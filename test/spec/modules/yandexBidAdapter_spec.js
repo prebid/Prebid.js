@@ -1,8 +1,9 @@
 import { assert, expect } from 'chai';
 import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { config } from '../../../src/config';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { BANNER, NATIVE } from '../../../src/mediaTypes';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Yandex adapter', function () {
   describe('isBidRequestValid', function () {
@@ -125,19 +126,21 @@ describe('Yandex adapter', function () {
     });
 
     it('should send currency if defined', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'USD'
-        }
+      setCurrencyConfig({
+        adServerCurrency: 'USD'
       });
 
       const bannerRequest = getBidRequest();
-      const requests = spec.buildRequests([bannerRequest], bidderRequest);
-      const { url } = requests[0];
-      const parsedRequestUrl = utils.parseUrl(url);
-      const { search: query } = parsedRequestUrl
 
-      expect(query['ssp-cur']).to.equal('USD');
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        const requests = spec.buildRequests([bannerRequest], res);
+        const { url } = requests[0];
+        const parsedRequestUrl = utils.parseUrl(url);
+        const { search: query } = parsedRequestUrl
+
+        expect(query['ssp-cur']).to.equal('USD');
+        setCurrencyConfig({});
+      });
     });
 
     it('should send eids and ortb2 user data if defined', function() {

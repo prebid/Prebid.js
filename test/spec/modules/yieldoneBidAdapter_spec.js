@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { getBrowser, getOS } from '../../../libraries/userAgentUtils/index.js';
+import { browserTypes, osTypes } from '../../../libraries/userAgentUtils/userAgentTypes.enums.js';
 
 const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
@@ -8,7 +10,7 @@ const VIDEO_PLAYER_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstview/js/d
 
 const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
-describe('yieldoneBidAdapter', function() {
+describe('yieldoneBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
@@ -473,6 +475,39 @@ describe('yieldoneBidAdapter', function() {
         expect(request[0].data.id5Id).to.equal('id5id_sample');
       });
     });
+
+    describe('UID2.0', function () {
+      it('dont send UID2.0 if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            userId: {},
+          },
+          {
+            params: {placementId: '2'},
+            userId: undefined,
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('uid2id');
+        expect(request[1].data).to.not.have.property('uid2id');
+        expect(request[2].data).to.not.have.property('uid2id');
+      });
+
+      it('should send UID2.0 if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            userId: {uid2: {id: 'uid2_sample'}},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.uid2id).to.equal('uid2_sample');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -638,12 +673,25 @@ describe('yieldoneBidAdapter', function() {
       expect(spec.getUserSyncs({})).to.be.undefined;
     });
 
-    it('should return a sync url if iframe syncs are enabled', function () {
-      expect(spec.getUserSyncs({
+    it('should return a sync url if iframe syncs are enabled and UserAgent is not Safari or iOS', function () {
+      const result = spec.getUserSyncs({
         'iframeEnabled': true
-      })).to.deep.equal([{
-        type: 'iframe', url: USER_SYNC_URL
-      }]);
+      });
+
+      if (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) {
+        expect(result).to.be.undefined;
+      } else {
+        expect(result).to.deep.equal([{
+          type: 'iframe', url: USER_SYNC_URL
+        }]);
+      }
+    });
+
+    it('should skip sync request in case GDPR applies', function () {
+      expect(spec.getUserSyncs({'iframeEnabled': true}, [], {
+        consentString: 'GDPR_CONSENT_STRING',
+        gdprApplies: true,
+      })).to.be.undefined;
     });
   });
 });

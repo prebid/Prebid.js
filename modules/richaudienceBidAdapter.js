@@ -1,9 +1,9 @@
-import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
+import {deepAccess, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -36,7 +36,7 @@ export const spec = {
         ifa: bid.params.ifa,
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
-        currencyCode: config.getConfig('currency.adServerCurrency'),
+        currencyCode: getCurrencyFromBidderRequest(bidderRequest),
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -48,12 +48,12 @@ export const spec = {
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: bidderRequest.timeout || 600,
-        user: raiSetEids(bid),
+        eids: deepAccess(bid, 'userIdAsEids') ? bid.userIdAsEids : [],
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
+        kws: bid.params.keywords,
         schain: bid.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
@@ -266,30 +266,6 @@ function raiGetVideoInfo(bid) {
   return videoData;
 }
 
-function raiSetEids(bid) {
-  let eids = [];
-
-  if (bid && bid.userId) {
-    raiSetUserId(bid, eids, 'id5-sync.com', deepAccess(bid, `userId.id5id.uid`));
-    raiSetUserId(bid, eids, 'pubcommon', deepAccess(bid, `userId.pubcid`));
-    raiSetUserId(bid, eids, 'criteo.com', deepAccess(bid, `userId.criteoId`));
-    raiSetUserId(bid, eids, 'liveramp.com', deepAccess(bid, `userId.idl_env`));
-    raiSetUserId(bid, eids, 'liveintent.com', deepAccess(bid, `userId.lipb.lipbid`));
-    raiSetUserId(bid, eids, 'adserver.org', deepAccess(bid, `userId.tdid`));
-  }
-
-  return eids;
-}
-
-function raiSetUserId(bid, eids, source, value) {
-  if (isStr(value)) {
-    eids.push({
-      userId: value,
-      source: source
-    });
-  }
-}
-
 function renderer(bid) {
   bid.renderer.push(() => {
     renderAd(bid)
@@ -299,12 +275,6 @@ function renderer(bid) {
 function renderAd(bid) {
   let raOutstreamHBPassback = `${bid.vastXml}`;
   let raPlayerHB = {
-    config: bid.params[0].player != undefined ? {
-      end: bid.params[0].player.end != null ? bid.params[0].player.end : 'close',
-      init: bid.params[0].player.init != null ? bid.params[0].player.init : 'close',
-      skin: bid.params[0].player.skin != null ? bid.params[0].player.skin : 'light',
-    } : {end: 'close', init: 'close', skin: 'light'},
-    pid: bid.params[0].pid,
     adUnit: bid.adUnitCode
   };
 

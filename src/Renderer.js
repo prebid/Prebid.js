@@ -1,6 +1,6 @@
 import { loadExternalScript } from './adloader.js';
 import {
-  logError, logWarn, logMessage, deepAccess
+  logError, logWarn, logMessage
 } from './utils.js';
 import {find} from './polyfill.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -24,6 +24,7 @@ export function Renderer(options) {
   this.handlers = {};
   this.id = id;
   this.renderNow = renderNow;
+  this.adUnitCode = adUnitCode;
 
   // a renderer may push to the command queue to delay rendering until the
   // render function is loaded by loadExternalScript, at which point the the command
@@ -101,7 +102,7 @@ Renderer.prototype.process = function() {
     try {
       this.cmd.shift().call();
     } catch (error) {
-      logError('Error processing Renderer command: ', error);
+      logError(`Error processing Renderer command on ad unit '${this.adUnitCode}':`, error);
     }
   }
 };
@@ -144,11 +145,11 @@ function isRendererPreferredFromAdUnit(adUnitCode) {
   }
 
   // renderer defined at adUnit level
-  const adUnitRenderer = deepAccess(adUnit, 'renderer');
+  const adUnitRenderer = adUnit?.renderer;
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
 
   // renderer defined at adUnit.mediaTypes level
-  const mediaTypeRenderer = deepAccess(adUnit, 'mediaTypes.video.renderer');
+  const mediaTypeRenderer = adUnit?.mediaTypes?.video?.renderer;
   const hasValidMediaTypeRenderer = !!(mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render)
 
   return !!(

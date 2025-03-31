@@ -14,15 +14,18 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { targeting } from '../src/targeting.js';
 import {
   buildUrl,
-  deepAccess,
   formatQS,
   isEmpty,
   isNumber,
   logError,
+  logWarn,
   parseSizesInput,
   parseUrl
 } from '../src/utils.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
+import { vastLocalCache } from '../src/videoCache.js';
+import { fetch } from '../src/ajax.js';
+import XMLUtil from '../libraries/xmlUtils/xmlUtils.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -55,6 +58,8 @@ import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT, gdprParams} from '../libraries/dfpUtil
 export const dep = {
   ri: getRefererInfo
 }
+
+export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
@@ -90,7 +95,7 @@ export function buildDfpVideoUrl(options) {
 
   const derivedParams = {
     correlator: Date.now(),
-    sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
+    sz: parseSizesInput(adUnit?.mediaTypes?.video?.playerSize).join('|'),
     url: encodeURIComponent(location.href),
   };
 
@@ -134,7 +139,7 @@ export function buildDfpVideoUrl(options) {
         return 'preroll';
       }
     },
-    vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.every(m => m === 7) ? '2' : undefined,
+    vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.some(m => m === 7) ? '2' : undefined,
     vpa() {
       // playbackmethod = 3 is play on click; 1, 2, 4, 5, 6 are autoplay
       if (Array.isArray(video?.playbackmethod)) {
@@ -208,7 +213,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  return deepAccess(components, `${prop}.description_url`) || encodeURIComponent(dep.ri().page);
+  return components?.[prop]?.description_url || encodeURIComponent(dep.ri().page);
 }
 
 /**
@@ -240,7 +245,7 @@ function getCustParams(bid, options, urlCustParams) {
   events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
 
   // merge the prebid + publisher targeting sets
-  const publisherTargetingSet = deepAccess(options, 'params.cust_params');
+  const publisherTargetingSet = options?.params?.cust_params;
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
   let encodedParams = encodeURIComponent(formatQS(targetingSet));
   if (urlCustParams) {
@@ -250,6 +255,72 @@ function getCustParams(bid, options, urlCustParams) {
   return encodedParams;
 }
 
+async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
+  try {
+    const xmlUtil = XMLUtil();
+    const xmlDoc = xmlUtil.parse(gamVastWrapper);
+    const vastAdTagUriElement = xmlDoc.querySelectorAll(VAST_TAG_URI_TAGNAME)[0];
+
+    if (!vastAdTagUriElement || !vastAdTagUriElement.textContent) {
+      return gamVastWrapper;
+    }
+
+    const uuidExp = new RegExp(`[A-Fa-f0-9]{8}-(?:[A-Fa-f0-9]{4}-){3}[A-Fa-f0-9]{12}`, 'gi');
+    const matchResult = Array.from(vastAdTagUriElement.textContent.matchAll(uuidExp));
+    const uuidCandidates = matchResult
+      .map(([uuid]) => uuid)
+      .filter(uuid => localCacheMap.has(uuid));
+
+    if (uuidCandidates.length != 1) {
+      logWarn(`Unable to determine unique uuid in ${VAST_TAG_URI_TAGNAME}`);
+      return gamVastWrapper;
+    }
+    const uuid = uuidCandidates[0];
+
+    const blobUrl = localCacheMap.get(uuid);
+    const base64BlobContent = await getBase64BlobContent(blobUrl);
+    const cdata = xmlDoc.createCDATASection(base64BlobContent);
+    vastAdTagUriElement.textContent = '';
+    vastAdTagUriElement.appendChild(cdata);
+    return xmlUtil.serialize(xmlDoc);
+  } catch (error) {
+    logWarn('Unable to process xml', error);
+    return gamVastWrapper;
+  }
+};
+
+export async function getVastXml(options, localCacheMap = vastLocalCache) {
+  const vastUrl = buildDfpVideoUrl(options);
+  const response = await fetch(vastUrl);
+  if (!response.ok) {
+    throw new Error('Unable to fetch GAM VAST wrapper');
+  }
+
+  const gamVastWrapper = await response.text();
+
+  if (config.getConfig('cache.useLocal')) {
+    const vastXml = await getVastForLocallyCachedBids(gamVastWrapper, localCacheMap);
+    return vastXml;
+  }
+
+  return gamVastWrapper;
+}
+
+export async function getBase64BlobContent(blobUrl) {
+  const response = await fetch(blobUrl);
+  if (!response.ok) {
+    logError('Unable to fetch blob');
+    throw new Error('Blob not found');
+  }
+  // Mechanism to handle cases where VAST tags are fetched
+  // from a context where the blob resource is not accessible.
+  // like IMA SDK iframe
+  const blobContent = await response.text();
+  const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+  return dataUrl;
+}
+
 registerVideoSupport('dfp', {
   buildVideoUrl: buildDfpVideoUrl,
+  getVastXml
 });

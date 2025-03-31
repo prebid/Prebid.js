@@ -4,6 +4,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -39,6 +41,7 @@ export const spec = {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
+    const schain = bidRequests[0].schain;
     let url;
     let params;
     const urlConfig = getUrlConfig(bidRequests);
@@ -70,7 +73,9 @@ export const spec = {
       if (pcrs) {
         params.crs = pcrs;
       }
-
+      if (schain && schain.nodes.length <= 2) {
+        params.sch = serializeSupplyChain(schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain']);
+      }
       if (referrerUrl) {
         params.fr = cutUrl(referrerUrl);
       }
@@ -360,7 +365,7 @@ function waitForElementsPresent(elements) {
             if (index < 0) {
               elements.forEach(code => {
                 let div = _getAdSlotHTMLElement(code);
-                if (div && div.contains(ad) && div.getBoundingClientRect().width > 0) {
+                if (div && div.contains(ad) && getBoundingClientRect(div).width > 0) {
                   index = elements.indexOf(div.id);
                   adView = div;
                 }

@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject, parseQueryStringParameters } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -170,10 +170,13 @@ export const spec = {
     }
 
     return {
-      method: 'GET',
+      method: 'POST',
       url: url,
+      options: {
+        contentType: 'application/x-www-form-urlencoded'
+      },
       withCredentials: true,
-      data: payload,
+      data: parseQueryStringParameters(payload),
       bidderRequests: validBidRequests
     };
   },
@@ -359,6 +362,51 @@ function _validateMediaType(bidRequest) {
       let plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt');
       mediaTypeValidation = `${mediaTypeValidation}pl=${plcmt},`;
     }
+    if (deepAccess(bidRequest, 'mediaTypes.video.protocols')) {
+      mediaTypeValidation = `${mediaTypeValidation}protocols=${deepAccess(bidRequest, 'mediaTypes.video.protocols').join(':')},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.mimes')) {
+      mediaTypeValidation = `${mediaTypeValidation}mimes=${deepAccess(bidRequest, 'mediaTypes.video.mimes').join(':')},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.battr')) {
+      mediaTypeValidation = `${mediaTypeValidation}battr=${deepAccess(bidRequest, 'mediaTypes.video.battr').join(':')},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.api')) {
+      mediaTypeValidation = `${mediaTypeValidation}api=${deepAccess(bidRequest, 'mediaTypes.video.api').join(':')},`;
+    }
+
+    if (deepAccess(bidRequest, 'mediaTypes.video.minduration')) {
+      let minduration = deepAccess(bidRequest, 'mediaTypes.video.minduration');
+      mediaTypeValidation = `${mediaTypeValidation}minduration=${minduration},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.maxduration')) {
+      let maxduration = deepAccess(bidRequest, 'mediaTypes.video.maxduration');
+      mediaTypeValidation = `${mediaTypeValidation}maxduration=${maxduration},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.skip')) {
+      let skip = deepAccess(bidRequest, 'mediaTypes.video.skip');
+      mediaTypeValidation = `${mediaTypeValidation}skip=${skip},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.skipafter')) {
+      let skipafter = deepAccess(bidRequest, 'mediaTypes.video.skipafter');
+      mediaTypeValidation = `${mediaTypeValidation}skipafter=${skipafter},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.startdelay')) {
+      let startdelay = deepAccess(bidRequest, 'mediaTypes.video.startdelay');
+      mediaTypeValidation = `${mediaTypeValidation}startdelay=${startdelay},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.linearity')) {
+      let linearity = deepAccess(bidRequest, 'mediaTypes.video.linearity');
+      mediaTypeValidation = `${mediaTypeValidation}linearity=${linearity},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.minbitrate')) {
+      let minbitrate = deepAccess(bidRequest, 'mediaTypes.video.minbitrate');
+      mediaTypeValidation = `${mediaTypeValidation}minbitrate=${minbitrate},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.maxbitrate')) {
+      let maxbitrate = deepAccess(bidRequest, 'mediaTypes.video.maxbitrate');
+      mediaTypeValidation = `${mediaTypeValidation}maxbitrate=${maxbitrate},`;
+    }
   } else if (mediaType === 'display') {
     mediaTypeValidation = 'c=d,';
   }
@@ -425,7 +473,7 @@ function loadOrCreateFirstPartyData() {
   var readData = function (key) {
     if (hasLocalStorage()) {
       // TODO FIX RULES VIOLATION
-      // eslint-disable-next-line prebid/no-global
+      // eslint-disable-next-line no-restricted-properties
       return window.localStorage.getItem(key);
     }
     return null;
@@ -446,7 +494,7 @@ function loadOrCreateFirstPartyData() {
     try {
       if (hasLocalStorage()) {
         // TODO FIX RULES VIOLATION
-        // eslint-disable-next-line prebid/no-global
+        // eslint-disable-next-line no-restricted-properties
         window.localStorage.setItem(key, value);
       }
     } catch (error) {

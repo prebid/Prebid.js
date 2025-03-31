@@ -91,53 +91,130 @@ describe('bidderFactory', () => {
         sandbox.restore();
       });
 
-      it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: true
+      describe('user syncs', () => {
+        [
+          {
+            t: 'invalid alias, aliasSync enabled',
+            alias: false,
+            aliasSyncEnabled: true,
+            shouldRegister: true
+          },
+          {
+            t: 'valid alias, aliasSync enabled',
+            alias: true,
+            aliasSyncEnabled: true,
+            shouldRegister: true
+          },
+          {
+            t: 'invalid alias, aliasSync disabled',
+            alias: false,
+            aliasSyncEnabled: false,
+            shouldRegister: true,
+          },
+          {
+            t: 'valid alias, aliasSync disabled',
+            alias: true,
+            aliasSyncEnabled: false,
+            shouldRegister: false
           }
+        ].forEach(({t, alias, aliasSyncEnabled, shouldRegister}) => {
+          describe(t, () => {
+            it(shouldRegister ? 'should register sync' : 'should NOT register sync', () => {
+              config.setConfig({
+                userSync: {
+                  aliasSyncEnabled
+                }
+              });
+              spec.code = 'someBidder';
+              if (alias) {
+                aliasRegistry[spec.code] = 'original';
+              }
+              const bidder = newBidder(spec);
+              bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+              if (shouldRegister) {
+                sinon.assert.called(spec.getUserSyncs);
+              } else {
+                sinon.assert.notCalled(spec.getUserSyncs);
+              }
+            });
+          });
         });
-        spec.code = 'fakeBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
 
-      it('should let registerSyncs run with valid alias and aliasSync enabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: true
-          }
-        });
-        spec.code = 'aliasBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
+        describe('getUserSyncs syncOptions', () => {
+          [
+            {
+              t: 'all image allowed, specific bidder denied iframe',
+              userSync: {
+                syncEnabled: true,
+                pixelEnabled: true,
+                iframeEnabled: true,
+                filterSettings: {
+                  image: {
+                    bidders: '*',
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['bidderB'],
+                    filter: 'include'
+                  }
+                }
+              },
+              expected: {
+                bidderA: {
+                  iframeEnabled: false,
+                  pixelEnabled: true
+                },
+                bidderB: {
+                  iframeEnabled: true,
+                  pixelEnabled: true,
+                }
+              }
+            },
+            {
+              t: 'specific bidders allowed specific methods',
+              userSync: {
+                syncEnabled: true,
+                pixelEnabled: true,
+                iframeEnabled: true,
+                filterSettings: {
+                  image: {
+                    bidders: ['bidderA'],
+                    filter: 'include'
+                  },
+                  iframe: {
+                    bidders: ['bidderB'],
+                    filter: 'include'
+                  }
+                },
+              },
+              expected: {
+                bidderA: {
+                  iframeEnabled: false,
+                  pixelEnabled: true
+                },
+                bidderB: {
+                  iframeEnabled: true,
+                  pixelEnabled: false,
+                }
+              }
+            }
+          ].forEach(({t, userSync, expected}) => {
+            describe(`when ${t}`, () => {
+              beforeEach(() => {
+                config.setConfig({userSync});
+              });
 
-      it('should let registerSyncs run with invalid alias and aliasSync disabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: false
-          }
-        });
-        spec.code = 'fakeBidder';
-        const bidder = newBidder(spec);
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(true);
-      });
-
-      it('should not let registerSyncs run with valid alias and aliasSync disabled', function () {
-        config.setConfig({
-          userSync: {
-            aliasSyncEnabled: false
-          }
-        });
-        spec.code = 'aliasBidder';
-        const bidder = newBidder(spec);
-        aliasRegistry = {[spec.code]: CODE};
-        bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-        expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
+              Object.entries(expected).forEach(([bidderCode, syncOptions]) => {
+                it(`should pass ${JSON.stringify(syncOptions)} to ${bidderCode}`, () => {
+                  spec.code = bidderCode;
+                  const bidder = newBidder(spec);
+                  bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+                  sinon.assert.calledWith(spec.getUserSyncs, syncOptions);
+                })
+              })
+            })
+          })
+        })
       });
 
       describe('transaction IDs', () => {
@@ -1610,18 +1687,16 @@ describe('bidderFactory', () => {
         }
       });
 
-      function mkResponse(width, height) {
-        return {
+      function mkResponse(props) {
+        return Object.assign({
           requestId: req.bidId,
-          width,
-          height,
           cpm: 1,
           ttl: 60,
           creativeId: '123',
           netRevenue: true,
           currency: 'USD',
           mediaType: 'banner',
-        }
+        }, props)
       }
 
       function checkValid(bid) {
@@ -1629,7 +1704,20 @@ describe('bidderFactory', () => {
       }
 
       it('should succeed when response has a size that was in request', () => {
-        expect(checkValid(mkResponse(3, 4))).to.be.true;
+        expect(checkValid(mkResponse({width: 3, height: 4}))).to.be.true;
+      });
+
+      describe('using w/hratio', () => {
+        beforeEach(() => {
+          req.ortb2Imp = {
+            banner: {
+              format: [{wratio: 1, hratio: 2}]
+            }
+          }
+        })
+        it('should accept wratio/hratio', () => {
+          expect(checkValid(mkResponse({wratio: 1, hratio: 2}))).to.be.true;
+        });
       });
     })
   });

@@ -7,6 +7,12 @@ import * as utils from '../../../src/utils.js';
 import {deepSetValue} from '../../../src/utils.js';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
+spec.getGetParametersAsObject = function() {
+  return {
+    page: 'https://www.ardm.io/sometestPage/?qsParam1=123',
+    location: 'https://www.ardm.io/sometestPage/?qsParam1=123'
+  };
+}
 var validBidRequests = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -2748,18 +2754,18 @@ describe('ozone Adapter', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);
       const data = JSON.parse(request.data);
       expect(data.ext.ozone).to.haveOwnProperty('test_rw');
-      config.setConfig({'ozone': {'kvpPrefix': null}});
+      config.resetConfig();
       spec.propertyBag.whitelabel = null;
     });
     it('handles an alias ', function () {
       spec.propertyBag.whitelabel = null;
-      config.setConfig({'lmc': {'kvpPrefix': 'test'}});
+      config.setConfig({'venatus': {'kvpPrefix': 've'}});
       let br = JSON.parse(JSON.stringify(validBidRequests));
-      br[0]['bidder'] = 'lmc';
+      br[0]['bidder'] = 'venatus';
       const request = spec.buildRequests(br, validBidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.ext.lmc).to.haveOwnProperty('test_rw');
-      config.setConfig({'lmc': {'kvpPrefix': null}}); // I cant remove the key so set the value to null
+      expect(data.ext.venatus).to.haveOwnProperty('ve_rw');
+      config.resetConfig();
       spec.propertyBag.whitelabel = null;
     });
     it('should use oztestmode GET value if set', function() {
@@ -2772,29 +2778,14 @@ describe('ozone Adapter', function () {
       expect(data.imp[0].ext.ozone.customData).to.be.an('array');
       expect(data.imp[0].ext.ozone.customData[0].targeting.oztestmode).to.equal('mytestvalue_123');
     });
-    it('should pass through GET params if present: ozf, ozpf, ozrp, ozip', function() {
+    it('should ignore these GET params if present (removed 202410): ozf, ozpf, ozrp, ozip', function() {
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
-        return {ozf: '1', ozpf: '0', ozrp: '2', ozip: '123'};
+        return {ozf: '1', ozpf: '10', ozrp: '2', ozip: '123'};
       };
       const request = specMock.buildRequests(validBidRequests, validBidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.ext.ozone.ozf).to.equal(1);
-      expect(data.ext.ozone.ozpf).to.equal(0);
-      expect(data.ext.ozone.ozrp).to.equal(2);
-      expect(data.ext.ozone.ozip).to.equal(123);
-    });
-    it('should pass through GET params if present: ozf, ozpf, ozrp, ozip with alternative values', function() {
-      var specMock = utils.deepClone(spec);
-      specMock.getGetParametersAsObject = function() {
-        return {ozf: 'false', ozpf: 'true', ozrp: 'xyz', ozip: 'hello'};
-      };
-      const request = specMock.buildRequests(validBidRequests, validBidderRequest);
-      const data = JSON.parse(request.data);
-      expect(data.ext.ozone.ozf).to.equal(0);
-      expect(data.ext.ozone.ozpf).to.equal(1);
-      expect(data.ext.ozone).to.not.haveOwnProperty('ozrp');
-      expect(data.ext.ozone).to.not.haveOwnProperty('ozip');
+      expect(data.ext.ozone).to.not.have.any.keys('zf', 'ozpf', 'ozrp', 'ozip');
     });
     it('should use oztestmode GET value if set, even if there is no customdata in config', function() {
       var specMock = utils.deepClone(spec);
@@ -2950,24 +2941,49 @@ describe('ozone Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.regs).to.include.keys('coppa');
       expect(payload.regs.coppa).to.equal(1);
+      config.resetConfig();
     });
     it('should pick up the config value of coppa & only set it in the request if its true', function () {
       config.setConfig({'coppa': false});
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'regs.coppa')).to.be.undefined;
+      config.resetConfig();
     });
     it('should handle oz_omp_floor correctly', function () {
       config.setConfig({'ozone': {'oz_omp_floor': 1.56}});
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'ext.ozone.oz_omp_floor')).to.equal(1.56);
+      config.resetConfig();
     });
     it('should ignore invalid oz_omp_floor values', function () {
       config.setConfig({'ozone': {'oz_omp_floor': '1.56'}});
       const request = spec.buildRequests(validBidRequestsNoSizes, validBidderRequest);
       const payload = JSON.parse(request.data);
       expect(utils.deepAccess(payload, 'ext.ozone.oz_omp_floor')).to.be.undefined;
+      config.resetConfig();
+    });
+    it('should handle a valid ozFloor string value in the adunit correctly', function () {
+      let cloneBidRequests = JSON.parse(JSON.stringify(validBidRequests));
+      cloneBidRequests[0].params.ozFloor = '0.1234'; // string or float - doesnt matter
+      const request = spec.buildRequests(cloneBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(utils.deepAccess(payload, 'imp.0.ext.ozone.ozFloor')).to.equal(0.1234);
+    });
+    it('should handle a valid ozFloor float value in the adunit correctly', function () {
+      let cloneBidRequests = JSON.parse(JSON.stringify(validBidRequests));
+      cloneBidRequests[0].params.ozFloor = 0.1234; // string or float - doesnt matter
+      const request = spec.buildRequests(cloneBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(utils.deepAccess(payload, 'imp.0.ext.ozone.ozFloor')).to.equal(0.1234);
+    });
+    it('should ignore an invalid ozFloor string value in the adunit correctly', function () {
+      let cloneBidRequests = JSON.parse(JSON.stringify(validBidRequests));
+      cloneBidRequests[0].params.ozFloor = 'this is no good!'; // string or float - doesnt matter
+      const request = spec.buildRequests(cloneBidRequests, validBidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(utils.deepAccess(payload, 'imp.0.ext.ozone.ozFloor', null)).to.be.null;
     });
     it('should should contain a unique page view id in the auction request which persists across calls', function () {
       let request = spec.buildRequests(validBidRequests, validBidderRequest);
@@ -3098,6 +3114,30 @@ describe('ozone Adapter', function () {
       expect(utils.deepAccess(payload, 'imp.0.floor.banner.currency')).to.equal('USD');
       expect(utils.deepAccess(payload, 'imp.0.floor.banner.floor')).to.equal(0.8);
     });
+    it(' (getFloorObjectForAuction) should handle advanced/custom floor config function correctly (note you cant fully test floor functionality because it relies on the floor module - only our code that interacts with it; we must extract the first w/h pair)', function () {
+      let testBidObject = {
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          },
+          video: {
+            playerSize: [[640, 360]]
+          },
+          native: {
+            image: {
+              sizes: [[300, 250], [640, 480]]
+            }
+          }
+        },
+        getFloor: function(obj) {
+          return obj.size; // we just want to look at the size that was sent
+        }
+      };
+      let floorObject = spec.getFloorObjectForAuction(testBidObject);
+      expect(floorObject.banner).to.deep.equal([300, 250]);
+      expect(floorObject.video).to.deep.equal([640, 360]);
+      expect(floorObject.native).to.deep.equal([300, 250]);
+    });
     it('handles schain object in each bidrequest (will be the same in each br)', function () {
       let br = JSON.parse(JSON.stringify(validBidRequests));
       let schainConfigObject = {
@@ -3177,6 +3217,27 @@ describe('ozone Adapter', function () {
       expect(payload.imp[0].ext.ozone.auctionId).to.equal(valid6BidRequestsWithAuctionIdTransactionId[0].ortb2.source.tid);
       expect(payload.imp[0].ext.ozone.transactionId).to.equal(valid6BidRequestsWithAuctionIdTransactionId[0].ortb2Imp.ext.tid);
       config.resetConfig();
+    });
+    it('should handle ortb2 device data', function () {
+      const bidderRequest = JSON.parse(JSON.stringify(validBidderRequest));
+      bidderRequest.ortb2 = {
+        device: {
+          w: 980,
+          h: 1720,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+          language: 'en',
+          devicetype: 1,
+          make: 'Apple',
+          model: 'iPhone 12 Pro Max',
+          os: 'iOS',
+          osv: '17.4',
+          ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+        },
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.device).to.deep.equal(bidderRequest.ortb2.device);
     });
   });
   describe('interpretResponse', function () {
@@ -3272,6 +3333,14 @@ describe('ozone Adapter', function () {
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_omp')).to.be.undefined;
     });
     it('should handle ext.bidder.ozone.floor correctly, setting flr & rid as necessary', function () {
+      const request = spec.buildRequests(validBidRequests, validBidderRequest);
+      let vres = JSON.parse(JSON.stringify(validResponse));
+      vres.body.seatbid[0].bid[0].ext.bidder.ozone = {floor: 1, ruleId: 'ZjbsYE1q'};
+      const result = spec.interpretResponse(vres, request);
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_flr')).to.equal(1);
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_rid')).to.equal('ZjbsYE1q');
+    });
+    it('Alias venatus: should handle ext.bidder.venatus.floor correctly, setting flr & rid as necessary', function () {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);
       let vres = JSON.parse(JSON.stringify(validResponse));
       vres.body.seatbid[0].bid[0].ext.bidder.ozone = {floor: 1, ruleId: 'ZjbsYE1q'};
@@ -3405,6 +3474,50 @@ describe('ozone Adapter', function () {
       const result = spec.interpretResponse(objResp, req);
       expect(result).to.be.an('object');
       expect(result.fledgeAuctionConfigs[0]['impid']).to.equal('1');
+    });
+    it('should add labels in the adserver request if they are present in the auction response', function () {
+      const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest);
+      let validres = JSON.parse(JSON.stringify(validResponse2Bids));
+      validres.body.seatbid.push(JSON.parse(JSON.stringify(validres.body.seatbid[0]))); // add another bidder
+      validres.body.seatbid[1].seat = 'marktest';
+      validres.body.seatbid[1].bid[0].ext.prebid.labels = ['b1', 'b2', 'b3'];
+      validres.body.seatbid[1].bid[0].price = 10; // will win
+      validres.body.seatbid[1].bid[1].price = 0; // will lose
+      validres.body.seatbid[0].bid[0].ext.prebid.labels = ['bid1label1', 'bid1label2', 'bid1label3'];
+      validres.body.seatbid[0].bid[1].ext.prebid.labels = ['bid2label'];
+      const result = spec.interpretResponse(validres, request);
+      expect(result.length).to.equal(4); // 4 bids will be returned; 2 from each bidder. All will have the winning keys attached.
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_winner')).to.equal('marktest'); // the first bid
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_labels')).to.equal('b1,b2,b3'); // the winner
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_appnexus_labels')).to.equal('bid1label1,bid1label2,bid1label3');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_winner')).to.equal('appnexus'); // the second bid
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_appnexus_labels')).to.equal('bid2label');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_labels')).to.equal('bid2label'); // the second adslot winning label
+      expect(utils.deepAccess(result[2].adserverTargeting, 'oz_labels')).to.equal('b1,b2,b3'); // we're back to the first of the 2 bids again
+      expect(utils.deepAccess(result[3].adserverTargeting, 'oz_labels')).to.equal('bid2label'); // the second adslot winning label
+    });
+    it('should not add labels in the adserver request if they are present in the auction response when config contains ozone.enhancedAdserverTargeting', function () {
+      config.setConfig({'ozone': {'enhancedAdserverTargeting': false}});
+      const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest);
+      let validres = JSON.parse(JSON.stringify(validResponse2Bids));
+      validres.body.seatbid.push(JSON.parse(JSON.stringify(validres.body.seatbid[0]))); // add another bidder
+      validres.body.seatbid[1].seat = 'marktest';
+      validres.body.seatbid[1].bid[0].ext.prebid.labels = ['b1', 'b2', 'b3'];
+      validres.body.seatbid[1].bid[0].price = 10; // will win
+      validres.body.seatbid[1].bid[1].price = 0; // will lose
+      validres.body.seatbid[0].bid[0].ext.prebid.labels = ['bid1label1', 'bid1label2', 'bid1label3'];
+      validres.body.seatbid[0].bid[1].ext.prebid.labels = ['bid2label'];
+      const result = spec.interpretResponse(validres, request);
+      expect(result.length).to.equal(4); // 4 bids will be returned; 2 from each bidder. All will have the winning keys attached.
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_winner')).to.equal('marktest'); // the first bid
+      expect(result[0].adserverTargeting).to.not.have.property('oz_labels');
+      expect(result[0].adserverTargeting).to.not.have.property('oz_appnexus_labels');
+      expect(utils.deepAccess(result[1].adserverTargeting, 'oz_winner')).to.equal('appnexus'); // the second bid
+      expect(result[1].adserverTargeting).to.not.have.property('oz_appnexus_labels');
+      expect(result[1].adserverTargeting).to.not.have.property('oz_labels'); // the second adslot winning label
+      expect(result[2].adserverTargeting).to.not.have.property('oz_labels'); // we're back to the first of the 2 bids again
+      expect(result[3].adserverTargeting).to.not.have.property('oz_labels'); // the second adslot winning label
+      config.resetConfig();
     });
   });
   describe('userSyncs', function () {

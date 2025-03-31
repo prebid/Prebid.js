@@ -21,8 +21,8 @@ import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {getRenderingData} from '../../src/adRendering.js';
-import {getCreativeRendererSource} from '../../src/creativeRenderers.js';
-import {deepClone, deepSetValue} from '../../src/utils.js';
+import {getCreativeRendererSource, PUC_MIN_VERSION} from '../../src/creativeRenderers.js';
+import {deepSetValue} from '../../src/utils.js';
 const utils = require('src/utils');
 
 const bid = {
@@ -402,7 +402,8 @@ describe('native.js', function () {
       'returns native data': {
         renderDataHook(next, bidResponse) {
           next.bail({
-            native: getNativeRenderingData(bidResponse, adUnit)
+            native: getNativeRenderingData(bidResponse, adUnit),
+            rendererVersion: 'native-render-version'
           });
         },
         renderSourceHook(next) {
@@ -433,8 +434,9 @@ describe('native.js', function () {
         function checkRenderer(message) {
           if (withRenderer) {
             expect(message.renderer).to.eql('mock-native-renderer')
+            expect(message.rendererVersion).to.eql(PUC_MIN_VERSION);
             Object.entries(message).forEach(([key, val]) => {
-              if (!['native', 'adId', 'message', 'assets', 'renderer'].includes(key)) {
+              if (!['native', 'adId', 'message', 'assets', 'renderer', 'rendererVersion'].includes(key)) {
                 expect(message.native[key]).to.eql(val);
               }
             })
