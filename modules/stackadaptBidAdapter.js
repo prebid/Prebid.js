@@ -1,9 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepSetValue, deepAccess, mergeDeep, logWarn, parseSizesInput, isNumber, isInteger, replaceAuctionPrice, getDNT, formatQS, isFn, isPlainObject } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.js'
+import { deepSetValue, logWarn, parseSizesInput, isNumber, isInteger, replaceAuctionPrice, formatQS, isFn, isPlainObject } from '../src/utils.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const BIDDER_CODE = 'stackadapt';
@@ -25,10 +23,6 @@ export const converter = ortbConverter({
 
     deepSetValue(request, 'site.publisher.id', bid.params.publisherId);
     deepSetValue(request, 'test', bid.params.testMode);
-
-    setDevice(request)
-    setSite(request, bidderRequest)
-    setUser(request, bidderRequest)
 
     return request;
   },
@@ -184,53 +178,6 @@ export const spec = {
     return syncs;
   },
 };
-
-function setSite(request, bidderRequest) {
-  request.site = mergeDeep(
-    {
-      page: bidderRequest.refererInfo?.page,
-      ref: bidderRequest.refererInfo?.ref,
-      publisher: bidderRequest.refererInfo?.domain ? { domain: bidderRequest.refererInfo?.domain } : undefined
-    },
-    request.site
-  )
-}
-
-function setDevice(request) {
-  request.device = mergeDeep(
-    {
-      ua: navigator.userAgent,
-      dnt: getDNT() ? 1 : 0,
-      language: navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage,
-      connectiontype: getConnectionType()
-    },
-    request.device
-  )
-};
-
-function setUser(request, bidderRequest) {
-  request.regs = mergeDeep(
-    {
-      coppa: config.getConfig('coppa') === true ? 1 : request.regs?.coppa,
-      gpp: bidderRequest.gppConsent?.gppString,
-      gpp_sid: bidderRequest.gppConsent?.applicableSections,
-      ext: {
-        gdpr: bidderRequest.gdprConsent?.gdprApplies ? 1 : 0,
-        us_privacy: bidderRequest.uspConsent
-      }
-    },
-    request.regs
-  )
-
-  if (bidderRequest.gdprConsent?.consentString && !request.user?.ext?.consent) {
-    deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-  }
-
-  var eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids')
-  if (eids && eids.length && !request.user?.ext?.eids) {
-    deepSetValue(request, 'user.ext.eids', eids);
-  }
-}
 
 function getBidFloor(bidRequest) {
   if (bidRequest.params.bidfloor) {

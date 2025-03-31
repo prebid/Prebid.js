@@ -839,48 +839,52 @@ describe('stackadaptBidAdapter', function () {
       expect(ortbRequest.imp[0].banner.battr).to.deep.equal(battr);
     });
 
-    it('should set gdpr consent info', function () {
+    it('should set ortb2 gdpr consent info', function () {
       const consentString = 'CQGRvoAQGRvoAAHABAENBKFsAP_gAEPgAAAAKhNV';
-      const clonedBidderRequest = deepClone(bidderRequest);
-      clonedBidderRequest.gdprConsent = {
-        consentString: consentString,
-        gdprApplies: true
+      const ortb2 = {
+        user: {
+          ext: {
+            consent: consentString
+          }
+        },
+        regs: {
+          ext: {
+            gdpr: 1
+          }
+        }
       };
-
+      let clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.user.ext.consent).to.equal(consentString);
       expect(ortbRequest.regs.ext.gdpr).to.equal(1);
     });
 
-    it('should set usp consent info', function () {
+    it('should set ortb2 usp consent info', function () {
       const consentString = 'CQGRvoAQGRvoAAHABAENBKFsAP_gAEPgAAAAKhNV';
-      const clonedBidderRequest = deepClone(bidderRequest);
-      clonedBidderRequest.uspConsent = consentString;
-
+      const ortb2 = {
+        regs: {
+          ext: {
+            us_privacy: consentString
+          }
+        }
+      };
+      let clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
       expect(ortbRequest.regs.ext.us_privacy).to.equal(consentString);
     });
 
-    it('should set coppa consent info', function () {
-      const clonedBidderRequest = deepClone(bidderRequest);
-      config.setConfig({coppa: true});
+    it('should set ortb2 coppa consent info', function () {
+      const ortb2 = {
+        regs: {
+          coppa: 1
+        }
+      };
+      let clonedBidderRequest = {...deepClone(bidderRequest), ortb2};
       const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
-      config.resetConfig();
       expect(ortbRequest.regs.coppa).to.equal(1);
     });
 
-    it('should set gpp consent info', function () {
-      const clonedBidderRequest = deepClone(bidderRequest);
-      clonedBidderRequest.gppConsent = {
-        gppString: 'DCACTA~1YAB',
-        applicableSections: [8]
-      };
-      const ortbRequest = spec.buildRequests(bidRequests, clonedBidderRequest).data;
-      expect(ortbRequest.regs.gpp).to.equal('DCACTA~1YAB');
-      expect(ortbRequest.regs.gpp_sid).to.deep.equal([8]);
-    });
-
-    it('should set ortb gpp consent info', function () {
+    it('should set ortb2 gpp consent info', function () {
       const ortb2 = {
         regs: {
           gpp: 'DCACTA~1YAA',
