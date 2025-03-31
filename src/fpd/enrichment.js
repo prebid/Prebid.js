@@ -107,12 +107,16 @@ const ENRICHMENTS = {
       const vpw = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
       const vph = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
 
+      const winLang = win.navigator.language.split('-').shift();
+      const documentLang = document.documentElement.lang.split('-').shift();
+
       const device = {
         w,
         h,
         dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
-        language: win.navigator.language.split('-').shift(),
+        language: winLang,
+        documentLang: documentLang || winLang,
         ext: {
           vpw,
           vph,

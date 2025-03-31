@@ -180,6 +180,12 @@ export const spec = {
         device: ortb2?.device,
       };
 
+      // Set the language in ortb2 site content if available
+      if (lang && data.site) {
+        if (!data.site.content) data.site.content = {};
+        data.site.content.language = lang;
+      }
+
       const eids = deepAccess(bidRequest, 'userIdAsEids');
       if (eids && eids.length) {
         deepSetValue(data, 'user.ext.eids', eids);
