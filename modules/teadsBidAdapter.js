@@ -19,7 +19,10 @@ const gdprStatus = {
   GDPR_DOESNT_APPLY: 0,
   CMP_NOT_FOUND_OR_ERROR: 22
 };
+
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
+const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
+
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
@@ -77,6 +80,7 @@ export const spec = {
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
+      outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
     };
 

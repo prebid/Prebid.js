@@ -344,10 +344,11 @@ describe('adnuntiusBidAdapter', function () {
       'auId': '0000000000000551',
       'targetId': 'adn-0000000000000551',
       'nativeJson': {
-        'link': {
-          'url': 'https://whatever.com'
-        },
-        'assets': [
+        'ortb': {
+          'link': {
+            'url': 'https://whatever.com'
+          },
+          'assets': [
           {
             'id': 1,
             'required': 1,
@@ -355,6 +356,7 @@ describe('adnuntiusBidAdapter', function () {
               'url': 'http://something.com/something.png'
             }
           }]
+        }
       },
       'matchedAdCount': 1,
       'responseId': '',
@@ -1693,7 +1695,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
       expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('adnuntius.com');
       expect(interpretedResponse[0].vastXml).to.equal(ad.vastXml);
-      expect(JSON.stringify(interpretedResponse[0].native)).to.equal('{"link":{"url":"https://whatever.com"},"assets":[{"id":1,"required":1,"img":{"url":"http://something.com/something.png"}}]}');
+      expect(JSON.stringify(interpretedResponse[0].native.ortb)).to.equal('{"link":{"url":"https://whatever.com"},"assets":[{"id":1,"required":1,"img":{"url":"http://something.com/something.png"}}]}');
     });
 
     it('should pass legacy requests on correctly', function () {
@@ -1701,7 +1703,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"ortb":{"ver":"1.2","assets":[{"id":0,"required":1,"img":{"type":3,"w":250,"h":250}}]}},"dimensions":[[200,200],[300,300]]}]}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"ortb":{"ver":"1.2","assets":[{"id":0,"required":1,"img":{"type":3,"w":250,"h":250}}],"eventtrackers":[{"event":1,"methods":[1]},{"event":2,"methods":[1]}]}},"dimensions":[[200,200],[300,300]]}]}');
     });
 
     it('should return valid legacy response when passed valid server response', function () {
