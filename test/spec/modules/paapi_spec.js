@@ -10,7 +10,7 @@ import {
   adAuctionHeadersHook,
   addPaapiConfigHook,
   addPaapiData,
-  ASYNC_SIGNALS,
+  ASYNC_SIGNALS, AsyncPAAPIParam, buildPAAPIParams,
   buyersToAuctionConfigs,
   getPAAPIConfig,
   getPAAPISize,
@@ -33,6 +33,7 @@ import {getGlobal} from '../../../src/prebidGlobal.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
+import {buildActivityParams} from '../../../src/activities/params.js';
 
 describe('paapi module', () => {
   let sandbox;
@@ -698,9 +699,16 @@ describe('paapi module', () => {
         function expectFledgeFlags(...enableFlags) {
           const bidRequests = mark();
           expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
+          if (bidRequests.appnexus.paapi?.enabled) {
+            expect(bidRequests.appnexus.paapi.createAuctionNonce).to.exist;
+          }
           bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
 
           expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
+          if (bidRequests.rubicon.paapi?.enabled) {
+            expect(bidRequests.rubicon.paapi.createAuctionNonce).to.exist;
+          }
+
           bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
 
           Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
@@ -1162,6 +1170,77 @@ describe('paapi module', () => {
       });
     });
   });
+
+  describe('buildPaapiParameters', () => {
+    let next, bidderRequest, spec, bids;
+    beforeEach(() => {
+      next = sinon.stub();
+      spec = {};
+      bidderRequest = {paapi: {enabled: true}};
+      bids = [];
+    });
+
+    function runParamHook() {
+      return Promise.resolve(buildPAAPIParams(next, spec, bids, bidderRequest));
+    }
+
+    Object.entries({
+      'has no paapiParameters': () => null,
+      'returns empty parameter map'() {
+        spec.paapiParameters = () => ({})
+      },
+      'returns null parameter map'() {
+        spec.paapiParameters = () => null
+      },
+      'returns params, but PAAPI is disabled'() {
+        bidderRequest.paapi.enabled = false;
+        spec.paapiParameters = () => ({param: new AsyncPAAPIParam()})
+      }
+    }).forEach(([t, setup]) => {
+      it(`should do nothing if spec ${t}`, async () => {
+        setup();
+        await runParamHook();
+        sinon.assert.calledWith(next, spec, bids, bidderRequest);
+      })
+    })
+
+    describe('when paapiParameters returns a map', () => {
+      let params;
+      beforeEach(() => {
+        spec.paapiParameters = sinon.stub().callsFake(() => params);
+      });
+      it('should be invoked with bids & bidderRequest', async () => {
+        await runParamHook();
+        sinon.assert.calledWith(spec.paapiParameters, bids, bidderRequest);
+      });
+      it('should leave most things (including promises) untouched', async () => {
+        params = {
+          'p1': 'scalar',
+          'p2': Promise.resolve()
+        }
+        await runParamHook();
+        expect(bidderRequest.paapi.params).to.eql(params);
+      });
+      it('should resolve async PAAPI parameeters', async () => {
+        params = {
+          'resolved': new AsyncPAAPIParam(() => Promise.resolve('value')),
+        }
+        await runParamHook();
+        expect(bidderRequest.paapi.params).to.eql({
+          'resolved': 'value'
+        })
+      })
+
+      it('should still call next if the resolution fails', async () => {
+        params = {
+          error: new AsyncPAAPIParam(() => Promise.reject(new Error()))
+        }
+        await runParamHook();
+        sinon.assert.called(next);
+        expect(bidderRequest.paapi.params).to.not.exist;
+      })
+    })
+  })
 
   describe('parallel PAAPI auctions', () => {
     describe('parallellPaapiProcessing', () => {
