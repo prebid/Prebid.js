@@ -123,7 +123,7 @@ describe('adapterManager tests', function () {
 
     beforeEach(function () {
       sinon.stub(utils, 'logError');
-      appnexusAdapterMock.callBids.reset();
+      appnexusAdapterMock.callBids();
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
@@ -135,7 +135,7 @@ describe('adapterManager tests', function () {
       delete adapterManager.bidderRegistry['appnexus'];
       delete adapterManager.bidderRegistry['rubicon'];
       delete adapterManager.bidderRegistry['badBidder'];
-      config.resetConfig();
+      configConfig();
     });
 
     it('should log an error if a bidder is used that does not exist', function () {
@@ -531,7 +531,8 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-      prebidServerAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
     });
 
     const bidRequests = [{
@@ -715,7 +716,8 @@ describe('adapterManager tests', function () {
       let cnt, count = () => cnt++;
 
       beforeEach(function () {
-        prebidServerAdapterMock.callBids.reset();
+        prebidServerAdapterMock.callBids.resetHistory();
+        prebidServerAdapterMock.callBids.resetBehavior();
         cnt = 0;
         events.on(EVENTS.BID_REQUESTED, count);
       });
@@ -756,7 +758,8 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: [CONFIG, CONFIG2]});
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-      prebidServerAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetHistoryBehavior();
     });
 
     const bidRequests = [{
@@ -1103,7 +1106,8 @@ describe('adapterManager tests', function () {
       let cnt, count = () => cnt++;
 
       beforeEach(function () {
-        prebidServerAdapterMock.callBids.reset();
+        prebidServerAdapterMock.callBids.resetHistory();
+        prebidServerAdapterMock.callBids.resetBehavior();
         cnt = 0;
         events.on(EVENTS.BID_REQUESTED, count);
       });
@@ -1205,10 +1209,11 @@ describe('adapterManager tests', function () {
 
       stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
 
-      prebidServerAdapterMock.callBids.reset();
-      adequantAdapterMock.callBids.reset();
-      appnexusAdapterMock.callBids.reset();
-      rubiconAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
+      adequantAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetHistory();
     });
 
     afterEach(function () {
@@ -1392,11 +1397,11 @@ describe('adapterManager tests', function () {
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['pubmatic'] = pubmaticAdapterMock;
 
-      prebidServerAdapterMock.callBids.reset();
-      adequantAdapterMock.callBids.reset();
-      appnexusAdapterMock.callBids.reset();
-      rubiconAdapterMock.callBids.reset();
-      pubmaticAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      adequantAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetHistory();
+      pubmaticAdapterMock.callBids.resetHistory();
     });
 
     it('calls server adapter if no sources defined for config where testing is true, ' +
