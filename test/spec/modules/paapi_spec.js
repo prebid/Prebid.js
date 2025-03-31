@@ -16,8 +16,6 @@ import {
   getPAAPISize,
   IGB_TO_CONFIG,
   mergeBuyers,
-  NONCE_MANAGERS,
-  nonceManager,
   onAuctionInit,
   parallelPaapiProcessing,
   parseExtIgi,
@@ -26,7 +24,6 @@ import {
   partitionBuyersByBidder,
   registerSubmodule,
   reset,
-  resolveRequestNoncesHook,
   setImpExtAe,
   setResponsePaapiConfigs
 } from 'modules/paapi.js';
@@ -47,121 +44,6 @@ describe('paapi module', () => {
     sandbox.restore();
     reset();
   });
-
-  describe('nonceManager', () => {
-    let mgr, createNonce;
-    beforeEach(() => {
-      let i = 0;
-      createNonce = sinon.stub().callsFake(() => Promise.resolve(`nonce-${i++}`));
-      mgr = nonceManager(createNonce);
-    });
-
-    describe('.nonce()', () => {
-      it('stringifies to a placeholder', () => {
-        const nonce = mgr.nonce();
-        expect(`${nonce}-${nonce}`).to.eql(`${mgr.placeholder(0)}-${mgr.placeholder(0)}`)
-      })
-      it('serializes to a placeholder', () => {
-        const nonce = mgr.nonce();
-        expect(JSON.parse(JSON.stringify([nonce, nonce]))).to.eql([mgr.placeholder(0), mgr.placeholder(0)]);
-      });
-      it('throws if manager is closed', () => {
-        mgr.close();
-        expect(() => mgr.nonce()).to.throw;
-      })
-    });
-
-    describe('.fetchNonces', () => {
-      it('calls createNonce once per placeholder', async () => {
-        mgr.nonce();
-        mgr.nonce();
-        await mgr.fetchNonces();
-        sinon.assert.callCount(createNonce, 2);
-      });
-      it('does not call when no more nonces are needed', async () => {
-        mgr.nonce();
-        await mgr.fetchNonces();
-        await mgr.fetchNonces();
-        sinon.assert.callCount(createNonce, 1);
-      });
-      it('calls for delta when more nonces are needed', async () => {
-        mgr.nonce();
-        await mgr.fetchNonces();
-        const nonce1 = mgr.nonce();
-        await mgr.fetchNonces();
-        sinon.assert.callCount(createNonce, 2);
-        expect(mgr.resolve(nonce1)).to.eql('nonce-1');
-      })
-    })
-
-    describe('.resolve()', () => {
-      it('can resolve placeholder objects', async () => {
-        const payload = mgr.nonce();
-        await mgr.fetchNonces();
-        expect(mgr.resolve(payload)).to.eql('nonce-0');
-      });
-      it('resolves the same placeholder to the same nonce', async () => {
-        const payload = mgr.nonce();
-        await mgr.fetchNonces();
-        expect(mgr.resolve(payload)).to.eql('nonce-0');
-        expect(mgr.resolve(payload)).to.eql('nonce-0');
-      })
-      it('can resolve within strings', async () => {
-        const nonce1 = mgr.nonce();
-        const nonce0 = mgr.nonce();
-        const payload = `pre-${nonce1}-mid-${nonce0}-post-${nonce1}`;
-        await mgr.fetchNonces();
-        expect(mgr.resolve(payload)).to.eql('pre-nonce-1-mid-nonce-0-post-nonce-1');
-      });
-      ['str', 1.23, null, undefined, true].forEach(payload => {
-        it(`returns unmodified scalar: ${payload}`, async () => {
-          await mgr.fetchNonces();
-          expect(mgr.resolve(payload)).to.eql(payload);
-        })
-      });
-      it('can resolve within nested objects & arrays', async () => {
-        const nonce1 = mgr.nonce();
-        const nonce0 = mgr.nonce();
-        const payload = {
-          arr: [nonce1, 2],
-          obj: {
-            nonce: nonce0,
-            str: `pre-${nonce1}`
-          }
-        }
-        await mgr.fetchNonces();
-        const resolved = mgr.resolve(payload);
-        expect(resolved).to.equal(payload);
-        expect(payload).to.eql({
-          arr: ['nonce-1', 2],
-          obj: {
-            nonce: 'nonce-0',
-            str: 'pre-nonce-1'
-          }
-        })
-      });
-    })
-  })
-
-  describe('resolveRequestNoncesHook', () => {
-    let bidderRequest, mgr;
-    beforeEach(() => {
-      bidderRequest = {};
-      mgr = nonceManager(() => 'nonce');
-      NONCE_MANAGERS.set(bidderRequest, mgr)
-    })
-    it('resolves nonces', async () => {
-      const next = sinon.spy();
-      const req = {arg: mgr.nonce()};
-      resolveRequestNoncesHook(next, {}, [], bidderRequest, req);
-      const resolved = await (next.args[0][3]);
-      expect(resolved).to.eql({arg: 'nonce'});
-    });
-    it('closes manager', () => {
-      resolveRequestNoncesHook(sinon.spy(), {}, [], bidderRequest);
-      expect(() => mgr.nonce()).to.throw();
-    })
-  })
 
   describe(`using paapi configuration`, () => {
     let getPAAPISizeStub;
@@ -247,17 +129,6 @@ describe('paapi module', () => {
           addPaapiConfigHook(nextFnSpy, request, paapiConfig);
           sinon.assert.calledWith(nextFnSpy, request, paapiConfig);
         });
-
-        it('should resolve nonces', () => {
-          const bidderReq = {};
-          sandbox.stub(auctionManager.index, 'getBidderRequest').callsFake(() => bidderReq);
-          const mgr = {
-            resolve: sinon.stub().callsFake((arg) => arg)
-          }
-          NONCE_MANAGERS.set(bidderReq, mgr);
-          addPaapiConfigHook(nextFnSpy, bidderReq, paapiConfig);
-          sinon.assert.calledWith(mgr.resolve, sinon.match(paapiConfig));
-        })
 
         describe('igb', () => {
           let igb1, igb2, buyerAuctionConfig;
@@ -827,16 +698,9 @@ describe('paapi module', () => {
         function expectFledgeFlags(...enableFlags) {
           const bidRequests = mark();
           expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
-          if (bidRequests.appnexus.paapi?.enabled) {
-            expect(bidRequests.appnexus.paapi.createAuctionNonce).to.exist;
-          }
           bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
 
           expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
-          if (bidRequests.rubicon.paapi?.enabled) {
-            expect(bidRequests.rubicon.paapi.createAuctionNonce).to.exist;
-          }
-
           bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
 
           Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
@@ -1341,8 +1205,8 @@ describe('paapi module', () => {
         config.resetConfig();
       });
 
-      async function startParallel() {
-        await parallelPaapiProcessing(next, spec, bids, bidderRequest, ...restOfTheArgs);
+      function startParallel() {
+        parallelPaapiProcessing(next, spec, bids, bidderRequest, ...restOfTheArgs);
         onAuctionInit({auctionId: 'aid'})
       }
 
@@ -1354,8 +1218,8 @@ describe('paapi module', () => {
         afterEach(() => {
           expect(getPAAPIConfig({}, true)).to.eql({au: null});
         })
-        it('spec has no buildPAAPIConfigs', async () => {
-          await startParallel();
+        it('spec has no buildPAAPIConfigs', () => {
+          startParallel();
         });
         Object.entries({
           'returns no configs': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []); },
@@ -1371,9 +1235,9 @@ describe('paapi module', () => {
           },
           'bidId points to missing bid': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [{config: mockConfig, bidId: 'missing'}]) }
         }).forEach(([t, setup]) => {
-          it(`buildPAAPIConfigs ${t}`, async () => {
+          it(`buildPAAPIConfigs ${t}`, () => {
             setup();
-            await startParallel();
+            startParallel();
           });
         });
       });
@@ -1392,8 +1256,8 @@ describe('paapi module', () => {
           spec.buildPAAPIConfigs = sinon.stub().callsFake(() => builtCfg);
         });
 
-        it('should make async config available from getPAAPIConfig', async () => {
-          await startParallel();
+        it('should make async config available from getPAAPIConfig', () => {
+          startParallel();
           const actual = getPAAPIConfig();
           const promises = Object.fromEntries(ASYNC_SIGNALS.map(signal => [signal, sinon.match((arg) => arg instanceof Promise)]))
           sinon.assert.match(actual, {
@@ -1417,16 +1281,16 @@ describe('paapi module', () => {
           });
         });
 
-        it('should work when called multiple times for the same auction', async () => {
-          await startParallel();
+        it('should work when called multiple times for the same auction', () => {
+          startParallel();
           spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []);
-          await startParallel();
+          startParallel();
           expect(getPAAPIConfig().au.componentAuctions.length).to.eql(1);
         });
 
-        it('should hide TIDs from buildPAAPIConfigs', async () => {
+        it('should hide TIDs from buildPAAPIConfigs', () => {
           config.setConfig({enableTIDs: false});
-          await startParallel();
+          startParallel();
           sinon.assert.calledWith(
             spec.buildPAAPIConfigs,
             sinon.match(bidRequests => bidRequests.every(req => req.auctionId == null)),
@@ -1434,9 +1298,9 @@ describe('paapi module', () => {
           );
         });
 
-        it('should show TIDs when enabled', async () => {
+        it('should show TIDs when enabled', () => {
           config.setConfig({enableTIDs: true});
-          await startParallel();
+          startParallel();
           sinon.assert.calledWith(
             spec.buildPAAPIConfigs,
             sinon.match(bidRequests => bidRequests.every(req => req.auctionId === 'aid')),
@@ -1444,9 +1308,9 @@ describe('paapi module', () => {
           )
         })
 
-        it('should respect requestedSize from adapter', async () => {
+        it('should respect requestedSize from adapter', () => {
           mockConfig.requestedSize = {width: 1, height: 2};
-          await startParallel();
+          startParallel();
           sinon.assert.match(getPAAPIConfig().au, {
             requestedSize: {
               width: 123,
@@ -1461,13 +1325,13 @@ describe('paapi module', () => {
           })
         })
 
-        it('should not accept multiple partial configs for the same bid/seller', async () => {
+        it('should not accept multiple partial configs for the same bid/seller', () => {
           builtCfg.push(builtCfg[0])
-          await startParallel();
+          startParallel();
           expect(getPAAPIConfig().au.componentAuctions.length).to.eql(1);
         });
         it('should resolve top level config with auction signals', async () => {
-          await startParallel();
+          startParallel();
           let config = getPAAPIConfig().au;
           endAuction();
           config = await resolveConfig(config);
@@ -1477,15 +1341,6 @@ describe('paapi module', () => {
             }
           })
         });
-
-        it('should resolve auction nonces', async () => {
-          const mgr = nonceManager(() => 'nonce');
-          NONCE_MANAGERS.set(bidderRequest, mgr);
-          mockConfig.auctionNonce = mgr.nonce();
-          await startParallel();
-          let config = getPAAPIConfig().au;
-          expect(config.componentAuctions[0].auctionNonce).to.eql('nonce');
-        })
 
         describe('when adapter returns the rest of auction config', () => {
           let configRemainder;
@@ -1499,7 +1354,7 @@ describe('paapi module', () => {
             addPaapiConfigHook(sinon.stub(), bids[0], {config: configRemainder});
           }
           it('should resolve component configs with values returned by adapters', async () => {
-            await startParallel();
+            startParallel();
             let config = getPAAPIConfig().au.componentAuctions[0];
             returnRemainder();
             endAuction();
@@ -1508,7 +1363,7 @@ describe('paapi module', () => {
           });
 
           it('should pick first config that matches bidId/seller', async () => {
-            await startParallel();
+            startParallel();
             let config = getPAAPIConfig().au.componentAuctions[0];
             returnRemainder();
             const expectedSignals = {...configRemainder};
@@ -1537,7 +1392,7 @@ describe('paapi module', () => {
               }
             }).forEach(([t, postResponse]) => {
               it(t, async () => {
-                await startParallel();
+                startParallel();
                 let config = getPAAPIConfig().au.componentAuctions[0];
                 postResponse();
                 endAuction();
@@ -1548,7 +1403,7 @@ describe('paapi module', () => {
           });
 
           it('should resolve to undefined when no value is available', async () => {
-            await startParallel();
+            startParallel();
             let config = getPAAPIConfig().au.componentAuctions[0];
             delete configRemainder.sellerSignals;
             returnRemainder();
@@ -1576,7 +1431,7 @@ describe('paapi module', () => {
           ].forEach(({start, end, should}) => {
             it(`when buildPAAPIConfigs returns ${start.t}, interpretResponse return ${end.t}, promise should resolve to ${should.t}`, async () => {
               mockConfig.sellerSignals = start.value
-              await startParallel();
+              startParallel();
               let config = getPAAPIConfig().au.componentAuctions[0];
               configRemainder.sellerSignals = end.value;
               returnRemainder();
@@ -1587,7 +1442,7 @@ describe('paapi module', () => {
           })
 
           it('should make extra configs available', async () => {
-            await startParallel();
+            startParallel();
             returnRemainder();
             configRemainder = {...configRemainder, seller: 'other.seller'};
             returnRemainder();
@@ -1640,7 +1495,7 @@ describe('paapi module', () => {
                 }
 
                 it(`should invoke onAuctionConfig when ${delayed ? 'auction ends' : 'auction requests have started'}`, async () => {
-                  await startParallel();
+                  startParallel();
                   await mockAuction.requestsDone;
                   expectInvoked(!delayed);
                   onAuctionConfig.reset();
@@ -1683,16 +1538,16 @@ describe('paapi module', () => {
             builtCfg = [{bidId: 'bidId', igb: {}}];
           }
         }).forEach(([t, setup]) => {
-          it(`should have no effect when ${t}`, async () => {
+          it(`should have no effect when ${t}`, () => {
             setup();
-            await startParallel();
+            startParallel();
             expect(getPAAPIConfig()).to.eql({});
           })
         })
 
         describe('when component seller is set up', () => {
-          it('should generate a deferred auctionConfig', async () => {
-            await startParallel();
+          it('should generate a deferred auctionConfig', () => {
+            startParallel();
             sinon.assert.match(getPAAPIConfig().au.componentAuctions[0], {
               ...auctionConfig,
               interestGroupBuyers: ['mock.buyer'],
@@ -1704,15 +1559,15 @@ describe('paapi module', () => {
             config.mergeConfig({
               paapi: {componentSeller: {auctionConfig}}
             })
-            await startParallel();
+            startParallel();
             endAuction();
             const cfg = await resolveConfig(getPAAPIConfig().au.componentAuctions[0]);
             sinon.assert.match(cfg.auctionSignals, auctionConfig.auctionSignals);
           })
 
-          it('should collate buyers', async () => {
-            await startParallel();
-            await startParallel();
+          it('should collate buyers', () => {
+            startParallel();
+            startParallel();
             sinon.assert.match(getPAAPIConfig().au.componentAuctions[0], {
               interestGroupBuyers: ['mock.buyer']
             });
@@ -1725,7 +1580,7 @@ describe('paapi module', () => {
           it('should resolve to values from interpretResponse as well as buildPAAPIConfigs', async () => {
             igb.cur = 'cur';
             igb.pbs = {over: 'ridden'}
-            await startParallel();
+            startParallel();
             let cfg = getPAAPIConfig().au.componentAuctions[0];
             returnIgb({
               origin: 'mock.buyer',
@@ -1743,8 +1598,8 @@ describe('paapi module', () => {
             })
           });
 
-          it('should not overwrite config once resolved', async () => {
-            await startParallel();
+          it('should not overwrite config once resolved', () => {
+            startParallel();
             returnIgb({
               origin: 'mock.buyer',
             });
@@ -1755,11 +1610,11 @@ describe('paapi module', () => {
 
           it('can resolve multiple igbs', async () => {
             igb.cur = 'cur1';
-            await startParallel();
+            startParallel();
             spec.code = 'other';
             igb.origin = 'other.buyer'
             igb.cur = 'cur2'
-            await startParallel();
+            startParallel();
             let cfg = getPAAPIConfig().au.componentAuctions[0];
             returnIgb({
               origin: 'mock.buyer',
@@ -1783,11 +1638,11 @@ describe('paapi module', () => {
             })
           })
 
-          async function startMultiple() {
-            await startParallel();
+          function startMultiple() {
+            startParallel();
             spec.code = 'other';
             igb.origin = 'other.buyer'
-            await startParallel();
+            startParallel();
           }
 
           describe('when using separateAuctions=false', () => {
@@ -1801,8 +1656,8 @@ describe('paapi module', () => {
               })
             });
 
-            it('should merge igb from different specs into a single auction config', async () => {
-              await startMultiple();
+            it('should merge igb from different specs into a single auction config', () => {
+              startMultiple();
               sinon.assert.match(getPAAPIConfig().au.componentAuctions[0], {
                 interestGroupBuyers: ['mock.buyer', 'other.buyer']
               });
@@ -1819,8 +1674,8 @@ describe('paapi module', () => {
                 }
               })
             });
-            it('should generate an auction config for each bidder', async () => {
-              await startMultiple();
+            it('should generate an auction config for each bidder', () => {
+              startMultiple();
               const components = getPAAPIConfig().au.componentAuctions;
               sinon.assert.match(components[0], {
                 interestGroupBuyers: ['mock.buyer']

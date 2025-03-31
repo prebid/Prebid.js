@@ -6,7 +6,7 @@ import {getHook, hook, module} from '../src/hook.js';
 import {
   deepAccess,
   deepEqual,
-  deepSetValue, generateUUID,
+  deepSetValue,
   logError,
   logInfo,
   logWarn,
@@ -21,7 +21,7 @@ import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
 import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
-import {defer, PbPromise} from '../src/utils/promise.js';
+import {defer} from '../src/utils/promise.js';
 import {auctionManager} from '../src/auctionManager.js';
 
 const MODULE = 'PAAPI';
@@ -85,7 +85,6 @@ function attachHandlers() {
   getHook('makeBidRequests').after(markForFledge);
   getHook('processBidderRequests').before(parallelPaapiProcessing);
   getHook('processBidderRequests').before(adAuctionHeadersHook);
-  getHook('postBuildRequests').before(resolveRequestNoncesHook);
   events.on(EVENTS.AUCTION_INIT, onAuctionInit);
   events.on(EVENTS.AUCTION_END, onAuctionEnd);
 }
@@ -96,7 +95,6 @@ function detachHandlers() {
   getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
   getHook('processBidderRequests').getHooks({hook: parallelPaapiProcessing}).remove();
   getHook('processBidderRequests').getHooks({hook: adAuctionHeadersHook}).remove();
-  getHook('postBuildRequests').getHooks({hook: resolveRequestNoncesHook}).remove();
   events.off(EVENTS.AUCTION_INIT, onAuctionInit);
   events.off(EVENTS.AUCTION_END, onAuctionEnd);
 }
@@ -271,10 +269,6 @@ function getComponentSellerConfigId(bidderCode) {
 
 export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
-    const nonceMgr = NONCE_MANAGERS.get(auctionManager.index.getBidderRequest(request));
-    if (nonceMgr) {
-      paapiConfig = nonceMgr.resolve(paapiConfig);
-    }
     const {adUnitCode, auctionId, bidder} = request;
 
 
@@ -507,110 +501,15 @@ export function markForFledge(next, bidderRequests) {
       Object.assign(bidderReq, {
         paapi: {
           enabled,
-          componentSeller: !!moduleConfig.componentSeller?.auctionConfig,
+          componentSeller: !!moduleConfig.componentSeller?.auctionConfig
         }
       });
-      if (enabled) {
-        const nonceMgr = nonceManager();
-        NONCE_MANAGERS.set(bidderReq, nonceMgr);
-        bidderReq.paapi.createAuctionNonce = nonceMgr.nonce;
-      }
     });
   }
   next(bidderRequests);
 }
 
 export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals', 'perBuyerCurrencies', 'perBuyerCumulativeTimeouts'];
-
-export const NONCE_MANAGERS = new WeakMap();
-
-export function nonceManager(createNonce = () => navigator.createAuctionNonce()) {
-  const mgrId = generateUUID();
-  let count = 0;
-  let fetched = 0;
-  let noncePool = [];
-  const nonces = {};
-  let closed = false;
-
-  const pattern = new RegExp(`##PAAPI_NONCE_${mgrId}_(\\d+)##`, 'g');
-
-  function placeholder(nonceId) {
-    return `##PAAPI_NONCE_${mgrId}_${nonceId}##`;
-  }
-
-  class NoncePlaceholder {
-    constructor(nonceId) {
-      this.nonceId = nonceId;
-    }
-    toString() {
-      return placeholder(this.nonceId);
-    }
-    toJSON() {
-      return placeholder(this.nonceId);
-    }
-  }
-
-  function getNonce(nonceId) {
-    if (!nonces.hasOwnProperty(nonceId)) {
-      nonces[nonceId] = noncePool.pop();
-    }
-    return nonces[nonceId];
-  }
-
-  function resolve(payload) {
-    if (payload instanceof NoncePlaceholder) {
-      return getNonce(payload.nonceId);
-    } else if (typeof payload == 'string') {
-      return payload.replaceAll(pattern, (_, nonceId) => getNonce(parseInt(nonceId, 10)));
-    } else if (payload != null && typeof payload === 'object') {
-      for (const [key, value] of Object.entries(payload)) {
-        payload[key] = resolve(value);
-      }
-    }
-    return payload;
-  }
-
-  return {
-    placeholder,
-    close() {
-      closed = true;
-    },
-    nonce() {
-      if (closed) {
-        throw new Error('Auction nonces must be generated during buildRequests at the latest');
-      }
-      return new NoncePlaceholder(count++);
-    },
-    async fetchNonces() {
-      if (count <= fetched) return PbPromise.resolve();
-      return PbPromise.all(Array.apply(null, Array(count - fetched)).map(() => createNonce()))
-        .then(result => {
-          fetched += result.length;
-          noncePool = noncePool.concat(result);
-        })
-        .catch((err) => {
-          logError(`Error calling navigator.createAuctionNonce`, err);
-          return PbPromise.reject(err);
-        });
-    },
-    resolve
-  }
-}
-
-function resolveNonces(bidderRequest, payload) {
-  const nonceMgr = NONCE_MANAGERS.get(bidderRequest);
-  if (nonceMgr && payload) {
-    return nonceMgr.fetchNonces().then(() => nonceMgr.resolve(payload))
-  } else {
-    return PbPromise.resolve(payload);
-  }
-}
-
-export function resolveRequestNoncesHook(next, spec, validBidRequests, bidderRequest, adapterRequests) {
-  const nonceMgr = NONCE_MANAGERS.get(bidderRequest);
-  nonceMgr && nonceMgr.close();
-  next.call(this, spec, validBidRequests, bidderRequest, resolveNonces(bidderRequest, adapterRequests));
-}
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [
@@ -658,7 +557,7 @@ const validatePartialConfig = (() => {
  * If the `paapi.parallel` config flag is set, PAAPI submodules are also triggered at the same time
  * (instead of when the auction ends).
  */
-export function parallelPaapiProcessing(next, spec, bids, bidderRequest) {
+export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
   function makeDeferrals(defaults = {}) {
     let promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
@@ -679,108 +578,97 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest) {
     }
   });
 
-  let buildConfigs = PbPromise.resolve();
-
   if (enabled && spec.buildPAAPIConfigs) {
-    buildConfigs = buildConfigs.then(() => {
-      const metrics = adapterMetrics(bidderRequest);
-      const tidGuard = guardTids(bidderRequest);
-      let partialConfigs;
-      const stopTiming = metrics.startTiming('buildPAAPIConfigs');
+    const metrics = adapterMetrics(bidderRequest);
+    const tidGuard = guardTids(bidderRequest);
+    let partialConfigs;
+    metrics.measureTime('buildPAAPIConfigs', () => {
       try {
         partialConfigs = spec.buildPAAPIConfigs(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))
       } catch (e) {
         logError(`Error invoking "buildPAAPIConfigs":`, e);
       }
-      partialConfigs = resolveNonces(bidderRequest, partialConfigs);
-      return partialConfigs.finally(stopTiming);
-    }).then(partialConfigs => {
-      const requestsById = Object.fromEntries(bids.map(bid => [bid.bidId, bid]));
-      (partialConfigs ?? []).forEach(({bidId, config, igb}) => {
-        const bidRequest = requestsById.hasOwnProperty(bidId) && requestsById[bidId];
-        if (!bidRequest) {
-          logError(`Received partial PAAPI config for unknown bidId`, {bidId, config});
-        } else {
-          const adUnitCode = bidRequest.adUnitCode;
-          latestAuctionForAdUnit[adUnitCode] = auctionId;
-          const deferredConfigs = deferredConfigsForAuction(auctionId);
+    });
+    const requestsById = Object.fromEntries(bids.map(bid => [bid.bidId, bid]));
+    (partialConfigs ?? []).forEach(({bidId, config, igb}) => {
+      const bidRequest = requestsById.hasOwnProperty(bidId) && requestsById[bidId];
+      if (!bidRequest) {
+        logError(`Received partial PAAPI config for unknown bidId`, {bidId, config});
+      } else {
+        const adUnitCode = bidRequest.adUnitCode;
+        latestAuctionForAdUnit[adUnitCode] = auctionId;
+        const deferredConfigs = deferredConfigsForAuction(auctionId);
 
-          const getDeferredConfig = () => {
-            if (!deferredConfigs.hasOwnProperty(adUnitCode)) {
-              const [deferrals, promises] = makeDeferrals();
-              auctionConfigs[adUnitCode] = {
-                ...getStaticSignals(auctionManager.index.getAdUnit(bidRequest)),
-                ...promises,
-                componentAuctions: []
-              }
-              deferredConfigs[adUnitCode] = {
-                top: deferrals,
-                components: {},
-                auctionConfig: auctionConfigs[adUnitCode]
-              }
+        const getDeferredConfig = () => {
+          if (!deferredConfigs.hasOwnProperty(adUnitCode)) {
+            const [deferrals, promises] = makeDeferrals();
+            auctionConfigs[adUnitCode] = {
+              ...getStaticSignals(auctionManager.index.getAdUnit(bidRequest)),
+              ...promises,
+              componentAuctions: []
             }
-            return deferredConfigs[adUnitCode];
-          }
-
-          if (config && validatePartialConfig(config)) {
-            const configId = getConfigId(bidRequest.bidder, config.seller);
-            const deferredConfig = getDeferredConfig();
-            if (deferredConfig.components.hasOwnProperty(configId)) {
-              logWarn(`Received multiple PAAPI configs for the same bidder and seller; config will be ignored`, {
-                config,
-                bidder: bidRequest.bidder
-              })
-            } else {
-              const [deferrals, promises] = makeDeferrals(config);
-              const auctionConfig = {
-                ...getStaticSignals(bidRequest),
-                ...config,
-                ...promises
-              }
-              deferredConfig.auctionConfig.componentAuctions.push(auctionConfig)
-              deferredConfig.components[configId] = {auctionConfig, deferrals};
+            deferredConfigs[adUnitCode] = {
+              top: deferrals,
+              components: {},
+              auctionConfig: auctionConfigs[adUnitCode]
             }
           }
-          if (componentSeller && igb && checkOrigin(igb)) {
-            const configId = getComponentSellerConfigId(spec.code);
-            const deferredConfig = getDeferredConfig();
-            const partialConfig = buyersToAuctionConfigs([[bidRequest, igb]])[0][1];
-            if (deferredConfig.components.hasOwnProperty(configId)) {
-              const {auctionConfig, deferrals} = deferredConfig.components[configId];
-              if (!auctionConfig.interestGroupBuyers.includes(igb.origin)) {
-                const immediate = {};
-                Object.entries(partialConfig).forEach(([key, value]) => {
-                  if (deferrals.hasOwnProperty(key)) {
-                    mergeDeep(deferrals[key], {default: value});
-                  } else {
-                    immediate[key] = value;
-                  }
-                })
-                mergeDeep(auctionConfig, immediate);
-              } else {
-                logWarn(`Received the same PAAPI buyer multiple times for the same PAAPI auction. Consider setting paapi.componentSeller.separateAuctions: true`, igb)
-              }
-            } else {
-              const [deferrals, promises] = makeDeferrals(partialConfig);
-              const auctionConfig = {
-                ...partialConfig,
-                ...getStaticSignals(bidRequest),
-                ...promises,
-              }
-              deferredConfig.components[configId] = {auctionConfig, deferrals};
-              deferredConfig.auctionConfig.componentAuctions.push(auctionConfig);
+          return deferredConfigs[adUnitCode];
+        }
+
+        if (config && validatePartialConfig(config)) {
+          const configId = getConfigId(bidRequest.bidder, config.seller);
+          const deferredConfig = getDeferredConfig();
+          if (deferredConfig.components.hasOwnProperty(configId)) {
+            logWarn(`Received multiple PAAPI configs for the same bidder and seller; config will be ignored`, {
+              config,
+              bidder: bidRequest.bidder
+            })
+          } else {
+            const [deferrals, promises] = makeDeferrals(config);
+            const auctionConfig = {
+              ...getStaticSignals(bidRequest),
+              ...config,
+              ...promises
             }
+            deferredConfig.auctionConfig.componentAuctions.push(auctionConfig)
+            deferredConfig.components[configId] = {auctionConfig, deferrals};
           }
         }
-      });
+        if (componentSeller && igb && checkOrigin(igb)) {
+          const configId = getComponentSellerConfigId(spec.code);
+          const deferredConfig = getDeferredConfig();
+          const partialConfig = buyersToAuctionConfigs([[bidRequest, igb]])[0][1];
+          if (deferredConfig.components.hasOwnProperty(configId)) {
+            const {auctionConfig, deferrals} = deferredConfig.components[configId];
+            if (!auctionConfig.interestGroupBuyers.includes(igb.origin)) {
+              const immediate = {};
+              Object.entries(partialConfig).forEach(([key, value]) => {
+                if (deferrals.hasOwnProperty(key)) {
+                  mergeDeep(deferrals[key], {default: value});
+                } else {
+                  immediate[key] = value;
+                }
+              })
+              mergeDeep(auctionConfig, immediate);
+            } else {
+              logWarn(`Received the same PAAPI buyer multiple times for the same PAAPI auction. Consider setting paapi.componentSeller.separateAuctions: true`, igb)
+            }
+          } else {
+            const [deferrals, promises] = makeDeferrals(partialConfig);
+            const auctionConfig = {
+              ...partialConfig,
+              ...getStaticSignals(bidRequest),
+              ...promises,
+            }
+            deferredConfig.components[configId] = {auctionConfig, deferrals};
+            deferredConfig.auctionConfig.componentAuctions.push(auctionConfig);
+          }
+        }
+      }
     })
   }
-  const args = Array.from(arguments).slice(1);
-  return buildConfigs.then(function () {
-    next.apply(this, args);
-  }).catch(err => {
-    logError(`Error calling buildPAAPIConfigs on '${spec.code}'`, err);
-  })
+  return next.call(this, spec, bids, bidderRequest, ...args);
 }
 
 export function onAuctionInit({auctionId}) {
