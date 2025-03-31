@@ -135,7 +135,7 @@ describe('adapterManager tests', function () {
       delete adapterManager.bidderRegistry['appnexus'];
       delete adapterManager.bidderRegistry['rubicon'];
       delete adapterManager.bidderRegistry['badBidder'];
-      configConfig();
+      config.resetConfig();
     });
 
     it('should log an error if a bidder is used that does not exist', function () {
