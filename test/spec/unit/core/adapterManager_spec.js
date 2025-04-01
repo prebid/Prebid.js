@@ -1406,6 +1406,11 @@ describe('adapterManager tests', function () {
       appnexusAdapterMock.callBids.resetHistory();
       rubiconAdapterMock.callBids.resetHistory();
       pubmaticAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
+      adequantAdapterMock.callBids.resetBehavior();
+      appnexusAdapterMock.callBids.resetBehavior();
+      rubiconAdapterMock.callBids.resetBehavior();
+      pubmaticAdapterMock.callBids.resetBehavior();
     });
 
     it('calls server adapter if no sources defined for config where testing is true, ' +
