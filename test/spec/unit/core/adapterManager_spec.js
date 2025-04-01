@@ -124,6 +124,7 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       sinon.stub(utils, 'logError');
       appnexusAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetBehavior()
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
