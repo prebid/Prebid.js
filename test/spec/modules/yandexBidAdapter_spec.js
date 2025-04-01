@@ -73,13 +73,10 @@ describe('Yandex adapter', function () {
       expect(requests[0].data.site.content.language).to.equal('es');
     });
 
-    it('should pass site.content.language to bidRequest params and use it in request', function () {
+    it('should do nothing when document language does not exist', function () {
+      delete mockBidRequests[0].params.documentLang;
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
-      const { url, data } = requests[0];
-      const parsedRequestUrl = utils.parseUrl(url);
-      const { search: query } = parsedRequestUrl;
-
-      expect(data.site.content.language).to.equal('en');
+      expect(requests[0].data.site?.content?.language).to.be.undefined;
     });
 
     /** @type {import('../../../src/auction').BidderRequest} */

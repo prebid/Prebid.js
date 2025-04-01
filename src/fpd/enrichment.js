@@ -52,7 +52,6 @@ export const enrichFPD = hook('sync', (fpd) => {
         deepSetValue(ortb2, 'device.ext', Object.assign({}, ext, ortb2.device.ext));
       }
 
-      // Set documentLang in bid request parameters
       const documentLang = dep.getDocument().documentElement.lang;
       if (documentLang) {
         deepSetValue(ortb2, 'ext.prebid.bidRequest.params.documentLang', documentLang);

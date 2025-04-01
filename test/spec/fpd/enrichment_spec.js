@@ -159,7 +159,7 @@ describe('FPD enrichment', () => {
         }
       });
       return fpd().then(ortb2 => {
-        expect(ortb2.ext.prebid.bidRequest.params.documentLang).to.equal('fr');
+        expect(ortb2.ext.prebid.bidRequest.params.documentLang).to.equal('fr-FR');
       });
     });
   });
