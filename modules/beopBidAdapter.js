@@ -18,6 +18,7 @@ import { getStorageManager } from '../src/storageManager.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'beop';
@@ -96,6 +97,7 @@ export const spec = {
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
       eids: firstSlot.eids,
+      pv: '$prebid.version$'
     };
 
     const payloadString = JSON.stringify(payloadObject);
@@ -140,14 +142,40 @@ export const spec = {
       search: trackingParams
     }));
   },
-  onSetTargeting: function(bid) {}
+
+  /**
+   * User syncs.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {UserSync[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+
+    if (serverResponses.length > 0) {
+      const body = serverResponses[0].body;
+
+      if (syncOptions.iframeEnabled && body.syncFrame) {
+        syncs.push({ type: 'iframe', url: body.syncFrame });
+      }
+
+      if (syncOptions.pixelEnabled && Array.isArray(body.syncPixels)) {
+        body.syncPixels.forEach(url => {
+          syncs.push({ type: 'image', url });
+        });
+      }
+    }
+
+    return syncs;
+  }
 }
 
 function buildTrackingParams(data, info, value) {
   let params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: params.accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : params.accountId,
+    pid: params.accountId ?? (data.ad?.match(/account: \“([a-f\d]{24})\“/)?.[1] ?? ''),
     nid: params.networkId,
     nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
@@ -155,7 +183,8 @@ function buildTrackingParams(data, info, value) {
     se_ca: 'bid',
     se_ac: info,
     se_va: value,
-    url: pageUrl
+    url: pageUrl,
+    pv: '$prebid.version$'
   };
 }
 

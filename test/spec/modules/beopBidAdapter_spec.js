@@ -350,4 +350,64 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.fg).to.exist;
     })
   })
+  describe('getUserSyncs', function () {
+    it('should return iframe sync when iframeEnabled and syncFrame provided', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: false };
+      const serverResponses = [{ body: { syncFrame: 'https://example.com/sync_frame' } }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://example.com/sync_frame');
+    });
+
+    it('should return pixel syncs when pixelEnabled and syncPixels provided', function () {
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+      const serverResponses = [{
+        body: {
+          syncPixels: [
+            'https://example.com/pixel1',
+            'https://example.com/pixel2'
+          ]
+        }
+      }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal('https://example.com/pixel1');
+      expect(syncs[1].url).to.equal('https://example.com/pixel2');
+    });
+
+    it('should return both iframe and pixel syncs when both options are enabled', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponses = [{
+        body: {
+          syncFrame: 'https://example.com/sync_frame',
+          syncPixels: ['https://example.com/pixel1']
+        }
+      }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[1].type).to.equal('image');
+    });
+
+    it('should return empty array when no serverResponses', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when no syncFrame or syncPixels provided', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponses = [{ body: {} }];
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+  });
 });
