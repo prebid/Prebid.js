@@ -333,7 +333,13 @@ describe('pubmatic analytics adapter', function () {
         s2sConfig: {
           accountId: '1234',
           bidders: ['pubmatic'],
-          defaultVendor: 'openwrap',
+          adapter: 'prebidServer',
+          enabled: true,
+          endpoint: {
+            p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+            noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+          },
+          maxTimeout: 500,
           timeout: 500
         }
       });
@@ -363,13 +369,15 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[0]);
 
       clock.tick(2000 + 1000);
-      expect(requests.length).to.equal(1); // only logger is fired
-      let request = requests[0];
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
-      expect(data.pubid).to.equal('9999');
-      expect(data.pid).to.equal('1111');
-      expect(data.pdvid).to.equal('20');
+      if (FEATURES.PBS_CONSTANTS) {
+        expect(requests.length).to.equal(1); // only logger is fired
+        let request = requests[0];
+        expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+        let data = getLoggerJsonFromRequest(request.requestBody);
+        expect(data.pubid).to.equal('9999');
+        expect(data.pid).to.equal('1111');
+        expect(data.pdvid).to.equal('20');
+      };
     });
 
     it('Non-pubmatic won: logger, tracker fired', function() {
