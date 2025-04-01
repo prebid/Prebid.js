@@ -49,16 +49,12 @@ describe('Yandex adapter', function () {
       bidRequests = [{
         bidId: 'bid123',
         params: {
-          placementId: 'R-I-123456-2'
+          placementId: 'R-I-123456-2',
+          documentLang: 'en'
         }
       }];
       bidderRequest = {
         ortb2: {
-          site: {
-            content: {
-              language: 'en'
-            }
-          },
           device: {
             language: 'fr'
           }
@@ -66,24 +62,24 @@ describe('Yandex adapter', function () {
       };
     });
 
-    it('should set site.content.language if device.language is not set', function () {
-      delete bidderRequest.ortb2.device.language;
+    it('should set site.content.language from document language if it is not set', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].data.device.language).to.equal('en');
+      expect(requests[0].data.site.content.language).to.equal('en');
     });
 
-    it('should preserve existing device.language if it set', function () {
+    it('should preserve existing site.content.language if it is set', function () {
+      bidderRequest.ortb2.site = { content: { language: 'es' } };
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      expect(requests[0].data.device.language).to.equal('fr');
+      expect(requests[0].data.site.content.language).to.equal('es');
     });
 
-    it('should pass device.language to bidRequest params and use it in request', function () {
+    it('should pass site.content.language to bidRequest params and use it in request', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       const { url, data } = requests[0];
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl;
 
-      expect(data.device.language).to.equal('fr');
+      expect(data.site.content.language).to.equal('en');
     });
 
     /** @type {import('../../../src/auction').BidderRequest} */

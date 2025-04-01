@@ -132,7 +132,7 @@ export const spec = {
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
-      const { targetRef, withCredentials = true, cur } = params;
+      const { targetRef, withCredentials = true, cur, documentLang } = params;
 
       const { pageId, impId } = extractPlacementIds(params);
 
@@ -175,9 +175,14 @@ export const spec = {
         device: ortb2?.device,
       };
 
-      const contentLang = bidderRequest?.ortb2?.site?.content?.language;
-      if (contentLang && data.device && !data.device?.language) {
-        data.device.language = contentLang;
+      if (documentLang && !data?.site?.content?.language) {
+        if (!data.site) {
+          data.site = {};
+        }
+        if (!data.site.content) {
+          data.site.content = {};
+        }
+        data.site.content.language = documentLang;
       }
 
       const eids = deepAccess(bidRequest, 'userIdAsEids');
