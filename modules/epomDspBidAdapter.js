@@ -34,20 +34,10 @@ export const spec = {
   buildRequests(bidRequests, bidderRequest) {
     try {
       const bidderConfig = config.getBidderConfig();
-      const globalSettings = bidderConfig['epom_dsp']?.epomSettings || {};
+      const globalSettings = bidderConfig[BIDDER_CODE]?.epomSettings || {};
 
-      const uniqueBids = {};
-      bidRequests.forEach((bid) => {
-        if (!uniqueBids[bid.adUnitCode]) {
-          uniqueBids[bid.adUnitCode] = bid;
-        }
-      });
-
-      const filteredBids = Object.values(uniqueBids);
-
-      const requests = filteredBids.map((bid) => {
+      return bidRequests.map((bid) => {
         const endpoint = bid.params?.endpoint || globalSettings.endpoint;
-        const bidfloor = getBidFloor(bid);
         if (!endpoint) {
           logWarn(`[${BIDDER_CODE}] Missing endpoint for bid request.`);
           return null;
@@ -55,10 +45,32 @@ export const spec = {
 
         const payload = {
           ...deepClone(bid),
+          id: bid.bidId || 'default-id',
+          imp: [
+            {
+              id: bid.bidId,
+              tagid: bid.adUnitCode,
+              bidfloor: getBidFloor(bid),
+              banner: {
+                w: bid.sizes[0][0],
+                h: bid.sizes[0][1],
+              },
+            }
+          ],
+          site: {
+            domain: bidderRequest?.refererInfo?.domain || 'unknown.com',
+            page: bidderRequest?.refererInfo?.referer || 'https://unknown.com',
+            publisher: { id: 'unknown-publisher' }
+          },
+          device: {
+            ua: navigator.userAgent || '',
+            ip: '0.0.0.0',
+            devicetype: 2
+          },
           referer: bidderRequest?.refererInfo?.referer,
           gdprConsent: bidderRequest?.gdprConsent,
           uspConsent: bidderRequest?.uspConsent,
-          bidfloor,
+          bidfloor:getBidFloor(bid),
           sizes: bid.sizes[0] || [],
         };
 
@@ -71,9 +83,7 @@ export const spec = {
             withCredentials: false,
           },
         };
-      });
-
-      return requests.filter(request => request !== null);
+      }).filter(request => request !== null);
     } catch (error) {
       logError(`[${BIDDER_CODE}] Error in buildRequests:`, error);
       return [];
