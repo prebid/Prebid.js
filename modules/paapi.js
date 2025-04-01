@@ -497,6 +497,8 @@ export function addPaapiData(next, adUnits, ...args) {
   next(adUnits, ...args);
 }
 
+export const NAVIGATOR_APIS = ['createAuctionNonce', 'getInterestGroupAdAuctionData'];
+
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((bidderReq) => {
@@ -508,8 +510,8 @@ export function markForFledge(next, bidderRequests) {
         }
       });
       if (enabled) {
-        Object.assign(bidderReq.paapi, {
-          createAuctionNonce
+        NAVIGATOR_APIS.forEach(method => {
+          bidderReq.paapi[method] = (...args) => new AsyncPAAPIParam(() => navigator[method](...args))
         })
       }
     });
@@ -688,10 +690,6 @@ export class AsyncPAAPIParam {
   constructor(resolve) {
     this.resolve = resolve;
   }
-}
-
-function createAuctionNonce() {
-  return new AsyncPAAPIParam(() => navigator.createAuctionNonce())
 }
 
 export function buildPAAPIParams(next, spec, bids, bidderRequest, ...args) {

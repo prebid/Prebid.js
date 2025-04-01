@@ -15,7 +15,7 @@ import {
   getPAAPIConfig,
   getPAAPISize,
   IGB_TO_CONFIG,
-  mergeBuyers,
+  mergeBuyers, NAVIGATOR_APIS,
   onAuctionInit,
   parallelPaapiProcessing,
   parseExtIgi,
@@ -683,6 +683,22 @@ describe('paapi module', () => {
       });
 
       describe('makeBidRequests', () => {
+        before(() => {
+          NAVIGATOR_APIS.forEach(method => {
+            if (navigator[method] == null) {
+              navigator[method] = () => null;
+              after(() => {
+                delete navigator[method];
+              })
+            }
+          })
+        });
+        beforeEach(() => {
+          NAVIGATOR_APIS.forEach(method => {
+            sandbox.stub(navigator, method)
+          })
+        });
+
         function mark() {
           return Object.fromEntries(
             adapterManager.makeBidRequests(
@@ -696,17 +712,25 @@ describe('paapi module', () => {
           );
         }
 
-        function expectFledgeFlags(...enableFlags) {
+        async function testAsyncParams(bidderRequest) {
+          for (const method of NAVIGATOR_APIS) {
+            navigator[method].returns('result');
+            expect(await bidderRequest.paapi[method]('arg').resolve()).to.eql('result');
+            sinon.assert.calledWith(navigator[method], 'arg');
+          }
+        }
+
+        async function expectFledgeFlags(...enableFlags) {
           const bidRequests = mark();
           expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
           if (bidRequests.appnexus.paapi?.enabled) {
-            expect(bidRequests.appnexus.paapi.createAuctionNonce).to.exist;
+            await testAsyncParams(bidRequests.appnexus)
           }
           bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
 
           expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
           if (bidRequests.rubicon.paapi?.enabled) {
-            expect(bidRequests.rubicon.paapi.createAuctionNonce).to.exist;
+            testAsyncParams(bidRequests.rubicon);
           }
 
           bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
@@ -722,7 +746,7 @@ describe('paapi module', () => {
         }
 
         describe('with setConfig()', () => {
-          it('should set paapi.enabled correctly per bidder', function () {
+          it('should set paapi.enabled correctly per bidder', async function () {
             config.setConfig({
               bidderSequence: 'fixed',
               paapi: {
@@ -731,10 +755,10 @@ describe('paapi module', () => {
                 defaultForSlots: 1,
               }
             });
-            expectFledgeFlags({enabled: true, ae: 1}, {enabled: false, ae: 0});
+            await expectFledgeFlags({enabled: true, ae: 1}, {enabled: false, ae: 0});
           });
 
-          it('should set paapi.enabled correctly for all bidders', function () {
+          it('should set paapi.enabled correctly for all bidders', async function () {
             config.setConfig({
               bidderSequence: 'fixed',
               paapi: {
@@ -742,7 +766,7 @@ describe('paapi module', () => {
                 defaultForSlots: 1,
               }
             });
-            expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
+            await expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
           });
 
           Object.entries({
