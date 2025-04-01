@@ -759,7 +759,7 @@ describe('adapterManager tests', function () {
       config.setConfig({s2sConfig: [CONFIG, CONFIG2]});
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
       prebidServerAdapterMock.callBids.resetHistory();
-      prebidServerAdapterMock.callBids.resetHistoryBehavior();
+      prebidServerAdapterMock.callBids.resetBehavior();
     });
 
     const bidRequests = [{
