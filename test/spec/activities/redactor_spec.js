@@ -38,6 +38,7 @@ describe('objectTransformer', () => {
 
     it('does not run rule once it is known that it does not apply', () => {
       applies.resetHistory();
+      applies.resetBehavior();
       applies.callsFake(() => false);
       run.callsFake((_1, _2, _3, _4, applies) => applies());
       objectTransformer([rule])({}, {});
