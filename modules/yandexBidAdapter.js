@@ -178,7 +178,6 @@ export const spec = {
       const documentLang = deepAccess(bidRequest, 'params.documentLang');
       if (documentLang && !data?.site?.content?.language) {
         deepSetValue(data, 'site.content.language', documentLang);
-        data.site.content.language = documentLang;
       }
 
       const eids = deepAccess(bidRequest, 'userIdAsEids');
