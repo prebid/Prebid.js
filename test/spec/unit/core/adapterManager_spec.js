@@ -1213,8 +1213,11 @@ describe('adapterManager tests', function () {
       prebidServerAdapterMock.callBids.resetHistory();
       prebidServerAdapterMock.callBids.resetBehavior();
       adequantAdapterMock.callBids.resetHistory();
+      adequantAdapterMock.callBids.resetBehavior()
       appnexusAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetBehavior()
       rubiconAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetBehavior();
     });
 
     afterEach(function () {
