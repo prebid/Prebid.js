@@ -33,7 +33,7 @@ describe('FPD enrichment', () => {
         language: ''
       },
       document: {
-        querySelector: sinon.stub(),
+        querySelector: sinon.stub()
       },
       screen: {
         width: 1,
