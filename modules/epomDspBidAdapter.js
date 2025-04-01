@@ -70,7 +70,7 @@ export const spec = {
           referer: bidderRequest?.refererInfo?.referer,
           gdprConsent: bidderRequest?.gdprConsent,
           uspConsent: bidderRequest?.uspConsent,
-          bidfloor:getBidFloor(bid),
+          bidfloor: getBidFloor(bid),
           sizes: bid.sizes[0] || [],
         };
 
