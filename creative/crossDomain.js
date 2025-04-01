@@ -93,7 +93,7 @@ export function renderer(win) {
             W.Promise.resolve(W.render(data, {sendMessage, mkFrame}, win)).then(
               () => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}),
               onError
-            );  
+            );
           } else {
             onError({ reason: 'MISSING_RENDER_FUNCTION', message: 'Expected render() not found in iframe.' });
           }
