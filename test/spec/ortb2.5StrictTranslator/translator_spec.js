@@ -7,6 +7,7 @@ describe('toOrtb25Strict', () => {
   })
   it('uses provided translator', () => {
     translator.resetBehavior();
+    translator.resetHistory();
     translator.callsFake(() => ({id: 'test'}));
     expect(toOrtb25Strict(null, translator)).to.eql({id: 'test'});
   });
