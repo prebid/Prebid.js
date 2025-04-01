@@ -1,4 +1,4 @@
-import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject } from '../src/utils.js';
+import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -53,6 +53,7 @@ let conf = {};
 let blockedIabCategories = [];
 let allowedIabCategories = [];
 let pubId = 0;
+export let cpmAdjustment;
 
 const converter = ortbConverter({
   context: {
@@ -147,6 +148,42 @@ const converter = ortbConverter({
     }
   }
 });
+
+export function _calculateBidCpmAdjustment(bid) {
+  if (!bid) return;
+
+  const { originalCurrency, currency, cpm, originalCpm, meta } = bid;
+  const convertedCpm = originalCurrency !== currency && isFn(bid.getCpmInNewCurrency)
+    ? bid.getCpmInNewCurrency(originalCurrency)
+    : cpm;
+
+  const mediaType = bid.mediaType;
+  const metaMediaType = meta?.mediaType;
+
+  cpmAdjustment = cpmAdjustment || {
+    currency,
+    originalCurrency,
+    adjustment: []
+  };
+
+  const adjustmentValue = Number(((originalCpm - convertedCpm) / originalCpm).toFixed(2));
+
+  const adjustmentEntry = {
+    cpmAdjustment: adjustmentValue,
+    mediaType,
+    metaMediaType,
+    cpm: convertedCpm,
+    originalCpm
+  };
+
+  const existingIndex = cpmAdjustment?.adjustment?.findIndex(
+    (entry) => entry?.mediaType === mediaType && entry?.metaMediaType === metaMediaType
+  );
+
+  existingIndex !== -1
+    ? cpmAdjustment.adjustment.splice(existingIndex, 1, adjustmentEntry)
+    : cpmAdjustment.adjustment.push(adjustmentEntry);
+}
 
 const handleImageProperties = asset => {
   const imgProps = {};
@@ -464,7 +501,8 @@ const addExtenstionParams = (req) => {
       wv: '$$REPO_AND_VERSION$$',
       transactionId,
       wp: 'pbjs'
-    }
+    },
+    cpmAdjustment: cpmAdjustment
   }
 }
 
@@ -743,6 +781,10 @@ export const spec = {
     const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
     const url = (type === 'iframe' ? USER_SYNC_URL_IFRAME : USER_SYNC_URL_IMAGE) + syncurl;
     return [{ type, url }];
+  },
+
+  onBidWon: (bid) => {
+    _calculateBidCpmAdjustment(bid);
   }
 };
 
