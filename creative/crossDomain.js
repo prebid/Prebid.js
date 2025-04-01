@@ -89,10 +89,14 @@ export function renderer(win) {
           const W = renderer.contentWindow;
           // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
           // does not appear to work if P comes from another frame
-          W.Promise.resolve(W.render(data, {sendMessage, mkFrame}, win)).then(
-            () => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}),
-            onError
-          );
+          if (typeof W.render === 'function') {
+            W.Promise.resolve(W.render(data, {sendMessage, mkFrame}, win)).then(
+              () => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}),
+              onError
+            );  
+          } else {
+            onError({ reason: 'MISSING_RENDER_FUNCTION', message: 'Expected render() not found in iframe.' });
+          }
         });
         win.document.body.appendChild(renderer);
       }
