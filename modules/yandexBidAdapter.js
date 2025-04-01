@@ -132,7 +132,7 @@ export const spec = {
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
-      const { targetRef, withCredentials = true, cur, documentLang } = params;
+      const { targetRef, withCredentials = true, cur } = params;
 
       const { pageId, impId } = extractPlacementIds(params);
 
@@ -175,13 +175,9 @@ export const spec = {
         device: ortb2?.device,
       };
 
+      const documentLang = deepAccess(bidRequest, 'params.documentLang');
       if (documentLang && !data?.site?.content?.language) {
-        if (!data.site) {
-          data.site = {};
-        }
-        if (!data.site.content) {
-          data.site.content = {};
-        }
+        deepSetValue(data, 'site.content.language', documentLang);
         data.site.content.language = documentLang;
       }
 
