@@ -1,6 +1,10 @@
 import {prefixLog} from '../utils.js';
 import {ACTIVITY_PARAM_COMPONENT} from './params.js';
 
+/**
+ * @param logger
+ * @return {((function(string, string, function(Object): {allow: boolean, reason?: string}, number=): function(): void)|(function(string, {}): boolean)|*)[]}
+ */
 export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const registry = {};
 

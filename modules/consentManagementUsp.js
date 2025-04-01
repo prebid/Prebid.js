@@ -146,7 +146,7 @@ function loadConsentData(cb) {
  * data as part of a uspConsent object which gets transferred to adapterManager's uspDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
- * @param {function} fn required; The next function in the chain, used by hook.js
+ * @param {function} fn required; The next function in the chain, used by hook.ts
  */
 export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(fn, reqBidsConfigObj) {
   if (!enabled) {

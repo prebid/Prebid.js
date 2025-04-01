@@ -86,7 +86,7 @@ export const TARGETING_KEYS = {
   ACAT: 'hb_acat',
   CRID: 'hb_crid',
   DSP: 'hb_dsp'
-};
+} as const;
 
 export const DEFAULT_TARGETING_KEYS = {
   BIDDER: 'hb_bidder',
@@ -132,7 +132,7 @@ export const BID_STATUS = {
   BID_TARGETING_SET: 'targetingSet',
   RENDERED: 'rendered',
   BID_REJECTED: 'bidRejected'
-};
+} as const;
 
 export const REJECTION_REASON = {
   INVALID: 'Bid has missing or invalid properties',
@@ -187,7 +187,7 @@ export const NATIVE_KEYS_THAT_ARE_NOT_ASSETS = [
   'adTemplate',
   'rendererUrl',
   'type'
-];
+] as const;
 
 export const MESSAGES = {
   REQUEST: 'Prebid Request',
