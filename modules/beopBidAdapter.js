@@ -22,7 +22,7 @@ import { getStorageManager } from '../src/storageManager.js';
  */
 
 const BIDDER_CODE = 'beop';
-const ENDPOINT_URL = 'https://hb.beop.io/bid';
+const ENDPOINT_URL = 'https://hb.collectiveaudience.co/bid';
 const COOKIE_NAME = 'beopid';
 const TCF_VENDOR_ID = 666;
 
@@ -123,7 +123,7 @@ export const spec = {
     logWarn(BIDDER_CODE + ': timed out request');
     triggerPixel(buildUrl({
       protocol: 'https',
-      hostname: 't.beop.io',
+      hostname: 't.collectiveaudience.co',
       pathname: '/bid',
       search: trackingParams
     }));
@@ -137,7 +137,7 @@ export const spec = {
     logInfo(BIDDER_CODE + ': won request');
     triggerPixel(buildUrl({
       protocol: 'https',
-      hostname: 't.beop.io',
+      hostname: 't.collectiveaudience.co',
       pathname: '/bid',
       search: trackingParams
     }));
