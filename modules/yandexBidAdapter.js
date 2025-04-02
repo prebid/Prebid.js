@@ -176,7 +176,7 @@ export const spec = {
       };
 
       if (!data?.site?.content?.language) {
-        const documentLang = deepAccess(bidRequest, 'params.documentLang');
+        const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
         if (documentLang) {
           deepSetValue(data, 'site.content.language', documentLang);
         }

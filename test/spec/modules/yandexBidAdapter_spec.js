@@ -50,13 +50,19 @@ describe('Yandex adapter', function () {
         bidId: 'bid123',
         params: {
           placementId: 'R-I-123456-2',
-          documentLang: 'en'
         }
       }];
       mockBidderRequest = {
         ortb2: {
           device: {
             language: 'fr'
+          },
+          site: {
+            ext: {
+              data: {
+                documentLang: 'en'
+              }
+            }
           }
         }
       };
@@ -68,13 +74,13 @@ describe('Yandex adapter', function () {
     });
 
     it('should preserve existing site.content.language if it is set', function () {
-      mockBidderRequest.ortb2.site = { content: { language: 'es' } };
+      mockBidderRequest.ortb2.site.content = {language: 'es'};
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
       expect(requests[0].data.site.content.language).to.equal('es');
     });
 
     it('should do nothing when document language does not exist', function () {
-      delete mockBidRequests[0].params.documentLang;
+      delete mockBidderRequest.ortb2.site.ext.data.documentLang;
       const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
       expect(requests[0].data.site?.content?.language).to.be.undefined;
     });
