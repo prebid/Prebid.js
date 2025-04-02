@@ -46,8 +46,13 @@ export const parseConfig = (moduleConfig) => {
  */
 export const defaultHandleRtd = async (reqBidsConfigObj, optableExtraData, mergeFn) => {
   const optableBundle = /** @type {Object} */ (window.optable);
-  // Call Optable DCN for targeting data and return the ORTB2 object
-  const targetingData = await optableBundle?.instance?.targeting();
+  // Get targeting data from cache, if available
+  let targetingData = optableBundle?.instance?.targetingFromCache();
+  // If no targeting data is found in the cache, call the targeting function
+  if (!targetingData) {
+    // Call Optable DCN for targeting data and return the ORTB2 object
+    targetingData = await optableBundle?.instance?.targeting();
+  }
   logMessage('Original targeting data from targeting(): ', targetingData);
 
   if (!targetingData || !targetingData.ortb2) {

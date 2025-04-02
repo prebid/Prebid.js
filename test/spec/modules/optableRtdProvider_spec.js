@@ -58,7 +58,12 @@ describe('Optable RTD Submodule', function () {
       sandbox = sinon.createSandbox();
       reqBidsConfigObj = {ortb2Fragments: {global: {}}};
       mergeFn = sinon.spy();
-      window.optable = {instance: {targeting: sandbox.stub()}};
+      window.optable = {
+        instance: {
+          targeting: sandbox.stub(),
+          targetingFromCache: sandbox.stub(),
+        },
+      };
     });
 
     afterEach(() => {
@@ -67,6 +72,7 @@ describe('Optable RTD Submodule', function () {
 
     it('merges valid targeting data into the global ORTB2 object', async function () {
       const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
+      window.optable.instance.targetingFromCache.returns(targetingData);
       window.optable.instance.targeting.resolves(targetingData);
 
       await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
@@ -74,10 +80,28 @@ describe('Optable RTD Submodule', function () {
     });
 
     it('does nothing if targeting data is missing the ortb2 property', async function () {
+      window.optable.instance.targetingFromCache.returns({});
       window.optable.instance.targeting.resolves({});
 
       await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
       expect(mergeFn.called).to.be.false;
+    });
+
+    it('uses targeting data from cache if available', async function () {
+      const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
+      window.optable.instance.targetingFromCache.returns(targetingData);
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+      expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
+    });
+
+    it('calls targeting function if no data is found in cache', async function () {
+      const targetingData = {ortb2: {user: {ext: {optable: 'testData'}}}};
+      window.optable.instance.targetingFromCache.returns(null);
+      window.optable.instance.targeting.resolves(targetingData);
+
+      await defaultHandleRtd(reqBidsConfigObj, {}, mergeFn);
+      expect(mergeFn.calledWith(reqBidsConfigObj.ortb2Fragments.global, targetingData.ortb2)).to.be.true;
     });
   });
 
