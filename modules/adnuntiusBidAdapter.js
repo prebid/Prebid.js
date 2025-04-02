@@ -367,9 +367,20 @@ export const spec = {
           adUnit.adType = 'NATIVE';
           if (!mediaTypeData.ortb) {
             // assume it's using old format if ortb not specified
-            const oldStyleNativeRequest = deepClone(mediaTypeData);
-            delete oldStyleNativeRequest.sizes;
-            adUnit.nativeRequest = {ortb: toOrtbNativeRequest(oldStyleNativeRequest)}
+            const legacyStyleNativeRequest = deepClone(mediaTypeData);
+            const nativeOrtb = toOrtbNativeRequest(legacyStyleNativeRequest);
+            // add explicit event tracker requests for impressions and viewable impressions, which do not exist in legacy format
+            nativeOrtb.eventtrackers = [
+              {
+                'event': 1,
+                'methods': [1]
+              },
+              {
+                'event': 2,
+                'methods': [1]
+              }
+            ];
+            adUnit.nativeRequest = {ortb: nativeOrtb}
           } else {
             adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
           }
@@ -453,8 +464,8 @@ export const spec = {
         adResponse.mediaType = VIDEO;
       } else if (renderSource.nativeJson) {
         adResponse.mediaType = NATIVE;
-        if (!bidOnRequest.mediaTypes?.native?.ortb) {
-          adResponse.native = toLegacyResponse(renderSource.nativeJson);
+        if (bidOnRequest.mediaTypes?.native && !bidOnRequest.mediaTypes?.native?.ortb) {
+          adResponse.native = toLegacyResponse(renderSource.nativeJson.ortb, toOrtbNativeRequest(bidOnRequest.mediaTypes.native));
         } else {
           adResponse.native = renderSource.nativeJson;
         }
