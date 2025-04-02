@@ -353,11 +353,11 @@ describe('BeOp Bid Adapter tests', () => {
   describe('getUserSyncs', function () {
     it('should return iframe sync when iframeEnabled and syncFrame provided', function () {
       const syncOptions = { iframeEnabled: true, pixelEnabled: false };
-      const serverResponses = [{ body: { syncFrame: 'https://example.com/sync_frame' } }];
+      const serverResponses = [{ body: { sync_frames: ['https://example.com/sync_frame', 'https://example2.com/sync_second'] } }];
 
       const syncs = spec.getUserSyncs(syncOptions, serverResponses);
 
-      expect(syncs).to.have.length(1);
+      expect(syncs).to.have.length(2);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.equal('https://example.com/sync_frame');
     });
@@ -366,7 +366,7 @@ describe('BeOp Bid Adapter tests', () => {
       const syncOptions = { iframeEnabled: false, pixelEnabled: true };
       const serverResponses = [{
         body: {
-          syncPixels: [
+          sync_pixels: [
             'https://example.com/pixel1',
             'https://example.com/pixel2'
           ]
@@ -385,8 +385,8 @@ describe('BeOp Bid Adapter tests', () => {
       const syncOptions = { iframeEnabled: true, pixelEnabled: true };
       const serverResponses = [{
         body: {
-          syncFrame: 'https://example.com/sync_frame',
-          syncPixels: ['https://example.com/pixel1']
+          sync_frames: ['https://example.com/sync_frame'],
+          sync_pixels: ['https://example.com/pixel1']
         }
       }];
 

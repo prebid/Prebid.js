@@ -156,12 +156,14 @@ export const spec = {
     if (serverResponses.length > 0) {
       const body = serverResponses[0].body;
 
-      if (syncOptions.iframeEnabled && body.syncFrame) {
-        syncs.push({ type: 'iframe', url: body.syncFrame });
+      if (syncOptions.iframeEnabled && Array.isArray(body.sync_frames)) {
+        body.sync_frames.forEach(url => {
+          syncs.push({ type: 'iframe', url });
+        });
       }
 
-      if (syncOptions.pixelEnabled && Array.isArray(body.syncPixels)) {
-        body.syncPixels.forEach(url => {
+      if (syncOptions.pixelEnabled && Array.isArray(body.sync_pixels)) {
+        body.sync_pixels.forEach(url => {
           syncs.push({ type: 'image', url });
         });
       }
