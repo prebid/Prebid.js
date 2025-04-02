@@ -138,8 +138,8 @@ export const spec = {
       gdpr: bidderRequest.gdprConsent,
       usp: bidderRequest.uspConsent,
       window: {
-        width: getWinDimensions('innerWidth'),
-        height: getWinDimensions('innerHeight'),
+        width: getWinDimensions().innerWidth,
+        height: getWinDimensions().innerHeight,
       },
       biddata: transformedBidRequests,
     };

@@ -331,8 +331,8 @@ export function getFilteredMediaTypes(mediaTypes) {
     native: undefined
   }
 
-  activeViewportWidth = getWinDimensions('innerWidth');
-  activeViewportHeight = getWinDimensions('innerHeight');
+  activeViewportWidth = getWinDimensions().innerWidth;
+  activeViewportHeight = getWinDimensions().innerHeight;
 
   const activeViewport = [activeViewportWidth, activeViewportHeight];
   Object.keys(mediaTypes).map(mediaType => {

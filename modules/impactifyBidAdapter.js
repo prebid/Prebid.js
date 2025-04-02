@@ -150,8 +150,8 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   if (!request.device) request.device = {};
   if (!request.site) request.site = {};
   request.device = {
-    w: getWinDimensions('innerWidth'),
-    h: getWinDimensions('innerHeight'),
+    w: getWinDimensions().innerWidth,
+    h: getWinDimensions().innerHeight,
     devicetype: helpers.getDeviceType(),
     ua: navigator.userAgent,
     js: 1,

@@ -180,8 +180,7 @@ describe('connatixBidAdapter', function () {
       const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
       const getWinDimensionsStub = sinon.stub(utils, 'getWinDimensions');
-      getWinDimensionsStub.withArgs('innerWidth').returns(topWinMock.innerWidth);
-      getWinDimensionsStub.withArgs('innerHeight').returns(topWinMock.innerHeight);
+      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
 
       const viewability = connatixGetViewability(element, topWinMock);
 

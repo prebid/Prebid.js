@@ -223,8 +223,8 @@ function geom(adunitCode) {
     const scrollY = window.scrollY;
     const { top, left, width, height } = getBoundingClientRect(slot);
     const viewport = {
-      width: getWinDimensions('innerWidth'),
-      height: getWinDimensions('innerHeight'),
+      width: getWinDimensions().innerWidth,
+      height: getWinDimensions().innerHeight,
     };
 
     return {

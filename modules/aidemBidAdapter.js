@@ -144,8 +144,8 @@ function setPrebidRequestEnvironment(payload) {
   deepSetValue(payload, 'environment.inp.jp', window.JSON.parse.name === 'parse' && typeof window.JSON.parse.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.ofe', window.Object.fromEntries.name === 'fromEntries' && typeof window.Object.fromEntries.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.oa', window.Object.assign.name === 'assign' && typeof window.Object.assign.prototype === 'undefined');
-  deepSetValue(payload, 'environment.wpar.innerWidth', getWinDimensions('innerWidth'));
-  deepSetValue(payload, 'environment.wpar.innerHeight', getWinDimensions('innerHeight'));
+  deepSetValue(payload, 'environment.wpar.innerWidth', getWinDimensions().innerWidth);
+  deepSetValue(payload, 'environment.wpar.innerHeight', getWinDimensions().innerHeight);
 }
 
 function hasValidMediaType(bidRequest) {

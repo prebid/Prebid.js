@@ -263,7 +263,8 @@ ascAdapter.getVisitorData = function (data = {}) {
   }
   function detectWidth() {
     const {width: viewportWidth} = getViewportSize();
-    return getWinDimensions('screen.width') || (getWinDimensions('innerWidth') && getWinDimensions('document.documentElement.clientWidth')) ? Math.min(getWinDimensions('innerWidth'), getWinDimensions('document.documentElement.clientWidth')) : viewportWidth;
+    const windowDimensions = getWinDimensions();
+    return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
   }
   function giveDeviceTypeOnScreenSize() {
     var _dWidth = detectWidth();

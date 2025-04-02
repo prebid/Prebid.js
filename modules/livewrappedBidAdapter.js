@@ -325,12 +325,12 @@ function getDeviceIfa() {
 
 function getDeviceWidth() {
   const device = config.getConfig('device') || {};
-  return device.w || getWinDimensions('innerWidth');
+  return device.w || getWinDimensions().innerWidth;
 }
 
 function getDeviceHeight() {
   const device = config.getConfig('device') || {};
-  return device.h || getWinDimensions('innerHeight');
+  return device.h || getWinDimensions().innerHeight;
 }
 
 function getCoppa() {

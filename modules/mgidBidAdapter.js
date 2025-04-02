@@ -654,8 +654,8 @@ function pageInfo() {
     location: l,
     referrer: r || '',
     masked: m,
-    wWidth: getWinDimensions('innerWidth'),
-    wHeight: getWinDimensions('innerHeight'),
+    wWidth: getWinDimensions().innerWidth,
+    wHeight: getWinDimensions().innerHeight,
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };

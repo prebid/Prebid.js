@@ -291,8 +291,10 @@ function getUiEvents() {
 
 function getScreen() {
   function getInnerSize() {
-    let w = getWinDimensions('innerWidth');
-    let h = getWinDimensions('innerHeight');
+    const { innerWidth, innerHeight } = getWinDimensions();
+
+    let w = innerWidth;
+    let h = innerHeight;
 
     if (w && h) {
       return [w, h];
@@ -300,8 +302,10 @@ function getScreen() {
   }
 
   function getDocumentSize() {
-    let w = getWinDimensions('document.body.clientWidth');
-    let h = getWinDimensions('document.body.clientHeight');
+    const windowDimensions = getWinDimensions();
+
+    let w = windowDimensions.document.body.clientWidth;
+    let h = windowDimensions.document.body.clientHeight;
 
     if (w && h) {
       return [w, h];

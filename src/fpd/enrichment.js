@@ -101,8 +101,8 @@ const ENRICHMENTS = {
   device() {
     return winFallback((win) => {
       // screen.width and screen.height are the physical dimensions of the screen
-      const w = getWinDimensions('screen.width');
-      const h = getWinDimensions('screen.height');
+      const w = getWinDimensions().screen.width;
+      const h = getWinDimensions().screen.height;
 
       // vpw and vph are the viewport dimensions of the browser window
       const {width: vpw, height: vph} = getViewportSize();

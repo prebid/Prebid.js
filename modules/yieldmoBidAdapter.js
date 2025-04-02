@@ -115,8 +115,8 @@ export const spec = {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
         serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
-        serverRequest.w = getWinDimensions('innerWidth');
-        serverRequest.h = getWinDimensions('innerHeight');
+        serverRequest.w = getWinDimensions().innerWidth;
+        serverRequest.h = getWinDimensions().innerHeight;
       }
 
       const mtp = window.navigator.maxTouchPoints;

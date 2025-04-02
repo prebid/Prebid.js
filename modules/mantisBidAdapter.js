@@ -75,8 +75,9 @@ export function onVisible(win, element, doOnVisible, time, pct) {
     });
   }
   interval = setInterval(function () {
-    var winHeight = (getWinDimensions('innerHeight') || getWinDimensions('document.documentElement.clientHeight'));
-    var winWidth = (getWinDimensions('innerWidth') || getWinDimensions('document.documentElement.clientWidth'));
+    const windowDimensions = getWinDimensions();
+    var winHeight = (windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight);
+    var winWidth = (windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth);
     doCheck(winWidth, winHeight, getBoundingClientRect(element));
   }, 100);
 }

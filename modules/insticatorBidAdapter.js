@@ -242,8 +242,8 @@ function buildDevice(bidRequest) {
   const deviceConfig = ortb2Data?.device || {}
 
   const device = {
-    w: getWinDimensions('innerWidth'),
-    h: getWinDimensions('innerHeight'),
+    w: getWinDimensions().innerWidth,
+    h: getWinDimensions().innerHeight,
     js: 1,
     ext: {
       localStorage: storage.localStorageIsEnabled(),

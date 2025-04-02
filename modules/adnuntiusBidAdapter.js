@@ -289,8 +289,11 @@ export const spec = {
     if (win.screen && win.screen.availHeight) {
       queryParamsAndValues.push('screen=' + win.screen.availWidth + 'x' + win.screen.availHeight);
     }
-    if (getWinDimensions('innerWidth')) {
-      queryParamsAndValues.push('viewport=' + getWinDimensions('innerWidth') + 'x' + getWinDimensions('innerHeight'));
+
+    const { innerWidth, innerHeight } = getWinDimensions();
+
+    if (innerWidth) {
+      queryParamsAndValues.push('viewport=' + innerWidth + 'x' + innerHeight);
     }
 
     const searchParams = new URLSearchParams(window.location.search);

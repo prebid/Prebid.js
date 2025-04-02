@@ -503,8 +503,8 @@ describe('Undertone Adapter', () => {
       const bidCommons = JSON.parse(request.data)['commons'];
       expect(bidCommons).to.be.an('object');
       expect(bidCommons.pageSize).to.be.an('array');
-      expect(bidCommons.pageSize[0]).to.equal(getWinDimensions('innerWidth'));
-      expect(bidCommons.pageSize[1]).to.equal(getWinDimensions('innerHeight'));
+      expect(bidCommons.pageSize[0]).to.equal(getWinDimensions().innerWidth);
+      expect(bidCommons.pageSize[1]).to.equal(getWinDimensions().innerHeight);
     });
     it('should send banner coordinates', function() {
       const request = spec.buildRequests(bidReq, bidderReq);

@@ -21,6 +21,7 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
+    const windowDimensions = utils.getWinDimensions();
     for (let i = 0; i < validBidRequests.length; i++) {
       let bidRequest = validBidRequests[i];
       bidRequest.adspiritConId = spec.genAdConId(bidRequest);
@@ -30,8 +31,8 @@ export const spec = {
         '&ref=' + encodeURIComponent(bidderRequest.refererInfo.topmostLocation) +
         '&scx=' + (screen.width) +
         '&scy=' + (screen.height) +
-        '&wcx=' + (utils.getWinDimensions('innerWidth') || utils.getWinDimensions('document.documentElement.clientWidth')) +
-        '&wcy=' + (utils.getWinDimensions('innerHeight') || utils.getWinDimensions('document.documentElement.clientHeight')) +
+        '&wcx=' + (windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth) +
+        '&wcy=' + (windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight) +
         '&async=' + bidRequest.adspiritConId +
         '&t=' + Math.round(Math.random() * 100000);
 

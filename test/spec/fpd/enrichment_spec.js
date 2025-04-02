@@ -161,8 +161,8 @@ describe('FPD enrichment', () => {
     testWindows(() => win, () => {
       it('sets w/h', () => {
         const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions');
-        getWinDimensionsStub.withArgs('screen.width').returns(321);
-        getWinDimensionsStub.withArgs('screen.height').returns(123);
+        
+        getWinDimensionsStub.returns({screen: {width: 321, height: 123}});
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device, {
             w: 321,
@@ -174,8 +174,7 @@ describe('FPD enrichment', () => {
 
       it('sets ext.vpw/vph', () => {
         const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions');
-        getWinDimensionsStub.withArgs('innerWidth').returns(12);
-        getWinDimensionsStub.withArgs('innerHeight').returns(21);
+        getWinDimensionsStub.returns({innerWidth: 12, innerHeight: 21, screen: {}});
         return fpd().then(ortb2 => {
           sinon.assert.match(ortb2.device.ext, {
             vpw: 12,

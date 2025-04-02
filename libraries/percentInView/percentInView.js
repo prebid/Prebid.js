@@ -44,12 +44,14 @@ function getIntersectionOfRects(rects) {
 export const percentInView = (element, {w, h} = {}) => {
   const elementBoundingBox = getBoundingBox(element, {w, h});
 
+  const { innerHeight, innerWidth } = getWinDimensions();
+
   // Obtain the intersection of the element and the viewport
   const elementInViewBoundingBox = getIntersectionOfRects([{
     left: 0,
     top: 0,
-    right: getWinDimensions('innerWidth'),
-    bottom: getWinDimensions('innerHeight')
+    right: innerWidth,
+    bottom: innerHeight
   }, elementBoundingBox]);
 
   let elementInViewArea, elementTotalArea;

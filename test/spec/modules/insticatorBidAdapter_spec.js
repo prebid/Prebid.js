@@ -388,8 +388,8 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site.page).not.to.be.empty;
       expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
       expect(data.device).to.be.an('object');
-      expect(data.device.w).to.equal(getWinDimensions('innerWidth'));
-      expect(data.device.h).to.equal(getWinDimensions('innerHeight'));
+      expect(data.device.w).to.equal(getWinDimensions().innerWidth);
+      expect(data.device.h).to.equal(getWinDimensions().innerHeight);
       expect(data.device.js).to.equal(1);
       expect(data.device.ext).to.be.an('object');
       expect(data.device.ext.localStorage).to.equal(true);

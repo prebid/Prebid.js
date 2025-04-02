@@ -12,9 +12,10 @@ export function getViewportCoordinates() {
 }
 
 export function getViewportSize() {
+  const windowDimensions = getWinDimensions();
   try {
-    const innerHeight = getWinDimensions('innerHeight') || getWinDimensions('document.documentElement.clientHeight') || getWinDimensions('document.body.clientHeight') || 0;
-    const innerWidth = getWinDimensions('innerWidth') || getWinDimensions('document.documentElement.clientWidth') || getWinDimensions('document.body.clientWidth') || 0;
+    const innerHeight = windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight || windowDimensions.document.body.clientHeight || 0;
+    const innerWidth = windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth || windowDimensions.document.body.clientWidth || 0;
     return { width: innerWidth, height: innerHeight };
   } catch (e) {
     return {};

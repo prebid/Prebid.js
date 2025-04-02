@@ -19,7 +19,7 @@ describe('Missena Adapter', function () {
   let sandbox = sinon.sandbox.create();
   sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
   sandbox.stub(autoplay, 'isAutoplayEnabled').returns(false);
-  const viewport = { width: getWinDimensions('innerWidth'), height: getWinDimensions('innerHeight') };
+  const viewport = { width: getWinDimensions().innerWidth, height: getWinDimensions().innerHeight };
 
   const bidId = 'abc';
   const bid = {

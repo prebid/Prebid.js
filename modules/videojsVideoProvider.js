@@ -598,8 +598,8 @@ export const utils = {
   },
 
   getPositionCode: function({left, top, width, height}) {
-    const bottom = getWinDimensions('innerHeight') - top - height;
-    const right = getWinDimensions('innerWidth') - left - width;
+    const bottom = getWinDimensions().innerHeight - top - height;
+    const right = getWinDimensions().innerWidth - left - width;
 
     if (left < 0 || right < 0 || top < 0) {
       return AD_POSITION.UNKNOWN;

@@ -123,8 +123,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     };
     var clientDim = function() {
       try {
-        var width = Math.max(getWinDimensions('document.documentElement.clientWidth'), getWinDimensions('innerWidth') || 0);
-        var height = Math.max(getWinDimensions('document.documentElement.clientHeight'), getWinDimensions('innerHeight') || 0);
+        const winDimensions = getWinDimensions();
+        var width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
+        var height = Math.max(winDimensions.document.documentElement.clientHeight, winDimensions.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
         logWarn('Could not parse screen dimensions, error details:', e);

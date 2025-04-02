@@ -55,8 +55,9 @@ export const spec = {
     if (commonFpd.device) {
       mergeDeep(device, commonFpd.device);
     }
-    device.w = device.w || getWinDimensions('innerWidth');
-    device.h = device.h || getWinDimensions('innerHeight');
+    const { innerWidth, innerHeight } = getWinDimensions();
+    device.w = device.w || innerWidth;
+    device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
     let source = commonFpd.source || {};

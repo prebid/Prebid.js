@@ -69,8 +69,8 @@ export const spec = {
       devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: getHLen(),
-      viewportHeight: getWinDimensions('visualViewport.height'),
-      viewportWidth: getWinDimensions('visualViewport.width'),
+      viewportHeight: getWinDimensions().visualViewport.height,
+      viewportWidth: getWinDimensions().visualViewport.width,
       prebid_version: '$prebid.version$',
     };
 

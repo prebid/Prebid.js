@@ -37,8 +37,8 @@ function emitEvent(...args) {
   }
 }
 
-/* eslint-disable no-restricted-properties */
-export function getWinDimensions(path = null) {
+
+export function getWinDimensions() {
   if (!windowDimensions) {
     const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
 
@@ -75,18 +75,13 @@ export function getWinDimensions(path = null) {
     };
   };
 
-  return path ? deepAccess(windowDimensions, path) : windowDimensions;
+  return windowDimensions;
 }
-/* eslint-enable no-restricted-properties */
+
 
 export function resetWinDimensions() {
   windowDimensions = null;
 }
-
-['resize', 'scroll', 'orientationchange'].forEach(event => {
-  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-  top.addEventListener(event, resetWinDimensions)
-});
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -108,6 +103,11 @@ export const internal = {
   formatQS,
   deepEqual
 };
+
+['resize', 'scroll', 'orientationchange'].forEach(event => {
+  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
+  top.addEventListener(event, debounce(resetWinDimensions, 20));
+});
 
 let prebidInternal = {};
 /**
@@ -1376,3 +1376,22 @@ export function triggerNurlWithCpm(bid, cpm) {
     triggerPixel(bid.nurl);
   }
 }
+
+export function debounce(func, wait, immediate) {
+  let timeout;
+  return function (...args) {
+    const context = this;
+    const later = function () {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    const callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    if (callNow) {
+      func.apply(context, args);
+    } else {
+      logInfo('Debounce wait time ' + wait);
+      timeout = setTimeout(later, wait);
+    }
+  };
+};

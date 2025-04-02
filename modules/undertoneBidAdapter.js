@@ -67,8 +67,9 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const vw = Math.max(getWinDimensions('document.documentElement.clientWidth'), getWinDimensions('innerWidth') || 0);
-    const vh = Math.max(getWinDimensions('document.documentElement.clientHeight'), getWinDimensions('innerHeight') || 0);
+    const windowDimensions = getWinDimensions();
+    const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
+    const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
     const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',

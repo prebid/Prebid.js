@@ -203,14 +203,15 @@ export const spec = {
   get_client_info: function () {
     let botTest = new BotClientTests();
     let win = getWindowTop();
+    const windowDimensions = getWinDimensions();
     return {
-      'wiw': getWinDimensions('innerWidth'),
-      'wih': getWinDimensions('innerHeight'),
-      'saw': getWinDimensions('screen.availWidth'),
-      'sah': getWinDimensions('screen.availHeight'),
+      'wiw': windowDimensions.innerWidth,
+      'wih': windowDimensions.innerHeight,
+      'saw': windowDimensions.screen.availWidth,
+      'sah': windowDimensions.screen.availHeight,
       'scd': screen ? screen.colorDepth : null,
-      'sw': getWinDimensions('screen.width'),
-      'sh': getWinDimensions('screen.height'),
+      'sw': windowDimensions.screen.width,
+      'sh': windowDimensions.screen.height,
       'whl': win.history.length,
       'wxo': win.pageXOffset,
       'wyo': win.pageYOffset,

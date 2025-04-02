@@ -165,7 +165,7 @@ const elementInView = (elementId) => {
 
   const visibleInWindow = (el, win) => {
     const rect = getBoundingClientRect(el);
-    const inView = (rect.top + rect.height >= 0) && (rect.top <= getWinDimensions('innerHeight'));
+    const inView = (rect.top + rect.height >= 0) && (rect.top <= getWinDimensions().innerHeight);
 
     if (win !== win.parent) {
       return inView && visibleInWindow(win.frameElement, win.parent);

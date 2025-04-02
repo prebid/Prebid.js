@@ -1000,8 +1000,8 @@ describe('Livewrapped adapter tests', function () {
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
         version: '1.4',
-        width: getWinDimensions('innerWidth'),
-        height: getWinDimensions('innerHeight'),
+        width: getWinDimensions().innerWidth,
+        height: getWinDimensions().innerHeight,
         cookieSupport: true,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',

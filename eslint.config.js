@@ -194,6 +194,7 @@ module.exports = [
             message: 'use libraries/boundingClientRect instead'
           },
           ...['scrollTop', 'scrollLeft', 'innerHeight', 'innerWidth', 'visualViewport'].map((property) => ({
+            object: 'window',
             property,
             message: 'use utils/getWinDimensions instead'
           }))

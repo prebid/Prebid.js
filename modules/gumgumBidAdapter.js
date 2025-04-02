@@ -82,8 +82,8 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   }
 
   browserParams = {
-    vw: getWinDimensions('innerWidth'),
-    vh: getWinDimensions('innerHeight'),
+    vw: getWinDimensions().innerWidth,
+    vh: getWinDimensions().innerHeight,
     sw: topScreen.width,
     sh: topScreen.height,
     pu: stripGGParams(topUrl),

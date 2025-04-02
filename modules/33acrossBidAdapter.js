@@ -750,9 +750,7 @@ function getViewportDimensions() {
 }
 
 function getScreenDimensions() {
-  const windowWidth = getWinDimensions('innerWidth');
-  const windowHeight = getWinDimensions('innerHeight');
-  const screen = getWinDimensions('screen');
+  const { innerWidth: windowWidth, innerHeight: windowHeight, screen } = getWinDimensions();
 
   const [biggerDimension, smallerDimension] = [
     Math.max(screen.width, screen.height),

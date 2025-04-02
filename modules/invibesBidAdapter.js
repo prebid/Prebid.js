@@ -166,8 +166,8 @@ function buildRequest(bidRequests, bidderRequest) {
     pcids: Object.keys(invibes.pushedCids).join(','),
 
     vId: invibes.visitId,
-    width: getWinDimensions('innerWidth'),
-    height: getWinDimensions('innerHeight'),
+    width: getWinDimensions().innerWidth,
+    height: getWinDimensions().innerHeight,
 
     oi: invibes.optIn,
 

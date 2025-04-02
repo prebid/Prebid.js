@@ -547,8 +547,8 @@ describe('VibrantMediaBidAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.window).to.exist; 
-      expect(payload.window.width).to.equal(getWinDimensions('innerWidth'));
-      expect(payload.window.height).to.equal(getWinDimensions('innerHeight'));
+      expect(payload.window.width).to.equal(getWinDimensions().innerWidth);
+      expect(payload.window.height).to.equal(getWinDimensions().innerHeight);
     });
 
     it('should add the top-level sizes to the bid request, if present', function () {

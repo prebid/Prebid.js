@@ -189,9 +189,11 @@ function getDevice(data) {
   if (!dnt) {
     dnt = getDNT() ? 1 : 0;
   }
+  const { innerWidth, innerHeight } = getWinDimensions();
+
   return {
-    w: data.w || getWinDimensions('innerWidth'),
-    h: data.h || getWinDimensions('innerHeight'),
+    w: data.w || innerWidth,
+    h: data.h || innerHeight,
     ua: data.ua || navigator.userAgent,
     dnt: dnt,
     language: data.language || navigator.language,

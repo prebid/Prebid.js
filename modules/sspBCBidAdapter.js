@@ -161,7 +161,7 @@ const getNotificationPayload = bidData => {
 const applyClientHints = ortbRequest => {
   const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
-  const viewport = getWinDimensions('visualViewport') || false;
+  const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
     'CH-Ect': connection.effectiveType,

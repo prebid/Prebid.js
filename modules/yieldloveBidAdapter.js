@@ -45,8 +45,8 @@ export const spec = {
     const s2sRequest = {
       device: {
         ua: window.navigator.userAgent,
-        w: utils.getWinDimensions('innerWidth'),
-        h: utils.getWinDimensions('innerHeight'),
+        w: utils.getWinDimensions().innerWidth,
+        h: utils.getWinDimensions().innerHeight,
       },
       site: {
         ver: '1.9.0',

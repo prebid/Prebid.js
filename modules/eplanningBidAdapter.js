@@ -179,7 +179,7 @@ function getUserAgent() {
   return window.navigator.userAgent;
 }
 function getInnerWidth() {
-  return getWinDimensions('innerWidth');
+  return getWinDimensions().innerWidth;
 }
 function isMobileUserAgent() {
   return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
