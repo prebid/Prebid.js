@@ -39,8 +39,8 @@ const CONSTANTS = Object.freeze({
 const BROWSER_REGEX_MAP = [
   { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 }, // Chrome for iOS
   { regex: /(edg|edge)(?:e|ios|a)?(?:\/([\w\.]+))?/i, id: 2 }, // Edge
-  { regex: /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 }, // Opera
-  { regex: /(?:ms|\()(ie) ([\w\.]+)/i, id: 4 }, // Internet Explorer
+  { regex: /(opera|opr)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 }, // Opera
+  { regex: /(?:ms|\()(ie) ([\w\.]+)|(?:trident\/[\w\.]+)/i, id: 4 }, // Internet Explorer
   { regex: /fxios\/([-\w\.]+)/i, id: 5 }, // Firefox for iOS
   { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 }, // Facebook In-App Browser
   { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 }, // Chrome WebView
@@ -122,6 +122,9 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
 
     // Floor configs from adunit / setconfig
     const defaultFloorConfig = conf.getConfig('floors') ?? {};
+    if (defaultFloorConfig?.endpoint) {
+      delete defaultFloorConfig.endpoint;
+    }
     // Plugin data from profile
     const dynamicFloors = profileConfigs?.plugins?.dynamicFloors;
 
@@ -243,17 +246,19 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
             timer: null
         };
         continueAuction(hookConfig);
-        const ortb2 = {
-            user: {
-                ext: {
-                    ctr: _country,
-                }
-            }
-        }
+        if (_country) {
+          const ortb2 = {
+              user: {
+                  ext: {
+                      ctr: _country,
+                  }
+              }
+          }
 
-        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
-            [CONSTANTS.SUBMODULE_NAME]: ortb2
-        });
+          mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+              [CONSTANTS.SUBMODULE_NAME]: ortb2
+          });
+        }
         callback();
     }).catch((error) => {
         logError(CONSTANTS.LOG_PRE_FIX, 'Error in updating floors :', error);

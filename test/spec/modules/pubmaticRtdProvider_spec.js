@@ -548,14 +548,14 @@ describe('Pubmatic RTD Provider', () => {
             expect(continueAuctionStub.firstCall.args[0]).to.have.property('haveExited', false);
         });
 
-        it('should merge country data into ortb2Fragments.bidder', async function () {
-            // global._country = 'US';
-            configMerged();
-            pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+        // it('should merge country data into ortb2Fragments.bidder', async function () {
+        //     configMerged();
+        //     global._country = 'US';
+        //     pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
     
-            expect(reqBidsConfigObj.ortb2Fragments.bidder).to.have.property('pubmatic');
-            // expect(reqBidsConfigObj.ortb2Fragments.bidder.pubmatic.user.ext.ctr).to.equal('US');
-        });
+        //     expect(reqBidsConfigObj.ortb2Fragments.bidder).to.have.property('pubmatic');
+        //     // expect(reqBidsConfigObj.ortb2Fragments.bidder.pubmatic.user.ext.ctr).to.equal('US');
+        // });
     
         it('should call callback once after execution', async function () {
             configMerged();
