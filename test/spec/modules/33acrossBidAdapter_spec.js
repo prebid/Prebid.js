@@ -1627,7 +1627,7 @@ describe('33acrossBidAdapter:', function () {
         it('builds siab request with video only with default params', function() {
           const bidRequests = new BidRequestsBuilder()
             .withVideo({
-              context: 'siab'
+              context: 'outstream'
             })
             .build();
           const ttxRequest = new TtxRequestBuilder()
@@ -2396,7 +2396,6 @@ describe('33acrossBidAdapter:', function () {
 
       context('when there is no gdpr consent data', function() {
         it('returns sync urls with undefined consent string as param', function() {
-          const bidRequests = this.buildBannerBidRequests();
           spec.buildRequests(this.bidRequests);
 
           const syncResults = spec.getUserSyncs(this.syncOptions, {}, undefined);
