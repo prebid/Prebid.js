@@ -27,7 +27,6 @@ export const spec = {
       logWarn(`[${BIDDER_CODE}] Invalid endpoint: must start with "https://".`);
       return false;
     }
-
     return true;
   },
 
@@ -65,7 +64,7 @@ export const spec = {
           device: {
             ua: navigator.userAgent || '',
             ip: '0.0.0.0',
-            devicetype: 2
+            devicetype: 2,
           },
           referer: bidderRequest?.refererInfo?.referer,
           gdprConsent: bidderRequest?.gdprConsent,
