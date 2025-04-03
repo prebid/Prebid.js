@@ -189,12 +189,15 @@ describe('connatixBidAdapter', function () {
     });
 
     it('should return 0% if the element is not in view', () => {
+      const getWinDimensionsStub = sinon.stub(utils, 'getWinDimensions');
+      getWinDimensionsStub.returns({ innerWidth: topWinMock.innerWidth, innerHeight: topWinMock.innerHeight});
       const boundingBox = { left: 900, top: 700, right: 1100, bottom: 900, width: 200, height: 200 };
       getBoundingClientRectStub.returns(boundingBox);
 
       const viewability = connatixGetViewability(element, topWinMock);
 
       expect(viewability).to.equal(0);
+      getWinDimensionsStub.restore();
     });
 
     it('should use provided width and height if element dimensions are zero', () => {
