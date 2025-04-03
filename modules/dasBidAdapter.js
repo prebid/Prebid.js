@@ -117,7 +117,7 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     };
     if (bid.params.slotSequence) {
       imp.ext = {
-        pos: bid.params.slotSequence
+        pos: String(bid.params.slotSequence)
       }
     }
 
