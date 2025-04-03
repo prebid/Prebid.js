@@ -161,12 +161,19 @@ describe('dasBidAdapter', function () {
     it('should return proper request object', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
 
-      expect(request.method).to.equal('POST');
-      expect(request.url).to.equal('https://csr.onet.pl/network1/bid');
+      expect(request.method).to.equal('GET');
       expect(request.options.withCredentials).to.be.true;
       expect(request.options.crossOrigin).to.be.true;
 
-      const payload = request.data;
+      expect(request.url).to.include('https://csr.onet.pl/network1/bid?data=');
+      const urlParts = request.url.split('?');
+      expect(urlParts.length).to.equal(2);
+
+
+      const params = new URLSearchParams(urlParts[1]);
+      expect(params.has('data')).to.be.true;
+
+      const payload = JSON.parse(decodeURIComponent(params.get('data')));
       expect(payload.id).to.equal('reqId123');
       expect(payload.imp[0].id).to.equal('bid123');
       expect(payload.imp[0].tagid).to.equal('slot1');
