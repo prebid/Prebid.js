@@ -147,7 +147,6 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
       },
       ...bidderRequest.ortb2.site,
     },
-    device: bidderRequest.device,
     user: {
       ext: {
         ids: buildUserIds(customParams),
@@ -160,6 +159,10 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     at: 1,
     tmax: bidderRequest.timeout
   };
+
+  if (bidderRequest.device) {
+    request.device = bidderRequest.device;
+  }
 
   if (bidderRequest.gdprConsent) {
     request.user = {
@@ -241,7 +244,6 @@ export const spec = {
     return {
       method: 'GET',
       url: `${getEndpoint(data.ext.network)}?data=${jsonData}`,
-      data,
       options: {
         withCredentials: true,
         crossOrigin: true,
