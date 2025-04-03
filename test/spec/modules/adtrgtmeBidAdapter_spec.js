@@ -211,7 +211,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
     BAD_VALUE.forEach(value => {
       it(`should determine bad bid for ${JSON.stringify(value)}`, () => {
-        expect(spec.isOK(value)).to.be.false;
+        expect(spec.isBidRequestValid(value)).to.be.false;
       });
     });
 
@@ -224,7 +224,7 @@ describe('Adtrgtme Bid Adapter:', () => {
 
     OK_VALUE.forEach(value => {
       it(`should determine OK bid for ${JSON.stringify(value)}`, () => {
-        expect(spec.isOK(value)).to.be.true;
+        expect(spec.isBidRequestValid(value)).to.be.true;
       });
     });
   });
