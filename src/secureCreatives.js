@@ -15,7 +15,7 @@ import {
   handleRender,
   markWinner
 } from './adRendering.js';
-import {getCreativeRendererSource} from './creativeRenderers.js';
+import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -89,7 +89,8 @@ function handleRenderRequest(reply, message, bidResponse) {
     renderFn(adData) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getCreativeRendererSource(bidResponse)
+        renderer: getCreativeRendererSource(bidResponse),
+        rendererVersion: PUC_MIN_VERSION
       }, adData));
     },
     resizeFn: getResizer(message.adId, bidResponse),

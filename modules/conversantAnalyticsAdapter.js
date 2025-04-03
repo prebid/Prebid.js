@@ -616,7 +616,7 @@ cnvrHelper.sendErrorData = function(eventType, exception) {
     url: cnvrHelper.getPageUrl()
   };
 
-  // eslint-disable-next-line no-undef
+
   ajax(ERROR_URL, function () {}, JSON.stringify(error), {contentType: 'text/plain'});
 }
 
