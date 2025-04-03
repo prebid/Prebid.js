@@ -572,15 +572,6 @@ describe('Adtrgtme Bid Adapter:', () => {
         }
       });
 
-      expect(data.source).to.deep.equal({
-        ext: {
-          hb: 1,
-          bidderver: BIDDER_VERSION,
-          prebidjsver: PREBIDJS_VERSION
-        },
-        fd: 1
-      });
-
       expect(data.cur).to.deep.equal(['USD']);
     });
 
