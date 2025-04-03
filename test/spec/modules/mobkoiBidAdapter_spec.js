@@ -7,7 +7,6 @@ import {
 describe('Mobkoi bidding Adapter', function () {
   const testAdServerBaseUrl = 'http://test.adServerBaseUrl.com';
   const testRequestId = 'test-request-id';
-  const testPublisherId = 'mobkoiPublisherId';
   const testPlacementId = 'mobkoiPlacementId';
   const testBidId = 'test-bid-id';
   const bidderCode = 'mobkoi';
@@ -18,7 +17,6 @@ describe('Mobkoi bidding Adapter', function () {
   const getOrtb2 = () => ({
     site: {
       publisher: {
-        id: testPublisherId,
         ext: { adServerBaseUrl: testAdServerBaseUrl }
       }
     }
@@ -34,7 +32,6 @@ describe('Mobkoi bidding Adapter', function () {
     auctionId: testAuctionId,
     ortb2: getOrtb2(),
     params: {
-      publisherId: testPublisherId,
       adServerBaseUrl: testAdServerBaseUrl,
       placementId: testPlacementId
     }
@@ -102,34 +99,12 @@ describe('Mobkoi bidding Adapter', function () {
       bid = getBidderRequest().bids[0];
     });
 
-    it('should return true when publisher id only exists in ortb2', function () {
-      delete bid.params.publisherId;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
     it('should return true when placement id exist in ad unit params', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when publisher ID only exists in ad unit params', function () {
-      delete bid.ortb2.site.publisher.id;
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should return false when publisher id is missing both in ad unit params and ortb2', function () {
-      delete bid.ortb2.site.publisher.id;
-      delete bid.params.publisherId;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
     it('should return false when placement id is missing in ad unit params', function () {
       delete bid.params.placementId;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when publisher id is empty in ad unit params and ortb2', function () {
-      bid.ortb2.site.publisher.id = '';
-      bid.params.publisherId = '';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
@@ -147,18 +122,9 @@ describe('Mobkoi bidding Adapter', function () {
       const ortbData = request.data;
 
       expect(ortbData.id).to.equal(bidderRequest.bidderRequestId);
-      expect(ortbData.site.publisher.id).to.equal(bidderRequest.ortb2.site.publisher.id);
     });
 
-    it('should obtain publisher ID from ad unit params if the value does not exist in ortb2.', function () {
-      delete bidderRequest.ortb2.site.publisher.id;
-      const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      const ortbData = request.data;
-
-      expect(ortbData.site.publisher.id).to.equal(bidderRequest.bids[0].params.publisherId);
-    });
-
-    it('should obtain adServerBaseUrl from ad unit params if the value does not exist in ortb2.', function () {
+    it('should obtain adServerBaseUrl from ad unit params if the value does not exist in ortb2', function () {
       delete bidderRequest.ortb2.site.publisher.ext.adServerBaseUrl;
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       const ortbData = request.data;
@@ -226,20 +192,6 @@ describe('Mobkoi bidding Adapter', function () {
       });
     })
 
-    describe('getPublisherId', function () {
-      it('should return the publisherId from the given object', function () {
-        expect(utils.getPublisherId(bidderRequest)).to.equal(bidderRequest.ortb2.site.publisher.id);
-      });
-
-      it('should throw error when publisherId is missing', function () {
-        delete bidderRequest.ortb2.site.publisher.id;
-        delete bidderRequest.bids[0].params.publisherId;
-        expect(() => {
-          utils.getPublisherId(bidderRequest);
-        }).to.throw();
-      });
-    })
-
     describe('getOrtbId', function () {
       it('should return the ortbId from the prebid request object (i.e bidderRequestId)', function () {
         expect(utils.getOrtbId(bidderRequest)).to.equal(bidderRequest.bidderRequestId);
@@ -268,47 +220,6 @@ describe('Mobkoi bidding Adapter', function () {
         expect(() => {
           utils.getOrtbId(bidderRequest);
         }).to.throw();
-      });
-    })
-
-    describe('replaceAllMacrosInPlace', function () {
-      let bidderResponse, bidRequest, bidderRequest;
-
-      beforeEach(function () {
-        bidderRequest = getBidderRequest();
-        bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-        bidderResponse = getBidderResponse();
-      });
-
-      it('should replace all macros in adm, nurl, and lurl fields', function () {
-        const bid = bidderResponse.body.seatbid[0].bid[0];
-        bid.nurl = '${BIDDING_API_BASE_URL}/win?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}';
-        bid.lurl = '${BIDDING_API_BASE_URL}/loss?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}';
-        bid.adm = '<div>${AUCTION_PRICE}${AUCTION_CURRENCY}${AUCTION_IMP_ID}${AUCTION_BID_ID}${CAMPAIGN_ID}${CREATIVE_ID}${PUBLISHER_ID}${ORTB_ID}${BIDDING_API_BASE_URL}</div>';
-
-        const BIDDING_API_BASE_URL = testAdServerBaseUrl;
-        const AUCTION_CURRENCY = bidderResponse.body.cur;
-        const AUCTION_BID_ID = bidderRequest.auctionId;
-        const AUCTION_PRICE = bid.price;
-        const AUCTION_IMP_ID = bid.impid;
-        const CREATIVE_ID = bid.crid;
-        const CAMPAIGN_ID = bid.cid;
-        const PUBLISHER_ID = bidderRequest.ortb2.site.publisher.id;
-        const ORTB_ID = bidderResponse.body.id;
-
-        const context = {
-          bidRequest,
-          bidderRequest
-        }
-        utils.replaceAllMacrosInPlace(bid, context);
-
-        expect(bid.adm).to.equal(`<div>${AUCTION_PRICE}${AUCTION_CURRENCY}${AUCTION_IMP_ID}${AUCTION_BID_ID}${CAMPAIGN_ID}${CREATIVE_ID}${PUBLISHER_ID}${ORTB_ID}${BIDDING_API_BASE_URL}</div>`);
-        expect(bid.lurl).to.equal(
-          `${BIDDING_API_BASE_URL}/loss?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}`
-        );
-        expect(bid.nurl).to.equal(
-          `${BIDDING_API_BASE_URL}/win?price=${AUCTION_PRICE}&impressionId=${AUCTION_IMP_ID}&currency=${AUCTION_CURRENCY}&campaignId=${CAMPAIGN_ID}&creativeId=${CREATIVE_ID}&publisherId=${PUBLISHER_ID}&ortbId=${ORTB_ID}`
-        );
       });
     })
   })

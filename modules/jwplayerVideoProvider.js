@@ -20,7 +20,7 @@ import { submodule } from '../src/hook.js';
  */
 
 /**
- * @constructor
+ * @class
  * @param {videoProviderConfig} config
  * @param {Object} jwplayer_ - JW Player global factory
  * @param {State} adState_
@@ -207,6 +207,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
 
     player.playAd(adTagUrl || options.adXml, options);
+  }
+
+  function setAdXml(vastXml, options) {
+    if (!player || !vastXml) {
+      return;
+    }
+
+    player.loadAdXml(vastXml, options);
   }
 
   function onEvent(externalEventName, callback, basePayload) {
@@ -496,6 +504,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy

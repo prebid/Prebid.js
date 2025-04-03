@@ -154,7 +154,7 @@ describe('PrecisoAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://ssp-bidder.mndtrk.com/bid_request/openrtb');
+      expect(serverRequest.url).to.equal('https://ssp-bidder.2trk.info/bid_request/openrtb');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -178,7 +178,7 @@ describe('PrecisoAdapter', function () {
       expect(ServeNativeRequest.url).to.exist;
       expect(ServeNativeRequest.data).to.exist;
       expect(ServeNativeRequest.method).to.equal('POST');
-      expect(ServeNativeRequest.url).to.equal('https://ssp-bidder.mndtrk.com/bid_request/openrtb');
+      expect(ServeNativeRequest.url).to.equal('https://ssp-bidder.2trk.info/bid_request/openrtb');
     });
 
     it('should extract the native params', function () {

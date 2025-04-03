@@ -1,8 +1,10 @@
 import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
 import { find } from 'src/polyfill.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
+
+const NATIVE_SUFFIX = 'Ad';
 
 describe('onetag', function () {
   function createBid() {
@@ -42,6 +44,55 @@ describe('onetag', function () {
     };
   }
 
+  function createNativeBid(bidRequest) {
+    const bid = bidRequest || createBid();
+    bid.mediaTypes = bid.mediaTypes || {};
+
+    bid.mediaTypes.native = {
+      ortb: {
+        ver: '1.2',
+        assets: [{
+          id: 1,
+          required: 1,
+          title: {
+            len: 140
+          }
+        },
+        {
+          id: 2,
+          required: true,
+          img: {
+            type: 3,
+            wmin: 100,
+            hmin: 100,
+          }
+        },
+        {
+          id: 3,
+          required: true,
+          data: {
+            type: 6
+          }
+        },
+        {
+          id: 4,
+          video: {
+            mimes: ['video/mp4', 'video/x-mswmv'],
+            minduration: 5,
+            maxduration: 30,
+            protocols: [2, 3]
+          }
+        }],
+        eventtrackers: [{
+          event: 1,
+          methods: [1],
+          url: 'sample-url'
+        }]
+      }
+    };
+    return bid;
+  }
+
   function createBannerBid(bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
@@ -77,11 +128,12 @@ describe('onetag', function () {
     return createInstreamVideoBid(createBannerBid());
   }
 
-  let bannerBid, instreamVideoBid, outstreamVideoBid;
+  let bannerBid, instreamVideoBid, outstreamVideoBid, nativeBid;
   beforeEach(() => {
     bannerBid = createBannerBid();
     instreamVideoBid = createInstreamVideoBid();
     outstreamVideoBid = createOutstreamVideoBid();
+    nativeBid = createNativeBid();
   })
 
   describe('isBidRequestValid', function () {
@@ -103,6 +155,107 @@ describe('onetag', function () {
         // cleaning up the setup code, it now (correctly) fails.
         bannerBid.sizes = [];
         // expect(spec.isBidRequestValid(bannerBid)).to.be.false;
+      });
+    });
+    describe('native bidRequest', function () {
+      it('Should return true when correct native bid is passed', function () {
+        const nativeBid = createNativeBid();
+        expect(spec.isBidRequestValid(nativeBid)).to.be.true;
+      });
+      it('Should return false when native is not an object', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb is not an object', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb = 30 || 'string';
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets is not an array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.assets = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets is an empty array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.assets = [];
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] doesnt have \'id\'', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0], 'id');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] doesnt have any of \'title\', \'img\', \'data\' and \'video\' properties', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0], 'title');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] have title, but doesnt have \'len\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0].title, 'len');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is image but doesnt have \'wmin\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[1].img, 'wmin');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is image but doesnt have \'hmin\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[1].img, 'hmin');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is data but doesnt have \'type\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[2].data, 'type');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'mimes\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'mimes');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'minduration\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'minduration');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'maxduration\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'maxduration');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.assets[i] is video but doesnt have \'protocols\' property', function () {
+        const nativeBid = createNativeBid();
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'protocols');
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers is not an array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].event is not a number', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = 'test-string';
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].event is not defined', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = undefined;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].methods is not an array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = 30;
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+      });
+      it('Should return false when native.ortb.eventtrackers[i].methods is empty array', function () {
+        const nativeBid = createNativeBid();
+        nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = [];
+        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
     });
     describe('video bidRequest', function () {
@@ -171,7 +324,7 @@ describe('onetag', function () {
   describe('buildRequests', function () {
     let serverRequest, data;
     before(() => {
-      serverRequest = spec.buildRequests([bannerBid, instreamVideoBid]);
+      serverRequest = spec.buildRequests([bannerBid, instreamVideoBid, nativeBid]);
       data = JSON.parse(serverRequest.data);
     });
 
@@ -478,7 +631,7 @@ describe('onetag', function () {
   });
   describe('interpretResponse', function () {
     const request = getBannerVideoRequest();
-    const response = getBannerVideoResponse();
+    const response = getBannerVideoNativeResponse();
     const fledgeResponse = getFledgeBannerResponse();
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
@@ -508,6 +661,9 @@ describe('onetag', function () {
         } else if (dataItem.meta.mediaType === BANNER) {
           expect(dataItem).to.include.all.keys('ad');
           expect(dataItem.ad).to.be.a('string');
+        } else if (dataItem.meta.mediaType === NATIVE || dataItem.meta.mediaType === NATIVE + NATIVE_SUFFIX) {
+          expect(dataItem).to.include.all.keys('native');
+          expect(dataItem.native).to.be.an('object');
         }
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
@@ -653,7 +809,7 @@ describe('onetag', function () {
   });
 });
 
-function getBannerVideoResponse() {
+function getBannerVideoNativeResponse() {
   return {
     body: {
       nobid: false,
@@ -696,6 +852,40 @@ function getBannerVideoResponse() {
           rendererUrl: 'https://testRenderer',
           mediaType: VIDEO,
           adomain: []
+        },
+        {
+          requestId: 'nativeRequestId',
+          cpm: 10,
+          width: 300,
+          height: 600,
+          adomain: ['test-domain'],
+          creativeId: '1821',
+          mediaType: 'nativeAd',
+          native: {
+            ortb: {
+              ver: '1.2',
+              assets: [
+                {
+                  id: 1,
+                  title: {
+                    text: 'test-title',
+                    len: 9
+                  }
+                }],
+              link: {
+                url: 'test-url',
+                clicktrackers: ['test-clicktracker']
+              },
+              eventtrackers: [
+                {
+                  event: 1,
+                  method: 1,
+                  url: 'test-url'
+                }
+              ]
+            }
+          },
+          currency: 'EUR',
         }
       ]
     }
@@ -703,7 +893,7 @@ function getBannerVideoResponse() {
 }
 
 function getFledgeBannerResponse() {
-  const bannerVideoResponse = getBannerVideoResponse();
+  const bannerVideoResponse = getBannerVideoNativeResponse();
   bannerVideoResponse.body.fledgeAuctionConfigs = [
     {
       bidId: 'fledge',
