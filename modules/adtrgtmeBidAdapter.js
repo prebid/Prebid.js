@@ -161,7 +161,7 @@ export const spec = {
   aliases: [],
   supportedMediaTypes: [BANNER],
 
-  isOK: function (bid) {
+  isBidRequestValid: function (bid) {
     const params = bid.params;
     if (
       isPlainObject(params) &&
