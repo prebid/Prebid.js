@@ -170,6 +170,7 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
       },
     };
     request.regs = {
+      gpp: bidderRequest.gdprConsent.consentString,
       gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
       ext: {
         dsa: customParams.dsainfo,
