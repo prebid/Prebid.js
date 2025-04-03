@@ -12,8 +12,6 @@ export function consentManagementHook(name, loadConsentData) {
       if (error && (!consentData || !SEEN.has(error))) {
         SEEN.add(error);
         logWarn(error.message, ...(error.args || []));
-      } else if (consentData) {
-        logInfo(`${name.toUpperCase()}: User consent information already known.  Pulling internally stored information...`);
       }
       fn.call(this, reqBidsConfigObj);
     }).catch((error) => {
@@ -117,12 +115,39 @@ export function configParser(
   function msg(message) {
     return `consentManagement.${namespace} ${message}`;
   }
-  let requestBidsHook, consentDataLoaded, staticConsentData;
+  let requestBidsHook, cdLoader, staticConsentData;
+
+  function attachActivityParams(next, params) {
+    return next(Object.assign({[`${namespace}Consent`]: consentDataHandler.getConsentData()}, params));
+  }
+
+  function loadConsentData() {
+    return cdLoader().then(({error}) => ({error, consentData: consentDataHandler.getConsentData()}))
+  }
+
+  function activate() {
+    if (requestBidsHook == null) {
+      requestBidsHook = consentManagementHook(namespace, () => cdLoader());
+      getGlobal().requestBids.before(requestBidsHook, 50);
+      buildActivityParams.before(attachActivityParams);
+      logInfo(`${displayName} consentManagement module has been activated...`)
+    }
+  }
+
+  function reset() {
+    if (requestBidsHook != null) {
+      getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
+      buildActivityParams.getHooks({hook: attachActivityParams}).remove();
+      requestBidsHook = null;
+    }
+  }
+
 
   return function getConsentConfig(config) {
     config = config?.[namespace];
     if (!config || typeof config !== 'object') {
       logWarn(msg(`config not defined, exiting consent manager module`));
+      reset();
       return {};
     }
     let cmpHandler;
@@ -156,23 +181,30 @@ export function configParser(
     } else {
       setupCmp = cmpHandlers[cmpHandler];
     }
-    consentDataLoaded = lookupConsentData({
+
+    const lookup = () => lookupConsentData({
       name: displayName,
       consentDataHandler,
       setupCmp,
       cmpTimeout,
       actionTimeout,
       getNullConsent,
-    })
-    const loadConsentData = () => consentDataLoaded.then(({error}) => ({error, consentData: consentDataHandler.getConsentData()}))
-    if (requestBidsHook == null) {
-      requestBidsHook = consentManagementHook(namespace, () => consentDataLoaded);
-      getGlobal().requestBids.before(requestBidsHook, 50);
-      buildActivityParams.before((next, params) => {
-        return next(Object.assign({[`${namespace}Consent`]: consentDataHandler.getConsentData()}, params));
-      });
-    }
-    logInfo(`${displayName} consentManagement module has been activated...`)
+    });
+
+    cdLoader = (() => {
+      let cd;
+      return function () {
+        if (cd == null) {
+          cd = lookup().catch(err => {
+            cd = null;
+            throw err;
+          })
+        }
+        return cd;
+      }
+    })();
+
+    activate();
     return {
       cmpHandler,
       cmpTimeout,

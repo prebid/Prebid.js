@@ -13,7 +13,7 @@ const GVLID = 874;
 let precisoId = 'NA';
 let sharedId = 'NA';
 
-const endpoint = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
+const endpoint = 'https://ssp-bidder.2trk.info/bid_request/openrtb';
 let syncEndpoint = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 
 export const spec = {

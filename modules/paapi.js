@@ -509,7 +509,7 @@ export function markForFledge(next, bidderRequests) {
   next(bidderRequests);
 }
 
-export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals'];
+export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals', 'perBuyerCurrencies', 'perBuyerCumulativeTimeouts'];
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [

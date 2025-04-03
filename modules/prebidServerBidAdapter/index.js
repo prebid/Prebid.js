@@ -503,14 +503,17 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .filter(uniques);
 
   const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
-  const requestJson = request && JSON.stringify(request);
-  logInfo('BidRequest: ' + requestJson);
-  const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
-  const customHeaders = s2sBidRequest?.s2sConfig?.customHeaders ?? {};
-  if (request && requestJson && endpointUrl) {
+  const requestData = {
+    endpointUrl: getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+    requestJson: request && JSON.stringify(request),
+    customHeaders: s2sBidRequest?.s2sConfig?.customHeaders ?? {},
+  };
+  events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
+  logInfo('BidRequest: ' + requestData);
+  if (request && requestData.requestJson && requestData.endpointUrl) {
     const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
-      endpointUrl,
+      requestData.endpointUrl,
       {
         success: function (response) {
           networkDone();
@@ -537,12 +540,12 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           onError.apply(this, arguments);
         }
       },
-      requestJson,
+      requestData.requestJson,
       {
         contentType: 'text/plain',
         withCredentials: true,
         browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
-        customHeaders
+        customHeaders: requestData.customHeaders
       }
     );
   } else {

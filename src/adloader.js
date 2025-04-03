@@ -10,8 +10,6 @@ const _approvedLoadExternalJSList = [
   // Prebid maintained modules:
   'debugging',
   'outstream',
-  // Bid Modules - only exception is on rendering edge cases, to clean up in Prebid 10:
-  'showheroes-bs',
   // RTD modules:
   'aaxBlockmeter',
   'adagio',
@@ -38,6 +36,7 @@ const _approvedLoadExternalJSList = [
   'wurfl',
   'nodalsAi',
   'anonymised',
+  'optable',
   // UserId Submodules
   'justtag',
   'tncId',

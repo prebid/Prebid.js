@@ -14,6 +14,9 @@ import * as adServer from 'src/adserver.js';
 import {hook} from '../../../src/hook.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
+import { getVastXml } from '../../../modules/dfpAdServerVideo.js';
+import { server } from '../../mocks/xhr.js';
+import { generateUUID } from '../../../src/utils.js';
 
 describe('The DFP video support module', function () {
   before(() => {
@@ -705,5 +708,166 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('existing_key', 'existing_value');
     expect(customParams).to.have.property('other_key', 'other_value');
     expect(customParams).to.have.property('hb_rand', 'random');
+  });
+
+  it('should return unmodified fetched gam vast wrapper if local cache is not used', (done) => {
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[https://endpoint.com]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+    server.respondWith(gamWrapper);
+
+    getVastXml({})
+      .then((finalGamWrapper) => {
+        expect(finalGamWrapper).to.deep.eql(gamWrapper);
+        done();
+      });
+
+    server.respond();
+  });
+
+  it('should substitue vast ad tag uri in gam wrapper with blob content in data uri format', (done) => {
+    config.setConfig({cache: { useLocal: true }});
+    const url = 'https://pubads.g.doubleclick.net/gampad/ads'
+    const blobContent = '<VAST version="3.0>EXAMPLE VAST BLOB</VAST>';
+    const blobUrl = URL.createObjectURL(new Blob([blobContent], { type: 'text/xml' }));
+    const uuid = generateUUID();
+    const localMap = new Map([[uuid, blobUrl]]);
+
+    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuid;
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+
+    const dataUrl = `data://text/xml;base64,${btoa(blobContent)}`;
+    const expectedOutput = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+         `<Wrapper>` +
+            `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${dataUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+
+    server.respondWith(/^https:\/\/pubads.*/, gamWrapper);
+    server.respondWith(/^blob:http:*/, blobContent);
+
+    getVastXml({url, adUnit: {}, bid: {}}, localMap)
+      .then((vastXml) => {
+        expect(vastXml).to.deep.eql(expectedOutput);
+        done();
+      })
+      .finally(config.resetConfig);
+
+    server.respond();
+
+    let timeout;
+
+    const waitForSecondRequest = () => {
+      if (server.requests.length >= 2) {
+        server.respond();
+        clearTimeout(timeout);
+      } else {
+        timeout = setTimeout(waitForSecondRequest, 50);
+      }
+    };
+
+    waitForSecondRequest();
+  });
+
+  it('should return unmodified gam vast wrapper if it doesn\'nt contain locally cached uuid', (done) => {
+    config.setConfig({cache: { useLocal: true }});
+    const uuidNotPresentInCache = '4536229c-eddb-45b3-a919-89d889e925aa';
+    const uuidPresentInCache = '64fcdc86-5325-4750-bc60-02f63b23175a';
+    const bidCacheUrl = 'https://prebid-test-cache-server.org/cache?uuid=' + uuidNotPresentInCache;
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+    const localCacheMap = new Map([[uuidPresentInCache, 'blob:http://localhost:9999/uri']]);
+    server.respondWith(gamWrapper);
+
+    getVastXml({}, localCacheMap)
+      .then((finalGamWrapper) => {
+        expect(finalGamWrapper).to.deep.eql(gamWrapper);
+        done();
+      })
+      .finally(config.resetConfig)
+
+    server.respond();
+  });
+
+  it('should return unmodified gam vast wrapper if it contains more than 1 saved uuids', (done) => {
+    config.setConfig({cache: { useLocal: true }});
+    const uuid1 = '4536229c-eddb-45b3-a919-89d889e925aa';
+    const uuid2 = '64fcdc86-5325-4750-bc60-02f63b23175a';
+    const bidCacheUrl = `https://prebid-test-cache-server.org/cache?uuid=${uuid1}&uuid_alt=${uuid2}`
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[${bidCacheUrl}]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+    const localCacheMap = new Map([
+      [uuid1, 'blob:http://localhost:9999/uri'],
+      [uuid2, 'blob:http://localhost:9999/uri'],
+    ]);
+    server.respondWith(gamWrapper);
+
+    getVastXml({}, localCacheMap)
+      .then((finalGamWrapper) => {
+        expect(finalGamWrapper).to.deep.eql(gamWrapper);
+        done();
+      })
+      .finally(config.resetConfig)
+
+    server.respond();
+  });
+
+  it('should return returned unmodified gam vast wrapper if exception has been thrown', (done) => {
+    config.setConfig({cache: { useLocal: true }});
+    const gamWrapper = (
+      `<VAST version="3.0">` +
+        `<Ad>` +
+          `<Wrapper>` +
+           `<AdSystem>prebid.org wrapper</AdSystem>` +
+            `<VASTAdTagURI><![CDATA[https://endpoint.com]]></VASTAdTagURI>` +
+          `</Wrapper>` +
+       `</Ad>` +
+      `</VAST>`
+    );
+    server.respondWith(gamWrapper);
+    getVastXml({}, null) // exception thrown when passing null as localCacheMap
+      .then((finalGamWrapper) => {
+        expect(finalGamWrapper).to.deep.eql(gamWrapper);
+        done();
+      })
+      .finally(config.resetConfig);
+    server.respond();
   });
 });
