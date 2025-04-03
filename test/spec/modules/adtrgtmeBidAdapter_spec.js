@@ -6,7 +6,7 @@ const DEFAULT_SID = '1220291391';
 const DEFAULT_ZID = '1836455615';
 const DEFAULT_PIXEL_URL = 'https://cdn.adtarget.me/libs/1x1.gif';
 const DEFAULT_BANNER_URL = 'https://cdn.adtarget.me/libs/banner/300x250.jpg';
-const BIDDER_VERSION = '1.0.5';
+const BIDDER_VERSION = '1.0.6';
 const PREBIDJS_VERSION = '$prebid.version$';
 
 const createBidRequest = ({bidId, adUnitCode, bidOverride, zid, ortb2}) => {
