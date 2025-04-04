@@ -318,7 +318,7 @@ describe('Pubmatic RTD Provider', () => {
       expect(logMessageStub.getCall(0).args[0]).to.include('floors data is empty');
     });
 
-    it('should log message when data is an empty object', () => {
+    it('should log message when data is an empty object ', () => {
       setFloorsConfig({});
 
       expect(confStub.called).to.be.false;
