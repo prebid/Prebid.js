@@ -643,6 +643,15 @@ export const spec = {
         bidRequest.gpid = gpid;
       }
 
+      let instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      if (instl !== undefined) {
+        bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
+      }
+      let rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      if (rwdd !== undefined) {
+        bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
+      }
+
       // features are added by the adagioRtdProvider.
       const rawFeatures = {
         ...deepAccess(bidRequest, 'ortb2.site.ext.data.adg_rtd.features', {}),
@@ -668,6 +677,8 @@ export const spec = {
         nativeParams: bidRequest.nativeParams,
         score: bidRequest.score,
         transactionId: bidRequest.transactionId,
+        instl: bidRequest.instl,
+        rwdd: bidRequest.rwdd,
       }
 
       return adUnit;
