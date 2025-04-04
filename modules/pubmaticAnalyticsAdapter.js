@@ -218,36 +218,38 @@ function getRootLevelDetails(auctionCache, auctionId) {
   }
 }
 
-function createBidsLoggerPayload(auctionCache, auctionId) {
-  return {
-    sd: auctionCache.adUnitCodes,
-    fd: getFeatureLevelDetails(auctionCache),
-    rd: getRootLevelDetails(auctionCache, auctionId)
-  };
-}
-
 function executeBidsLoggerCall(event, highestCpmBids) {
   const { auctionId } = event;
   const auctionCache = cache.auctions[auctionId];
   if (!auctionCache || auctionCache.sent) return;
+  const country = event.bidderRequests?.length > 0
+    ? event.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext?.ctr || ''
+    : '';
   // Fetching slotinfo at event level results to undefined so Running loop over the codes to get the GPT slot name.
-  Object.values(auctionCache?.adUnitCodes).forEach(adUnit => {
-    Object.values(adUnit?.bids).forEach(bidArray => {
-      for (let bidId in adUnit?.bids) {
-        adUnit?.bids[bidId].forEach(bid => {
-          bid['owAdUnitId'] = getGptSlotInfoForAdUnitCode(bid?.adUnit?.adUnitCode)?.gptSlot || bid.adUnit?.adUnitCode;   
-          const winBid = highestCpmBids.filter(cpmbid => cpmbid.adId === bid?.adId)[0]?.adId;
-          auctionCache.adUnitCodes[bid?.adUnitId].bidWonAdId = auctionCache.adUnitCodes[bid?.adUnitId].bidWonAdId ? auctionCache.adUnitCodes[bid?.adUnitId].bidWonAdId : winBid;
-          bid.mi = bid?.bidResponse ? bid.bidResponse.mi : (window.matchedimpressions && window.matchedimpressions[bid.bidder]);
-          const prebidBidId = bid.bidResponse && bid.bidResponse.prebidBidId;
-          bid.bidId = prebidBidId || bid.bidId || bidId;
-          bid.bidderCode = bid.bidderCode || bid.bidder;
-        })
-      }
-    });
+  Object.entries(auctionCache?.adUnitCodes || {}).forEach(([adUnitCode, adUnit]) => {
+    let origAdUnit = getAdUnit(cache.auctions[auctionId]?.origAdUnits, adUnitCode) || {};
+    auctionCache.adUnitCodes[adUnitCode].adUnitId = origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitCode)?.gptSlot || adUnitCode;
+    
+    for (let bidId in adUnit?.bids) {
+      adUnit?.bids[bidId].forEach(bid => {
+        bid['owAdUnitId'] = getGptSlotInfoForAdUnitCode(bid?.adUnit?.adUnitCode)?.gptSlot || bid.adUnit?.adUnitCode;   
+        const winBid = highestCpmBids.filter(cpmbid => cpmbid.adId === bid?.adId)[0]?.adId;
+        auctionCache.adUnitCodes[bid?.adUnitId].bidWonAdId = auctionCache.adUnitCodes[bid?.adUnitId].bidWonAdId ? auctionCache.adUnitCodes[bid?.adUnitId].bidWonAdId : winBid;
+        const prebidBidId = bid.bidResponse && bid.bidResponse.prebidBidId;
+        bid.bidId = prebidBidId || bid.bidId || bidId;
+        bid.bidderCode = bid.bidderCode || bid.bidder;
+        let adapterName = getAdapterNameForAlias(bid.adapterCode || bid.bidder);
+        bid.adapterName = adapterName;
+        bid.bidder = adapterName;
+      })
+    }
   });
 
-  const payload = createBidsLoggerPayload(auctionCache, auctionId);
+  const payload = {
+    sd: auctionCache.adUnitCodes,
+    fd: getFeatureLevelDetails(auctionCache),
+    rd:{ctr:  country && country !== '' ? country : '', ...getRootLevelDetails(auctionCache, auctionId)}
+  };
   auctionCache.sent = true;
 
   const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
