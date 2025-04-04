@@ -576,6 +576,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.ft).to.equal(1);
       expect(data.dm).to.equal(DISPLAY_MANAGER);
       expect(data.dmv).to.equal('$prebid.version$' || '-1');
+      expect(data.ctr).not.to.be.null;
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       expect(data.ffs).to.equal(1);
@@ -796,6 +797,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.ft).to.equal(1);
       expect(data.dm).to.equal(DISPLAY_MANAGER);
       expect(data.dmv).to.equal('$prebid.version$' || '-1');
+      expect(data.ctr).not.to.be.null;
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       expect(data.ffs).to.equal(1);
@@ -877,6 +879,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.ft).to.equal(1);
       expect(data.dm).to.equal(DISPLAY_MANAGER);
       expect(data.dmv).to.equal('$prebid.version$' || '-1');
+      expect(data.ctr).not.to.be.null;
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -924,6 +927,7 @@ describe('pubmatic analytics adapter', function () {
       expect(requests.length).to.equal(2); // 1 logger and 1 win-tracker
       let request = requests[1]; // logger is executed late, trackers execute first
       let data = getLoggerJsonFromRequest(request.requestBody);
+      expect(data.ctr).not.to.be.null;
       expect(data.tgid).to.equal(0);// test group id should be an INT between 0-15 else set to 0
       expect(data.ffs).to.equal(1);
       expect(data.fsrc).to.equal(2);
@@ -1445,6 +1449,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.dm).to.equal(DISPLAY_MANAGER);
       expect(data.dmv).to.equal('$prebid.version$' || '-1');
+      expect(data.ctr).not.to.be.null;
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
@@ -1575,6 +1580,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.dm).to.equal(DISPLAY_MANAGER);
       expect(data.dmv).to.equal('$prebid.version$' || '-1');
+      expect(data.ctr).not.to.be.null;
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
