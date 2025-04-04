@@ -79,7 +79,7 @@ import {
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
-import {batchAndStore} from './videoCache.js';
+import {batchAndStore, storeLocally} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
@@ -92,7 +92,7 @@ import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
 import adapterManager from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
-import {defer, GreedyPromise} from './utils/promise.js';
+import {defer, PbPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -547,7 +547,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       return addBid;
     })(),
     adapterDone: function () {
-      responsesReady(GreedyPromise.resolve()).finally(() => adapterDone.call(this));
+      responsesReady(PbPromise.resolve()).finally(() => adapterDone.call(this));
     }
   }
 }
@@ -571,9 +571,17 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   })?.video;
   const context = videoMediaType && videoMediaType?.context;
   const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
+  const {
+    useLocal,
+    url: cacheUrl,
+    ignoreBidderCacheKey
+  } = config.getConfig('cache') || {};
 
-  if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
-    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
+  if (useLocal) {
+    // stores video bid vast as local blob in the browser
+    storeLocally(bidResponse);
+  } else if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
+    if (!bidResponse.videoCacheKey || ignoreBidderCacheKey) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
     } else if (!bidResponse.vastUrl) {
@@ -581,6 +589,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
       addBid = false;
     }
   }
+
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();

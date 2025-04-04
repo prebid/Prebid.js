@@ -299,7 +299,6 @@ function makeTimer(now, cb) {
   let done = false;
   function stopTiming() {
     if (!done) {
-      // eslint-disable-next-line standard/no-callback-literal
       cb(now() - start);
       done = true;
     }

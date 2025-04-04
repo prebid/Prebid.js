@@ -20,6 +20,7 @@ const FLOOR_VALUES = {
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
 const VENDOR_OPENWRAP = 'openwrap';
+const DISPLAY_MANAGER = 'Prebid.js';
 const SEND_TIMEOUT = 2000;
 const END_POINT_HOST = 'https://t.pubmatic.com/';
 const END_POINT_BID_LOGGER = END_POINT_HOST + 'wl?';
@@ -48,6 +49,22 @@ const MEDIATYPE = {
   VIDEO: 1,
   NATIVE: 2
 }
+
+// TODO : Remove - Once BM calculation moves to Server Side
+const BROWSER_MAP = [
+  { value: /(firefox)\/([\w\.]+)/i, key: 12 }, // Firefox
+  { value: /\b(?:crios)\/([\w\.]+)/i, key: 1 }, // Chrome for iOS
+  { value: /edg(?:e|ios|a)?\/([\w\.]+)/i, key: 2 }, // Edge
+  { value: /(opera)(?:.+version\/|[\/ ]+)([\w\.]+)/i, key: 3 }, // Opera
+  { value: /(?:ms|\()(ie) ([\w\.]+)/i, key: 4 }, // Internet Explorer
+  { value: /fxios\/([-\w\.]+)/i, key: 5 }, // Firefox for iOS
+  { value: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, key: 6 }, // Facebook In-App Browser
+  { value: / wv\).+(chrome)\/([\w\.]+)/i, key: 7 }, // Chrome WebView
+  { value: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, key: 8 }, // Android Browser
+  { value: /(chrome|chromium|crios)\/v?([\w\.]+)/i, key: 9 }, // Chrome
+  { value: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, key: 10 }, // Safari Mobile
+  { value: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, key: 11 }, // Safari
+];
 
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
@@ -201,6 +218,17 @@ function getDevicePlatform() {
     }
   } catch (ex) {}
   return deviceType;
+}
+
+// TODO : Remove - Once BM calculation moves to Server Side
+function getBrowserType() {
+  const userAgent = navigator?.userAgent;
+  let browserIndex = userAgent == null ? -1 : 0;
+
+  if (userAgent) {
+    browserIndex = BROWSER_MAP.find(({ value }) => value.test(userAgent))?.key || 0;
+  }
+  return browserIndex;
 }
 
 function getValueForKgpv(bid, adUnitId) {
@@ -408,6 +436,10 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
+  const user = e.bidderRequests?.length > 0
+    ? e.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext || {}
+    : {};
+
   if (!auctionCache || auctionCache.sent) {
     return;
   }
@@ -423,7 +455,10 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
-  outputObj['pbv'] = '$prebid.version$' || '-1';
+  outputObj['dm'] = DISPLAY_MANAGER;
+  outputObj['dmv'] = '$prebid.version$' || '-1';
+  outputObj['bm'] = getBrowserType();
+  outputObj['ctr'] = Object.keys(user)?.length ? user.ctr : '';
 
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData?.floorRequestData);
@@ -516,6 +551,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&en=' + enc(winningBid.bidResponse?.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse?.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
+  pixelURL += '&dm=' + enc(DISPLAY_MANAGER);
+  pixelURL += '&dmv=' + enc('$prebid.version$' || '-1');
   pixelURL += '&origbidid=' + enc(winningBid?.bidResponse?.partnerImpId || winningBid?.bidResponse?.prebidBidId || winningBid.bidId);
   pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
   const ds = winningBid.bidResponse?.meta ? getMetadata(winningBid.bidResponse.meta)?.ds : undefined;
