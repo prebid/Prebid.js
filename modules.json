@@ -9,6 +9,7 @@
     "carbonAnalyticsAdapter",
     "concertBidAdapter",
     "connectIdSystem",
+    "consentManagementUsp",
     "consentManagementGpp",
     "consentManagementTcf",
     "conversantBidAdapter",
