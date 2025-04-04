@@ -7,6 +7,7 @@ import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
 import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
+import { getWinDimensions } from '../../../src/utils';
 
 describe('adnuntiusBidAdapter', function () {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
@@ -48,9 +49,9 @@ describe('adnuntiusBidAdapter', function () {
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const win = getWindowTop() || window;
-  const screen = win.screen.availWidth + 'x' + win.screen.availHeight;
-  const viewport = win.innerWidth + 'x' + win.innerHeight;
+  const winDimensions = getWinDimensions();
+  const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
+  const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
   const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&screen=${screen}&viewport=${viewport}`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&screen=${screen}&viewport=${viewport}&userId=${usi}`;

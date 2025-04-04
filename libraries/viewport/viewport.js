@@ -1,11 +1,10 @@
-import {getWindowTop} from '../../src/utils.js';
+import {getWinDimensions, getWindowTop} from '../../src/utils.js';
 
 export function getViewportCoordinates() {
   try {
     const win = getWindowTop();
-    let { scrollY: top, scrollX: left, innerHeight, innerWidth } = win;
-    innerHeight = innerHeight || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-    innerWidth = innerWidth || win.document.documentElement.clientHeight || win.document.body.clientHeight
+    let { scrollY: top, scrollX: left } = win;
+    const { height: innerHeight, width: innerWidth } = getViewportSize();
     return { top, right: left + innerWidth, bottom: top + innerHeight, left };
   } catch (e) {
     return {};
@@ -13,11 +12,10 @@ export function getViewportCoordinates() {
 }
 
 export function getViewportSize() {
+  const windowDimensions = getWinDimensions();
   try {
-    const win = getWindowTop();
-    let { innerHeight, innerWidth } = win;
-    innerHeight = innerHeight || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-    innerWidth = innerWidth || win.document.documentElement.clientHeight || win.document.body.clientHeight
+    const innerHeight = windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight || windowDimensions.document.body.clientHeight || 0;
+    const innerWidth = windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth || windowDimensions.document.body.clientWidth || 0;
     return { width: innerWidth, height: innerHeight };
   } catch (e) {
     return {};

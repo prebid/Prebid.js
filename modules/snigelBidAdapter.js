@@ -4,6 +4,7 @@ import {BANNER} from '../src/mediaTypes.js';
 import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -31,6 +32,7 @@ export const spec = {
   },
 
   buildRequests: function (bidRequests, bidderRequest) {
+    const { width: w, height: h } = getViewportSize();
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     return {
       method: 'POST',
@@ -61,8 +63,8 @@ export const spec = {
         page: getPage(bidderRequest),
         topframe: inIframe() === true ? 0 : 1,
         device: {
-          w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-          h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
+          w,
+          h,
           dnt: getDNT() ? 1 : 0,
           language: getLanguage(),
         },

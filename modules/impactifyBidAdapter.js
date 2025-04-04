@@ -1,6 +1,6 @@
 'use strict';
 
-import { deepAccess, deepSetValue, generateUUID, isPlainObject } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, getWinDimensions, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
@@ -150,8 +150,8 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   if (!request.device) request.device = {};
   if (!request.site) request.site = {};
   request.device = {
-    w: window.innerWidth,
-    h: window.innerHeight,
+    w: getWinDimensions().innerWidth,
+    h: getWinDimensions().innerHeight,
     devicetype: helpers.getDeviceType(),
     ua: navigator.userAgent,
     js: 1,

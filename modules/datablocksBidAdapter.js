@@ -1,4 +1,4 @@
-import {deepAccess, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
+import {deepAccess, getWinDimensions, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -203,14 +203,15 @@ export const spec = {
   get_client_info: function () {
     let botTest = new BotClientTests();
     let win = getWindowTop();
+    const windowDimensions = getWinDimensions();
     return {
-      'wiw': win.innerWidth,
-      'wih': win.innerHeight,
-      'saw': screen ? screen.availWidth : null,
-      'sah': screen ? screen.availHeight : null,
+      'wiw': windowDimensions.innerWidth,
+      'wih': windowDimensions.innerHeight,
+      'saw': windowDimensions.screen.availWidth,
+      'sah': windowDimensions.screen.availHeight,
       'scd': screen ? screen.colorDepth : null,
-      'sw': screen ? screen.width : null,
-      'sh': screen ? screen.height : null,
+      'sw': windowDimensions.screen.width,
+      'sh': windowDimensions.screen.height,
       'whl': win.history.length,
       'wxo': win.pageXOffset,
       'wyo': win.pageYOffset,

@@ -9,7 +9,7 @@ import {
   logInfo,
   triggerPixel,
   uniques,
-  deepSetValue
+  deepSetValue,
 } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -22,6 +22,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {ADPOD} from '../src/mediaTypes.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
@@ -206,8 +207,9 @@ class PageDetail {
   }
 
   _getWindowSize() {
-    let w = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || -1;
-    let h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || -1;
+    const { width, height } = getViewportSize();
+    let w = width || -1;
+    let h = height || -1;
     return `${w}x${h}`;
   }
 

@@ -6,7 +6,7 @@
 
 import {
   deepClone,
-  getWindowTop,
+  getWinDimensions,
   isArray,
   isArrayOfNums,
   isValidMediaTypes,
@@ -331,14 +331,9 @@ export function getFilteredMediaTypes(mediaTypes) {
     native: undefined
   }
 
-  try {
-    activeViewportWidth = getWindowTop().innerWidth;
-    activeViewportHeight = getWindowTop().innerHeight;
-  } catch (e) {
-    logWarn(`SizeMappingv2:: Unfriendly iframe blocks viewport size to be evaluated correctly`);
-    activeViewportWidth = window.innerWidth;
-    activeViewportHeight = window.innerHeight;
-  }
+  activeViewportWidth = getWinDimensions().innerWidth;
+  activeViewportHeight = getWinDimensions().innerHeight;
+
   const activeViewport = [activeViewportWidth, activeViewportHeight];
   Object.keys(mediaTypes).map(mediaType => {
     const sizeConfig = mediaTypes[mediaType].sizeConfig;

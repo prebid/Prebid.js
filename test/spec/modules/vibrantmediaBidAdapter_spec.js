@@ -3,6 +3,7 @@ import {spec} from 'modules/vibrantmediaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
+import { getWinDimensions } from '../../../src/utils';
 
 const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com/prebid';
 
@@ -545,9 +546,9 @@ describe('VibrantMediaBidAdapter', function () {
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
 
-      expect(payload.window).to.exist;
-      expect(payload.window.width).to.equal(window.innerWidth);
-      expect(payload.window.height).to.equal(window.innerHeight);
+      expect(payload.window).to.exist; 
+      expect(payload.window.width).to.equal(getWinDimensions().innerWidth);
+      expect(payload.window.height).to.equal(getWinDimensions().innerHeight);
     });
 
     it('should add the top-level sizes to the bid request, if present', function () {

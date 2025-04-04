@@ -1,6 +1,7 @@
 import { spec } from 'modules/marsmediaBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
+import { internal, resetWinDimensions } from '../../../src/utils';
 
 var marsAdapter = spec;
 
@@ -32,7 +33,9 @@ describe('marsmedia adapter tests', function () {
       document: {
         visibilityState: 'visible'
       },
-
+      location: {
+        href: 'http://location'
+      },
       innerWidth: 800,
       innerHeight: 600
     };
@@ -520,10 +523,13 @@ describe('marsmedia adapter tests', function () {
 
     context('when element is partially in view', function() {
       it('returns percentage', function() {
+        sandbox.stub(internal, 'getWindowTop').returns(win);
+        resetWinDimensions();
         Object.assign(element, { width: 800, height: 800 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
         expect(openrtbRequest.imp[0].ext.viewability).to.equal(75);
+        internal.getWindowTop.restore();
       });
     });
 

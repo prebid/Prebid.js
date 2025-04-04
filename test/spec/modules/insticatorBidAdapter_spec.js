@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
+import { getWinDimensions } from '../../../src/utils.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -387,8 +388,8 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site.page).not.to.be.empty;
       expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
       expect(data.device).to.be.an('object');
-      expect(data.device.w).to.equal(window.innerWidth);
-      expect(data.device.h).to.equal(window.innerHeight);
+      expect(data.device.w).to.equal(getWinDimensions().innerWidth);
+      expect(data.device.h).to.equal(getWinDimensions().innerHeight);
       expect(data.device.js).to.equal(1);
       expect(data.device.ext).to.be.an('object');
       expect(data.device.ext.localStorage).to.equal(true);

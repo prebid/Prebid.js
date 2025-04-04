@@ -4,6 +4,7 @@ import {TARGETING_KEYS} from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
+import { debounce } from '../../src/utils.js';
 
 var assert = require('assert');
 
@@ -1325,3 +1326,24 @@ describe('memoize', () => {
     })
   });
 })
+
+describe('debounce', () => {
+  let clock;
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers();
+  });
+
+  afterEach(() => {
+    clock.restore();
+  });
+
+  it('should delay function execution', () => {
+    const fn = sinon.stub();
+    const debouncedFn = debounce(fn, 500);
+    debouncedFn();
+    sinon.assert.notCalled(fn);
+    clock.tick(500);
+    sinon.assert.calledOnce(fn);
+  });
+});

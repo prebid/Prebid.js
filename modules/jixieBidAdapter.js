@@ -1,4 +1,4 @@
-import {deepAccess, getDNT, isArray, logWarn, isFn, isPlainObject, logError, logInfo} from '../src/utils.js';
+import {deepAccess, getDNT, isArray, logWarn, isFn, isPlainObject, logError, logInfo, getWinDimensions} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -104,8 +104,8 @@ function fetchIds_(cfg) {
 // Now changed to an object. yes the backend is able to handle it.
 function getDevice_() {
   const device = config.getConfig('device') || {};
-  device.w = device.w || window.innerWidth;
-  device.h = device.h || window.innerHeight;
+  device.w = device.w || getWinDimensions().innerWidth;
+  device.h = device.h || getWinDimensions().innerHeight;
   device.ua = device.ua || navigator.userAgent;
   device.dnt = getDNT() ? 1 : 0;
   device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';

@@ -1,4 +1,4 @@
-import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
+import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
@@ -74,8 +74,8 @@ export const spec = {
       devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: getHLen(),
-      viewportHeight: topWindow.visualViewport?.height,
-      viewportWidth: topWindow.visualViewport?.width,
+      viewportHeight: getWinDimensions().visualViewport.height,
+      viewportWidth: getWinDimensions().visualViewport.width,
       hardwareConcurrency: getHC(),
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',

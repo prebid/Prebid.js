@@ -2,7 +2,7 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl, extractDomainFromHost} from '../src/utils.js';
+import {deepAccess, parseUrl, extractDomainFromHost, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -67,8 +67,9 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    const windowDimensions = getWinDimensions();
+    const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
+    const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
     const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',
