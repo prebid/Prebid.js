@@ -6,7 +6,7 @@ import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { addFPDToBidderRequest } from '../../helpers/fpd';
 const utils = require('src/utils');
 
-const ENDPOINT = 'https://hb.beop.io/bid';
+const ENDPOINT = 'https://hb.collectiveaudience.co/bid';
 
 let validBid = {
   'bidder': 'beop',
@@ -239,7 +239,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onTimeout({params: {accountId: '5a8af500c9e77c00017e4cad'}, timeout: 2000});
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=timeout');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('pid=5a8af500c9e77c00017e4cad');
@@ -251,7 +251,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onBidWon({params: {accountId: '5a8af500c9e77c00017e4cad'}, cpm: 1.2});
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won');
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
@@ -262,7 +262,7 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onBidWon({params: [{accountId: '5a8af500c9e77c00017e4cad'}], cpm: 1.2});
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.collectiveaudience.co');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won');
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
@@ -350,4 +350,64 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.fg).to.exist;
     })
   })
+  describe('getUserSyncs', function () {
+    it('should return iframe sync when iframeEnabled and syncFrame provided', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: false };
+      const serverResponses = [{ body: { sync_frames: ['https://example.com/sync_frame', 'https://example2.com/sync_second'] } }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://example.com/sync_frame');
+    });
+
+    it('should return pixel syncs when pixelEnabled and syncPixels provided', function () {
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+      const serverResponses = [{
+        body: {
+          sync_pixels: [
+            'https://example.com/pixel1',
+            'https://example.com/pixel2'
+          ]
+        }
+      }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('image');
+      expect(syncs[0].url).to.equal('https://example.com/pixel1');
+      expect(syncs[1].url).to.equal('https://example.com/pixel2');
+    });
+
+    it('should return both iframe and pixel syncs when both options are enabled', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponses = [{
+        body: {
+          sync_frames: ['https://example.com/sync_frame'],
+          sync_pixels: ['https://example.com/pixel1']
+        }
+      }];
+
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+
+      expect(syncs).to.have.length(2);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[1].type).to.equal('image');
+    });
+
+    it('should return empty array when no serverResponses', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const syncs = spec.getUserSyncs(syncOptions, []);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+
+    it('should return empty array when no syncFrame or syncPixels provided', function () {
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const serverResponses = [{ body: {} }];
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses);
+      expect(syncs).to.be.an('array').that.is.empty;
+    });
+  });
 });
