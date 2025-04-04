@@ -59,12 +59,16 @@ const getUid = () => {
   return null;
 };
 
-const ensureUid = () => {
-  const existingUid = getUid() || null;
+const ensureUid = (gdprConsent) => {
+  // Check if the user has given consent for purpose 1
+  if (!gdprConsent || !hasPurpose1Consent(gdprConsent)) return null;
+  // Check if the UID already exists
+  const existingUid = getUid();
   if (existingUid) return existingUid;
-  const newUid = generateUUID();
-  setUid(newUid);
-  return newUid;
+  // Generate a new UID if it doesn't exist
+  const uid = generateUUID();
+  setUid(uid);
+  return uid;
 };
 
 /* Custom extensions */
@@ -128,12 +132,14 @@ const converter = ortbConverter({
     const { bidRequests = [] } = context;
     const firstBidRequest = bidRequests?.[0];
 
+    // Read gdpr consent data
+    const gdprConsent = bidderRequest?.gdprConsent;
+
     // Apply custom extensions to the request
     if (bidRequests.length > 0) {
       ortbRequest.ext = ortbRequest.ext || {};
       ortbRequest.ext[BIDDER_CODE] = ortbRequest.ext[BIDDER_CODE] || {};
-      ortbRequest.ext[BIDDER_CODE].uid = ensureUid();
-      ortbRequest.ext[BIDDER_CODE].targetings = firstBidRequest?.params?.customTargeting || {};
+      ortbRequest.ext[BIDDER_CODE].uid = ensureUid(gdprConsent);
       ortbRequest.ext[BIDDER_CODE].publisherId = firstBidRequest?.params?.publisherId;
       ortbRequest.ext[BIDDER_CODE].mockResponse = firstBidRequest?.params?.mockResponse || false;
     }
@@ -213,7 +219,7 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
-    const uid = ensureUid();
+    const uid = ensureUid(gdprConsent);
     if (hasPurpose1Consent(gdprConsent)) {
       let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
       if (type) {
