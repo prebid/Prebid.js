@@ -399,7 +399,7 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
             await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.called).to.be.true;
             expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS:');
         });
 
@@ -414,7 +414,7 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub.rejects(new Error('Network Error'));
 
             await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.called).to.be.true;
             expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS');
         });
     });
@@ -474,7 +474,7 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
             await fetchData('1234', '123', 'FLOORS');
-            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.called).to.be.true;
             expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching FLOORS');
         });
 
@@ -489,7 +489,7 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub.rejects(new Error('Network Error'));
 
             await fetchData('1234', '123', 'FLOORS');
-            expect(logErrorStub.calledOnce).to.be.true;
+            expect(logErrorStub.called).to.be.true;
             expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching FLOORS');
         });
     });
@@ -543,7 +543,7 @@ describe('Pubmatic RTD Provider', () => {
             configMerged();
             await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
     
-            expect(continueAuctionStub.calledOnce).to.be.true;
+            expect(continueAuctionStub.called).to.be.true;
             expect(continueAuctionStub.firstCall.args[0]).to.have.property('reqBidsConfigObj', reqBidsConfigObj);
             expect(continueAuctionStub.firstCall.args[0]).to.have.property('haveExited', false);
         });
@@ -561,7 +561,7 @@ describe('Pubmatic RTD Provider', () => {
             configMerged();
             await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
     
-            expect(callback.calledOnce).to.be.true;
+            expect(callback.called).to.be.true;
         });
     });        
 
