@@ -250,6 +250,10 @@ export function getWindowLocation() {
   return window.location;
 }
 
+export function getDocument() {
+  return document;
+}
+
 export function canAccessWindowTop() {
   try {
     if (internal.getWindowTop().location.href) {
