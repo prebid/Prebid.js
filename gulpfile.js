@@ -51,7 +51,7 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['build'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
@@ -359,6 +359,16 @@ function bundle(dev, moduleArr) {
     .pipe(gulpif(sm, sourcemaps.write('.')));
 }
 
+function setupDist() {
+  return gulp.src(['build/dist/**/*'])
+    .pipe(rename(function (path) {
+      if (path.dirname === '.' && path.basename === 'prebid') {
+        path.dirname = 'not-for-prod';
+      }
+    }))
+    .pipe(gulp.dest('dist'))
+}
+
 // Run the unit tests.
 //
 // By default, this runs in headless chrome.
@@ -567,7 +577,9 @@ gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, precompile(), 'build-bundle-prod', updateCreativeExample));
+// npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
+gulp.task('setup-npmignore', run("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('build', gulp.series(clean, precompile(), 'build-bundle-prod', updateCreativeExample, setupDist, 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev', watch, test)));

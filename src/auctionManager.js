@@ -21,6 +21,7 @@
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
  * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
  * @property {function(): void} clearAllAuctions - clear all auctions for testing
+ * @property {function(*): *} onExpiry
  * @property {AuctionIndex} index
  */
 
