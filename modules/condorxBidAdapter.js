@@ -135,7 +135,7 @@ export const bidderSpec = {
             url = new URL(getBidderRequestUrl(bidderRequest))
           }
           subid = url.hostname;
-        }catch(e){
+        } catch (e) {
           subid = widgetId;
         }
         const bidId = bidRequest.bidId;
