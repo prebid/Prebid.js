@@ -14,6 +14,7 @@ window.addEventListener('unhandledrejection', function (ev) {
   console.error('Unhandled rejection:', ev.reason);
 })
 
+require('test/helpers/global_hooks.js');
 require('test/helpers/consentData.js');
 require('test/helpers/prebidGlobal.js');
 require('test/mocks/adloaderStub.js');
