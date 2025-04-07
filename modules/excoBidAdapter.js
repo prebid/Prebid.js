@@ -14,13 +14,14 @@ import {
   logError,
   isStr,
   generateUUID,
+  triggerPixel,
 } from '../src/utils.js';
 
 export const SID = window.excoPid || generateUUID();
 export const ENDPOINT = '//v.ex.co/se/openrtb/hb/pbjs';
 const SYNC_URL = '//cdn.ex.co/sync/e15e216-l/cookie_sync.html';
 export const BIDDER_CODE = 'exco';
-const VERSION = '0.0.1';
+const VERSION = '0.0.2';
 const CURRENCY = 'USD';
 
 const SYNC = {
@@ -117,6 +118,7 @@ export class AdapterHelpers {
 
     bidResponse.ad = bid.ad;
     bidResponse.adUrl = bid.adUrl;
+    bidResponse.nurl = bid.nurl;
 
     bidResponse.mediaType = bid.mediaType || VIDEO;
     bidResponse.meta.mediaType = bid.mediaType || VIDEO;
@@ -138,6 +140,10 @@ export class AdapterHelpers {
     }
 
     return bidResponse;
+  }
+
+  replaceMacro(str) {
+    return str.replace('[TIMESTAMP]', Date.now());
   }
 
   log(severity, message) {
@@ -328,7 +334,39 @@ export const spec = {
       SYNC.done = true;
     }
 
-    return [];
+    return result;
+  },
+
+  /**
+   * Register bidder specific code, which will execute if bidder timed out after an auction
+   * @param {Object} data - Contains timeout specific data
+   */
+  onTimeout: function (data) {
+    // TBD
+  },
+
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * @param {import('../src/auction.js').BidResponse} bid - The bid that won the auction
+   */
+  onBidWon: function (bid) {
+    if (bid == null) {
+      return;
+    }
+
+    if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
+      triggerPixel(
+        helpers.replaceMacro(bid.nurl)
+      );
+    }
+  },
+
+  /**
+   * Register bidder specific code, which will execute if the bidder responded with an error
+   * @param {{error: Error, bidderRequest: object}} details - An object with the XMLHttpRequest error and the bid request object
+   */
+  onBidderError: function (details) {
+    // TBD
   },
 };
 
