@@ -181,8 +181,8 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
 
 function copyVerbatim() {
   return gulp.src(helpers.getSourceFolders().flatMap(name => [
-    '**/*.json',
-    '**/*.d.ts',
+    `${name}/**/*.json`,
+    `${name}/**/*.d.ts`,
   ]), {base: '.'})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
@@ -550,6 +550,7 @@ const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp
 gulp.task(lint);
 gulp.task(watch);
 
+gulp.task('verbatim', copyVerbatim)
 gulp.task(clean);
 gulp.task('ts', run('tsc'));
 
