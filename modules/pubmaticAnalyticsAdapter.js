@@ -182,11 +182,6 @@ function getTgId() {
   return 0;
 }
 
-function getIntegrationType() {
-  let s2sConfig = config.getConfig('s2sConfig');
-  return s2sConfig?.bidders?.length ? 'hybrid' : 'web';
-}
-
 
 function getFeatureLevelDetails(auctionCache) {
   if (!auctionCache?.floorData?.floorRequestData) return {};
@@ -212,7 +207,6 @@ function getRootLevelDetails(auctionCache, auctionId) {
     ortb2: auctionCache.ortb2,
     tgid: getTgId(),
     s2sls: s2sBidders,
-    it: getIntegrationType(),
     dm: DISPLAY_MANAGER,
     dmv: '$prebid.version$' || '-1'
   }
@@ -222,6 +216,7 @@ function executeBidsLoggerCall(event, highestCpmBids) {
   const { auctionId } = event;
   const auctionCache = cache.auctions[auctionId];
   if (!auctionCache || auctionCache.sent) return;
+  //TODO: Change logic to add ctr
   const country = event.bidderRequests?.length > 0
     ? event.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext?.ctr || ''
     : '';
@@ -248,7 +243,7 @@ function executeBidsLoggerCall(event, highestCpmBids) {
   const payload = {
     sd: auctionCache.adUnitCodes,
     fd: getFeatureLevelDetails(auctionCache),
-    rd:{ctr:  country && country !== '' ? country : '', ...getRootLevelDetails(auctionCache, auctionId)}
+    rd:{ctr: country || '', ...getRootLevelDetails(auctionCache, auctionId)}
   };
   auctionCache.sent = true;
 
