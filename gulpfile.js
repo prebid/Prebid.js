@@ -363,10 +363,10 @@ function setupDist() {
   return gulp.src(['build/dist/**/*'])
     .pipe(rename(function (path) {
       if (path.dirname === '.' && path.basename === 'prebid') {
-        path.dirname = 'not-for-prod';
+        path.dirname = '../not-for-prod';
       }
     }))
-    .pipe(gulp.dest('dist'))
+    .pipe(gulp.dest('dist/chunks'))
 }
 
 // Run the unit tests.
