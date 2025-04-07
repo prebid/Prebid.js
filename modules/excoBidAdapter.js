@@ -294,6 +294,35 @@ export const spec = {
     gdprConsent,
     uspConsent
   ) {
+    const result = [];
+
+    const collectSyncs = (syncs) => {
+      if (syncs) {
+        syncs.forEach(sync => {
+          if (syncOptions.iframeEnabled && sync.type === 'iframe') {
+            result.push({ type: sync.type, url: sync.url });
+          } else if (syncOptions.pixelEnabled && ['image', 'pixel'].includes(sync.type)) {
+            result.push({ type: 'image', url: sync.url });
+          }
+        });
+      }
+    }
+
+    serverResponses.forEach(response => {
+      const { body = {} } = response;
+      const { ext } = body;
+
+      if (ext && ext.syncs) {
+        collectSyncs(ext.syncs);
+      }
+
+      if (ext && ext.usersync) {
+        Object.keys(ext.usersync).forEach(key => {
+          collectSyncs(ext.usersync[key].syncs);
+        });
+      }
+    });
+
     if (syncOptions.iframeEnabled && !SYNC.done) {
       helpers.doSync(gdprConsent);
       SYNC.done = true;
