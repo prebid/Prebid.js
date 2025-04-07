@@ -175,6 +175,13 @@ export const spec = {
         device: ortb2?.device,
       };
 
+      if (!data?.site?.content?.language) {
+        const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
+        if (documentLang) {
+          deepSetValue(data, 'site.content.language', documentLang);
+        }
+      }
+
       const eids = deepAccess(bidRequest, 'userIdAsEids');
       if (eids && eids.length) {
         deepSetValue(data, 'user.ext.eids', eids);
