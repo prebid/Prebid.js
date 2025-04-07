@@ -46,7 +46,7 @@ export function createBannerRequest(br) {
 
   if (isArrayOfNums(br.mediaTypes.banner.sizes)) {
     [w, h] = br.mediaTypes.banner.sizes;
-    format.push( { w, h } );
+    format.push({ w, h });
   } else if (isArray(br.mediaTypes.banner.sizes)) {
     [w, h] = br.mediaTypes.banner.sizes[0];
     if (br.mediaTypes.banner.sizes.length > 1) { format = br.mediaTypes.banner.sizes.map((size) => ({ w: size[0], h: size[1] })); }
