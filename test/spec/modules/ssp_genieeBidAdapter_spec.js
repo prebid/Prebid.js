@@ -358,6 +358,28 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
       });
 
+      describe('buildExtuidQuery', function() {
+        it('should return tab-separated string when both id5 and imuId exist', function() {
+          const result = buildExtuidQuery({ id5: 'test_id5', imuId: 'test_imu' });
+          expect(result).to.equal('id5:test_id5\tim:test_imu');
+        });
+
+        it('should return only id5 when imuId is missing', function() {
+          const result = buildExtuidQuery({ id5: 'test_id5', imuId: null });
+          expect(result).to.equal('id5:test_id5');
+        });
+
+        it('should return only imuId when id5 is missing', function() {
+          const result = buildExtuidQuery({ id5: null, imuId: 'test_imu' });
+          expect(result).to.equal('im:test_imu');
+        });
+
+        it('should return null when both id5 and imuId are missing', function() {
+          const result = buildExtuidQuery({ id5: null, imuId: null });
+          expect(result).to.be.null;
+        });
+      });
+
       it('should include gpid when ortb2Imp.ext.gpid exists', function () {
         const gpid = '/123/abc';
         const bidWithGpid = {
