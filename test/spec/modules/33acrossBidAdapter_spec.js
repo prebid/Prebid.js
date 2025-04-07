@@ -1007,6 +1007,8 @@ describe('33acrossBidAdapter:', function () {
         win.innerHeight = 728;
         win.innerWidth = 727;
 
+        resetWinDimensions();
+
         const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
@@ -1029,6 +1031,7 @@ describe('33acrossBidAdapter:', function () {
         utils.getWindowTop.restore();
         win.document.visibilityState = 'hidden';
         sandbox.stub(utils, 'getWindowTop').returns(win);
+        resetWinDimensions();
 
         const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);

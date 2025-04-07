@@ -37,50 +37,52 @@ function emitEvent(...args) {
   }
 }
 
-
-export function getWinDimensions() {
-  if (!windowDimensions) {
-    const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-
-    windowDimensions = {
-      screen: {
-        width: top.screen?.width,
-        height: top.screen?.height,
-        availWidth: top.screen?.availWidth,
-        availHeight: top.screen?.availHeight,
-        colorDepth: top.screen?.colorDepth,
-      },
-      innerHeight: top.innerHeight,
-      innerWidth: top.innerWidth,
-      outerWidth: top.outerWidth,
-      outerHeight: top.outerHeight,
-      visualViewport: {
-        height: top.visualViewport?.height,
-        width: top.visualViewport?.width,
-      },
-      document: {
-        documentElement: {
-          clientWidth: top.document?.documentElement?.clientWidth,
-          clientHeight: top.document?.documentElement?.clientHeight,
-          scrollTop: top.document?.documentElement?.scrollTop,
-          scrollLeft: top.document?.documentElement?.scrollLeft,
-        },
-        body: {
-          scrollTop: document.body?.scrollTop,
-          scrollLeft: document.body?.scrollLeft,
-          clientWidth: document.body?.clientWidth,
-          clientHeight: document.body?.clientHeight,
-        },
-      }
-    };
-  };
-
-  return windowDimensions;
-}
-
+export const getWinDimensions = (function() {
+  let lastCheckTimestamp;
+  const CHECK_INTERVAL_MS = 20;
+  return () => {
+    if (!windowDimensions || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
+      internal.resetWinDimensions();
+      lastCheckTimestamp = Date.now();
+    }
+    return windowDimensions;
+  }
+})();
 
 export function resetWinDimensions() {
-  windowDimensions = null;
+  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
+
+  windowDimensions = {
+    screen: {
+      width: top.screen?.width,
+      height: top.screen?.height,
+      availWidth: top.screen?.availWidth,
+      availHeight: top.screen?.availHeight,
+      colorDepth: top.screen?.colorDepth,
+    },
+    innerHeight: top.innerHeight,
+    innerWidth: top.innerWidth,
+    outerWidth: top.outerWidth,
+    outerHeight: top.outerHeight,
+    visualViewport: {
+      height: top.visualViewport?.height,
+      width: top.visualViewport?.width,
+    },
+    document: {
+      documentElement: {
+        clientWidth: top.document?.documentElement?.clientWidth,
+        clientHeight: top.document?.documentElement?.clientHeight,
+        scrollTop: top.document?.documentElement?.scrollTop,
+        scrollLeft: top.document?.documentElement?.scrollLeft,
+      },
+      body: {
+        scrollTop: document.body?.scrollTop,
+        scrollLeft: document.body?.scrollLeft,
+        clientWidth: document.body?.clientWidth,
+        clientHeight: document.body?.clientHeight,
+      },
+    }
+  };
 }
 
 // this allows stubbing of utility functions that are used internally by other utility functions
@@ -101,13 +103,9 @@ export const internal = {
   logInfo,
   parseQS,
   formatQS,
-  deepEqual
+  deepEqual,
+  resetWinDimensions
 };
-
-['resize', 'scroll', 'orientationchange'].forEach(event => {
-  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
-  top.addEventListener(event, debounce(resetWinDimensions, 20));
-});
 
 let prebidInternal = {};
 /**
@@ -1376,22 +1374,3 @@ export function triggerNurlWithCpm(bid, cpm) {
     triggerPixel(bid.nurl);
   }
 }
-
-export function debounce(func, wait, immediate) {
-  let timeout;
-  return function (...args) {
-    const context = this;
-    const later = function () {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    if (callNow) {
-      func.apply(context, args);
-    } else {
-      logInfo('Debounce wait time ' + wait);
-      timeout = setTimeout(later, wait);
-    }
-  };
-};

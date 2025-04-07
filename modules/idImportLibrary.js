@@ -6,7 +6,7 @@ import { isActivityAllowed } from '../src/activities/rules.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { debounce, logError, logInfo } from '../src/utils.js';
+import { logError, logInfo } from '../src/utils.js';
 
 let email;
 let conf;
@@ -133,6 +133,26 @@ function processInputChange(event) {
     removeInputElementsElementListner();
   }
 }
+
+function debounce(func, wait, immediate) {
+  var timeout;
+  return function () {
+    const context = this;
+    const args = arguments;
+    const later = function () {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    var callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    if (callNow) {
+      func.apply(context, args);
+    } else {
+      _logInfo('Debounce wait time ' + wait);
+      timeout = setTimeout(later, wait);
+    }
+  };
+};
 
 function handleTargetElement() {
   const targetObserver = new MutationObserver(debounce(targetAction, conf.debounce, false));

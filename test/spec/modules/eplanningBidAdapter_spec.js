@@ -637,12 +637,12 @@ describe('E-Planning Adapter', function () {
       sandbox = sinon.sandbox.create();
       getWindowTopStub = sandbox.stub(internal, 'getWindowTop');
       getWindowTopStub.returns(createWindow(800));
+      resetWinDimensions();
     });
 
     afterEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       sandbox.restore();
-      resetWinDimensions();
     });
 
     const createWindow = (innerWidth) => {
@@ -962,6 +962,7 @@ describe('E-Planning Adapter', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
       // overwrite default innerWdith for tests with a larger one we consider "Desktop" or NOT Mobile
       getWindowTopStub.returns(createWindow(1025));
+      resetWinDimensions();
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600,970x250');
     });
