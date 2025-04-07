@@ -10,6 +10,7 @@
     "concertBidAdapter",
     "connectIdSystem",
     "consentManagementUsp",
+    "consentManagementGpp",
     "consentManagementTcf",
     "conversantBidAdapter",
     "criteoBidAdapter",
