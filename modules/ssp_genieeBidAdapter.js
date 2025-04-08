@@ -226,6 +226,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     }
   }
 
+  // imuid, id5
   const id5 = utils.deepAccess(bid, 'userId.id5id.uid');
   const imuId = utils.deepAccess(bid, 'userId.imuid');
   const extuidQuery = buildExtuidQuery({id5, imuId});
