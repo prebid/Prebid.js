@@ -127,7 +127,7 @@ function creativeMessageHandler(deps) {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse, options) {
-  const {ad, adUrl, cpm, originalCpm, width, height} = bidResponse
+  const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -136,7 +136,8 @@ export const getRenderingData = hook('sync', function (bidResponse, options) {
     ad: replaceMacros(ad, repl),
     adUrl: replaceMacros(adUrl, repl),
     width,
-    height
+    height,
+    instl
   };
 })
 
