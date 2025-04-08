@@ -1,7 +1,8 @@
 import {expect, assert} from 'chai';
-import {spec, EVENT_PIXEL_URL, EVENTS} from 'modules/medianetBidAdapter.js';
+import {spec, EVENTS} from '../../../modules/medianetBidAdapter.js';
+import {POST_ENDPOINT} from '../../../libraries/medianetUtils/constants.js';
 import { makeSlot } from '../integration/faker/googletag.js';
-import { config } from 'src/config.js';
+import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
 
 $$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
@@ -1254,8 +1255,6 @@ let VALID_BID_REQUEST = [{
     } catch (e) {}
     PAGE_META.site = Object.assign(PAGE_META.site, {
       'canonical_url': 'http://localhost:9999/canonical-test',
-      'twitter_url': 'http://localhost:9999/twitter-test',
-      'og_url': 'http://localhost:9999/fb-test'
     });
     return PAGE_META;
   })(),
@@ -2280,7 +2279,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.TIMEOUT_EVENT_NAME);
       assert.equal(reqBody.get('rd'), timeoutData[0].timeout.toString());
       assert.equal(reqBody.get('acid[]'), timeoutData[0].auctionId);
@@ -2306,7 +2305,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.BID_WON_EVENT_NAME);
       assert.equal(reqBody.get('value'), bid.cpm.toString());
       assert.equal(reqBody.get('acid[]'), bid.auctionId);
@@ -2333,7 +2332,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.SET_TARGETING);
       assert.equal(reqBody.get('value'), bid.cpm.toString());
       assert.equal(reqBody.get('acid[]'), bid.auctionId);
@@ -2364,7 +2363,7 @@ describe('Media.net bid adapter', function () {
       const reqBody = new URLSearchParams(server.requests[0].requestBody);
 
       assert.equal(server.requests[0].method, 'POST');
-      assert.equal(server.requests[0].url, EVENT_PIXEL_URL);
+      assert.equal(server.requests[0].url, POST_ENDPOINT);
       assert.equal(reqBody.get('event'), EVENTS.BIDDER_ERROR);
       assert.equal(reqBody.get('rd'), `timedOut:${error.timedOut}|status:${error.status}|message:${error.reason.message}`);
       assert.equal(reqBody.get('acid[]'), bids[0].auctionId);
