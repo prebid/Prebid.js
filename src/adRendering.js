@@ -257,17 +257,8 @@ export function renderAdDirect(doc, adId, options) {
   }
   function resizeFn(width, height) {
     if (doc.defaultView && doc.defaultView.frameElement) {
-      let frame = doc.defaultView.frameElement;
-      if (frame.id === "ad_iframe") {
-        frame.width = width;
-        frame.height = height;
-        frame.style.width = `${width}px`;
-        frame.style.height = `${height}px`;
-        frame.style.display = "block";
-      } else {
-        width && (doc.defaultView.frameElement.width = width);
-        height && (doc.defaultView.frameElement.height = height);
-      }
+      width && (doc.defaultView.frameElement.width = width);
+      height && (doc.defaultView.frameElement.height = height);
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});
@@ -298,17 +289,10 @@ export function renderAdDirect(doc, adId, options) {
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      if (doc === document && !inIframe()) {
-        fail(
-          AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
-          "renderAd was prevented from writing to the main document."
-        );
-      } else {
       getBidToRender(adId).then(bidResponse => {
         bid = bidResponse;
         handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
       });
-      }
     }
   } catch (e) {
     fail(EXCEPTION, e.message);
