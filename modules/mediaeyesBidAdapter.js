@@ -4,7 +4,7 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
-import { deepAccess, generateUUID } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, isArray, isNumber, isPlainObject, isStr } from '../src/utils.js';
 
 const ENDPOINT_URL = 'https://delivery.upremium.asia/ortb/open/auction';
 
@@ -31,9 +31,6 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT_URL + "?item_id=" + itemId,
         data: JSON.stringify(requestData),
-        options: {
-          contentType: 'application/json',
-        }
       });
     })
 
@@ -64,6 +61,20 @@ export const spec = {
       prBid.width = rtbBid.w;
       prBid.height = rtbBid.h;
       prBid.ad = rtbBid.adm;
+      if (isArray(rtbBid.adomain)) {
+        deepSetValue(prBid, 'meta.advertiserDomains', rtbBid.adomain);
+      }
+      if (isPlainObject(rtbBid.ext)) {
+        if (isNumber(rtbBid.ext.advertiser_id)) {
+          deepSetValue(prBid, 'meta.advertiserId', rtbBid.ext.advertiser_id);
+        }
+        if (isStr(rtbBid.ext.advertiser_name)) {
+          deepSetValue(prBid, 'meta.advertiserName', rtbBid.ext.advertiser_name);
+        }
+        if (isStr(rtbBid.ext.agency_name)) {
+          deepSetValue(prBid, 'meta.agencyName', rtbBid.ext.agency_name);
+        }
+      }
 
       return prBid
     });
@@ -77,7 +88,11 @@ registerBidder(spec);
 function cookingImp(bidReq) {
   let imp = {};
   if (bidReq) {
-    let bidfloor = deepAccess(bidReq, 'params.bid_floor', 0)
+    const bidfloor = getBidFloor(bidReq);
+    if (bidfloor) {
+      imp.bidfloor = parseFloat(bidfloor);
+      imp.bidfloorcur = 'USD';
+    }
 
     imp.id = bidReq.bidId;
     imp.bidfloor = bidfloor;
@@ -91,7 +106,24 @@ const cookImpBanner = ({ mediaTypes, params }) => {
 
   const { sizes } = mediaTypes.banner;
   return {
-    h: params.height || sizes?.[0]?.[1] || undefined,
-    w: params.width || sizes?.[0]?.[0] || undefined,
+    h: sizes?.[0]?.[1] || undefined,
+    w: sizes?.[0]?.[0] || undefined,
   };
 };
+
+function getBidFloor(bidRequest) {
+  let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
+  // support getFloor
+  if (!bidfloor && bidRequest.getFloor) {
+    let floor = bidRequest.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+    if (isPlainObject(floor) && !isNaN(floor.floor)) {
+      bidfloor = floor.floor;
+    }
+  }
+
+  return bidfloor;
+}

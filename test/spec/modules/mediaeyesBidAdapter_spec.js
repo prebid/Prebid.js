@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/mediaEyesBidAdapter.js';
+import { spec } from '../../../modules/mediaeyesBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 
 describe('mediaeyes adapter', function () {
@@ -77,4 +77,20 @@ describe('mediaeyes adapter', function () {
             expect(request).to.deep.equal(_Request);
         });
     });
+
+    describe('responses processing', function () {
+        it('should return fully-initialized banner bid-response', function () {
+            let bidRequest = spec.buildRequests(request);
+
+            let resp = spec.interpretResponse(bannerResponse, bidRequest[0])[0];
+            expect(resp).to.have.property('requestId');
+            expect(resp).to.have.property('cpm');
+            expect(resp).to.have.property('width');
+            expect(resp).to.have.property('height');
+            expect(resp).to.have.property('creativeId');
+            expect(resp).to.have.property('currency');
+            expect(resp).to.have.property('ttl');
+            expect(resp).to.have.property('ad');
+        });
+    })
 });
