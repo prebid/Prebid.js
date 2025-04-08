@@ -1104,7 +1104,6 @@ describe('Utils', function () {
     });
     it('should work when adding properties to the prototype of Array', () => {
       after(function () {
-        // eslint-disable-next-line no-extend-native
         delete Array.prototype.unitTestTempProp;
       });
       // eslint-disable-next-line no-extend-native

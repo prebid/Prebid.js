@@ -271,7 +271,7 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
     const {adUnitCode, auctionId, bidder} = request;
 
-    // eslint-disable-next-line no-inner-declarations
+
     function storePendingData(store, data) {
       const target = store(auctionId);
       if (target != null) {
@@ -509,7 +509,7 @@ export function markForFledge(next, bidderRequests) {
   next(bidderRequests);
 }
 
-export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals'];
+export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals', 'perBuyerCurrencies', 'perBuyerCumulativeTimeouts'];
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [
