@@ -1,12 +1,12 @@
 # Overview
 
 Module Name: OneId Id System
-Module Type: OneId Id System
+Module Type: UserID Module
 Maintainer: alexandr.dubinin@audienzz.com
 
 # Description
 
-OneId user identification system
+[OneId](https://docs.oneid.xyz/developers-guide/oneid-sdk) user identification system
 
 ## Example configuration for publishers:
 
