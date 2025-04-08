@@ -256,7 +256,13 @@ export function renderAdDirect(doc, adId, options) {
     emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
   function resizeFn(width, height) {
-    if (doc.defaultView && doc.defaultView.frameElement) {
+    if (doc.defaultView.frameElement) {
+      var frame = doc.defaultView.frameElement;
+      frame.width = width;
+      frame.height = height;
+      frame.style.width = `${width}px`;
+      frame.style.height = `${height}px`;
+    } else if (doc.defaultView) {
       width && (doc.defaultView.frameElement.width = width);
       height && (doc.defaultView.frameElement.height = height);
     }
