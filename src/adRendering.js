@@ -257,17 +257,8 @@ export function renderAdDirect(doc, adId, options) {
   }
   function resizeFn(width, height) {
     if (doc.defaultView && doc.defaultView.frameElement) {
-      let frame = doc.defaultView.frameElement;
-      if (frame.id === "ad_iframe") {
-        frame.width = width;
-        frame.height = height;
-        frame.style.width = `${width}px`;
-        frame.style.height = `${height}px`;
-        frame.style.display = "block";
-      } else {
-        width && (doc.defaultView.frameElement.width = width);
-        height && (doc.defaultView.frameElement.height = height);
-      }
+      width && (doc.defaultView.frameElement.width = width);
+      height && (doc.defaultView.frameElement.height = height);
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});
@@ -278,42 +269,30 @@ export function renderAdDirect(doc, adId, options) {
       emitAdRenderSucceeded({doc, bid, id: bid.adId});
     } else {
       getCreativeRenderer(bid)
-        .then((render) => render(adData,
-            {
-              sendMessage: (type, data) => messageHandler(type, data, bid),
-              mkFrame: createIframe,
-            },
-            doc.defaultView
-          )
-        )
+        .then(render => render(adData, {
+          sendMessage: (type, data) => messageHandler(type, data, bid),
+          mkFrame: createIframe,
+        }, doc.defaultView))
         .then(
           () => emitAdRenderSucceeded({doc, bid, id: bid.adId}),
           (e) => {
-            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message);
+            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
             e?.stack && logError(e);
           }
         );
     }
-    const creativeComment = document.createComment(
-      `Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`
-    );
-    insertElement(creativeComment, doc, "html");
+    // TODO: this is almost certainly the wrong way to do this
+    const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+    insertElement(creativeComment, doc, 'html');
   }
   try {
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      if (doc === document && !inIframe()) {
-        fail(
-          AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
-          "renderAd was prevented from writing to the main document."
-        );
-      } else {
       getBidToRender(adId).then(bidResponse => {
         bid = bidResponse;
         handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
       });
-      }
     }
   } catch (e) {
     fail(EXCEPTION, e.message);
