@@ -693,7 +693,6 @@ export class AsyncPAAPIParam {
 }
 
 export function buildPAAPIParams(next, spec, bids, bidderRequest, ...args) {
-  let that = this;
   if (bidderRequest.paapi?.enabled && spec.paapiParameters) {
     const params = callAdapterApi(spec, 'paapiParameters', bids, bidderRequest);
     return PbPromise.all(
@@ -706,7 +705,7 @@ export function buildPAAPIParams(next, spec, bids, bidderRequest, ...args) {
     }).catch(err => {
       logError(`Could not resolve PAAPI parameters`, err);
     }).then(() => {
-      next.call(that, spec, bids, bidderRequest, ...args);
+      next.call(this, spec, bids, bidderRequest, ...args);
     })
   } else {
     next.call(this, spec, bids, bidderRequest, ...args);
