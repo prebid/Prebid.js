@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
   spec,
   BANNER_ENDPOINT,
+  buildExtuidQuery,
 } from 'modules/ssp_genieeBidAdapter.js';
 import { config } from 'src/config.js';
 
