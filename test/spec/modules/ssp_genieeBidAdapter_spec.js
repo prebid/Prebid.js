@@ -352,7 +352,7 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[0].data).to.not.have.property('extuid');
       });
 
-      it('should include an extuid query when bid.userId.imuid exists', function () {
+      it('should include only imuid in extuid query when only imuid exists', function () {
         const imuid = 'b.a4ad1d3eeb51e600';
         const request = spec.buildRequests([{...BANNER_BID, userId: {imuid}}]);
         expect(request[0].data.extuid).to.deep.equal(`im:${imuid}`);
