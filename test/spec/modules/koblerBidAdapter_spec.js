@@ -544,7 +544,8 @@ describe('KoblerAdapter', function () {
           }
         ],
         device: {
-          devicetype: 2
+          devicetype: 2,
+          ua: navigator.userAgent
         },
         site: {
           page: 'bid.kobler.no'
