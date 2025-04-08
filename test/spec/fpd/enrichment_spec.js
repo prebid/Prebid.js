@@ -151,6 +151,17 @@ describe('FPD enrichment', () => {
         expect(ortb2.site.publisher.domain).to.eql('pub.com');
       });
     });
+
+    it('should pass documentElement.lang into bid request params', function () {
+      sandbox.stub(dep, 'getDocument').returns({
+        documentElement: {
+          lang: 'fr-FR'
+        }
+      });
+      return fpd().then(ortb2 => {
+        expect(ortb2.site.ext.data.documentLang).to.equal('fr-FR');
+      });
+    });
   });
 
   describe('device', () => {
