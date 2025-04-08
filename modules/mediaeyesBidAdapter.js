@@ -4,7 +4,7 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
-import { deepAccess, deepSetValue, generateUUID, isArray, isNumber, isPlainObject, isStr } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, isArray, isFn, isNumber, isPlainObject, isStr } from '../src/utils.js';
 
 const ENDPOINT_URL = 'https://delivery.upremium.asia/ortb/open/auction';
 
@@ -113,8 +113,8 @@ const cookImpBanner = ({ mediaTypes, params }) => {
 
 function getBidFloor(bidRequest) {
   let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
-  // support getFloor
-  if (!bidfloor && bidRequest.getFloor) {
+
+  if (!bidfloor && isFn(bidRequest.getFloor)) {
     let floor = bidRequest.getFloor({
       currency: 'USD',
       mediaType: '*',
