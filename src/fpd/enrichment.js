@@ -1,7 +1,7 @@
 import {hook} from '../hook.js';
 import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
-import {deepSetValue, getDefinedParams, getDNT, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import {deepSetValue, getDefinedParams, getDNT, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {PbPromise} from '../utils/promise.js';
@@ -18,6 +18,7 @@ export const dep = {
   getWindowSelf,
   getHighEntropySUA,
   getLowEntropySUA,
+  getDocument
 };
 
 const oneClient = clientSectionChecker('FPD')
@@ -49,6 +50,11 @@ export const enrichFPD = hook('sync', (fpd) => {
           cdep
         }
         deepSetValue(ortb2, 'device.ext', Object.assign({}, ext, ortb2.device.ext));
+      }
+
+      const documentLang = dep.getDocument().documentElement.lang;
+      if (documentLang) {
+        deepSetValue(ortb2, 'site.ext.data.documentLang', documentLang);
       }
 
       ortb2 = oneClient(ortb2);
