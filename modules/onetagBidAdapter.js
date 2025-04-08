@@ -50,8 +50,8 @@ export function isValid(type, bid) {
   } else if (type === NATIVE) {
     if (typeof bid.mediaTypes.native !== 'object' || bid.mediaTypes.native === null) return false;
 
-    const assets = bid.mediaTypes.native?.ortb.assets;
-    const eventTrackers = bid.mediaTypes.native?.ortb.eventtrackers;
+    const assets = bid.mediaTypes.native?.ortb?.assets;
+    const eventTrackers = bid.mediaTypes.native?.ortb?.eventtrackers;
 
     let isValidAssets = false;
     let isValidEventTrackers = false;
