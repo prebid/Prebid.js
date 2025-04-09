@@ -17,7 +17,7 @@ const FLOOR_VALUES = {
   TIMEOUT: 'timeout'
 };
 
-/// /////////// CONSTANTS //////////////
+/// /////////// CONSTANTS ///////////////
 const ADAPTER_CODE = 'pubmatic';
 const VENDOR_OPENWRAP = 'openwrap';
 const DISPLAY_MANAGER = 'Prebid.js';
