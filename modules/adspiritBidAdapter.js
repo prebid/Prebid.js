@@ -1,6 +1,6 @@
 import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
@@ -9,7 +9,7 @@ export const spec = {
 
   code: 'adspirit',
   aliases: ['twiago'],
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE,VIDEO],
 
   isBidRequestValid: function (bid) {
     let host = spec.getBidderHost(bid);
