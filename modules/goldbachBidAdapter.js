@@ -2,6 +2,7 @@ import { ajax } from '../src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
+import { deepAccess } from '../src/utils.js';
 
 /* General config */
 const IS_LOCAL_MODE = false;
@@ -243,8 +244,8 @@ const getRendererForBid = (bidRequest, creative) => {
             muted: false,
             controls: true,
             styling: { progressbarColor: '#000' },
-            videoHeight: Math.min(doc.defaultView?.innerWidth / 16 * 9, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_HEIGHT),
-            videoVerticalHeight: Math.min(doc.defaultView?.innerWidth / 9 * 16, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_WIDTH),
+            videoHeight: Math.min(deepAccess(doc, 'defaultView.innerWidth') / 16 * 9, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_HEIGHT),
+            videoVerticalHeight: Math.min(deepAccess(doc, 'defaultView.innerWidth') / 9 * 16, RENDERER_OPTIONS.OUTSTREAM_GP.MIN_WIDTH),
           };
           const GP = doc.defaultView.GoldPlayer;
           const player = new GP(options);

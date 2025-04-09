@@ -16,6 +16,7 @@ import {
   buildUrl,
   isArray,
   generateUUID,
+  getWinDimensions,
   canAccessWindowTop,
   deepAccess,
   getSafeframeGeometry,
@@ -464,8 +465,10 @@ function getUiEvents() {
 
 function getScreen() {
   function getInnerSize() {
-    let w = window?.innerWidth;
-    let h = window?.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+
+    let w = innerWidth;
+    let h = innerHeight;
 
     if (w && h) {
       return [w, h];
@@ -473,9 +476,10 @@ function getScreen() {
   }
 
   function getDocumentSize() {
-    let body = window?.document?.body;
-    let w = body.clientWidth;
-    let h = body.clientHeight;
+    const windowDimensions = getWinDimensions();
+
+    let w = windowDimensions.document.body.clientWidth;
+    let h = windowDimensions.document.body.clientHeight;
 
     if (w && h) {
       return [w, h];

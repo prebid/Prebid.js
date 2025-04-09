@@ -450,8 +450,8 @@ export var spec = {
         dnt: utils.getDNT() ? 1 : 0,
         ua: navigator.userAgent,
         language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-        w: (window.screen.width || window.innerWidth),
-        h: (window.screen.height || window.innerHeigh),
+        w: (utils.getWinDimensions().screen.width || utils.getWinDimensions().innerWidth),
+        h: (utils.getWinDimensions().screen.height || utils.getWinDimensions().innerHeight),
         geo: {
           country: params.country,
           lat: params.latitude,

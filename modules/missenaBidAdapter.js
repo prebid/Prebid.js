@@ -2,6 +2,7 @@ import {
   buildUrl,
   formatQS,
   generateUUID,
+  getWinDimensions,
   isFn,
   logInfo,
   safeJSONParse,
@@ -69,6 +70,7 @@ function toPayload(bidRequest, bidderRequest) {
   payload.currency = getCurrencyFromBidderRequest(bidderRequest);
   payload.schain = bidRequest.schain;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
+  payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
   payload.viewport = getViewportSize();
   payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
   payload.ortb2 = bidderRequest.ortb2;
