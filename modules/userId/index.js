@@ -570,7 +570,7 @@ export function enrichEids(ortb2Fragments) {
   return ortb2Fragments;
 }
 
-function addIdData({adUnits, ortb2Fragments}) {
+export function addIdData({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
