@@ -15,7 +15,7 @@ const LOG_PREFIX = '[SemantIQ RTD Module]: ';
 const KEYWORDS_URL = 'https://api.adnz.co/api/ws-semantiq/page-keywords';
 const STORAGE_KEY = `adnz_${SUBMODULE_NAME}`;
 const AUDIENZZ_COMPANY_ID = 1;
-const REQUIRED_TENANT_IDS = [AUDIENZZ_COMPANY_ID];
+const FALLBACK_TENANT_IDS = [AUDIENZZ_COMPANY_ID];
 const AUDIENZZ_GLOBAL_VENDOR_ID = 783;
 
 const DEFAULT_TIMEOUT = 1000;
@@ -58,13 +58,9 @@ const getPageUrl = () => getWindowLocation().href;
  * @returns {number[]}
  */
 const getTenantIds = (companyId) => {
-  if (!companyId) {
-    return REQUIRED_TENANT_IDS;
-  }
-
   const companyIdArray = Array.isArray(companyId) ? companyId : [companyId];
 
-  return [...REQUIRED_TENANT_IDS, ...companyIdArray];
+  return companyIdArray.filter(Boolean).length ? companyIdArray : FALLBACK_TENANT_IDS;
 };
 
 /**

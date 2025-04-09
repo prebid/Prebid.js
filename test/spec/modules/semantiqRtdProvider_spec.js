@@ -106,7 +106,7 @@ describe('semantiqRtdProvider', () => {
 
       const requestUrl = new URL(server.requests[0].url);
 
-      expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('1,13');
+      expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('13');
     });
 
     it('allows to specify multiple company IDs as a parameter', async () => {
@@ -136,7 +136,7 @@ describe('semantiqRtdProvider', () => {
 
       const requestUrl = new URL(server.requests[0].url);
 
-      expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('1,13,23');
+      expect(requestUrl.searchParams.get('tenantIds')).to.be.equal('13,23');
     });
 
     it('gets keywords from the cache if the data is present in the storage', async () => {
