@@ -66,7 +66,7 @@ Each adunit with `adspirit` adapter has to have `placementId` and `host`.
             {
                 bidder: 'adspirit',
                 params: {
-                    placementId: '9',
+                    placementId: '99',
                     host: 'test.adspirit.de',
                     bidfloor: 0.1
                 }
@@ -90,7 +90,7 @@ Each adunit with `adspirit` adapter has to have `placementId` and `host`.
 
 6. Click URL: This is the landing page URL where the user will be redirected after clicking the ad.
 
-
+In the Adspirit adapter, Title, Main Image, and Body Text are mandatory fields.
 ### Privacy Policies
 
 General Data Protection Regulation(GDPR) is supported by default.
