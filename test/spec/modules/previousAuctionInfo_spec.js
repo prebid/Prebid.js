@@ -90,6 +90,7 @@ describe('previous auction info', () => {
         source: 'pbjs',
         adUnitCode: 'adUnit1',
         highestBidCpm: 2,
+        highestBidCurrency: 'EUR',
         bidderCpm: 2,
         bidderOriginalCpm: 2.1,
         bidderCurrency: 'EUR',
@@ -109,6 +110,7 @@ describe('previous auction info', () => {
       expect(previousAuctionInfo.auctionState['testBidder1'][0]).to.include({
         bidId: 'bid123',
         highestBidCpm: 2,
+        highestBidCurrency: 'EUR',
         adUnitCode: 'adUnit1',
         bidderCpm: 1,
         bidderCurrency: 'USD'
@@ -117,6 +119,7 @@ describe('previous auction info', () => {
       expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({
         bidId: 'bidxyz',
         highestBidCpm: 3,
+        highestBidCurrency: 'USD',
         adUnitCode: 'adUnit2',
         bidderCpm: 3,
         bidderCurrency: 'USD'
