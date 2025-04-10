@@ -11,30 +11,30 @@ import {
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
 
-let sandbox;
-
-beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    sandbox.stub(conf, 'getConfig').callsFake(() => {
-        return {
-            floors: {
-                'enforcement': {
-                    'floorDeals': true,
-                    'enforceJS': true
-                }
-            },
-            realTimeData: {
-                auctionDelay: 100
-            }
-        };
-    });
-});
-
-afterEach(() => {
-    sandbox.restore();
-});
-
 describe('Pubmatic RTD Provider', () => {
+    let sandbox;
+
+    beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(conf, 'getConfig').callsFake(() => {
+            return {
+                floors: {
+                    'enforcement': {
+                        'floorDeals': true,
+                        'enforceJS': true
+                    }
+                },
+                realTimeData: {
+                    auctionDelay: 100
+                }
+            };
+        });
+    });
+    
+    afterEach(() => {
+        sandbox.restore();
+    });
+
     describe('registerSubModule', () => {
         it('should register RTD submodule provider', () => {
             let submoduleStub = sinon.stub(hook, 'submodule');
