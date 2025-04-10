@@ -3371,19 +3371,6 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('createBid', function () {
-    it('should return a bid object', function () {
-      const statusCode = 1;
-      const bid = $$PREBID_GLOBAL$$.createBid(statusCode);
-      assert.isObject(bid, 'bid is an object');
-      assert.equal(bid.getStatusCode(), statusCode, 'bid has correct status');
-
-      const defaultStatusBid = $$PREBID_GLOBAL$$.createBid();
-      assert.isObject(defaultStatusBid, 'bid is an object');
-      assert.equal(defaultStatusBid.getStatusCode(), 0, 'bid has correct status');
-    });
-  });
-
   describe('aliasBidder', function () {
     it('should call adapterManager.aliasBidder', function () {
       const aliasBidAdapterSpy = sinon.spy(adapterManager, 'aliasBidAdapter');

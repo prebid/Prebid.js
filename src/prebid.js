@@ -31,7 +31,6 @@ import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
@@ -826,17 +825,6 @@ pbjsInstance.registerAnalyticsAdapter = function (options) {
   } catch (e) {
     logError('Error registering analytics adapter : ' + e.message);
   }
-};
-
-/**
- * Wrapper to bidfactory.createBid()
- * @param  {string} statusCode [description]
- * @alias module:pbjs.createBid
- * @return {Object} bidResponse [description]
- */
-pbjsInstance.createBid = function (statusCode) {
-  logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
-  return createBid(statusCode);
 };
 
 /**
