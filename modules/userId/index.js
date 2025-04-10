@@ -486,7 +486,7 @@ function mkPriorityMaps() {
     const bidder = {};
 
     function activeModuleGetter(key, useGlobals, modules) {
-      return function (params) {
+      return function () {
         for (const {allowed, bidders, module} of modules) {
           const value = module.idObj?.[key];
           if (value != null) {

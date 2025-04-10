@@ -108,7 +108,6 @@ describe('idTestingModule', () => {
         getDataFromSessionStorage: sinon.stub().returns(JSON.stringify(currentConfig)),
         setDataInSessionStorage: sinon.stub()
       };
-      // getStoredTestConfigStub.returns(previousConfig);
       init(fakeStorageManager);
       sinon.assert.notCalled(fakeStorageManager.setDataInSessionStorage);
       sinon.assert.notCalled(getCalculatedSubmodulesStub);
