@@ -3625,9 +3625,9 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     })
 
-    it('returns an empty object if there is no bid for the given adUnitCode', () => {
+    it('returns null if there is no bid for the given adUnitCode', () => {
       const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('stallone');
-      expect(highestBid).to.deep.equal({});
+      expect(highestBid).to.equal(null);
     })
 
     it('returns undefined if adUnitCode is provided', () => {

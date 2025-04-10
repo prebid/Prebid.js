@@ -383,14 +383,14 @@ pbjsInstance.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adunitCode {string} adUnitCode to get the bid responses for
  * @alias module:pbjs.getHighestUnusedBidResponseForAdUnitCode
- * @returns {Object}  returnObj return bid
+ * @returns {Object|null}  returnObj return bid or null if no suitable bid exists
  */
 pbjsInstance.getHighestUnusedBidResponseForAdUnitCode = function (adunitCode) {
   if (adunitCode) {
     const bid = auctionManager.getAllBidsForAdUnitCode(adunitCode)
       .filter(isBidUsable)
 
-    return bid.length ? bid.reduce(getHighestCpm) : {}
+    return bid.length ? bid.reduce(getHighestCpm) : null
   } else {
     logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
   }
