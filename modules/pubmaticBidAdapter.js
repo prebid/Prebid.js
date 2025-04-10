@@ -61,7 +61,7 @@ const converter = ortbConverter({
     ttl: DEFAULT_TTL
   },
   imp(buildImp, bidRequest, context) {
-    const { kadfloor, currency, adSlot, deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
+    const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
     const { adUnitCode, mediaTypes, rtd } = bidRequest;
     const imp = buildImp(bidRequest, context);
     if (deals) addPMPDeals(imp, deals);
