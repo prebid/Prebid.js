@@ -49,7 +49,6 @@ const MEDIATYPE = {
   VIDEO: 1,
   NATIVE: 2
 }
-
 // TODO : Remove - Once BM calculation moves to Server Side
 const BROWSER_MAP = [
   { value: /(firefox)\/([\w\.]+)/i, key: 12 }, // Firefox
