@@ -1,5 +1,6 @@
 import { _map, deepAccess, isFn, isPlainObject, uniques } from '../../src/utils.js';
 import {mnetGlobals} from './constants.js';
+import {getViewportSize} from '../viewport/viewport.js';
 
 export function findBidObj(list = [], key, value) {
   return list.find((bid) => {
@@ -41,9 +42,10 @@ export function formatQS(data) {
 }
 
 export function getWindowSize() {
-  const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth || -1;
-  const height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || -1;
-  return `${width}x${height}`;
+  const { width, height } = getViewportSize();
+  let w = width || -1;
+  let h = height || -1;
+  return `${w}x${h}`;
 }
 
 export function getRequestedSizes({ mediaTypes, sizes }) {
