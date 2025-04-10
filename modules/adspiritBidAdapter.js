@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-
+const { getWinDimensions } = utils;
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
 
@@ -25,6 +25,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
     let prebidVersion = getGlobal().version;
+    const win = getWinDimensions();
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let bidRequest = validBidRequests[i];
@@ -33,14 +34,14 @@ export const spec = {
       let placementId = utils.getBidIdParameter('placementId', bidRequest.params);
 
       reqUrl = '//' + reqUrl + RTB_URL +
-            '&pid=' + placementId +
-            '&ref=' + encodeURIComponent(bidderRequest.refererInfo.topmostLocation) +
-            '&scx=' + screen.width +
-            '&scy=' + screen.height +
-            '&wcx=' + (window.innerWidth || document.documentElement.clientWidth) +
-            '&wcy=' + (window.innerHeight || document.documentElement.clientHeight) +
-            '&async=' + bidRequest.adspiritConId +
-            '&t=' + Math.round(Math.random() * 100000);
+        '&pid=' + placementId +
+        '&ref=' + encodeURIComponent(bidderRequest.refererInfo.topmostLocation) +
+        '&scx=' + screen.width +
+        '&scy=' + screen.height +
+        '&wcx=' + win.innerWidth +
+        '&wcy=' + win.innerHeight +
+        '&async=' + bidRequest.adspiritConId +
+        '&t=' + Math.round(Math.random() * 100000);
 
       let gdprApplies = bidderRequest.gdprConsent ? (bidderRequest.gdprConsent.gdprApplies ? 1 : 0) : 0;
       let gdprConsentString = bidderRequest.gdprConsent ? encodeURIComponent(bidderRequest.gdprConsent.consentString) : '';
@@ -104,8 +105,8 @@ export const spec = {
         device: {
           ua: navigator.userAgent,
           language: (navigator.language || '').split('-')[0],
-          w: window.innerWidth || document.documentElement.clientWidth,
-          h: window.innerHeight || document.documentElement.clientHeight,
+          w: win.innerWidth,
+          h: win.innerHeight,
           geo: {
             lat: bidderRequest?.geo?.lat || 0,
             lon: bidderRequest?.geo?.lon || 0,
