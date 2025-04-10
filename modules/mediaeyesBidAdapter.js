@@ -106,9 +106,9 @@ const cookImpBanner = ({ mediaTypes, params }) => {
 
   const { sizes } = mediaTypes.banner;
   return {
-    h: sizes?.[0]?.[1] || undefined,
-    w: sizes?.[0]?.[0] || undefined,
-  };
+    w: sizes[0][0],
+    h: sizes[0][1]
+  }
 };
 
 function getBidFloor(bidRequest) {
