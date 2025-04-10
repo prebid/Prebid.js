@@ -10,7 +10,8 @@
     "./prebid": "./dist/src/src/prebid.public.js",
     "./.babelrc.js": "./.babelrc.js",
     "./babelConfig.js": "./babelConfig.js",
-    "./modules/*": "./dist/src/modules/*"
+    "./modules/*.js": "./dist/src/modules/*.js",
+    "./modules/*": "./dist/src/modules/*.js"
   },
   "scripts": {
     "serve": "gulp serve",
