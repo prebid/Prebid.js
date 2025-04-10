@@ -146,6 +146,9 @@
     "fun-hooks": "^0.9.9",
     "gulp-babel": "^8.0.0",
     "gulp-wrap": "^0.15.0",
+    "iab-adcom": "^1.0.6",
+    "iab-native": "^1.0.0",
+    "iab-openrtb": "^1.0.1",
     "klona": "^2.0.6",
     "live-connect-js": "^7.2.0"
   },

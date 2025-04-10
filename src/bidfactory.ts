@@ -2,7 +2,7 @@ import {getUniqueIdentifierStr} from './utils.js';
 import type {BidderCode, BidSource, Currency, Identifier} from "./types/common.d.ts";
 import {MediaType} from "./mediaTypes.ts";
 import type {DSAResponse} from "./types/ortb/ext/dsa.d.ts";
-import type {EventTrackerResponse} from "./types/ortb/native/eventtrackers.d.ts";
+import type {EventTrackerResponse} from "./types/ortb/native.d.ts";
 import {Metrics} from "./utils/perfMetrics.ts";
 import {Renderer} from './Renderer.js';
 import {type BID_STATUS} from "./constants.ts";
