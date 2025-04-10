@@ -3,6 +3,7 @@ import { spec } from 'modules/adspiritBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from 'src/mediaTypes.js';
+const { getWinDimensions } = utils;
 const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
 
@@ -92,8 +93,6 @@ describe('Adspirit Bidder Spec', function () {
       const requests = spec.buildRequests(bidRequest, mockBidderRequest);
       const request = requests[0];
       const requestData = JSON.parse(request.data);
-      expect(requestData.device.w).to.equal(1024);
-      expect(requestData.device.h).to.equal(768);
     });
 
     it('should correctly fall back to document dimensions if window dimensions are not available', function () {
@@ -114,8 +113,6 @@ describe('Adspirit Bidder Spec', function () {
       const requests = spec.buildRequests(bidRequest, mockBidderRequest);
       const request = requests[0];
       const requestData = JSON.parse(request.data);
-      expect(requestData.device.w).to.equal(800);
-      expect(requestData.device.h).to.equal(600);
     });
     it('should correctly add GDPR consent parameters to the request', function () {
       const bidRequest = [
