@@ -5,13 +5,12 @@
   "//": "TODO: these main/exports only work locally for now; needs prebidjs-releaser updates",
   "main": "build/precompiled/src/prebid.public.ts",
   "exports": {
-    ".": "./build/precompiled/src/prebid.public.js",
-    "./prebid.js": "./build/precompiled/src/prebid.public.js",
-    "./prebid": "./build/precompiled/src/prebid.public.js",
+    ".": "./dist/src/src/prebid.public.js",
+    "./prebid.js": "./dist/src/src/prebid.public.js",
+    "./prebid": "./dist/src/src/prebid.public.js",
     "./.babelrc.js": "./.babelrc.js",
     "./babelConfig.js": "./babelConfig.js",
-    "./modules/*": "./build/precompiled/modules/*",
-    "./modules/*.js": "./build/precompiled/modules/*.js"
+    "./modules/*": "./dist/src/modules/*"
   },
   "scripts": {
     "serve": "gulp serve",
