@@ -34,7 +34,7 @@ module.exports = function(api, options) {
     '$$PREBID_GLOBAL$$': pbGlobal,
     '$$DEFINE_PREBID_GLOBAL$$': defineGlobal,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
-    '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`,
+    '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/chunks/`,
     '$$LIVE_INTENT_MODULE_MODE$$': (process && process.env && process.env.LiveConnectMode) || 'standard'
   };
 
@@ -79,6 +79,11 @@ module.exports = function(api, options) {
           } while (path.scope.hasBinding(registerName))
           path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
           path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
+        }
+      },
+      ImportDeclaration(path, state) {
+        if (path.node.source.value.endsWith('.ts')) {
+          path.node.source.value = path.node.source.value.replace(/\.ts$/, '.js');
         }
       },
       StringLiteral(path) {

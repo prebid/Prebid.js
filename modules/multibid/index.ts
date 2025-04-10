@@ -94,6 +94,17 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
   fn.call(this, bidderRequests);
 }
 
+declare module '../../src/bidfactory' {
+    interface BaseBid {
+        // TODO multibid alters bid's `requestId` and `bidderCode`, which is not
+        // necessary if the objective is to just alter targeting.
+        // is it desirable for e.g. analytics to see bogus bidder codes?
+        multibidPrefix?: string;
+        originalBidder?: BaseBid['bidderCode'];
+        originalRequestId?: BaseBid['requestId'];
+        targetingBidder?: string;
+    }
+}
 /**
  * @summary addBidResponse before hook
  * @param {Function} fn reference to original function (used by hook logic)
@@ -175,11 +186,11 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
     const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
     let modifiedBids = [];
     let buckets = groupBy(bidsReceived, 'adUnitCode');
-    let bids = [].concat.apply([], Object.keys(buckets).reduce((result, slotId) => {
+    let bids = [].concat(...Object.keys(buckets).reduce((result, slotId) => {
       let bucketBids = [];
       // Get bids and group by property originalBidder
       let bidsByBidderName = groupBy(buckets[slotId], 'originalBidder');
-      let adjustedBids = [].concat.apply([], Object.keys(bidsByBidderName).map(key => {
+      let adjustedBids = [].concat(...Object.keys(bidsByBidderName).map(key => {
         // Reset all bidderCodes to original bidder values and sort by CPM
         return bidsByBidderName[key].sort((bidA, bidB) => {
           if (bidA.originalBidder && bidA.originalBidder !== bidA.bidderCode) bidA.bidderCode = bidA.originalBidder;
@@ -206,7 +217,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
         modifiedBids.push(...bucketBids);
       }
 
-      return [].concat.apply([], modifiedBids);
+      return [].concat(...modifiedBids);
     }, []));
 
     fn.call(this, bids, highestCpmCallback, adUnitBidLimit, true);

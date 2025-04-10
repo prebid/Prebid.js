@@ -1,7 +1,8 @@
 import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
-import {config} from '../src/config.js';
+import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
+import type {VideoBid} from "./bidfactory.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -64,10 +65,10 @@ export function fillVideoDefaults(adUnit) {
  * Other properties are ignored and kept as is.
  *
  * @param {Object} adUnit - The adUnit object.
- * @param {Function} onInvalidParam - The callback function to be called with key, value, and adUnit.
+ * @param {Function=} onInvalidParam - The callback function to be called with key, value, and adUnit.
  * @returns {void}
  */
-export function validateOrtbVideoFields(adUnit, onInvalidParam) {
+export function validateOrtbVideoFields(adUnit, onInvalidParam?) {
   const videoParams = adUnit?.mediaTypes?.video;
 
   if (!isPlainObject(videoParams)) {
@@ -95,18 +96,9 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam) {
 }
 
 /**
- * @typedef {object} VideoBid
- * @property {string} adId id of the bid
- */
-
-/**
  * Validate that the assets required for video context are present on the bid
- * @param {VideoBid} bid Video bid to validate
- * @param {Object} [options] - Options object
- * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`
- * @return {Boolean} If object is valid
  */
-export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
+export function isValidVideoBid(bid: VideoBid, {index = auctionManager.index} = {}): boolean {
   const videoMediaType = index.getMediaTypes(bid)?.video;
   const context = videoMediaType && videoMediaType?.context;
   const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
@@ -117,7 +109,20 @@ export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
   return checkVideoBidSetup(bid, adUnit, videoMediaType, context, useCacheKey);
 }
 
-export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context, useCacheKey) {
+declare module './bidfactory' {
+    interface VideoBidResponseProperties {
+        vastXml?: string;
+        vastUrl?: string;
+    }
+}
+
+declare module './hook' {
+    interface NamedHooks {
+        checkVideoBidSetup: typeof checkVideoBidSetup
+    }
+}
+
+export const checkVideoBidSetup = hook('sync', function(bid: VideoBid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     const { url, useLocal } = config.getConfig('cache') || {};

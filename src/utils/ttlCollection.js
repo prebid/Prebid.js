@@ -4,19 +4,19 @@ import {setFocusTimeout} from './focusTimeout.js';
 
 /**
  * Create a set-like collection that automatically forgets items after a certain time.
- *
- * @param {function(*): (number|Promise<number>)} [startTime=timestamp] - A function taking an item added to this collection,
+ * @param {{}} options
+ * @param {function(*): (number|Promise<number>)} [options.startTime=timestamp] - A function taking an item added to this collection,
  *   and returning (a promise to) a timestamp to be used as the starting time for the item
  *   (the item will be dropped after `ttl(item)` milliseconds have elapsed since this timestamp).
  *   Defaults to the time the item was added to the collection.
- * @param {function(*): (number|void|Promise<number|void>)} [ttl=() => null] - A function taking an item added to this collection,
+ * @param {function(*): (number|void|Promise<number|void>)} [options.ttl=() => null] - A function taking an item added to this collection,
  *   and returning (a promise to) the duration (in milliseconds) the item should be kept in it.
  *   May return null to indicate that the item should be persisted indefinitely.
- * @param {boolean} [monotonic=false] - Set to true for better performance, but only if, given any two items A and B in this collection:
+ * @param {boolean} [options.monotonic=false] - Set to true for better performance, but only if, given any two items A and B in this collection:
  *   if A was added before B, then:
  *     - startTime(A) + ttl(A) <= startTime(B) + ttl(B)
  *     - Promise.all([startTime(A), ttl(A)]) never resolves later than Promise.all([startTime(B), ttl(B)])
- * @param {number} [slack=5000] - Maximum duration (in milliseconds) that an item is allowed to persist
+ * @param {number} [options.slack=5000] - Maximum duration (in milliseconds) that an item is allowed to persist
  *   once past its TTL. This is also roughly the interval between "garbage collection" sweeps.
  * @returns {Object} A set-like collection with automatic TTL expiration.
  * @returns {function(*): void} return.add - Add an item to the collection.

@@ -17,11 +17,42 @@ import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
+import type {NativeResponse, Link} from "./types/ortb/native.d.ts";
 
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- */
+type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
+type LegacyImageAssets = { icon: unknown, image: unknown };
+
+type LegacyImageAssetResponse = {
+    url: string;
+    width: number;
+    height: number;
+}
+
+export type LegacyNativeAssetsResponse = {
+    [K in keyof Omit<LegacyAssets, keyof LegacyImageAssets>]?: string;
+} & {
+    [K in keyof LegacyImageAssets]?: LegacyImageAssetResponse
+};
+
+export type LegacyNativeResponse = LegacyNativeAssetsResponse & {
+    clickUrl?: string;
+    privacyLink?: string;
+    clickTrackers?: string | string[];
+    impressionTrackers?: string | string[];
+    javascriptTrackers?: string | string[];
+};
+
+declare module './bidfactory' {
+    interface NativeBidResponseProperties {
+        native: LegacyNativeResponse & { ortb?: NativeResponse };
+    }
+
+    // core will always provide ortb for native responses
+
+    interface NativeBidProperties {
+        native: LegacyNativeResponse & { ortb: NativeResponse };
+    }
+}
 
 export const nativeAdapters = [];
 
@@ -210,7 +241,7 @@ export const hasNonNativeBidder = adUnit =>
  * Validate that the native assets on this bid contain all assets that were
  * marked as required in the adUnit configuration.
  * @param {Bid} bid Native bid to validate
- * @param {BidRequest[]} bidRequests All bid requests for an auction
+ * @param index All bid requests for an auction
  * @return {Boolean} If object is valid
  */
 export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
@@ -413,7 +444,7 @@ export function getNativeRenderingData(bid, adUnit, keys) {
 }
 
 function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
-  const msg = {
+  const msg: any = {
     message: 'assetResponse',
     adId: data.adId,
   };
@@ -482,13 +513,13 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     logError('Native assets object is empty or not an object: ', legacyNativeAssets);
     return;
   }
-  const ortb = {
+  const ortb: any = {
     ver: '1.2',
     assets: []
   };
   for (let key in legacyNativeAssets) {
     // skip conversion for non-asset keys
-    if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
+    if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key as any)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key)) {
       logError(`Unrecognized native asset code: ${key}. Asset will be ignored.`);
       continue;
@@ -504,7 +535,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     if (asset.required && isBoolean(asset.required)) {
       required = Number(asset.required);
     }
-    const ortbAsset = {
+    const ortbAsset: any = {
       id: ortb.assets.length,
       required
     };
@@ -603,7 +634,7 @@ export function fromOrtbNativeRequest(openRTBRequest) {
     return;
   }
 
-  const oldNativeObject = {};
+  const oldNativeObject: any = {};
   for (const asset of openRTBRequest.assets) {
     if (asset.title) {
       const title = {
@@ -612,7 +643,7 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       }
       oldNativeObject.title = title;
     } else if (asset.img) {
-      const image = {
+      const image: any = {
         required: asset.required ? Boolean(asset.required) : false,
       }
       if (asset.img.w && asset.img.h) {
@@ -689,21 +720,21 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
  *
  * @param legacyNative `bidResponse.native` object as returned by adapters
  */
-export function legacyPropertiesToOrtbNative(legacyNative) {
-  const response = {
-    link: {},
+export function legacyPropertiesToOrtbNative(legacyNative: LegacyNativeResponse): Partial<NativeResponse> {
+  const response: NativeResponse = {
+    link: {} as Link,
     eventtrackers: []
   }
   Object.entries(legacyNative).forEach(([key, value]) => {
     switch (key) {
       case 'clickUrl':
-        response.link.url = value;
+        response.link.url = value as string;
         break;
       case 'clickTrackers':
-        response.link.clicktrackers = Array.isArray(value) ? value : [value];
+        response.link.clicktrackers = (Array.isArray(value) ? value : [value]) as string[];
         break;
       case 'impressionTrackers':
-        (Array.isArray(value) ? value : [value]).forEach(url => {
+        (Array.isArray(value) ? value : [value]).forEach((url: string) => {
           response.eventtrackers.push({
             event: EVENT_TYPE_IMPRESSION,
             method: TRACKER_METHOD_IMG,
@@ -716,21 +747,21 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
         // TODO: at the time of writing this, core expected javascriptTrackers to be a string (despite the name),
         // but many adapters are passing an array. It's possible that some of them are, in fact, passing URLs and not markup
         // in general, native trackers seem to be neglected and/or broken
-        response.jstracker = Array.isArray(value) ? value.join('') : value;
+        response.jstracker = Array.isArray(value) ? value.join('') : value as string;
         break;
       case 'privacyLink':
-        response.privacy = value;
+        response.privacy = value as string;
         break;
     }
   });
   return response;
 }
 
-export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
+export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbRequest): NativeResponse {
   const ortbResponse = {
     ...legacyPropertiesToOrtbNative(legacyResponse),
     assets: []
-  };
+  } as NativeResponse;
 
   function useRequestAsset(predicate, fn) {
     let asset = ortbRequest.assets.find(predicate);
@@ -781,8 +812,8 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
  * @param {*} ortbRequest the ortb request, useful to match ids.
  * @returns an object containing the response in legacy native format: { title: "this is a title", image: ... }
  */
-export function toLegacyResponse(ortbResponse, ortbRequest) {
-  const legacyResponse = {};
+export function toLegacyResponse(ortbResponse: NativeResponse, ortbRequest) {
+  const legacyResponse = {} as LegacyNativeResponse;
   const requestAssets = ortbRequest?.assets || [];
   legacyResponse.clickUrl = ortbResponse.link?.url;
   legacyResponse.privacyLink = ortbResponse.privacy;

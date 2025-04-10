@@ -24,9 +24,6 @@ config.getConfig(TTL_CONFIG, (val) => {
   }
 });
 
-let slice = Array.prototype.slice;
-let push = Array.prototype.push;
-
 // define entire events
 let allEvents = Object.values(EVENTS);
 
@@ -34,7 +31,7 @@ const idPaths = EVENT_ID_PATHS;
 
 const _public = (function () {
   let _handlers = {};
-  let _public = {};
+  let _public: any = {};
 
   /**
    *
@@ -69,17 +66,17 @@ const _public = (function () {
      * `callbacks` array
      */
     if (key && eventKeys.includes(key)) {
-      push.apply(callbacks, event[key].que);
+        callbacks.push(...event[key].que);
     }
 
     /** Push each general callback to the `callbacks` array. */
-    push.apply(callbacks, event.que);
+    callbacks.push(...event.que);
 
     /** call each of the callbacks */
     (callbacks || []).forEach(function (fn) {
       if (!fn) return;
       try {
-        fn.apply(null, args);
+        fn(...args);
       } catch (e) {
         utils.logError('Error executing handler:', 'events.js', e, eventString);
       }
@@ -110,8 +107,7 @@ const _public = (function () {
     }
   };
 
-  _public.emit = function (event) {
-    let args = slice.call(arguments, 1);
+  _public.emit = function (event, ...args) {
     _dispatch(event, args);
   };
 
