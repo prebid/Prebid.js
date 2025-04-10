@@ -12,8 +12,8 @@ const BUNDLE = 'bundle';
 const LABELS_KEY = 'analyticsLabels';
 
 const labels = {
-  publisher: {},
   internal: {},
+  publisher: {},
 };
 
 let allLabels = {};
