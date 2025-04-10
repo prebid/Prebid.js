@@ -7,7 +7,7 @@ import * as events from '../../../src/events';
 import * as utils from 'src/utils.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js'
 import Sinon from 'sinon';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone, getWinDimensions } from '../../../src/utils.js';
 
 const MODULE_NAME = 'contxtful';
 
@@ -668,8 +668,7 @@ describe('contxtfulRtdProvider', function () {
 
         // Cannot change the window size from JS
         // So we take the current size as expectation
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const { innerHeight: height, innerWidth: width } = getWinDimensions()
 
         let reqBidsConfigObj = {
           ortb2Fragments: {

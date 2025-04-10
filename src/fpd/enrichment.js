@@ -1,7 +1,7 @@
 import {hook} from '../hook.js';
 import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
-import {deepSetValue, getDefinedParams, getDNT, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import {deepSetValue, getDefinedParams, getDNT, getWinDimensions, getDocument, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {PbPromise} from '../utils/promise.js';
@@ -10,6 +10,7 @@ import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {ACTIVITY_ACCESS_DEVICE} from '../activities/activities.js';
 import {MODULE_TYPE_PREBID} from '../activities/modules.js';
+import { getViewportSize } from '../../libraries/viewport/viewport.js';
 
 export const dep = {
   getRefererInfo,
@@ -106,12 +107,11 @@ const ENRICHMENTS = {
   device() {
     return winFallback((win) => {
       // screen.width and screen.height are the physical dimensions of the screen
-      const w = win.screen.width;
-      const h = win.screen.height;
+      const w = getWinDimensions().screen.width;
+      const h = getWinDimensions().screen.height;
 
       // vpw and vph are the viewport dimensions of the browser window
-      const vpw = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
-      const vph = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
+      const {width: vpw, height: vph} = getViewportSize();
 
       const device = {
         w,

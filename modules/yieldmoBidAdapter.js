@@ -1,6 +1,7 @@
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isArrayOfNums,
@@ -114,8 +115,8 @@ export const spec = {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
         serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
-        serverRequest.w = LOCAL_WINDOW.innerWidth;
-        serverRequest.h = LOCAL_WINDOW.innerHeight;
+        serverRequest.w = getWinDimensions().innerWidth;
+        serverRequest.h = getWinDimensions().innerHeight;
       }
 
       const mtp = window.navigator.maxTouchPoints;

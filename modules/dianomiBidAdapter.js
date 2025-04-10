@@ -10,7 +10,8 @@ import {
   parseSizesInput,
   deepSetValue,
   formatQS,
-  setOnAny
+  setOnAny,
+  getWinDimensions
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -101,8 +102,9 @@ export const spec = {
     }
 
     const device = getConfig('device') || {};
-    device.w = device.w || window.innerWidth;
-    device.h = device.h || window.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+    device.w = device.w || innerWidth;
+    device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
     const paramsEndpoint = setOnAny(validBidRequests, 'params.endpoint');

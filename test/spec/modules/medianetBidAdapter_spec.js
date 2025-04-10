@@ -4,6 +4,7 @@ import {POST_ENDPOINT} from '../../../libraries/medianetUtils/constants.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import { config } from '../../../src/config.js';
 import {server} from '../../mocks/xhr.js';
+import {resetWinDimensions} from '../../../src/utils.js';
 
 $$PREBID_GLOBAL$$.version = $$PREBID_GLOBAL$$.version || 'version';
 let VALID_BID_REQUEST = [{
@@ -1925,6 +1926,7 @@ describe('Media.net bid adapter', function () {
   });
 
   afterEach(function () {
+    resetWinDimensions();
     sandbox.restore();
   });
 
