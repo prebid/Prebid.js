@@ -16,9 +16,10 @@ import {
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
 import { parseDomain } from '../src/refererDetection.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'valuad';
-const AD_URL = 'https://valuad-server-test.appspot.com/adapter';
+const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
 export const _VALUAD = (function() {
@@ -97,7 +98,7 @@ function detectAdUnitPosition(adUnitCode) {
   const element = document.getElementById(adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(adUnitCode)?.divId);
   if (!element) return null;
 
-  const rect = element.getBoundingClientRect();
+  const rect = getBoundingClientRect(element);
   const docElement = document.documentElement;
   const pageWidth = docElement.clientWidth;
   const pageHeight = docElement.scrollHeight;
@@ -461,31 +462,6 @@ const onBidWon = (bid) => {
   });
   const encodedBidStr = window.btoa(bidStr);
   triggerPixel(WON_URL + '?b=' + encodedBidStr);
-}
-
-// Add observer cleanup
-const observers = new Map();
-
-function trackViewability(adUnitCode) {
-  // Cleanup existing observer if any
-  if (observers.has(adUnitCode)) {
-    observers.get(adUnitCode).disconnect();
-  }
-
-  const observer = new IntersectionObserver((entries) => {
-    // ... existing code
-  });
-
-  observers.set(adUnitCode, observer);
-  return observer;
-}
-
-// Add cleanup function
-function cleanupViewabilityTracking(adUnitCode) {
-  if (observers.has(adUnitCode)) {
-    observers.get(adUnitCode).disconnect();
-    observers.delete(adUnitCode);
-  }
 }
 
 export const spec = {
