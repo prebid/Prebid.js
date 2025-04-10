@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 
@@ -863,6 +863,48 @@ describe('PubMatic adapter', () => {
           expect(request.data.imp[0].ext).to.not.have.property('ae');
         });
       })
+
+      describe('cpm adjustment', () => {
+        beforeEach(() => {
+          global.cpmAdjustment = {};
+        });
+
+        it('should not perform any action if the bid is undefined', () => {
+          spec.onBidWon(undefined);
+          expect(global.cpmAdjustment).to.deep.equal({});
+        });
+
+        it('should not perform any action if the bid is null', () => {
+          spec.onBidWon(null);
+          expect(global.cpmAdjustment).to.deep.equal({});
+        });
+        it('should invoke _calculateBidCpmAdjustment and correctly update cpmAdjustment', () => {
+          const bid = {
+            cpm: 2.5,
+            originalCpm: 3,
+            originalCurrency: 'USD',
+            currency: 'USD',
+            mediaType: 'banner',
+            meta: { mediaType: 'banner' }
+          };
+
+          spec.onBidWon(bid);
+
+          expect(cpmAdjustment).to.deep.equal({
+            currency: 'USD',
+            originalCurrency: 'USD',
+            adjustment: [
+              {
+                cpmAdjustment: Number(((3 - 2.5) / 3).toFixed(2)), // Expected: 0.17
+                mediaType: 'banner',
+                metaMediaType: 'banner',
+                cpm: 2.5,
+                originalCpm: 3
+              }
+            ]
+          });
+        });
+      });
 
       // describe('USER ID/ EIDS', () => {
       // 	let copiedBidderRequest;
