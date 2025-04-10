@@ -1,7 +1,3 @@
-import { ACTIVITY_ACCESS_USER_IDS } from '../../src/activities/activities.js';
-import { activityParams } from '../../src/activities/activityParams.js';
-import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { isActivityAllowed } from '../../src/activities/rules.js';
 import {logError, deepClone, isFn, isStr} from '../../src/utils.js';
 
 /**
@@ -88,8 +84,7 @@ export function getEids(priorityMap) {
   const idValues = {};
   Object.entries(priorityMap).forEach(([key, getActiveModule]) => {
     const submodule = getActiveModule();
-    const isModuleAllowed = submodule && isActivityAllowed(ACTIVITY_ACCESS_USER_IDS, activityParams(MODULE_TYPE_UID, submodule?.config?.name));
-    if (isModuleAllowed) {
+    if (submodule) {
       idValues[key] = submodule.idObj[key];
       let eidConf = submodule.submodule.eids?.[key];
       if (typeof eidConf === 'function') {

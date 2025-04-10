@@ -38,6 +38,8 @@ import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { addIdData } from '../../../modules/userId/index.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -3168,8 +3170,8 @@ describe('User ID', function () {
         mockIdSubmodule(UNALLOWED_MODULE),
       ]);
 
-      const unregisterRule = registerActivityControl(ACTIVITY_ACCESS_USER_IDS, 'ruleName', ({componentName}) => {
-        if (componentName === 'mockId3Module') { return ({ allow: false, reason: "disabled" }); }
+      const unregisterRule = registerActivityControl(ACTIVITY_ENRICH_EIDS, 'ruleName', ({componentName, init}) => {
+        if (componentName === 'mockId3Module' && init === false) { return ({ allow: false, reason: "disabled" }); }
       });
 
       config.setConfig({

@@ -13,18 +13,22 @@ const LABELS_KEY = 'analyticsLabels';
 
 const labels = {
   publisher: {},
-  internal: {}
+  internal: {},
 };
+
+let allLabels = {};
 
 config.getConfig(LABELS_KEY, (cfg) => {
   labels.publisher = cfg[LABELS_KEY];
+  allLabels = combineLabels(); ;
 });
 
 export function setLabels(internalLabels) {
   labels.internal = internalLabels;
+  allLabels = combineLabels();
 };
 
-const combineLabels = () => Object.values(labels).reduce((acc, curr) => Object.assign(curr, acc), {});
+const combineLabels = () => Object.values(labels).reduce((acc, curr) => ({...acc, ...curr}), {});
 
 export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
   .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
@@ -107,11 +111,10 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   }
 
   function _callEndpoint({ eventType, args, callback }) {
-    _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels: combineLabels(labels) }));
+    _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels: allLabels }));
   }
 
   function _enqueue({eventType, args}) {
-    const allLabels = combineLabels(labels)
     queue.push(() => {
       if (Object.keys(allLabels || []).length > 0) {
         args = {

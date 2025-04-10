@@ -151,7 +151,7 @@ import {findRootDomain} from '../../src/fpd/rootDomain.js';
 import {allConsent, GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
-import {ACTIVITY_ACCESS_USER_IDS, ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
+import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
 import {startAuction} from '../../src/prebid.js';
@@ -409,10 +409,6 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
 function getIds(priorityMap) {
   return Object.fromEntries(
     Object.entries(priorityMap)
-      .filter(([, getActiveModule]) => {
-        const submodule = getActiveModule();
-        return dep.isAllowed(ACTIVITY_ACCESS_USER_IDS, activityParams(MODULE_TYPE_UID, submodule?.config?.name));
-      })
       .map(([key, getActiveModule]) => [key, getActiveModule()?.idObj?.[key]])
       .filter(([_, value]) => value != null)
   )
@@ -490,10 +486,13 @@ function mkPriorityMaps() {
     const bidder = {};
 
     function activeModuleGetter(key, useGlobals, modules) {
-      return function () {
+      return function (params) {
         for (const {allowed, bidders, module} of modules) {
           const value = module.idObj?.[key];
           if (value != null) {
+            if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
+              return null;
+            }
             if (allowed) {
               return module;
             } else if (useGlobals) {
