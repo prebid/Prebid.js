@@ -272,6 +272,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   }
 
   const adapterName = getAdapterNameForAlias(winningBid.adapterCode || winningBid.bidder);
+  winningBid.bidId =  winningBidId;
   if (isOWPubmaticBid(adapterName) && isS2SBidder(winningBid.bidder)) {
     return;
   }
