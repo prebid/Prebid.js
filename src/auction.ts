@@ -599,6 +599,10 @@ declare module './bidfactory' {
 
     interface BaseBid {
         /**
+         * true if this bid is for an interstitial slot.
+         */
+        instl: boolean;
+        /**
          * Timestamp of when the request for this bid was generated.
          */
         requestTimestamp: number;
