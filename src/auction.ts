@@ -690,8 +690,11 @@ function getPreparedBidForAuction(bid: Partial<Bid>, {index = auctionManager.ind
   // but others to not be set yet (like priceStrings). See #1372 and #1389.
   events.emit(EVENTS.BID_ADJUSTMENT, bid);
 
+  const adUnit = index.getAdUnit(bid);
+  bid.instl = adUnit?.ortb2Imp?.instl === 1;
+
   // a publisher-defined renderer can be used to render bids
-  const bidRenderer = index.getBidRequest(bid)?.renderer || index.getAdUnit(bid).renderer;
+  const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;

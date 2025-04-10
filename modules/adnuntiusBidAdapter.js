@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone} from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone, getWinDimensions} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
@@ -289,8 +289,11 @@ export const spec = {
     if (win.screen && win.screen.availHeight) {
       queryParamsAndValues.push('screen=' + win.screen.availWidth + 'x' + win.screen.availHeight);
     }
-    if (win.innerWidth) {
-      queryParamsAndValues.push('viewport=' + win.innerWidth + 'x' + win.innerHeight);
+
+    const { innerWidth, innerHeight } = getWinDimensions();
+
+    if (innerWidth) {
+      queryParamsAndValues.push('viewport=' + innerWidth + 'x' + innerHeight);
     }
 
     const searchParams = new URLSearchParams(window.location.search);

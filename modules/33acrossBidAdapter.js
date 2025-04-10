@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {
   deepAccess,
+  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   isArray,
@@ -548,7 +549,7 @@ function _isViewabilityMeasurable(element) {
 
 function _getViewability(element, topWin, { w, h } = {}) {
   return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, topWin, { w, h })
+    ? percentInView(element, { w, h })
     : 0;
 }
 
@@ -749,11 +750,7 @@ function getViewportDimensions() {
 }
 
 function getScreenDimensions() {
-  const {
-    innerWidth: windowWidth,
-    innerHeight: windowHeight,
-    screen
-  } = getWindowSelf();
+  const { innerWidth: windowWidth, innerHeight: windowHeight, screen } = getWinDimensions();
 
   const [biggerDimension, smallerDimension] = [
     Math.max(screen.width, screen.height),

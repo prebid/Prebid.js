@@ -6,7 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, logError, deepAccess } from '../src/utils.js';
+import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
@@ -50,8 +50,8 @@ export function isValid(type, bid) {
   } else if (type === NATIVE) {
     if (typeof bid.mediaTypes.native !== 'object' || bid.mediaTypes.native === null) return false;
 
-    const assets = bid.mediaTypes.native?.ortb.assets;
-    const eventTrackers = bid.mediaTypes.native?.ortb.eventtrackers;
+    const assets = bid.mediaTypes.native?.ortb?.assets;
+    const eventTrackers = bid.mediaTypes.native?.ortb?.eventtrackers;
 
     let isValidAssets = false;
     let isValidEventTrackers = false;
@@ -269,20 +269,21 @@ function getDocumentVisibility(window) {
  * @returns {{location: *, referrer: (*|string), stack: (*|Array.<String>), numIframes: (*|Number), wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
 function getPageInfo(bidderRequest) {
+  const winDimensions = getWinDimensions();
   const topmostFrame = getFrameNesting();
   return {
     location: deepAccess(bidderRequest, 'refererInfo.page', null),
     referrer: deepAccess(bidderRequest, 'refererInfo.ref', null),
     stack: deepAccess(bidderRequest, 'refererInfo.stack', []),
     numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
-    wWidth: topmostFrame.innerWidth,
-    wHeight: topmostFrame.innerHeight,
-    oWidth: topmostFrame.outerWidth,
-    oHeight: topmostFrame.outerHeight,
-    sWidth: topmostFrame.screen.width,
-    sHeight: topmostFrame.screen.height,
-    aWidth: topmostFrame.screen.availWidth,
-    aHeight: topmostFrame.screen.availHeight,
+    wWidth: getWinDimensions().innerWidth,
+    wHeight: getWinDimensions().innerHeight,
+    oWidth: winDimensions.outerWidth,
+    oHeight: winDimensions.outerHeight,
+    sWidth: winDimensions.screen.width,
+    sHeight: winDimensions.screen.height,
+    aWidth: winDimensions.screen.availWidth,
+    aHeight: winDimensions.screen.availHeight,
     sLeft: 'screenLeft' in topmostFrame ? topmostFrame.screenLeft : topmostFrame.screenX,
     sTop: 'screenTop' in topmostFrame ? topmostFrame.screenTop : topmostFrame.screenY,
     xOffset: topmostFrame.pageXOffset,
