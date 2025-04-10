@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find} from '../src/polyfill.js';
 
@@ -242,8 +242,8 @@ function buildDevice(bidRequest) {
   const deviceConfig = ortb2Data?.device || {}
 
   const device = {
-    w: window.innerWidth,
-    h: window.innerHeight,
+    w: getWinDimensions().innerWidth,
+    h: getWinDimensions().innerHeight,
     js: 1,
     ext: {
       localStorage: storage.localStorageIsEnabled(),

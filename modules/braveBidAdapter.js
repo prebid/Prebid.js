@@ -11,7 +11,7 @@ import { buildRequests, interpretResponse } from '../libraries/braveUtils/buildA
 
 const BIDDER_CODE = 'brave';
 const DEFAULT_CUR = 'USD';
-const ENDPOINT_URL = `https://point.bravegroup.tv/?t=2&partner=hash`;
+const ENDPOINT_URL = `https://point.braveglobal.tv/?t=2&partner=hash`;
 
 export const spec = {
   code: BIDDER_CODE,
