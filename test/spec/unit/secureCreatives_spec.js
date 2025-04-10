@@ -579,5 +579,15 @@ describe('secureCreatives', () => {
       sinon.assert.called(slots[1].getSlotElementId);
       sinon.assert.calledWith(document.getElementById, 'div2');
     });
+
+    it('should not resize interstitials', () => {
+      resizeRemoteCreative({
+        instl: true,
+        adId: 'adId',
+        width: 300,
+        height: 250,
+      });
+      sinon.assert.notCalled(document.getElementById);
+    })
   })
 });
