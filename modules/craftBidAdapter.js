@@ -1,4 +1,4 @@
-import {getBidRequest} from '../src/utils.js';
+import {getBidRequest, generateUUID} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
@@ -48,7 +48,7 @@ export const spec = {
         payload.us_privacy = bidderRequest.uspConsent;
       }
       if (bidderRequest.refererInfo) {
-        let refererinfo = {
+        const refererinfo = {
           // TODO: this collects everything it finds, except for the canonical URL
           rd_ref: bidderRequest.refererInfo.topmostLocation,
           rd_top: bidderRequest.refererInfo.reachedTop,
@@ -92,11 +92,9 @@ export const spec = {
 };
 
 function formatRequest(payload, bidderRequest) {
-  let options = {};
+  const options = {};
   if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
-    options = {
-      withCredentials: false
-    };
+    options.withCredentials = false;
   }
   const baseUrl = payload.tags[0].url || URL_BASE;
   const payloadString = JSON.stringify(payload);
@@ -132,12 +130,17 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
 function bidToTag(bid) {
   const tag = {};
-  for (var k in bid.params) {
+  for (const k in bid.params) {
     tag[k] = bid.params[k];
   }
   try {
     if (storage.hasLocalStorage()) {
-      tag.uid = JSON.parse(storage.getDataFromLocalStorage(`${bid.params.sitekey}_uid`));
+      const field = `${bid.params.sitekey}_uid`;
+      tag.uid = JSON.parse(storage.getDataFromLocalStorage(field));
+      if (!tag.uid) {
+        tag.uid = {value: {id: generateUUID()}};
+        storage.setDataInLocalStorage(field, JSON.stringify(tag.uid));
+      }
     }
   } catch (e) {
   }
