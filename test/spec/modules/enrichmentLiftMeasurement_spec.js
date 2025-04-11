@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig } from "../../../modules/idTestingModule";
+import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig } from "../../../modules/enrichmentLiftMeasurement";
 import {server} from 'test/mocks/xhr.js';
 import { config } from "../../../src/config"
 import { isInteger } from "../../../src/utils";
@@ -11,8 +11,10 @@ import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/ana
 import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter";
 import { EVENTS } from "../../../src/constants";
 import { getCoreStorageManager } from "../../../src/storageManager";
+import { compareConfigs } from "../../../modules/enrichmentLiftMeasurement";
+import { STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement";
 
-describe('idTestingModule', () => {
+describe('enrichmentLiftMeasurement', () => {
   beforeEach(() => {
     config.resetConfig();
     reset();
@@ -35,7 +37,7 @@ describe('idTestingModule', () => {
     const mathRandomStub = sinon.stub(Math, 'random').callsFake(() => {
       return fixedRandoms[callIndex++];
     });
-    config.setConfig({ idTestingModule: {
+    config.setConfig({ enrichmentLiftMeasurement: {
         modules: modulesConfig
     }});
 
@@ -63,7 +65,7 @@ describe('idTestingModule', () => {
       [suppressionMethod.SUBMODULES]: true
     }).forEach(([method, value]) => {
       it(method, () => {					
-        config.setConfig({ idTestingModule: {
+        config.setConfig({ enrichmentLiftMeasurement: {
           suppression: method,
           modules: [
             { name: 'idSystem', percentage: 0 }
@@ -79,16 +81,16 @@ describe('idTestingModule', () => {
     const TEST_RUN_ID = 'AB1';
     let getCalculatedSubmodulesStub;
 
-    const previousConfig = [
+    const mockConfig = [
       { name: 'idSystem', percentage: 0.5, enabled: true },
       { name: 'idSystem2', percentage: 0.5, enabled: false },
     ];
 
     beforeEach(() => {
       getCalculatedSubmodulesStub = sinon.stub(internals, 'getCalculatedSubmodules');
-      config.setConfig({ idTestingModule: {
+      config.setConfig({ enrichmentLiftMeasurement: {
         testRun: TEST_RUN_ID,
-        storeSplits: storeSplitsMethod.SESSION,
+        storeSplits: storeSplitsMethod.SESSION_STORAGE,
         modules: [
           { name: 'idSystem', percentage: 1 }
         ]
@@ -100,9 +102,12 @@ describe('idTestingModule', () => {
     })
 
     it('should get config from storage if present', () => {
-      const currentConfig = [
-        { name: 'idSystem', percentage: 1 }
-      ]
+      const currentConfig = {
+        testRun: TEST_RUN_ID,
+        modules: [
+          { name: 'idSystem', percentage: 1, enabled: true }
+        ]
+      };
       const fakeStorageManager = {
         sessionStorageIsEnabled: () => true,
         getDataFromSessionStorage: sinon.stub().returns(JSON.stringify(currentConfig)),
@@ -114,7 +119,7 @@ describe('idTestingModule', () => {
     });
 
     it('should store config if not present', () => {
-      const stubCalculation = previousConfig.map(module => ({...module, percentage: 0.1}));
+      const stubCalculation = mockConfig.map(module => ({...module, percentage: 0.1}));
       getCalculatedSubmodulesStub.returns(stubCalculation);
       const fakeStorageManager = {
         sessionStorageIsEnabled: () => true,
@@ -124,22 +129,26 @@ describe('idTestingModule', () => {
       init(fakeStorageManager);
       sinon.assert.calledOnce(fakeStorageManager.setDataInSessionStorage);
       sinon.assert.calledOnce(getCalculatedSubmodulesStub);
-      expect(fakeStorageManager.setDataInSessionStorage.getCall(0).args[1]).to.deep.eql(JSON.stringify(stubCalculation));
+      const expectedArg = {testRun: TEST_RUN_ID, modules: stubCalculation};
+      expect(fakeStorageManager.setDataInSessionStorage.getCall(0).args[1]).to.deep.eql(JSON.stringify(expectedArg));
     });
 
     it('should update config if present is different', () => {
-      const stubCalculation = previousConfig.map(module => ({...module, percentage: 0.1}));
+      const stubCalculation = mockConfig.map(module => ({...module, percentage: 0.1}));
       getCalculatedSubmodulesStub.returns(stubCalculation);
-      const newConfig = previousConfig.map(module => ({...module, percentage: 0.1}));
+      const previousTestConfig = {
+        modules: mockConfig,
+        testRun: TEST_RUN_ID
+      }
       const fakeStorageManager = {
         sessionStorageIsEnabled: () => true,
-        getDataFromSessionStorage: sinon.stub().returns(JSON.stringify(previousConfig)),
+        getDataFromSessionStorage: sinon.stub().returns(JSON.stringify(previousTestConfig)),
         setDataInSessionStorage: sinon.stub()
       };
-      config.setConfig({ idTestingModule: {
+      config.setConfig({ enrichmentLiftMeasurement: {
         testRun: TEST_RUN_ID,
-        storeSplits: storeSplitsMethod.SESSION,
-        modules: newConfig
+        storeSplits: storeSplitsMethod.SESSION_STORAGE,
+        modules: mockConfig.map(module => ({...module, percentage: 0.1}))
       }});
       
       init(fakeStorageManager);
@@ -149,15 +158,15 @@ describe('idTestingModule', () => {
     });
 
     it('should attach module config to analytics labels', () => {
-      getCalculatedSubmodulesStub.returns(previousConfig);
+      getCalculatedSubmodulesStub.returns(mockConfig);
       const TEST_RUN_ID = 'AB1';
       enableAjaxForAnalytics();
       const adapter = new AnalyticsAdapter({
         url: 'https://localhost:9999/endpoint',
         analyticsType: 'endpoint'
       });
-      config.setConfig({ idTestingModule: {
-        modules: previousConfig,
+      config.setConfig({ enrichmentLiftMeasurement: {
+        modules: mockConfig,
         testRun: TEST_RUN_ID,
         storeSplits: storeSplitsMethod.PAGE
       }});
@@ -169,43 +178,89 @@ describe('idTestingModule', () => {
 
       const result = JSON.parse(server.requests[0].requestBody);
 
-      sinon.assert.match(result, {labels: {[TEST_RUN_ID]: previousConfig}, eventType});
+      sinon.assert.match(result, {labels: {[TEST_RUN_ID]: mockConfig}, eventType});
       disableAjaxForAnalytics();
     });
 
     describe('getStoredTestConfig', () => {
-      const { LIFE_OF_USER, SESSION } = storeSplitsMethod;
+      const { LOCAL_STORAGE, SESSION_STORAGE } = storeSplitsMethod;
       const TEST_RUN_ID = 'ExperimentA';
-      const stringifiedConfig = JSON.stringify(previousConfig);
+      const expectedResult = {
+        modules: mockConfig,
+        testRun: TEST_RUN_ID
+      };
+      const stringifiedConfig = JSON.stringify(expectedResult);
 
       Object.entries({ 
-        [LIFE_OF_USER]: localStorage,
-        [SESSION]: sessionStorage,
+        [LOCAL_STORAGE]: localStorage,
+        [SESSION_STORAGE]: sessionStorage,
       }).forEach(([method, storage]) => {
         it('should get stored config for ' + method, () => {
-          storage.setItem(TEST_RUN_ID, stringifiedConfig);
-          const result = getStoredTestConfig(TEST_RUN_ID, method, getCoreStorageManager('idTestingModule'));
-          expect(result).to.deep.eql(previousConfig);
-          storage.removeItem(TEST_RUN_ID);
+          storage.setItem(STORAGE_KEY, stringifiedConfig);
+          const result = getStoredTestConfig(method, getCoreStorageManager('enrichmentLiftMeasurement'));
+          expect(result).to.deep.eql(expectedResult);
+          storage.removeItem(STORAGE_KEY);
         });
       });
     });
 
     describe('storeTestConfig', () => {
-      const { LIFE_OF_USER, SESSION } = storeSplitsMethod;
+      const { LOCAL_STORAGE, SESSION_STORAGE } = storeSplitsMethod;
       const TEST_RUN_ID = 'ExperimentA';
 
       Object.entries({ 
-        [LIFE_OF_USER]: localStorage,
-        [SESSION]: sessionStorage,
+        [LOCAL_STORAGE]: localStorage,
+        [SESSION_STORAGE]: sessionStorage,
       }).forEach(([method, storage]) => {
         it('should store test config for ' + method, () => {
-          storeTestConfig(TEST_RUN_ID, previousConfig, method, getCoreStorageManager('idTestingModule'));
-          const result = JSON.parse(storage.getItem(TEST_RUN_ID));
-          expect(result).to.deep.eql(previousConfig);
-          storage.removeItem(TEST_RUN_ID);
+          const expected = {
+            modules: mockConfig,
+            testRun: TEST_RUN_ID
+          };
+          storeTestConfig(TEST_RUN_ID, mockConfig, method, getCoreStorageManager('enrichmentLiftMeasurement'));
+          const result = JSON.parse(storage.getItem(STORAGE_KEY));
+          expect(result).to.deep.eql(expected);
+          storage.removeItem(STORAGE_KEY);
         });
       });
+    });
+  });
+
+  describe('compareConfigs', () => {
+    it('should return true for same config and test run identifier regardless of order', () => {
+      const oldConfig = {
+        testRun: 'AB1',
+        modules: [
+          {name: 'idSystem1', percentage: 1.0, enabled: true},
+          {name: 'idSystem2', percentage: 0.3, enabled: false},
+        ]
+      }
+      const newConfig = {
+        testRun: 'AB1',
+        modules: [
+          {name: 'idSystem2', percentage: 0.3},
+          {name: 'idSystem1', percentage: 1.0},
+        ]
+      }
+      expect(compareConfigs(newConfig, oldConfig)).to.eql(true);
+    });
+
+    it('should return false for same config and different run identifier', () => {
+      const oldConfig = {
+        testRun: 'AB1',
+        modules: [
+          {name: 'idSystem1', percentage: 1.0, enabled: true},
+          {name: 'idSystem2', percentage: 0.3, enabled: false},
+        ]
+      }
+      const newConfig = {
+        testRun: 'AB2',
+        modules: [
+          {name: 'idSystem2', percentage: 0.3},
+          {name: 'idSystem1', percentage: 1.0},
+        ]
+      }
+      expect(compareConfigs(newConfig, oldConfig)).to.eql(false);
     });
   });
 });
