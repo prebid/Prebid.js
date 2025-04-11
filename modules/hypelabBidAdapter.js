@@ -12,7 +12,7 @@ export const REPORTING_ROUTE = '';
 
 const PREBID_VERSION = '$prebid.version$';
 const PROVIDER_NAME = 'prebid';
-const PROVIDER_VERSION = '0.0.2';
+const PROVIDER_VERSION = '0.0.3';
 
 const url = (route) => ENDPOINT_URL + route;
 
@@ -37,10 +37,21 @@ function buildRequests(validBidRequests, bidderRequest) {
     }, []);
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
-
     const floor = getBidFloor(request, request.sizes || []);
-
     const dpr = typeof window != 'undefined' ? window.devicePixelRatio : 1;
+    const wp = getWalletPresence();
+    const wpfs = getWalletProviderFlags();
+    const vp = [
+      Math.max(
+        document.documentElement.clientWidth || 0,
+        window.innerWidth || 0
+      ),
+      Math.max(
+        document.documentElement.clientHeight || 0,
+        window.innerHeight || 0
+      ),
+    ];
+    const pp = getPosition(request.adUnitCode);
 
     const payload = {
       property_slug: request.params.property_slug,
@@ -60,19 +71,16 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidRequestsCount: request.bidRequestsCount,
       bidderRequestsCount: request.bidderRequestsCount,
       bidderWinsCount: request.bidderWinsCount,
-      wp: {
-        ada: typeof window != 'undefined' && !!window.cardano,
-        bnb: typeof window != 'undefined' && !!window.BinanceChain,
-        eth: typeof window != 'undefined' && !!window.ethereum,
-        sol: typeof window != 'undefined' && !!window.solana,
-        tron: typeof window != 'undefined' && !!window.tron,
-      },
+      wp,
+      wpfs,
+      vp,
+      pp,
     };
 
     return {
       method: 'POST',
       url: url(REQUEST_ROUTE),
-      options: { contentType: 'application/json', withCredentials: false },
+      options: { contentType: 'application/json', withCredentials: true },
       data: payload,
       bidId: request.bidId,
     };
@@ -95,14 +103,229 @@ function getBidFloor(bid, sizes) {
   let floorInfo = bid.getFloor({
     currency: 'USD',
     mediaType: 'banner',
-    size: sizes.length === 1 ? sizes[0] : '*'
+    size: sizes.length === 1 ? sizes[0] : '*',
   });
 
-  if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+  if (
+    isPlainObject(floorInfo) &&
+    floorInfo.currency === 'USD' &&
+    !isNaN(parseFloat(floorInfo.floor))
+  ) {
     floor = parseFloat(floorInfo.floor);
   }
 
   return floor;
+}
+
+function getPosition(id) {
+  const element = document.getElementById(id);
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  return [rect.left, rect.top];
+}
+
+function getWalletPresence() {
+  return {
+    ada: typeof window != 'undefined' && !!window.cardano,
+    bnb: typeof window != 'undefined' && !!window.BinanceChain,
+    eth: typeof window != 'undefined' && !!window.ethereum,
+    sol: typeof window != 'undefined' && !!window.solana,
+    tron: typeof window != 'undefined' && !!window.tron,
+  };
+}
+
+function getWalletProviderFlags() {
+  let ada, bnb, eth, sol, tron;
+
+  try {
+    ada = getAdaWalletProviderFlags();
+  } catch (e) {
+    ada = [];
+  }
+  try {
+    bnb = getBnbWalletProviderFlags();
+  } catch (e) {
+    bnb = [];
+  }
+  try {
+    eth = getEthWalletProviderFlags();
+  } catch (e) {
+    eth = [];
+  }
+  try {
+    sol = getSolWalletProviderFlags();
+  } catch (e) {
+    sol = [];
+  }
+
+  try {
+    tron = getTronWalletProviderFlags();
+  } catch (e) {
+    tron = [];
+  }
+
+  return {
+    ada,
+    bnb,
+    eth,
+    sol,
+    tron,
+  };
+}
+
+function getAdaWalletProviderFlags() {
+  const flags = [];
+  if (typeof window === 'undefined') return flags;
+  if (window.cardano) {
+    const allWalletProviderFlags = [
+      'eternl',
+      'yoroi',
+      'nufi',
+      'flint',
+      'exodus',
+      'lace',
+      'nami',
+      'gerowallet',
+      'typhon',
+      'begin',
+    ];
+    for (const flag of allWalletProviderFlags) {
+      if (window.cardano[flag]) flags.push(flag);
+    }
+  }
+  return flags;
+}
+
+function getBnbWalletProviderFlags() {
+  const flags = [];
+  if (typeof window === 'undefined') return flags;
+  if (window.BinanceChain) {
+    const allWalletProviderFlags = [
+      'isTrustWallet',
+      'isCoin98',
+      'isKaiWallet',
+      'isMetaMask',
+      'isNifyWallet',
+    ];
+    for (const flag of allWalletProviderFlags) {
+      if (window.BinanceChain[flag]) flags.push(flag);
+    }
+    // Coin98 adds additional flags
+    if (flags.includes('isCoin98') && flags.includes('isKaiWallet')) {
+      flags.splice(flags.indexOf('isKaiWallet'), 1);
+    }
+    if (flags.includes('isCoin98') && flags.includes('isNifyWallet')) {
+      flags.splice(flags.indexOf('isNifyWallet'), 1);
+    }
+    if (flags.includes('isCoin98') && flags.includes('isMetaMask')) {
+      flags.splice(flags.indexOf('isMetaMask'), 1);
+    }
+  }
+  return flags;
+}
+
+function getEthWalletProviderFlags() {
+  const flags = [];
+  if (typeof window === 'undefined') return flags;
+  if (window.ethereum) {
+    const allWalletProviderFlags = [
+      'isApexWallet',
+      'isAvalanche',
+      'isBackpack',
+      'isBifrost',
+      'isBitKeep',
+      'isBitski',
+      'isBlockWallet',
+      'isBraveWallet',
+      'isCoinbaseWallet',
+      'isDawn',
+      'isEnkrypt',
+      'isExodus',
+      'isFrame',
+      'isFrontier',
+      'isGamestop',
+      'isHyperPay',
+      'isImToken',
+      'isKuCoinWallet',
+      'isMathWallet',
+      'isMetaMask',
+      'isOkxWallet',
+      'isOKExWallet',
+      'isOneInchAndroidWallet',
+      'isOneInchIOSWallet',
+      'isOpera',
+      'isPhantom',
+      'isPortal',
+      'isRabby',
+      'isRainbow',
+      'isStatus',
+      'isTally',
+      'isTokenPocket',
+      'isTokenary',
+      'isTrust',
+      'isTrustWallet',
+      'isXDEFI',
+      'isZerion',
+    ];
+    for (const flag of allWalletProviderFlags) {
+      if (window.ethereum[flag]) flags.push(flag);
+    }
+    // Filter MetaMask lookalikes
+    if (
+      flags.includes('isMetaMask') &&
+      [
+        'isApexWallet',
+        'isAvalanche',
+        'isBitKeep',
+        'isBlockWallet',
+        'isKuCoinWallet',
+        'isMathWallet',
+        'isOKExWallet',
+        'isOkxWallet',
+        'isOneInchAndroidWallet',
+        'isOneInchIOSWallet',
+        'isOpera',
+        'isPhantom',
+        'isPortal',
+        'isRabby',
+        'isTokenPocket',
+        'isTokenary',
+        'isZerion',
+      ].some((f) => flags.includes(f))
+    ) {
+      flags.splice(flags.indexOf('isMetaMask'), 1);
+    }
+  }
+  return flags;
+}
+
+function getSolWalletProviderFlags() {
+  const flags = [];
+  if (typeof window === 'undefined') return flags;
+  if (window.solana) {
+    const allWalletProviderFlags = ['isPhantom', 'isNufi'];
+    for (const flag of allWalletProviderFlags) {
+      if (window.solana[flag]) flags.push(flag);
+    }
+    if (flags.includes('isNufi') && flags.includes('isPhantom')) {
+      flags.splice(flags.indexOf('isPhantom'), 1);
+    }
+  }
+  if (window.solflare) flags.push('isSolflare');
+  if (window.backpack) flags.push('isBackpack');
+  return flags;
+}
+
+function getTronWalletProviderFlags() {
+  const flags = [];
+  if (typeof window === 'undefined') return flags;
+  if (window.tron) {
+    const allWalletProviderFlags = ['isTronLink'];
+    for (const flag of allWalletProviderFlags) {
+      if (window.tron[flag]) flags.push(flag);
+    }
+  }
+  return flags;
 }
 
 function interpretResponse(serverResponse, bidRequest) {
