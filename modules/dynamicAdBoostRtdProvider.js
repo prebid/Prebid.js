@@ -43,7 +43,7 @@ function init() {
     let dabDateNow = new Date();
     let dabTimeNow = dabDateNow.getTime();
     let dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
-    let elapsedThreshold = 30;
+    let elapsedThreshold = 0;
 
     if (dabElapsedSeconds >= elapsedThreshold) {
       clearInterval(dabInterval); // Stop
@@ -55,9 +55,7 @@ function init() {
 }
 
 function loadLmScript(keyId) {
-  let viewableAdUnits = Object.keys(dynamicAdBoostAdUnits);
-  let viewableAdUnitsCSV = viewableAdUnits.join(',');
-  const scriptUrl = `${SCRIPT_URL}/${keyId}.js?viewableAdUnits=${viewableAdUnitsCSV}`;
+  const scriptUrl = `${SCRIPT_URL}/${keyId}.js`;
   loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME);
   observer.disconnect();
 }
