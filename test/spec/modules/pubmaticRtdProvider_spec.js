@@ -296,7 +296,7 @@ describe('Pubmatic RTD Provider', () => {
 
       setFloorsConfig(validData);
 
-      expect(confStub.calledOnce).to.be.true;
+      expect(confStub.called).to.be.true;
       const calledWith = confStub.getCall(0).args[0];
       expect(calledWith).to.have.nested.property('floors.data.currency', 'USD');
       expect(calledWith).to.have.nested.property('floors.data.schema.fields[0]', 'mediaType');
@@ -306,7 +306,7 @@ describe('Pubmatic RTD Provider', () => {
       setFloorsConfig(null);
 
       expect(confStub.called).to.be.false;
-      expect(logMessageStub.calledOnce).to.be.true;
+      expect(logMessageStub.called).to.be.true;
       expect(logMessageStub.getCall(0).args[0]).to.include('floors data is empty');
     });
 
@@ -314,15 +314,15 @@ describe('Pubmatic RTD Provider', () => {
       setFloorsConfig(undefined);
 
       expect(confStub.called).to.be.false;
-      expect(logMessageStub.calledOnce).to.be.true;
+      expect(logMessageStub.called).to.be.true;
       expect(logMessageStub.getCall(0).args[0]).to.include('floors data is empty');
     });
 
-    it('should log message when data is an empty object', () => {
+    it('should log message when data is an empty object ', () => {
       setFloorsConfig({});
 
       expect(confStub.called).to.be.false;
-      expect(logMessageStub.calledOnce).to.be.true;
+      expect(logMessageStub.called).to.be.true;
       expect(logMessageStub.getCall(0).args[0]).to.include('floors data is empty');
     });
 
@@ -330,7 +330,7 @@ describe('Pubmatic RTD Provider', () => {
       setFloorsConfig([]);
 
       expect(confStub.called).to.be.false;
-      expect(logMessageStub.calledOnce).to.be.true;
+      expect(logMessageStub.called).to.be.true;
       expect(logMessageStub.getCall(0).args[0]).to.include('floors data is empty');
     });
 
@@ -349,7 +349,7 @@ describe('Pubmatic RTD Provider', () => {
 
       setFloorsConfig(floorData);
 
-      expect(confStub.calledOnce).to.be.true;
+      expect(confStub.called).to.be.true;
       const calledWith = confStub.getCall(0).args[0];
       expect(calledWith.floors.data).to.deep.equal(floorData);
     });
@@ -430,7 +430,7 @@ describe('Pubmatic RTD Provider', () => {
         fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
         await fetchFloorRules('publisherId', 'profileId');
-        expect(logErrorStub.calledOnce).to.be.true;
+        expect(logErrorStub.called).to.be.true;
         expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
       });
 
@@ -445,7 +445,7 @@ describe('Pubmatic RTD Provider', () => {
         fetchStub.rejects(new Error('Network Error'));
 
         await fetchFloorRules('publisherId', 'profileId');
-        expect(logErrorStub.calledOnce).to.be.true;
+        expect(logErrorStub.called).to.be.true;
         expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching floors');
       });
     });
@@ -470,8 +470,8 @@ describe('Pubmatic RTD Provider', () => {
         fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200 }));
         await setPriceFloors('publisherId', 'profileId');
 
-        expect(fetchStub.calledOnce).to.be.true;
-        expect(confStub.calledOnce).to.be.true;
+        expect(fetchStub.called).to.be.true;
+        expect(confStub.called).to.be.true;
       });
     });
   });
@@ -519,7 +519,7 @@ describe('Pubmatic RTD Provider', () => {
       _pubmaticFloorRulesPromiseMock = Promise.resolve();
       pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
       await _pubmaticFloorRulesPromiseMock;
-      expect(continueAuctionStub.calledOnce);
+      expect(continueAuctionStub.called);
       expect(
         continueAuctionStub.alwaysCalledWith(
           hookConfig

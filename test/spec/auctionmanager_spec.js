@@ -1266,6 +1266,31 @@ describe('auctionmanager.js', function () {
         auction.callBids();
         expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
       });
+
+      [
+        {
+          request: 1,
+          response: true
+        },
+        {
+          request: 0,
+          response: false
+        },
+        {
+          request: 2,
+          response: false
+        },
+        {
+          request: undefined,
+          response: false
+        }
+      ].forEach(({request, response}) => {
+        it(`sets bidResponse.instl to ${response} if adUnit.ortb2Imp.instl is ${request}`, () => {
+          adUnits[0].ortb2Imp = {instl: request};
+          auction.callBids();
+          expect(auction.getBidsReceived()[0].instl).to.equal(response);
+        })
+      })
     });
 
     describe('when auction timeout is 20', function () {
