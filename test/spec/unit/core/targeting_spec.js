@@ -948,7 +948,7 @@ describe('targeting tests', function () {
         // Default behavior - no specific configuration
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
-        // Custom key values from both bids should be combined to maintain existing functionality
+        // Custom key values from both bids should no longer combined to maintain existing functionality
         expect(targeting['/123456/header-bid-tag-0']).to.not.have.property('foobar');
         expect(targeting['/123456/header-bid-tag-0']['foobar']).to.not.equal('winner,loser');
       });
