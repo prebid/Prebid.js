@@ -123,7 +123,7 @@ describe('Equativ bid adapter tests', () => {
       nativeOrtbRequest,
       bidder: 'equativ',
       params: {
-        networkId: 777,
+        networkId: 111,
       },
       requestId: 'equativ_native_reqid_42',
       ortb2Imp: {
@@ -424,25 +424,25 @@ describe('Equativ bid adapter tests', () => {
     });
 
     it('should read and send pid as buyeruid', () => {
-      const cookieData = {
+      const localStorageData = {
         'eqt_pid': '7789746781'
       };
-      const getCookieStub = sinon.stub(storage, 'getCookie');
-      getCookieStub.callsFake(cookieName => cookieData[cookieName]);
+      const getDataFromLocalStorage = sinon.stub(storage, 'getDataFromLocalStorage');
+      getDataFromLocalStorage.callsFake(name => localStorageData[name]);
 
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
       )[0];
 
-      expect(request.data.user).to.have.property('buyeruid').that.eq(cookieData['eqt_pid']);
+      expect(request.data.user).to.have.property('buyeruid').that.eq(localStorageData['eqt_pid']);
 
-      getCookieStub.restore();
+      getDataFromLocalStorage.restore();
     });
 
     it('should not send buyeruid', () => {
-      const getCookieStub = sinon.stub(storage, 'getCookie');
-      getCookieStub.callsFake(() => null);
+      const getDataFromLocalStorage = sinon.stub(storage, 'getDataFromLocalStorage');
+      getDataFromLocalStorage.callsFake(() => null);
 
       const request = spec.buildRequests(
         DEFAULT_BANNER_BID_REQUESTS,
@@ -451,12 +451,12 @@ describe('Equativ bid adapter tests', () => {
 
       expect(request.data).to.not.have.property('user');
 
-      getCookieStub.restore();
+      getDataFromLocalStorage.restore();
     });
 
     it('should pass buyeruid defined in config', () => {
-      const getCookieStub = sinon.stub(storage, 'getCookie');
-      getCookieStub.callsFake(() => undefined);
+      const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      getDataFromLocalStorageStub.callsFake(() => undefined);
 
       const bidRequest = {
         ...DEFAULT_BANNER_BIDDER_REQUEST,
@@ -470,7 +470,7 @@ describe('Equativ bid adapter tests', () => {
 
       expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
 
-      getCookieStub.restore();
+      getDataFromLocalStorageStub.restore();
     });
 
     it('should build a video request properly under normal circumstances', () => {
@@ -752,11 +752,11 @@ describe('Equativ bid adapter tests', () => {
   });
 
   describe('getUserSyncs', () => {
-    let setCookieStub;
+    let setDataInLocalStorageStub;
 
-    beforeEach(() => setCookieStub = sinon.stub(storage, 'setCookie'));
+    beforeEach(() => setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage'));
 
-    afterEach(() => setCookieStub.restore());
+    afterEach(() => setDataInLocalStorageStub.restore());
 
     it('should return empty array if iframe sync not enabled', () => {
       const syncs = spec.getUserSyncs({}, SAMPLE_RESPONSE);
@@ -764,75 +764,95 @@ describe('Equativ bid adapter tests', () => {
     });
 
     it('should retrieve and save user pid', (done) => {
-      const userSyncs = spec.getUserSyncs(
+      spec.getUserSyncs(
         { iframeEnabled: true },
-        SAMPLE_RESPONSE
+        SAMPLE_RESPONSE,
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
       );
 
       window.dispatchEvent(new MessageEvent('message', {
         data: {
+          action: 'getConsent',
           pid: '7767825890726'
         },
-        origin: 'https://apps.smartadserver.com'
+        origin: 'https://apps.smartadserver.com',
+        source: window
       }));
 
-      const exp = new Date();
-      exp.setTime(Date.now() + 31536000000);
-
       setTimeout(() => {
-        expect(setCookieStub.calledOnce).to.be.true;
-        expect(setCookieStub.calledWith('eqt_pid', '7767825890726', exp.toUTCString())).to.be.true;
+        expect(setDataInLocalStorageStub.calledOnce).to.be.true;
+        expect(setDataInLocalStorageStub.calledWith('eqt_pid', '7767825890726')).to.be.true;
         done();
       });
     });
 
-    it('should not save user pid coming from not origin', (done) => {
-      const userSyncs = spec.getUserSyncs(
+    it('should not save user pid coming from incorrect origin', (done) => {
+      spec.getUserSyncs(
         { iframeEnabled: true },
-        SAMPLE_RESPONSE
+        SAMPLE_RESPONSE,
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
       );
 
       window.dispatchEvent(new MessageEvent('message', {
         data: {
+          action: 'getConsent',
           pid: '7767825890726'
         },
-        origin: 'https://another-origin.com'
+        origin: 'https://another-origin.com',
+        source: window
       }));
 
       setTimeout(() => {
-        expect(setCookieStub.notCalled).to.be.true;
+        expect(setDataInLocalStorageStub.notCalled).to.be.true;
         done();
       });
     });
 
     it('should not save empty pid', (done) => {
-      const userSyncs = spec.getUserSyncs(
+      spec.getUserSyncs(
         { iframeEnabled: true },
-        SAMPLE_RESPONSE
+        SAMPLE_RESPONSE,
+        { gdprApplies: true, vendorData: { vendor: { consents: {} } } }
       );
 
       window.dispatchEvent(new MessageEvent('message', {
         data: {
+          action: 'getConsent',
           pid: ''
         },
-        origin: 'https://apps.smartadserver.com'
+        origin: 'https://apps.smartadserver.com',
+        source: window
       }));
 
       setTimeout(() => {
-        expect(setCookieStub.notCalled).to.be.true;
+        expect(setDataInLocalStorageStub.notCalled).to.be.true;
         done();
       });
     });
 
-    it('should return array including iframe cookie sync object', () => {
+    it('should return array including iframe cookie sync object (gdprApplies=true)', () => {
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
-        SAMPLE_RESPONSE
+        SAMPLE_RESPONSE,
+        { gdprApplies: true }
       );
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0]).to.deep.equal({
         type: 'iframe',
-        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html'
+        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=1&'
+      });
+    });
+
+    it('should return array including iframe cookie sync object (gdprApplies=false)', () => {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        SAMPLE_RESPONSE,
+        { gdprApplies: false }
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0]).to.deep.equal({
+        type: 'iframe',
+        url: 'https://apps.smartadserver.com/diff/templates/asset/csync.html?nwid=111&gdpr=0&'
       });
     });
   });
