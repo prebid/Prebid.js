@@ -490,6 +490,9 @@ function mkPriorityMaps() {
         for (const {allowed, bidders, module} of modules) {
           const value = module.idObj?.[key];
           if (value != null) {
+            if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
+              return null;
+            }
             if (allowed) {
               return module;
             } else if (useGlobals) {
@@ -566,7 +569,7 @@ export function enrichEids(ortb2Fragments) {
   return ortb2Fragments;
 }
 
-function addIdData({adUnits, ortb2Fragments}) {
+export function addIdData({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
