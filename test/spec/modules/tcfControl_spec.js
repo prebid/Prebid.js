@@ -452,11 +452,11 @@ describe('gdpr enforcement', function () {
       expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
 
-    it('should return deny when purpose 4 consent is withheld', () => {
+    it('should return deny by default when purpose 4 consent is withheld', () => {
       setEnforcementConfig({
         gdpr: {
           rules: [{
-            purpose: 'personalizedAds',
+            purpose: 'someOtherPurpose',
             enforcePurpose: true,
             enforceVendor: true,
           }]

@@ -69,14 +69,33 @@ const CONFIGURABLE_RULES = {
   personalizedAds: {
     type: 'purpose',
     id: 4,
+    default: {
+      purpose: 'personalizedAds',
+      enforcePurpose: true,
+      enforceVendor: true,
+      vendorExceptions: [],
+      eidsRequireP4Consent: false
+    }
   },
   measurement: {
     type: 'purpose',
     id: 7,
+    default: {
+      purpose: 'measurement',
+      enforcePurpose: true,
+      enforceVendor: true,
+      vendorExceptions: []
+    }
   },
   transmitPreciseGeo: {
     type: 'feature',
     id: 1,
+    default: {
+      purpose: 'transmitPreciseGeo',
+      enforcePurpose: true,
+      enforceVendor: true,
+      vendorExceptions: []
+    }
   },
 };
 
