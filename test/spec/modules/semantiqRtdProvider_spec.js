@@ -22,8 +22,49 @@ describe('semantiqRtdProvider', () => {
 
   describe('init', () => {
     it('returns true on initialization', () => {
-      const initResult = semantiqRtdSubmodule.init();
+      const initResult = semantiqRtdSubmodule.init({});
       expect(initResult).to.be.true;
+    });
+  });
+
+  describe('pageImpression event', () => {
+    it('dispatches an event on initialization', () => {
+      getWindowLocationStub.returns(new URL('https://example.com/article'));
+
+      semantiqRtdSubmodule.init({ params: { companyId: 5 } });
+
+      const body = JSON.parse(server.requests[0].requestBody);
+
+      expect(server.requests[0].url).to.be.equal('https://api.adnz.co/api/ws-clickstream-collector/submit');
+      expect(server.requests[0].method).to.be.equal('POST');
+
+      expect(body.company_id).to.be.equal(5);
+      expect(body.event_id).not.to.be.empty;
+      expect(body.event_timestamp).not.to.be.empty;
+      expect(body.event_type).to.be.equal('pageImpression');
+      expect(body.page_impression_id).not.to.be.empty;
+      expect(body.source).to.be.equal('semantiqPrebidModule');
+      expect(body.url).to.be.equal('https://example.com/article');
+    });
+
+    it('uses the correct company ID', () => {
+      semantiqRtdSubmodule.init({ params: { companyId: 555 } });
+      semantiqRtdSubmodule.init({ params: { companyId: [111, 222, 333] } });
+
+      const body1 = JSON.parse(server.requests[0].requestBody);
+      const body2 = JSON.parse(server.requests[1].requestBody);
+
+      expect(body1.company_id).to.be.equal(555);
+      expect(body2.company_id).to.be.equal(111);
+    });
+
+    it('uses cached page impression ID if present', () => {
+      window.audienzz = { collectorPageImpressionId: 'cached-guid' };
+      semantiqRtdSubmodule.init({ params: { companyId: 5 } });
+
+      const body = JSON.parse(server.requests[0].requestBody);
+
+      expect(body.page_impression_id).to.be.equal('cached-guid');
     });
   });
 
