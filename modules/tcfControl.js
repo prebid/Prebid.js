@@ -91,7 +91,7 @@ const CONFIGURABLE_RULES = {
     type: 'feature',
     id: 1,
     default: {
-      purpose: 'measurement',
+      purpose: 'transmitPreciseGeo',
       enforcePurpose: true,
       enforceVendor: true,
       vendorExceptions: []
