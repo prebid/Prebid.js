@@ -75,10 +75,17 @@ export function GenericAnalytics() {
       if (callDepth >= MAX_CALL_DEPTH) {
         return;
       }
-      try {
+      const doHandler = () => {
+       try {
         handler(currentBatch);
-      } catch (e) {
-        logError('error executing options.handler', e);
+        } catch (e) {
+          logError('Generic Analytics: error executing options.handler', e);
+        }
+      };
+      if (window.scheduler && typeof scheduler.postTask === 'function') {
+        scheduler.postTask(doHandler, { priority: 'background' });
+      } else {
+        doHandler();
       }
     } finally {
       callDepth--;
