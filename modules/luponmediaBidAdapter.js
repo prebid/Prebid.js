@@ -3,8 +3,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'luponmedia';
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/;
 
@@ -66,6 +68,25 @@ export const converter = ortbConverter({
   },
 });
 
+function getLocalFallbackBids() {
+  try {
+    const dabstoreRaw = storage.getDataFromLocalStorage('dabStore');
+    if (!dabstoreRaw) return [];
+
+    const dabstore = JSON.parse(dabstoreRaw);
+    const now = Date.now();
+
+    return dabstore.bids.filter(bid => {
+      const bidTime = bid.responseTimestamp || bid.timestamp;
+      const bidExpiry = bidTime + bid.ttl * 1000;
+      return bidExpiry > now;
+    });
+  } catch (e) {
+    logWarn('Error parsing dabStore:', e);
+    return [];
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -84,10 +105,40 @@ export const spec = {
     };
   },
   interpretResponse: (response, request) => {
-    if (!response.body) {
+    let ortbResponse;
+
+    if (response.status === 206) {
+      const localBids = getLocalFallbackBids();
+
+      ortbResponse = {
+        id: request.data.id,
+        seatbid: [{
+          seat: BIDDER_CODE,
+          bid: localBids.map(bid => ({
+            id: bid.requestId,
+            impid: bid.requestId,
+            price: bid.cpm,
+            adm: bid.ad,
+            crid: bid.creativeId,
+            w: bid.width,
+            h: bid.height,
+            exp: bid.ttl,
+            ext: {
+              prebid: {
+                type: bid.mediaType
+              }
+            }
+          }))
+        }],
+        cur: localBids[0]?.currency
+      }
+    } else if (response.body) {
+      ortbResponse = response.body;
+    } else {
       return [];
     }
-    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
+
+    const bids = converter.fromORTB({ response: ortbResponse, request: request.data }).bids;
     return bids;
   },
   getUserSyncs: function (syncOptions, responses) {
