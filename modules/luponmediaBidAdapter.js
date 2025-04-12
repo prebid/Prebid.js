@@ -6,7 +6,7 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'luponmedia';
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/;
 
@@ -109,7 +109,9 @@ export const spec = {
     let ortbResponse;
 
     if (response.status === 200) {
-      ortbResponse = response.body;
+      const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
+
+      return bids;
     }
 
     if (response.status == 204) {
@@ -128,12 +130,17 @@ export const spec = {
             impid: bid.requestId,
             price: bid.cpm,
             adm: bid.ad,
+            addomain: bid.meta.advertiserDomains,
             crid: bid.creativeId,
             w: bid.width,
             h: bid.height,
-            exp: bid.ttl,
             ext: {
               prebid: {
+                targeting: {
+                  hb_bidder: BIDDER_CODE,
+                  hb_pb: bid.cpm,
+                  hb_size: bid.size
+                },
                 type: bid.mediaType
               }
             }
@@ -141,11 +148,13 @@ export const spec = {
         }],
         cur: localBids[0]?.currency
       }
+
+      const bids = converter.fromORTB({ response: ortbResponse, request: request.data }).bids;
+
+      return bids;
     }
 
-    const bids = converter.fromORTB({ response: ortbResponse, request: request.data }).bids;
-
-    return bids;
+    return [];
   },
   getUserSyncs: function (syncOptions, responses) {
     let allUserSyncs = [];
