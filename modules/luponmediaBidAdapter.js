@@ -71,14 +71,15 @@ export const converter = ortbConverter({
 function getLocalFallbackBids() {
   try {
     const dabstoreRaw = storage.getDataFromLocalStorage('dabStore');
+
     if (!dabstoreRaw) return [];
 
     const dabstore = JSON.parse(dabstoreRaw);
     const now = Date.now();
 
     return dabstore.bids.filter(bid => {
-      const bidTime = bid.responseTimestamp || bid.timestamp;
-      const bidExpiry = bidTime + bid.ttl * 1000;
+      const bidExpiry = bid.timestamp + bid.ttl * 1000;
+
       return bidExpiry > now;
     });
   } catch (e) {
@@ -107,6 +108,14 @@ export const spec = {
   interpretResponse: (response, request) => {
     let ortbResponse;
 
+    if (response.status === 200) {
+      ortbResponse = response.body;
+    }
+
+    if (response.status == 204) {
+      return [];
+    }
+
     if (response.status === 206) {
       const localBids = getLocalFallbackBids();
 
@@ -132,13 +141,10 @@ export const spec = {
         }],
         cur: localBids[0]?.currency
       }
-    } else if (response.body) {
-      ortbResponse = response.body;
-    } else {
-      return [];
     }
 
     const bids = converter.fromORTB({ response: ortbResponse, request: request.data }).bids;
+
     return bids;
   },
   getUserSyncs: function (syncOptions, responses) {
