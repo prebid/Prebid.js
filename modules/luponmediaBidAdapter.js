@@ -55,15 +55,19 @@ export const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
+
     if (!bidResponse.creativeId) {
       bidResponse.creativeId = bid.crid || bid.id;
     }
+
     if (!bidResponse.dealId && bid.dealid) {
       bidResponse.dealId = bid.dealid;
     }
+
     if (context.bidRequest?.ortb2?.site?.ref) {
       bidResponse.referrer = context.bidRequest.ortb2.site.ref;
     }
+
     return bidResponse;
   },
 });
@@ -106,8 +110,6 @@ export const spec = {
     };
   },
   interpretResponse: (response, request) => {
-    let ortbResponse;
-
     if (response.status === 200) {
       const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
 
@@ -121,7 +123,7 @@ export const spec = {
     if (response.status === 206) {
       const localBids = getLocalFallbackBids();
 
-      ortbResponse = {
+      const ortbResponse = {
         id: request.data.id,
         seatbid: [{
           seat: BIDDER_CODE,

@@ -1,436 +1,348 @@
-import { resetUserSync, spec, converter } from 'modules/luponmediaBidAdapter.js';
+// tests/luponmediaBidAdapter_spec.js
+import { resetUserSync, spec, converter, storage } from 'modules/luponmediaBidAdapter.js';
+import sinon from 'sinon';
+import { expect } from 'chai';
 
 describe('luponmediaBidAdapter', function () {
+  let sandbox;
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   describe('isBidRequestValid', function () {
-    let bid = {
-      'bidder': 'luponmedia',
-      'params': {
-        'keyId': 'uid@eu_test_300_600'
-      },
-      'adUnitCode': 'test-div',
-      'sizes': [[300, 250]],
-      'bidId': 'g1987234bjkads',
-      'bidderRequestId': '290348ksdhkas89324',
-      'auctionId': '20384rlek235',
+    const bid = {
+      bidder: 'luponmedia',
+      params: { keyId: 'uid@eu_test_300_600' },
+      adUnitCode: 'test-div',
+      sizes: [[300, 250]],
+      bidId: 'g1987234bjkads'
     };
 
     it('should return true when required param is found and it is valid', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('should return true with required and without optional param', function () {
-      bid.params = {
-        'keyId': 'uid_test_300_600'
-      };
-
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      bid.params = { keyId: 'uid_test_300_600' };
+      expect(spec.isBidRequestValid(bid)).to.be.true;
     });
 
     it('should return false when keyId is not in the required format', function () {
-      bid.params = {
-        'keyId': 12345
-      };
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.params = { keyId: 12345 };
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
 
   describe('buildRequests', function () {
     const bidRequests = [
       {
-        'bidder': 'luponmedia',
-        'params': {
-          'keyId': 'uid_test_300_600',
-          'placement_id': 'test-div'
-        },
-        'ortb2Imp': {
-          'ext': {
-            'tid': 'df103a09-d255-48cc-b372-faf80adedb6d'
-          }
-        },
-        'mediaTypes': {
-          'banner': {
-            'sizes': [
-              [
-                300,
-                600
-              ]
-            ]
-          }
-        },
-        'adUnitCode': 'test-div',
-        'transactionId': 'df103a09-d255-48cc-b372-faf80adedb6d',
-        'adUnitId': '13c08b91-a866-4308-b240-ea671d3b1902',
-        'sizes': [
-          [
-            300,
-            600
-          ]
-        ],
-        'bidId': '3913ea5825f4d6',
-        'bidderRequestId': '2edea9c2757aff',
-        'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
-        'src': 'client',
-        'auctionsCount': 1,
-        'bidRequestsCount': 1,
-        'bidderRequestsCount': 1,
-        'bidderWinsCount': 0,
-        'deferBilling': false,
-        'ortb2': {
-          'source': {
-            'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
-          },
-          'device': {
-            'w': 3008,
-            'h': 1692,
-            'dnt': 1,
-            'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-            'language': 'sr',
-            'ext': {
-              'vpw': 1522,
-              'vph': 714
-            },
-            'sua': {
-              'source': 1,
-              'mobile': 0
-            }
-          }
-        }
+        bidder: 'luponmedia',
+        params: { keyId: 'uid_test_300_600', placement_id: 'test-div' },
+        mediaTypes: { banner: { sizes: [[300, 600]] } },
+        adUnitCode: 'test-div',
+        transactionId: 'txn-id',
+        bidId: 'bid-id',
+        ortb2: { device: { ua: 'test-agent' } }
       }
     ];
 
-    const bidderRequest = {
-      'bidderCode': 'luponmedia',
-      'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
-      'bidderRequestId': '2edea9c2757aff',
-      'bids': [
-        {
-          'bidder': 'luponmedia',
-          'params': {
-            'keyId': 'uid_test_300_600',
-            'placement_id': 'test-div'
-          },
-          'ortb2Imp': {
-            'ext': {
-              'tid': 'df103a09-d255-48cc-b372-faf80adedb6d'
-            }
-          },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [
-                [
-                  300,
-                  600
-                ]
-              ]
-            }
-          },
-          'adUnitCode': 'test-div',
-          'transactionId': 'df103a09-d255-48cc-b372-faf80adedb6d',
-          'adUnitId': '13c08b91-a866-4308-b240-ea671d3b1902',
-          'sizes': [
-            [
-              300,
-              600
-            ]
-          ],
-          'bidId': '3913ea5825f4d6',
-          'bidderRequestId': '2edea9c2757aff',
-          'auctionId': '00e01a66-1f95-4197-8d4f-8e07c512104b',
-          'src': 'client',
-          'auctionsCount': 1,
-          'bidRequestsCount': 1,
-          'bidderRequestsCount': 1,
-          'bidderWinsCount': 0,
-          'deferBilling': false,
-          'ortb2': {
-            'source': {
-              'tid': '00e01a66-1f95-4197-8d4f-8e07c512104b'
-            },
-            'device': {
-              'w': 3008,
-              'h': 1692,
-              'dnt': 1,
-              'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-              'language': 'sr',
-              'ext': {
-                'vpw': 1522,
-                'vph': 714
-              },
-              'sua': {
-                'source': 1,
-                'platform': {
-                  'brand': 'macOS'
-                },
-                'mobile': 0
-              }
-            }
-          }
-        }
-      ],
-      'auctionStart': 1741002030343,
-      'timeout': 1000,
-    }
+    const bidderRequest = { bidderCode: 'luponmedia' };
 
     it('sends bid request to default endpoint', function () {
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-
-      expect(requests.url).to.equal('https://rtb.adxpremium.services/openrtb2/auction');
-      expect(requests.method).to.equal('POST');
-      expect(requests.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
-      expect(requests.data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
+      const req = spec.buildRequests(bidRequests, bidderRequest);
+      expect(req.url).to.include('https://rtb.adxpremium.services/openrtb2/auction');
+      expect(req.method).to.equal('POST');
+      expect(req.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
+      expect(req.data.imp[0].ext.luponmedia.keyId).to.equal('uid_test_300_600');
     });
 
     it('sends bid request to endpoint specified in keyId', function () {
       bidRequests[0].params.keyId = 'uid@eu_test_300_600';
-      bidderRequest.bids[0].params.keyId = 'uid@eu_test_300_600';
-
-      const requests = spec.buildRequests(bidRequests, bidderRequest);
-
-      expect(requests.url).to.equal('https://eu.adxpremium.services/openrtb2/auction');
+      const req = spec.buildRequests(bidRequests, bidderRequest);
+      expect(req.url).to.include('https://eu.adxpremium.services/openrtb2/auction');
     });
   });
 
   describe('interpretResponse', function () {
     it('should get correct banner bid response', function () {
       const response = {
-        'id': '4776d680-15a2-45c3-bad5-db6bebd94a06',
-        'seatbid': [
+        id: 'resp-id',
+        seatbid: [
           {
-            'bid': [
+            bid: [
               {
-                'id': '2a122246ef72ea',
-                'impid': '2a122246ef72ea',
-                'price': 0.43,
-                'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
-                'adid': '56380110',
-                'cid': '44724710',
-                'crid': '443801010',
-                'w': 300,
-                'h': 250,
-                'ext': {
-                  'prebid': {
-                    'targeting': {
-                      'hb_bidder': 'luponmedia',
-                      'hb_pb': '0.40',
-                      'hb_size': '300x250'
+                id: 'bid123',
+                impid: 'bid123',
+                price: 0.43,
+                adm: '<div>Ad Markup</div>',
+                crid: 'creative-id',
+                w: 300,
+                h: 250,
+                ext: {
+                  prebid: {
+                    targeting: {
+                      hb_bidder: 'luponmedia',
+                      hb_pb: '0.40',
+                      hb_size: '300x250'
                     },
-                    'type': 'banner'
+                    type: 'banner'
                   }
                 }
               }
             ],
-            'seat': 'luponmedia'
+            seat: 'luponmedia'
           }
         ],
-        'cur': 'USD',
-        'ext': {
-          'responsetimemillis': {
-            'luponmedia': 233
-          },
-          'tmaxrequest': 1500,
-          'usersyncs': {
-            'status': 'ok',
-            'bidder_status': []
-          }
-        }
+        cur: 'USD'
       };
 
       const bidRequests = [
         {
-          'bidder': 'luponmedia',
-          'params': {
-            'keyId': 'uid_test_300_600',
-            'placement_id': 'test-div'
-          },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[300, 250]]
-            }
-          },
-          'adUnitCode': 'test-div',
-          'bidId': '2a122246ef72ea'
+          bidId: 'bid123',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
         }
       ];
 
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'https://example.com'
-        }
-      };
-
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
       const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
 
-      const result = spec.interpretResponse({ body: response }, { data: ortbRequest });
+      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
 
-      // Partially match the expected object
       expect(result).to.be.an('array').with.lengthOf(1);
       expect(result[0]).to.include({
-        requestId: '2a122246ef72ea',
+        requestId: 'bid123',
         cpm: 0.43,
         width: 300,
         height: 250,
-        creativeId: '443801010',
-        creative_id: '443801010',
+        creativeId: 'creative-id',
         currency: 'USD',
-        netRevenue: false,
         ttl: 300,
-        ad: '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>'
+        ad: '<div>Ad Markup</div>'
       });
     });
 
-    it('should get correct banner bid response', function () {
+    it('should enrich bidResponse with crid, dealId, and referrer if missing', function () {
       const response = {
-        'id': '4776d680-15a2-45c3-bad5-db6bebd94a06',
-        'seatbid': [
+        id: 'resp-id',
+        seatbid: [
           {
-            'bid': [
+            bid: [
               {
-                'id': '2a122246ef72ea',
-                'impid': '2a122246ef72ea',
-                'price': 0.43,
-                'adm': '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>',
-                'adid': '56380110',
-                'cid': '44724710',
-                'crid': '443801010',
-                'w': 300,
-                'h': 250,
-                'ext': {
-                  'prebid': {
-                    'targeting': {
-                      'hb_bidder': 'luponmedia',
-                      'hb_pb': '0.40',
-                      'hb_size': '300x250'
-                    },
-                    'type': 'banner'
-                  }
-                }
+                id: 'bid456',
+                impid: 'bid456',
+                price: 0.75,
+                adm: '<div>Creative</div>',
+                crid: 'creative456',
+                dealid: 'deal789',
+                w: 300,
+                h: 250
               }
             ],
-            'seat': 'luponmedia'
+            seat: 'luponmedia'
           }
         ],
-        'cur': 'USD',
-        'ext': {
-          'responsetimemillis': {
-            'luponmedia': 233
-          },
-          'tmaxrequest': 1500,
-          'usersyncs': {
-            'status': 'ok',
-            'bidder_status': []
+        cur: 'USD'
+      };
+    
+      const bidRequests = [
+        {
+          bidId: 'bid456',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } },
+          ortb2: {
+            site: {
+              ref: 'https://mysite.com'
+            }
           }
         }
-      };
-
-      const bidRequests = [
-        {
-          'bidder': 'luponmedia',
-          'params': {
-            'keyId': 'uid_test_300_600',
-            'placement_id': 'test-div'
-          },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[300, 250]]
-            }
-          },
-          'adUnitCode': 'test-div',
-          'bidId': '2a122246ef72ea'
-        }
       ];
-
+    
       const bidderRequest = {
-        refererInfo: {
-          referer: 'https://example.com'
-        }
+        refererInfo: { referer: 'https://mysite.com' }
       };
-
+    
       const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
-
-      const result = spec.interpretResponse({ body: response }, { data: ortbRequest });
-
-      // Partially match the expected object
-      expect(result).to.be.an('array').with.lengthOf(1);
-      expect(result[0]).to.include({
-        requestId: '2a122246ef72ea',
-        cpm: 0.43,
-        width: 300,
-        height: 250,
-        creativeId: '443801010',
-        creative_id: '443801010',
-        currency: 'USD',
-        netRevenue: false,
-        ttl: 300,
-        ad: '<a href="https://novi.ba" target="_blank" style="position:absolute; width:300px; height:250px; z-index:5;"> </a><iframe src="https://lupon.media/vijestiba/300x250new/index.html" height="250" width="300" scrolling="no" frameborder="0"></iframe>'
-      });
+    
+      const result = spec.interpretResponse({ status: 200, body: response }, { data: ortbRequest });
+    
+      expect(result[0].creativeId).to.equal('creative456');
+      expect(result[0].dealId).to.equal('deal789');
+      expect(result[0].referrer).to.equal('https://mysite.com');
+    });    
+    
+    it('handles nobid responses', function () {
+      const response = { status: 204, body: {} };
+      const result = spec.interpretResponse(response, { data: {} });
+      expect(result).to.deep.equal([]);
     });
 
-    it('handles nobid responses', function () {
-      const noBidResponse = {
-        body: {
-          id: 'test-request-id',
-          seatbid: []
-        }
+    it('should handle 206 status properly and return localStorage fallback bid', function () {
+      const now = Date.now();
+      const fallbackBid = {
+        requestId: 'fallback123',
+        cpm: 0.07,
+        width: 300,
+        height: 250,
+        ad: '<div>Fallback Ad</div>',
+        ttl: 300,
+        currency: 'USD',
+        creativeId: 'fallbackCreative',
+        timestamp: now - 10000,
+        mediaType: 'banner',
+        meta: { advertiserDomains: ['fdj.fr'] }
       };
 
-      // Generate the ortbRequest object dynamically
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs('dabStore')
+        .returns(JSON.stringify({ bids: [fallbackBid] }));
+
       const bidRequests = [
         {
-          'bidder': 'luponmedia',
-          'params': {
-            'keyId': 'uid_test_300_600',
-            'placement_id': 'test-div'
-          },
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[300, 250]]
-            }
-          },
-          'adUnitCode': 'test-div',
-          'bidId': '2a122246ef72ea'
+          bidId: 'fallback123',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
         }
       ];
 
-      const bidderRequest = {
-        refererInfo: {
-          referer: 'https://example.com'
-        }
-      };
-
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
       const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
 
-      const result = spec.interpretResponse(noBidResponse, { data: ortbRequest });
+      const result = spec.interpretResponse({ status: 206 }, { data: ortbRequest });
+
+      expect(result).to.be.an('array').with.lengthOf(1);
+      expect(result[0].requestId).to.equal('fallback123');
+      expect(result[0].cpm).to.equal(0.07);
+      expect(result[0].currency).to.equal('USD');
+      expect(result[0].creativeId).to.equal('fallbackCreative');
+      expect(result[0].ad).to.contain('Fallback Ad');
+    });
+
+    it('should ignore expired fallback bids from localStorage', function () {
+      const oldTimestamp = Date.now() - 1000 * 1000; // way expired
+      const expiredBid = {
+        requestId: 'expiredBid',
+        cpm: 0.05,
+        width: 300,
+        height: 250,
+        ad: '<div>Expired Ad</div>',
+        ttl: 300,
+        currency: 'USD',
+        creativeId: 'expiredCreative',
+        timestamp: oldTimestamp,
+        mediaType: 'banner',
+        meta: { advertiserDomains: ['expired.com'] }
+      };
+
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs('dabStore')
+        .returns(JSON.stringify({ bids: [expiredBid] }));
+
+      const bidRequests = [
+        {
+          bidId: 'expiredBid',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
+        }
+      ];
+
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+
+      const result = spec.interpretResponse({ status: 206 }, { data: ortbRequest });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should return empty array when store does not exists or consent', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs('dabStore')
+        .returns(null);
+
+      const bidRequests = [
+        {
+          bidId: 'expiredBid',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
+        }
+      ];
+
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+
+      const result = spec.interpretResponse({ status: 206 }, { data: ortbRequest });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should return empty array when store is empty', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs('dabStore')
+        .returns(JSON.stringify([]));
+
+      const bidRequests = [
+        {
+          bidId: 'expiredBid',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
+        }
+      ];
+
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+
+      const result = spec.interpretResponse({ status: 206 }, { data: ortbRequest });
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should return empty array for unhandled response', function () {
+      const bidRequests = [
+        {
+          bidId: 'expiredBid',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
+        }
+      ];
+
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+
+      const result = spec.interpretResponse({ status: 400 }, { data: ortbRequest });
+
       expect(result).to.deep.equal([]);
     });
   });
 
   describe('getUserSyncs', function () {
-    const bidResponse1 = {
-      'body': {
-        'ext': {
-          'responsetimemillis': {
-            'luponmedia': 233
-          },
-          'tmaxrequest': 1500,
-          'usersyncs': {
-            'status': 'ok',
-            'bidder_status': [
+    const bidResponse = {
+      body: {
+        ext: {
+          usersyncs: {
+            bidder_status: [
               {
-                'bidder': 'luponmedia',
-                'no_cookie': true,
-                'usersync': {
-                  'url': 'https://adxpremium.services/api/usersync',
-                  'type': 'redirect'
-                }
+                no_cookie: true,
+                usersync: { url: 'https://sync.img', type: 'image' }
               },
               {
-                'bidder': 'luponmedia',
-                'no_cookie': true,
-                'usersync': {
-                  'url': 'https://adxpremium.services/api/iframeusersync',
-                  'type': 'iframe'
-                }
+                no_cookie: true,
+                usersync: { url: 'https://sync.iframe', type: 'iframe' }
               }
             ]
           }
@@ -438,79 +350,42 @@ describe('luponmediaBidAdapter', function () {
       }
     };
 
-    const bidResponse2 = {
-      'body': {
-        'ext': {
-          'responsetimemillis': {
-            'luponmedia': 233
-          },
-          'tmaxrequest': 1500,
-          'usersyncs': {
-            'status': 'no_cookie',
-            'bidder_status': [
-              {
-                'bidder': 'luponmedia',
-                'no_cookie': false,
-              }
-            ]
-          }
-        }
-      }
-    };
+    it('should return empty syncs when not pixel or iframe enabled', function () {
+      resetUserSync();
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse]);
+      expect(syncs.length).to.equal(0);
+    });
 
-    it('should use a sync url from first response (pixel and iframe)', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse1, bidResponse2]);
-      expect(syncs).to.deep.equal([
-        {
-          type: 'image',
-          url: 'https://adxpremium.services/api/usersync'
-        },
-        {
-          type: 'iframe',
-          url: 'https://adxpremium.services/api/iframeusersync'
-        }
+    it('returns pixel syncs when pixel enabled and iframe not enabled', function () {
+      resetUserSync();
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse]);
+      expect(syncs).to.deep.include({ type: 'image', url: 'https://sync.img' });
+    });
+
+    it('returns iframe syncs when iframe enabled and pixel not enabled', function () {
+      resetUserSync();
+      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse]);
+      expect(syncs).to.deep.include({ type: 'iframe', url: 'https://sync.iframe' });
+    });
+
+    it('returns both syncs when both iframe and pixel enabled', function () {
+      resetUserSync();
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [bidResponse]);
+      expect(syncs).to.deep.include.members([
+        { type: 'image', url: 'https://sync.img' },
+        { type: 'iframe', url: 'https://sync.iframe' }
       ]);
     });
 
-    it('handle empty response (e.g. timeout)', function () {
+    it('returns no syncs when usersyncs object missing', function () {
+      const emptyResponse = { body: { ext: {} } };
+      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [emptyResponse]);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('returns empty syncs on empty response array', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
-    });
-
-    it('returns empty syncs when not pixel enabled and not iframe enabled', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse1]);
-      expect(syncs).to.deep.equal([]);
-    });
-
-    it('returns pixel syncs when pixel enabled and not iframe enabled', function () {
-      resetUserSync();
-
-      const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse1]);
-      expect(syncs).to.deep.equal([
-        {
-          type: 'image',
-          url: 'https://adxpremium.services/api/usersync'
-        }
-      ]);
-    });
-
-    it('returns iframe syncs when not pixel enabled and iframe enabled', function () {
-      resetUserSync();
-
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse1]);
-      expect(syncs).to.deep.equal([
-        {
-          type: 'iframe',
-          url: 'https://adxpremium.services/api/iframeusersync'
-        }
-      ]);
-    });
-
-    it('returns empty array when sync is off', function () {
-      resetUserSync();
-
-      const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: false }, [bidResponse1]);
-      expect(syncs.length).equal(0);
     });
   });
 });
