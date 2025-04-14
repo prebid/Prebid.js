@@ -184,7 +184,7 @@ describe('luponmediaBidAdapter', function () {
       expect(result).to.deep.equal([]);
     });
 
-    it('should handle 206 status properly and return localStorage fallback bid', function () {
+    it('should handle 206 status properly and return aligned fallback bid for correct size', function () {
       const now = Date.now();
       const fallbackBid = {
         requestId: 'fallback123',
@@ -195,8 +195,9 @@ describe('luponmediaBidAdapter', function () {
         ttl: 300,
         currency: 'USD',
         creativeId: 'fallbackCreative',
-        timestamp: now - 10000,
+        responseTimestamp: now - 10000,
         mediaType: 'banner',
+        size: '300x250',
         meta: { advertiserDomains: ['fdj.fr'] }
       };
 
@@ -220,11 +221,54 @@ describe('luponmediaBidAdapter', function () {
       const result = spec.interpretResponse({ status: 206 }, { data: ortbRequest });
 
       expect(result).to.be.an('array').with.lengthOf(1);
-      expect(result[0].requestId).to.equal('fallback123');
-      expect(result[0].cpm).to.equal(0.07);
-      expect(result[0].currency).to.equal('USD');
-      expect(result[0].creativeId).to.equal('fallbackCreative');
-      expect(result[0].ad).to.contain('Fallback Ad');
+
+      const bid = result[0];
+
+      expect(bid.cpm).to.equal(0.07);
+      expect(bid.currency).to.equal('USD');
+      expect(bid.creativeId).to.equal('fallbackCreative');
+      expect(bid.ad).to.contain('Fallback Ad');
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+    });
+
+    it('should ignore fallback bids with mismatched sizes', function () {
+      const now = Date.now();
+      const mismatchedBid = {
+        requestId: 'mismatch123',
+        cpm: 0.3,
+        width: 728,
+        height: 90,
+        ad: '<div>Wrong Size Ad</div>',
+        ttl: 300,
+        currency: 'USD',
+        creativeId: 'wrongSizeCreative',
+        responseTimestamp: now - 5000,
+        mediaType: 'banner',
+        size: '728x90',
+        meta: { advertiserDomains: ['mismatch.com'] }
+      };
+    
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      sandbox.stub(storage, 'getDataFromLocalStorage')
+        .withArgs('dabStore')
+        .returns(JSON.stringify({ bids: [mismatchedBid] }));
+    
+      const bidRequests = [
+        {
+          bidId: 'test-id',
+          adUnitCode: 'test-div',
+          params: { keyId: 'uid_test_300_600' },
+          mediaTypes: { banner: { sizes: [[300, 250]] } }
+        }
+      ];
+    
+      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
+      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
+    
+      const result = spec.interpretResponse({ status: 206 }, { data: ortbRequest });
+    
+      expect(result).to.be.an('array').that.is.empty;
     });
 
     it('should ignore expired fallback bids from localStorage', function () {

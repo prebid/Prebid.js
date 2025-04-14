@@ -72,7 +72,7 @@ export const converter = ortbConverter({
   },
 });
 
-function getLocalFallbackBids() {
+function getCachedBids() {
   try {
     const dabstoreRaw = storage.getDataFromLocalStorage('dabStore');
 
@@ -81,15 +81,83 @@ function getLocalFallbackBids() {
     const dabstore = JSON.parse(dabstoreRaw);
     const now = Date.now();
 
-    return dabstore.bids.filter(bid => {
-      const bidExpiry = bid.timestamp + bid.ttl * 1000;
+    const validBids = dabstore.bids.filter(bid => {
+      const bidExpiry = bid.responseTimestamp + bid.ttl * 1000;
 
       return bidExpiry > now;
-    });
+    })
+
+    storage.setDataInLocalStorage('dabStore', JSON.stringify({ bids: validBids }));
+
+    return validBids;
   } catch (e) {
     logWarn('Error parsing dabStore:', e);
     return [];
   }
+}
+
+function removeUsedCachedBids(usedRequestIds = []) {
+  try {
+    const dabstoreRaw = storage.getDataFromLocalStorage('dabStore');
+    if (!dabstoreRaw) return;
+
+    const dabstore = JSON.parse(dabstoreRaw);
+    const updatedBids = (dabstore.bids || []).filter(bid => !usedRequestIds.includes(bid.requestId));
+
+    storage.setDataInLocalStorage('dabStore', JSON.stringify({ bids: updatedBids }));
+  } catch (e) {
+    logWarn('Error updating dabStore after removing used bids:', e);
+  }
+}
+
+
+function buildValidSizeMap(imps) {
+  const validSizesMap = imps.reduce((map, imp) => {
+    const sizes = imp.banner?.format?.map(fmt => `${fmt.w}x${fmt.h}`) || [];
+    map[imp.id] = sizes;
+    return map;
+  }, {});
+
+  return validSizesMap;
+}
+
+function alignBids(imps, validSizesMap, cachedBids) {
+  const alignedBids = [];
+
+  for (const imp of imps) {
+    const validSizes = validSizesMap[imp.id];
+
+    for (const cachedBid of cachedBids) {
+      const bidSize = `${cachedBid.width}x${cachedBid.height}`;
+
+      if (validSizes.includes(bidSize)) {
+        alignedBids.push({
+          id: imp.id,
+          impid: imp.id,
+          price: cachedBid.cpm,
+          adm: cachedBid.ad,
+          addomain: cachedBid.meta?.advertiserDomains || [],
+          crid: cachedBid.creativeId || cachedBid.requestId,
+          w: cachedBid.width,
+          h: cachedBid.height,
+          ext: {
+            prebid: {
+              targeting: {
+                hb_bidder: BIDDER_CODE,
+                hb_pb: cachedBid.cpm,
+                hb_size: cachedBid.size
+              },
+              type: cachedBid.mediaType
+            }
+          }
+        });
+
+        break;
+      }
+    }
+  }
+
+  return alignedBids;
 }
 
 export const spec = {
@@ -112,7 +180,6 @@ export const spec = {
   interpretResponse: (response, request) => {
     if (response.status === 200) {
       const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
-
       return bids;
     }
 
@@ -121,35 +188,28 @@ export const spec = {
     }
 
     if (response.status === 206) {
-      const localBids = getLocalFallbackBids();
+      const cachedBids = getCachedBids();
+      const imps = request.data.imp || [];
+
+      const validSizesMap = buildValidSizeMap(imps);
+      const alignedBids = alignBids(imps, validSizesMap, cachedBids);
+
+      if (alignedBids.length === 0) {
+        return [];
+      }
+
+      const usedRequestIds = alignedBids.map(b => b.impid);
+
+      removeUsedCachedBids(usedRequestIds);
 
       const ortbResponse = {
         id: request.data.id,
         seatbid: [{
           seat: BIDDER_CODE,
-          bid: localBids.map(bid => ({
-            id: bid.requestId,
-            impid: bid.requestId,
-            price: bid.cpm,
-            adm: bid.ad,
-            addomain: bid.meta.advertiserDomains,
-            crid: bid.creativeId,
-            w: bid.width,
-            h: bid.height,
-            ext: {
-              prebid: {
-                targeting: {
-                  hb_bidder: BIDDER_CODE,
-                  hb_pb: bid.cpm,
-                  hb_size: bid.size
-                },
-                type: bid.mediaType
-              }
-            }
-          }))
+          bid: alignedBids
         }],
-        cur: localBids[0]?.currency
-      }
+        cur: cachedBids[0]?.currency
+      };
 
       const bids = converter.fromORTB({ response: ortbResponse, request: request.data }).bids;
 
