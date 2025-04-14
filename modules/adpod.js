@@ -420,7 +420,7 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
  */
 function initAdpodHooks() {
   // Warn only when the adpod hooks are truly being initialized (i.e., the module is in use)
-  logWarn('Prebid.js is not aware of any transactions requiring the ADPOD video mediatype context. Please open a github issue if you are relying on it as support for it may be removed in a future version.');
+  logWarn('DEPRECATION NOTICE: Prebid.js is not aware of any transactions requiring the ADPOD video mediatype context. Please open a github issue if you are relying on it as support for it may be removed in a future version.');
 
   setupBeforeHookFnOnce(getHook('callPrebidCache'), callPrebidCacheHook);
   setupBeforeHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
