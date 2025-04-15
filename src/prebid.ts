@@ -31,7 +31,6 @@ import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import {Bid, createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
@@ -54,6 +53,7 @@ import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import { newBidder } from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
+import type {Bid} from "./bidfactory.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -462,8 +462,7 @@ function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string): Bid | Rec
         const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
             .filter(isBidUsable)
 
-        // TODO: {} is a terrible null value here
-        return bid.length ? bid.reduce(getHighestCpm) : {}
+        return bid.length ? bid.reduce(getHighestCpm) : null
     } else {
         logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
     }
@@ -903,16 +902,6 @@ pbjsInstance.registerAnalyticsAdapter = logInvocation('registerAnalyticsAdapter'
   } catch (e) {
     logError('Error registering analytics adapter : ' + e.message);
   }
-});
-
-/**
- * Wrapper to bidfactory.createBid()
- * @param  {string} statusCode [description]
- * @alias module:pbjs.createBid
- * @return {Object} bidResponse [description]
- */
-pbjsInstance.createBid = logInvocation('createBid', function (statusCode) {
-  return createBid(statusCode);
 });
 
 /**

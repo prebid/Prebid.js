@@ -66,7 +66,7 @@ import {batchAndStore, storeLocally} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
-import {hook} from './hook.js';
+import {hook, ignoreCallbackArg} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
 import {VIDEO} from './mediaTypes.js';
@@ -414,13 +414,13 @@ declare module './hook' {
 /**
  * Hook into this to intercept bids before they are added to an auction.
  */
-export const addBidResponse = hook('sync', function(adUnitCode: string, bid: Partial<Bid>, reject: (reason: (typeof REJECTION_REASON)[keyof typeof REJECTION_REASON]) => void): void {
+export const addBidResponse = ignoreCallbackArg(hook('async', function(adUnitCode: string, bid: Partial<Bid>, reject: (reason: (typeof REJECTION_REASON)[keyof typeof REJECTION_REASON]) => void): void {
   if (!isValidPrice(bid)) {
     reject(REJECTION_REASON.PRICE_TOO_HIGH)
   } else {
     this.dispatch.call(null, adUnitCode, bid);
   }
-}, 'addBidResponse');
+}, 'addBidResponse'));
 
 /**
  * Delay hook for adapter responses.

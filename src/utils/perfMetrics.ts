@@ -385,11 +385,9 @@ export const newMetrics = (() => {
 
 export function hookTimer<F extends AnyFunction>(prefix: string, getMetrics: (...args: Parameters<F>) => Metrics) {
   return function<H extends InstrumentedHook<F>>(name: string, hookFn: H): HookFunction<F> {
-    return function (next, ...args) {
-        // eslint-disable-next-line @typescript-eslint/no-this-alias
-      const that = this;
-      return useMetrics(getMetrics.apply(that, args)).measureHookTime(prefix + name, next, function (next) {
-        return hookFn.call(that, next, ...args);
+    return (next, ...args) => {
+      return useMetrics(getMetrics.apply(this, args)).measureHookTime(prefix + name, next, (next) => {
+        return hookFn.call(this, next, ...args);
       });
     }
   }
