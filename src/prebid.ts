@@ -35,7 +35,7 @@ import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
 import * as events from './events.js';
-import {newMetrics, useMetrics} from './utils/perfMetrics.js';
+import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
@@ -55,7 +55,9 @@ import { newBidder } from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
-import type {AdUnitCode} from "./types/common.d.ts";
+import type {AdUnitCode, Identifier} from "./types/common.d.ts";
+import type {ORTBRequest} from "./types/ortb/request.d.ts";
+import type {DeepPartial} from "./types/objects.d.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -366,7 +368,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
   return validatedAdUnits;
 }, 'checkAdUnitSetup');
 
-function fillAdUnitDefaults(adUnits: AdUnit[]) {
+function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
   if (FEATURES.VIDEO) {
     adUnits.forEach(au => fillVideoDefaults(au))
   }
@@ -408,7 +410,7 @@ declare module './prebidGlobal' {
         setTargetingForAst;
         renderAd;
         removeAdUnit: typeof removeAdUnit;
-        requestBids;
+        requestBids: (options?: RequestBidsOptions) => Promise<RequestBidsResult>;
         addAdUnits: typeof addAdUnits;
         onEvent;
         offEvent;
@@ -629,37 +631,76 @@ function removeAdUnit(adUnitCode?: AdUnitCode) {
 }
 addApiMethod('removeAdUnit', removeAdUnit);
 
-type AuctionOptions = {
-    bidsBackHandler?;
+export type RequestBidsOptions = {
+    /**
+     * Callback to execute when all the bid responses are back or the timeout hits.
+     */
+    bidsBackHandler?: (bids?: RequestBidsResult['bids'], timedOut?: RequestBidsResult['timedOut'], auctionId?: RequestBidsResult['auctionId']) => void;
+    /**
+     * TTL buffer override for this auction.
+     */
     ttlBuffer?: number;
+    /**
+     * Timeout for requesting the bids specified in milliseconds
+     */
     timeout?: number;
-    adUnits?;
-    adUnitCodes?: string[];
+    /**
+     * AdUnit definitions to request. Use this or adUnitCodes. Default to all adUnits if empty.
+     */
+    adUnits?: AdUnitDefinition[];
+    /**
+     * adUnit codes to request. Use this or adUnits. Default to all adUnits if empty.
+     */
+    adUnitCodes?: AdUnitCode[];
+    /**
+     * Defines labels that may be matched on ad unit targeting conditions.
+     */
     labels?: string[];
+    /**
+     * Defines an auction ID to be used rather than having Prebid generate one.
+     * This can be useful if there are multiple wrappers on a page and a single auction ID
+     * is desired to tie them together in analytics.
+     */
     auctionId?: string;
-    defer?;
-    metrics?;
-}
-type _PrivRequestBidsOptions = AuctionOptions & {
-    ortb2?;
+    /**
+     * Additional first-party data to use for this auction only
+     */
+    ortb2?: DeepPartial<ORTBRequest>;
 }
 
-type StartAuctionOptions = AuctionOptions & {
+type RequestBidsResult = {
+    /**
+     * Bids received.
+     */
+    bids: WrapsInBids<Bid>;
+    /**
+     * True if any bidder timed out.
+     */
+    timedOut: boolean;
+    /**
+     * The auction's ID
+     */
+    auctionId: Identifier;
+}
+
+type _PrivRequestBidsOptions = RequestBidsOptions & {
+    defer?;
+    metrics?: Metrics;
+    adUnits: AdUnitDefinition[];
+}
+
+type StartAuctionOptions = Omit<_PrivRequestBidsOptions, 'ortb2'> & {
     ortb2Fragments?;
 }
 
-/**
- * @param {Object} requestOptions
- * @param {function} requestOptions.bidsBackHandler
- * @param {number} requestOptions.timeout
- * @param {Array} requestOptions.adUnits
- * @param {Array} requestOptions.adUnitCodes
- * @param {Array} requestOptions.labels
- * @param {String} requestOptions.auctionId
- * @alias module:pbjs.requestBids
- */
-pbjsInstance.requestBids = (function() {
-  const delegate = hook('async', logInvocation('requestBids', function (reqBidOptions: _PrivRequestBidsOptions = {}, ...args) {
+declare module './hook' {
+    interface NamedHooks {
+        requestBids: typeof requestBids;
+    }
+}
+
+export const requestBids = (function() {
+  const delegate = hook('async', function (reqBidOptions = {} as _PrivRequestBidsOptions, ...args) {
     let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions;
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
@@ -682,18 +723,18 @@ pbjsInstance.requestBids = (function() {
       ortb2Fragments.global = global;
       return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
     })
-  }), 'requestBids');
+  }, 'requestBids');
 
-  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(req: any = {}) {
+  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(options: RequestBidsOptions = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-
+    const req = options as _PrivRequestBidsOptions;
     let adUnits = req.adUnits || pbjsInstance.adUnits;
-    req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
+    req.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
     req.metrics = newMetrics();
     req.metrics.checkpoint('requestBids');
@@ -703,7 +744,9 @@ pbjsInstance.requestBids = (function() {
   }));
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {}) {
+addApiMethod('requestBids', requestBids);
+
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {} as StartAuctionOptions) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
@@ -810,7 +853,7 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
 }
 
 // This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that tcfControl module is added or not
-pbjsInstance.requestBids.before(executeCallbacks, 49);
+requestBids.before(executeCallbacks, 49);
 
 /**
  * Add ad unit(s)

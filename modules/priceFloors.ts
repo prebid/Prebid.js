@@ -709,7 +709,7 @@ export function handleSetFloorsConfig(config) {
       });
 
       // we want our hooks to run after the currency hooks
-      getGlobal().requestBids.before(requestBidsHook, 50);
+      getHook('requestBids').before(requestBidsHook, 50);
       // if user has debug on then we want to allow the debugging module to run before this, assuming they are testing priceFloors
       // debugging is currently set at 5 priority
       getHook('addBidResponse').before(addBidResponseHook, debugTurnedOn() ? 4 : 50);
@@ -722,7 +722,7 @@ export function handleSetFloorsConfig(config) {
     _floorDataForAuction = {};
 
     getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
-    getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
+    getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
 
     addedFloorsHook = false;
   }

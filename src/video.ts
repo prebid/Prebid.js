@@ -6,7 +6,7 @@ import type {VideoBid} from "./bidfactory.ts";
 import {ADPOD, type BaseMediaType} from "./mediaTypes.ts";
 import type {ORTBImp} from "./types/ortb/request.d.ts";
 import type {Size} from "./types/common.d.ts";
-import type {AdUnit} from "./adUnits.ts";
+import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -76,7 +76,7 @@ export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], Ex
     sequence?: number;
 }
 
-export function fillVideoDefaults(adUnit: AdUnit) {
+export function fillVideoDefaults(adUnit: AdUnitDefinition) {
   const video = adUnit?.mediaTypes?.video;
   if (video != null && video.plcmt == null) {
     if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {

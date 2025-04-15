@@ -2,6 +2,7 @@ import type {AdUnitCode, BidderCode, ContextIdentifiers, Size} from "./types/com
 import type {ORTBImp} from "./types/ortb/request.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {MediaTypes} from "./mediaTypes.ts";
+import type {DeepPartial} from "./types/objects";
 
 export interface RendererConfig {
     /**
@@ -91,7 +92,7 @@ export interface AdUnitDefinition {
      * Used to signal OpenRTB Imp objects at the adUnit grain.
      * Similar to the global ortb2 field used for global first party data configuration, but specific to this adunit.
      */
-    ortb2Imp?: Partial<ORTBImp>;
+    ortb2Imp?: DeepPartial<ORTBImp>;
     /**
      * Custom renderer, typically used for outstream video
      */

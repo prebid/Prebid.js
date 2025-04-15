@@ -2,6 +2,7 @@ import {config} from '../config.js';
 import type {AnyFunction, Wraps} from "../types/functions.d.ts";
 import {HookFunction, Next} from "../hook.ts";
 import type {addBidResponse} from "../auction.ts";
+import type {requestBids} from "../prebid.ts";
 export const CONFIG_TOGGLE = 'performanceMetrics';
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
 const NODES = new WeakMap();
@@ -393,5 +394,5 @@ export function hookTimer<F extends AnyFunction>(prefix: string, getMetrics: (..
   }
 }
 
-export const timedAuctionHook = hookTimer('requestBids.', (req) => req.metrics);
+export const timedAuctionHook = hookTimer<typeof requestBids>('requestBids.', (req) => req.metrics);
 export const timedBidResponseHook = hookTimer<typeof addBidResponse>('addBidResponse.', (_, bid) => bid.metrics)
