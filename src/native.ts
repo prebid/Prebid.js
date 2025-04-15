@@ -20,7 +20,6 @@ import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_M
 import type {NativeResponse, Link, NativeRequest} from "./types/ortb/native.d.ts";
 import type {Size} from "./types/common.d.ts";
 import type {Ext} from "./types/ortb/common.d.ts";
-import type {ORTBImp} from "./types/ortb/request";
 
 type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
 type LegacyImageAssets = { icon: unknown, image: unknown };
@@ -83,13 +82,8 @@ export type LegacyNativeRequest = {
     }
 }
 
-interface ORTBNativeRequest extends Omit<NativeRequest, 'assets'> {
-    // Prebid accepts "vanilla" ORTB native, except asset IDs are optional (and auto-generated)
-    assets: (Partial<Pick<NativeRequest['assets'][0], 'id'>> & Omit<NativeRequest['assets'][0], 'id'>)[];
-}
-
 export interface NativeMediaType extends LegacyNativeRequest {
-    ortb?: ORTBNativeRequest;
+    ortb?: NativeRequest;
 }
 
 export const nativeAdapters = [];
@@ -193,7 +187,7 @@ export function decorateAdUnitsWithNativeParams(adUnits) {
     }
   });
 }
-export function isOpenRTBBidRequestValid(ortb) {
+export function isOpenRTBBidRequestValid(ortb: NativeRequest) {
   const assets = ortb.assets;
   if (!Array.isArray(assets) || assets.length === 0) {
     logError(`assets in mediaTypes.native.ortb is not an array, or it's empty. Assets: `, assets);
@@ -215,7 +209,7 @@ export function isOpenRTBBidRequestValid(ortb) {
   return assets.every(asset => isOpenRTBAssetValid(asset))
 }
 
-function isOpenRTBAssetValid(asset) {
+function isOpenRTBAssetValid(asset: NativeRequest['assets'][0]) {
   if (!isPlainObject(asset)) {
     logError(`asset must be an object. Provided asset: `, asset);
     return false;
@@ -546,7 +540,7 @@ function getNativeKeys(adUnit) {
  * @param {object} legacyNativeAssets an object that describes a native bid request in Prebid proprietary format
  * @returns an OpenRTB format of the same bid request
  */
-export function toOrtbNativeRequest(legacyNativeAssets) {
+export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): NativeRequest {
   if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
     logError('Native assets object is empty or not an object: ', legacyNativeAssets);
     return;
@@ -667,7 +661,7 @@ function gcd(a, b) {
  * @param {object} openRTBRequest an OpenRTB v1.2 request object
  * @returns a Prebid legacy native format request
  */
-export function fromOrtbNativeRequest(openRTBRequest) {
+export function fromOrtbNativeRequest(openRTBRequest: NativeRequest) {
   if (!isOpenRTBBidRequestValid(openRTBRequest)) {
     return;
   }
