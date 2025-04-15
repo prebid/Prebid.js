@@ -54,6 +54,8 @@ import {delayIfPrerendering} from './utils/prerendering.js';
 import { newBidder } from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {Bid} from "./bidfactory.ts";
+import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
+import type {AdUnitCode} from "./types/common.d.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -86,7 +88,7 @@ declare module './prebidGlobal' {
          * (applies only when the page is prerendering).
          */
         delayPrerendering?: boolean
-        adUnits;
+        adUnits: AdUnitDefinition[];
     }
 }
 
@@ -162,8 +164,8 @@ export function syncOrtb2(adUnit, mediaType) {
   });
 }
 
-function validateBannerMediaType(adUnit) {
-  const validatedAdUnit = deepClone(adUnit);
+function validateBannerMediaType(adUnit: AdUnit) {
+  const validatedAdUnit = deepClone(adUnit) as AdUnit;
   const banner = validatedAdUnit.mediaTypes.banner;
   const bannerSizes = banner.sizes == null ? null : validateSizes(banner.sizes);
   const format = adUnit.ortb2Imp?.banner?.format ?? banner?.format;
@@ -206,8 +208,8 @@ function validateBannerMediaType(adUnit) {
   return validatedAdUnit;
 }
 
-function validateVideoMediaType(adUnit) {
-  const validatedAdUnit = deepClone(adUnit);
+function validateVideoMediaType(adUnit: AdUnit) {
+  const validatedAdUnit = deepClone(adUnit) as AdUnit;
   const video = validatedAdUnit.mediaTypes.video;
   if (video.playerSize) {
     const tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
@@ -230,7 +232,7 @@ function validateVideoMediaType(adUnit) {
   return validatedAdUnit;
 }
 
-function validateNativeMediaType(adUnit) {
+function validateNativeMediaType(adUnit: AdUnit) {
   function err(msg) {
     logError(`Error in adUnit "${adUnit.code}": ${msg}. Removing native request from ad unit`, adUnit);
     delete validatedAdUnit.mediaTypes.native;
@@ -244,7 +246,7 @@ function validateNativeMediaType(adUnit) {
       }
     }
   }
-  const validatedAdUnit = deepClone(adUnit);
+  const validatedAdUnit = deepClone(adUnit) as AdUnit;
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
@@ -292,9 +294,9 @@ function validateAdUnitPos(adUnit, mediaType) {
   return adUnit
 }
 
-function validateAdUnit(adUnit) {
+function validateAdUnit(adUnitDef: AdUnitDefinition): AdUnit {
   const msg = (msg) => `adUnit.code '${adUnit.code}' ${msg}`;
-
+  const adUnit = adUnitDef as AdUnit;
   const mediaTypes = adUnit.mediaTypes;
   const bids = adUnit.bids;
 
@@ -332,11 +334,11 @@ if (FEATURES.VIDEO) {
   Object.assign(adUnitSetupChecks, { validateVideoMediaType });
 }
 
-export const checkAdUnitSetup = hook('sync', function (adUnits) {
+export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition[]) {
   const validatedAdUnits = [];
 
-  adUnits.forEach(adUnit => {
-    adUnit = validateAdUnit(adUnit);
+  adUnits.forEach(adUnitDef => {
+    const adUnit = validateAdUnit(adUnitDef);
     if (adUnit == null) return;
 
     const mediaTypes = adUnit.mediaTypes;
@@ -364,7 +366,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
   return validatedAdUnits;
 }, 'checkAdUnitSetup');
 
-function fillAdUnitDefaults(adUnits) {
+function fillAdUnitDefaults(adUnits: AdUnit[]) {
   if (FEATURES.VIDEO) {
     adUnits.forEach(au => fillVideoDefaults(au))
   }
@@ -405,15 +407,14 @@ declare module './prebidGlobal' {
         setTargetingForGPTAsync;
         setTargetingForAst;
         renderAd;
-        removeAdUnit;
+        removeAdUnit: typeof removeAdUnit;
         requestBids;
-        addAdUnits;
+        addAdUnits: typeof addAdUnits;
         onEvent;
         offEvent;
         getEvents;
         registerBidAdapter;
         registerAnalyticsAdapter;
-        createBid;
         enableAnalytics;
         aliasBidder;
         aliasRegistry;
@@ -601,31 +602,32 @@ pbjsInstance.renderAd = hook('async', logInvocation('renderAd', function (doc, i
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
- * @param  {string| Array} adUnitCode the adUnitCode(s) to remove
+ * @param adUnitCode the adUnitCode(s) to remove
  * @alias module:pbjs.removeAdUnit
  */
-pbjsInstance.removeAdUnit = logInvocation('removeAdUnit', function (adUnitCode) {
-  if (!adUnitCode) {
-    pbjsInstance.adUnits = [];
-    return;
-  }
-
-  let adUnitCodes;
-
-  if (isArray(adUnitCode)) {
-    adUnitCodes = adUnitCode;
-  } else {
-    adUnitCodes = [adUnitCode];
-  }
-
-  adUnitCodes.forEach((adUnitCode) => {
-    for (let i = pbjsInstance.adUnits.length - 1; i >= 0; i--) {
-      if (pbjsInstance.adUnits[i].code === adUnitCode) {
-        pbjsInstance.adUnits.splice(i, 1);
-      }
+function removeAdUnit(adUnitCode?: AdUnitCode) {
+    if (!adUnitCode) {
+        pbjsInstance.adUnits = [];
+        return;
     }
-  });
-});
+
+    let adUnitCodes;
+
+    if (isArray(adUnitCode)) {
+        adUnitCodes = adUnitCode;
+    } else {
+        adUnitCodes = [adUnitCode];
+    }
+
+    adUnitCodes.forEach((adUnitCode) => {
+        for (let i = pbjsInstance.adUnits.length - 1; i >= 0; i--) {
+            if (pbjsInstance.adUnits[i].code === adUnitCode) {
+                pbjsInstance.adUnits.splice(i, 1);
+            }
+        }
+    });
+}
+addApiMethod('removeAdUnit', removeAdUnit);
 
 type AuctionOptions = {
     bidsBackHandler?;
@@ -811,16 +813,15 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
 pbjsInstance.requestBids.before(executeCallbacks, 49);
 
 /**
- *
- * Add adunit(s)
- * @param {Array|Object} adUnitArr Array of adUnits or single adUnit Object.
- * @alias module:pbjs.addAdUnits
+ * Add ad unit(s)
+ * @param adUnits
  */
-pbjsInstance.addAdUnits = logInvocation('addAdUnits', function (adUnitArr) {
-  pbjsInstance.adUnits.push(...(isArray(adUnitArr) ? adUnitArr : [adUnitArr]))
-  // emit event
-  events.emit(ADD_AD_UNITS);
-});
+function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
+    pbjsInstance.adUnits.push(...(Array.isArray(adUnits) ? adUnits : [adUnits]))
+    events.emit(ADD_AD_UNITS);
+}
+
+addApiMethod('addAdUnits', addAdUnits);
 
 /**
  * @param {string} event the name of the event

@@ -5,6 +5,8 @@ import {auctionManager} from './auctionManager.js';
 import type {VideoBid} from "./bidfactory.ts";
 import {ADPOD, type BaseMediaType} from "./mediaTypes.ts";
 import type {ORTBImp} from "./types/ortb/request.d.ts";
+import type {Size} from "./types/common.d.ts";
+import type {AdUnit} from "./adUnits.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
@@ -59,6 +61,10 @@ export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
 export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], Exclude<ORTB_PARAM, DEPRECATED_ORTB_PARAM>> {
     context: VideoContext;
+    /**
+     * @deprecated - use w & h instead.
+     */
+    playerSize?: Size | Size[];
     // placement & sequence are deprecated in 2.6 and not in the iab-openrtb types, so we replicate them here
     /**
      * @deprecated - use plcmt instead.
@@ -70,12 +76,12 @@ export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], Ex
     sequence?: number;
 }
 
-export function fillVideoDefaults(adUnit) {
+export function fillVideoDefaults(adUnit: AdUnit) {
   const video = adUnit?.mediaTypes?.video;
   if (video != null && video.plcmt == null) {
     if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
       video.plcmt = 4;
-    } else if (video.context !== OUTSTREAM && [2, 6].includes(video.playbackmethod)) {
+    } else if (([2, 6] as any).includes(video.playbackmethod)) {
       video.plcmt = 2;
     }
   }

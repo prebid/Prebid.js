@@ -690,16 +690,16 @@ export function shuffle(array) {
   return array;
 }
 
-export function deepClone(obj) {
-  return klona(obj) || {};
-}
-
 export function inIframe() {
   try {
     return internal.getWindowSelf() !== internal.getWindowTop();
   } catch (e) {
     return true;
   }
+}
+
+export function deepClone(obj) {
+  return klona(obj) || {};
 }
 
 /**
