@@ -554,7 +554,7 @@ function getBidResponsesForAdUnitCode(adUnitCode: string): WrapsInBids<Bid> {
     const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
     return { bids };
 }
-addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode, false);
+addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode);
 
 /**
  * Set query string targeting on one or more GPT ad units.
@@ -961,7 +961,7 @@ function getAllWinningBids(): Bid[] {
     return auctionManager.getAllWinningBids();
 }
 
-addApiMethod('getAllWinningBids', getAllWinningBids, false)
+addApiMethod('getAllWinningBids', getAllWinningBids)
 
 /**
  * @return Bids that have won their respective auctions but have not been rendered yet.
@@ -971,7 +971,7 @@ function getAllPrebidWinningBids(): Bid[] {
         .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 }
 
-addApiMethod('getAllPrebidWinningBids', getAllPrebidWinningBids, false);
+addApiMethod('getAllPrebidWinningBids', getAllPrebidWinningBids);
 
 /**
  * Get highest cpm bids for all adUnits, or highest cpm bid object for the given adUnit
@@ -981,7 +981,7 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
     return targeting.getWinningBids(adUnitCode);
 }
 
-addApiMethod('getHighestCpmBids', getHighestCpmBids, false);
+addApiMethod('getHighestCpmBids', getHighestCpmBids);
 
 
 pbjsInstance.clearAllAuctions = function () {
