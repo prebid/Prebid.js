@@ -135,7 +135,10 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
-export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+  // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
+  // be handled within it.
+  if (instl) return;
   function getDimension(value) {
     return value ? value + 'px' : '100%';
   }

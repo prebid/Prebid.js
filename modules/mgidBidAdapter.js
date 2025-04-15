@@ -14,7 +14,8 @@ import {
   isNumber,
   isBoolean,
   extractDomainFromHost,
-  isInteger, deepSetValue, getBidIdParameter, setOnAny
+  isInteger, deepSetValue, getBidIdParameter, setOnAny,
+  getWinDimensions
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -653,8 +654,8 @@ function pageInfo() {
     location: l,
     referrer: r || '',
     masked: m,
-    wWidth: w.innerWidth,
-    wHeight: w.innerHeight,
+    wWidth: getWinDimensions().innerWidth,
+    wHeight: getWinDimensions().innerHeight,
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };

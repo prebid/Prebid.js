@@ -1,4 +1,4 @@
-import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined} from '../src/utils.js';
+import {isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -179,7 +179,7 @@ function getUserAgent() {
   return window.navigator.userAgent;
 }
 function getInnerWidth() {
-  return getWindowSelf().innerWidth;
+  return getWinDimensions().innerWidth;
 }
 function isMobileUserAgent() {
   return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);

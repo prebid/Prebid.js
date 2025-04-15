@@ -1,4 +1,4 @@
-import { deepAccess, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -161,7 +161,7 @@ const getNotificationPayload = bidData => {
 const applyClientHints = ortbRequest => {
   const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
-  const viewport = W.visualViewport || false;
+  const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
     'CH-Ect': connection.effectiveType,

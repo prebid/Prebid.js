@@ -173,7 +173,7 @@ function _isViewabilityMeasurable(element) {
 
 function _getViewability(element, topWin, { w, h } = {}) {
   return getWindowTop().document.visibilityState === 'visible'
-    ? percentInView(element, topWin, { w, h })
+    ? percentInView(element, { w, h })
     : 0;
 }
 
