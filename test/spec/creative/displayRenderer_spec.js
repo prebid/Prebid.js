@@ -75,5 +75,28 @@ describe('Creative renderer - display', () => {
     runRenderer({ad: 'mock'});
     expect(doc.body.style.height).to.eql('100%');
     expect(doc.body.parentElement.style.height).to.eql('100%');
+  });
+
+  it('sizes frame element if instl = true', () => {
+    win.frameElement = { style: {}};
+    runRenderer({
+      ad: 'mock',
+      width: 123,
+      height: 321,
+      instl: true
+    });
+    expect(win.frameElement.style).to.eql({
+      width: '123px',
+      height: '321px'
+    })
+  });
+
+  it('does not choke if no frame element can be found', () => {
+    runRenderer({
+      ad: 'mock',
+      width: 123,
+      height: 321,
+      instl: true
+    });
   })
 })

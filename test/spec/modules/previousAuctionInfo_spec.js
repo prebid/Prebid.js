@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import * as events from 'src/events.js';
 import {CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook} from '../../../modules/previousAuctionInfo';
+import { REJECTION_REASON } from '../../../src/constants.js';
 
 describe('previous auction info', () => {
   let sandbox;
@@ -90,11 +91,12 @@ describe('previous auction info', () => {
         source: 'pbjs',
         adUnitCode: 'adUnit1',
         highestBidCpm: 2,
+        highestBidCurrency: 'EUR',
         bidderCpm: 2,
         bidderOriginalCpm: 2.1,
         bidderCurrency: 'EUR',
         bidderOriginalCurrency: 'EUR',
-        bidderErrorCode: null,
+        rejectionReason: null,
         timestamp: auctionDetails.timestamp
       });
     });
@@ -109,17 +111,21 @@ describe('previous auction info', () => {
       expect(previousAuctionInfo.auctionState['testBidder1'][0]).to.include({
         bidId: 'bid123',
         highestBidCpm: 2,
+        highestBidCurrency: 'EUR',
         adUnitCode: 'adUnit1',
         bidderCpm: 1,
-        bidderCurrency: 'USD'
+        bidderCurrency: 'USD',
+        rejectionReason: null,
       });
 
       expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({
         bidId: 'bidxyz',
         highestBidCpm: 3,
+        highestBidCurrency: 'USD',
         adUnitCode: 'adUnit2',
         bidderCpm: 3,
-        bidderCurrency: 'USD'
+        bidderCurrency: 'USD',
+        rejectionReason: null,
       });
     });
 
@@ -129,6 +135,37 @@ describe('previous auction info', () => {
 
       expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
       expect(previousAuctionInfo.auctionState).to.not.have.property('testBidder2');
+    });
+
+    it('should include rejectionReason string if the bid was rejected', () => {
+      const auctionDetailsWithRejectedBid = {
+        auctionId: 'auctionXYZ',
+        bidsReceived: [],
+        bidsRejected: [
+          { requestId: 'bid456', rejectionReason: REJECTION_REASON.FLOOR_NOT_MET } // string from REJECTION_REASON
+        ],
+        bidderRequests: [
+          {
+            bidderCode: 'testBidder1',
+            bidderRequestId: 'req1',
+            bids: [
+              { bidId: 'bid456', adUnitCode: 'adUnit1' }
+            ]
+          }
+        ],
+        timestamp: Date.now(),
+      };
+    
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
+      previousAuctionInfo.onAuctionEndHandler(auctionDetailsWithRejectedBid);
+    
+      const stored = previousAuctionInfo.auctionState['testBidder1'][0];
+      expect(stored).to.include({
+        bidId: 'bid456',
+        rejectionReason: REJECTION_REASON.FLOOR_NOT_MET,
+        bidderCpm: null,
+        highestBidCpm: null
+      });
     });
   });
 
