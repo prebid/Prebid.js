@@ -3,7 +3,7 @@ export function reset() {
   adUnits = {}
 }
 
-function ensureAdUnit(adunit, bidderCode) {
+function ensureAdUnit(adunit, bidderCode?) {
   let adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
   if (bidderCode) {
     return adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {}
@@ -11,7 +11,7 @@ function ensureAdUnit(adunit, bidderCode) {
   return adUnit;
 }
 
-function incrementAdUnitCount(adunit, counter, bidderCode) {
+function incrementAdUnitCount(adunit, counter, bidderCode?) {
   let adUnit = ensureAdUnit(adunit, bidderCode);
   adUnit[counter] = (adUnit[counter] || 0) + 1;
   return adUnit[counter];
