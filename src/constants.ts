@@ -161,7 +161,7 @@ export const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
   price: 'price',
   salePrice: 'saleprice',
   displayUrl: 'displayurl'
-};
+} as const;
 
 export const NATIVE_ASSET_TYPES = {
   sponsored: 1,

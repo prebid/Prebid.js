@@ -7,6 +7,7 @@
 import type {BannerMediaType} from "./banner.ts";
 import type {RendererConfig} from "./adUnits.ts";
 import type {VideoMediaType} from "./video.ts";
+import type {NativeMediaType} from "./native.ts";
 
 export type MediaType = typeof NATIVE | typeof VIDEO | typeof BANNER;
 
@@ -20,6 +21,7 @@ export interface BaseMediaType {
 export interface MediaTypes {
     banner?: BannerMediaType;
     video?: VideoMediaType;
+    native?: NativeMediaType;
 }
 
 export const NATIVE = 'native';

@@ -17,7 +17,10 @@ import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
-import type {NativeResponse, Link} from "./types/ortb/native.d.ts";
+import type {NativeResponse, Link, NativeRequest} from "./types/ortb/native.d.ts";
+import type {Size} from "./types/common.d.ts";
+import type {Ext} from "./types/ortb/common.d.ts";
+import type {ORTBImp} from "./types/ortb/request";
 
 type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
 type LegacyImageAssets = { icon: unknown, image: unknown };
@@ -52,6 +55,41 @@ declare module './bidfactory' {
     interface NativeBidProperties {
         native: LegacyNativeResponse & { ortb: NativeResponse };
     }
+}
+
+type LegacyAssetRequest = {
+    required?: boolean;
+}
+
+export type LegacyNativeRequest = {
+    privacyLink?: LegacyAssetRequest;
+    title?: LegacyAssetRequest & {
+        len?: number;
+    };
+    ext?: Ext;
+} & {
+    [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]: LegacyAssetRequest & {
+        len?: number;
+    }
+} & {
+    [K in keyof LegacyImageAssets]: LegacyAssetRequest & {
+        sizes?: Size | Size[];
+        aspect_ratios?: {
+            min_width: number;
+            min_height: number;
+            ratio_width: number;
+            ratio_height: number;
+        }[];
+    }
+}
+
+interface ORTBNativeRequest extends Omit<NativeRequest, 'assets'> {
+    // Prebid accepts "vanilla" ORTB native, except asset IDs are optional (and auto-generated)
+    assets: (Partial<Pick<NativeRequest['assets'][0], 'id'>> & Omit<NativeRequest['assets'][0], 'id'>)[];
+}
+
+export interface NativeMediaType extends LegacyNativeRequest {
+    ortb?: ORTBNativeRequest;
 }
 
 export const nativeAdapters = [];
