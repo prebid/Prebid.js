@@ -11,4 +11,12 @@ export interface ORTBRequest extends BidRequest {
     }
 }
 
-export type ORTBImp = Imp;
+export type ORTBImp = Imp & {
+    ext?: Ext & {
+        /**
+         * Transaction ID for this imp. Unique for each impression opportunity (slot & auction)
+         * but common across all requests for that opportunity.
+         */
+        tid?: string;
+    }
+};

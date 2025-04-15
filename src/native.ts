@@ -844,7 +844,7 @@ export function toOrtbNativeResponse(legacyResponse: LegacyNativeResponse, ortbR
  * @param {*} ortbRequest the ortb request, useful to match ids.
  * @returns an object containing the response in legacy native format: { title: "this is a title", image: ... }
  */
-export function toLegacyResponse(ortbResponse: NativeResponse, ortbRequest) {
+export function toLegacyResponse(ortbResponse: NativeResponse, ortbRequest: NativeRequest) {
   const legacyResponse = {} as LegacyNativeResponse;
   const requestAssets = ortbRequest?.assets || [];
   legacyResponse.clickUrl = ortbResponse.link?.url;

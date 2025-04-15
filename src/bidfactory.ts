@@ -1,5 +1,5 @@
 import {getUniqueIdentifierStr} from './utils.js';
-import type {BidderCode, BidSource, Currency, Identifier} from "./types/common.d.ts";
+import type {BidderCode, BidSource, ContextIdentifiers, Currency, Identifier} from "./types/common.d.ts";
 import {MediaType} from "./mediaTypes.ts";
 import type {DSAResponse} from "./types/ortb/ext/dsa.d.ts";
 import type {EventTrackerResponse} from "./types/ortb/native.d.ts";
@@ -7,23 +7,6 @@ import {Metrics} from "./utils/perfMetrics.ts";
 import {Renderer} from './Renderer.js';
 import {type BID_STATUS} from "./constants.ts";
 import type {DemandChain} from "./types/ortb/ext/dchain.d.ts";
-
-type ContextIdentifiers = {
-    /**
-     * Auction ID. Unique for any given auction, but shared across all requests and responses within that auction.
-     */
-    auctionId: Identifier;
-    /**
-     * Transaction ID. Unique for any given impression opportunity (every auction presents an opportunity for each slot),
-     * but shared across all bid requests and responses for that impression opportunity.
-     */
-    transactionId: Identifier;
-    /**
-     * Ad unit ID. Similar to transaction IDs in that any slot and auction pair will have different IDs, but unlike transactions,
-     * twin ad units will have different ad unit IDs.
-     */
-    adUnitId: Identifier;
-}
 
 type BidIdentifiers = ContextIdentifiers & {
     src: BidSource;

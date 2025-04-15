@@ -1,4 +1,4 @@
-import type {AdUnitCode, BidderCode} from "./types/common.d.ts";
+import type {AdUnitCode, BidderCode, ContextIdentifiers} from "./types/common.d.ts";
 import type {ORTBImp} from "./types/ortb/request.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {BannerMediaType} from "./banner.ts";
@@ -72,7 +72,7 @@ export interface AdUnitModuleBid<MODULE extends AdUnitModuleBidders> extends Bas
 
 export type AdUnitBid = AdUnitModuleBid<AdUnitModuleBidders> | AdUnitBidderBid<BidderCode>;
 
-export interface AdUnitRequest {
+export interface AdUnitDefinition {
     /**
      * An identifier you create and assign to this ad unit.
      * Generally this is set to the ad slot name or the div element ID.
@@ -103,6 +103,8 @@ export interface AdUnitRequest {
      */
     deferBilling?: boolean;
 }
+
+export type AdUnit = ContextIdentifiers & AdUnitDefinition;
 
 const REQUESTS = 'requests';
 const WINS = 'wins';
