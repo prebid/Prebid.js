@@ -24,6 +24,7 @@ import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../l
 import {VIDEO} from '../../src/mediaTypes.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
+import {getHook} from '../../src/hook.js';
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
@@ -32,11 +33,11 @@ events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD
  * This module adds User Video support to prebid.js
  * @module modules/videoModule
  */
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
+export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
-  const requestBids = pbGlobal.requestBids;
+  const requestBids = requestBids_;
   const pbEvents = pbEvents_;
   const videoEvents = videoEvents_;
   const gamAdServerFactory = gamAdServerFactory_;
@@ -291,7 +292,7 @@ export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
   const adQueueCoordinator = AdQueueCoordinator(videoCore, events);
   const pbGlobal = getGlobal();
-  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator);
+  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, getHook('requestBids'), events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator);
   pbVideo.init();
   pbGlobal.videoModule = pbVideo;
   doRender.before(videoRenderHook);

@@ -208,7 +208,7 @@ describe('Unit: Prebid Module', function () {
   }
   before((done) => {
     hook.ready();
-    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    pbjsModule.requestBids.getHooks().remove();
     resetDebugging();
     sinon.stub(filters, 'isActualBid').returns(true); // stub this out so that we can use vanilla objects as bids
     getBidToRender.before(getBidToRenderHook, 100);
@@ -286,7 +286,7 @@ describe('Unit: Prebid Module', function () {
     }
 
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
+      pbjsModule.requestBids.before(deferringHook, 99);
       hookRan = new Promise((resolve) => {
         done = resolve;
       });
@@ -294,7 +294,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     afterEach(() => {
-      $$PREBID_GLOBAL$$.requestBids.getHooks({hook: deferringHook}).remove();
+      pbjsModule.requestBids.getHooks({hook: deferringHook}).remove();
       $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length);
     })
 
@@ -1706,11 +1706,11 @@ describe('Unit: Prebid Module', function () {
 
       beforeEach(() => {
         // make sure the return value works correctly when hooks give up priority
-        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+        pbjsModule.requestBids.before(delayHook)
       });
 
       afterEach(() => {
-        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+        pbjsModule.requestBids.getHooks({hook: delayHook}).remove();
       });
 
       Object.entries({

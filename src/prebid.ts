@@ -670,9 +670,9 @@ export type RequestBidsOptions = {
 
 type RequestBidsResult = {
     /**
-     * Bids received.
+     * Bids received, grouped by ad unit.
      */
-    bids: WrapsInBids<Bid>;
+    bids: { [adUnitCode: AdUnitCode]: WrapsInBids<Bid> };
     /**
      * True if any bidder timed out.
      */
@@ -700,8 +700,8 @@ declare module './hook' {
 }
 
 export const requestBids = (function() {
-  const delegate = hook('async', function (reqBidOptions = {} as _PrivRequestBidsOptions, ...args) {
-    let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions;
+  const delegate = hook('async', function (reqBidOptions: _PrivRequestBidsOptions) {
+    let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     if (adUnitCodes != null && !Array.isArray(adUnitCodes)) {
@@ -746,10 +746,10 @@ export const requestBids = (function() {
 
 addApiMethod('requestBids', requestBids);
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {} as StartAuctionOptions) {
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits: adUnitDefs, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: StartAuctionOptions = {} as any) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
-  fillAdUnitDefaults(adUnits);
-  adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
+  fillAdUnitDefaults(adUnitDefs);
+  const adUnits: AdUnit[] = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnitDefs));
 
   function auctionDone(bids?, timedOut?: boolean, auctionId?: string) {
     if (typeof bidsBackHandler === 'function') {
@@ -763,7 +763,6 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   }
 
   const tids = {};
-
   /*
    * for a given adunit which supports a set of mediaTypes
    * and a given bidder which supports a set of mediaTypes
@@ -775,7 +774,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
     // get the bidder's mediaTypes
-    const allBidders = adUnit.bids.map(bid => bid.bidder);
+    const allBidders = adUnit.bids.map(bid => (bid as any).bidder);
     const bidderRegistry = adapterManager.bidderRegistry;
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
@@ -802,7 +801,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       if (!bidderEligible) {
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
-        adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+        adUnit.bids = adUnit.bids.filter(bid => (bid as any).bidder !== bidder);
       }
     });
   });

@@ -2,7 +2,7 @@ import type {AdUnitCode, BidderCode, ContextIdentifiers, Size} from "./types/com
 import type {ORTBImp} from "./types/ortb/request.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {MediaTypes} from "./mediaTypes.ts";
-import type {DeepPartial} from "./types/objects";
+import type {DeepPartial} from "./types/objects.d.ts";
 
 export interface RendererConfig {
     /**
@@ -105,7 +105,7 @@ export interface AdUnitDefinition {
     /**
      * @deprecated - use mediaType specific size parameters instead.
      */
-    sizes: Size | Size[];
+    sizes?: Size | Size[];
 }
 
 /**
@@ -141,56 +141,56 @@ type AdUnitCounter = (adUnit: AdUnitCode) => number;
 type BidderCounter = (adUnit: AdUnitCode, bidderCode: BidderCode) => number;
 type Counter<BY_BIDDER extends boolean> = BY_BIDDER extends true ? BidderCounter : AdUnitCounter;
 
-function incrementer<BY_BIDDER extends boolean>(counter): Counter<BY_BIDDER> {
+function incrementer<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): Counter<BY_BIDDER> {
     return function (adUnit, bidder?) {
-        const counters = ensureAdUnit(adUnit, bidder);
+        const counters = ensureAdUnit(adUnit, byBidder && bidder);
         counters[counter] = (counters[counter] ?? 0) + 1;
         return counters[counter];
     }
 }
 
-function getter<BY_BIDDER extends boolean>(counter): Counter<BY_BIDDER> {
+function getter<BY_BIDDER extends boolean>(counter, byBidder: BY_BIDDER): Counter<BY_BIDDER> {
     return function (adUnit, bidder?) {
-        return ensureAdUnit(adUnit, bidder)[counter] ?? 0;
+        return ensureAdUnit(adUnit, byBidder && bidder)[counter] ?? 0;
     }
 }
 
 /**
  * Increments and returns current Adunit counter
  */
-export const incrementRequestsCounter = incrementer<false>(REQUESTS);
+export const incrementRequestsCounter = incrementer(REQUESTS, false);
 
 /**
  * Increments and returns current Adunit requests counter for a bidder
  */
-export const incrementBidderRequestsCounter = incrementer<true>(REQUESTS);
+export const incrementBidderRequestsCounter = incrementer(REQUESTS, true);
 
 /**
  * Increments and returns current Adunit wins counter for a bidder
  */
-export const incrementBidderWinsCounter = incrementer<true>(WINS);
+export const incrementBidderWinsCounter = incrementer(WINS, true);
 
 /**
  * Increments and returns current Adunit auctions counter
  */
-export const incrementAuctionsCounter = incrementer<false>(AUCTIONS);
+export const incrementAuctionsCounter = incrementer(AUCTIONS, false);
 
 /**
  * Returns current Adunit counter
  */
-export const getRequestsCounter = getter<false>(REQUESTS);
+export const getRequestsCounter = getter(REQUESTS, false);
 
 /**
  * Returns current Adunit requests counter for a specific bidder code
  */
-export const getBidderRequestsCounter = getter<false>(REQUESTS)
+export const getBidderRequestsCounter = getter(REQUESTS, true)
 
 /**
  * Returns current Adunit requests counter for a specific bidder code
  */
-export const getBidderWinsCounter = getter<true>(WINS);
+export const getBidderWinsCounter = getter(WINS, true);
 
 /**
  * Returns current Adunit auctions counter
  */
-export const getAuctionsCounter = getter<false>(AUCTIONS);
+export const getAuctionsCounter = getter(AUCTIONS, false);

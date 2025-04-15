@@ -3,6 +3,7 @@ import type {AnyFunction, Wraps} from "../types/functions.d.ts";
 import {HookFunction, Next} from "../hook.ts";
 import type {addBidResponse} from "../auction.ts";
 import type {requestBids} from "../prebid.ts";
+
 export const CONFIG_TOGGLE = 'performanceMetrics';
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
 const NODES = new WeakMap();
