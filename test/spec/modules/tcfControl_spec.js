@@ -453,15 +453,7 @@ describe('gdpr enforcement', function () {
     });
 
     it('should return deny by default when purpose 4 consent is withheld', () => {
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'someOtherPurpose',
-            enforcePurpose: true,
-            enforceVendor: true,
-          }]
-        }
-      });
+      setEnforcementConfig({});
       Object.assign(gvlids, {
         mockBidder: 123
       });
