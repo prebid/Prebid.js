@@ -3,50 +3,72 @@ import {config} from './config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 import type {VideoBid} from "./bidfactory.ts";
+import {ADPOD, type BaseMediaType} from "./mediaTypes.ts";
+import type {ORTBImp} from "./types/ortb/request.d.ts";
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
+
+const ORTB_PARAMS = [
+    [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
+    [ 'minduration', isInteger ],
+    [ 'maxduration', isInteger ],
+    [ 'startdelay', isInteger ],
+    [ 'maxseq', isInteger ],
+    [ 'poddur', isInteger ],
+    [ 'protocols', isArrayOfNums ],
+    [ 'w', isInteger ],
+    [ 'h', isInteger ],
+    [ 'podid', isStr ],
+    [ 'podseq', isInteger ],
+    [ 'rqddurs', isArrayOfNums ],
+    [ 'placement', isInteger ], // deprecated, see plcmt
+    [ 'plcmt', isInteger ],
+    [ 'linearity', isInteger ],
+    [ 'skip', value => [1, 0].includes(value) ],
+    [ 'skipmin', isInteger ],
+    [ 'skipafter', isInteger ],
+    [ 'sequence', isInteger ], // deprecated
+    [ 'slotinpod', isInteger ],
+    [ 'mincpmpersec', isNumber ],
+    [ 'battr', isArrayOfNums ],
+    [ 'maxextended', isInteger ],
+    [ 'minbitrate', isInteger ],
+    [ 'maxbitrate', isInteger ],
+    [ 'boxingallowed', isInteger ],
+    [ 'playbackmethod', isArrayOfNums ],
+    [ 'playbackend', isInteger ],
+    [ 'delivery', isArrayOfNums ],
+    [ 'pos', isInteger ],
+    [ 'api', isArrayOfNums ],
+    [ 'companiontype', isArrayOfNums ],
+    [ 'poddedupe', isArrayOfNums ]
+] as const;
 
 /**
  * List of OpenRTB 2.x video object properties with simple validators.
  * Not included: `companionad`, `durfloors`, `ext`
  * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
  */
-export const ORTB_VIDEO_PARAMS = new Map([
-  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-  [ 'minduration', isInteger ],
-  [ 'maxduration', isInteger ],
-  [ 'startdelay', isInteger ],
-  [ 'maxseq', isInteger ],
-  [ 'poddur', isInteger ],
-  [ 'protocols', isArrayOfNums ],
-  [ 'w', isInteger ],
-  [ 'h', isInteger ],
-  [ 'podid', isStr ],
-  [ 'podseq', isInteger ],
-  [ 'rqddurs', isArrayOfNums ],
-  [ 'placement', isInteger ], // deprecated, see plcmt
-  [ 'plcmt', isInteger ],
-  [ 'linearity', isInteger ],
-  [ 'skip', value => [1, 0].includes(value) ],
-  [ 'skipmin', isInteger ],
-  [ 'skipafter', isInteger ],
-  [ 'sequence', isInteger ], // deprecated
-  [ 'slotinpod', isInteger ],
-  [ 'mincpmpersec', isNumber ],
-  [ 'battr', isArrayOfNums ],
-  [ 'maxextended', isInteger ],
-  [ 'minbitrate', isInteger ],
-  [ 'maxbitrate', isInteger ],
-  [ 'boxingallowed', isInteger ],
-  [ 'playbackmethod', isArrayOfNums ],
-  [ 'playbackend', isInteger ],
-  [ 'delivery', isArrayOfNums ],
-  [ 'pos', isInteger ],
-  [ 'api', isArrayOfNums ],
-  [ 'companiontype', isArrayOfNums ],
-  [ 'poddedupe', isArrayOfNums ]
-]);
+export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS);
+
+type ORTB_PARAM = (typeof ORTB_PARAMS)[number][0];
+type DEPRECATED_ORTB_PARAM = 'placement' | 'sequence';
+
+export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
+
+export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], Exclude<ORTB_PARAM, DEPRECATED_ORTB_PARAM>> {
+    context: VideoContext;
+    // placement & exclude are deprecated in 2.6 and not in the iab-openrtb types, so we replicate them here
+    /**
+     * @deprecated - use plcmt instead.
+     */
+    placement?: number;
+    /**
+     * @deprecated - use slotinpod instead.
+     */
+    sequence?: number;
+}
 
 export function fillVideoDefaults(adUnit) {
   const video = adUnit?.mediaTypes?.video;
@@ -78,7 +100,7 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam?) {
 
   if (videoParams != null) {
     Object.entries(videoParams)
-      .forEach(([key, value]) => {
+      .forEach(([key, value]: any) => {
         if (!ORTB_VIDEO_PARAMS.has(key)) {
           return
         }

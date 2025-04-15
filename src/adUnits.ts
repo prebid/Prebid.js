@@ -25,13 +25,6 @@ export interface BidderParams {
     [bidder: BidderCode]: { [param: string]: unknown };
 }
 
-export interface BaseMediaType {
-    /**
-     * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this media type.
-     */
-    renderer?: RendererConfig;
-}
-
 export interface BaseAdUnitBid {
     /**
      * Used for conditional ads (sizeMapping or sizeMappingV2 modules).

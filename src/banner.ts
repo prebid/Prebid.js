@@ -1,7 +1,7 @@
 import { isArrayOfNums, isInteger, isStr } from './utils.js';
 import type {Size} from "./types/common.d.ts";
 import type {PlacementPosition} from "./types/ortb/request.d.ts";
-import type {BaseMediaType} from "./adUnits.ts";
+import type {BaseMediaType} from "./mediaTypes.ts";
 
 export interface BannerMediaType extends BaseMediaType {
     /**

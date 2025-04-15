@@ -5,11 +5,21 @@
  * register themselves with prebid-core.
  */
 import type {BannerMediaType} from "./banner.ts";
+import type {RendererConfig} from "./adUnits.ts";
+import type {VideoMediaType} from "./video.ts";
 
 export type MediaType = typeof NATIVE | typeof VIDEO | typeof BANNER;
 
+export interface BaseMediaType {
+    /**
+     * Custom renderer. Takes precedence over adUnit.renderer, but applies only to this media type.
+     */
+    renderer?: RendererConfig;
+}
+
 export interface MediaTypes {
-    banner?: BannerMediaType
+    banner?: BannerMediaType;
+    video?: VideoMediaType;
 }
 
 export const NATIVE = 'native';
