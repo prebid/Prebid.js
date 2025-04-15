@@ -59,7 +59,7 @@ export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
 export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], Exclude<ORTB_PARAM, DEPRECATED_ORTB_PARAM>> {
     context: VideoContext;
-    // placement & exclude are deprecated in 2.6 and not in the iab-openrtb types, so we replicate them here
+    // placement & sequence are deprecated in 2.6 and not in the iab-openrtb types, so we replicate them here
     /**
      * @deprecated - use plcmt instead.
      */
