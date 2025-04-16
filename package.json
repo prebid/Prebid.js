@@ -2,7 +2,6 @@
   "name": "prebid.js",
   "version": "9.40.0-pre",
   "description": "Header Bidding Management Library",
-  "//": "TODO: these main/exports only work locally for now; needs prebidjs-releaser updates",
   "main": "build/precompiled/src/prebid.public.ts",
   "exports": {
     ".": "./dist/src/src/prebid.public.js",
