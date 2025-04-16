@@ -18,6 +18,7 @@ import {
   getDomLoadingDuration,
   getSafeframeGeometry,
   getUniqueIdentifierStr,
+  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   inIframe,
@@ -523,12 +524,13 @@ function getSlotPosition(divId) {
 
       let box = getBoundingClientRect(domElement);
 
-      const docEl = d.documentElement;
+      const windowDimensions = getWinDimensions();
+
       const body = d.body;
       const clientTop = d.clientTop || body.clientTop || 0;
       const clientLeft = d.clientLeft || body.clientLeft || 0;
-      const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
-      const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
+      const scrollTop = wt.pageYOffset || windowDimensions.document.documentElement.scrollTop || windowDimensions.document.body.scrollTop;
+      const scrollLeft = wt.pageXOffset || windowDimensions.document.documentElement.scrollLeft || windowDimensions.document.body.scrollLeft;
 
       const elComputedStyle = wt.getComputedStyle(domElement, null);
       const mustDisplayElement = elComputedStyle.display === 'none';
@@ -585,9 +587,9 @@ function getViewPortDimensions() {
     viewportDims.h = Math.round(win.h);
   } else {
     // window.top based computing
-    const wt = getWindowTop();
-    viewportDims.w = wt.innerWidth;
-    viewportDims.h = wt.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+    viewportDims.w = innerWidth;
+    viewportDims.h = innerHeight;
   }
 
   return `${viewportDims.w}x${viewportDims.h}`;

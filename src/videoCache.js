@@ -12,7 +12,7 @@
 import {ajaxBuilder} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
-import {logError, logWarn} from './utils.js';
+import {generateUUID, logError, logWarn} from './utils.js';
 import {addBidToAuction} from './auction.js';
 
 /**
@@ -20,6 +20,8 @@ import {addBidToAuction} from './auction.js';
  * Depending on publisher needs
  */
 const ttlBufferInSeconds = 15;
+
+export const vastLocalCache = new Map();
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -72,7 +74,7 @@ function wrapURI(uri, impTrackerURLs) {
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  const vastValue = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   let payload = {
@@ -140,6 +142,10 @@ function shimStorageCallback(done) {
   }
 }
 
+function getVastXml(bid) {
+  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+};
+
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
@@ -162,6 +168,22 @@ export function getCacheUrl(id) {
   return `${config.getConfig('cache.url')}?uuid=${id}`;
 }
 
+export const storeLocally = (bid) => {
+  const vastXml = getVastXml(bid);
+  const bidVastUrl = URL.createObjectURL(new Blob([vastXml], { type: 'text/xml' }));
+
+  assignVastUrlAndCacheId(bid, bidVastUrl);
+
+  vastLocalCache.set(bid.videoCacheKey, bidVastUrl);
+};
+
+const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey) => {
+  bid.videoCacheKey = videoCacheKey || generateUUID();
+  if (!bid.vastUrl) {
+    bid.vastUrl = vastUrl;
+  }
+}
+
 export const _internal = {
   store
 }
@@ -182,10 +204,7 @@ export function storeBatch(batch) {
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
         } else {
-          bidResponse.videoCacheKey = cacheId.uuid;
-          if (!bidResponse.vastUrl) {
-            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
-          }
+          assignVastUrlAndCacheId(bidResponse, getCacheUrl(bidResponse.videoCacheKey), cacheId.uuid);
           addBidToAuction(auctionInstance, bidResponse);
           afterBidAdded();
         }
@@ -194,15 +213,29 @@ export function storeBatch(batch) {
   });
 };
 
-let batchSize, batchTimeout;
+let batchSize, batchTimeout, cleanupHandler;
 if (FEATURES.VIDEO) {
-  config.getConfig('cache', (cacheConfig) => {
-    batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
-      ? cacheConfig.cache.batchSize
+  config.getConfig('cache', ({cache}) => {
+    batchSize = typeof cache.batchSize === 'number' && cache.batchSize > 0
+      ? cache.batchSize
       : 1;
-    batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
-      ? cacheConfig.cache.batchTimeout
+    batchTimeout = typeof cache.batchTimeout === 'number' && cache.batchTimeout > 0
+      ? cache.batchTimeout
       : 0;
+
+    // removing blobs that are not going to be used
+    if (cache.useLocal && !cleanupHandler) {
+      cleanupHandler = auctionManager.onExpiry((auction) => {
+        auction.getBidsReceived()
+          .forEach((bid) => {
+            const vastUrl = vastLocalCache.get(bid.videoCacheKey)
+            if (vastUrl && vastUrl.startsWith('blob')) {
+              URL.revokeObjectURL(vastUrl);
+            }
+            vastLocalCache.delete(bid.videoCacheKey);
+          })
+      });
+    }
   });
 }
 

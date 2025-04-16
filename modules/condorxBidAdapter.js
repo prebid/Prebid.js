@@ -8,13 +8,17 @@ const API_URL = 'https://api.condorx.io/cxb/get.json';
 const REQUEST_METHOD = 'GET';
 const MAX_SIZE_DEVIATION = 0.05;
 const SUPPORTED_AD_SIZES = [
-  [100, 100], [200, 200], [300, 250], [400, 200], [300, 200], [600, 600], [650, 1168], [236, 202], [1080, 1920], [300, 374]
+  [100, 100], [200, 200], [300, 250], [400, 200], [300, 200], [600, 600], [236, 202], [1080, 1920], [300, 374]
 ];
 
 function getBidRequestUrl(bidRequest, bidderRequest) {
   if (bidRequest.params.url && bidRequest.params.url !== 'current url') {
     return bidRequest.params.url;
   }
+  return getBidderRequestUrl(bidderRequest);
+}
+
+function getBidderRequestUrl(bidderRequest) {
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     return bidderRequest.refererInfo.page;
   }
@@ -122,8 +126,20 @@ export const bidderSpec = {
         const widgetId = bidRequest.params.widget;
         const websiteId = bidRequest.params.website;
         const pageUrl = getBidRequestUrl(bidRequest, bidderRequest);
+        let subid;
+        try {
+          let url
+          try {
+            url = new URL(pageUrl);
+          } catch (e) {
+            url = new URL(getBidderRequestUrl(bidderRequest))
+          }
+          subid = url.hostname;
+        } catch (e) {
+          subid = widgetId;
+        }
         const bidId = bidRequest.bidId;
-        let apiUrl = `${API_URL}?w=${websiteId}&wg=${widgetId}&u=${pageUrl}&p=0&ireqid=${bidId}&prebid=${mediaType}&imgw=${imageWidth}&imgh=${imageHeight}`;
+        let apiUrl = `${API_URL}?w=${websiteId}&wg=${widgetId}&u=${pageUrl}&s=${subid}&p=0&ireqid=${bidId}&prebid=${mediaType}&imgw=${imageWidth}&imgh=${imageHeight}`;
         if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprApplies && bidderRequest.consentString) {
           apiUrl += `&g=1&gc=${bidderRequest.consentString}`;
         }

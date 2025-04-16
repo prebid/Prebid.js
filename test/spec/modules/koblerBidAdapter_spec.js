@@ -544,7 +544,8 @@ describe('KoblerAdapter', function () {
           }
         ],
         device: {
-          devicetype: 2
+          devicetype: 2,
+          ua: navigator.userAgent
         },
         site: {
           page: 'bid.kobler.no'
@@ -589,6 +590,7 @@ describe('KoblerAdapter', function () {
                   price: 7.981,
                   nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'edea9b03-3a57-41aa-9c00-abd673e22006',
+                  cid: '572',
                   dealid: '',
                   w: 320,
                   h: 250,
@@ -603,6 +605,7 @@ describe('KoblerAdapter', function () {
                   nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
                   crid: 'fa2d5af7-2678-4204-9023-44c526160742',
                   dealid: '2783483223432342',
+                  cid: '800',
                   w: 580,
                   h: 400,
                   adm: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432"></script>',
@@ -631,6 +634,7 @@ describe('KoblerAdapter', function () {
           ttl: 600,
           ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=sdhfusdaobfadslf234324"></script>',
           nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=sdhfusdaobfadslf234324&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+          cid: '572',
           meta: {
             advertiserDomains: [
               'https://kobler.no'
@@ -649,6 +653,7 @@ describe('KoblerAdapter', function () {
           ttl: 600,
           ad: '<script src="https://atag.essrtb.com/serve/prebid_ad_tag?payload=nbashgufvishdafjk23432"></script>',
           nurl: 'https://atag.essrtb.com/serve/prebid_win_notification?payload=nbashgufvishdafjk23432&sp=${AUCTION_PRICE}&sp_cur=${AUCTION_PRICE_CURRENCY}&asp=${AD_SERVER_PRICE}&asp_cur=${AD_SERVER_PRICE_CURRENCY}',
+          cid: '800',
           meta: {
             advertiserDomains: [
               'https://bid.kobler.no'
