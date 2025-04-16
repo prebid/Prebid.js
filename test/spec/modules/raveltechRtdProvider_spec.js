@@ -74,25 +74,22 @@ describe('raveltechRtdProvider', () => {
     expect(fakeAjax.getCall(0).args[2]).not.to.contain('"pbjsAdapter":"test"');
   })
 
-  it('remove uids when ZKAD unavailable', () => {
+  it('do not call ravel when ZKAD unavailable', () => {
     adapterManager.getBidAdapter('alias1').callBids({
       auctionId: '123',
       bidderCode: 'test',
       bidderRequestId: 'abc',
       bids: [ { ...fakeBidReq, bidder: 'test' } ]
     }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
-    expect(fakeAjax.calledTwice).to.be.true;
+    expect(fakeAjax.calledOnce).to.be.true;
     expect(fakeZkad.called).to.be.false;
-    expect(fakeBuildRequests.calledTwice).to.be.true;
+    expect(fakeBuildRequests.calledOnce).to.be.true;
     expect(fakeAjax.getCall(0).args[2]).to.contain('"id":"testid123"');
-    expect(fakeAjax.getCall(1).args[2]).not.to.contain('"id":"testid123"');
-    expect(fakeAjax.getCall(1).args[2]).not.to.contain('"id":');
     expect(fakeAjax.getCall(0).args[2]).not.to.contain('"pbjsAdapter":"test"');
-    expect(fakeAjax.getCall(1).args[2]).to.contain('"pbjsAdapter":"test"');
   })
 
   it('successfully replace uids with ZKAD', () => {
-    window.ZKAD = { anonymizeID: fakeZkad };
+    window.ZKAD = { anonymizeID: fakeZkad, ready: true };
     adapterManager.getBidAdapter('alias1').callBids({
       auctionId: '123',
       bidderCode: 'test',
