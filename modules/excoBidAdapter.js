@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {
   mergeDeep,
   deepAccess,
@@ -26,6 +27,13 @@ const CURRENCY = 'USD';
 
 const SYNC = {
   done: false,
+};
+
+const EVENTS = {
+  TYPE: 'exco-adapter',
+  PING: 'exco-adapter-ping',
+  PONG: 'exco-adapter-pong',
+  subscribed: false,
 };
 
 export class AdapterHelpers {
@@ -144,6 +152,74 @@ export class AdapterHelpers {
 
   replaceMacro(str) {
     return str.replace('[TIMESTAMP]', Date.now());
+  }
+
+  percentInViewport(win, element) {
+    if (!element) {
+      return 0;
+    }
+
+    const rect = getBoundingClientRect(element);
+    const viewportHeight = win.innerHeight || win.document.documentElement.clientHeight;
+    const viewportWidth = win.innerWidth || win.document.documentElement.clientWidth;
+
+    // Calculate boundaries of intersection between element and viewport.
+    const visibleRect = {
+      top: Math.max(rect.top, 0),
+      left: Math.max(rect.left, 0),
+      bottom: Math.min(rect.bottom, viewportHeight),
+      right: Math.min(rect.right, viewportWidth)
+    };
+
+    // Compute intersection dimensions.
+    const intersectionWidth = visibleRect.right - visibleRect.left;
+    const intersectionHeight = visibleRect.bottom - visibleRect.top;
+
+    // If no visible area, return 0.
+    if (intersectionWidth <= 0 || intersectionHeight <= 0) {
+      return 0;
+    }
+
+    const intersectionArea = intersectionWidth * intersectionHeight;
+    const elementArea = rect.width * rect.height;
+
+    return (intersectionArea / elementArea) * 100;
+  }
+
+  postToAllParentFrames = (message) => {
+    window.parent.postMessage(message, '*');
+
+    for (let i = 0; i < window.parent.frames.length; i++) {
+      window.parent.frames[i].postMessage(message, '*');
+    }
+  }
+
+  sendMessage(eventName, data = {}) {
+    this.postToAllParentFrames({
+      type: EVENTS.TYPE,
+      eventName,
+      metadata: data
+    });
+  }
+
+  listenForMessages() {
+    window.addEventListener('message', ({ data }) => {
+      if (data && data.type === EVENTS.TYPE && data.eventName === EVENTS.PING) {
+        const { href, sid } = data.metadata;
+
+        if (href) {
+          const frame = document.querySelector(`iframe[src*="${href}"]`);
+
+          if (frame) {
+            const viewPercent = this.percentInViewport(window, frame);
+
+            this.sendMessage(EVENTS.PONG, {
+              viewPercent, sid
+            });
+          }
+        }
+      }
+    });
   }
 
   log(severity, message) {
@@ -284,7 +360,15 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     const body = response?.body?.Result || response?.body || {};
-    return converter.fromORTB({response: body, request: request?.data}).bids || [];
+    const converted = converter.fromORTB({response: body, request: request?.data});
+    const bids = converted.bids || [];
+
+    if (bids.length && !EVENTS.subscribed) {
+      EVENTS.subscribed = true;
+      helpers.listenForMessages();
+    }
+
+    return bids;
   },
 
   /**
