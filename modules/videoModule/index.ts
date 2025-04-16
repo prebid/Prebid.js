@@ -85,7 +85,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     });
   }
 
-  function renderBid(divId, bid, options = {}) {
+  function renderBid(divId, bid, options: any = {}) {
     const adUrl = bid.vastUrl;
     options.adXml = bid.vastXml;
     options.winner = bid.bidder;
@@ -215,7 +215,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     const adServerConfig = getAdServerConfig(videoConfig);
     const winningBid = getWinningBid(adUnitCode);
 
-    const options = { adUnitCode };
+    const options: any = { adUnitCode };
 
     async function prefetchVast() {
       const gamVastWrapper = await gamSubmodule.getVastXml(
@@ -274,6 +274,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
     return find(bids, bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }
+}
+
+declare module '../../src/prebidGlobal' {
+    interface PrebidJS {
+        videoModule: ReturnType<typeof PbVideo>
+    }
 }
 
 function videoRenderHook(next, args) {
