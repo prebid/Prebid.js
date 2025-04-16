@@ -41,7 +41,7 @@ export const spec = {
 
     _each(validBidRequests, (request) => {
       const impExt = request.ortb2Imp?.ext;
-      const data = Object();
+      const data = {};
 
       data.page = page;
       data.adUnitCode = request.adUnitCode;

@@ -1687,18 +1687,16 @@ describe('bidderFactory', () => {
         }
       });
 
-      function mkResponse(width, height) {
-        return {
+      function mkResponse(props) {
+        return Object.assign({
           requestId: req.bidId,
-          width,
-          height,
           cpm: 1,
           ttl: 60,
           creativeId: '123',
           netRevenue: true,
           currency: 'USD',
           mediaType: 'banner',
-        }
+        }, props)
       }
 
       function checkValid(bid) {
@@ -1706,7 +1704,20 @@ describe('bidderFactory', () => {
       }
 
       it('should succeed when response has a size that was in request', () => {
-        expect(checkValid(mkResponse(3, 4))).to.be.true;
+        expect(checkValid(mkResponse({width: 3, height: 4}))).to.be.true;
+      });
+
+      describe('using w/hratio', () => {
+        beforeEach(() => {
+          req.ortb2Imp = {
+            banner: {
+              format: [{wratio: 1, hratio: 2}]
+            }
+          }
+        })
+        it('should accept wratio/hratio', () => {
+          expect(checkValid(mkResponse({wratio: 1, hratio: 2}))).to.be.true;
+        });
       });
     })
   });

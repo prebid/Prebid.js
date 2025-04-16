@@ -127,7 +127,7 @@ function creativeMessageHandler(deps) {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse, options) {
-  const {ad, adUrl, cpm, originalCpm, width, height} = bidResponse
+  const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -136,7 +136,8 @@ export const getRenderingData = hook('sync', function (bidResponse, options) {
     ad: replaceMacros(ad, repl),
     adUrl: replaceMacros(adUrl, repl),
     width,
-    height
+    height,
+    instl
   };
 })
 
@@ -256,9 +257,16 @@ export function renderAdDirect(doc, adId, options) {
     emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
   function resizeFn(width, height) {
-    if (doc.defaultView && doc.defaultView.frameElement) {
-      width && (doc.defaultView.frameElement.width = width);
-      height && (doc.defaultView.frameElement.height = height);
+    const frame = doc.defaultView?.frameElement;
+    if (frame) {
+      if (width) {
+        frame.width = width;
+        frame.style.width && (frame.style.width = `${width}px`);
+      }
+      if (height) {
+        frame.height = height;
+        frame.style.height && (frame.style.height = `${height}px`);
+      }
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});

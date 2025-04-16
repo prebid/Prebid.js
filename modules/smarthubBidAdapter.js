@@ -4,10 +4,12 @@ import {
   buildPlacementProcessingFunction,
   buildRequestsBase,
   interpretResponseBuilder,
-  isBidRequestValid
+  isBidRequestValid,
+  getUserSyncs
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'smarthub';
+const SYNC_URL = 'https://us.shb-sync.com'
 const ALIASES = [
   {code: 'attekmi'},
   {code: 'markapp'},
@@ -86,7 +88,8 @@ export const spec = {
     addtlBidValidation(bid) {
       return bid.hasOwnProperty('netRevenue')
     }
-  })
+  }),
+  getUserSyncs: getUserSyncs(SYNC_URL)
 };
 
 registerBidder(spec);

@@ -1,11 +1,13 @@
-import * as previousAuctionInfo from 'libraries/previousAuctionInfo/previousAuctionInfo.js';
+import * as previousAuctionInfo from '../../../modules/previousAuctionInfo';
 import sinon from 'sinon';
 import { expect } from 'chai';
 import { config } from 'src/config.js';
+import * as events from 'src/events.js';
+import {CONFIG_NS, resetPreviousAuctionInfo, startAuctionHook} from '../../../modules/previousAuctionInfo';
+import { REJECTION_REASON } from '../../../src/constants.js';
 
 describe('previous auction info', () => {
   let sandbox;
-  let initHandlersStub;
 
   const auctionDetails = {
     auctionId: 'auction123',
@@ -44,35 +46,37 @@ describe('previous auction info', () => {
     timestamp: Date.now(),
   };
 
+  before(() => {
+    config.resetConfig();
+  })
+
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    previousAuctionInfo.resetPreviousAuctionInfo();
-    initHandlersStub = sandbox.stub();
   });
 
   afterEach(() => {
+    config.resetConfig();
+    resetPreviousAuctionInfo();
     sandbox.restore();
   });
 
   describe('config', () => {
     it('should initialize the module if publisher enabled', () => {
-      previousAuctionInfo.initPreviousAuctionInfo(initHandlersStub);
-      config.setConfig({ previousAuctionInfo: true });
-      sandbox.assert.calledOnce(initHandlersStub);
+      sandbox.spy(events, 'on');
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1', 'testBidder2'] } });
+      expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.true;
+      sinon.assert.called(events.on);
     });
 
     it('should not enable previous auction info if config.previousAuctionInfo is not set', () => {
-      sandbox.restore();
-      previousAuctionInfo.initPreviousAuctionInfo(initHandlersStub);
-      config.setConfig({ previousAuctionInfo: false });
+      config.setConfig({});
       expect(previousAuctionInfo.previousAuctionInfoEnabled).to.be.false;
     });
   });
 
   describe('onAuctionEndHandler', () => {
     it('should store auction data for enabled bidders in auctionState', () => {
-      const config = { bidderCode: 'testBidder2' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config);
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder2'] } });
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
 
       expect(previousAuctionInfo.auctionState).to.have.property('testBidder2');
@@ -87,20 +91,18 @@ describe('previous auction info', () => {
         source: 'pbjs',
         adUnitCode: 'adUnit1',
         highestBidCpm: 2,
+        highestBidCurrency: 'EUR',
         bidderCpm: 2,
         bidderOriginalCpm: 2.1,
         bidderCurrency: 'EUR',
         bidderOriginalCurrency: 'EUR',
-        bidderErrorCode: -1,
+        rejectionReason: null,
         timestamp: auctionDetails.timestamp
       });
     });
 
     it('should store auction data for multiple bidders correctly', () => {
-      const config1 = { bidderCode: 'testBidder1' };
-      const config2 = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config1);
-      previousAuctionInfo.enablePreviousAuctionInfo(config2);
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1', 'testBidder3'] } });
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
 
       expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
@@ -109,30 +111,120 @@ describe('previous auction info', () => {
       expect(previousAuctionInfo.auctionState['testBidder1'][0]).to.include({
         bidId: 'bid123',
         highestBidCpm: 2,
+        highestBidCurrency: 'EUR',
         adUnitCode: 'adUnit1',
         bidderCpm: 1,
-        bidderCurrency: 'USD'
+        bidderCurrency: 'USD',
+        rejectionReason: null,
       });
 
       expect(previousAuctionInfo.auctionState['testBidder3'][0]).to.include({
         bidId: 'bidxyz',
         highestBidCpm: 3,
+        highestBidCurrency: 'USD',
         adUnitCode: 'adUnit2',
         bidderCpm: 3,
-        bidderCurrency: 'USD'
+        bidderCurrency: 'USD',
+        rejectionReason: null,
       });
     });
 
     it('should not store auction data for disabled bidders', () => {
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
       previousAuctionInfo.onAuctionEndHandler(auctionDetails);
+
+      expect(previousAuctionInfo.auctionState).to.have.property('testBidder1');
       expect(previousAuctionInfo.auctionState).to.not.have.property('testBidder2');
+    });
+
+    it('should include rejectionReason string if the bid was rejected', () => {
+      const auctionDetailsWithRejectedBid = {
+        auctionId: 'auctionXYZ',
+        bidsReceived: [],
+        bidsRejected: [
+          { requestId: 'bid456', rejectionReason: REJECTION_REASON.FLOOR_NOT_MET } // string from REJECTION_REASON
+        ],
+        bidderRequests: [
+          {
+            bidderCode: 'testBidder1',
+            bidderRequestId: 'req1',
+            bids: [
+              { bidId: 'bid456', adUnitCode: 'adUnit1' }
+            ]
+          }
+        ],
+        timestamp: Date.now(),
+      };
+    
+      config.setConfig({ [CONFIG_NS]: { enabled: true, bidders: ['testBidder1'] } });
+      previousAuctionInfo.onAuctionEndHandler(auctionDetailsWithRejectedBid);
+    
+      const stored = previousAuctionInfo.auctionState['testBidder1'][0];
+      expect(stored).to.include({
+        bidId: 'bid456',
+        rejectionReason: REJECTION_REASON.FLOOR_NOT_MET,
+        bidderCpm: null,
+        highestBidCpm: null
+      });
     });
   });
 
+  describe('startAuctionHook', () => {
+    let global, bidder, next;
+    beforeEach(() => {
+      global = {};
+      bidder = {};
+      next = sinon.spy();
+    });
+    function runHook() {
+      startAuctionHook(next, {ortb2Fragments: {global, bidder}});
+    }
+    it('should not add info when none is available', () => {
+      runHook();
+      expect(global).to.eql({});
+      expect(bidder).to.eql({});
+    })
+    it('should call next', () => {
+      runHook();
+      sinon.assert.called(next);
+    })
+    describe('when info is available', () => {
+      beforeEach(() => {
+        Object.assign(previousAuctionInfo.auctionState, {
+          bidder1: [{transactionId: 'tid1', auction: '1'}],
+          bidder2: [{transactionId: 'tid2', auction: '2'}]
+        })
+      })
+
+      function extractInfo() {
+        return Object.fromEntries(
+          Object.entries(bidder)
+            .map(([bidder, ortb2]) => [bidder, ortb2.ext?.prebid?.previousauctioninfo])
+        )
+      }
+
+      it('should set info for enabled bidders, when only some are enabled', () => {
+        config.setConfig({[CONFIG_NS]: {enabled: true, bidders: ['bidder1']}});
+        runHook();
+        expect(extractInfo()).to.eql({
+          bidder1: [{auction: '1'}]
+        })
+      });
+
+      it('should set info for all bidders, when none is specified', () => {
+        config.setConfig({[CONFIG_NS]: {enabled: true}});
+        runHook();
+        expect(extractInfo()).to.eql({
+          bidder1: [{auction: '1'}],
+          bidder2: [{auction: '2'}]
+        })
+      })
+    })
+  })
+
   describe('onBidWonHandler', () => {
     it('should update the rendered field in auctionState when a pbjs bid wins', () => {
-      const config = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config);
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } });
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'trans789', rendered: 0 }
@@ -148,8 +240,7 @@ describe('previous auction info', () => {
     });
 
     it('should not update the rendered field if no matching transactionId is found', () => {
-      const config = { bidderCode: 'testBidder3' };
-      previousAuctionInfo.enablePreviousAuctionInfo(config);
+      config.setConfig({ previousAuctionInfo: { enabled: true, bidders: ['testBidder3'] } });
 
       previousAuctionInfo.auctionState['testBidder3'] = [
         { transactionId: 'someOtherTid', rendered: 0 }

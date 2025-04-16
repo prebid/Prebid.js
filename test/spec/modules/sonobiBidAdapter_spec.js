@@ -307,7 +307,19 @@ describe('SonobiBidAdapter', function () {
           context: 'outstream',
           playbackmethod: [1, 2, 3],
           plcmt: 3,
-          placement: 2
+          placement: 2,
+          protocols: [1, 2, 3, 4, 5],
+          mimes: ['video/mp4', 'video/mpeg', 'video/x-flv'],
+          battr: [16, 17],
+          api: [1, 2, 3],
+          minduration: 5,
+          maxduration: 60,
+          skip: 1,
+          skipafter: 10,
+          startdelay: 5,
+          linearity: 1,
+          minbitrate: 1,
+          maxbitrate: 2
         }
       }
     },
@@ -374,7 +386,7 @@ describe('SonobiBidAdapter', function () {
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|640x480|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,pm=1:2:3,p=2,pl=3,',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|640x480|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,pm=1:2:3,p=2,pl=3,protocols=1:2:3:4:5,mimes=video/mp4:video/mpeg:video/x-flv,battr=16:17,api=1:2:3,minduration=5,maxduration=60,skip=1,skipafter=10,startdelay=5,linearity=1,minbitrate=1,maxbitrate=2,',
       '30b31c1838de1g': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25,gpid=/123123/gpt_publisher/adunit-code-42,c=d,',
       '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42,gpid=/123123/gpt_publisher/adunit-code-3,c=d,',
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB,c=d,',
