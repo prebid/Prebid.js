@@ -632,9 +632,10 @@ addApiMethod('removeAdUnit', removeAdUnit);
 
 export type RequestBidsOptions = {
     /**
-     * Callback to execute when all the bid responses are back or the timeout hits.
+     * Callback to execute when all the bid responses are back or the timeout hits. Parameters may be undefined
+     * in situations where the auction is canceled prematurely (e.g. CMP errors)
      */
-    bidsBackHandler?: (bids: RequestBidsResult['bids'], timedOut: RequestBidsResult['timedOut'], auctionId: RequestBidsResult['auctionId']) => void;
+    bidsBackHandler?: (bids?: RequestBidsResult['bids'], timedOut?: RequestBidsResult['timedOut'], auctionId?: RequestBidsResult['auctionId']) => void;
     /**
      * TTL buffer override for this auction.
      */
@@ -685,6 +686,10 @@ type RequestBidsResult = {
 export type PrivRequestBidsOptions = RequestBidsOptions & {
     defer?;
     metrics?: Metrics;
+    /**
+     * Ad units are always defined and fixed here (as opposed to the public API where we may fall back to
+     * the global array).
+     */
     adUnits: AdUnitDefinition[];
 }
 
