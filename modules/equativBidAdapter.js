@@ -17,7 +17,9 @@ const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
 const LOG_PREFIX = 'Equativ:';
 const PID_COOKIE_NAME = 'eqt_pid';
 
+let feedbackArray = [];
 let impIdMap = {};
+let tokens = {};
 
 /**
  * Assigns values to new properties, removes temporary ones from an object
@@ -60,6 +62,14 @@ function getFloor(bid, mediaType, width, height, currency) {
 }
 
 /**
+ * Gets value of the local variable impIdMap
+ * @returns {*} Value of impIdMap
+ */
+export function getImpIdMap() {
+  return impIdMap;
+};
+
+/**
  * Evaluates impressions for validity.  The entry evaluated is considered valid if NEITHER of these conditions are met:
  * 1) it has a `video` property defined for `mediaTypes.video` which is an empty object
  * 2) it has a `native` property defined for `mediaTypes.native` which is an empty object
@@ -69,6 +79,8 @@ function getFloor(bid, mediaType, width, height, currency) {
 function isValid(bidReq) {
   return !(bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}') && !(bidReq.mediaTypes.native && JSON.stringify(bidReq.mediaTypes.native) === '{}');
 }
+
+enablePreviousAuctionInfo({ bidderCode: BIDDER_CODE });
 
 /**
  * Generates a 14-char string id
@@ -85,6 +97,36 @@ function makeId() {
   }
 
   return str;
+}
+
+/**
+ * Updates bid request with data from previous auction
+ * @param {*} req A bid request object to be updated
+ * @returns {*} Updated bid request object
+ */
+function updateFeedbackData(req) {
+  if (req?.ext?.prebid?.previousauctioninfo) {
+    req.ext.prebid.previousauctioninfo.forEach(info => {
+      if (tokens[info?.bidId]) {
+        feedbackArray.push({
+          feedback_token: tokens[info.bidId],
+          loss: info.bidderCpm == info.highestBidCpm ? 0 : 102,
+          price: info.highestBidCpm
+        });
+
+        delete tokens[info.bidId];
+      }
+    });
+
+    delete req.ext.prebid;
+  }
+
+  if (feedbackArray.length) {
+    deepSetValue(req, 'ext.bid_feedback', feedbackArray[0]);
+    feedbackArray.shift();
+  }
+
+  return req;
 }
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -107,20 +149,12 @@ export const spec = {
 
     const requests = [];
 
-    let no = 1;
-
     bidRequests.forEach(bid => {
       const data = converter.toORTB({bidRequests: [bid], bidderRequest});
       requests.push({
         data,
         method: 'POST',
-        // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-        url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
-        options: {
-          customHeaders: {
-            'X-Eqtv-Debug': no++ === 1 ? '67c190809d44a9f4fd5ddf64' : '6708e3aeca04848e919e9c8c'
-          }
-        }
+        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
       })
     });
 
@@ -141,7 +175,12 @@ export const spec = {
       serverResponse.body.seatbid
         .filter(seat => seat?.bid?.length)
         .forEach(seat =>
-          seat.bid.forEach(bid => bid.impid = impIdMap[bid.impid])
+          seat.bid.forEach(bid => {
+            bid.impid = impIdMap[bid.impid];
+            if (deepAccess(bid, 'ext.feedback_token')) {
+              tokens[bid.impid] = bid.ext.feedback_token;
+            }
+          })
         );
     }
 
@@ -263,7 +302,7 @@ export const converter = ortbConverter({
       });
     });
 
-    const req = buildRequest(splitImps, bidderRequest, context);
+    let req = buildRequest(splitImps, bidderRequest, context);
 
     let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
     deepSetValue(req, env.replace('ortb2.', '') + '.id', deepAccess(bid, env + '.id') || bid.params.networkId);
@@ -286,6 +325,8 @@ export const converter = ortbConverter({
     if (pid) {
       deepSetValue(req, 'user.buyeruid', pid);
     }
+
+    req = updateFeedbackData(req);
 
     return req;
   }
