@@ -423,7 +423,7 @@ declare module './prebidGlobal' {
         getAllWinningBids: typeof getAllWinningBids;
         getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
         getHighestCpmBids: typeof getHighestCpmBids;
-        clearAllAuctions;
+        clearAllAuctions: typeof clearAllAuctions;
         markWinningBidAsUsed;
         getConfig;
         readConfig;
@@ -605,7 +605,6 @@ type RenderAdOptions = {
 function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
     renderAdDirect(doc, id, options);
 }
-
 addApiMethod('renderAd', renderAd);
 
 
@@ -1049,10 +1048,13 @@ function getHighestCpmBids(adUnitCode?: string): Bid[] {
 
 addApiMethod('getHighestCpmBids', getHighestCpmBids);
 
-
-pbjsInstance.clearAllAuctions = function () {
-  auctionManager.clearAllAuctions();
-};
+/**
+ * Clear all auctions (and their bids) from the bid cache.
+ */
+function clearAllAuctions() {
+    auctionManager.clearAllAuctions();
+}
+addApiMethod('clearAllAuctions', clearAllAuctions);
 
 if (FEATURES.VIDEO) {
   /**
