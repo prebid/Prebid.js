@@ -29,7 +29,7 @@ import {type VideoBid} from '../../src/bidfactory.js';
 import type {BidderCode} from "../../src/types/common.d.ts";
 import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {DeepPartial} from "../../src/types/objects.d.ts";
-import type {AdServerVendor} from "../../libraries/video/constants/vendorCodes";
+import type {AdServerVendor} from "../../libraries/video/constants/vendorCodes.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
