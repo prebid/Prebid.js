@@ -54,26 +54,14 @@ const ORTB_PARAMS = [
  */
 export const ORTB_VIDEO_PARAMS = new Map(ORTB_PARAMS);
 
-type ORTB_PARAM = (typeof ORTB_PARAMS)[number][0];
-type DEPRECATED_ORTB_PARAM = 'placement' | 'sequence';
-
 export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
-export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], Exclude<ORTB_PARAM, DEPRECATED_ORTB_PARAM>> {
+export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], (typeof ORTB_PARAMS)[number][0]> {
     context: VideoContext;
     /**
      * @deprecated - use w & h instead.
      */
     playerSize?: Size | Size[];
-    // placement & sequence are deprecated in 2.6 and not in the iab-openrtb types, so we replicate them here
-    /**
-     * @deprecated - use plcmt instead.
-     */
-    placement?: number;
-    /**
-     * @deprecated - use slotinpod instead.
-     */
-    sequence?: number;
 }
 
 export function fillVideoDefaults(adUnit: AdUnitDefinition) {

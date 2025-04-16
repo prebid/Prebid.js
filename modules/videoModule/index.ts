@@ -25,6 +25,10 @@ import {VIDEO} from '../../src/mediaTypes.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
 import {getHook} from '../../src/hook.js';
+import {type VideoBid} from '../../src/bidfactory.js';
+import type {BidderCode} from "../../src/types/common.d.ts";
+import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
+import type {DeepPartial} from "../../src/types/objects.d.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
@@ -85,7 +89,13 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     });
   }
 
-  function renderBid(divId, bid, options: any = {}) {
+  type RenderBidOptions = {
+    adXml?: string;
+    winner?: BidderCode;
+    [option: string]: unknown;
+  };
+
+  function renderBid(divId: string, bid: VideoBid, options: RenderBidOptions = {}) {
     const adUrl = bid.vastUrl;
     options.adXml = bid.vastXml;
     options.winner = bid.bidder;
@@ -93,11 +103,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     loadAd(adUrl, divId, options);
   }
 
-  function getOrtbVideo(divId) {
+  function getOrtbVideo(divId: string): DeepPartial<ORTBImp['video']> {
     return videoCore.getOrtbVideo(divId);
   }
 
-  function getOrtbContent(divId) {
+  function getOrtbContent(divId: string): DeepPartial<ORTBRequest['site']['content']> {
     return videoCore.getOrtbContent(divId);
   }
 
@@ -248,7 +258,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvent
     return highestCpmBids.shift();
   }
 
-  function loadAd(adTagUrl, divId, options) {
+  function loadAd(adTagUrl: string, divId: string, options: RenderBidOptions) {
     adQueueCoordinator.queueAd(adTagUrl, divId, options);
   }
 
