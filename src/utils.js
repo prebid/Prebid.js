@@ -1,5 +1,4 @@
 import {config} from './config.js';
-import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
@@ -8,6 +7,7 @@ import { default as deepAccess } from 'dlv/index.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
+export {deepClone} from './utils/objects.js'
 
 var tStr = 'String';
 var tFn = 'Function';
@@ -696,10 +696,6 @@ export function inIframe() {
   } catch (e) {
     return true;
   }
-}
-
-export function deepClone(obj) {
-  return klona(obj) || {};
 }
 
 /**

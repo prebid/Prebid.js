@@ -167,7 +167,7 @@ export function syncOrtb2(adUnit, mediaType) {
 }
 
 function validateBannerMediaType(adUnit: AdUnit) {
-  const validatedAdUnit = deepClone(adUnit) as AdUnit;
+  const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
   const bannerSizes = banner.sizes == null ? null : validateSizes(banner.sizes);
   const format = adUnit.ortb2Imp?.banner?.format ?? banner?.format;
@@ -211,7 +211,7 @@ function validateBannerMediaType(adUnit: AdUnit) {
 }
 
 function validateVideoMediaType(adUnit: AdUnit) {
-  const validatedAdUnit = deepClone(adUnit) as AdUnit;
+  const validatedAdUnit = deepClone(adUnit);
   const video = validatedAdUnit.mediaTypes.video;
   if (video.playerSize) {
     const tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
@@ -248,7 +248,7 @@ function validateNativeMediaType(adUnit: AdUnit) {
       }
     }
   }
-  const validatedAdUnit = deepClone(adUnit) as AdUnit;
+  const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
