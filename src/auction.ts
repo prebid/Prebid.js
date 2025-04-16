@@ -133,8 +133,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   const _auctionId = auctionId || generateUUID();
   const _timeout = cbTimeout;
   const _timelyRequests = new Set();
-  const done = defer();
-  const requestsDone = defer();
+  const done = defer<void>();
+  const requestsDone = defer<void>();
   let _bidsRejected = [];
   let _callback = callback;
   let _bidderRequests = [];

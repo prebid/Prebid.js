@@ -28,7 +28,7 @@ export var currencyRates = {} as any;
 let bidderCurrencyDefault = {};
 let defaultRates;
 
-export let responseReady = defer();
+export let responseReady = defer<void>();
 
 const delayedAuctions = timeoutQueue();
 let auctionDelay = 0;

@@ -36,7 +36,7 @@ import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
-import {defer, PbPromise} from './utils/promise.js';
+import {type Defer, defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
@@ -684,8 +684,8 @@ type RequestBidsResult = {
 }
 
 export type PrivRequestBidsOptions = RequestBidsOptions & {
-    defer?;
-    metrics?: Metrics;
+    defer: Defer<RequestBidsResult>;
+    metrics: Metrics;
     /**
      * Ad units are always defined and fixed here (as opposed to the public API where we may fall back to
      * the global array).
@@ -742,7 +742,7 @@ export const requestBids = (function() {
 
     req.metrics = newMetrics();
     req.metrics.checkpoint('requestBids');
-    req.defer = defer({ promiseFactory: (r) => new Promise(r) as any }) // the promiseFactory is inferred to return a GreedyPromise, but a Promise is not a GreedyPromise and is missing two fields, which is why we need to cast it to any
+    req.defer = defer({ promiseFactory: (r) => new Promise(r)})
     delegate.call(this, req);
     return req.defer.promise;
   }));

@@ -45,7 +45,7 @@ export let hook: FunHooks = funHooks({
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
 
-const readyCtl = defer();
+const readyCtl = defer<void>();
 hook.ready = (() => {
   const ready = hook.ready;
   return function () {
