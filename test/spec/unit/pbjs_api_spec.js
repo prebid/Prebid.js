@@ -1307,13 +1307,6 @@ describe('Unit: Prebid Module', function () {
       })
     });
 
-    it('should log message with bid id', function () {
-      return renderAd(doc, bidId).then(() => {
-        var message = 'Calling renderAd with adId :' + bidId;
-        assert.ok(spyLogMessage.calledWith(message), 'expected message was logged');
-      })
-    });
-
     it('should write the ad to the doc', function () {
       pushBidResponseToAuction({
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
@@ -1423,16 +1416,12 @@ describe('Unit: Prebid Module', function () {
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
       });
       return renderAd(doc, bidId).then(() => {
-        var message = 'Calling renderAd with adId :' + bidId;
-        sinon.assert.calledWith(spyLogMessage, message);
-
         sinon.assert.calledOnce(spyAddWinningBid);
         sinon.assert.calledWith(spyAddWinningBid, adResponse);
       });
     });
 
     it('should warn stale rendering', function () {
-      var message = 'Calling renderAd with adId :' + bidId;
       var warning = `Ad id ${bidId} has been rendered before`;
       var onWonEvent = sinon.stub();
       var onStaleEvent = sinon.stub();
@@ -1446,7 +1435,6 @@ describe('Unit: Prebid Module', function () {
 
       // First render should pass with no warning and added to winning bids
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.neverCalledWith(spyLogWarn, warning);
 
         sinon.assert.calledOnce(spyAddWinningBid);
@@ -1466,7 +1454,6 @@ describe('Unit: Prebid Module', function () {
         return renderAd(doc, bidId);
       }).then(() => {
         // Second render should have a warning but still be rendered
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.calledWith(spyLogWarn, warning);
         sinon.assert.calledWith(onStaleEvent, adResponse);
         sinon.assert.called(doc.write);
@@ -1478,7 +1465,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should stop stale rendering', function () {
-      var message = 'Calling renderAd with adId :' + bidId;
       var warning = `Ad id ${bidId} has been rendered before`;
       var onWonEvent = sinon.stub();
       var onStaleEvent = sinon.stub();
@@ -1495,7 +1481,6 @@ describe('Unit: Prebid Module', function () {
 
       // First render should pass with no warning and added to winning bids
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.neverCalledWith(spyLogWarn, warning);
 
         sinon.assert.calledOnce(spyAddWinningBid);
@@ -1515,7 +1500,6 @@ describe('Unit: Prebid Module', function () {
         // Second render should have a warning and do not proceed further
         return renderAd(doc, bidId);
       }).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.calledWith(spyLogWarn, warning);
 
         sinon.assert.notCalled(spyAddWinningBid);
