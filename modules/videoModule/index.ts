@@ -29,9 +29,43 @@ import {type VideoBid} from '../../src/bidfactory.js';
 import type {BidderCode} from "../../src/types/common.d.ts";
 import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {DeepPartial} from "../../src/types/objects.d.ts";
+import type {AdServerVendor} from "../../libraries/video/constants/vendorCodes";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
+
+interface AdServerConfig {
+    /**
+     * The identifier of the AdServer vendor (i.e. gam, etc).
+     */
+    vendorCode: AdServerVendor
+    /**
+     * Your AdServer Ad Tag. The targeting params of the winning bid will be appended.
+     */
+    baseAdTagUrl?: string;
+    /**
+     * Querystring parameters that will be used to construct the video ad tag URL.
+     */
+    params?: Record<string, string>;
+}
+
+interface AdUnitVideoOptions {
+    /**
+     * Unique identifier of the player provider, used to specify which player should be used to render the ad.
+     * Equivalent to the HTML Div Id of the player.
+     */
+    divId: string;
+    /**
+     * Configuration for ad server integration. Supersedes video.adServer configurations defined in the Prebid Config.
+     */
+    adServer?: AdServerConfig
+}
+
+declare module '../../src/adUnits' {
+    interface AdUnitDefinition {
+        video?: AdUnitVideoOptions
+    }
+}
 
 /**
  * This module adds User Video support to prebid.js
