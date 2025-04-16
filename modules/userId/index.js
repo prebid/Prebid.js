@@ -488,11 +488,11 @@ function mkPriorityMaps() {
     function activeModuleGetter(key, useGlobals, modules) {
       return function () {
         for (const {allowed, bidders, module} of modules) {
+          if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
+            continue;
+          }
           const value = module.idObj?.[key];
           if (value != null) {
-            if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
-              return null;
-            }
             if (allowed) {
               return module;
             } else if (useGlobals) {
