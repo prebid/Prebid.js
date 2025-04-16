@@ -682,13 +682,13 @@ type RequestBidsResult = {
     auctionId: Identifier;
 }
 
-type _PrivRequestBidsOptions = RequestBidsOptions & {
+export type PrivRequestBidsOptions = RequestBidsOptions & {
     defer?;
     metrics?: Metrics;
     adUnits: AdUnitDefinition[];
 }
 
-type StartAuctionOptions = Omit<_PrivRequestBidsOptions, 'ortb2'> & {
+export type StartAuctionOptions = Omit<PrivRequestBidsOptions, 'ortb2'> & {
     ortb2Fragments?;
 }
 
@@ -699,7 +699,7 @@ declare module './hook' {
 }
 
 export const requestBids = (function() {
-  const delegate = hook('async', function (reqBidOptions: _PrivRequestBidsOptions) {
+  const delegate = hook('async', function (reqBidOptions: PrivRequestBidsOptions) {
     let { bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = reqBidOptions ?? {};
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
@@ -731,7 +731,7 @@ export const requestBids = (function() {
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    const req = options as _PrivRequestBidsOptions;
+    const req = options as PrivRequestBidsOptions;
     let adUnits = req.adUnits || pbjsInstance.adUnits;
     req.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
