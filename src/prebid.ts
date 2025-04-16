@@ -2,26 +2,26 @@
 
 import {getGlobal, PrebidJS} from './prebidGlobal.js';
 import {
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  flatten,
-  generateUUID,
-  isArray,
-  isArrayOfNums,
-  isEmpty,
-  isFn,
-  isGptPubadsDefined,
-  isNumber,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  mergeDeep,
-  transformAdServerTargetingObj,
-  uniques,
-  unsupportedBidderMessage,
-  deepEqual
+    deepAccess,
+    deepClone,
+    deepEqual,
+    deepSetValue,
+    flatten,
+    generateUUID,
+    isArray,
+    isArrayOfNums,
+    isEmpty,
+    isFn,
+    isGptPubadsDefined,
+    isNumber,
+    logError,
+    logInfo,
+    logMessage,
+    logWarn,
+    mergeDeep,
+    transformAdServerTargetingObj,
+    uniques,
+    unsupportedBidderMessage
 } from './utils.js';
 import {listenMessagesFromCreative} from './secureCreatives.js';
 import {userSync} from './userSync.js';
@@ -33,25 +33,25 @@ import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
-import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
+import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
-  insertLocatorFrame,
-  markBidAsRendered,
-  markWinningBid,
-  renderAdDirect,
-  renderIfDeferred
+    insertLocatorFrame,
+    markBidAsRendered,
+    markWinningBid,
+    renderAdDirect,
+    renderIfDeferred
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
-import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
-import { ORTB_BANNER_PARAMS } from './banner.js';
-import { BANNER, VIDEO } from './mediaTypes.js';
+import {fillVideoDefaults, ORTB_VIDEO_PARAMS, validateOrtbVideoFields} from './video.js';
+import {ORTB_BANNER_PARAMS} from './banner.js';
+import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
-import { newBidder } from './adapters/bidderFactory.js';
+import {newBidder} from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
@@ -634,7 +634,7 @@ export type RequestBidsOptions = {
     /**
      * Callback to execute when all the bid responses are back or the timeout hits.
      */
-    bidsBackHandler?: (bids?: RequestBidsResult['bids'], timedOut?: RequestBidsResult['timedOut'], auctionId?: RequestBidsResult['auctionId']) => void;
+    bidsBackHandler?: (bids: RequestBidsResult['bids'], timedOut: RequestBidsResult['timedOut'], auctionId: RequestBidsResult['auctionId']) => void;
     /**
      * TTL buffer override for this auction.
      */
