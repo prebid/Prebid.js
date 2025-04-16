@@ -2,7 +2,7 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _map, isArray, triggerPixel } from '../src/utils.js';
+import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -223,8 +223,8 @@ function geom(adunitCode) {
     const scrollY = window.scrollY;
     const { top, left, width, height } = getBoundingClientRect(slot);
     const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight,
+      width: getWinDimensions().innerWidth,
+      height: getWinDimensions().innerHeight,
     };
 
     return {
