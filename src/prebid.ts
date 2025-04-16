@@ -457,10 +457,9 @@ addApiMethod('getAdserverTargetingForAdUnitCodeStr', getAdserverTargetingForAdUn
 
 /**
  * Return the highest cpm, unused bid for the given ad unit.
- *
  * @param adUnitCode
  */
-function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string): Bid | Record<any, never> {
+function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string): Bid {
     if (adUnitCode) {
         const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
             .filter(isBidUsable)
