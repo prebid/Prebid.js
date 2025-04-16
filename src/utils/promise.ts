@@ -14,10 +14,10 @@ declare module '../prebidGlobal' {
     }
 }
 
-export const pbSetTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout)
-export const PbPromise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise);
+export const pbSetTimeout: typeof setTimeout = getGlobal().setTimeout ?? (FEATURES.GREEDY ? greedySetTimeout : setTimeout)
+export const PbPromise: typeof Promise = getGlobal().Promise ?? (FEATURES.GREEDY ? GreedyPromise : Promise) as any;
 
-export function delay(delayMs = 0) {
+export function delay(delayMs = 0): Promise<void> {
   return new PbPromise((resolve) => {
     pbSetTimeout(resolve, delayMs);
   });
