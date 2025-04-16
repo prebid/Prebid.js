@@ -1,4 +1,4 @@
-import {logInfo} from '../src/utils.js';
+import {getWinDimensions, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -166,8 +166,8 @@ function buildRequest(bidRequests, bidderRequest) {
     pcids: Object.keys(invibes.pushedCids).join(','),
 
     vId: invibes.visitId,
-    width: topWin.innerWidth,
-    height: topWin.innerHeight,
+    width: getWinDimensions().innerWidth,
+    height: getWinDimensions().innerHeight,
 
     oi: invibes.optIn,
 

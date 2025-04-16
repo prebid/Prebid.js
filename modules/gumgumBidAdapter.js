@@ -1,5 +1,5 @@
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {_each, deepAccess, logError, logWarn, parseSizesInput} from '../src/utils.js';
+import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput} from '../src/utils.js';
 
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -82,8 +82,8 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   }
 
   browserParams = {
-    vw: topWindow.innerWidth,
-    vh: topWindow.innerHeight,
+    vw: getWinDimensions().innerWidth,
+    vh: getWinDimensions().innerHeight,
     sw: topScreen.width,
     sh: topScreen.height,
     pu: stripGGParams(topUrl),
