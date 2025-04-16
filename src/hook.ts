@@ -9,13 +9,14 @@ export type Next<W extends AnyFunction> = {
 }
 
 export type HookFunction<W extends AnyFunction> = (next: Next<W>, ...args: Parameters<W>) => unknown;
+export type BeforeHookParams<TYP extends HookType, FN extends AnyFunction> =
+    TYP extends 'async'
+        ? Last<Parameters<FN>> extends AnyFunction ? AllExceptLast<Parameters<FN>> : Parameters<FN>
+        : Parameters<FN>;
 
-type RemoveLastParam<T extends AnyFunction> = (...args: AllExceptLast<Parameters<T>>) => ReturnType<T>;
 export type HookType = 'sync' | 'async';
 
-type SyncBeforeHook<T extends AnyFunction> = HookFunction<T>;
-type AsyncBeforeHook<T extends AnyFunction> = Last<Parameters<T>> extends AnyFunction ? HookFunction<RemoveLastParam<T>> : HookFunction<T>;
-export type BeforeHook<TYP extends HookType, FN extends AnyFunction> = TYP extends 'async' ? AsyncBeforeHook<FN> : SyncBeforeHook<FN>;
+export type BeforeHook<TYP extends HookType, FN extends AnyFunction> = HookFunction<(...args: BeforeHookParams<TYP, FN>) => ReturnType<FN>>
 export type AfterHook<FN extends AnyFunction> = HookFunction<(result: ReturnType<FN>) => ReturnType<FN>>;
 
 export type Hookable<TYP extends HookType, FN extends AnyFunction> = Wraps<FN> & {
@@ -108,10 +109,10 @@ export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hoo
  * This returns a wrapper around a given 'async' hook that works around this, for when the last argument
  * should be treated as a normal argument.
  */
-export function ignoreCallbackArg<FN extends AnyFunction>(hook: Hookable<'async', RemoveLastParam<FN>>): Hookable<'async', FN> {
+export function ignoreCallbackArg<FN extends AnyFunction>(hook: Hookable<'async', FN>): Hookable<'async', (...args: [...Parameters<FN>, () => void]) => ReturnType<FN>> {
     return wrapHook(hook, function (...args) {
         args.push(function () {})
         return hook.apply(this, args);
-    } as FN)
+    } as any) as any;
 }
 

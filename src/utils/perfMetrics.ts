@@ -1,8 +1,8 @@
 import {config} from '../config.js';
 import type {AnyFunction, Wraps} from "../types/functions.d.ts";
-import {type Hookable, HookFunction, Next} from "../hook.ts";
+import {type BeforeHook, type BeforeHookParams, type HookType, Next} from "../hook.ts";
 import type {addBidResponse} from "../auction.ts";
-import type {PrivRequestBidsOptions, requestBids, RequestBidsOptions, StartAuctionOptions} from "../prebid.ts";
+import type {PrivRequestBidsOptions, StartAuctionOptions} from "../prebid.ts";
 
 export const CONFIG_TOGGLE = 'performanceMetrics';
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
@@ -32,8 +32,6 @@ export type InstrumentedNext<F extends AnyFunction> = Next<F> & {
     untimed: Next<F>;
     stopTiming: MetricsTimer;
 }
-
-export type InstrumentedHook<F extends AnyFunction> = (next: InstrumentedNext<F>, ...args: Parameters<F>) => unknown;
 
 function wrapFn<F extends AnyFunction>(fn: F, before?: () => void, after?: () => void): Wraps<F> {
   return function (...args) {
@@ -384,9 +382,8 @@ export const newMetrics = (() => {
   }
 })();
 
-
-export function hookTimer<F extends AnyFunction>(prefix: string, getMetrics: (...args: Parameters<F>) => Metrics): (name: string, hookFn: InstrumentedHook<F>) => HookFunction<F> {
-  return function(name: string, hookFn: InstrumentedHook<F>): HookFunction<F> {
+export function hookTimer<TYP extends HookType, F extends AnyFunction>(prefix: string, getMetrics: (...args: Parameters<F>) => Metrics) {
+  return function(name: string, hookFn: (next: InstrumentedNext<(...args: BeforeHookParams<TYP, F>) => ReturnType<F>>, ...args: BeforeHookParams<TYP, F>) => unknown): BeforeHook<TYP, F> {
     return (next, ...args) => {
       return useMetrics(getMetrics.apply(this, args)).measureHookTime(prefix + name, next, (next) => {
         return hookFn.call(this, next, ...args);
@@ -395,5 +392,5 @@ export function hookTimer<F extends AnyFunction>(prefix: string, getMetrics: (..
   }
 }
 
-export const timedAuctionHook = hookTimer<(options: PrivRequestBidsOptions | StartAuctionOptions) => void>('requestBids.', (req) => req.metrics);
-export const timedBidResponseHook = hookTimer<typeof addBidResponse>('addBidResponse.', (_, bid) => bid.metrics)
+export const timedAuctionHook = hookTimer<'async', (options: PrivRequestBidsOptions | StartAuctionOptions) => void>('requestBids.', (req) => req.metrics);
+export const timedBidResponseHook = hookTimer<'async', typeof addBidResponse>('addBidResponse.', (_, bid) => bid.metrics)
