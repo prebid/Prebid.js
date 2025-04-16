@@ -41,7 +41,7 @@ export interface BaseAdUnitBid {
     /**
      * OpenRTB first-party data specific to this bidder or module. This is merged with, and takes precedence over, adUnit.ortb2Imp.
      */
-    ortb2Imp?: Partial<ORTBImp>;
+    ortb2Imp?: DeepPartial<ORTBImp>;
 }
 
 export interface AdUnitBidderBid<BIDDER extends BidderCode> extends BaseAdUnitBid {
