@@ -408,7 +408,7 @@ declare module './prebidGlobal' {
         getBidResponsesForAdUnitCode: typeof getBidResponsesForAdUnitCode;
         setTargetingForGPTAsync;
         setTargetingForAst;
-        renderAd;
+        renderAd: typeof renderAd;
         removeAdUnit: typeof removeAdUnit;
         requestBids: (options?: RequestBidsOptions) => Promise<RequestBidsResult>;
         addAdUnits: typeof addAdUnits;
@@ -589,17 +589,25 @@ pbjsInstance.setTargetingForAst = logInvocation('setTargetingForAn', function (a
   events.emit(SET_TARGETING, targeting.getAllTargeting());
 });
 
+type RenderAdOptions = {
+    /**
+     * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
+     */
+    clickThrough?: string;
+}
 /**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
- * @param  {Document} doc document
- * @param  {string} id bid id to locate the ad
- * @alias module:pbjs.renderAd
+ * @param  doc document
+ * @param  id adId of the bid to render
+ * @param options
  */
-pbjsInstance.renderAd = hook('async', logInvocation('renderAd', function (doc, id, options) {
-  logMessage('Calling renderAd with adId :' + id);
-  renderAdDirect(doc, id, options);
-}));
+function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
+    renderAdDirect(doc, id, options);
+}
+
+addApiMethod('renderAd', renderAd);
+
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
