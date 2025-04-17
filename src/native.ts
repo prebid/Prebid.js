@@ -1,25 +1,34 @@
 import {
-  deepClone, getDefinedParams,
-  insertHtmlIntoIframe,
-  isArray,
-  isBoolean,
-  isInteger,
-  isNumber,
-  isPlainObject,
-  logError,
-  pick,
-  triggerPixel
+    deepClone,
+    getDefinedParams,
+    insertHtmlIntoIframe,
+    isArray,
+    isBoolean,
+    isInteger,
+    isNumber,
+    isPlainObject,
+    logError,
+    pick,
+    triggerPixel
 } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
-import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS} from './constants.js';
+import {
+    NATIVE_ASSET_TYPES,
+    NATIVE_IMAGE_TYPES,
+    NATIVE_KEYS,
+    NATIVE_KEYS_THAT_ARE_NOT_ASSETS,
+    PREBID_NATIVE_DATA_KEYS_TO_ORTB
+} from './constants.js';
 import {NATIVE} from './mediaTypes.js';
 import {getRenderingData} from './adRendering.js';
 import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_METHOD_JS} from './eventTrackers.js';
-import type {NativeResponse, Link, NativeRequest} from "./types/ortb/native.d.ts";
+import type {Link, NativeRequest, NativeResponse} from "./types/ortb/native.d.ts";
 import type {Size} from "./types/common.d.ts";
 import type {Ext} from "./types/ortb/common.d.ts";
+import type {Bid, BidResponse, NativeBidResponse} from "./bidfactory.ts";
+import type {AdUnit} from "./adUnits.ts";
 
 type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;
 type LegacyImageAssets = { icon: unknown, image: unknown };
@@ -62,16 +71,17 @@ type LegacyAssetRequest = {
 
 export type LegacyNativeRequest = {
     privacyLink?: LegacyAssetRequest;
+    clickUrl?: LegacyAssetRequest;
     title?: LegacyAssetRequest & {
         len?: number;
     };
     ext?: Ext;
 } & {
-    [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]: LegacyAssetRequest & {
+    [K in keyof typeof PREBID_NATIVE_DATA_KEYS_TO_ORTB]?: LegacyAssetRequest & {
         len?: number;
     }
 } & {
-    [K in keyof LegacyImageAssets]: LegacyAssetRequest & {
+    [K in keyof LegacyImageAssets]?: LegacyAssetRequest & {
         sizes?: Size | Size[];
         aspect_ratios?: {
             min_width: number;
@@ -83,6 +93,11 @@ export type LegacyNativeRequest = {
 }
 
 export interface NativeMediaType extends LegacyNativeRequest {
+    /**
+     * `type: 'image'` acts as a shortcut for a native request for 4 assets:
+     * image, title, "sponsored by" data, description (optional), and icon (optional).
+     */
+    type?: keyof typeof SUPPORTED_TYPES
     ortb?: NativeRequest;
 }
 
@@ -92,7 +107,7 @@ export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
   key => NATIVE_KEYS[key]
 );
 
-export const IMAGE = {
+export const IMAGE: NativeMediaType = {
   ortb: {
     ver: '1.2',
     assets: [
@@ -147,16 +162,16 @@ export const IMAGE = {
 
 const SUPPORTED_TYPES = {
   image: IMAGE
-};
+} as const;
 
 // inverse native maps useful for converting to legacy
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const NATIVE_ASSET_TYPES_INVERSE = inverse(NATIVE_ASSET_TYPES);
 
-export function isNativeResponse(bidResponse) {
+export function isNativeResponse(bidResponse: BidResponse): bidResponse is NativeBidResponse {
   // check for native data and not mediaType; it's possible
   // to treat banner responses as native
-  return bidResponse.native && typeof bidResponse.native === 'object';
+  return (bidResponse as NativeBidResponse).native != null && typeof (bidResponse as NativeBidResponse).native === 'object';
 }
 
 /**
@@ -164,7 +179,7 @@ export function isNativeResponse(bidResponse) {
  * passes them on directly. If they were of type 'type', translate
  * them into the predefined specific asset requests for that type of native ad.
  */
-export function processNativeAdUnitParams(params) {
+export function processNativeAdUnitParams(params: NativeMediaType): NativeMediaType {
   if (params && params.type && typeIsSupported(params.type)) {
     params = SUPPORTED_TYPES[params.type];
   }
@@ -175,7 +190,14 @@ export function processNativeAdUnitParams(params) {
   return params;
 }
 
-export function decorateAdUnitsWithNativeParams(adUnits) {
+declare module './adUnits' {
+    interface AdUnit {
+        nativeParams?: NativeMediaType;
+        nativeOrtbRequest?: NativeRequest;
+    }
+}
+
+export function decorateAdUnitsWithNativeParams(adUnits: AdUnit[]) {
   adUnits.forEach(adUnit => {
     const nativeParams =
       adUnit.nativeParams || adUnit?.mediaTypes?.native;
@@ -545,7 +567,7 @@ export function toOrtbNativeRequest(legacyNativeAssets: LegacyNativeRequest): Na
     logError('Native assets object is empty or not an object: ', legacyNativeAssets);
     return;
   }
-  const ortb: any = {
+  const ortb: NativeRequest = {
     ver: '1.2',
     assets: []
   };
