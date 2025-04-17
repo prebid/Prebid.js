@@ -14,11 +14,11 @@ import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/u
 const BIDDER_CODE = 'equativ';
 const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
 const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
+const DEFAULT_TTL = 300;
 const LOG_PREFIX = 'Equativ:';
 const PID_STORAGE_NAME = 'eqt_pid';
 
 let nwid = 0;
-
 let impIdMap = {};
 
 /**
@@ -61,47 +61,13 @@ function getFloor(bid, mediaType, width, height, currency) {
     .floor || bid.params.bidfloor || -1;
 }
 
-let impIdMap = {};
-
 /**
- * Assigns values to new properties, removes temporary ones from an object
- * and remove temporary default bidfloor of -1
- * @param {*} obj An object
- * @param {string} key A name of the new property
- * @param {string} tempKey A name of the temporary property to be removed
- * @returns {*} An updated object
+ * Gets value of the local variable impIdMap
+ * @returns {*} Value of impIdMap
  */
-function cleanObject(obj, key, tempKey) {
-  const newObj = {};
-
-  for (const prop in obj) {
-    if (prop === key) {
-      if (Object.prototype.hasOwnProperty.call(obj, tempKey)) {
-        newObj[key] = obj[tempKey];
-      }
-    } else if (prop !== tempKey) {
-      newObj[prop] = obj[prop];
-    }
-  }
-
-  newObj.bidfloor === -1 && delete newObj.bidfloor;
-
-  return newObj;
-}
-
-/**
- * Returns a floor price provided by the Price Floors module or the floor price set in the publisher parameters
- * @param {*} bid
- * @param {string} mediaType A media type
- * @param {number} width A width of the ad
- * @param {number} height A height of the ad
- * @param {string} currency A floor price currency
- * @returns {number} Floor price
- */
-function getFloor(bid, mediaType, width, height, currency) {
-  return bid.getFloor?.({ currency, mediaType, size: [width, height] })
-    .floor || bid.params.bidfloor || -1;
-}
+export function getImpIdMap() {
+  return impIdMap;
+};
 
 /**
  * Evaluates impressions for validity.  The entry evaluated is considered valid if NEITHER of these conditions are met:
@@ -177,7 +143,10 @@ export const spec = {
       serverResponse.body.seatbid
         .filter(seat => seat?.bid?.length)
         .forEach(seat =>
-          seat.bid.forEach(bid => bid.impid = impIdMap[bid.impid])
+          seat.bid.forEach(bid => {
+            bid.impid = impIdMap[bid.impid];
+            bid.ttl = typeof bid.exp === 'number' ? bid.exp : DEFAULT_TTL;
+          })
         );
     }
 
@@ -234,8 +203,7 @@ export const spec = {
 
 export const converter = ortbConverter({
   context: {
-    netRevenue: true,
-    ttl: 300,
+    netRevenue: true
   },
 
   imp(buildImp, bidRequest, context) {
