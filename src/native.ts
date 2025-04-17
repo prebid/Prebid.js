@@ -94,7 +94,7 @@ export type LegacyNativeRequest = {
 
 export interface NativeMediaType extends LegacyNativeRequest {
     /**
-     * `type: 'image'` acts as a shortcut for a native request for 4 assets:
+     * `type: 'image'` acts as a shortcut for a native request for five assets:
      * image, title, "sponsored by" data, description (optional), and icon (optional).
      */
     type?: keyof typeof SUPPORTED_TYPES
