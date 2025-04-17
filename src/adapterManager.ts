@@ -30,8 +30,8 @@ import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {
     type AdUnit,
-    type AdUnitBidderBid,
     type AdUnitBid,
+    type AdUnitBidderBid,
     getAuctionsCounter,
     getBidderRequestsCounter,
     getBidderWinsCounter,
@@ -39,7 +39,7 @@ import {
     incrementAuctionsCounter,
     incrementBidderRequestsCounter,
     incrementBidderWinsCounter,
-    incrementRequestsCounter, type AdUnitModuleBid, type AdUnitModuleBidders
+    incrementRequestsCounter
 } from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler,} from './consentHandler.js';
@@ -151,7 +151,7 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
 
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
-    const bids = adUnit.bids.filter(bid => (bid as any).bidder === bidderCode);
+    const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
     if (bidderCode == null && bids.length === 0 && (adUnit as PBSAdUnit).s2sBid != null) {
       bids.push({bidder: null});
     }
@@ -232,7 +232,7 @@ function getAdUnitCopyForPrebidServer(adUnits: AdUnit[], s2sConfig) {
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
-    const s2sBids = adUnit.bids.filter((b) => (b as AdUnitModuleBid<AdUnitModuleBidders>).module === PBS_ADAPTER_NAME && (b as AdUnitModuleBid<AdUnitModuleBidders>).params?.configName === s2sConfig.configName);
+    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && b.params?.configName === s2sConfig.configName);
     if (s2sBids.length === 1) {
       adUnit.s2sBid = s2sBids[0];
       hasModuleBids = true;
