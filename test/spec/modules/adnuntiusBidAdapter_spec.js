@@ -7,6 +7,7 @@ import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
 import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
+import { getWinDimensions } from '../../../src/utils';
 
 describe('adnuntiusBidAdapter', function () {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
@@ -48,9 +49,9 @@ describe('adnuntiusBidAdapter', function () {
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const win = getWindowTop() || window;
-  const screen = win.screen.availWidth + 'x' + win.screen.availHeight;
-  const viewport = win.innerWidth + 'x' + win.innerHeight;
+  const winDimensions = getWinDimensions();
+  const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
+  const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
   const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&screen=${screen}&viewport=${viewport}`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&screen=${screen}&viewport=${viewport}&userId=${usi}`;
@@ -344,10 +345,11 @@ describe('adnuntiusBidAdapter', function () {
       'auId': '0000000000000551',
       'targetId': 'adn-0000000000000551',
       'nativeJson': {
-        'link': {
-          'url': 'https://whatever.com'
-        },
-        'assets': [
+        'ortb': {
+          'link': {
+            'url': 'https://whatever.com'
+          },
+          'assets': [
           {
             'id': 1,
             'required': 1,
@@ -355,6 +357,7 @@ describe('adnuntiusBidAdapter', function () {
               'url': 'http://something.com/something.png'
             }
           }]
+        }
       },
       'matchedAdCount': 1,
       'responseId': '',
@@ -1693,7 +1696,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
       expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('adnuntius.com');
       expect(interpretedResponse[0].vastXml).to.equal(ad.vastXml);
-      expect(JSON.stringify(interpretedResponse[0].native)).to.equal('{"link":{"url":"https://whatever.com"},"assets":[{"id":1,"required":1,"img":{"url":"http://something.com/something.png"}}]}');
+      expect(JSON.stringify(interpretedResponse[0].native.ortb)).to.equal('{"link":{"url":"https://whatever.com"},"assets":[{"id":1,"required":1,"img":{"url":"http://something.com/something.png"}}]}');
     });
 
     it('should pass legacy requests on correctly', function () {
@@ -1701,7 +1704,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"ortb":{"ver":"1.2","assets":[{"id":0,"required":1,"img":{"type":3,"w":250,"h":250}}]}},"dimensions":[[200,200],[300,300]]}]}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"ortb":{"ver":"1.2","assets":[{"id":0,"required":1,"img":{"type":3,"w":250,"h":250}}],"eventtrackers":[{"event":1,"methods":[1]},{"event":2,"methods":[1]}]}},"dimensions":[[200,200],[300,300]]}]}');
     });
 
     it('should return valid legacy response when passed valid server response', function () {

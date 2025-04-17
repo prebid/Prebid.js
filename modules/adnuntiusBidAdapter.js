@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone} from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone, getWinDimensions} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
@@ -289,8 +289,11 @@ export const spec = {
     if (win.screen && win.screen.availHeight) {
       queryParamsAndValues.push('screen=' + win.screen.availWidth + 'x' + win.screen.availHeight);
     }
-    if (win.innerWidth) {
-      queryParamsAndValues.push('viewport=' + win.innerWidth + 'x' + win.innerHeight);
+
+    const { innerWidth, innerHeight } = getWinDimensions();
+
+    if (innerWidth) {
+      queryParamsAndValues.push('viewport=' + innerWidth + 'x' + innerHeight);
     }
 
     const searchParams = new URLSearchParams(window.location.search);
@@ -364,9 +367,20 @@ export const spec = {
           adUnit.adType = 'NATIVE';
           if (!mediaTypeData.ortb) {
             // assume it's using old format if ortb not specified
-            const oldStyleNativeRequest = deepClone(mediaTypeData);
-            delete oldStyleNativeRequest.sizes;
-            adUnit.nativeRequest = {ortb: toOrtbNativeRequest(oldStyleNativeRequest)}
+            const legacyStyleNativeRequest = deepClone(mediaTypeData);
+            const nativeOrtb = toOrtbNativeRequest(legacyStyleNativeRequest);
+            // add explicit event tracker requests for impressions and viewable impressions, which do not exist in legacy format
+            nativeOrtb.eventtrackers = [
+              {
+                'event': 1,
+                'methods': [1]
+              },
+              {
+                'event': 2,
+                'methods': [1]
+              }
+            ];
+            adUnit.nativeRequest = {ortb: nativeOrtb}
           } else {
             adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
           }
@@ -450,8 +464,8 @@ export const spec = {
         adResponse.mediaType = VIDEO;
       } else if (renderSource.nativeJson) {
         adResponse.mediaType = NATIVE;
-        if (!bidOnRequest.mediaTypes?.native?.ortb) {
-          adResponse.native = toLegacyResponse(renderSource.nativeJson);
+        if (bidOnRequest.mediaTypes?.native && !bidOnRequest.mediaTypes?.native?.ortb) {
+          adResponse.native = toLegacyResponse(renderSource.nativeJson.ortb, toOrtbNativeRequest(bidOnRequest.mediaTypes.native));
         } else {
           adResponse.native = renderSource.nativeJson;
         }
