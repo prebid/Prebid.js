@@ -484,7 +484,7 @@ function getNativeAssets(nativeProps, keys, ext = false) {
 }
 
 export function getNativeRenderingData(bid, adUnit, keys) {
-  const data = {
+  const data: any = {
     ...getDefinedParams(bid.native, ['rendererUrl', 'adTemplate']),
     assets: getNativeAssets(bid.native, keys),
     nativeKeys: NATIVE_KEYS

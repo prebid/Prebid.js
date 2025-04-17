@@ -129,7 +129,7 @@ export const S2S = {
   SRC: 's2s',
   DEFAULT_ENDPOINT: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
   SYNCED_BIDDERS_KEY: 'pbjsSyncs'
-};
+} as const;
 
 export const BID_STATUS = {
   BID_TARGETING_SET: 'targetingSet',

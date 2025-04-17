@@ -1,26 +1,26 @@
 /** @module adaptermanger */
 
 import {
-  deepClone,
-  flatten,
-  generateUUID,
-  getBidderCodes,
-  getDefinedParams,
-  getUniqueIdentifierStr,
-  getUserConfiguredParams,
-  groupBy,
-  internal,
-  isArray,
-  isPlainObject,
-  isValidMediaTypes,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  mergeDeep,
-  shuffle,
-  timestamp,
-  uniques,
+    deepClone,
+    flatten,
+    generateUUID,
+    getBidderCodes,
+    getDefinedParams,
+    getUniqueIdentifierStr,
+    getUserConfiguredParams,
+    groupBy,
+    internal,
+    isArray,
+    isPlainObject,
+    isValidMediaTypes,
+    logError,
+    logInfo,
+    logMessage,
+    logWarn,
+    mergeDeep,
+    shuffle,
+    timestamp,
+    uniques,
 } from './utils.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
 import {newBidder} from './adapters/bidderFactory.js';
@@ -29,20 +29,23 @@ import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {
-  getAuctionsCounter,
-  getBidderRequestsCounter,
-  getBidderWinsCounter,
-  getRequestsCounter,
-  incrementAuctionsCounter,
-  incrementBidderRequestsCounter,
-  incrementBidderWinsCounter,
-  incrementRequestsCounter
+    type AdUnit,
+    type AdUnitBidderBid,
+    type AdUnitBid,
+    getAuctionsCounter,
+    getBidderRequestsCounter,
+    getBidderWinsCounter,
+    getRequestsCounter,
+    incrementAuctionsCounter,
+    incrementBidderRequestsCounter,
+    incrementBidderWinsCounter,
+    incrementRequestsCounter, type AdUnitModuleBid, type AdUnitModuleBidders
 } from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
-import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
+import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler,} from './consentHandler.js';
 import * as events from './events.js';
 import {EVENTS, S2S} from './constants.js';
-import {useMetrics} from './utils/perfMetrics.js';
+import {type Metrics, useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
 import {isActivityAllowed} from './activities/rules.js';
@@ -50,6 +53,7 @@ import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activ
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
 import {redactor} from './activities/redactor.js';
 import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
+import type {AdUnitCode, BidderCode, BidSource, ContextIdentifiers, Identifier, Size} from "./types/common.d.ts";
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -83,22 +87,79 @@ export function s2sActivityParams(s2sConfig) {
   });
 }
 
-function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}) {
+export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof ADUNIT_BID_PROPERTIES[number] | 'mediaTypes' | 'ortb2Imp'> {
+    /**
+     * Unique ID for this request.
+     */
+    bidId: Identifier;
+    /**
+     * ID of the BidderRequest containing this request.
+     */
+    bidderRequestId: Identifier;
+    metrics: Metrics;
+    src: BidSource;
+    /**
+     * The code of the ad unit associated with this request.
+     */
+    adUnitCode: AdUnitCode;
+    /**
+     * @deprecated - use mediaType specific size parameters instead.
+     */
+    sizes: Size | Size[];
+    /**
+     * The number of auctions that took place involving the ad unit associated with this request.
+     */
+    auctionsCount: number;
+    /**
+     * How many times the ad unit code associated with this request took part in an auction. This differs
+     * from `auctionsCount` when twin ad units are used.
+     */
+    bidRequestsCount: number;
+    /**
+     * The number of client (but not s2s) requests that were generated for the combination of ad unit and bidder
+     * associated with this request.
+     */
+    bidderRequestsCount: number;
+    /**
+     * The number of times a bid from the same bidder and for the same ad unit as this request has won.
+     */
+    bidderWinsCount: number;
+    deferBilling: AdUnit['deferBilling'];
+}
+
+interface StoredBidRequest extends BaseBidRequest {
+    bidder: null;
+}
+type BidderBidRequest<BIDDER extends BidderCode> = BaseBidRequest & AdUnitBidderBid<BIDDER>;
+
+export type BidRequest<BIDDER extends BidderCode | null> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<BIDDER>;
+
+const ADUNIT_BID_PROPERTIES = [
+    'nativeParams',
+    'nativeOrtbRequest',
+    'renderer',
+] as const;
+
+type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
+    bidderCode: BIDDER;
+    auctionId: Identifier;
+    bidderRequestId: Identifier;
+    adUnits: (SRC extends typeof S2S.SRC ? PBSAdUnit : AdUnit)[]
+    src: SRC;
+    metrics: Metrics
+}
+
+function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
-    const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
-    if (bidderCode == null && bids.length === 0 && adUnit.s2sBid != null) {
+    const bids = adUnit.bids.filter(bid => (bid as any).bidder === bidderCode);
+    if (bidderCode == null && bids.length === 0 && (adUnit as PBSAdUnit).s2sBid != null) {
       bids.push({bidder: null});
     }
     result.push(
-      bids.reduce((bids, bid) => {
+      bids.reduce((bids: BidRequest<BIDDER>[], bid: BidRequest<BIDDER>) => {
         bid = Object.assign({}, bid,
           {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp)},
-          getDefinedParams(adUnit, [
-            'nativeParams',
-            'nativeOrtbRequest',
-            'mediaType',
-            'renderer'
-          ])
+          getDefinedParams(adUnit, ADUNIT_BID_PROPERTIES)
         );
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
@@ -122,7 +183,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           transactionId: adUnit.transactionId,
           adUnitId: adUnit.adUnitId,
           sizes: mediaTypes?.banner?.sizes || mediaTypes?.video?.playerSize || [],
-          bidId: bid.bid_id || getUniqueIdentifierStr(),
+          bidId: (bid as any).bid_id || getUniqueIdentifierStr(),
           bidderRequestId,
           auctionId,
           src,
@@ -156,13 +217,22 @@ export const filterBidsForAdUnit = hook('sync', function(bids, s2sConfig, {getS2
     }
 }, 'filterBidsForAdUnit');
 
-function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
-  let adUnitsCopy = deepClone(adUnits);
+type PBSAdUnitBid = AdUnitBid & {
+    bid_id?: Identifier;
+};
+
+type PBSAdUnit = Omit<AdUnit, 'bids'> & {
+    s2sBid?: PBSAdUnitBid;
+    bids: PBSAdUnitBid[];
+};
+
+function getAdUnitCopyForPrebidServer(adUnits: AdUnit[], s2sConfig) {
+  let adUnitsCopy = deepClone(adUnits) as PBSAdUnit[];
   let hasModuleBids = false;
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
-    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && b.params?.configName === s2sConfig.configName);
+    const s2sBids = adUnit.bids.filter((b) => (b as AdUnitModuleBid<AdUnitModuleBidders>).module === PBS_ADAPTER_NAME && (b as AdUnitModuleBid<AdUnitModuleBidders>).params?.configName === s2sConfig.configName);
     if (s2sBids.length === 1) {
       adUnit.s2sBid = s2sBids[0];
       hasModuleBids = true;
@@ -184,7 +254,7 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
   return {adUnits: adUnitsCopy, hasModuleBids};
 }
 
-function getAdUnitCopyForClientAdapters(adUnits) {
+function getAdUnitCopyForClientAdapters(adUnits: AdUnit[]) {
   let adUnitsClientCopy = deepClone(adUnits);
   adUnitsClientCopy.forEach((adUnit) => {
     adUnit.bids = filterBidsForAdUnit(adUnit.bids, null);
