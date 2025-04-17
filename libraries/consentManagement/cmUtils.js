@@ -1,9 +1,9 @@
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../../src/utils.js';
 import {ConsentHandler} from '../../src/consentHandler.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
 import {PbPromise} from '../../src/utils/promise.js';
 import {buildActivityParams} from '../../src/activities/params.js';
+import {getHook} from '../../src/hook.js';
 
 export function consentManagementHook(name, loadConsentData) {
   const SEEN = new WeakSet();
@@ -128,7 +128,7 @@ export function configParser(
   function activate() {
     if (requestBidsHook == null) {
       requestBidsHook = consentManagementHook(namespace, () => cdLoader());
-      getGlobal().requestBids.before(requestBidsHook, 50);
+      getHook('requestBids').before(requestBidsHook, 50);
       buildActivityParams.before(attachActivityParams);
       logInfo(`${displayName} consentManagement module has been activated...`)
     }
@@ -136,7 +136,7 @@ export function configParser(
 
   function reset() {
     if (requestBidsHook != null) {
-      getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
+      getHook('requestBids').getHooks({hook: requestBidsHook}).remove();
       buildActivityParams.getHooks({hook: attachActivityParams}).remove();
       requestBidsHook = null;
     }

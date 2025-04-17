@@ -1,7 +1,7 @@
 import Adapter from '../adapter.js';
 import adapterManager from '../adapterManager.js';
 import {config} from '../config.js';
-import {createBid} from '../bidfactory.js';
+import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
@@ -28,11 +28,8 @@ import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
+import type {AnyFunction} from "../types/functions.d.ts";
 
-/**
- * @typedef {import('../mediaTypes.js').MediaType} MediaType
- * @typedef {import('../Renderer.js').Renderer} Renderer
- */
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -82,13 +79,6 @@ import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activ
  */
 
 /**
- * @typedef {object} BidRequest
- *
- * @property {string} bidId A string which uniquely identifies this BidRequest in the current Auction.
- * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- */
-
-/**
  * @typedef {object} BidderAuctionResponse An object encapsulating an adapter response for current Auction
  *
  * @property {Array<Bid>} bids? Contextual bids returned by this adapter, if any
@@ -114,27 +104,6 @@ import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activ
  *   string with the body's content.
  * @property {{get: function(string): string}} headers The response headers.
  *   Call this like `ServerResponse.headers.get("Content-Type")`
- */
-
-/**
- * @typedef {object} Bid
- *
- * @property {string} requestId The specific BidRequest which this bid is aimed at.
- *   This should match the BidRequest.bidId which this Bid targets.
- * @property {string} ad A URL which can be used to load this ad, if it's chosen by the publisher.
- * @property {string} currency The currency code for the cpm value
- * @property {number} cpm The bid price, in US cents per thousand impressions.
- * @property {number} ttl Time-to-live - how long (in seconds) Prebid can use this bid.
- * @property {boolean} netRevenue Boolean defining whether the bid is Net or Gross.  The default is true (Net).
- * @property {number} height The height of the ad, in pixels.
- * @property {number} width The width of the ad, in pixels.
- *
- * @property {object} [native] Object for storing native creative assets
- * @property {object} [video] Object for storing video response data
- * @property {object} [meta] Object for storing bid meta data
- * @property {string} [meta.primaryCatId] The IAB primary category ID
- * @property {Renderer} renderer A Renderer which can be used as a default for this bid,
- *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
 
 /**
@@ -192,7 +161,7 @@ export function registerBidder(spec) {
   }
 }
 
-export const guardTids = memoize(({bidderCode}) => {
+export const guardTids: any = memoize(({bidderCode}) => {
   if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
     return {
       bidRequest: (br) => br,
@@ -210,7 +179,7 @@ export const guardTids = memoize(({bidderCode}) => {
     // always allow methods (such as getFloor) private access to TIDs
     Object.entries(target)
       .filter(([_, v]) => typeof v === 'function')
-      .forEach(([prop, fn]) => proxy[prop] = fn.bind(target));
+      .forEach(([prop, fn]: [string, AnyFunction]) => proxy[prop] = fn.bind(target));
     return proxy;
   }
   const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);
@@ -239,7 +208,7 @@ export const guardTids = memoize(({bidderCode}) => {
  * @param {BidderSpec} spec
  */
 export function newBidder(spec) {
-  return Object.assign(new Adapter(spec.code), {
+  return Object.assign(Adapter(spec.code), {
     getSpec: function() {
       return Object.freeze(Object.assign({}, spec));
     },
@@ -251,7 +220,7 @@ export function newBidder(spec) {
       const tidGuard = guardTids(bidderRequest);
 
       const adUnitCodesHandled = {};
-      function addBidWithCode(adUnitCode, bid) {
+      function addBidWithCode(adUnitCode: string, bid: Bid) {
         const metrics = useMetrics(bid.metrics);
         metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
@@ -312,26 +281,27 @@ export function newBidder(spec) {
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, {bidRequests: validBidRequests});
         },
-        onBid: (bid) => {
-          const bidRequest = bidRequestMap[bid.requestId];
+        onBid: (bidResponse: BidResponse) => {
+          const bidRequest = bidRequestMap[bidResponse.requestId];
+          const bid = bidResponse as Bid;
           if (bidRequest) {
             bid.adapterCode = bidRequest.bidder;
-            if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
-              logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
-              addBidResponse.reject(bidRequest.adUnitCode, bid, REJECTION_REASON.BIDDER_DISALLOWED)
+            if (isInvalidAlternateBidder(bidResponse.bidderCode, bidRequest.bidder)) {
+              logWarn(`${bidResponse.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              addBidResponse.reject(bidRequest.adUnitCode, bidResponse, REJECTION_REASON.BIDDER_DISALLOWED)
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
-            bid.originalCpm = bid.cpm;
-            bid.originalCurrency = bid.currency;
-            bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
+            bid.originalCpm = bidResponse.cpm;
+            bid.originalCurrency = bidResponse.currency;
+            bid.meta = bidResponse.meta || Object.assign({}, bidResponse[bidRequest.bidder]);
             bid.deferBilling = bidRequest.deferBilling;
-            bid.deferRendering = bid.deferBilling && (bid.deferRendering ?? typeof spec.onBidBillable !== 'function');
-            const prebidBid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
+            bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
+            const prebidBid: Bid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
-            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-            addBidResponse.reject(null, bid, REJECTION_REASON.INVALID_REQUEST_ID);
+            logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bidResponse.requestId}. Ignoring.`);
+            addBidResponse.reject(null, bidResponse, REJECTION_REASON.INVALID_REQUEST_ID);
           }
         },
         onCompletion: afterAllResponses,
@@ -544,8 +514,18 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
 export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
 }, 'addPaapiConfig');
 
+
+declare module '../bidfactory' {
+    interface BannerBidProperties {
+        width?: number;
+        height?: number;
+        wratio?: number;
+        hratio?: number;
+    }
+}
+
 // check that the bid has a width and height set
-function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
+function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index} = {}) {
   if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
     bid.width = parseInt(bid.width, 10);
     bid.height = parseInt(bid.height, 10);
@@ -577,7 +557,7 @@ function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
 }
 
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
-export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
+export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index} = {}) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));

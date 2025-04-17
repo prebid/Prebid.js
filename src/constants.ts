@@ -89,7 +89,7 @@ export const TARGETING_KEYS = {
   ACAT: 'hb_acat',
   CRID: 'hb_crid',
   DSP: 'hb_dsp'
-};
+} as const;
 
 export const DEFAULT_TARGETING_KEYS = {
   BIDDER: 'hb_bidder',
@@ -129,13 +129,13 @@ export const S2S = {
   SRC: 's2s',
   DEFAULT_ENDPOINT: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
   SYNCED_BIDDERS_KEY: 'pbjsSyncs'
-};
+} as const;
 
 export const BID_STATUS = {
   BID_TARGETING_SET: 'targetingSet',
   RENDERED: 'rendered',
   BID_REJECTED: 'bidRejected'
-};
+} as const;
 
 export const REJECTION_REASON = {
   INVALID: 'Bid has missing or invalid properties',
@@ -161,7 +161,7 @@ export const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
   price: 'price',
   salePrice: 'saleprice',
   displayUrl: 'displayurl'
-};
+} as const;
 
 export const NATIVE_ASSET_TYPES = {
   sponsored: 1,
@@ -190,7 +190,7 @@ export const NATIVE_KEYS_THAT_ARE_NOT_ASSETS = [
   'adTemplate',
   'rendererUrl',
   'type'
-];
+] as const;
 
 export const MESSAGES = {
   REQUEST: 'Prebid Request',

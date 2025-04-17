@@ -24,19 +24,58 @@ import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../l
 import {VIDEO} from '../../src/mediaTypes.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
+import {getHook} from '../../src/hook.js';
+import {type VideoBid} from '../../src/bidfactory.js';
+import type {BidderCode} from "../../src/types/common.d.ts";
+import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
+import type {DeepPartial} from "../../src/types/objects.d.ts";
+import type {AdServerVendor} from "../../libraries/video/constants/vendorCodes.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
+
+interface AdServerConfig {
+    /**
+     * The identifier of the AdServer vendor (i.e. gam, etc).
+     */
+    vendorCode: AdServerVendor
+    /**
+     * Your AdServer Ad Tag. The targeting params of the winning bid will be appended.
+     */
+    baseAdTagUrl?: string;
+    /**
+     * Querystring parameters that will be used to construct the video ad tag URL.
+     */
+    params?: Record<string, string>;
+}
+
+interface AdUnitVideoOptions {
+    /**
+     * Unique identifier of the player provider, used to specify which player should be used to render the ad.
+     * Equivalent to the HTML Div Id of the player.
+     */
+    divId: string;
+    /**
+     * Configuration for ad server integration. Supersedes video.adServer configurations defined in the Prebid Config.
+     */
+    adServer?: AdServerConfig
+}
+
+declare module '../../src/adUnits' {
+    interface AdUnitDefinition {
+        video?: AdUnitVideoOptions
+    }
+}
 
 /**
  * This module adds User Video support to prebid.js
  * @module modules/videoModule
  */
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
+export function PbVideo(videoCore_, getConfig_, pbGlobal_, requestBids_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
-  const requestBids = pbGlobal.requestBids;
+  const requestBids = requestBids_;
   const pbEvents = pbEvents_;
   const videoEvents = videoEvents_;
   const gamAdServerFactory = gamAdServerFactory_;
@@ -84,7 +123,13 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  function renderBid(divId, bid, options = {}) {
+  type RenderBidOptions = {
+    adXml?: string;
+    winner?: BidderCode;
+    [option: string]: unknown;
+  };
+
+  function renderBid(divId: string, bid: VideoBid, options: RenderBidOptions = {}) {
     const adUrl = bid.vastUrl;
     options.adXml = bid.vastXml;
     options.winner = bid.bidder;
@@ -92,11 +137,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     loadAd(adUrl, divId, options);
   }
 
-  function getOrtbVideo(divId) {
+  function getOrtbVideo(divId: string): DeepPartial<ORTBImp['video']> {
     return videoCore.getOrtbVideo(divId);
   }
 
-  function getOrtbContent(divId) {
+  function getOrtbContent(divId: string): DeepPartial<ORTBRequest['site']['content']> {
     return videoCore.getOrtbContent(divId);
   }
 
@@ -214,7 +259,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const adServerConfig = getAdServerConfig(videoConfig);
     const winningBid = getWinningBid(adUnitCode);
 
-    const options = { adUnitCode };
+    const options: any = { adUnitCode };
 
     async function prefetchVast() {
       const gamVastWrapper = await gamSubmodule.getVastXml(
@@ -247,7 +292,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return highestCpmBids.shift();
   }
 
-  function loadAd(adTagUrl, divId, options) {
+  function loadAd(adTagUrl: string, divId: string, options: RenderBidOptions) {
     adQueueCoordinator.queueAd(adTagUrl, divId, options);
   }
 
@@ -275,6 +320,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 }
 
+declare module '../../src/prebidGlobal' {
+    interface PrebidJS {
+        videoModule: ReturnType<typeof PbVideo>
+    }
+}
+
 function videoRenderHook(next, args) {
   if (args.bidResponse.mediaType === VIDEO) {
     const adUnit = auctionManager.index.getAdUnit(args.bidResponse);
@@ -291,7 +342,7 @@ export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
   const adQueueCoordinator = AdQueueCoordinator(videoCore, events);
   const pbGlobal = getGlobal();
-  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator);
+  const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, getHook('requestBids'), events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator);
   pbVideo.init();
   pbGlobal.videoModule = pbVideo;
   doRender.before(videoRenderHook);
