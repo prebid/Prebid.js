@@ -21,12 +21,13 @@ const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
-const USERID_CONFIG = [
+const getUserConfig = () => [
   {
     'name': 'intentIqId',
     'params': {
       'partner': partner,
       'unpack': null,
+      'manualWinReportEnabled': false
     },
     'storage': {
       'type': 'html5',
@@ -58,7 +59,6 @@ let wonRequest = {
   'responseTimestamp': 1669644710345,
   'requestTimestamp': 1669644710109,
   'bidder': 'testbidder',
-  'adUnitCode': 'addUnitCode',
   'timeToRespond': 236,
   'pbLg': '5.00',
   'pbMg': '5.00',
@@ -79,7 +79,7 @@ describe('IntentIQ tests all', function () {
 
   beforeEach(function () {
     logErrorStub = sinon.stub(utils, 'logError');
-    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(getUserConfig());
     sinon.stub(events, 'getEvents').returns([]);
     iiqAnalyticsAnalyticsAdapter.enableAnalytics({
       provider: 'iiqAnalytics',
@@ -132,6 +132,45 @@ describe('IntentIQ tests all', function () {
     expect(request.url).to.contain(`&vrref=${expectedVrref}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+  });
+
+  it('should include adType in payload when present in BID_WON event', function () {
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+    const bidWonEvent = { ...wonRequest, mediaType: 'video' };
+
+    events.emit(EVENTS.BID_WON, bidWonEvent);
+
+    const request = server.requests[0];
+    const urlParams = new URL(request.url);
+    const payloadEncoded = urlParams.searchParams.get('payload');
+    const payloadDecoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
+
+    expect(server.requests.length).to.be.above(0);
+    expect(payloadDecoded).to.have.property('adType', bidWonEvent.mediaType);
+  });
+
+  it('should include adType in payload when present in reportExternalWin event', function () {
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+    const externalWinEvent = { cpm: 1, currency: 'USD', adType: 'banner' };
+    const [userConfig] = getUserConfig();
+    userConfig.params.manualWinReportEnabled = true;
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+    const partnerId = userConfig.params.partner;
+
+    events.emit(EVENTS.BID_REQUESTED);
+
+    window[`intentIqAnalyticsAdapter_${partnerId}`].reportExternalWin(externalWinEvent);
+
+    const request = server.requests[0];
+    const urlParams = new URL(request.url);
+    const payloadEncoded = urlParams.searchParams.get('payload');
+    const payloadDecoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
+
+    expect(server.requests.length).to.be.above(0);
+    expect(payloadDecoded).to.have.property('adType', externalWinEvent.adType);
   });
 
   it('should send report to report-gdpr address if gdpr is detected', function () {
@@ -250,7 +289,7 @@ describe('IntentIQ tests all', function () {
     getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
 
     const referrer = getReferrer();
-    expect(referrer).to.equal(encodeURIComponent('http://localhost:9876/'));
+    expect(referrer).to.equal('http://localhost:9876/');
   });
 
   it('should return window.top.location.href when window.self !== window.top and access is successful', function () {
@@ -260,7 +299,7 @@ describe('IntentIQ tests all', function () {
 
     const referrer = getReferrer();
 
-    expect(referrer).to.equal(encodeURIComponent('http://example.com/'));
+    expect(referrer).to.equal('http://example.com/');
   });
 
   it('should return an empty string and log an error when accessing window.top.location.href throws an error', function () {
@@ -275,7 +314,7 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should not send request if the browser is in blacklist (chrome)', function () {
-    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    const USERID_CONFIG_BROWSER = [...getUserConfig()];
     USERID_CONFIG_BROWSER[0].params.browserBlackList = 'ChrOmE';
 
     config.getConfig.restore();
@@ -289,7 +328,7 @@ describe('IntentIQ tests all', function () {
   });
 
   it('should send request if the browser is not in blacklist (safari)', function () {
-    const USERID_CONFIG_BROWSER = [...USERID_CONFIG];
+    const USERID_CONFIG_BROWSER = [...getUserConfig()];
     USERID_CONFIG_BROWSER[0].params.browserBlackList = 'chrome,firefox';
 
     config.getConfig.restore();
@@ -365,6 +404,81 @@ describe('IntentIQ tests all', function () {
       if (shouldContainFui) {
         expect(fui).to.equal('1');
       }
+    });
+  });
+
+  const adUnitConfigTests = [
+    {
+      adUnitConfig: 1,
+      description: 'should extract adUnitCode first (adUnitConfig = 1)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'adUnitCode-123'
+    },
+    {
+      adUnitConfig: 1,
+      description: 'should extract placementId if there is no adUnitCode (adUnitConfig = 1)',
+      event: { placementId: 'placementId-456' },
+      expectedPlacementId: 'placementId-456'
+    },
+    {
+      adUnitConfig: 2,
+      description: 'should extract placementId first (adUnitConfig = 2)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'placementId-456'
+    },
+    {
+      adUnitConfig: 2,
+      description: 'should extract adUnitCode if there is no placementId (adUnitConfig = 2)',
+      event: { adUnitCode: 'adUnitCode-123', },
+      expectedPlacementId: 'adUnitCode-123'
+    },
+    {
+      adUnitConfig: 3,
+      description: 'should extract only adUnitCode (adUnitConfig = 3)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'adUnitCode-123'
+    },
+    {
+      adUnitConfig: 4,
+      description: 'should extract only placementId (adUnitConfig = 4)',
+      event: { adUnitCode: 'adUnitCode-123', placementId: 'placementId-456' },
+      expectedPlacementId: 'placementId-456'
+    },
+    {
+      adUnitConfig: 1,
+      description: 'should return empty placementId if neither adUnitCode or placementId exist',
+      event: {},
+      expectedPlacementId: ''
+    },
+    {
+      adUnitConfig: 1,
+      description: 'should extract placementId from params array if no top-level adUnitCode or placementId exist (adUnitConfig = 1)',
+      event: {
+        params: [{ someKey: 'value' }, { placementId: 'nested-placementId' }]
+      },
+      expectedPlacementId: 'nested-placementId'
+    }
+  ];
+
+  adUnitConfigTests.forEach(({ adUnitConfig, description, event, expectedPlacementId }) => {
+    it(description, function () {
+      const [userConfig] = getUserConfig();
+      userConfig.params.adUnitConfig = adUnitConfig;
+
+      config.getConfig.restore();
+      sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+      const testEvent = { ...wonRequest, ...event };
+      events.emit(EVENTS.BID_WON, testEvent);
+
+      const request = server.requests[0];
+      const urlParams = new URL(request.url);
+      const encodedPayload = urlParams.searchParams.get('payload');
+      const decodedPayload = JSON.parse(atob(JSON.parse(encodedPayload)[0]));
+
+      expect(server.requests.length).to.be.above(0);
+      expect(encodedPayload).to.exist;
+      expect(decodedPayload).to.have.property('placementId', expectedPlacementId);
     });
   });
 });
