@@ -152,24 +152,6 @@ function getGdprConsent(bidderRequest) {
   });
 }
 
-function getCoppa() {
-  return {
-    required: config.getConfig('coppa') === true ? 1 : 0
-  };
-}
-
-function getUspConsent(bidderRequest) {
-  return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
-}
-
-function getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'schain');
-}
-
-function getEids(bidRequest) {
-  return deepAccess(bidRequest, 'userIdAsEids');
-}
-
 function processVideoParams(bid) {
   const videoParams = deepAccess(bid, 'mediaTypes.video', {});
   const playerSize = videoParams.playerSize || [];
@@ -234,10 +216,9 @@ const converter = ortbConverter({
     const site = getSite(bidderRequest);
     const session = getSession();
 
-    const gdprConsent = getGdprConsent(bidderRequest).consentRequired || 0;
-    const gdprConsentString = getGdprConsent(bidderRequest).consentString || '';
-    const uspConsent = getUspConsent(bidderRequest).uspConsent || '';
-    const coppa = getCoppa().required;
+    const gdpr = getGdprConsent(bidderRequest);
+    const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
+    const coppa = config.getConfig('coppa') === true ? 1 : 0;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
 
@@ -246,11 +227,11 @@ const converter = ortbConverter({
     deepSetValue(request, 'site', {...request.site, ...site});
 
     deepSetValue(request, 'regs', {
-      gdpr: gdprConsent,
+      gdpr: gdpr.consentRequired || 0,
       coppa: coppa,
       us_privacy: uspConsent,
       ext: {
-        gdpr_conset: gdprConsentString,
+        gdpr_conset: gdpr.consentString || '',
         gpp: gpp || '',
         gppSid: gppSid || [],
         dsa: dsa,
@@ -277,13 +258,13 @@ const converter = ortbConverter({
     deepSetValue(request, 'cur', ['USD']);
 
     // Add schain if present
-    const schain = getSchain(bidderRequest.bids[0]);
+    const schain = deepAccess(bidderRequest.bids[0], 'schain');
     if (schain) {
       deepSetValue(request, 'source.ext.schain', schain);
     }
 
     // Add eids if present
-    const eids = getEids(bidderRequest.bids[0]);
+    const eids = deepAccess(bidderRequest.bids[0], 'userIdAsEids');
     if (eids) {
       deepSetValue(request, 'user.ext.eids', eids);
     }
@@ -387,7 +368,7 @@ const converter = ortbConverter({
   },
 });
 
-const isBidRequestValid = () => (bid = {}) => {
+function isBidRequestValid(bid = {}) {
   const { params, bidId, mediaTypes } = bid;
 
   const foundKeys = bid && bid.params && bid.params.placementId;
@@ -404,9 +385,9 @@ const isBidRequestValid = () => (bid = {}) => {
   }
 
   return valid;
-};
+}
 
-const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = {}) => {
+function buildRequests(validBidRequests = [], bidderRequest = {}) {
   // Add bid-level metadata for our server to use
   validBidRequests = validBidRequests.map(req => {
     req.valuadMeta = {
@@ -423,12 +404,12 @@ const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = {}) => 
 
   return [{
     method: 'POST',
-    url: adUrl,
+    url: AD_URL,
     data
   }];
-};
+}
 
-const interpretResponse = () => (response, request) => {
+function interpretResponse(response, request) {
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
 
   // Process server-side data
@@ -438,22 +419,20 @@ const interpretResponse = () => (response, request) => {
   }
 
   return bidResponses;
-};
+}
 
-const getUserSyncs = () => (syncOptions, serverResponses) => {
+function getUserSyncs(syncOptions, serverResponses) {
   if (!serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSyncs) {
     return false;
   }
 
-  const syncs = serverResponses[0].body.userSyncs.map(sync => ({
+  return serverResponses[0].body.userSyncs.map(sync => ({
     type: sync.type === 'iframe' ? 'iframe' : 'image',
     url: sync.url
   }));
+}
 
-  return syncs;
-};
-
-const onBidWon = (bid) => {
+function onBidWon(bid) {
   const {
     adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
   } = bid;
@@ -467,12 +446,10 @@ const onBidWon = (bid) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-
-  isBidRequestValid: isBidRequestValid(),
-  buildRequests: buildRequests(AD_URL),
-  interpretResponse: interpretResponse(),
-  getUserSyncs: getUserSyncs(),
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  getUserSyncs,
   onBidWon,
 };
-
 registerBidder(spec);
