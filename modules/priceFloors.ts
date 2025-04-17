@@ -32,7 +32,7 @@ import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
 import {ALL_MEDIATYPES, BANNER, type MediaType} from '../src/mediaTypes.js';
-import type {Currency} from "../src/types/common.d.ts";
+import type {Currency, Size} from "../src/types/common.d.ts";
 import type {Bid} from "../src/bidfactory.ts";
 
 export const FLOOR_SKIPPED_REASON = {
@@ -241,7 +241,7 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
 type GetFloorParams = {
     currency?: Currency | '*';
     mediaType?: MediaType | '*';
-    size?: [number, number] | '*';
+    size?: Size | '*';
 }
 
 /**
