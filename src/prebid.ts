@@ -796,7 +796,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
     // get the bidder's mediaTypes
-    const allBidders = adUnit.bids.map(bid => (bid as any).bidder);
+    const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adapterManager.bidderRegistry;
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
@@ -823,7 +823,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       if (!bidderEligible) {
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
-        adUnit.bids = adUnit.bids.filter(bid => (bid as any).bidder !== bidder);
+        adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
       }
     });
   });

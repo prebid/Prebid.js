@@ -49,6 +49,7 @@ export interface AdUnitBidderBid<BIDDER extends BidderCode> extends BaseAdUnitBi
      * Unique code identifying the bidder.
      */
     bidder: BIDDER;
+    module?: undefined | null;
     /**
      * Bid request parameters for a given bidder.
      */
@@ -62,6 +63,7 @@ export interface AdUnitModuleBid<MODULE extends AdUnitModuleBidders> extends Bas
      * Module code - for requesting bids from modules that are not bid adapters
      */
     module: MODULE;
+    bidder?: undefined | null;
     params?: {
         /**
          * Name given to a PBS configuration. Used to identify specific PBS instances when multiple are in use.
