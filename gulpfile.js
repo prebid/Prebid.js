@@ -156,6 +156,7 @@ function prebidSource(webpackCfg) {
     .pipe(webpackStream(webpackCfg, webpack));
 }
 
+// do not generate more than one task for a given build config - so that `gulp.lastRun` can work properly
 const PRECOMP_TASKS = new Map();
 function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
   if (dev && distUrlBase == null) {
@@ -168,6 +169,7 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
       prebidDistUrlBase: distUrlBase ?? argv.distUrlBase
     });
     const precompile = function() {
+      // `since: gulp.lastRun(task)` selects files that have been modified since the last time this gulp process ran `task`
       return gulp.src(SOURCE_PAT, {base: '.', since: gulp.lastRun(precompile)})
         .pipe(sourcemaps.init())
         .pipe(babel(babelConfig))
@@ -179,6 +181,9 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
   return PRECOMP_TASKS.get(key);
 }
 
+/**
+ * .json and .d.ts files are used at runtime, so make them part of the precompilation output
+ */
 function copyVerbatim() {
   return gulp.src(helpers.getSourceFolders().flatMap(name => [
     `${name}/**/*.json`,
