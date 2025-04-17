@@ -70,7 +70,7 @@ export interface AdUnitModuleBid<MODULE extends AdUnitModuleBidders> extends Bas
     }
 }
 
-export type AdUnitBid = AdUnitModuleBid<AdUnitModuleBidders> | AdUnitBidderBid<BidderCode>;
+export type AdUnitBidDefinition = AdUnitModuleBid<AdUnitModuleBidders> | AdUnitBidderBid<BidderCode>;
 
 export interface AdUnitDefinition {
     /**
@@ -82,7 +82,7 @@ export interface AdUnitDefinition {
     /**
      * Bid requests representing demand partners and associated parameters.
      */
-    bids?: AdUnitBid[];
+    bids?: AdUnitBidDefinition[];
     mediaTypes?: MediaTypes;
     /**
      * TTL buffer override for this adUnit.
@@ -116,8 +116,10 @@ interface NullBid {
     bidder: null
 }
 
+export type AdUnitBid = AdUnitBidDefinition | NullBid;
+
 export interface AdUnit extends ContextIdentifiers, Omit<AdUnitDefinition, 'bids'> {
-    bids: (AdUnitBid | NullBid)[]
+    bids: AdUnitBid[]
 }
 
 const REQUESTS = 'requests';

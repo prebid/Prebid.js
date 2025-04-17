@@ -147,15 +147,14 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
  * @param s2sConfig null if the adUnit is being routed to a client adapter; otherwise the s2s adapter's config
  * @returns the subset of `bids` that are pertinent for the given `s2sConfig`
  */
-export function _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders = getS2SBidderSet} = {}) {
-  if (s2sConfig == null) {
-    return bids;
-  } else {
-    const serverBidders = getS2SBidders(s2sConfig);
-    return bids.filter((bid) => serverBidders.has(bid.bidder))
-  }
-}
-export const filterBidsForAdUnit = hook('sync', _filterBidsForAdUnit, 'filterBidsForAdUnit');
+export const filterBidsForAdUnit = hook('sync', function(bids, s2sConfig, {getS2SBidders = getS2SBidderSet} = {}) {
+    if (s2sConfig == null) {
+        return bids;
+    } else {
+        const serverBidders = getS2SBidders(s2sConfig);
+        return bids.filter((bid) => serverBidders.has(bid.bidder))
+    }
+}, 'filterBidsForAdUnit');
 
 function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
   let adUnitsCopy = deepClone(adUnits);
