@@ -146,7 +146,7 @@ export function prepareSite(br, request) {
   siteObj.page = request.refererInfo.page || request.refererInfo.topmostLocation;
 
   if (request.refererInfo.ref) {
-    siteObj.site.ref = request.refererInfo.ref;
+    siteObj.ref = request.refererInfo.ref;
   }
 
   return siteObj;
