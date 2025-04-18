@@ -145,7 +145,7 @@ export const spec = {
         .forEach(seat =>
           seat.bid.forEach(bid => {
             bid.impid = impIdMap[bid.impid];
-            bid.ttl = typeof bid.exp === 'number' ? bid.exp : DEFAULT_TTL;
+            bid.ttl = typeof bid.exp === 'number' && bid.exp > 0 ? bid.exp : DEFAULT_TTL;
           })
         );
     }
@@ -203,7 +203,8 @@ export const spec = {
 
 export const converter = ortbConverter({
   context: {
-    netRevenue: true
+    netRevenue: true,
+    ttl: DEFAULT_TTL
   },
 
   imp(buildImp, bidRequest, context) {
