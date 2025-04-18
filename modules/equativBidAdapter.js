@@ -14,11 +14,11 @@ import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/u
 const BIDDER_CODE = 'equativ';
 const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
 const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
+const DEFAULT_TTL = 300;
 const LOG_PREFIX = 'Equativ:';
 const PID_STORAGE_NAME = 'eqt_pid';
 
 let nwid = 0;
-
 let impIdMap = {};
 
 /**
@@ -60,6 +60,14 @@ function getFloor(bid, mediaType, width, height, currency) {
   return bid.getFloor?.({ currency, mediaType, size: [width, height] })
     .floor || bid.params.bidfloor || -1;
 }
+
+/**
+ * Gets value of the local variable impIdMap
+ * @returns {*} Value of impIdMap
+ */
+export function getImpIdMap() {
+  return impIdMap;
+};
 
 /**
  * Evaluates impressions for validity.  The entry evaluated is considered valid if NEITHER of these conditions are met:
@@ -135,7 +143,10 @@ export const spec = {
       serverResponse.body.seatbid
         .filter(seat => seat?.bid?.length)
         .forEach(seat =>
-          seat.bid.forEach(bid => bid.impid = impIdMap[bid.impid])
+          seat.bid.forEach(bid => {
+            bid.impid = impIdMap[bid.impid];
+            bid.ttl = typeof bid.exp === 'number' && bid.exp > 0 ? bid.exp : DEFAULT_TTL;
+          })
         );
     }
 
@@ -193,7 +204,7 @@ export const spec = {
 export const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300,
+    ttl: DEFAULT_TTL
   },
 
   imp(buildImp, bidRequest, context) {
