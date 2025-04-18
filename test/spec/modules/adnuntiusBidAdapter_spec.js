@@ -7,6 +7,7 @@ import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
 import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
+import { getWinDimensions } from '../../../src/utils';
 
 describe('adnuntiusBidAdapter', function () {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
@@ -48,9 +49,9 @@ describe('adnuntiusBidAdapter', function () {
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const win = getWindowTop() || window;
-  const screen = win.screen.availWidth + 'x' + win.screen.availHeight;
-  const viewport = win.innerWidth + 'x' + win.innerHeight;
+  const winDimensions = getWinDimensions();
+  const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
+  const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
   const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&screen=${screen}&viewport=${viewport}`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&screen=${screen}&viewport=${viewport}&userId=${usi}`;
@@ -106,6 +107,25 @@ describe('adnuntiusBidAdapter', function () {
       },
     }
   ];
+
+  const legacyNativeBidderRequest = {bid: [
+    {
+      bidId: 'adn-0000000000000551',
+      bidder: 'adnuntius',
+      params: {
+        auId: '0000000000000551',
+        network: 'adnuntius',
+      },
+      mediaTypes: {
+        native: {
+          sizes: [[200, 200], [300, 300]],
+          image: {
+            required: true,
+            sizes: [250, 250]
+          }
+        }
+      }
+    }]};
 
   const nativeBidderRequest = {bid: [
     {
@@ -325,17 +345,19 @@ describe('adnuntiusBidAdapter', function () {
       'auId': '0000000000000551',
       'targetId': 'adn-0000000000000551',
       'nativeJson': {
-        'assets': [
+        'ortb': {
+          'link': {
+            'url': 'https://whatever.com'
+          },
+          'assets': [
           {
             'id': 1,
             'required': 1,
             'img': {
               'url': 'http://something.com/something.png'
             }
-          },
-          {
-            'url': 'http://whatever.com'
           }]
+        }
       },
       'matchedAdCount': 1,
       'responseId': '',
@@ -1655,7 +1677,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"assets":[{"id":1,"required":1,"img":{"type":3,"w":250,"h":250}}]},"dimensions":[[200,200],[300,300]]}]}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"ortb":{"assets":[{"id":1,"required":1,"img":{"type":3,"w":250,"h":250}}]}},"dimensions":[[200,200],[300,300]]}]}');
     });
 
     it('should return valid response when passed valid server response', function () {
@@ -1674,6 +1696,34 @@ describe('adnuntiusBidAdapter', function () {
       expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
       expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('adnuntius.com');
       expect(interpretedResponse[0].vastXml).to.equal(ad.vastXml);
+      expect(JSON.stringify(interpretedResponse[0].native.ortb)).to.equal('{"link":{"url":"https://whatever.com"},"assets":[{"id":1,"required":1,"img":{"url":"http://something.com/something.png"}}]}');
+    });
+
+    it('should pass legacy requests on correctly', function () {
+      const request = spec.buildRequests(legacyNativeBidderRequest.bid, {});
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('bid');
+      expect(request[0]).to.have.property('data');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"0000000000000551","targetId":"adn-0000000000000551","adType":"NATIVE","nativeRequest":{"ortb":{"ver":"1.2","assets":[{"id":0,"required":1,"img":{"type":3,"w":250,"h":250}}],"eventtrackers":[{"event":1,"methods":[1]},{"event":2,"methods":[1]}]}},"dimensions":[[200,200],[300,300]]}]}');
+    });
+
+    it('should return valid legacy response when passed valid server response', function () {
+      const interpretedResponse = spec.interpretResponse(nativeResponse, legacyNativeBidderRequest);
+      const ad = nativeResponse.body.adUnits[0].ads[0]
+      expect(interpretedResponse).to.have.lengthOf(1);
+
+      expect(interpretedResponse[0].bidderCode).to.equal('adnuntius');
+      expect(interpretedResponse[0].cpm).to.equal(ad.bid.amount * 1000);
+      expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
+      expect(interpretedResponse[0].height).to.equal(Number(ad.creativeHeight));
+      expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);
+      expect(interpretedResponse[0].currency).to.equal(ad.bid.currency);
+      expect(interpretedResponse[0].netRevenue).to.equal(false);
+      expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('adnuntius.com');
+      expect(interpretedResponse[0].vastXml).to.equal(ad.vastXml);
+      expect(JSON.stringify(interpretedResponse[0].native)).to.equal('{"clickUrl":"https://whatever.com","icon":{"url":"http://something.com/something.png"},"impressionTrackers":[]}');
     });
   });
 });

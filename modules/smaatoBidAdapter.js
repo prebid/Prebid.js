@@ -19,11 +19,12 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.2'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.3'
 const TTL = 300;
 const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
-const SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
+const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
+const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -197,7 +198,7 @@ export const spec = {
    * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    if (syncOptions && syncOptions.pixelEnabled) {
+    if (syncOptions) {
       let gdprParams = '';
       if (gdprConsent && gdprConsent.consentString) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -207,10 +208,22 @@ export const spec = {
         }
       }
 
-      return [{
-        type: 'image',
-        url: SYNC_URL + gdprParams
-      }];
+      if (syncOptions.iframeEnabled) {
+        let maxUrlsParam = '';
+        if (config.getConfig('userSync') && config.getConfig('userSync').syncsPerBidder) {
+          maxUrlsParam = `&maxUrls=${config.getConfig('userSync').syncsPerBidder}`;
+        }
+
+        return [{
+          type: 'iframe',
+          url: IFRAME_SYNC_URL + gdprParams + maxUrlsParam
+        }];
+      } else if (syncOptions.pixelEnabled) {
+        return [{
+          type: 'image',
+          url: IMAGE_SYNC_URL + gdprParams
+        }];
+      }
     }
 
     return [];

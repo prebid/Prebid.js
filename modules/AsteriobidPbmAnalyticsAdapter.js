@@ -5,6 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { EVENTS } from '../src/constants.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
@@ -25,12 +26,7 @@ let flushInterval;
 var pmAnalyticsEnabled = false;
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
-var w = window;
-var d = document;
-var e = d.documentElement;
-var g = d.getElementsByTagName('body')[0];
-var x = (w && w.innerWidth) || (e && e.clientWidth) || (g && g.clientWidth);
-var y = (w && w.innerHeight) || (e && e.clientHeight) || (g && g.clientHeight);
+const {width: x, height: y} = getViewportSize();
 
 var _pageView = {
   eventType: 'pageView',

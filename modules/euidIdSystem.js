@@ -87,11 +87,11 @@ export const euidIdSubmodule = {
    * @returns {IdResponse}
    */
   getId(config, consentData) {
-    if (consentData?.gdprApplies !== true) {
+    if (consentData?.gdpr?.gdprApplies !== true) {
       logWarn('EUID is intended for use within the EU. The module will not run when GDPR does not apply.');
       return;
     }
-    if (!hasWriteToDeviceConsent(consentData)) {
+    if (!hasWriteToDeviceConsent(consentData?.gdpr)) {
       // The module cannot operate without this permission.
       _logWarn(`Unable to use EUID module due to insufficient consent. The EUID module requires storage permission.`)
       return;

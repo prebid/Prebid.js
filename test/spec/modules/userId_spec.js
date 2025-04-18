@@ -18,7 +18,7 @@ import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getPrebidInternal} from 'src/utils.js';
+import {deepAccess, getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
@@ -37,6 +37,7 @@ import {allConsent, GDPR_GVLIDS, gdprDataHandler} from '../../../src/consentHand
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
+import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -139,7 +140,7 @@ describe('User ID', function () {
   function runBidsHook(...args) {
     startDelay = delay();
 
-    const result = startAuctionHook(...args, {delay: startDelay});
+    const result = startAuctionHook(...args, {mkDelay: startDelay});
     return new Promise((resolve) => setTimeout(() => resolve(result)));
   }
 
@@ -152,7 +153,7 @@ describe('User ID', function () {
 
   function initModule(config) {
     callbackDelay = delay();
-    return init(config, {delay: callbackDelay});
+    return init(config, {mkDelay: callbackDelay});
   }
 
   before(function () {
@@ -163,10 +164,6 @@ describe('User ID', function () {
   });
 
   beforeEach(function () {
-    // TODO: this whole suite needs to be redesigned; it is passing by accident
-    // some tests do not pass if consent data is available
-    // (there are functions here with signature `getId(config, storedId)`, but storedId is actually consentData)
-    // also, this file is ginormous; do we really need to test *all* id systems as one?
     resetConsentData();
     sandbox = sinon.sandbox.create();
     consentData = null;
@@ -1681,6 +1678,7 @@ describe('User ID', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
         config.resetConfig();
         sandbox.restore();
+        coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       });
 
       it('delays auction if auctionDelay is set, timing out at auction delay', function () {
@@ -2150,7 +2148,7 @@ describe('User ID', function () {
               'mid': value['MOCKID']
             };
           },
-          getId: function (config, storedId) {
+          getId: function (config, consentData, storedId) {
             if (storedId) return {};
             return {id: {'MOCKID': '1234'}};
           }
@@ -2569,15 +2567,19 @@ describe('User ID', function () {
         });
       });
 
-      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', () => {
+      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', async () => {
         init(config);
-        config.setConfig({
-          ortb2: {user: {ext: {eids: [eid]}}}
-        })
         expect(startAuction.getHooks({hook: startAuctionHook}).length).equal(0);
         expect(startAuction.getHooks({hook: addUserIdsHook}).length).equal(1);
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledWith(startAuctionStub, sinon.match.hasNested('adUnits[0].bids[0].userIdAsEids[0]', eid));
+        addUserIdsHook(sinon.stub(), {
+          adUnits,
+          ortb2Fragments: {
+            global: {
+              user: {ext: {eids: [eid]}}
+            }
+          }
+        });
+        expect(adUnits[0].bids[0].userIdAsEids[0]).to.eql(eid);
       });
     });
   });
@@ -2957,27 +2959,135 @@ describe('User ID', function () {
       });
     })
 
-    it('should exclude bidder-unrestricted IDs that conflict for some bidders', () => {
-      config.setConfig({
-        userSync: {
-          idPriority: {
-            mockId1: ['mockId1Module', 'mockId3Module'],
-          },
-          userIds: [
-            { name: 'mockId1Module', bidders: ['bidderA'] },
-            { name: 'mockId3Module' },
-          ]
+    describe('conflicting bidder filters', () => {
+      beforeEach(() => {
+        idValues.mockId2 = ['mockId1'];
+        idValues.mockId3 = ['mockId1'];
+        idValues.mockId4 = ['mockId1'];
+        setSubmoduleRegistry([
+          mockIdSubmodule('mockId1'),
+          mockIdSubmodule('mockId2', 'mockId1'),
+          mockIdSubmodule('mockId3', 'mockId1'),
+          mockIdSubmodule('mockId4', 'mockId1')
+        ]);
+      })
+
+      function bidderEids(bidderEidMap) {
+        return Object.fromEntries(
+          Object.entries(bidderEidMap).map(([bidder, eidMap]) => [bidder, {
+            user: {
+              ext: {
+                eids: eidsFrom(eidMap)
+              }
+            }
+          }])
+        )
+      }
+      describe('primary provider is restricted', () => {
+        function setup() {
+          config.setConfig({
+            userSync: {
+              idPriority: {
+                mockId1: ['mockId1Module', 'mockId2Module', 'mockId3Module', 'mockId4Module'],
+              },
+              userIds: [
+                { name: 'mockId1Module', bidders: ['bidderA'] },
+                { name: 'mockId2Module', bidders: ['bidderA', 'bidderB'] },
+                { name: 'mockId3Module', bidders: ['bidderC'] },
+                { name: 'mockId4Module' }
+              ]
+            }
+          });
         }
+
+        it('should restrict ID if it comes from restricted modules', async () => {
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId1Module'
+            },
+            bidderB: {
+              mockId1: 'mockId2Module'
+            },
+            bidderC: {
+              mockId1: 'mockId3Module'
+            }
+          }))
+        });
+        it('should use secondary module restrictions if ID comes from it', async () => {
+          idValues.mockId1 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId2Module'
+            },
+            bidderB: {
+              mockId1: 'mockId2Module'
+            },
+            bidderC: {
+              mockId1: 'mockId3Module'
+            }
+          }));
+        });
+        it('shoud not restrict if ID comes from unrestricted module', async () => {
+          idValues.mockId1 = [];
+          idValues.mockId2 = [];
+          idValues.mockId3 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global.user.ext.eids).to.eql(eidsFrom({
+            mockId1: 'mockId4Module'
+          }));
+          expect(bidder).to.eql({});
+        });
       });
-      return enrich().then(({global, bidder}) => {
-        expect(global.user.ext.eids).to.eql(eidsFrom({
-          mockId2: 'mockId3Module',
-          mockId3: 'mockId3Module',
-          mockId4: 'mockId3Module'
-        }));
-        expect(bidder).to.eql({});
-      });
-    });
+      describe('secondary provider is restricted', () => {
+        function setup() {
+          config.setConfig({
+            userSync: {
+              idPriority: {
+                mockId1: ['mockId1Module', 'mockId2Module', 'mockId3Module', 'mockId4Module'],
+              },
+              userIds: [
+                { name: 'mockId1Module' },
+                { name: 'mockId2Module', bidders: ['bidderA'] },
+                { name: 'mockId3Module', bidders: ['bidderA', 'bidderB'] },
+                { name: 'mockId4Module', bidders: ['bidderC'] },
+              ]
+            }
+          });
+        }
+        it('should not restrict if primary id is available', async () => {
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global.user.ext.eids).to.eql(eidsFrom({
+            mockId1: 'mockId1Module'
+          }));
+          expect(bidder).to.eql({});
+        });
+        it('should use secondary modules\' restrictions if they provide the ID', async () => {
+          idValues.mockId1 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId2Module'
+            },
+            bidderB: {
+              mockId1: 'mockId3Module'
+            },
+            bidderC: {
+              mockId1: 'mockId4Module'
+            }
+          }))
+        });
+      })
+    })
 
     it('should provide bidder-specific IDs, even when they conflict across bidders', () => {
       config.setConfig({
@@ -2998,7 +3108,7 @@ describe('User ID', function () {
             mockId1: 'mockId1Module'
           },
           bidderB: {
-            mockId1: 'mockId1Module',
+            mockId1: 'mockId3Module',
             mockId2: 'mockId3Module',
             mockId3: 'mockId3Module',
             mockId4: 'mockId3Module'

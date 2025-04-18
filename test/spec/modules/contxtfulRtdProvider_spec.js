@@ -5,8 +5,9 @@ import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
 import * as events from '../../../src/events';
 import * as utils from 'src/utils.js';
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js'
 import Sinon from 'sinon';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone, getWinDimensions } from '../../../src/utils.js';
 
 const MODULE_NAME = 'contxtful';
 
@@ -19,13 +20,15 @@ const RX_FROM_SESSION_STORAGE = { ReceptivityState: 'Receptive', test_info: 'rx_
 const RX_FROM_API = { ReceptivityState: 'Receptive', test_info: 'rx_from_engine' };
 
 const RX_API_MOCK = { receptivity: sinon.stub(), receptivityBatched: sinon.stub() };
+const RX_API_MOCK_WITH_BUNDLE = { receptivity: sinon.stub(), receptivityBatched: sinon.stub(), getOrtb2Fragment: sinon.stub() }
+
 const RX_CONNECTOR_MOCK = {
   fetchConfig: sinon.stub(),
   rxApiBuilder: sinon.stub(),
 };
 
 const TIMEOUT = 10;
-const RX_CONNECTOR_IS_READY_EVENT = new CustomEvent('rxConnectorIsReady', { detail: {[CUSTOMER]: RX_CONNECTOR_MOCK}, bubbles: true });
+const RX_CONNECTOR_IS_READY_EVENT = new CustomEvent('rxConnectorIsReady', { detail: { [CUSTOMER]: RX_CONNECTOR_MOCK }, bubbles: true });
 
 function buildInitConfig(version, customer) {
   return {
@@ -37,6 +40,24 @@ function buildInitConfig(version, customer) {
       bidders: ['mock-bidder-code'],
       adServerTargeting: true,
     },
+  };
+}
+
+function fakeGetElementById(width, height, x, y) {
+  const obj = { x, y, width, height };
+
+  return {
+    ...obj,
+    getBoundingClientRect: () => {
+      return {
+        width: obj.width,
+        height: obj.height,
+        left: obj.x,
+        top: obj.y,
+        right: obj.x + obj.width,
+        bottom: obj.y + obj.height
+      };
+    }
   };
 }
 
@@ -56,6 +77,19 @@ describe('contxtfulRtdProvider', function () {
 
     RX_API_MOCK.receptivityBatched.reset();
     RX_API_MOCK.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
+
+    RX_API_MOCK_WITH_BUNDLE.receptivity.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivity.callsFake(() => RX_FROM_API);
+
+    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
+
+    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.reset();
+    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callsFake((bidders, reqBidsConfigObj) => {
+      let bidderObj = bidders.reduce((accumulator, bidder) => { accumulator[bidder] = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } }; return accumulator; }, {});
+      return { global: { user: { site: { id: 'globalsiteId' } } }, bidder: bidderObj }
+    }
+    );
 
     RX_CONNECTOR_MOCK.fetchConfig.reset();
     RX_CONNECTOR_MOCK.fetchConfig.callsFake((tagId) => new Promise((resolve, reject) => resolve({ tag_id: tagId })));
@@ -332,7 +366,7 @@ describe('contxtfulRtdProvider', function () {
     theories.forEach(([adUnits, expected, _description]) => {
       it('uses non-expired info from session storage and adds receptivity to the ad units using session storage', function (done) {
         // Simulate that there was a write to sessionStorage in the past.
-        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE}))
+        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({ exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE }))
 
         let config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
@@ -365,7 +399,7 @@ describe('contxtfulRtdProvider', function () {
     theories.forEach(([adUnits, expected, _description]) => {
       it('ignores expired info from session storage and does not forward the info to ad units', function (done) {
         // Simulate that there was a write to sessionStorage in the past.
-        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({exp: new Date().getTime() - 100, rx: RX_FROM_SESSION_STORAGE}));
+        storage.setDataInSessionStorage(CUSTOMER, JSON.stringify({ exp: new Date().getTime() - 100, rx: RX_FROM_SESSION_STORAGE }));
 
         let config = buildInitConfig(VERSION, CUSTOMER);
         contxtfulSubmodule.init(config);
@@ -466,7 +500,7 @@ describe('contxtfulRtdProvider', function () {
       // Simulate that there was a write to sessionStorage in the past.
       let bidder = config.params.bidders[0];
 
-      storage.setDataInSessionStorage(`${config.params.customer}_${bidder}`, JSON.stringify({exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE}));
+      storage.setDataInSessionStorage(`${config.params.customer}_${bidder}`, JSON.stringify({ exp: new Date().getTime() + 1000, rx: RX_FROM_SESSION_STORAGE }));
 
       let reqBidsConfigObj = {
         ortb2Fragments: {
@@ -478,7 +512,7 @@ describe('contxtfulRtdProvider', function () {
       contxtfulSubmodule.init(config);
 
       // Since the RX_CONNECTOR_IS_READY_EVENT event was not dispatched, the RX engine is not loaded.
-      contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, () => {}, config);
+      contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, () => { }, config);
 
       setTimeout(() => {
         let ortb2BidderFragment = reqBidsConfigObj.ortb2Fragments.bidder[bidder];
@@ -634,8 +668,7 @@ describe('contxtfulRtdProvider', function () {
 
         // Cannot change the window size from JS
         // So we take the current size as expectation
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const { innerHeight: height, innerWidth: width } = getWinDimensions()
 
         let reqBidsConfigObj = {
           ortb2Fragments: {
@@ -659,7 +692,302 @@ describe('contxtfulRtdProvider', function () {
           done();
         }, TIMEOUT);
       });
+    });
+  });
+
+  describe('when there is no ad units', function () {
+    it('adds empty ad unit positions', function (done) {
+      let config = buildInitConfig(VERSION, CUSTOMER);
+      contxtfulSubmodule.init(config);
+      let reqBidsConfigObj = {
+        ortb2Fragments: {
+          global: {},
+          bidder: {},
+        },
+      };
+      setTimeout(() => {
+        const onDoneSpy = sinon.spy();
+        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+        let pos = JSON.parse(atob(ext.pos));
+
+        expect(Object.keys(pos).length).to.be.equal(0);
+        done();
+      }, TIMEOUT);
+    });
+  });
+
+  describe('when there are ad units', function () {
+    it('return empty objects for ad units that we can\'t get position of', function (done) {
+      let config = buildInitConfig(VERSION, CUSTOMER);
+      contxtfulSubmodule.init(config);
+      let reqBidsConfigObj = {
+        adUnits: [
+          { code: 'code1' },
+          { code: 'code2' }
+        ],
+        ortb2Fragments: {
+          global: {},
+          bidder: {},
+        },
+      };
+      setTimeout(() => {
+        const onDoneSpy = sinon.spy();
+        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+        let pos = JSON.parse(atob(ext.pos));
+
+        expect(Object.keys(pos).length).to.be.equal(0);
+        done();
+      }, TIMEOUT);
+    });
+
+    it('returns the IAB position if the ad unit div id cannot be bound but property pos can be found in the ad unit', function (done) {
+      let config = buildInitConfig(VERSION, CUSTOMER);
+      contxtfulSubmodule.init(config);
+      let reqBidsConfigObj = {
+        adUnits: [
+          { code: 'code1', mediaTypes: { banner: { pos: 4 } } },
+          { code: 'code2', mediaTypes: { banner: { pos: 5 } } },
+          { code: 'code3', mediaTypes: { banner: { pos: 0 } } },
+        ],
+        ortb2Fragments: {
+          global: {},
+          bidder: {},
+        },
+      };
+      setTimeout(() => {
+        const onDoneSpy = sinon.spy();
+        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+        let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+        let pos = JSON.parse(atob(ext.pos));
+
+        expect(Object.keys(pos).length).to.be.equal(3);
+        expect(pos['code1'].p).to.be.equal(4);
+        expect(pos['code2'].p).to.be.equal(5);
+        expect(pos['code3'].p).to.be.equal(0);
+        done();
+      }, TIMEOUT);
     })
+
+    function getFakeRequestBidConfigObj() {
+      return {
+        adUnits: [
+          { code: 'code1', ortb2Imp: { ext: { data: { divId: 'divId1' } } } },
+          { code: 'code2', ortb2Imp: { ext: { data: { divId: 'divId2' } } } }
+        ],
+        ortb2Fragments: {
+          global: {},
+          bidder: {},
+        },
+      };
+    }
+
+    function InitDivStubPositions(config, withIframe, isVisible, forceGetElementById = true) {
+      let fakeElem = fakeGetElementById(100, 100, 30, 30);
+      if (isVisible) {
+        fakeElem.checkVisibility = function () { return true };
+        sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
+      } else {
+        fakeElem.checkVisibility = function () { return false };
+        sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
+      }
+
+      if (withIframe) {
+        let ws = {
+          frameElement: {
+            getBoundingClientRect: () => fakeElem.getBoundingClientRect()
+          },
+          document: {
+            getElementById: (id) => fakeElem,
+
+          }
+        }
+        sandbox.stub(utils, 'getWindowSelf').returns(window.top);
+        sandbox.stub(utils, 'inIframe').returns(true);
+        sandbox.stub(fakeElem, 'checkVisibility').returns(isVisible);
+      } else {
+        sandbox.stub(utils, 'inIframe').returns(false);
+        sandbox.stub(fakeElem, 'checkVisibility').returns(isVisible);
+      }
+      if (forceGetElementById) {
+        sandbox.stub(window.top.document, 'getElementById').returns(fakeElem);
+      }
+      contxtfulSubmodule.init(config);
+    }
+
+    describe('when the div id cannot be found, we should try with GPT method', function () {
+      it('returns an empty list if gpt not find the div', function (done) {
+        let config = buildInitConfig(VERSION, CUSTOMER);
+        let reqBidsConfigObj = {
+          adUnits: [
+            { code: 'code1' },
+            { code: 'code2' }
+          ],
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
+        };
+        InitDivStubPositions(config, false, true, false);
+        let fakeElem = fakeGetElementById(100, 100, 30, 30);
+        sandbox.stub(window.top.document, 'getElementById').returns(function (id) {
+          if (id == 'code1' || id == 'code2') {
+            return undefined;
+          } else {
+            return fakeElem;
+          }
+        });
+        setTimeout(() => {
+          const onDoneSpy = sinon.spy();
+          contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+          let pos = JSON.parse(atob(ext.pos));
+
+          expect(Object.keys(pos).length).to.be.equal(0);
+          done();
+        }, TIMEOUT);
+      })
+
+      it('returns object visibility and position if gpt not found but the div id is the ad unit code', function (done) {
+        let config = buildInitConfig(VERSION, CUSTOMER);
+        let reqBidsConfigObj = {
+          adUnits: [
+            { code: 'code1' },
+            { code: 'code2' }
+          ],
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
+        };
+        InitDivStubPositions(config, false, true);
+        setTimeout(() => {
+          const onDoneSpy = sinon.spy();
+          contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+          let pos = JSON.parse(atob(ext.pos));
+
+          expect(Object.keys(pos).length).to.be.equal(2);
+          expect(pos['code1'].p.x).to.be.equal(30);
+          expect(pos['code1'].p.y).to.be.equal(30);
+          expect(pos['code1'].v).to.be.equal(true);
+          done();
+        }, TIMEOUT);
+      });
+
+      it('returns object visibility and position if gpt finds the div', function (done) {
+        let config = buildInitConfig(VERSION, CUSTOMER);
+        let reqBidsConfigObj = {
+          adUnits: [
+            { code: 'code1' },
+            { code: 'code2' }
+          ],
+          ortb2Fragments: {
+            global: {},
+            bidder: {},
+          },
+        };
+        InitDivStubPositions(config, false, true);
+        sandbox.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({ divId: 'div1' });
+
+        setTimeout(() => {
+          const onDoneSpy = sinon.spy();
+          contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+          let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+          let pos = JSON.parse(atob(ext.pos));
+
+          expect(Object.keys(pos).length).to.be.equal(2);
+          expect(pos['code1'].p.x).to.be.equal(30);
+          expect(pos['code1'].p.y).to.be.equal(30);
+          expect(pos['code1'].v).to.be.equal(true);
+          done();
+        }, TIMEOUT);
+      });
+    });
+
+    describe('when we get object visibility and position for ad units that we can get div id', function () {
+      let config = buildInitConfig(VERSION, CUSTOMER);
+
+      describe('when we are not in an iframe', function () {
+        it('return object visibility true if element is visible', function (done) {
+          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          InitDivStubPositions(config, false, true);
+          setTimeout(() => {
+            const onDoneSpy = sinon.spy();
+            contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            let pos = JSON.parse(atob(ext.pos));
+
+            expect(Object.keys(pos).length).to.be.equal(2);
+            expect(pos['code1'].p.x).to.be.equal(30);
+            expect(pos['code1'].p.y).to.be.equal(30);
+            expect(pos['code1'].v).to.be.equal(true);
+            done();
+          }, TIMEOUT);
+        });
+
+        it('return object visibility false if element is not visible', function (done) {
+          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          InitDivStubPositions(config, false, false);
+          setTimeout(() => {
+            const onDoneSpy = sinon.spy();
+            contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            let pos = JSON.parse(atob(ext.pos));
+
+            expect(Object.keys(pos).length).to.be.equal(2);
+            expect(pos['code1'].v).to.be.equal(false);
+            expect(pos['code2'].v).to.be.equal(false);
+            done();
+          }, TIMEOUT);
+        });
+      });
+
+      describe('when we are in an iframe', function () {
+        it('return object visibility true if element is visible', function (done) {
+          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          InitDivStubPositions(config, true, true)
+          setTimeout(() => {
+            const onDoneSpy = sinon.spy();
+            contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            let pos = JSON.parse(atob(ext.pos));
+
+            expect(Object.keys(pos).length).to.be.equal(2);
+            expect(pos['code1'].p.x).to.be.equal(30);
+            expect(pos['code1'].p.y).to.be.equal(30);
+            expect(pos['code1'].v).to.be.equal(true);
+            done();
+          }, TIMEOUT);
+        });
+
+        it('return object visibility false if element is not visible', function (done) {
+          let reqBidsConfigObj = getFakeRequestBidConfigObj();
+          InitDivStubPositions(config, true, false);
+          setTimeout(() => {
+            const onDoneSpy = sinon.spy();
+            contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+
+            let ext = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]].user.data[0].ext;
+            let pos = JSON.parse(atob(ext.pos));
+
+            expect(Object.keys(pos).length).to.be.equal(2);
+            expect(pos['code1'].v).to.be.equal(false);
+            done();
+          }, TIMEOUT);
+        });
+      });
+    });
   });
 
   describe('after rxApi is loaded', function () {
@@ -687,5 +1015,37 @@ describe('contxtfulRtdProvider', function () {
         done();
       }, TIMEOUT);
     });
+  })
+
+  describe('when rxConnector contains getOrtb2Fragment function', () => {
+    it('should just take whatever it contains and merge to the fragment', function (done) {
+      RX_CONNECTOR_MOCK.rxApiBuilder.reset();
+      RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK_WITH_BUNDLE)));
+
+      let config = buildInitConfig(VERSION, CUSTOMER);
+      contxtfulSubmodule.init(config);
+      window.dispatchEvent(RX_CONNECTOR_IS_READY_EVENT);
+
+      let reqBidsConfigObj = {
+        ortb2Fragments: {
+          global: {},
+          bidder: {},
+        },
+      };
+
+      setTimeout(() => {
+        const onDoneSpy = sinon.spy();
+        contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, config);
+        let global = reqBidsConfigObj.ortb2Fragments.global;
+        let bidder = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
+
+        let globalExpected = { user: { site: { id: 'globalsiteId' } } };
+        let bidderExpected = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } };
+        expect(RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callCount).to.equal(1);
+        expect(global).to.deep.equal(globalExpected);
+        expect(bidder).to.deep.equal(bidderExpected);
+        done();
+      }, TIMEOUT);
+    })
   })
 });

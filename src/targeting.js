@@ -338,10 +338,15 @@ export function newTargeting(auctionManager) {
   }
 
   function getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes) {
+    const useAllBidsCustomTargeting = config.getConfig('targetingControls.allBidsCustomTargeting') !== false;
+
     const targeting = getWinningBidTargeting(bidsSorted, adUnitCodes)
-      .concat(getCustomBidTargeting(bidsSorted, customKeysByUnit))
       .concat(getBidderTargeting(bidsSorted))
-      .concat(getAdUnitTargeting());
+      .concat(getAdUnitTargeting(adUnitCodes));
+
+    if (useAllBidsCustomTargeting) {
+      targeting.push(...getCustomBidTargeting(bidsSorted, customKeysByUnit))
+    }
 
     targeting.forEach(adUnitCode => {
       updatePBTargetingKeys(adUnitCode);
@@ -697,9 +702,9 @@ export function newTargeting(auctionManager) {
     }, []);
   }
 
-  function getAdUnitTargeting() {
+  function getAdUnitTargeting(adUnitCodes) {
     function getTargetingObj(adUnit) {
-      return deepAccess(adUnit, JSON_MAPPING.ADSERVER_TARGETING);
+      return adUnit?.[JSON_MAPPING.ADSERVER_TARGETING];
     }
 
     function getTargetingValues(adUnit) {
@@ -714,7 +719,7 @@ export function newTargeting(auctionManager) {
     }
 
     return auctionManager.getAdUnits()
-      .filter(adUnit => getTargetingObj(adUnit))
+      .filter(adUnit => adUnitCodes.includes(adUnit.code) && getTargetingObj(adUnit))
       .reduce((result, adUnit) => {
         const targetingValues = getTargetingValues(adUnit);
 
