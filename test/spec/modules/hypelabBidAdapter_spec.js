@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { server } from '../../mocks/xhr';
+import { getWinDimensions } from '../../../src/utils';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
 
 import {
   mediaSize,
@@ -184,16 +186,17 @@ describe('hypelabBidAdapter', function () {
         sol: [],
         tron: [],
       });
+      const winDimensions = getWinDimensions();
       expect(data.vp).to.deep.equal([
-        Math.max(
-          document.documentElement.clientWidth || 0,
-          window.innerWidth || 0
-        ),
-        Math.max(
-          document.documentElement.clientHeight || 0,
-          window.innerHeight || 0
-        ),
-      ]);
+      Math.max(
+        winDimensions?.document.documentElement.clientWidth || 0,
+        winDimensions?.innerWidth || 0
+      ),
+      Math.max(
+        winDimensions?.document.documentElement.clientHeight || 0,
+        winDimensions?.innerHeight || 0
+      ),
+    ]);
       expect(data.pp).to.deep.equal(null);
     });
 

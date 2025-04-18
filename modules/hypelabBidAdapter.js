@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { generateUUID, isFn, isPlainObject } from '../src/utils.js';
+import { generateUUID, isFn, isPlainObject, getWinDimensions } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 export const BIDDER_CODE = 'hypelab';
 export const ENDPOINT_URL = 'https://api.hypelab.com';
@@ -41,14 +42,15 @@ function buildRequests(validBidRequests, bidderRequest) {
     const dpr = typeof window != 'undefined' ? window.devicePixelRatio : 1;
     const wp = getWalletPresence();
     const wpfs = getWalletProviderFlags();
+    const winDimensions = getWinDimensions();
     const vp = [
       Math.max(
-        document.documentElement.clientWidth || 0,
-        window.innerWidth || 0
+        winDimensions?.document.documentElement.clientWidth || 0,
+        winDimensions?.innerWidth || 0
       ),
       Math.max(
-        document.documentElement.clientHeight || 0,
-        window.innerHeight || 0
+        winDimensions?.document.documentElement.clientHeight || 0,
+        winDimensions?.innerHeight || 0
       ),
     ];
     const pp = getPosition(request.adUnitCode);
@@ -120,7 +122,7 @@ function getBidFloor(bid, sizes) {
 function getPosition(id) {
   const element = document.getElementById(id);
   if (!element) return null;
-  const rect = element.getBoundingClientRect();
+  const rect = getBoundingClientRect(element);
   return [rect.left, rect.top];
 }
 
