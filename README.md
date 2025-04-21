@@ -233,6 +233,8 @@ Features that can be disabled this way are:
  - `NATIVE` - support for native bids;
  - `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
  - `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).    
+ - `LOG_NON_ERROR` - support for non-error console messages
+ - `LOG_ERROR` - support for error console messages
 
 #### Greedy promises
 

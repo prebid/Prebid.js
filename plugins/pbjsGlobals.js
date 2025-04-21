@@ -16,6 +16,19 @@ function featureMap(disable = []) {
   return Object.fromEntries([...allFeatures.keys()].map((f) => [f, !disable.has(f)]));
 }
 
+function skipCallSet(features = {}) {
+  const r = new Set();
+  if (!features['LOG_NON_ERROR']) {
+    r.add('logMessage');
+    r.add('logInfo');
+    r.add('logWarn');
+  }
+  if (!features['LOG_ERROR']) {
+    r.add('logError');
+  }
+  return r;
+}
+
 function getNpmVersion(version) {
   try {
     // only use "real" versions (that is, not the -pre ones, they won't be on jsDelivr)
@@ -29,6 +42,7 @@ module.exports = function(api, options) {
   const pbGlobal = options.globalVarName || prebid.globalVarName;
   const defineGlobal = typeof (options.defineGlobal) !== 'undefined' ? options.defineGlobal : prebid.defineGlobal;
   const features = featureMap(options.disableFeatures);
+  const skipCalls = skipCallSet(features); // expression calls to skip entirely
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,
@@ -131,6 +145,26 @@ module.exports = function(api, options) {
           features.hasOwnProperty(path.node.property.name)
         ) {
           path.replaceWith(t.booleanLiteral(features[path.node.property.name]));
+        }
+      },
+      CallExpression(path) {
+        if (
+              // direct calls, e.g. logMessage()
+              t.isIdentifier(path.node.callee) &&
+              skipCalls.has(path.node.callee.name) ||
+
+              // Member expression calls, e.g. utils.logMessage()
+              t.isMemberExpression(path.node.callee) &&
+              t.isIdentifier(path.node.callee.property) &&
+              skipCalls.has(path.node.callee.property.name)
+        ) {
+          if (t.isExpressionStatement(path.parent)) {
+            path.parentPath.remove();
+          } else {
+            // Fallback to undefined if it's used as part of a larger expression
+            path.replaceWith(t.identifier('undefined'));
+          }
+          path.skip(); // Prevent further traversal
         }
       }
     }
