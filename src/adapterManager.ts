@@ -143,7 +143,7 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
     ortb2: DeepPartial<ORTBRequest>;
 }
 
-interface StoredBidRequest extends BaseBidRequest {
+export interface StoredBidRequest extends BaseBidRequest {
     bidder: null;
     src: typeof S2S.SRC;
 }
@@ -194,7 +194,7 @@ export interface ClientBidderRequest<BIDDER extends BidderCode> extends BaseBidd
     src: 'client';
 }
 
-type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderRequest<BIDDER> | S2SBidderRequest<BIDDER>;
+export type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderRequest<BIDDER> | S2SBidderRequest<BIDDER>;
 
 const ADUNIT_BID_PROPERTIES = [
     'nativeParams',

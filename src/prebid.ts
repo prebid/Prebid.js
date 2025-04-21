@@ -32,7 +32,7 @@ import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
 import {storageCallbacks} from './storageManager.js';
-import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
+import {type BidRequest, default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
@@ -402,8 +402,8 @@ declare module './prebidGlobal' {
         getAdserverTargetingForAdUnitCode;
         getAdserverTargeting;
         getConsentMetadata: typeof getConsentMetadata;
-        getNoBids;
-        getNoBidsForAdUnitCode;
+        getNoBids: typeof getNoBids;
+        getNoBidsForAdUnitCode: typeof getNoBidsForAdUnitCode;
         getBidResponses: typeof getBidResponses;
         getBidResponsesForAdUnitCode: typeof getBidResponsesForAdUnitCode;
         setTargetingForGPTAsync;
@@ -500,7 +500,7 @@ type WrapsInBids<T> = {
     bids: T[]
 }
 
-function getBids<T>(type): { [adUnitCode: string]: WrapsInBids<T> } {
+function getBids<T>(type): { [adUnitCode: AdUnitCode]: WrapsInBids<T> } {
   const responses = auctionManager[type]()
     .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
@@ -521,25 +521,21 @@ function getBids<T>(type): { [adUnitCode: string]: WrapsInBids<T> } {
 }
 
 /**
- * This function returns the bids requests involved in an auction but not bid on
- * @alias module:pbjs.getNoBids
- * @return {Object}            map | object that contains the bidRequests
+ * @returns the bids requests involved in an auction but not bid on
  */
-pbjsInstance.getNoBids = logInvocation('getNoBids', function () {
-  return getBids('getNoBids');
-});
+function getNoBids() {
+    return getBids<BidRequest<any>>('getNoBids');
+}
+addApiMethod('getNoBids', getNoBids);
 
 /**
- * This function returns the bids requests involved in an auction but not bid on or the specified adUnitCode
- * @param  {string} adUnitCode adUnitCode
- * @alias module:pbjs.getNoBidsForAdUnitCode
- * @return {Object}           bidResponse object
+ * @returns the bids requests involved in an auction but not bid on or the specified adUnitCode
  */
-
-pbjsInstance.getNoBidsForAdUnitCode = function (adUnitCode) {
-  const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
-  return { bids };
-};
+function getNoBidsForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<BidRequest<any>> {
+    const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
+    return { bids };
+}
+addApiMethod('getNoBidsForAdUnitCode', getNoBidsForAdUnitCode);
 
 /**
  * @return a map from ad unit code to all bids received for that ad unit code.
