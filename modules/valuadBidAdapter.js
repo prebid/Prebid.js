@@ -357,12 +357,21 @@ const converter = ortbConverter({
   },
 
   bidResponse(buildBidResponse, bid, context) {
-    const bidResponse = buildBidResponse(bid, context);
-    if (bid.vbid) {
-      bidResponse.vbid = bid.vbid;
-    }
-    if (context.bidRequest?.params?.placementId) {
-      bidResponse.vid = context.bidRequest.params.placementId;
+    let bidResponse;
+    try {
+      bidResponse = buildBidResponse(bid, context);
+
+      if (bidResponse) {
+        if (bid.vbid) {
+          bidResponse.vbid = bid.vbid;
+        }
+        if (context.bidRequest?.params?.placementId) {
+          bidResponse.vid = context.bidRequest.params.placementId;
+        }
+      }
+    } catch (e) {
+      logInfo('[VALUAD CONVERTER] Error calling buildBidResponse:', e, 'Bid:', bid);
+      return;
     }
     return bidResponse;
   },
@@ -410,11 +419,11 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
 }
 
 function interpretResponse(response, request) {
+  // Restore original call, remove logging and safe navigation
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
 
-  // Process server-side data
+  // Restore original server-side data processing
   if (response.body && response.body.ext && response.body.ext.valuad) {
-    // Store any server-side enhanced data for future use
     _VALUAD.serverData = response.body.ext.valuad;
   }
 
