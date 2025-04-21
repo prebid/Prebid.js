@@ -477,7 +477,6 @@ function interpretNativeAd(bidReceived, price, currency) {
     );
 
     _each(native.eventtrackers || [], (eventtracker) => {
-      console.log(eventtracker);
       if (
         eventtracker.event === TRACKER_EVENTS.impression &&
         eventtracker.method === TRACKER_METHODS.img
