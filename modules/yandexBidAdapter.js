@@ -57,6 +57,18 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
 const ADAPTER_VERSION = '2.0.0';
 
+const TRACKER_METHODS = {
+  img: 1,
+  js: 2,
+};
+
+const TRACKER_EVENTS = {
+  impression: 1,
+  'viewable-mrc50': 2,
+  'viewable-mrc100': 3,
+  'viewable-video50': 4,
+};
+
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
   IMAGE: 3,
@@ -322,10 +334,13 @@ function mapNative(bidRequest) {
     });
 
     return {
-      ver: 1.1,
+      ver: 1.2,
       request: JSON.stringify({
-        ver: 1.1,
-        assets
+        ver: 1.2,
+        assets,
+        eventtrackers: [
+          { event: TRACKER_EVENTS.impression, methods: [TRACKER_METHODS.img] },
+        ],
       }),
     };
   }
@@ -457,9 +472,23 @@ function interpretNativeAd(bidReceived, price, currency) {
       }
     });
 
-    result.impressionTrackers = _map(native.imptrackers, (tracker) =>
+    const impressionTrackers = _map(native.imptrackers || [], (tracker) =>
       replaceAuctionPrice(tracker, price, currency)
     );
+
+    _each(native.eventtrackers || [], (eventtracker) => {
+      console.log(eventtracker);
+      if (
+        eventtracker.event === TRACKER_EVENTS.impression &&
+        eventtracker.method === TRACKER_METHODS.img
+      ) {
+        impressionTrackers.push(
+          replaceAuctionPrice(eventtracker.url, price, currency)
+        );
+      }
+    });
+
+    result.impressionTrackers = impressionTrackers;
 
     return result;
   } catch (e) {}
