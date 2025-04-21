@@ -41,7 +41,7 @@ import {
     incrementBidderWinsCounter,
     incrementRequestsCounter
 } from './adUnits.js';
-import {getRefererInfo} from './refererDetection.js';
+import {getRefererInfo, type RefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler,} from './consentHandler.js';
 import * as events from './events.js';
 import {EVENTS, S2S} from './constants.js';
@@ -177,7 +177,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
      * Request timeout in milliseconds.
      */
     timeout: number;
-    refererInfo;
+    refererInfo: RefererInfo;
     metrics: Metrics;
 }
 

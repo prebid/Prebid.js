@@ -34,23 +34,24 @@ export function ensureProtocol(url, win = window) {
 
 /**
  * Extract the domain portion from a URL.
- * @param {string} url - The URL to extract the domain from.
- * @param {Object} options - Options for parsing the domain.
- * @param {boolean} options.noLeadingWww - If true, remove 'www.' appearing at the beginning of the domain.
- * @param {boolean} options.noPort - If true, do not include the ':[port]' portion.
- * @return {string|undefined} - The extracted domain or undefined if the URL is invalid.
+ * @param url - The URL to extract the domain from.
+ * @param options - Options for parsing the domain.
+ * @param options.noLeadingWww - If true, remove 'www.' appearing at the beginning of the domain.
+ * @param options.noPort - If true, do not include the ':[port]' portion.
+ * @return The extracted domain or undefined if the URL is invalid.
  */
-export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
+export function parseDomain(url: string, {noLeadingWww = false, noPort = false} = {}): string | null {
+  let target;
   try {
-    url = new URL(ensureProtocol(url));
+    target = new URL(ensureProtocol(url));
   } catch (e) {
     return;
   }
-  url = noPort ? url.hostname : url.host;
-  if (noLeadingWww && url.startsWith('www.')) {
-    url = url.substring(4);
+  target = noPort ? target.hostname : target.host;
+  if (noLeadingWww && target.startsWith('www.')) {
+    target = target.substring(4);
   }
-  return url;
+  return target;
 }
 
 /**
@@ -102,29 +103,17 @@ export function detectReferer(win) {
   // happily provide a location for the top).
 
   /**
-   * @typedef {Object} refererInfo
-   * @property {string|null} location the browser's location, or null if not available (due to cross-origin restrictions)
-   * @property {string|null} canonicalUrl the site's canonical URL as set by the publisher, through setConfig({pageUrl}) or <link rel="canonical" />
-   * @property {string|null} page the best candidate for the current page URL: `canonicalUrl`, falling back to `location`
-   * @property {string|null} domain the domain portion of `page`
-   * @property {string|null} ref the referrer (document.referrer) to the current page, or null if not available (due to cross-origin restrictions)
-   * @property {string} topmostLocation of the top-most frame for which we could guess the location. Outside of cross-origin scenarios, this is equivalent to `location`.
-   * @property {number} numIframes number of steps between window.self and window.top
-   * @property {Array<string|null>} stack our best guess at the location for each frame, in the direction top -> self.
-   */
-
-  /**
    * Walk up the windows to get the origin stack and best available referrer, canonical URL, etc.
    *
-   * @returns {refererInfo} An object containing referer information.
+   * @returns An object containing referer information.
    */
   function refererInfo() {
-    const stack = [];
+    const stack: string[] = [];
     const ancestors = getAncestorOrigins(win);
     const maxNestedIframes = config.getConfig('maxNestedIframes');
 
     let currentWindow;
-    let bestLocation;
+    let bestLocation: string;
     let bestCanonicalUrl;
     let reachedTop = false;
     let level = 0;
@@ -222,40 +211,67 @@ export function detectReferer(win) {
 
     stack.reverse();
 
-    let ref;
+    let ref: string;
     try {
       ref = win.top.document.referrer;
     } catch (e) {}
 
-    const location = reachedTop || hasTopLocation ? bestLocation : null;
-    const canonicalUrl = config.getConfig('pageUrl') || bestCanonicalUrl || null;
-    let page = config.getConfig('pageUrl') || location || ensureProtocol(canonicalUrl, win);
+    const location: string = reachedTop || hasTopLocation ? bestLocation : null;
+    const canonicalUrl: string | null = config.getConfig('pageUrl') || bestCanonicalUrl || null;
+    let page: string = config.getConfig('pageUrl') || location || ensureProtocol(canonicalUrl, win);
 
     if (location && location.indexOf('?') > -1 && page.indexOf('?') === -1) {
       page = `${page}${location.substring(location.indexOf('?'))}`;
     }
 
     return {
-      reachedTop,
-      isAmp: valuesFromAmp,
-      numIframes: level - 1,
-      stack,
-      topmostLocation: bestLocation || null,
-      location,
-      canonicalUrl,
-      page,
-      domain: parseDomain(page) || null,
-      ref: ref || null,
-      // TODO: the "legacy" refererInfo object is provided here, for now, to accomodate
-      // adapters that decided to just send it verbatim to their backend.
-      legacy: {
+        /**
+         * True if the top window is accessible.
+         */
         reachedTop,
         isAmp: valuesFromAmp,
+        /**
+         * number of steps between window.self and window.top
+         */
         numIframes: level - 1,
+        /**
+         * our best guess at the location for each frame, in the direction top -> self.
+         */
         stack,
-        referer: bestLocation || null,
-        canonicalUrl
-      }
+        /**
+         * of the top-most frame for which we could guess the location. Outside of cross-origin scenarios, this is equivalent to `location`.
+         */
+        topmostLocation: bestLocation || null,
+        /**
+         * the browser's location, or null if not available (due to cross-origin restrictions)
+         */
+        location,
+        /**
+         * the site's canonical URL as set by the publisher, through setConfig({pageUrl}) or <link rel="canonical" />
+         */
+        canonicalUrl,
+        /**
+         * the best candidate for the current page URL: `canonicalUrl`, falling back to `location`
+         */
+        page,
+        /**
+         * the domain portion of `page`
+         */
+        domain: parseDomain(page) || null,
+        /**
+         * the referrer (document.referrer) to the current page, or null if not available (due to cross-origin restrictions)
+         */
+        ref: ref || null,
+        // TODO: the "legacy" refererInfo object is provided here, for now, to accomodate
+        // adapters that decided to just send it verbatim to their backend.
+        legacy: {
+            reachedTop,
+            isAmp: valuesFromAmp,
+            numIframes: level - 1,
+            stack,
+            referer: bestLocation || null,
+            canonicalUrl
+        }
     };
   }
 
@@ -280,7 +296,5 @@ export function cacheWithLocation(fn, win = window) {
   }
 }
 
-/**
- * @type {function(): refererInfo}
- */
-export const getRefererInfo = cacheWithLocation(detectReferer(window));
+export type RefererInfo = ReturnType<ReturnType<typeof detectReferer>>;
+export const getRefererInfo: () => RefererInfo = cacheWithLocation(detectReferer(window));
