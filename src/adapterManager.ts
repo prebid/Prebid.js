@@ -53,7 +53,17 @@ import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activ
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
 import {redactor} from './activities/redactor.js';
 import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
-import type {AdUnitCode, BidderCode, BidSource, ContextIdentifiers, Identifier, Size} from "./types/common.d.ts";
+import type {
+    AdUnitCode,
+    BidderCode,
+    BidSource,
+    ContextIdentifiers,
+    Identifier,
+    ORTBFragments,
+    Size
+} from "./types/common.d.ts";
+import type {DeepPartial} from "./types/objects.d.ts";
+import type {ORTBRequest} from "./types/ortb/request.d.ts";
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -125,14 +135,63 @@ export interface BaseBidRequest extends ContextIdentifiers, Pick<AdUnit, typeof 
      */
     bidderWinsCount: number;
     deferBilling: AdUnit['deferBilling'];
+    /**
+     * "Global" (not adUnit-specific) first party data for this request. This
+     * is an alias for the enclosing BidderRequest's `.ortb2`; adUnit-specific
+     * FPD is in `ortb2Imp`.
+     */
+    ortb2: DeepPartial<ORTBRequest>;
 }
 
 interface StoredBidRequest extends BaseBidRequest {
     bidder: null;
+    src: typeof S2S.SRC;
 }
 type BidderBidRequest<BIDDER extends BidderCode> = BaseBidRequest & AdUnitBidderBid<BIDDER>;
 
 export type BidRequest<BIDDER extends BidderCode | null> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<BIDDER>;
+
+export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
+    /**
+     * Unique ID for this request.
+     */
+    bidderRequestId: Identifier;
+    auctionId: Identifier;
+    /**
+     * The bidder associated with this request, or null in the case of stored impressions.
+     */
+    bidderCode: BIDDER;
+    /**
+     * Bid requests (one per ad unit) included in this request.
+     */
+    bids: BidRequest<BIDDER>[];
+    /**
+     * First party data for this request.
+     */
+    ortb2: DeepPartial<ORTBRequest>;
+    /**
+     * Auction start timestamp.
+     */
+    auctionStart: number;
+    /**
+     * Request timeout in milliseconds.
+     */
+    timeout: number;
+    refererInfo;
+    metrics: Metrics;
+}
+
+export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {
+    src: typeof S2S.SRC;
+    uniquePbsTid: Identifier;
+    adUnitsS2SCopy: PBSAdUnit[];
+}
+
+export interface ClientBidderRequest<BIDDER extends BidderCode> extends BaseBidderRequest<BIDDER> {
+    src: 'client';
+}
+
+type BidderRequest<BIDDER extends BidderCode | null> = ClientBidderRequest<BIDDER> | S2SBidderRequest<BIDDER>;
 
 const ADUNIT_BID_PROPERTIES = [
     'nativeParams',
@@ -312,10 +371,24 @@ export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SB
 
 export const partitionBidders = hook('sync', _partitionBidders, 'partitionBidders');
 
+declare module './hook' {
+    interface NamedHooks {
+        makeBidRequests: typeof adapterManager.makeBidRequests;
+    }
+}
+
 const adapterManager = {
     bidderRegistry: _bidderRegistry,
     aliasRegistry: _aliasRegistry,
-    makeBidRequests: hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels, ortb2Fragments = {}, auctionMetrics) {
+    makeBidRequests: hook('sync', function (
+        adUnits: AdUnit[],
+        auctionStart: number,
+        auctionId: Identifier,
+        cbTimeout: number,
+        labels: string[],
+        ortb2Fragments: ORTBFragments = {},
+        auctionMetrics: Metrics
+    ): BidderRequest<any>[] {
         auctionMetrics = useMetrics(auctionMetrics);
         /**
          * emit and pass adunits for external modification
@@ -348,12 +421,12 @@ const adapterManager = {
         }
         const refererInfo = getRefererInfo();
 
-        let bidRequests = [];
+        let bidRequests: BidderRequest<any>[] = [];
 
         const ortb2 = ortb2Fragments.global || {};
         const bidderOrtb2 = ortb2Fragments.bidder || {};
 
-        function addOrtb2(bidderRequest, s2sActivityParams?) {
+        function addOrtb2<T extends BidderRequest<any>>(bidderRequest: Partial<T>, s2sActivityParams?): T {
             const redact = dep.redact(
                 s2sActivityParams != null
                     ? s2sActivityParams
@@ -365,7 +438,7 @@ const adapterManager = {
                 bid.ortb2 = fpd;
                 return redact.bidRequest(bid);
             })
-            return bidderRequest;
+            return bidderRequest as T;
         }
 
         _s2sConfigs.forEach(s2sConfig => {
@@ -405,7 +478,7 @@ const adapterManager = {
                     adUnitCopy.bids = validBids;
                 });
 
-                bidRequests.forEach(request => {
+                bidRequests.forEach((request: S2SBidderRequest<any>) => {
                     if (request.adUnitsS2SCopy === undefined) {
                         request.adUnitsS2SCopy = adUnitsS2SCopy.filter(au => au.bids.length > 0 || au.s2sBid != null);
                     }

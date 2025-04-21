@@ -55,7 +55,7 @@ import {newBidder} from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
-import type {AdUnitCode, BidderCode, Identifier} from "./types/common.d.ts";
+import type {AdUnitCode, Identifier, ORTBFragments} from "./types/common.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 
@@ -701,18 +701,7 @@ export type PrivRequestBidsOptions = RequestBidsOptions & {
 }
 
 export type StartAuctionOptions = Omit<PrivRequestBidsOptions, 'ortb2'> & {
-    ortb2Fragments: {
-        /**
-         * Global first party data for this auction.
-         */
-        global?: DeepPartial<ORTBRequest>;
-        /**
-         * Bidder-specific first party data for this auction (mapped by bidder).
-         */
-        bidder?: {
-            [bidderCode: BidderCode]: DeepPartial<ORTBRequest>
-        }
-    }
+    ortb2Fragments: ORTBFragments
 }
 
 declare module './hook' {

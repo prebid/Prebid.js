@@ -1,3 +1,6 @@
+import type {DeepPartial} from "./objects";
+import type {ORTBRequest} from "./ortb/request";
+
 /**
  * Prebid-generated identifier.
  */
@@ -25,4 +28,16 @@ export type ContextIdentifiers = {
      * twin ad units will have different ad unit IDs.
      */
     adUnitId: Identifier;
+}
+export type ORTBFragments = {
+    /**
+     * Global first party data for this auction.
+     */
+    global?: DeepPartial<ORTBRequest>;
+    /**
+     * Bidder-specific first party data for this auction (mapped by bidder).
+     */
+    bidder?: {
+        [bidderCode: BidderCode]: DeepPartial<ORTBRequest>
+    }
 }

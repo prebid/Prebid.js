@@ -56,13 +56,13 @@ export interface AdUnitBidderBid<BIDDER extends BidderCode> extends BaseAdUnitBi
     params: BidderParams[BIDDER];
 }
 
-export type AdUnitModuleBidders = 'pbsBidAdapter';
+export type AdUnitModuleBidder = 'pbsBidAdapter';
 
-export interface AdUnitModuleBid<MODULE extends AdUnitModuleBidders> extends BaseAdUnitBidDefinition {
+export interface AdUnitModuleBid extends BaseAdUnitBidDefinition {
     /**
      * Module code - for requesting bids from modules that are not bid adapters
      */
-    module: MODULE;
+    module: AdUnitModuleBidder;
     bidder?: undefined | null;
     params?: {
         /**
@@ -72,7 +72,7 @@ export interface AdUnitModuleBid<MODULE extends AdUnitModuleBidders> extends Bas
     }
 }
 
-export type AdUnitBidDefinition = AdUnitModuleBid<AdUnitModuleBidders> | AdUnitBidderBid<BidderCode>;
+export type AdUnitBidDefinition = AdUnitModuleBid | AdUnitBidderBid<BidderCode>;
 
 export interface AdUnitDefinition {
     /**
