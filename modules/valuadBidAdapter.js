@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
   cleanObj,
@@ -152,58 +152,6 @@ function getGdprConsent(bidderRequest) {
   });
 }
 
-function processVideoParams(bid) {
-  const videoParams = deepAccess(bid, 'mediaTypes.video', {});
-  const playerSize = videoParams.playerSize || [];
-
-  return cleanObj({
-    mimes: videoParams.mimes,
-    minduration: videoParams.minduration,
-    maxduration: videoParams.maxduration,
-    protocols: videoParams.protocols,
-    w: playerSize[0]?.[0],
-    h: playerSize[0]?.[1],
-    startdelay: videoParams.startdelay,
-    placement: videoParams.placement,
-    linearity: videoParams.linearity,
-    skip: videoParams.skip,
-    skipmin: videoParams.skipmin,
-    skipafter: videoParams.skipafter,
-    playbackmethod: videoParams.playbackmethod,
-    api: videoParams.api
-  });
-}
-
-function processNativeAssets(nativeParams) {
-  const assets = [];
-  let id = 1;
-
-  if (nativeParams.title) {
-    assets.push({
-      id: id++,
-      required: nativeParams.title.required ? 1 : 0,
-      title: {
-        len: nativeParams.title.len || 140
-      }
-    });
-  }
-
-  if (nativeParams.image) {
-    assets.push({
-      id: id++,
-      required: nativeParams.image.required ? 1 : 0,
-      img: {
-        type: 3, // Main image
-        w: nativeParams.image.sizes[0],
-        h: nativeParams.image.sizes[1],
-        mimes: nativeParams.image.mimes || ['image/jpeg', 'image/png']
-      }
-    });
-  }
-
-  return assets;
-}
-
 // Enhanced ORTBConverter with additional data
 const converter = ortbConverter({
   context: {
@@ -318,8 +266,6 @@ const converter = ortbConverter({
 
         if (mediaType === BANNER) {
           size = bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0];
-        } else if (mediaType === VIDEO) {
-          size = bid.mediaTypes.video.playerSize;
         }
 
         if (size) {
@@ -337,20 +283,6 @@ const converter = ortbConverter({
       } catch (e) {
         logInfo('Valuad: Error getting floor', e);
       }
-    }
-
-    if (bid.mediaTypes?.video) {
-      imp.video = {
-        ...imp.video,
-        ...processVideoParams(bid)
-      };
-    }
-
-    if (bid.mediaTypes?.native) {
-      imp.native = {
-        ver: '1.2',
-        assets: processNativeAssets(bid.mediaTypes.native)
-      };
     }
 
     return imp;
@@ -385,10 +317,6 @@ function isBidRequestValid(bid = {}) {
 
   if (mediaTypes && mediaTypes[BANNER]) {
     valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
-  } else if (mediaTypes && mediaTypes[VIDEO]) {
-    valid = valid && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
-  } else if (mediaTypes && mediaTypes[NATIVE]) {
-    valid = valid && Boolean(mediaTypes[NATIVE]);
   } else {
     valid = false;
   }
@@ -454,7 +382,7 @@ function onBidWon(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
   interpretResponse,

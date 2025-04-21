@@ -14,7 +14,7 @@ Valuad bid adapter supports Banner format only.
 
 ```js
     const adUnits = [{
-        code: 'test-div',
+        code: 'valuad-test-div',
         mediaTypes: {
             banner: {
                 sizes: [[300, 250]]
@@ -23,7 +23,7 @@ Valuad bid adapter supports Banner format only.
         bids: [{
             bidder: 'valuad',
             params: {
-                placementId: 'test', // REQUIRED
+                placementId: '00000', // REQUIRED
             }
         }]
     }];
