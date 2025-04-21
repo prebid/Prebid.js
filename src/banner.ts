@@ -26,12 +26,11 @@ const ORTB_PARAMS = [
 export const ORTB_BANNER_PARAMS = new Map(ORTB_PARAMS);
 
 
-export interface BannerMediaType extends BaseMediaType, Pick<ORTBImp['banner'], (typeof ORTB_PARAMS)[number][0]> {
+export interface BannerMediaType extends BaseMediaType, Partial<Pick<ORTBImp['banner'], (typeof ORTB_PARAMS)[number][0]>> {
     /**
      * All sizes this ad unit can accept.
      * Examples: [400, 600], [[300, 250], [300, 600]].
      * Prebid recommends that the sizes auctioned by Prebid should be the same auctioned by AdX and GAM OpenBidding, which means AdUnit sizes should match the GPT sizes.
      */
-    sizes: Size | Size[]
+    sizes?: Size | Size[]
 }
-
