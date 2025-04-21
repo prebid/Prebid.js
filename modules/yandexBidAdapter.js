@@ -55,7 +55,7 @@ const DEFAULT_CURRENCY = 'EUR';
  */
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.0.0';
+const ADAPTER_VERSION = '2.1.0';
 
 const TRACKER_METHODS = {
   img: 1,
