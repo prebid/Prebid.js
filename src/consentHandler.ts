@@ -1,6 +1,7 @@
 import {cyrb53Hash, isStr, timestamp} from './utils.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {config} from './config.js';
+import type {ModuleType} from "./activities/modules.ts";
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
@@ -9,8 +10,21 @@ import {config} from './config.js';
  * see https://github.com/prebid/Prebid.js/issues/8161
  */
 export const VENDORLESS_GVLID = Object.freeze({});
+export const CONSENT_GDPR = 'gdpr';
+export const CONSENT_GPP = 'gpp';
+export const CONSENT_USP = 'usp';
+export const CONSENT_COPPA = 'coppa';
+export type ConsentType = typeof CONSENT_GDPR | typeof CONSENT_GPP | typeof CONSENT_USP | typeof CONSENT_COPPA;
 
-export class ConsentHandler {
+export interface ConsentData {
+    // with just core, only coppa is defined - everything else will be null.
+    // importing consent modules also imports the type definitions.
+    [CONSENT_COPPA]: boolean;
+}
+
+type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
+
+export class ConsentHandler<T> {
   #enabled;
   #data;
   #defer;
@@ -66,7 +80,7 @@ export class ConsentHandler {
   /**
    * @returns a promise than resolves to the consent data, or null if no consent data is available
    */
-  get promise() {
+  get promise(): Promise<T> {
     if (this.#ready) {
       return PbPromise.resolve(this.#data);
     }
@@ -76,13 +90,13 @@ export class ConsentHandler {
     return this.#defer.promise;
   }
 
-  setConsentData(data, time = timestamp()) {
+  setConsentData(data: T, time = timestamp()) {
     this.generatedTime = time;
     this.#dirty = true;
     this.#resolve(data);
   }
 
-  getConsentData() {
+  getConsentData(): T {
     return this.#data;
   }
 
@@ -95,7 +109,7 @@ export class ConsentHandler {
   }
 }
 
-class UspConsentHandler extends ConsentHandler {
+class UspConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_USP>> {
   getConsentMeta() {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
@@ -106,7 +120,7 @@ class UspConsentHandler extends ConsentHandler {
   }
 }
 
-class GdprConsentHandler extends ConsentHandler {
+class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GDPR>> {
   hashFields = ['gdprApplies', 'consentString']
   getConsentMeta() {
     const consentData = this.getConsentData();
@@ -121,7 +135,7 @@ class GdprConsentHandler extends ConsentHandler {
   }
 }
 
-class GppConsentHandler extends ConsentHandler {
+class GppConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GPP>> {
   hashFields = ['applicableSections', 'gppString'];
   getConsentMeta() {
     const consentData = this.getConsentData();
@@ -133,6 +147,20 @@ class GppConsentHandler extends ConsentHandler {
   }
 }
 
+export type GVLID = number | typeof VENDORLESS_GVLID;
+type GVLIDResult = {
+    /**
+     * A map from module type to that module's GVL ID.
+     */
+    modules: {
+        [moduleType: string]: GVLID;
+    };
+    /**
+     * The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
+     */
+    gvlid?: GVLID;
+}
+
 export function gvlidRegistry() {
   const registry = {};
   const flat = {};
@@ -140,11 +168,11 @@ export function gvlidRegistry() {
   return {
     /**
      * Register a module's GVL ID.
-     * @param {string} moduleType defined in `activities/modules.js`
-     * @param {string} moduleName
-     * @param {number} gvlid
+     * @param moduleType defined in `activities/modules.js`
+     * @param moduleName
+     * @param gvlid
      */
-    register(moduleType, moduleName, gvlid) {
+    register(moduleType: ModuleType, moduleName: string, gvlid: GVLID) {
       if (gvlid) {
         (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
         if (flat.hasOwnProperty(moduleName)) {
@@ -154,22 +182,17 @@ export function gvlidRegistry() {
         }
       }
     },
-    /**
-     * @typedef {Object} GvlIdResult
-     * @property {Object.<string, number>} modules - A map from module type to that module's GVL ID.
-     * @property {number} [gvlid] - The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
-     */
 
     /**
      * Get a module's GVL ID(s).
      *
-     * @param {string} moduleName - The name of the module.
-     * @return {GvlIdResult} An object where:
+     * @param moduleName - The name of the module.
+     * @return An object where:
      *   `modules` is a map from module type to that module's GVL ID;
      *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
-    get(moduleName) {
-      const result = {modules: registry[moduleName] || {}};
+    get(moduleName: string) {
+      const result: GVLIDResult = {modules: registry[moduleName] || {}};
       if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
         result.gvlid = flat[moduleName];
       }
@@ -202,31 +225,39 @@ export const coppaDataHandler = (() => {
 export const GDPR_GVLIDS = gvlidRegistry();
 
 const ALL_HANDLERS = {
-  gdpr: gdprDataHandler,
-  usp: uspDataHandler,
-  gpp: gppDataHandler,
-  coppa: coppaDataHandler,
+  [CONSENT_GDPR]: gdprDataHandler,
+  [CONSENT_USP]: uspDataHandler,
+  [CONSENT_GPP]: gppDataHandler,
+  [CONSENT_COPPA]: coppaDataHandler,
+} as const;
+
+type AllConsentData = {
+    [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
 }
 
-export function multiHandler(handlers = ALL_HANDLERS) {
-  handlers = Object.entries(handlers);
+interface MultiHandler extends Pick<ConsentHandler<AllConsentData>, 'promise' | 'hash' | 'getConsentData' | 'reset'> {
+    getConsentMeta(): {[K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentMeta']>}
+}
+
+export function multiHandler(handlers = ALL_HANDLERS): MultiHandler {
+  const entries = Object.entries(handlers);
   function collector(method) {
     return function () {
-      return Object.fromEntries(handlers.map(([name, handler]) => [name, handler[method]()]))
+      return Object.fromEntries(entries.map(([name, handler]) => [name, handler[method]()]))
     }
   }
   return Object.assign(
     {
       get promise() {
-        return PbPromise.all(handlers.map(([name, handler]) => handler.promise.then(val => [name, val])))
+        return PbPromise.all(entries.map(([name, handler]) => handler.promise.then(val => [name, val])))
           .then(entries => Object.fromEntries(entries));
       },
       get hash() {
-        return cyrb53Hash(handlers.map(([_, handler]) => handler.hash).join(':'));
+        return cyrb53Hash(entries.map(([_, handler]) => handler.hash).join(':'));
       }
     },
     Object.fromEntries(['getConsentData', 'getConsentMeta', 'reset'].map(n => [n, collector(n)])),
-  )
+  ) as any;
 }
 
 export const allConsent = multiHandler();

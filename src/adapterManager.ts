@@ -179,6 +179,9 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
     timeout: number;
     refererInfo: RefererInfo;
     metrics: Metrics;
+    gpdrConsent?: ReturnType<typeof gdprDataHandler['getConsentData']>;
+    uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
+    gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
 }
 
 export interface S2SBidderRequest<BIDDER extends BidderCode | null> extends BaseBidderRequest<BIDDER> {

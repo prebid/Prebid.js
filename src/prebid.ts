@@ -401,7 +401,7 @@ declare module './prebidGlobal' {
         getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
         getAdserverTargetingForAdUnitCode;
         getAdserverTargeting;
-        getConsentMetadata;
+        getConsentMetadata: typeof getConsentMetadata;
         getNoBids;
         getNoBidsForAdUnitCode;
         getBidResponses: typeof getBidResponses;
@@ -491,9 +491,10 @@ pbjsInstance.getAdserverTargeting = logInvocation('getAdserverTargeting', functi
   return targeting.getAllTargeting(adUnitCode);
 });
 
-pbjsInstance.getConsentMetadata = logInvocation('getConsentMetadata', function () {
-  return allConsent.getConsentMeta()
-});
+function getConsentMetadata() {
+    return allConsent.getConsentMeta()
+}
+addApiMethod('getConsentMetadata', getConsentMetadata);
 
 type WrapsInBids<T> = {
     bids: T[]

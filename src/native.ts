@@ -27,7 +27,7 @@ import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG, TRACKER_M
 import type {Link, NativeRequest, NativeResponse} from "./types/ortb/native.d.ts";
 import type {Size} from "./types/common.d.ts";
 import type {Ext} from "./types/ortb/common.d.ts";
-import type {Bid, BidResponse, NativeBidResponse} from "./bidfactory.ts";
+import type {BidResponse, NativeBidResponse} from "./bidfactory.ts";
 import type {AdUnit} from "./adUnits.ts";
 
 type LegacyAssets = Omit<{[K in keyof (typeof NATIVE_KEYS)]: unknown}, (typeof NATIVE_KEYS_THAT_ARE_NOT_ASSETS)[number]>;

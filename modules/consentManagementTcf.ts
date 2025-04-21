@@ -11,8 +11,9 @@ import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
 import {configParser} from '../libraries/consentManagement/cmUtils.js';
+import {CONSENT_GDPR} from "../src/consentHandler.ts";
 
-export let consentConfig = {};
+export let consentConfig: any = {};
 export let gdprScope;
 let dsaPlatform;
 const CMP_VERSION = 2;
@@ -22,11 +23,37 @@ const cmpCallMap = {
   'iab': lookupIabConsent,
 };
 
+export type TCFConsentData = {
+    apiVersion: typeof CMP_VERSION;
+    /**
+     * The consent string.
+     */
+    consentString: string;
+    /**
+     * True if GDPR is in scope.
+     */
+    gdprApplies: boolean;
+    /**
+     * The response from the CMP.
+     */
+    vendorData: Record<string, unknown>;
+    /**
+     * Additional consent string, if provided by the CMP.
+     */
+    addtlConsent?: string;
+}
+
+declare module '../src/consentHandler' {
+    interface ConsentData {
+        [CONSENT_GDPR]: TCFConsentData;
+    }
+}
+
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  */
 function lookupIabConsent(setProvisionalConsent) {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     function cmpResponseCallback(tcfData, success) {
       logInfo('Received a response from CMP', tcfData);
       if (success) {
@@ -57,7 +84,7 @@ function lookupIabConsent(setProvisionalConsent) {
     if (!cmp) {
       reject(new Error('TCF2 CMP not found.'))
     }
-    if (cmp.isDirect) {
+    if ((cmp as any).isDirect) {
       logInfo('Detected CMP API is directly accessible, calling it now...');
     } else {
       logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
@@ -70,7 +97,7 @@ function lookupIabConsent(setProvisionalConsent) {
   })
 }
 
-function parseConsentData(consentObject) {
+function parseConsentData(consentObject): TCFConsentData {
   function checkData() {
     // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
     const gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
@@ -89,15 +116,15 @@ function parseConsentData(consentObject) {
 }
 
 function toConsentData(cmpConsentObject) {
-  const consentData = {
+  const consentData: TCFConsentData = {
     consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
     vendorData: (cmpConsentObject) || undefined,
-    gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
+    gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope,
+    apiVersion: CMP_VERSION
   };
   if (cmpConsentObject && cmpConsentObject.addtlConsent && isStr(cmpConsentObject.addtlConsent)) {
     consentData.addtlConsent = cmpConsentObject.addtlConsent;
   }
-  consentData.apiVersion = CMP_VERSION;
   return consentData;
 }
 
@@ -116,7 +143,7 @@ const parseConfig = configParser({
   cmpHandlers: cmpCallMap,
   parseConsentData,
   getNullConsent: () => toConsentData(null)
-})
+} as any)
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))

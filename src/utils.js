@@ -4,17 +4,12 @@ import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
 import { default as deepAccess } from 'dlv/index.js';
+import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 export * from './utils/objects.js'
 
-var tStr = 'String';
-var tFn = 'Function';
-var tNumb = 'Number';
-var tObject = 'Object';
-var tBoolean = 'Boolean';
-var toString = Object.prototype.toString;
 let consoleExists = Boolean(window.console);
 let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
@@ -377,38 +372,6 @@ export function getParameterByName(name) {
   return parseQS(getWindowLocation().search)[name] || '';
 }
 
-/**
- * Return if the object is of the
- * given type.
- * @param {*} object to test
- * @param {String} _t type string (e.g., Array)
- * @return {Boolean} if object is of type _t
- */
-export function isA(object, _t) {
-  return toString.call(object) === '[object ' + _t + ']';
-}
-
-export function isFn(object) {
-  return isA(object, tFn);
-}
-
-export function isStr(object) {
-  return isA(object, tStr);
-}
-
-export const isArray = Array.isArray.bind(Array);
-
-export function isNumber(object) {
-  return isA(object, tNumb);
-}
-
-export function isPlainObject(object) {
-  return isA(object, tObject);
-}
-
-export function isBoolean(object) {
-  return isA(object, tBoolean);
-}
 
 /**
  * Return if the object is "empty";
