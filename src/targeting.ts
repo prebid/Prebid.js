@@ -162,7 +162,8 @@ type GPTTargetingValues = TargetingMap<string | string[]>;
 type TargetingValueLists = TargetingMap<string[]>;
 type TargetingArray = ByAdUnit<TargetingValueLists[]>[];
 
-
+type AdUnitPredicate = (adUnitCode: AdUnitCode) => boolean;
+export type SlotMatchingFn = (slot: googletag.Slot) => AdUnitPredicate;
 
 export function newTargeting(auctionManager) {
   let latestAuctionForAdUnit = {};
@@ -198,7 +199,7 @@ export function newTargeting(auctionManager) {
        * @param [winSorter = sortByHighestCpm] - sorter method
        * @return targeting
        */
-      getAllTargeting(adUnitCode?: AdUnitCode, bidLimit?: number, bidsReceived?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestCpm): ByAdUnit<TargetingValues> {
+      getAllTargeting(adUnitCode?: AdUnitCode | AdUnitCode[], bidLimit?: number, bidsReceived?: Bid[], winReducer = getHighestCpm, winSorter = sortByHighestCpm): ByAdUnit<TargetingValues> {
           bidsReceived ||= getBidsReceived(winReducer, winSorter);
           const adUnitCodes = getAdUnitCodes(adUnitCode);
           const sendAllBids = config.getConfig('enableSendAllBids');
@@ -242,7 +243,7 @@ export function newTargeting(auctionManager) {
           return flatTargeting;
       },
 
-      setTargetingForGPT: hook('sync', function (adUnit: AdUnitCode, customSlotMatching) {
+      setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[], customSlotMatching?: SlotMatchingFn) {
           // get our ad unit codes
           let targetingSet: ByAdUnit<GPTTargetingValues> = targeting.getAllTargeting(adUnit);
 
@@ -578,10 +579,10 @@ export function newTargeting(auctionManager) {
 
   /**
    * normlizes input to a `adUnit.code` array
-   * @param  {(string|string[])} adUnitCode [description]
-   * @return {string[]}     AdUnit code array
+   * @param  adUnitCode
+   * @return AdUnit code array
    */
-  function getAdUnitCodes(adUnitCode) {
+  function getAdUnitCodes(adUnitCode?: AdUnitCode | AdUnitCode[]): AdUnitCode[] {
     if (typeof adUnitCode === 'string') {
       return [adUnitCode];
     } else if (isArray(adUnitCode)) {

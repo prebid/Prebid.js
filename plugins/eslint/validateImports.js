@@ -16,7 +16,13 @@ function isInDirectory(filename, dir) {
 
 function flagErrors(context, node, importPath) {
   let absFileDir = path.dirname(context.getFilename());
-  let absImportPath = importPath.startsWith('.') ? path.resolve(absFileDir, importPath) : require.resolve(importPath);
+  let absImportPath;
+  try {
+    absImportPath = importPath.startsWith('.') ? path.resolve(absFileDir, importPath) : require.resolve(importPath);
+  } catch (e) {
+    context.report(node, e.message)
+    return;
+  }
   const parsedImportPath = path.parse(importPath);
 
   // don't allow extension-less local imports

@@ -27,7 +27,7 @@ import {listenMessagesFromCreative} from './secureCreatives.js';
 import {userSync} from './userSync.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
-import {isBidUsable, targeting} from './targeting.js';
+import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
@@ -406,7 +406,7 @@ declare module './prebidGlobal' {
         getNoBidsForAdUnitCode: typeof getNoBidsForAdUnitCode;
         getBidResponses: typeof getBidResponses;
         getBidResponsesForAdUnitCode: typeof getBidResponsesForAdUnitCode;
-        setTargetingForGPTAsync;
+        setTargetingForGPTAsync: typeof setTargetingForGPTAsync;
         setTargetingForAst;
         renderAd: typeof renderAd;
         removeAdUnit: typeof removeAdUnit;
@@ -557,17 +557,17 @@ addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode);
 
 /**
  * Set query string targeting on one or more GPT ad units.
- * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
- * @param {function(object): function(string): boolean} customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
- * @alias module:pbjs.setTargetingForGPTAsync
+ * @param adUnit a single `adUnit.code` or multiple.
+ * @param customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
  */
-pbjsInstance.setTargetingForGPTAsync = logInvocation('setTargetingForGPTAsync', function (adUnit, customSlotMatching) {
-  if (!isGptPubadsDefined()) {
-    logError('window.googletag is not defined on the page');
-    return;
-  }
-  targeting.setTargetingForGPT(adUnit, customSlotMatching);
-});
+function setTargetingForGPTAsync(adUnit?: AdUnitCode | AdUnitCode[], customSlotMatching?: SlotMatchingFn) {
+    if (!isGptPubadsDefined()) {
+        logError('window.googletag is not defined on the page');
+        return;
+    }
+    targeting.setTargetingForGPT(adUnit, customSlotMatching);
+}
+addApiMethod('setTargetingForGPTAsync', setTargetingForGPTAsync);
 
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).

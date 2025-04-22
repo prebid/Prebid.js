@@ -48,6 +48,7 @@
     "@babel/eslint-parser": "^7.16.5",
     "@babel/register": "^7.24.6",
     "@eslint/compat": "^1.2.7",
+    "@types/google-publisher-tag": "^1.20250210.0",
     "@wdio/browserstack-service": "^9.0.5",
     "@wdio/cli": "^9.0.5",
     "@wdio/concise-reporter": "^8.29.0",

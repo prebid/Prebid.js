@@ -5,7 +5,6 @@ declare global {
     function parseFloat(n: number): number;
 
     interface Window {
-        googletag: any;
         apntag: any;
     }
 }
