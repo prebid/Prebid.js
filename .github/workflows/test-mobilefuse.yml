@@ -1,0 +1,40 @@
+name: Test MobileFuse Adapter
+
+on:
+  push:
+    paths:
+      - 'modules/mobilefuseBidAdapter.js'
+      - 'test/spec/modules/mobilefuseBidAdapter_spec.js'
+  pull_request:
+    paths:
+      - 'modules/mobilefuseBidAdapter.js'
+      - 'test/spec/modules/mobilefuseBidAdapter_spec.js'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Run Prebid Unit Tests
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: gulp test --modules=mobilefuseBidAdapter
