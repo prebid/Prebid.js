@@ -1,4 +1,4 @@
-import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn } from '../src/utils.js';
+import { logWarn, isStr, isArray, deepAccess, deepSetValue, isBoolean, isInteger, logInfo, logError, deepClone, uniques, generateUUID, isPlainObject, isFn, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -6,6 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -70,7 +71,7 @@ const converter = ortbConverter({
     imp.bidfloor = _parseSlotParam('kadfloor', kadfloor);
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
     setFloorInImp(imp, bidRequest);
-    if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
+    if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot, adUnitCode, imp);
     if (imp.hasOwnProperty('video')) updateVideoImp(imp.video, mediaTypes?.video, adUnitCode, imp);
     if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
     // Check if the imp object does not have banner, video, or native
@@ -303,7 +304,7 @@ const setFloorInImp = (imp, bid) => {
   if (isMultiFormatRequest) removeGranularFloor(imp, requestedMediatypes);
 }
 
-const updateBannerImp = (bannerObj, adSlot) => {
+const updateBannerImp = (bannerObj, adSlot, adUnitCode, imp) => {
   let slot = adSlot.split(':');
   let splits = slot[0]?.split('@');
   splits = splits?.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
@@ -320,6 +321,13 @@ const updateBannerImp = (bannerObj, adSlot) => {
     (item) => !(item.w === bannerObj.w && item.h === bannerObj.h)
   );
   bannerObj.pos ??= 0;
+
+  // Get sizes for viewability measurement
+  const sizes = bannerObj.format.concat([{ w: bannerObj.w, h: bannerObj.h }]);
+  const minSize = _getMinSize(sizes);
+
+  // Add viewability at the imp level
+  addViewabilityToImp(imp, adUnitCode, { w: minSize.w, h: minSize.h });
 }
 
 const setImpTagId = (imp, adSlot, hashedKey) => {
@@ -350,6 +358,29 @@ const updateVideoImp = (videoImp, videoParams, adUnitCode, imp) => {
   if (!videoParams || (!videoImp.w && !videoImp.h)) {
     delete imp.video;
     logWarn(`${LOG_WARN_PREFIX}Error: Missing ${!videoParams ? 'video config params' : 'video size params (playersize or w&h)'} for adunit: ${adUnitCode} with mediaType set as video. Ignoring video impression in the adunit.`);
+    return;
+  }
+
+  // Get video dimensions from either playerSize or w/h dimensions
+  let videoSize = { w: 0, h: 0 };
+
+  // Use the existing dimensions if available
+  if (videoImp.w && videoImp.h) {
+    videoSize.w = videoImp.w;
+    videoSize.h = videoImp.h;
+  }
+  // Otherwise try to get from playerSize
+  else if (videoParams.playerSize) {
+    const playerSize = Array.isArray(videoParams.playerSize[0])
+      ? videoParams.playerSize[0] : videoParams.playerSize;
+    videoSize.w = parseInt(playerSize[0], 10);
+    videoSize.h = parseInt(playerSize[1], 10);
+  }
+
+  // Calculate viewability if we have valid dimensions
+  if (videoSize.w > 0 && videoSize.h > 0) {
+    // Add viewability at the imp level
+    addViewabilityToImp(imp, adUnitCode, videoSize);
   }
 }
 
@@ -638,6 +669,73 @@ const _handleCustomParams = (params, conf) => {
     }
   });
   return conf;
+};
+
+function _isIframe() {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+}
+
+/**
+ * Checks if viewability can be measured for an element
+ * @param {HTMLElement} element - DOM element to check
+ * @returns {boolean} True if viewability is measurable
+ */
+function _isViewabilityMeasurable(element) {
+  return !_isIframe() && element !== null;
+}
+
+/**
+ * Gets the viewability percentage of an element
+ * @param {HTMLElement} element - DOM element to measure
+ * @param {Window} topWin - Top window object
+ * @param {Object} size - Size object with width and height
+ * @returns {number|string} Viewability percentage or 0 if not visible
+ */
+function _getViewability(element, topWin, { w, h } = {}) {
+  return topWin.document.visibilityState === 'visible'
+    ? percentInView(element, { w, h })
+    : 0;
+}
+
+/**
+ * Gets the minimum size from an array of sizes
+ * @param {Array} sizes - Array of size objects with w and h properties
+ * @returns {Object} The smallest size object
+ */
+function _getMinSize(sizes) {
+  if (!sizes || !sizes.length) {
+    return { w: 0, h: 0 };
+  }
+  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min, sizes[0]);
+}
+
+/**
+ * Measures viewability for an element and adds it to the imp object at the ext level
+ * @param {Object} imp - The impression object
+ * @param {string} adUnitCode - The ad unit code for element identification
+ * @param {Object} size - Size object with width and height properties
+ */
+const addViewabilityToImp = (imp, adUnitCode, size) => {
+  const element = document.getElementById(adUnitCode);
+  if (!element) return;
+
+  const viewabilityAmount = _isViewabilityMeasurable(element)
+    ? _getViewability(element, getWindowTop(), size)
+    : 'na';
+
+  // Initialize ext object if it doesn't exist
+  if (!imp.ext) {
+    imp.ext = {};
+  }
+
+  // Add viewability data at the imp.ext level
+  imp.ext.viewability = {
+    amount: isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount)
+  };
 };
 
 export const spec = {
