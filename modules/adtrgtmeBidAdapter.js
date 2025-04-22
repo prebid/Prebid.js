@@ -13,7 +13,7 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'adtrgtme';
-const BIDDER_VERSION = '1.0.5';
+const BIDDER_VERSION = '1.0.6';
 const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
 const PREBIDJS_VERSION = '$prebid.version$';
 const DEFAULT_TTL = 300;
@@ -161,7 +161,7 @@ export const spec = {
   aliases: [],
   supportedMediaTypes: [BANNER],
 
-  isOK: function (bid) {
+  isBidRequestValid: function (bid) {
     const params = bid.params;
     if (
       isPlainObject(params) &&

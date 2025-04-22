@@ -13,6 +13,7 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.js'
+import {BANNER} from '../../../src/mediaTypes';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -229,7 +230,7 @@ describe('Conversant adapter tests', function() {
     expect(spec.aliases).to.be.an('array').with.lengthOf(2);
     expect(spec.aliases[0]).to.equal('cnvr');
     expect(spec.aliases[1]).to.equal('epsilon');
-    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(2);
+    expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(3);
     expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
 
@@ -525,6 +526,72 @@ describe('Conversant adapter tests', function() {
       });
     }
   });
+
+  describe('Verify Native Ads', function () {
+    let request, response;
+
+    const nativeOrtbRequest = {
+      ver: '1.2',
+      assets: [
+        { id: 1, required: 1, title: { len: 80 } }]
+    };
+    const nativeBidRequests = [{
+      bidder: 'conversant',
+      params: {
+        site_id: 10806
+      },
+      adUnitCode: 'adunit',
+      mediaTypes: {
+        banner: { sizes: [[300, 250]] },
+        native: {
+          ...nativeOrtbRequest
+        },
+      },
+      nativeOrtbRequest,
+      bidId: '0',
+      bidderRequestId: 'requestId',
+    }];
+
+    const nativeMarkup = JSON.stringify({
+      native: {
+        assets: [
+          {id: 1, title: {text: 'TextValue!'}},
+          {id: 5, data: {value: 'Epsilon'}},
+        ],
+        link: { url: 'https://www.epsilon.com/us', }, }
+    });
+
+    const nativeBidResponse = {
+      body: {
+        bidId: 'requestId',
+        seatbid: [{
+          bid: [{
+            impid: '0',
+            price: 0.25,
+            mtype: 4,
+            adm: nativeMarkup
+          }]
+        }],
+        cur: 'USD'
+      }
+    };
+
+    if (FEATURES.NATIVE) {
+      it('Request', function () {
+        request = spec.buildRequests(nativeBidRequests, {});
+        const payload = request.data;
+        const native = JSON.parse(payload.imp[0].native.request);
+        expect(native).to.deep.equal(nativeBidRequests[0].nativeOrtbRequest);
+      });
+      it('Response', function () {
+        response = spec.interpretResponse(nativeBidResponse, request);
+        const result = response.bids[0];
+        expect(result.ad).to.equal(nativeMarkup);
+        expect(result.mediaType).to.equal(BANNER);
+        expect(result.cpm).to.equal(nativeBidResponse.body.seatbid[0].bid[0].price);
+      });
+    }
+  })
 
   it('Verify publisher commond id support', function() {
     // clone bidRequests

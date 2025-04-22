@@ -12,7 +12,6 @@ import {
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
-import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/schain.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
@@ -20,7 +19,7 @@ import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
 import 'modules/multibid/index.js';
 import adapterManager from 'src/adapterManager.js';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import { deepClone } from '../../../src/utils.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
@@ -1565,6 +1564,39 @@ describe('the rubicon adapter', function () {
                 // Check if the generated EID value matches the expected format
                 expect(data.get('eid_example.com')).to.equal(expectedEidValue);
               });
+              it('should generate eidValue with all attributes including rtiPartner', function () {
+                const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+                // Simulating a full EID object with multiple fields
+                clonedBid.ortb2 = {
+                  user: {
+                    ext: {
+                      eids: [{
+                        source: 'example.com',
+                        uids: [{
+                          id: '11111', // UID
+                          atype: 2, // atype
+                          ext: {
+                            rtiPartner: 'rtipartner123', // rtiPartner (note the different capitalization)
+                            stype: 'ppuid' // stype
+                          }
+                        }],
+                        inserter: 'inserter123', // inserter
+                        matcher: 'matcher123', // matcher
+                        mm: 'mm123' // mm
+                      }]
+                    }
+                  }
+                };
+
+                let [request] = spec.buildRequests([clonedBid], bidderRequest);
+                let data = new URLSearchParams(request.data);
+
+                // Expected format: uid^atype^third^inserter^matcher^mm^rtipartner
+                const expectedEidValue = '11111^2^^inserter123^matcher123^mm123^rtipartner123';
+
+                // Check if the generated EID value matches the expected format
+                expect(data.get('eid_example.com')).to.equal(expectedEidValue);
+              });
             });
           });
           describe('Config user.id support', function () {
@@ -1938,7 +1970,7 @@ describe('the rubicon adapter', function () {
               architecture: 'x86'
             }
           });
-          it('should send m_ch_* params if ortb2.device.sua object is there', function () {
+          it('should send m_ch_* params if ortb2.device.sua object is there with igh entropy', function () {
             let bidRequestSua = utils.deepClone(bidderRequest);
             bidRequestSua.bids[0].ortb2 = { device: { sua: standardSuaObject } };
 
@@ -2008,19 +2040,73 @@ describe('the rubicon adapter', function () {
             // arch not sent
             expect(data.get('m_ch_arch')).to.be.null;
           });
+          it('should not send high entropy if not present when it is low entropy client hints', function () {
+            let bidRequestSua = utils.deepClone(bidderRequest);
+            bidRequestSua.bids[0].ortb2 = { device: { sua: {
+              'source': 1,
+              'platform': {
+                'brand': 'macOS'
+              },
+              'browsers': [
+                {
+                  'brand': 'Not A(Brand',
+                  'version': [
+                    '8'
+                  ]
+                },
+                {
+                  'brand': 'Chromium',
+                  'version': [
+                    '132'
+                  ]
+                },
+                {
+                  'brand': 'Google Chrome',
+                  'version': [
+                    '132'
+                  ]
+                }
+              ],
+              'mobile': 0
+            } } };
+
+            // How should fastlane query be constructed with default SUA
+            let expectedValues = {
+              m_ch_ua: `"Not A(Brand"|v="8","Chromium"|v="132","Google Chrome"|v="132"`,
+              m_ch_mobile: '?0',
+              m_ch_platform: 'macOS',
+            }
+
+            // Build Fastlane call
+            let [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
+            let data = new URLSearchParams(request.data);
+
+            // Loop through expected values and if they do not match push an error
+            const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              return accum;
+            }, []);
+
+            // should be no errors
+            expect(errors).to.deep.equal([]);
+
+            // make sure high entropy keys are not present
+            let highEntropyHints = ['m_ch_full_ver', 'm_ch_arch', 'm_ch_bitness', 'm_ch_platform_ver'];
+            highEntropyHints.forEach((hint) => { expect(data.get(hint)).to.be.null; });
+          });
         });
       });
 
       if (FEATURES.VIDEO) {
         describe('for video requests', function () {
-          it('should make a well-formed video request', function () {
+          it('should make a well-formed video request', async function () {
             const bidderRequest = createVideoBidderRequest();
 
             sandbox.stub(Date, 'now').callsFake(() =>
               bidderRequest.auctionStart + 100
             );
 
-            let [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
+            let [request] = spec.buildRequests(bidderRequest.bids, await addFPDToBidderRequest(bidderRequest));
             let post = request.data;
 
             expect(post).to.have.property('imp');
@@ -2504,7 +2590,7 @@ describe('the rubicon adapter', function () {
             expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
           });
 
-          it('should include coppa flag in video bid request', () => {
+          it('should include coppa flag in video bid request', async () => {
             const bidderRequest = createVideoBidderRequest();
 
             sandbox.stub(Date, 'now').callsFake(() =>
@@ -2517,7 +2603,7 @@ describe('the rubicon adapter', function () {
               };
               return config[key];
             });
-            const [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
+            const [request] = spec.buildRequests(bidderRequest.bids, await addFPDToBidderRequest(bidderRequest));
             expect(request.data.regs.coppa).to.equal(1);
           });
 
@@ -2647,7 +2733,7 @@ describe('the rubicon adapter', function () {
             expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
           });
 
-          it('should pass the user.id provided in the config', function () {
+          it('should pass the user.id provided in the config', async function () {
             config.setConfig({user: {id: '123'}});
             const bidderRequest = createVideoBidderRequest();
 
@@ -2655,7 +2741,7 @@ describe('the rubicon adapter', function () {
               bidderRequest.auctionStart + 100
             );
 
-            let [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
+            let [request] = spec.buildRequests(bidderRequest.bids, await addFPDToBidderRequest(bidderRequest));
             let post = request.data;
 
             expect(post).to.have.property('imp')
@@ -2827,6 +2913,29 @@ describe('the rubicon adapter', function () {
           expect(slotParams['tg_v.tax9']).is.equal('1,2');
           expect(slotParams['tg_i.tax10']).is.equal('2,3');
           expect(slotParams['tg_v.tax404']).is.equal(undefined);
+        });
+
+        it('should support IAB segtax 7 in site segments', () => {
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.refererInfo = {domain: 'bob'};
+          config.setConfig({
+            rubicon: {
+              sendUserSegtax: [4],
+              sendSiteSegtax: [1, 2, 5, 6, 7]
+            }
+          });
+          localBidderRequest.ortb2.site = {
+            content: {
+              data: [{
+                ext: {
+                  segtax: '7'
+                },
+                segment: [{id: 8}, {id: 9}]
+              }]
+            }
+          };
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
+          expect(slotParams['tg_i.tax7']).to.equal('8,9');
         });
 
         it('should add p_site.mobile if mobile is a number in ortb2.site', function () {

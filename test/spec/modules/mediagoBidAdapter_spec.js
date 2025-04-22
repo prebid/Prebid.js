@@ -56,7 +56,9 @@ describe('mediago:BidAdapterTests', function () {
             content: {
               keywords: 'video, source=streaming'
             },
-
+            publisher: {
+              domain: 'mediago.io'
+            },
           },
           user: {
             ext: {
@@ -158,7 +160,8 @@ describe('mediago:BidAdapterTests', function () {
       spec.isBidRequestValid({
         bidder: 'mediago',
         params: {
-          token: ['85a6b01e41ac36d49744fad726e3655d']
+          token: ['85a6b01e41ac36d49744fad726e3655d'],
+          publisher: ['test_publisher']
         }
       })
     ).to.equal(true);

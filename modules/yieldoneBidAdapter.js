@@ -16,17 +16,6 @@ import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.
  * @typedef {import('../src/auction').BidderRequest} BidderRequest
  */
 
-/**
- * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory').BidderSpec} BidderSpec
- * @typedef {import('../src/adapters/bidderFactory').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory').UserSync} UserSync
- * @typedef {import('../src/auction').BidderRequest} BidderRequest
- */
-
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
@@ -122,6 +111,12 @@ export const spec = {
       const id5id = deepAccess(bidRequest, 'userId.id5id.uid');
       if (isStr(id5id) && !isEmpty(id5id)) {
         payload.id5Id = id5id;
+      }
+
+      // UID2.0
+      const uid2 = deepAccess(bidRequest, 'userId.uid2.id');
+      if (isStr(uid2) && !isEmpty(uid2)) {
+        payload.uid2id = uid2;
       }
 
       return {

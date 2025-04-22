@@ -3,8 +3,10 @@ import { attachIdSystem } from '../../../modules/userId/index.js';
 import { createEidsArray } from '../../../modules/userId/eids.js';
 
 const consentData = {
-  gdprApplies: true,
-  consentString: 'GDPR_CONSENT_STRING'
+  gdpr: {
+    gdprApplies: true,
+    consentString: 'GDPR_CONSENT_STRING'
+  }
 };
 
 describe('TNCID tests', function () {
@@ -35,7 +37,7 @@ describe('TNCID tests', function () {
     });
 
     it('Should NOT give TNCID if GDPR applies but consent string is missing', function () {
-      const res = tncidSubModule.getId({}, { gdprApplies: true });
+      const res = tncidSubModule.getId({}, { gdpr: {gdprApplies: true} });
       expect(res).to.be.undefined;
     });
 

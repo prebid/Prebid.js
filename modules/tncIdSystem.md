@@ -14,8 +14,6 @@ gulp build --modules=tncIdSystem,userId
 
 Disclosure: This module loads external script unreviewed by the prebid.js community
 
-Disclosure: This module loads external script unreviewed by the prebid.js community
-
 You can configure this submodule in your `userSync.userIds[]` configuration:
 
 ```javascript

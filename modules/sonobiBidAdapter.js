@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject, parseQueryStringParameters, getWinDimensions } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -158,11 +158,6 @@ export const spec = {
       payload.coppa = 0;
     }
 
-    if (deepAccess(bidderRequest, 'ortb2.experianRtidData') && deepAccess(bidderRequest, 'ortb2.experianRtidKey')) {
-      payload.expData = deepAccess(bidderRequest, 'ortb2.experianRtidData');
-      payload.expKey = deepAccess(bidderRequest, 'ortb2.experianRtidKey');
-    }
-
     // If there is no key_maker data, then don't make the request.
     if (isEmpty(data)) {
       return null;
@@ -175,10 +170,13 @@ export const spec = {
     }
 
     return {
-      method: 'GET',
+      method: 'POST',
       url: url,
+      options: {
+        contentType: 'application/x-www-form-urlencoded'
+      },
       withCredentials: true,
-      data: payload,
+      data: parseQueryStringParameters(payload),
       bidderRequests: validBidRequests
     };
   },
@@ -364,6 +362,51 @@ function _validateMediaType(bidRequest) {
       let plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt');
       mediaTypeValidation = `${mediaTypeValidation}pl=${plcmt},`;
     }
+    if (deepAccess(bidRequest, 'mediaTypes.video.protocols')) {
+      mediaTypeValidation = `${mediaTypeValidation}protocols=${deepAccess(bidRequest, 'mediaTypes.video.protocols').join(':')},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.mimes')) {
+      mediaTypeValidation = `${mediaTypeValidation}mimes=${deepAccess(bidRequest, 'mediaTypes.video.mimes').join(':')},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.battr')) {
+      mediaTypeValidation = `${mediaTypeValidation}battr=${deepAccess(bidRequest, 'mediaTypes.video.battr').join(':')},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.api')) {
+      mediaTypeValidation = `${mediaTypeValidation}api=${deepAccess(bidRequest, 'mediaTypes.video.api').join(':')},`;
+    }
+
+    if (deepAccess(bidRequest, 'mediaTypes.video.minduration')) {
+      let minduration = deepAccess(bidRequest, 'mediaTypes.video.minduration');
+      mediaTypeValidation = `${mediaTypeValidation}minduration=${minduration},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.maxduration')) {
+      let maxduration = deepAccess(bidRequest, 'mediaTypes.video.maxduration');
+      mediaTypeValidation = `${mediaTypeValidation}maxduration=${maxduration},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.skip')) {
+      let skip = deepAccess(bidRequest, 'mediaTypes.video.skip');
+      mediaTypeValidation = `${mediaTypeValidation}skip=${skip},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.skipafter')) {
+      let skipafter = deepAccess(bidRequest, 'mediaTypes.video.skipafter');
+      mediaTypeValidation = `${mediaTypeValidation}skipafter=${skipafter},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.startdelay')) {
+      let startdelay = deepAccess(bidRequest, 'mediaTypes.video.startdelay');
+      mediaTypeValidation = `${mediaTypeValidation}startdelay=${startdelay},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.linearity')) {
+      let linearity = deepAccess(bidRequest, 'mediaTypes.video.linearity');
+      mediaTypeValidation = `${mediaTypeValidation}linearity=${linearity},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.minbitrate')) {
+      let minbitrate = deepAccess(bidRequest, 'mediaTypes.video.minbitrate');
+      mediaTypeValidation = `${mediaTypeValidation}minbitrate=${minbitrate},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.maxbitrate')) {
+      let maxbitrate = deepAccess(bidRequest, 'mediaTypes.video.maxbitrate');
+      mediaTypeValidation = `${mediaTypeValidation}maxbitrate=${maxbitrate},`;
+    }
   } else if (mediaType === 'display') {
     mediaTypeValidation = 'c=d,';
   }
@@ -390,7 +433,7 @@ function _getBidIdFromTrinityKey(key) {
 /**
  * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
  */
-export const _isInbounds = (context = window) => (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => context.innerWidth >= lowerBound && context.innerWidth < upperBound;
+export const _isInbounds = (context = getWinDimensions()) => (lowerBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => deepAccess(context, 'innerWidth') >= lowerBound && deepAccess(context, 'innerWidth') < upperBound;
 
 /**
  * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
@@ -430,7 +473,7 @@ function loadOrCreateFirstPartyData() {
   var readData = function (key) {
     if (hasLocalStorage()) {
       // TODO FIX RULES VIOLATION
-      // eslint-disable-next-line prebid/no-global
+      // eslint-disable-next-line no-restricted-properties
       return window.localStorage.getItem(key);
     }
     return null;
@@ -451,7 +494,7 @@ function loadOrCreateFirstPartyData() {
     try {
       if (hasLocalStorage()) {
         // TODO FIX RULES VIOLATION
-        // eslint-disable-next-line prebid/no-global
+        // eslint-disable-next-line no-restricted-properties
         window.localStorage.setItem(key, value);
       }
     } catch (error) {

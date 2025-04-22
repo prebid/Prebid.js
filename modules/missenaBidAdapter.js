@@ -2,6 +2,7 @@ import {
   buildUrl,
   formatQS,
   generateUUID,
+  getWinDimensions,
   isFn,
   logInfo,
   safeJSONParse,
@@ -13,6 +14,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { isAutoplayEnabled } from '../libraries/autoplayDetection/autoplay.js';
 import { normalizeBannerSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -56,27 +58,9 @@ function toPayload(bidRequest, bidderRequest) {
     timeout: bidderRequest.timeout,
   };
 
-  if (bidderRequest && bidderRequest.refererInfo) {
-    // TODO: is 'topmostLocation' the right value here?
-    payload.referer = bidderRequest.refererInfo.topmostLocation;
-    payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
-  }
-
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    payload.consent_string = bidderRequest.gdprConsent.consentString;
-    payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
-  }
-
-  if (bidderRequest && bidderRequest.uspConsent) {
-    payload.us_privacy = bidderRequest.uspConsent;
-  }
-
   const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
   payload.params = bidRequest.params;
 
-  if (bidRequest.ortb2?.device?.ext?.cdep) {
-    payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
-  }
   payload.userEids = bidRequest.userIdAsEids || [];
   payload.version = '$prebid.version$';
 
@@ -85,10 +69,11 @@ function toPayload(bidRequest, bidderRequest) {
   payload.floor_currency = bidFloor?.currency;
   payload.currency = getCurrencyFromBidderRequest(bidderRequest);
   payload.schain = bidRequest.schain;
-  payload.coppa = bidderRequest?.ortb2?.regs?.coppa ? 1 : 0;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
-  payload.screen = { height: screen.height, width: screen.width };
+  payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
+  payload.viewport = getViewportSize();
   payload.sizes = normalizeBannerSizes(bidRequest.mediaTypes.banner.sizes);
+  payload.ortb2 = bidderRequest.ortb2;
 
   return {
     method: 'POST',
