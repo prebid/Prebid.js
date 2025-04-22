@@ -399,15 +399,15 @@ declare module './prebidGlobal' {
         triggerUserSyncs: typeof triggerUserSyncs;
         getAdserverTargetingForAdUnitCodeStr: typeof getAdserverTargetingForAdUnitCodeStr;
         getHighestUnusedBidResponseForAdUnitCode: typeof getHighestUnusedBidResponseForAdUnitCode;
-        getAdserverTargetingForAdUnitCode;
-        getAdserverTargeting;
+        getAdserverTargetingForAdUnitCode: typeof getAdserverTargetingForAdUnitCode;
+        getAdserverTargeting: typeof getAdserverTargeting;
         getConsentMetadata: typeof getConsentMetadata;
         getNoBids: typeof getNoBids;
         getNoBidsForAdUnitCode: typeof getNoBidsForAdUnitCode;
         getBidResponses: typeof getBidResponses;
         getBidResponsesForAdUnitCode: typeof getBidResponsesForAdUnitCode;
         setTargetingForGPTAsync: typeof setTargetingForGPTAsync;
-        setTargetingForAst;
+        setTargetingForAst: typeof setTargetingForAst;
         renderAd: typeof renderAd;
         removeAdUnit: typeof removeAdUnit;
         requestBids: (options?: RequestBidsOptions) => Promise<RequestBidsResult>;
@@ -445,9 +445,9 @@ addApiMethod('triggerUserSyncs', triggerUserSyncs);
  *
  * @param adUnitCode ad unit code to target
  */
-function getAdserverTargetingForAdUnitCodeStr(adUnitCode: string): string {
+function getAdserverTargetingForAdUnitCodeStr(adUnitCode: AdUnitCode): string {
     if (adUnitCode) {
-        const res = pbjsInstance.getAdserverTargetingForAdUnitCode(adUnitCode);
+        const res = getAdserverTargetingForAdUnitCode(adUnitCode);
         return transformAdServerTargetingObj(res);
     } else {
         logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
@@ -459,7 +459,7 @@ addApiMethod('getAdserverTargetingForAdUnitCodeStr', getAdserverTargetingForAdUn
  * Return the highest cpm, unused bid for the given ad unit.
  * @param adUnitCode
  */
-function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string): Bid {
+function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: AdUnitCode): Bid {
     if (adUnitCode) {
         const bid = auctionManager.getAllBidsForAdUnitCode(adUnitCode)
             .filter(isBidUsable)
@@ -472,24 +472,24 @@ function getHighestUnusedBidResponseForAdUnitCode(adUnitCode: string): Bid {
 addApiMethod('getHighestUnusedBidResponseForAdUnitCode', getHighestUnusedBidResponseForAdUnitCode);
 
 /**
- * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
- * @param adUnitCode {string} adUnitCode to get the bid responses for
- * @alias module:pbjs.getAdserverTargetingForAdUnitCode
- * @returns {Object}  returnObj return bids
+ * Returns targeting key-value pairs available at this moment for a given ad unit.
+ * @param adUnitCode adUnitCode to get the bid responses for
  */
-pbjsInstance.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
-  return pbjsInstance.getAdserverTargeting(adUnitCode)[adUnitCode];
-};
+function getAdserverTargetingForAdUnitCode(adUnitCode) {
+  return getAdserverTargeting(adUnitCode)[adUnitCode];
+}
+addApiMethod('getAdserverTargetingForAdUnitCode', getAdserverTargetingForAdUnitCode);
+
 
 /**
- * returns all ad server targeting for all ad units
- * @return {Object} Map of adUnitCodes and targeting values []
- * @alias module:pbjs.getAdserverTargeting
+ * returns all ad server targeting, optionally scoped to the given ad unit(s).
+ * @return Map of adUnitCodes to targeting key-value pairs
  */
-
-pbjsInstance.getAdserverTargeting = logInvocation('getAdserverTargeting', function (adUnitCode) {
+function getAdserverTargeting(adUnitCode?: AdUnitCode | AdUnitCode[]) {
   return targeting.getAllTargeting(adUnitCode);
-});
+}
+addApiMethod('getAdserverTargeting', getAdserverTargeting);
+
 
 function getConsentMetadata() {
     return allConsent.getConsentMeta()
@@ -549,7 +549,7 @@ addApiMethod('getBidResponses', getBidResponses);
  * Returns bids received for the specified ad unit.
  * @param adUnitCode ad unit code
  */
-function getBidResponsesForAdUnitCode(adUnitCode: string): WrapsInBids<Bid> {
+function getBidResponsesForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<Bid> {
     const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
     return { bids };
 }
@@ -571,20 +571,20 @@ addApiMethod('setTargetingForGPTAsync', setTargetingForGPTAsync);
 
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
- * @param  {(string|string[])} adUnitCodes adUnitCode or array of adUnitCodes
- * @alias module:pbjs.setTargetingForAst
+ * @param adUnitCodes adUnitCode or array of adUnitCodes
  */
-pbjsInstance.setTargetingForAst = logInvocation('setTargetingForAn', function (adUnitCodes) {
+function setTargetingForAst(adUnitCodes?: AdUnitCode | AdUnitCode[]) {
   if (!targeting.isApntagDefined()) {
     logError('window.apntag is not defined on the page');
     return;
   }
 
   targeting.setTargetingForAst(adUnitCodes);
-
-  // emit event
   events.emit(SET_TARGETING, targeting.getAllTargeting());
-});
+}
+
+addApiMethod('setTargetingForAst', setTargetingForAst);
+
 
 type RenderAdOptions = {
     /**

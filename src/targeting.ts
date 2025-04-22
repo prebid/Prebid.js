@@ -173,7 +173,7 @@ export function newTargeting(auctionManager) {
           latestAuctionForAdUnit[adUnitCode] = auctionId;
       },
 
-      resetPresetTargetingAST(adUnitCode: AdUnitCode) {
+      resetPresetTargetingAST(adUnitCode?: AdUnitCode | AdUnitCode[]) {
           const adUnitCodes = getAdUnitCodes(adUnitCode);
           adUnitCodes.forEach(function(unit) {
               const astTag = window.apntag.getTag(unit);
@@ -306,10 +306,10 @@ export function newTargeting(auctionManager) {
       },
 
       /**
-       * @param  {(string|string[])} adUnitCodes adUnitCode or array of adUnitCodes
+       * @param  adUnitCodes adUnitCode or array of adUnitCodes
        * Sets targeting for AST
        */
-      setTargetingForAst(adUnitCodes) {
+      setTargetingForAst(adUnitCodes?: AdUnitCode | AdUnitCode[]) {
           let astTargeting = targeting.getAllTargeting(adUnitCodes);
 
           try {
