@@ -1,53 +1,3 @@
-/**
- * @typedef {Object} AdUnit An object containing the adUnit configuration.
- *
- * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
- *   one as is used in the call to registerBidAdapter
- * @property {Array.<size>} sizes A list of size for adUnit.
- * @property {object} params Any bidder-specific params which the publisher used in their bid request.
- *   This is guaranteed to have passed the spec.areParamsValid() test.
- */
-
-/**
- * @typedef {Array.<number>} size
- */
-
-/**
- * @typedef {Array.<string>} AdUnitCode
- */
-
-/**
- * @typedef {Object} BidderRequest
- *
- * @property {string} bidderCode - adUnit bidder
- * @property {number} auctionId - random UUID
- * @property {string} bidderRequestId - random string, unique key set on all bidRequest.bids[]
- * @property {Array.<Bid>} bids
- * @property {number} auctionStart - Date.now() at auction start
- * @property {number} timeout - callback timeout
- * @property {refererInfo} refererInfo - referer info object
- * @property {string} [tid] - random UUID (used for s2s)
- * @property {string} [src] - s2s or client (used for s2s)
- * @property {import('./types/ortb2.js').Ortb2.BidRequest} [ortb2] Global (not specific to any adUnit) first party data to use for all requests in this auction.
- */
-
-/**
- * @typedef {Object} BidReceived
- * //TODO add all properties
- */
-
-/**
- * @typedef {Object} Auction
- *
- * @property {function(): string} getAuctionStatus - returns the auction status which can be any one of 'started', 'in progress' or 'completed'
- * @property {function(): AdUnit[]} getAdUnits - return the adUnits for this auction instance
- * @property {function(): AdUnitCode[]} getAdUnitCodes - return the adUnitCodes for this auction instance
- * @property {function(): BidRequest[]} getBidRequests - get all bid requests for this auction instance
- * @property {function(): BidReceived[]} getBidsReceived - get all bid received for this auction instance
- * @property {function(): void} startAuctionTimer - sets the bidsBackHandler callback and starts the timer for auction
- * @property {function(): void} callBids - sends requests to all adapters for bids
- */
-
 import {
     generateUUID,
     isEmpty,
@@ -76,13 +26,15 @@ import * as events from './events.js';
 import adapterManager from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
 import {defer, PbPromise} from './utils/promise.js';
-import {useMetrics} from './utils/perfMetrics.js';
+import {type Metrics, useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 import type {Bid} from "./bidfactory.ts";
-import type {BidderCode} from './types/common.d.ts';
+import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
+import type {TargetingMap, TargetingValues} from "./targeting.ts";
+import type {AdUnit} from "./adUnits.ts";
 
 const { syncUsers } = userSync;
 
@@ -110,22 +62,18 @@ export function resetAuctionState() {
   [outstandingRequests, sourceInfo].forEach((ob) => Object.keys(ob).forEach((k) => { delete ob[k] }));
 }
 
-/**
- * Creates new auction instance
- *
- * @param {Object} requestConfig
- * @param {AdUnit} requestConfig.adUnits
- * @param {AdUnitCode} requestConfig.adUnitCodes
- * @param {function():void} requestConfig.callback
- * @param {number} requestConfig.cbTimeout
- * @param {Array.<string>} requestConfig.labels
- * @param {string} requestConfig.auctionId
- * @param {{global: {}, bidder: {}}} requestConfig.ortb2Fragments first party data, separated into global
- *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
- * @param {Object} requestConfig.metrics
- * @returns {Auction} auction instance
- */
-export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}) {
+type AuctionOptions = {
+    adUnits: AdUnit[],
+    adUnitCodes: AdUnitCode[],
+    callback: () => void;
+    cbTimeout: number;
+    labels: string[];
+    auctionId: Identifier;
+    ortb2Fragments: ORTBFragments;
+    metrics: Metrics;
+}
+
+export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}: AuctionOptions) {
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
   const _labels = labels;
@@ -592,9 +540,9 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
 declare module './bidfactory' {
     interface BaseBidResponse {
         /**
-         * Targeting key-value pairs for this bid.
+         * Targeting custom key-value pairs for this bid.
          */
-        adserverTargeting?: { [key: string]: unknown }
+        adserverTargeting?: TargetingMap<unknown>;
     }
 
     interface BaseBid {
