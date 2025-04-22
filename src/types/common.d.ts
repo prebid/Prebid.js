@@ -41,3 +41,5 @@ export type ORTBFragments = {
         [bidderCode: BidderCode]: DeepPartial<ORTBRequest>
     }
 }
+
+export type ByAdUnit<T> = { [adUnit: AdUnitCode]: T };

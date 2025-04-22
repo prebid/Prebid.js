@@ -851,8 +851,8 @@ export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() ===
 
 /**
  * Returns filter function to match adUnitCode in slot
- * @param {Object} slot GoogleTag slot
- * @return {function} filter function
+ * @param slot GoogleTag slot
+ * @return filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
   return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
