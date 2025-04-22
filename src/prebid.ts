@@ -55,7 +55,7 @@ import {newBidder} from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
-import type {AdUnitCode, Identifier, ORTBFragments} from "./types/common.d.ts";
+import type {AdUnitCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 
@@ -500,7 +500,7 @@ type WrapsInBids<T> = {
     bids: T[]
 }
 
-function getBids<T>(type): { [adUnitCode: AdUnitCode]: WrapsInBids<T> } {
+function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
   const responses = auctionManager[type]()
     .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
@@ -676,7 +676,7 @@ type RequestBidsResult = {
     /**
      * Bids received, grouped by ad unit.
      */
-    bids: { [adUnitCode: AdUnitCode]: WrapsInBids<Bid> };
+    bids: ByAdUnit<WrapsInBids<Bid>>;
     /**
      * True if any bidder timed out.
      */
