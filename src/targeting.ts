@@ -143,7 +143,7 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
  * @param customSlotMatching
  * @param getSlots
  */
-export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], customSlotMatching, getSlots = () => window.googletag.pubads().getSlots()): ByAdUnit<any[]> {
+export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], customSlotMatching, getSlots = () => window.googletag.pubads().getSlots()): ByAdUnit<googletag.Slot[]> {
   return getSlots().reduce((auToSlots, slot) => {
     const customMatch = isFn(customSlotMatching) && customSlotMatching(slot);
     Object.keys(auToSlots).filter(isFn(customMatch) ? customMatch : isAdUnitCodeMatchingSlot(slot)).forEach(au => auToSlots[au].push(slot));

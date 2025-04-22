@@ -33,7 +33,7 @@ import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
-import type {TargetingMap, TargetingValues} from "./targeting.ts";
+import type {TargetingMap} from "./targeting.ts";
 import type {AdUnit} from "./adUnits.ts";
 
 const { syncUsers } = userSync;
