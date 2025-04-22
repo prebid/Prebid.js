@@ -188,7 +188,10 @@ function copyVerbatim() {
   return gulp.src(helpers.getSourceFolders().flatMap(name => [
     `${name}/**/*.json`,
     `${name}/**/*.d.ts`,
-  ]).concat(['./package.json']), {base: '.'})
+  ]).concat([
+    './package.json',
+    '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
+  ]), {base: '.'})
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 
