@@ -688,45 +688,47 @@ if (FEATURES.UID2_CSTG) {
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
-  const logInfoUid2 = (...args) => logInfoWrapper(_logInfo, ...args);
+
+  // eslint-disable-next-line no-restricted-syntax
+  const logInfo = (...args) => logInfoWrapper(_logInfo, ...args);
 
   let suppliedToken = null;
   const preferLocalStorage = (config.storage !== 'cookie');
-  const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, logInfoUid2);
-  logInfoUid2(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
+  const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, logInfo);
+  logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
   const isCstgEnabled =
   clientSideTokenGenerator &&
   clientSideTokenGenerator.isCSTGOptionsValid(config.cstg, _logWarn);
   if (isCstgEnabled) {
-    logInfoUid2(`Module is using client-side token generation.`);
+    logInfo(`Module is using client-side token generation.`);
     // Ignores config.paramToken and config.serverCookieName if any is provided
     suppliedToken = null;
   } else if (config.paramToken) {
     suppliedToken = config.paramToken;
-    logInfoUid2('Read token from params', suppliedToken);
+    logInfo('Read token from params', suppliedToken);
   } else if (config.serverCookieName) {
     suppliedToken = storageManager.readProvidedCookie(config.serverCookieName);
-    logInfoUid2('Read token from server-supplied cookie', suppliedToken);
+    logInfo('Read token from server-supplied cookie', suppliedToken);
   }
   let storedTokens = storageManager.getStoredValueWithFallback();
-  logInfoUid2('Loaded module-stored tokens:', storedTokens);
+  logInfo('Loaded module-stored tokens:', storedTokens);
 
   if (storedTokens && typeof storedTokens === 'string') {
     // Stored value is a plain token - if no token is supplied, just use the stored value.
 
     if (!suppliedToken && !isCstgEnabled) {
-      logInfoUid2('Returning legacy cookie value.');
+      logInfo('Returning legacy cookie value.');
       return { id: storedTokens };
     }
     // Otherwise, ignore the legacy value - it should get over-written later anyway.
-    logInfoUid2('Discarding superseded legacy cookie.');
+    logInfo('Discarding superseded legacy cookie.');
     storedTokens = null;
   }
 
   if (suppliedToken && storedTokens) {
     if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
-      logInfoUid2('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
+      logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
       // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
       storedTokens = null;
     }
@@ -735,16 +737,16 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   if (FEATURES.UID2_CSTG && isCstgEnabled) {
     const cstgIdentity = clientSideTokenGenerator.getValidIdentity(config.cstg, _logWarn);
     if (cstgIdentity) {
-      if (storedTokens && clientSideTokenGenerator.isStoredTokenInvalid(cstgIdentity, storedTokens, logInfoUid2, _logWarn)) {
+      if (storedTokens && clientSideTokenGenerator.isStoredTokenInvalid(cstgIdentity, storedTokens, logInfo, _logWarn)) {
         storedTokens = null;
       }
 
       if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
-        const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, storageManager, logInfoUid2, _logWarn);
-        logInfoUid2('Generate token using CSTG');
+        const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, storageManager, logInfo, _logWarn);
+        logInfo('Generate token using CSTG');
         return { callback: (cb) => {
           promise.then((result) => {
-            logInfoUid2('Token generation responded, passing the new token on.', result);
+            logInfo('Token generation responded, passing the new token on.', result);
             cb(result);
           });
         } };
@@ -754,25 +756,25 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
 
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
-  logInfoUid2('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
   if ((!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires)) {
-    logInfoUid2('Newest available token is expired and not refreshable.');
+    logInfo('Newest available token is expired and not refreshable.');
     return { id: null };
   }
   if (Date.now() > newestAvailableToken.identity_expires) {
-    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfoUid2, _logWarn);
-    logInfoUid2('Token is expired but can be refreshed, attempting refresh.');
+    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    logInfo('Token is expired but can be refreshed, attempting refresh.');
     return { callback: (cb) => {
       promise.then((result) => {
-        logInfoUid2('Refresh reponded, passing the updated token on.', result);
+        logInfo('Refresh reponded, passing the updated token on.', result);
         cb(result);
       });
     } };
   }
   // If should refresh (but don't need to), refresh in the background.
   if (Date.now() > newestAvailableToken.refresh_from) {
-    logInfoUid2(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfoUid2, _logWarn);
+    logInfo(`Refreshing token in background with low priority.`);
+    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
   }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,

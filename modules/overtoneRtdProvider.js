@@ -1,11 +1,12 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { safeJSONParse, logMessage } from '../src/utils.js';
+import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
 
 export const OVERTONE_URL = 'https://prebid-1.overtone.ai/contextual';
 
-const logMessageOvertone = (...args) => {
-  logMessage('Overtone', ...args);
+// eslint-disable-next-line no-restricted-syntax
+const logMessage = (...args) => {
+  _logMessage('Overtone', ...args);
 };
 
 export async function fetchContextData(url = window.location.href) {
@@ -14,11 +15,11 @@ export async function fetchContextData(url = window.location.href) {
   const request = window.ajaxBuilder || ajaxBuilder();
 
   return new Promise((resolve, reject) => {
-    logMessageOvertone('Sending request to:', requestUrl);
+    logMessage('Sending request to:', requestUrl);
     request(requestUrl, {
       success: (response) => {
         const data = safeJSONParse(response);
-        logMessageOvertone('Fetched data:', data);
+        logMessage('Fetched data:', data);
 
         if (!data || typeof data.status !== 'number') {
           reject(new Error('Invalid response format'));
@@ -38,7 +39,7 @@ export async function fetchContextData(url = window.location.href) {
         }
       },
       error: (err) => {
-        logMessageOvertone('Error during request:', err);
+        logMessage('Error during request:', err);
         reject(err);
       },
     });
@@ -46,7 +47,7 @@ export async function fetchContextData(url = window.location.href) {
 }
 
 function init(config) {
-  logMessageOvertone('init', config);
+  logMessage('init', config);
   return true;
 }
 
@@ -66,7 +67,7 @@ export const overtoneRtdProvider = {
         callback();
       })
       .catch((error) => {
-        logMessageOvertone('Error fetching context data', error);
+        logMessage('Error fetching context data', error);
         callback();
       });
   },

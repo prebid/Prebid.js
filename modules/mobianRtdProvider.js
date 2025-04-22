@@ -4,7 +4,7 @@
  */
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-import { safeJSONParse, logMessage } from '../src/utils.js';
+import { safeJSONParse, logMessage as _logMessage } from '../src/utils.js';
 import { setKeyValue } from '../libraries/gptUtils/gptUtils.js';
 
 /**
@@ -59,8 +59,9 @@ export const CONTEXT_KEYS = [
 
 const AP_KEYS = ['a0', 'a1', 'p0', 'p1'];
 
-const logMessageMobian = (...args) => {
-  logMessage('Mobian', ...args);
+// eslint-disable-next-line no-restricted-syntax
+const logMessage = (...args) => {
+  _logMessage('Mobian', ...args);
 };
 
 function makeMemoizedFetch() {
@@ -74,7 +75,7 @@ function makeMemoizedFetch() {
       cachedResponse = makeDataFromResponse(response);
       return cachedResponse;
     } catch (error) {
-      logMessageMobian('error', error);
+      logMessage('error', error);
       return Promise.resolve({});
     }
   }
@@ -132,7 +133,7 @@ export function getConfig(config) {
  * @param {MobianContextData} contextData
  */
 export function setTargeting(config, contextData) {
-  logMessageMobian('context', contextData);
+  logMessage('context', contextData);
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.publisherTargeting.includes(key))
     .reduce(makeContextDataToKeyValuesReducer(config), [])
@@ -168,7 +169,7 @@ export function makeDataFromResponse(contextData) {
  * @param {MobianConfig} config
  */
 export function extendBidRequestConfig(bidReqConfig, contextData, config) {
-  logMessageMobian('extendBidRequestConfig', bidReqConfig, contextData);
+  logMessage('extendBidRequestConfig', bidReqConfig, contextData);
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.advertiserTargeting.includes(key))
@@ -189,7 +190,7 @@ export function extendBidRequestConfig(bidReqConfig, contextData, config) {
  * @returns {boolean}
  */
 function init(rawConfig) {
-  logMessageMobian('init', rawConfig);
+  logMessage('init', rawConfig);
   const config = getConfig(rawConfig);
   if (config.publisherTargeting.length) {
     getContextData().then((contextData) => setTargeting(config, contextData));
@@ -198,7 +199,7 @@ function init(rawConfig) {
 }
 
 function getBidRequestData(bidReqConfig, callback, rawConfig) {
-  logMessageMobian('getBidRequestData', bidReqConfig);
+  logMessage('getBidRequestData', bidReqConfig);
 
   const config = getConfig(rawConfig);
   const { advertiserTargeting } = config;
