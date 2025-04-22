@@ -12,6 +12,7 @@ import {
   getDNT,
   logInfo,
   triggerPixel,
+  getWinDimensions,
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
@@ -49,16 +50,17 @@ function getDevice() {
     geo: {}
   };
 
+  const { innerWidth: windowWidth, innerHeight: windowHeight, screen } = getWinDimensions();
   // Get screen dimensions
   if (window.screen) {
-    deviceInfo.w = window.screen.width;
-    deviceInfo.h = window.screen.height;
+    deviceInfo.w = screen.width;
+    deviceInfo.h = screen.height;
   }
 
   // Get viewport dimensions
   deviceInfo.ext = {
-    vpw: window.innerWidth,
-    vph: window.innerHeight
+    vpw: windowWidth,
+    vph: windowHeight
   };
 
   return deviceInfo;
@@ -115,8 +117,7 @@ function detectAdUnitPosition(adUnitCode) {
 }
 
 function calculateVisibility(rect) {
-  const windowHeight = window.innerHeight;
-  const windowWidth = window.innerWidth;
+  const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
 
   // Element is not in viewport
   if (rect.bottom < 0 || rect.right < 0 || rect.top > windowHeight || rect.left > windowWidth) {
@@ -186,12 +187,13 @@ const converter = ortbConverter({
       }
     });
 
+    const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
     deepSetValue(request, 'site.ext.data.valuad_rtd', {
       pageviewId: _VALUAD.pageviewId,
       session: session,
       features: {
         page_dimensions: `${document.documentElement.scrollWidth}x${document.documentElement.scrollHeight}`,
-        viewport_dimensions: `${window.innerWidth}x${window.innerHeight}`,
+        viewport_dimensions: `${windowWidth}x${windowHeight}`,
         user_timestamp: Math.floor(Date.now() / 1000),
         dom_loading: window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart
       }
