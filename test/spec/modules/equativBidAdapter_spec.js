@@ -1,4 +1,4 @@
-import { converter, spec, storage } from 'modules/equativBidAdapter.js';
+import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Equativ bid adapter tests', () => {
@@ -889,6 +889,24 @@ describe('Equativ bid adapter tests', () => {
       const response = utils.deepClone(SAMPLE_RESPONSE);
       delete response.body.seatbid;
       expect(spec.interpretResponse(response, request)).to.not.throw;
+    });
+
+    it('should pass exp as ttl parameter with its value', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+
+      const response = utils.deepClone(SAMPLE_RESPONSE);
+      const bidId = 'abcd1234';
+      const impIdMap = getImpIdMap();
+
+      response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+      response.body.seatbid[0].bid[0].exp = 120;
+
+      const result = spec.interpretResponse(response, request);
+
+      expect(result.bids[0]).to.have.property('ttl').that.eq(120);
     });
   });
 
