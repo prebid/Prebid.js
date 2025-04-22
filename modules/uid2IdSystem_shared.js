@@ -688,7 +688,6 @@ if (FEATURES.UID2_CSTG) {
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
-
   // eslint-disable-next-line no-restricted-syntax
   const logInfo = (...args) => logInfoWrapper(_logInfo, ...args);
 
