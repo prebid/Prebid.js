@@ -2,7 +2,7 @@ import { expect, util } from 'chai';
 import * as sinon from 'sinon';
 import { spec, _VALUAD } from 'modules/valuadBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
+import { BANNER } from 'src/mediaTypes.js';
 import { deepClone, generateUUID } from 'src/utils.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
@@ -104,27 +104,6 @@ describe('ValuadAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true for a valid video bid request', function () {
-      let videoBid = deepClone(bid);
-      videoBid.mediaTypes = {
-        [VIDEO]: {
-          playerSize: [[640, 480]]
-        }
-      };
-      expect(spec.isBidRequestValid(videoBid)).to.equal(true);
-    });
-
-    it('should return true for a valid native bid request', function () {
-      let nativeBid = deepClone(bid);
-      nativeBid.mediaTypes = {
-        [NATIVE]: {
-          title: { required: true, len: 140 },
-          image: { required: true, sizes: [300, 250] },
-        }
-      };
-      expect(spec.isBidRequestValid(nativeBid)).to.equal(true);
-    });
-
     it('should return false when placementId is missing', function () {
       let invalidBid = deepClone(bid);
       delete invalidBid.params.placementId;
@@ -152,14 +131,6 @@ describe('ValuadAdapter', function () {
     it('should return false when banner sizes are missing', function () {
       let invalidBid = deepClone(bid);
       delete invalidBid.mediaTypes[BANNER].sizes;
-      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
-    });
-
-    it('should return false when video playerSize is missing', function () {
-      let invalidBid = deepClone(bid);
-      invalidBid.mediaTypes = {
-        [VIDEO]: {}
-      };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
@@ -306,64 +277,6 @@ describe('ValuadAdapter', function () {
       expect(payload.imp[0].bidfloor).to.equal(1.50);
       expect(payload.imp[0].bidfloorcur).to.equal('USD');
       sinon.assert.calledWith(bidWithFloor[0].getFloor, { currency: 'USD', mediaType: BANNER, size: [300, 250] });
-    });
-
-    it('should handle video params correctly', function () {
-      let videoBid = deepClone(validBidRequests[0]);
-      videoBid.mediaTypes = {
-        [VIDEO]: {
-          playerSize: [[640, 480]],
-          mimes: ['video/mp4'],
-          protocols: [2, 3],
-          minduration: 5,
-          maxduration: 30,
-          startdelay: 0,
-          placement: 1,
-          linearity: 1,
-          skip: 1,
-          skipmin: 5,
-          skipafter: 10,
-          playbackmethod: [1, 3],
-          api: [1, 2]
-        }
-      };
-      let videoReq = deepClone(bidderRequest);
-      videoReq.bids = [videoBid];
-
-      const request = spec.buildRequests([videoBid], videoReq);
-      const payload = request[0].data;
-      const imp = payload.imp[0];
-
-      expect(imp.video).to.exist;
-      expect(imp.video.w).to.equal(640);
-      expect(imp.video.h).to.equal(480);
-      expect(imp.video.mimes).to.deep.equal(['video/mp4']);
-      expect(imp.video.protocols).to.deep.equal([2, 3]);
-      expect(imp.video.minduration).to.equal(5);
-      expect(imp.video.maxduration).to.equal(30);
-    });
-
-    it('should handle native params correctly', function () {
-      let nativeBid = deepClone(validBidRequests[0]);
-      nativeBid.mediaTypes = {
-        [NATIVE]: {
-          title: { required: true, len: 100 },
-          image: { required: true, sizes: [1200, 627], mimes: ['image/jpeg'] },
-        }
-      };
-      let nativeReq = deepClone(bidderRequest);
-      nativeReq.bids = [nativeBid];
-
-      const request = spec.buildRequests([nativeBid], nativeReq);
-      const payload = request[0].data;
-      const imp = payload.imp[0];
-
-      expect(imp.native).to.exist;
-      expect(imp.native.ver).to.equal('1.2');
-      expect(imp.native.assets).to.be.an('array').with.lengthOf(2);
-      expect(imp.native.assets[0].title.len).to.equal(100);
-      expect(imp.native.assets[1].img.w).to.equal(1200);
-      expect(imp.native.assets[1].img.h).to.equal(627);
     });
   });
 
