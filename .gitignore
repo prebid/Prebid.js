@@ -83,3 +83,6 @@ typings/
 
 # MacOS system files
 .DS_Store
+
+/prebid.js
+/prebid.js.gz
