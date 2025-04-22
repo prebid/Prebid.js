@@ -1,40 +1,41 @@
-import { auctionManager } from './auctionManager.js';
-import { getBufferedTTL } from './bidTTL.js';
-import { bidderSettings } from './bidderSettings.js';
-import { config } from './config.js';
+import {auctionManager} from './auctionManager.js';
+import {getBufferedTTL} from './bidTTL.js';
+import {bidderSettings} from './bidderSettings.js';
+import {config} from './config.js';
 import {
-  BID_STATUS,
-  DEFAULT_TARGETING_KEYS,
-  EVENTS,
-  JSON_MAPPING,
-  NATIVE_KEYS,
-  STATUS,
-  TARGETING_KEYS
+    BID_STATUS,
+    DEFAULT_TARGETING_KEYS,
+    EVENTS,
+    JSON_MAPPING,
+    NATIVE_KEYS,
+    STATUS,
+    TARGETING_KEYS
 } from './constants.js';
 import * as events from './events.js';
-import { hook } from './hook.js';
-import { ADPOD } from './mediaTypes.js';
-import { NATIVE_TARGETING_KEYS } from './native.js';
-import { find, includes } from './polyfill.js';
+import {hook} from './hook.js';
+import {ADPOD} from './mediaTypes.js';
+import {NATIVE_TARGETING_KEYS} from './native.js';
+import {find, includes} from './polyfill.js';
 import {
-  deepAccess,
-  deepClone,
-  groupBy,
-  isAdUnitCodeMatchingSlot,
-  isArray,
-  isFn,
-  isStr,
-  logError,
-  logInfo,
-  logMessage,
-  logWarn,
-  sortByHighestCpm,
-  timestamp,
-  uniques,
+    deepAccess,
+    deepClone,
+    groupBy,
+    isAdUnitCodeMatchingSlot,
+    isArray,
+    isFn,
+    isStr,
+    logError,
+    logInfo,
+    logMessage,
+    logWarn,
+    sortByHighestCpm,
+    timestamp,
+    uniques,
 } from './utils.js';
-import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
+import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnitCode, ByAdUnit, Identifier} from "./types/common.d.ts";
+import type {DefaultTargeting} from "./auction.ts";
 
 var pbTargetingKeys = [];
 
@@ -151,8 +152,7 @@ export function getGPTSlotsForAdUnits(adUnitCodes: AdUnitCode[], customSlotMatch
   }, Object.fromEntries(adUnitCodes.map(au => [au, []])));
 }
 
-
-export interface TargetingMap<V> {
+export type TargetingMap<V> = Partial<DefaultTargeting> & {
     [targetingKey: string]: V
 }
 

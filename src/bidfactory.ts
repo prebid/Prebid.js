@@ -56,6 +56,14 @@ export interface BidMeta {
      * Demand chain object.
      */
     dchain?: DemandChain
+    /**
+     * DSP network name.
+     */
+    networkName?: string;
+    /**
+     * DSP network ID.
+     */
+    networkId?: string | number;
 }
 
 /**
@@ -175,7 +183,11 @@ type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & 
 export type BannerBid = BidFrom<BannerBidResponse, BannerBidProperties>;
 export type VideoBid = BidFrom<VideoBidResponse, VideoBidProperties>;
 export type NativeBid = BidFrom<NativeBidResponse, NativeBidProperties>;
-export type Bid = BannerBid | VideoBid | NativeBid;
+
+type AnyBid = BannerBid | VideoBid | NativeBid;
+
+type SpecificFor<B extends AnyBid> = Partial<Omit<B, keyof AnyBid>>;
+export type Bid = AnyBid & SpecificFor<BannerBid> & SpecificFor<VideoBid> & SpecificFor<NativeBid>;
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare

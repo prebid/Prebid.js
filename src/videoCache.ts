@@ -60,6 +60,10 @@ declare module './bidfactory' {
          * Cache key to use for caching this bid's VAST.
          */
         customCacheKey?: string
+        /**
+         * The cache key that was used for this bid.
+         */
+        videoCacheKey?: string;
     }
 }
 /**

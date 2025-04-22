@@ -19,11 +19,11 @@ import {userSync} from './userSync.js';
 import {hook, ignoreCallbackArg} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
-import {VIDEO} from './mediaTypes.js';
+import {type MediaType, VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
-import adapterManager from './adapterManager.js';
+import adapterManager, {type BidRequest} from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {type Metrics, useMetrics} from './utils/perfMetrics.js';
@@ -31,8 +31,8 @@ import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
-import type {Bid} from "./bidfactory.ts";
-import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
+import type {BannerBid, Bid, NativeBid, VideoBid} from "./bidfactory.ts";
+import type {AdUnitCode, BidderCode, BidSource, Identifier, ORTBFragments} from './types/common.d.ts';
 import type {TargetingMap} from "./targeting.ts";
 import type {AdUnit} from "./adUnits.ts";
 
@@ -794,8 +794,71 @@ export const getPrimaryCatId = () => {
   }
 }
 
-// factory for key value objs
-function createKeyVal(key, value) {
+export interface DefaultTargeting {
+    /**
+     * Bidder code.
+     */
+    [TARGETING_KEYS.BIDDER]: Bid['bidderCode'];
+    /**
+     * Ad ID.
+     */
+    [TARGETING_KEYS.AD_ID]: Bid['adId'];
+    /**
+     * Price bucket.
+     */
+    [TARGETING_KEYS.PRICE_BUCKET]: string;
+    /**
+     * Size, expressed as ${width}x${height}.
+     */
+    [TARGETING_KEYS.SIZE]: Bid['size'];
+    /**
+     * Deal ID.
+     */
+    [TARGETING_KEYS.DEAL]: Bid['dealId'];
+    /**
+     * Bid source - either client or s2s.
+     */
+    [TARGETING_KEYS.SOURCE]: Bid['source'];
+    /**
+     * Media type.
+     */
+    [TARGETING_KEYS.FORMAT]: Bid['mediaType'];
+    /**
+     * Advertiser domain.
+     */
+    [TARGETING_KEYS.ADOMAIN]: Bid['meta']['advertiserDomains'][0];
+    /**
+     * Primary category ID.
+     */
+    [TARGETING_KEYS.ACAT]: Bid['meta']['primaryCatId'];
+    /**
+     * DSP network name.
+     */
+    [TARGETING_KEYS.DSP]: Bid['meta']['networkName'];
+    /**
+     * Creative ID.
+     */
+    [TARGETING_KEYS.CRID]: Bid['creativeId'];
+    /**
+     * Video cache key.
+     */
+    [TARGETING_KEYS.UUID]: Bid['videoCacheKey'];
+    /**
+     * Video cache key.
+     */
+    [TARGETING_KEYS.CACHE_ID]: Bid['videoCacheKey'];
+    /**
+     * Video cache host.
+     */
+    [TARGETING_KEYS.CACHE_HOST]: string;
+}
+
+type KeyValFn<K extends keyof DefaultTargeting> = (bidResponse: Bid, bidRequest: BidRequest<any>) => DefaultTargeting[K];
+type KeyValProp<K extends keyof DefaultTargeting> = {
+    [P in keyof Bid]: Bid[P] extends DefaultTargeting[K] ? P : never
+}[keyof Bid];
+
+function createKeyVal<K extends keyof DefaultTargeting>(key: K, value: KeyValFn<K> | KeyValProp<K>) {
   return {
     key,
     val: (typeof value === 'function')
@@ -852,7 +915,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
-          return bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname;
+          return (bidResponse?.adserverTargeting?.[TARGETING_KEYS.CACHE_HOST] || urlInfo.hostname) as string;
         }));
       }
     }

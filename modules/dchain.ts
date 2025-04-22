@@ -110,18 +110,6 @@ function isValidDchain(bid) {
   }
 }
 
-declare module '../src/bidfactory' {
-    interface BidMeta {
-        /**
-         * Dchain node `name` for the dchain module to use.
-         */
-        networkName?: string;
-        /**
-         * Dchain node `bsid` for the dchain module to use.
-         */
-        networkId?: string | number;
-    }
-}
 
 export const addBidResponseHook = timedBidResponseHook('dchain', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   const basicDchain: DemandChain = {
