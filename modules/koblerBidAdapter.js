@@ -74,6 +74,7 @@ export const interpretResponse = function (serverResponse, request) {
           ttl: TIME_TO_LIVE_IN_SECONDS,
           ad: b.adm,
           nurl: b.nurl,
+          cid: b.cid,
           meta: {
             advertiserDomains: b.adomain
           }
