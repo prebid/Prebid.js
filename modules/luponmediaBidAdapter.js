@@ -1,22 +1,33 @@
-import { logMessage, logWarn, logError } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {logError, logMessage, logWarn, deepSetValue} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'luponmedia';
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/;
-
+let initReq = true;
 const buildServerUrl = (keyId) => {
   const match = String(keyId).match(/@([^_]+)_/);
-
   let host = 'rtb';
 
-  if (match) {
+  if (!initReq && match) {
     host = match[1];
+  } else {
+    try {
+      const dabstoreRaw = storage.getDataFromLocalStorage('dabStore');
+      if (dabstoreRaw) {
+        const dabstore = JSON.parse(dabstoreRaw);
+        if (Array.isArray(dabstore) && dabstore.length > 0 && match) {
+          host = match[1];
+        }
+      }
+    } catch (e) {
+      logWarn('Error reading dabStore for host selection:', e);
+    }
   }
 
   return `https://${host}.adxpremium.services/openrtb2/auction`
@@ -24,9 +35,8 @@ const buildServerUrl = (keyId) => {
 
 function hasRtd() {
   const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
-
   return Boolean(rtdConfigs.find(provider => provider.name === 'dynamicAdBoost'));
-};
+}
 
 export const converter = ortbConverter({
   context: {
@@ -71,23 +81,18 @@ export const converter = ortbConverter({
     return bidResponse;
   },
 });
-
 function getCachedBids() {
   try {
     const dabstoreRaw = storage.getDataFromLocalStorage('dabStore');
 
     if (!dabstoreRaw) return [];
-
-    const dabstore = JSON.parse(dabstoreRaw);
-    const now = Date.now();
-
-    const validBids = dabstore.bids.filter(bid => {
+    const dabstore = JSON.parse(dabstoreRaw) || [];
+    const validBids = dabstore.filter(bid => {
       const bidExpiry = bid.responseTimestamp + bid.ttl * 1000;
-
-      return bidExpiry > now;
+      return bidExpiry > Date.now();
     })
 
-    storage.setDataInLocalStorage('dabStore', JSON.stringify({ bids: validBids }));
+    storage.setDataInLocalStorage('dabStore', JSON.stringify(validBids));
 
     return validBids;
   } catch (e) {
@@ -101,10 +106,11 @@ function removeUsedCachedBids(usedRequestIds = []) {
     const dabstoreRaw = storage.getDataFromLocalStorage('dabStore');
     if (!dabstoreRaw) return;
 
-    const dabstore = JSON.parse(dabstoreRaw);
-    const updatedBids = (dabstore.bids || []).filter(bid => !usedRequestIds.includes(bid.requestId));
+    const dabstore = JSON.parse(dabstoreRaw) || [];
 
-    storage.setDataInLocalStorage('dabStore', JSON.stringify({ bids: updatedBids }));
+    const updatedBids = dabstore.filter(bid => !usedRequestIds.includes(bid.requestId));
+
+    storage.setDataInLocalStorage('dabStore', JSON.stringify(updatedBids));
   } catch (e) {
     logWarn('Error updating dabStore after removing used bids:', e);
   }
@@ -112,13 +118,10 @@ function removeUsedCachedBids(usedRequestIds = []) {
 
 
 function buildValidSizeMap(imps) {
-  const validSizesMap = imps.reduce((map, imp) => {
-    const sizes = imp.banner?.format?.map(fmt => `${fmt.w}x${fmt.h}`) || [];
-    map[imp.id] = sizes;
+  return imps.reduce((map, imp) => {
+    map[imp.id] = imp.banner?.format?.map(fmt => `${fmt.w}x${fmt.h}`) || [];
     return map;
   }, {});
-
-  return validSizesMap;
 }
 
 function alignBids(imps, validSizesMap, cachedBids) {
@@ -127,38 +130,43 @@ function alignBids(imps, validSizesMap, cachedBids) {
   for (const imp of imps) {
     const validSizes = validSizesMap[imp.id];
 
-    for (const cachedBid of cachedBids) {
-      const bidSize = `${cachedBid.width}x${cachedBid.height}`;
+    const matchingBids = cachedBids.filter(bid => {
+      const bidSize = `${bid.width}x${bid.height}`;
+      return validSizes.includes(bidSize);
+    });
 
-      if (validSizes.includes(bidSize)) {
-        alignedBids.push({
-          id: imp.id,
-          impid: imp.id,
-          price: cachedBid.cpm,
-          adm: cachedBid.ad,
-          addomain: cachedBid.meta?.advertiserDomains || [],
-          crid: cachedBid.creativeId || cachedBid.requestId,
-          w: cachedBid.width,
-          h: cachedBid.height,
-          ext: {
-            prebid: {
-              targeting: {
-                hb_bidder: BIDDER_CODE,
-                hb_pb: cachedBid.cpm,
-                hb_size: cachedBid.size
-              },
-              type: cachedBid.mediaType
-            }
+    if (matchingBids.length > 0) {
+      const highestBid = matchingBids.reduce((max, bid) => {
+        return bid.cpm > max.cpm ? bid : max;
+      });
+
+      alignedBids.push({
+        id: imp.id,
+        impid: imp.id,
+        price: highestBid.cpm,
+        adm: highestBid.ad,
+        adomain: highestBid.meta?.advertiserDomains || [],
+        crid: highestBid.creativeId || highestBid.requestId,
+        w: highestBid.width,
+        h: highestBid.height,
+        ext: {
+          cached_id: highestBid.requestId,
+          prebid: {
+            targeting: {
+              hb_bidder: BIDDER_CODE,
+              hb_pb: highestBid.cpm,
+              hb_size: highestBid.size
+            },
+            type: highestBid.mediaType
           }
-        });
-
-        break;
-      }
+        }
+      });
     }
   }
 
   return alignedBids;
 }
+
 
 export const spec = {
   code: BIDDER_CODE,
@@ -168,8 +176,23 @@ export const spec = {
   },
   buildRequests: function (bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidderRequest, bidRequests });
+    if (bidderRequest.gdprConsent) {
+      let gdprApplies;
+      if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+        gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      }
 
+      deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
+      deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    }
+
+    if (bidderRequest.uspConsent) {
+      deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
     const serverUrl = buildServerUrl(bidRequests[0].params.keyId);
+    initReq = false;
+
+    storage.setDataInLocalStorage('lastDabStore', data);
 
     return {
       method: 'POST',
@@ -178,16 +201,7 @@ export const spec = {
     };
   },
   interpretResponse: (response, request) => {
-    if (response.status === 200) {
-      const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
-      return bids;
-    }
-
-    if (response.status == 204) {
-      return [];
-    }
-
-    if (response.status === 206) {
+    if (response.body === 'Partial content') {
       const cachedBids = getCachedBids();
       const imps = request.data.imp || [];
 
@@ -198,7 +212,7 @@ export const spec = {
         return [];
       }
 
-      const usedRequestIds = alignedBids.map(b => b.impid);
+      const usedRequestIds = alignedBids.map(b => b.ext.cached_id);
 
       removeUsedCachedBids(usedRequestIds);
 
@@ -211,12 +225,10 @@ export const spec = {
         cur: cachedBids[0]?.currency
       };
 
-      const bids = converter.fromORTB({ response: ortbResponse, request: request.data }).bids;
-
-      return bids;
+      return converter.fromORTB({response: ortbResponse, request: request.data}).bids;
+    } else {
+      return converter.fromORTB({response: response.body, request: request.data}).bids;
     }
-
-    return [];
   },
   getUserSyncs: function (syncOptions, responses) {
     let allUserSyncs = [];
@@ -252,7 +264,7 @@ export const spec = {
           } else if ((type === 'image' || type === 'redirect') && syncOptions.pixelEnabled) {
             logMessage(`Invoking image pixel user sync for luponmedia`);
             allUserSyncs.push({ type: 'image', url: url });
-          } else if (type == 'iframe' && syncOptions.iframeEnabled) {
+          } else if (type === 'iframe' && syncOptions.iframeEnabled) {
             logMessage(`Invoking iframe user sync for luponmedia`);
             allUserSyncs.push({ type: 'iframe', url: url });
           } else {
@@ -278,3 +290,4 @@ export function resetUserSync() {
 }
 
 registerBidder(spec);
+
