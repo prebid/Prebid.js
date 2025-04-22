@@ -1125,12 +1125,12 @@ function updateEIDConfig(submodules) {
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
-export function getUpdatedSubmoduleContainers(prevSubmodules, registry, options, configs) {
+export function generateSubmoduleContainers(prevSubmodules, registry, options, configs) {
   const {autoRefresh, retainConfig} = options;
   const normalizer = (val) => (val || '').toLowerCase();
   return registry
     .reduce((acc, submodule) => {
-      const {name = '', aliasName = ''} = submodule;
+      const {name, aliasName} = submodule;
       const submoduleConfig = findBy(configs, 'name', [name, aliasName], null, normalizer);
 
       if (!submoduleConfig) {
@@ -1169,7 +1169,7 @@ function updateSubmodules(options = {}) {
     return;
   }
 
-  const updatedContainers = getUpdatedSubmoduleContainers(submodules, submoduleRegistry, options, configs);
+  const updatedContainers = generateSubmoduleContainers(submodules, submoduleRegistry, options, configs);
   submodules.splice(0, submodules.length);
   submodules.push(...updatedContainers);
 

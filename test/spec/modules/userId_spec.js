@@ -38,7 +38,7 @@ import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
-import { getUpdatedSubmoduleContainers } from '../../../modules/userId/index.js';
+import {generateSubmoduleContainers} from '../../../modules/userId/index.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -3152,7 +3152,7 @@ describe('User ID', function () {
     })
   });
 
-  describe('getUpdatedSubmoduleContainers', () => {
+  describe('generateSubmoduleContainers', () => {
     it('should properly map registry to submodule containers for empty previous submodule containers', () => {
       const previousSubmoduleContainers = [];
       const submoduleRegistry = [
@@ -3161,7 +3161,7 @@ describe('User ID', function () {
         createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
       ];
       const configRegistry = [{ name: 'sharedId' }];
-      const result = getUpdatedSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {}, configRegistry);
+      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {}, configRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
     });
@@ -3177,7 +3177,7 @@ describe('User ID', function () {
         createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
       ];
       const configRegistry = [{ name: 'sharedId' }];
-      const result = getUpdatedSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {}, configRegistry);
+      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {}, configRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
     });
@@ -3191,7 +3191,7 @@ describe('User ID', function () {
         createMockIdSubmodule('shouldBeKept', { id: { uid2: { id: 'uid2_value' } } }, null, null),
       ];
       const configRegistry = [{ name: 'sharedId' }];
-      const result = getUpdatedSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {retainConfig: true}, configRegistry);
+      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {retainConfig: true}, configRegistry);
       expect(result).to.have.lengthOf(2);
       expect(result[0].submodule.name).to.eql('sharedId');
       expect(result[1].submodule.name).to.eql('shouldBeKept');
@@ -3212,7 +3212,7 @@ describe('User ID', function () {
         {name: 'new'},
         {name: 'unchanged', auctionDelay: 300},
       ];
-      const result = getUpdatedSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {autoRefresh: true}, configRegistry);
+      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {autoRefresh: true}, configRegistry);
       expect(result).to.have.lengthOf(3);
       const itemsWithRefreshIds = result.filter(item => item.refreshIds);
       const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
