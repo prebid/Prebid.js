@@ -368,9 +368,7 @@ const updateVideoImp = (videoImp, videoParams, adUnitCode, imp) => {
   if (videoImp.w && videoImp.h) {
     videoSize.w = videoImp.w;
     videoSize.h = videoImp.h;
-  }
-  // Otherwise try to get from playerSize
-  else if (videoParams.playerSize) {
+  } else if (videoParams.playerSize) {
     const playerSize = Array.isArray(videoParams.playerSize[0])
       ? videoParams.playerSize[0] : videoParams.playerSize;
     videoSize.w = parseInt(playerSize[0], 10);
@@ -684,7 +682,7 @@ function _isIframe() {
  * @param {HTMLElement} element - DOM element to check
  * @returns {boolean} True if viewability is measurable
  */
-function _isViewabilityMeasurable(element) {
+export function _isViewabilityMeasurable(element) {
   return !_isIframe() && element !== null;
 }
 
@@ -695,7 +693,7 @@ function _isViewabilityMeasurable(element) {
  * @param {Object} size - Size object with width and height
  * @returns {number|string} Viewability percentage or 0 if not visible
  */
-function _getViewability(element, topWin, { w, h } = {}) {
+export function _getViewability(element, topWin, { w, h } = {}) {
   return topWin.document.visibilityState === 'visible'
     ? percentInView(element, { w, h })
     : 0;
@@ -719,7 +717,7 @@ function _getMinSize(sizes) {
  * @param {string} adUnitCode - The ad unit code for element identification
  * @param {Object} size - Size object with width and height properties
  */
-const addViewabilityToImp = (imp, adUnitCode, size) => {
+export const addViewabilityToImp = (imp, adUnitCode, size) => {
   const element = document.getElementById(adUnitCode);
   if (!element) return;
 
