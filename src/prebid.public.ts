@@ -8,6 +8,7 @@ export type {Bid, VideoBid, BannerBid, NativeBid} from './bidfactory.ts';
 // through only ts files.
 
 /* eslint-disable import-x/first */
-import './auction.ts'
+import './auction.ts';
+import './videoCache.ts';
 
 

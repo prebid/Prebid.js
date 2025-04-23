@@ -113,7 +113,6 @@ export interface BannerBidResponseProperties {
     mediaType: 'banner';
 }
 
-
 export interface VideoBidResponseProperties {
     mediaType: 'video';
 }
