@@ -29,10 +29,17 @@ import type {BidderCode} from "../../src/types/common.d.ts";
 import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {DeepPartial} from "../../src/types/objects.d.ts";
 import type {AdServerVendor} from "../../libraries/video/constants/vendorCodes.ts";
+import type {VideoEvent} from "../../libraries/video/constants/events.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 
 events.addEvents(allVideoEvents.concat(additionalEvents).map(getExternalVideoEventName) as any);
+
+declare module '../../src/events' {
+    interface EventNames {
+        video: VideoEvent
+    }
+}
 
 interface AdServerConfig {
     /**

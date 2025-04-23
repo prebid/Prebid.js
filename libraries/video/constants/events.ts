@@ -107,10 +107,4 @@ export const additionalEvents = [
 
 type Event = { [K in keyof typeof videoEvents]: (typeof videoEvents)[K] }[keyof typeof videoEvents] | typeof additionalEvents[number];
 type ExternalName<E extends Event> = `video${Capitalize<E>}`;
-type VideoEvent = ExternalName<Event>;
-
-declare module '../../../src/events' {
-    interface EventNames {
-        video: VideoEvent
-    }
-}
+export type VideoEvent = ExternalName<Event>;

@@ -39,6 +39,7 @@ import {
     getS2SBidderSet
 } from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
+import type {EventHandler, EventIDs, Events} from "./events.js";
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {type Defer, defer, PbPromise} from './utils/promise.js';
@@ -69,10 +70,6 @@ const { triggerUserSyncs } = userSync;
 
 /* private variables */
 const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = EVENTS;
-
-const eventValidators = {
-  bidWon: checkDefinedPlacement
-};
 
 // initialize existing debugging sessions if present
 loadSession();
@@ -108,19 +105,6 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 
-
-function checkDefinedPlacement(id) {
-  const adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
-    .reduce(flatten)
-    .filter(uniques);
-
-  if (!adUnitCodes.includes(id)) {
-    logError('The "' + id + '" placement is not defined.');
-    return;
-  }
-
-  return true;
-}
 
 function validateSizes(sizes, targLength?: number) {
   let cleanSizes = [];
@@ -417,9 +401,9 @@ declare module './prebidGlobal' {
         removeAdUnit: typeof removeAdUnit;
         requestBids: RequestBids;
         addAdUnits: typeof addAdUnits;
-        onEvent;
-        offEvent;
-        getEvents;
+        onEvent: typeof onEvent;
+        offEvent: typeof offEvent;
+        getEvents: typeof getEvents;
         registerBidAdapter;
         registerAnalyticsAdapter;
         enableAnalytics;
@@ -894,11 +878,31 @@ function addAdUnits(adUnits: AdUnitDefinition | AdUnitDefinition[]) {
 
 addApiMethod('addAdUnits', addAdUnits);
 
+const eventIdValidators = {
+    bidWon(id) {
+        const adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
+            .reduce(flatten)
+            .filter(uniques);
+
+        if (!adUnitCodes.includes(id)) {
+            logError('The "' + id + '" placement is not defined.');
+            return;
+        }
+
+        return true;
+    }
+};
+
+function validateEventId(event, id) {
+    return eventIdValidators.hasOwnProperty(event) && eventIdValidators[event](id);
+}
+
+
+
 /**
- * @param {string} event the name of the event
- * @param {Function} handler a callback to set on event
- * @param {string} id an identifier in the context of the event
- * @alias module:pbjs.onEvent
+ * @param event the name of the event
+ * @param handler a callback to set on event
+ * @param id an identifier in the context of the event
  *
  * This API call allows you to register a callback to handle a Prebid.js event.
  * An optional `id` parameter provides more finely-grained event callback registration.
@@ -910,42 +914,41 @@ addApiMethod('addAdUnits', addAdUnits);
  *
  * Currently `bidWon` is the only event that accepts an `id` parameter.
  */
-pbjsInstance.onEvent = logInvocation('onEvent', function (event, handler, id) {
-  if (!isFn(handler)) {
-    logError('The event handler provided is not a function and was not set on event "' + event + '".');
-    return;
-  }
+function onEvent<E extends keyof Events>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+    if (!isFn(handler)) {
+        logError('The event handler provided is not a function and was not set on event "' + event + '".');
+        return;
+    }
 
-  if (id && !eventValidators[event].call(null, id)) {
-    logError('The id provided is not valid for event "' + event + '" and no handler was set.');
-    return;
-  }
+    if (id && !validateEventId(event, id)) {
+        logError('The id provided is not valid for event "' + event + '" and no handler was set.');
+        return;
+    }
 
-  events.on(event, handler, id);
-});
+    events.on(event, handler, id);
+}
+addApiMethod('onEvent', onEvent);
 
 /**
- * @param {string} event the name of the event
- * @param {Function} handler a callback to remove from the event
- * @param {string} id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
- * @alias module:pbjs.offEvent
+ * @param event the name of the event
+ * @param handler a callback to remove from the event
+ * @param id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
  */
-pbjsInstance.offEvent = logInvocation('offEvent', function (event, handler, id) {
-  if (id && !eventValidators[event].call(null, id)) {
-    return;
-  }
-
-  events.off(event, handler, id);
-});
+function offEvent<E extends keyof Events>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+    if (id && !validateEventId(event, id)) {
+        return;
+    }
+    events.off(event, handler, id);
+}
+addApiMethod('offEvent', offEvent);
 
 /**
  * Return a copy of all events emitted
- *
- * @alias module:pbjs.getEvents
  */
-pbjsInstance.getEvents = logInvocation('getEvents', function () {
-  return events.getEvents();
-});
+function getEvents() {
+    return events.getEvents();
+}
+addApiMethod('getEvents', getEvents);
 
 /*
  * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
