@@ -211,6 +211,21 @@ type GetBidsOptions<SRC extends BidSource, BIDDER extends BidderCode | null> = {
     metrics: Metrics
 }
 
+export type AliasBidderOptions = {
+    /**
+     * IAB Global Vendor List ID for this alias for use with the TCF control module.
+     */
+    gvlid?: number;
+    /**
+     * Flag determining if the GVL ID of the original adapter should be re-used.
+     */
+    useBaseGvlid?: boolean;
+    /**
+     * If true, the alias will not be communicated to Prebid Server.
+     */
+    skipPbsAliasing?: boolean
+}
+
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
     const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
@@ -662,7 +677,7 @@ const adapterManager = {
             logError('bidAdapter or bidderCode not specified');
         }
     },
-    aliasBidAdapter(bidderCode, alias, options) {
+    aliasBidAdapter(bidderCode: BidderCode, alias: BidderCode, options?: AliasBidderOptions) {
         let existingAlias = _bidderRegistry[alias];
 
         if (typeof existingAlias === 'undefined') {

@@ -32,7 +32,12 @@ import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
 import {storageCallbacks} from './storageManager.js';
-import {type BidRequest, default as adapterManager, getS2SBidderSet} from './adapterManager.js';
+import {
+    type AliasBidderOptions,
+    type BidRequest,
+    default as adapterManager,
+    getS2SBidderSet
+} from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
@@ -55,7 +60,7 @@ import {newBidder} from './adapters/bidderFactory.js';
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
-import type {AdUnitCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
+import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 
@@ -418,7 +423,7 @@ declare module './prebidGlobal' {
         registerBidAdapter;
         registerAnalyticsAdapter;
         enableAnalytics;
-        aliasBidder;
+        aliasBidder: typeof aliasBidder;
         aliasRegistry: typeof adapterManager.aliasRegistry;
         getAllWinningBids: typeof getAllWinningBids;
         getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
@@ -988,16 +993,16 @@ pbjsInstance.enableAnalytics = function (config) {
 };
 
 /**
- * @alias module:pbjs.aliasBidder
+ * Define an alias for a bid adapter.
  */
-pbjsInstance.aliasBidder = logInvocation('aliasBidder', function (bidderCode, alias, options) {
-  if (bidderCode && alias) {
-    adapterManager.aliasBidAdapter(bidderCode, alias, options);
-  } else {
-    logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
-  }
-});
-
+function aliasBidder(bidderCode: BidderCode, alias: BidderCode, options?: AliasBidderOptions) {
+    if (bidderCode && alias) {
+        adapterManager.aliasBidAdapter(bidderCode, alias, options);
+    } else {
+        logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
+    }
+}
+addApiMethod('aliasBidder', aliasBidder);
 
 pbjsInstance.aliasRegistry = adapterManager.aliasRegistry;
 config.getConfig('aliasRegistry', config => {
