@@ -79,7 +79,7 @@ export const dep = {
 }
 
 const _bidderRegistry = {};
-const _aliasRegistry = {};
+const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
 const _analyticsRegistry = {};
 
 let _s2sConfigs = [];
@@ -382,6 +382,9 @@ declare module './hook' {
 
 const adapterManager = {
     bidderRegistry: _bidderRegistry,
+    /**
+     * Map from alias codes to the bidder code they alias.
+     */
     aliasRegistry: _aliasRegistry,
     makeBidRequests: hook('sync', function (
         adUnits: AdUnit[],

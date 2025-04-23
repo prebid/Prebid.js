@@ -419,12 +419,12 @@ declare module './prebidGlobal' {
         registerAnalyticsAdapter;
         enableAnalytics;
         aliasBidder;
-        aliasRegistry;
+        aliasRegistry: typeof adapterManager.aliasRegistry;
         getAllWinningBids: typeof getAllWinningBids;
         getAllPrebidWinningBids: typeof getAllPrebidWinningBids;
         getHighestCpmBids: typeof getHighestCpmBids;
         clearAllAuctions: typeof clearAllAuctions;
-        markWinningBidAsUsed;
+        markWinningBidAsUsed: typeof markWinningBidAsUsed;
         getConfig;
         readConfig;
         mergeConfig;
@@ -704,6 +704,7 @@ export type StartAuctionOptions = Omit<PrivRequestBidsOptions, 'ortb2'> & {
 declare module './hook' {
     interface NamedHooks {
         requestBids: typeof requestBids;
+        startAuction: typeof startAuction;
     }
 }
 
@@ -997,9 +998,7 @@ pbjsInstance.aliasBidder = logInvocation('aliasBidder', function (bidderCode, al
   }
 });
 
-/**
- * @alias module:pbjs.aliasRegistry
- */
+
 pbjsInstance.aliasRegistry = adapterManager.aliasRegistry;
 config.getConfig('aliasRegistry', config => {
   if (config.aliasRegistry === 'private') delete pbjsInstance.aliasRegistry;
@@ -1042,35 +1041,54 @@ function clearAllAuctions() {
 }
 addApiMethod('clearAllAuctions', clearAllAuctions);
 
-if (FEATURES.VIDEO) {
-  /**
-   * Mark the winning bid as used, should only be used in conjunction with video
-   * @typedef {Object} MarkBidRequest
-   * @property {string} adUnitCode The ad unit code
-   * @property {string} adId The id representing the ad we want to mark
-   * @property {boolean} events If true, fires tracking pixels and BID_WON handlers
-   * @property {boolean} analytics alias of `events` (for backwards compat)
-   *
-   * @alias module:pbjs.markWinningBidAsUsed
-   */
-  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false, events = false}) {
+type MarkWinningBidAsUsedOptions = ({
+    /**
+     * The id representing the ad we want to mark
+     */
+    adId: string;
+    adUnitCode?: undefined | null
+} | {
+    /**
+     * The ad unit code
+     */
+    adUnitCode: AdUnitCode;
+    adId?: undefined | null;
+
+}) & {
+    /**
+     * If true, fires tracking pixels and BID_WON handlers
+     */
+    events?: boolean;
+    /**
+     * @deprecated - alias of `events`
+     */
+    analytics?: boolean
+}
+
+/**
+ * Mark the winning bid as used, should only be used in conjunction with video
+ */
+function markWinningBidAsUsed({adId, adUnitCode, analytics = false, events = false}: MarkWinningBidAsUsedOptions) {
     let bids;
     if (adUnitCode && adId == null) {
-      bids = targeting.getWinningBids(adUnitCode);
+        bids = targeting.getWinningBids(adUnitCode);
     } else if (adId) {
-      bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
+        bids = auctionManager.getBidsReceived().filter(bid => bid.adId === adId)
     } else {
-      logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+        logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
     }
     if (bids.length > 0) {
-      if (analytics || events) {
-        markWinningBid(bids[0]);
-      } else {
-        auctionManager.addWinningBid(bids[0]);
-      }
-      markBidAsRendered(bids[0])
+        if (analytics || events) {
+            markWinningBid(bids[0]);
+        } else {
+            auctionManager.addWinningBid(bids[0]);
+        }
+        markBidAsRendered(bids[0])
     }
-  }
+}
+
+if (FEATURES.VIDEO) {
+    addApiMethod('markWinningBidAsUsed', markWinningBidAsUsed);
 }
 
 /**
