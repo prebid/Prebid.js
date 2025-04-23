@@ -31,7 +31,7 @@ export class ConsentHandler<T> {
   #ready;
   #dirty = true;
   #hash;
-  generatedTime;
+  generatedTime: number;
   hashFields;
 
   constructor() {
@@ -126,7 +126,7 @@ class GdprConsentHandler extends ConsentHandler<ConsentDataFor<typeof CONSENT_GD
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
-        gdprApplies: consentData.gdprApplies,
+        gdprApplies: consentData.gdprApplies as boolean,
         consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
         generatedAt: this.generatedTime,
         apiVersion: consentData.apiVersion
