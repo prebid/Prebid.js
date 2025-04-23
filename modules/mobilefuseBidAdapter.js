@@ -50,18 +50,13 @@ const converter = ortbConverter({
 
     deepSetValue(request, 'ext.prebid.mobilefuse.version', ADAPTER_VERSION);
 
-    if (bidderRequest.gdprConsent) {
-      deepSetValue(request, 'user.consent', bidderRequest.gdprConsent.consentString);
-      deepSetValue(request, 'regs.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-    }
-
     if (bidderRequest.uspConsent) {
       deepSetValue(request, 'regs.us_privacy', bidderRequest.uspConsent);
     }
 
     if (bidderRequest.gppConsent) {
-      deepSetValue(request, 'regs.gpp', bidderRequest.gppString);
-      deepSetValue(request, 'regs.gpp_sid', bidderRequest.applicableSections);
+      deepSetValue(request, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
     }
 
     return request;
@@ -80,12 +75,15 @@ function buildRequests(validBidRequests, bidderRequest) {
   };
 }
 
-function interpretResponse(serverResponse, request) {
-  const response = serverResponse.body;
-  if (!response || !response.seatbid) {
+function interpretResponse(response, request) {
+  if (!response.body || !response.body.seatbid) {
     return [];
   }
-  return converter.fromORTB({response, request: request.data });
+
+  return converter.fromORTB({
+    request: request.data,
+    response: response.body,
+  }).bids;
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
@@ -98,11 +96,6 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   if (gppConsent) {
     params.push('gpp=' + encodeURIComponent(gppConsent.gppString));
     params.push('gpp_sid=' + gppConsent.applicableSections.join(','));
-  }
-
-  if (gdprConsent) {
-    params.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-    params.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
   }
 
   if (uspConsent) {
