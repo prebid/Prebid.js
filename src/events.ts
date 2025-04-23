@@ -6,12 +6,21 @@ import { EVENTS, EVENT_ID_PATHS } from './constants.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {config} from './config.js';
 
-type EventNames = {[K in keyof typeof EVENTS]: typeof EVENTS[K]}[keyof typeof EVENTS];
-type CoreEvents = {[K in EventNames]: unknown};
+
+type CoreEvent = {[K in keyof typeof EVENTS]: typeof EVENTS[K]}[keyof typeof EVENTS];
+
+// hide video events (unless the video module is included) with this one weird trick
+
+export interface EventNames {
+    core: CoreEvent;
+}
+type AllEvents = {
+    [K in EventNames[keyof EventNames]]: unknown;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface Events extends CoreEvents {
-    // event types are defined close to where they are emitted
+export interface Events extends AllEvents {
+    // this is extended (defining event types) close to where they are emitted
 }
 
 export type EventIDs = {

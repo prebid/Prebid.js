@@ -1,4 +1,4 @@
-export const videoKey = 'video';
+export const videoKey = 'video' as const;
 
 export const PLAYBACK_MODE = {
   VOD: 0,

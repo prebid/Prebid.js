@@ -1,26 +1,25 @@
-import { config } from '../../src/config.js';
-import { find } from '../../src/polyfill.js';
+import {config} from '../../src/config.js';
+import {find} from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
-import {mergeDeep, logWarn, logError} from '../../src/utils.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
-import { EVENTS } from '../../src/constants.js';
+import {logError, logWarn, mergeDeep} from '../../src/utils.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import {EVENTS} from '../../src/constants.js';
 import {
-  videoEvents,
-  AUCTION_AD_LOAD_ATTEMPT,
-  AD_IMPRESSION,
-  AD_ERROR,
-  BID_IMPRESSION,
-  BID_ERROR,
-  AUCTION_AD_LOAD_ABORT,
-  AUCTION_AD_LOAD_QUEUED
+    AD_ERROR,
+    AD_IMPRESSION,
+    additionalEvents,
+    AUCTION_AD_LOAD_ABORT,
+    BID_ERROR,
+    BID_IMPRESSION,
+    videoEvents
 } from '../../libraries/video/constants/events.js'
-import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
-import { videoKey } from '../../libraries/video/constants/constants.js'
-import { videoCoreFactory } from './coreVideo.js';
-import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
-import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
-import { AdQueueCoordinator } from './adQueue.js';
-import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
+import {PLACEMENT} from '../../libraries/video/constants/ortb.js';
+import {videoKey} from '../../libraries/video/constants/constants.js'
+import {videoCoreFactory} from './coreVideo.js';
+import {gamSubmoduleFactory} from './gamAdServerSubmodule.js';
+import {videoImpressionVerifierFactory} from './videoImpressionVerifier.js';
+import {AdQueueCoordinator} from './adQueue.js';
+import {getExternalVideoEventName, getExternalVideoEventPayload} from '../../libraries/video/shared/helpers.js'
 import {VIDEO} from '../../src/mediaTypes.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {doRender} from '../../src/adRendering.js';
@@ -32,7 +31,8 @@ import type {DeepPartial} from "../../src/types/objects.d.ts";
 import type {AdServerVendor} from "../../libraries/video/constants/vendorCodes.ts";
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
-events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
+
+events.addEvents(allVideoEvents.concat(additionalEvents).map(getExternalVideoEventName) as any);
 
 interface AdServerConfig {
     /**
