@@ -30,6 +30,9 @@ export interface Defer<T> {
     reject: Parameters<ConstructorParameters<typeof Promise<T>>[0]>[1],
 }
 
+export type UnwrapPromise<T> = T extends PromiseLike<infer R> ? R : T;
+export type ToPromise<T> = Promise<UnwrapPromise<T>>;
+
 /**
  * @returns a {promise, resolve, reject} trio where `promise` is resolved by calling `resolve` or `reject`.
  */
