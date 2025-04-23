@@ -98,7 +98,9 @@ describe('TaboolaIdSystem', function () {
 
       // Assume localStorage had some old ID
       getDataFromLocalStorageStub.returns('OLD_ID');
-      const result = taboolaIdSubmodule.getId({});
+      const result = taboolaIdSubmodule.getId({params: {
+        shouldSkipSync: false
+      }});
       expect(result.id).to.equal('OLD_ID');
 
       const callback = sinon.spy();
@@ -131,7 +133,9 @@ describe('TaboolaIdSystem', function () {
 
     it('should fallback to the existing ID if the server response is invalid', function () {
       getDataFromLocalStorageStub.returns('OLD_ID');
-      const result = taboolaIdSubmodule.getId({});
+      const result = taboolaIdSubmodule.getId({params: {
+        shouldSkipSync: false
+      }});
       const cb = sinon.spy();
       result.callback(cb);
 
@@ -150,7 +154,9 @@ describe('TaboolaIdSystem', function () {
 
     it('should fallback to the existing ID if the server returns 500 or network error', function () {
       getDataFromLocalStorageStub.returns('OLD_ID');
-      const result = taboolaIdSubmodule.getId({});
+      const result = taboolaIdSubmodule.getId({params: {
+        shouldSkipSync: false
+      }});
       const cb = sinon.spy();
       result.callback(cb);
 
@@ -163,6 +169,43 @@ describe('TaboolaIdSystem', function () {
 
       expect(cb.calledOnce).to.be.true;
       expect(cb.firstCall.args[0]).to.deep.equal({taboolaId: 'OLD_ID'});
+    });
+
+    it('should default skipSync to true if params is undefined', function () {
+      getDataFromLocalStorageStub.returns('LOCAL_ID');
+      const result = taboolaIdSubmodule.getId();
+      const cb = sinon.spy();
+      result.callback(cb);
+
+      // Should not call server, just return existing ID
+      expect(server.requests.length).to.equal(0);
+      expect(cb.calledOnce).to.be.true;
+      expect(cb.firstCall.args[0]).to.deep.equal({taboolaId: 'LOCAL_ID'});
+    });
+
+    it('should fallback if response is not valid JSON', function () {
+      getDataFromLocalStorageStub.returns('LOCAL_ID');
+      const result = taboolaIdSubmodule.getId({params: {shouldSkipSync: false}});
+      const cb = sinon.spy();
+      result.callback(cb);
+
+      server.requests[0].respond(
+        200,
+        {'Content-Type': 'application/json'},
+        'not-json'
+      );
+
+      expect(cb.calledOnce).to.be.true;
+      expect(cb.firstCall.args[0]).to.deep.equal({taboolaId: 'LOCAL_ID'});
+    });
+
+    it('should return t_gid if present when main cookie is missing', function () {
+      getDataFromLocalStorageStub.returns(undefined);
+      getCookieStub.withArgs('trc_cookie_storage').returns(undefined);
+      getCookieStub.withArgs('t_gid').returns('TID_123');
+
+      const result = taboolaIdSubmodule.getId({});
+      expect(result.id).to.equal('TID_123');
     });
   });
 
@@ -201,7 +244,9 @@ describe('TaboolaIdSystem', function () {
   describe('handle response edge cases', function() {
     it('should do nothing if no existing ID and server returns invalid JSON (missing user.id)', function() {
       getDataFromLocalStorageStub.returns(undefined);
-      const result = taboolaIdSubmodule.getId({});
+      const result = taboolaIdSubmodule.getId({params: {
+        shouldSkipSync: false
+      }});
       expect(result.id).to.be.undefined;
 
       const cb = sinon.spy();
@@ -229,7 +274,9 @@ describe('TaboolaIdSystem', function () {
       // No cookies, no TRC
       getCookieStub.returns(undefined);
 
-      const result = taboolaIdSubmodule.getId({});
+      const result = taboolaIdSubmodule.getId({params: {
+        shouldSkipSync: false
+      }});
 
       expect(result.id).to.be.undefined;
       expect(getDataFromLocalStorageStub.called).to.be.false;
@@ -255,7 +302,9 @@ describe('TaboolaIdSystem', function () {
       localStorageIsEnabledStub.returns(false);
       getCookieStub.returns('COOKIE_ID');
 
-      const result = taboolaIdSubmodule.getId({});
+      const result = taboolaIdSubmodule.getId({params: {
+        shouldSkipSync: false
+      }});
       expect(result.id).to.equal('COOKIE_ID');
       expect(getDataFromLocalStorageStub.called).to.be.false;
 
@@ -277,7 +326,9 @@ describe('TaboolaIdSystem', function () {
 
     it('should ignore empty string from the server as a new ID', function() {
       getDataFromLocalStorageStub.returns('OLD_ID');
-      const result = taboolaIdSubmodule.getId({});
+      const result = taboolaIdSubmodule.getId({params: {
+        shouldSkipSync: false
+      }});
       expect(result.id).to.equal('OLD_ID');
 
       const cb = sinon.spy();

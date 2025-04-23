@@ -28,18 +28,20 @@ The below parameters apply only to the IDx integration.
  2. In your Prebid config, enable the Taboola ID submodule:
 ```
    pbjs.setConfig({
-                    userSync: {
-                      userIds: [
-                        {
-                          name: 'taboolaId',
-                       Optionally specify where to store the ID, e.g. cookies or localStorage
-                       storage: {
-                         name: 'taboolaId',
-                         type: 'html5', // or 'cookie' or 'html5&cookie'
-                         expires: 365 // days
-                       }
-                     }
-                   ]
-                    }
-                  });
+        userSync: {
+          userIds: [
+            {
+              name: 'taboolaId',
+              storage: {                    //Optionally specify where to store the ID, e.g. cookies or localStorage
+                 name: 'taboolaId',
+                 type: 'html5', // or 'cookie' or 'html5&cookie'
+                 expires: 365 // days
+               },
+               params: {
+                 shouldSkipSync: false      // Optional (defaults to true)
+               }
+            }
+         ]
+        }
+  });
 ```
