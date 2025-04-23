@@ -28,9 +28,7 @@ import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
-import type {Identifier} from '../../src/types/common.d.ts';
-import {prebidjs} from "../../integrationExamples/gitignored/types/prebid.ts";
-import BidderCode = prebidjs.BidderCode;
+import type {Identifier, BidderCode} from '../../src/types/common.d.ts';
 import type {Metrics} from "../../src/utils/perfMetrics.ts";
 
 const getConfig = config.getConfig;
@@ -504,7 +502,7 @@ export function PrebidServer() {
     }
   };
 
-  return Object.assign(this, {
+  Object.assign(this, {
     callBids: baseAdapter.callBids,
     setBidderCode: baseAdapter.setBidderCode,
     type: TYPE
@@ -602,4 +600,4 @@ function getAtagData(response) {
   return response?.ext?.prebid?.analytics?.tags;
 }
 
-adapterManager.registerBidAdapter(PrebidServer(), 'prebidServer');
+adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');
