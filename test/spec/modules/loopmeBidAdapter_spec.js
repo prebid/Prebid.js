@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec, converter } from '../../../modules/loopmeBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
-import { deepClone, deepSetValue, getUniqueIdentifierStr } from '../../../src/utils.js';
+import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'loopme';
 
@@ -35,7 +35,6 @@ const bidderRequest = {
     { bidder, params: { bundleId: 'bundleId', placementId: 'placementId', publisherId: 'publisherId' } }
   ],
   ortb2: {
-    device: { ip: '127.0.0.1' },
     site: { page: 'https://loopme.com' }
   }
 };
@@ -48,25 +47,12 @@ describe('LoopMeBidAdapter', function () {
       const validBids = [
         { bundleId: 'bundleId', publisherId: 'publisherId', placementId: 'placementId' },
         { bundleId: 'bundleId', publisherId: 'publisherId' },
-      ].flatMap(params => mTypes.flatMap(mediaTypes => [
-        { bidder, bidId, mediaTypes, params, ortb2: { device: { ip: '127.0.0.1' } } },
-        { bidder, bidId, mediaTypes, params: {...params, device: { ip: '127.0.0.1' }} }
-      ]));
+      ].flatMap(params => mTypes.map(mediaTypes => ({ bidder, bidId, mediaTypes, params})));
 
       validBids.forEach(function (bid) {
         it('Should return true if bid request valid', function () {
           expect(spec.isBidRequestValid(bid)).eq(true, `Bid: ${JSON.stringify(bid)}`);
         })
-      });
-
-      deepClone(validBids).map((bid) => {
-        deepSetValue(bid, 'params.device.ip', undefined);
-        deepSetValue(bid, 'ortb2.device.ip', undefined);
-        return bid;
-      }).forEach(function (bid) {
-        it('Should return false if bid request without ip address', function () {
-          expect(spec.isBidRequestValid(bid)).eq(false, `Bid: ${JSON.stringify(bid)}`);
-        });
       });
     });
 
@@ -140,7 +126,6 @@ describe('LoopMeBidAdapter', function () {
       expect(bidRequest.url).to.equal('https://prebid.loopmertb.com/');
       expect(bidRequest.data).to.deep.nested.include({
         at: 1,
-        'device.ip': '127.0.0.1',
         'imp[0].ext.bidder': { bundleId: 'bundleId', placementId: 'placementId', publisherId: 'publisherId' },
         site: {
           domain: 'bundleId',

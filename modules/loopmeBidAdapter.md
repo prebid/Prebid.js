@@ -96,18 +96,3 @@ var adUnits = [{
 | `publisherId` | required | Manually set up publisher ID | `publisherId`|
 | `bundleId` | required | Manually set up bundle ID | `bundleId`|
 | `placementId` | optional | Manually set up placement ID | `placementId`|
-
-In addition to the required bid param above, LoopMe will also enforce the following requirements
-- The publisher must provide a client IP
-
-`bids[].params.device.ip` or
-
-```
-pbjs.setConfig({
-    ortb2: {
-        device: {
-            ip: "127.0.0.1"
-        }
-    }
-});
-```

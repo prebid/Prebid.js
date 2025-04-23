@@ -22,9 +22,7 @@ export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.at = 1;
-    const {device, bundleId, publisherId} = bidderRequest.bids[0].params;
-    const ip = bidderRequest.ortb2?.device?.ip || device?.ip;
-    deepSetValue(req, 'device.ip', ip);
+    const {bundleId, publisherId} = bidderRequest.bids[0].params;
     deepSetValue(req, 'site.domain', bundleId);
     deepSetValue(req, 'site.publisher.domain', bundleId);
     deepSetValue(req, 'site.publisher.id', publisherId);
@@ -37,8 +35,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
 
-  isBidRequestValid: ({params = {}, ortb2 = {}}) =>
-    Boolean(params.publisherId && params.bundleId && (params.device?.ip || ortb2.device?.ip)),
+  isBidRequestValid: ({params = {}}) => Boolean(params.publisherId && params.bundleId),
 
   buildRequests: (bidRequests, bidderRequest) =>
     ({url, method: 'POST', data: converter.toORTB({bidRequests, bidderRequest})}),
