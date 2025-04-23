@@ -39,8 +39,8 @@ export type AnalyticsOptions<P extends AnalyticsProvider> = AnalyticsProviderCon
     options?: {
         sampling?: number;
     }
-    includeEvents?: string[];
-    excludeEvents?: string[];
+    includeEvents?: (keyof events.Events)[];
+    excludeEvents?: (keyof events.Events)[];
 };
 
 export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }) {
@@ -183,7 +183,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
   }
 
   function _disable() {
-    Object.entries(handlers || {}).forEach(([event, handler]) => {
+    Object.entries(handlers || {}).forEach(([event, handler]: any) => {
       events.off(event, handler);
     })
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;

@@ -23,7 +23,7 @@ import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
-import adapterManager, {type BidRequest} from './adapterManager.js';
+import adapterManager, {type BidderRequest, type BidRequest} from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {type Metrics, useMetrics} from './utils/perfMetrics.js';
@@ -41,6 +41,8 @@ const { syncUsers } = userSync;
 export const AUCTION_STARTED = 'started';
 export const AUCTION_IN_PROGRESS = 'inProgress';
 export const AUCTION_COMPLETED = 'completed';
+
+type AuctionStatus = typeof AUCTION_STARTED | typeof AUCTION_COMPLETED | typeof AUCTION_IN_PROGRESS;
 
 // register event for bid adjustment
 events.on(EVENTS.BID_ADJUSTMENT, function (bid) {
@@ -73,29 +75,45 @@ type AuctionOptions = {
     metrics: Metrics;
 }
 
+export type AuctionProperties = ReturnType<ReturnType<typeof newAuction>['getProperties']>;
+
+declare module './events' {
+    interface Events {
+        [EVENTS.AUCTION_INIT]: AuctionProperties;
+        [EVENTS.AUCTION_END]: AuctionProperties;
+        [EVENTS.AUCTION_TIMEOUT]: AuctionProperties;
+        [EVENTS.BID_ACCEPTED]: Partial<Bid>;
+        [EVENTS.BID_REJECTED]: Partial<Bid>;
+        [EVENTS.BID_TIMEOUT]: BidRequest<any>[];
+        [EVENTS.NO_BID]: BidRequest<any>;
+        [EVENTS.BID_RESPONSE]: Bid;
+        [EVENTS.BID_ADJUSTMENT]: Partial<Bid>;
+    }
+}
+
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}: AuctionOptions) {
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
   const _labels = labels;
   const _adUnitCodes = adUnitCodes;
-  const _auctionId = auctionId || generateUUID();
+  const _auctionId: Identifier = auctionId || generateUUID();
   const _timeout = cbTimeout;
   const _timelyRequests = new Set();
   const done = defer<void>();
   const requestsDone = defer<void>();
-  let _bidsRejected = [];
+  let _bidsRejected: Partial<Bid>[] = [];
   let _callback = callback;
-  let _bidderRequests = [];
-  let _bidsReceived = ttlCollection({
+  let _bidderRequests: BidderRequest<any>[] = [];
+  let _bidsReceived = ttlCollection<Bid>({
     startTime: (bid) => bid.responseTimestamp,
     ttl: (bid) => getMinBidCacheTTL() == null ? null : Math.max(getMinBidCacheTTL(), bid.ttl) * 1000
   });
-  let _noBids = [];
-  let _winningBids = [];
-  let _auctionStart;
-  let _auctionEnd;
+  let _noBids: BidRequest<any>[] = [];
+  let _winningBids: Bid[] = [];
+  let _auctionStart: number;
+  let _auctionEnd: number;
   let _timeoutTimer;
-  let _auctionStatus;
+  let _auctionStatus: AuctionStatus;
   let _nonBids = [];
 
   onMinBidCacheTTLChange(() => _bidsReceived.refresh());

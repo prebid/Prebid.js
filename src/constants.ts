@@ -59,7 +59,7 @@ export const AD_RENDER_FAILED_REASON = {
   EXCEPTION: 'exception',
   CANNOT_FIND_AD: 'cannotFindAd',
   MISSING_DOC_OR_ADID: 'missingDocOrAdid'
-};
+} as const;
 
 export const EVENT_ID_PATHS = {
   bidWon: 'adUnitCode'

@@ -17,7 +17,7 @@
  * @property {function(string, string): void} setStatusForBids - set status for bids
  * @property {function(): string} getLastAuctionId - returns last auctionId
  * @property {function(Object): Object} createAuction - creates auction instance and stores it for future reference
- * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
+ * @property {function(string): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
  * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
  * @property {function(): void} clearAllAuctions - clear all auctions for testing

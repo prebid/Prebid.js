@@ -6,15 +6,19 @@ import { EVENTS, EVENT_ID_PATHS } from './constants.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {config} from './config.js';
 
-export interface Events {
-    [eventName: string]: unknown;
+type EventNames = {[K in keyof typeof EVENTS]: typeof EVENTS[K]}[keyof typeof EVENTS];
+type CoreEvents = {[K in EventNames]: unknown};
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface Events extends CoreEvents {
+    // event types are defined close to where they are emitted
 }
 
 export type EventIDs = {
     [K in keyof Events]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][(typeof EVENT_ID_PATHS)[K]] : never;
 };
 
-export type EventArgs<E extends keyof Events> = [Events[E], ...extraArgs: unknown[]]
+export type EventArgs<E extends keyof Events> = Events[E] extends void ? unknown[] : [Events[E], ...extraArgs: unknown[]]
 export type EventHandler<E extends keyof Events> = (...args: EventArgs<E>) => void;
 
 export type EventRecord<E extends keyof Events> = {
@@ -29,7 +33,7 @@ const TTL_CONFIG = 'eventHistoryTTL';
 let eventTTL = null;
 
 // keep a record of all events fired
-const eventsFired = ttlCollection({
+const eventsFired = ttlCollection<EventRecord<any>>({
   monotonic: true,
   ttl: () => eventTTL,
 })

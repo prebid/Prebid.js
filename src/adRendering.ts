@@ -1,11 +1,12 @@
 import {
-  createIframe,
-  createInvisibleIframe,
-  inIframe,
-  insertElement,
-  logError,
-  logWarn,
-  replaceMacros, triggerPixel
+    createIframe,
+    createInvisibleIframe,
+    inIframe,
+    insertElement,
+    logError,
+    logWarn,
+    replaceMacros,
+    triggerPixel
 } from './utils.js';
 import * as events from './events.js';
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES, PB_LOCATOR} from './constants.js';
@@ -21,9 +22,20 @@ import adapterManager from './adapterManager.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {filters} from './targeting.js';
 import {EVENT_TYPE_WIN, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
+import type {Bid} from "./bidfactory.ts";
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON, EXPIRED_RENDER } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
+
+declare module './events' {
+    interface Events {
+        [EVENTS.BID_WON]: Bid;
+        [EVENTS.AD_RENDER_FAILED]: AdRenderFailedData;
+        [EVENTS.AD_RENDER_SUCCEEDED]: AdRenderSucceededData;
+        [EVENTS.STALE_RENDER]: Bid;
+        [EVENTS.EXPIRED_RENDER]: Bid;
+    }
+}
 
 export const getBidToRender = hook('sync', function (adId, forRender = true, override = PbPromise.resolve()) {
   return override
@@ -38,17 +50,30 @@ export const markWinningBid = hook('sync', function (bid) {
   auctionManager.addWinningBid(bid);
 })
 
+type AdRenderFailedData = {
+    /**
+     * Failure reason.
+     */
+    reason: (typeof AD_RENDER_FAILED_REASON)[keyof typeof AD_RENDER_FAILED_REASON];
+    /**
+     * failure description
+     */
+    message: string;
+    /**
+     * The bid that failed to render.
+     */
+    bid?: Bid;
+    /**
+     * Ad ID of the bid that failed to render.
+     */
+    adId?: string;
+}
+
 /**
  * Emit the AD_RENDER_FAILED event.
- *
- * @param {Object} data
- * @param data.reason one of the values in AD_RENDER_FAILED_REASON
- * @param data.message failure description
- * @param [data.bid] bid response object that failed to render
- * @param [data.id] adId that failed to render
  */
-export function emitAdRenderFail({ reason, message, bid, id }) {
-  const data = { reason, message };
+export function emitAdRenderFail({ reason, message, bid, id }: Omit<AdRenderFailedData, 'adId'> & { id?: string }) {
+  const data: AdRenderFailedData = { reason, message };
   if (bid) {
     data.bid = bid;
     data.adId = bid.adId;
@@ -59,19 +84,28 @@ export function emitAdRenderFail({ reason, message, bid, id }) {
   events.emit(AD_RENDER_FAILED, data);
 }
 
+
+type AdRenderSucceededData = {
+    /**
+     * document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
+     * a cross-origin frame).
+     */
+    doc: Document | null;
+    /**
+     * The bid that was rendered.
+     */
+    bid: Bid;
+    /**
+     * Ad ID of the bid that was rendered.
+     */
+    adId: string;
+}
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
  * (Note: Invocation of this function indicates that the render function did not generate an error, it does not guarantee that tracking for this event has occurred yet.)
- * @param {Object} data
- * @param data.doc document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
- * a cross-origin frame).
- * @param [data.bid] bid response object for the ad that was rendered
- * @param [data.id] adId that was rendered.
  */
 export function emitAdRenderSucceeded({ doc, bid, id }) {
-  const data = { doc };
-  if (bid) data.bid = bid;
-  if (id) data.adId = id;
+  const data: AdRenderSucceededData = { doc, bid, adId: id};
 
   adapterManager.callAdRenderSucceededBidder(bid.adapterCode || bid.bidder, bid);
 
@@ -110,7 +144,7 @@ export function handleNativeMessage(data, bidResponse, {resizeFn, fireTrackers =
   }
 }
 
-const HANDLERS = {
+const HANDLERS: any = {
   [MESSAGES.EVENT]: handleCreativeEvent
 }
 
@@ -126,10 +160,11 @@ function creativeMessageHandler(deps) {
   }
 }
 
-/**
- * @type {Hookable<"sync", function(*, *): *>}
- */
-export const getRenderingData = hook('sync', function (bidResponse, options) {
+type RenderOptions = {
+    clickUrl?: string;
+}
+
+export const getRenderingData = hook('sync', function (bidResponse: Bid, options?: RenderOptions): Record<string, any> {
   const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
