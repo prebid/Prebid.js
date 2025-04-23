@@ -28,6 +28,10 @@ import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
+import type {Identifier} from '../../src/types/common.d.ts';
+import {prebidjs} from "../../integrationExamples/gitignored/types/prebid.ts";
+import BidderCode = prebidjs.BidderCode;
+import type {Metrics} from "../../src/utils/perfMetrics.ts";
 
 const getConfig = config.getConfig;
 
@@ -233,7 +237,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
     if (img) filterSettings = Object.assign({ image: img }, filterSettings);
   }
 
-  const payload = {
+  const payload: any = {
     uuid: generateUUID(),
     bidders: bidderCodes,
     account: s2sConfig.accountId,
@@ -386,11 +390,36 @@ function getConsentData(bidRequests) {
   return { gdprConsent, uspConsent, gppConsent };
 }
 
+export type SeatNonBid = {
+    seatnonbid: any;
+    auctionId: Identifier;
+    requestedBidders: BidderCode[];
+    response: any;
+    adapterMetrics: Metrics;
+}
+
+export type PbsAnalytics = {
+    seatnonbid: any;
+    atag: any;
+    auctionId: Identifier;
+    requestedBidders: BidderCode[];
+    response: any;
+    adapterMetrics: Metrics;
+}
+
+declare module '../../src/events' {
+    interface Events {
+        [EVENTS.SEAT_NON_BID]: SeatNonBid;
+        [EVENTS.PBS_ANALYTICS]: PbsAnalytics;
+        [EVENTS.BEFORE_PBS_HTTP]: PbsRequestData;
+    }
+}
+
 /**
  * Bidder adapter for Prebid Server
  */
 export function PrebidServer() {
-  const baseAdapter = new Adapter('prebidServer');
+  const baseAdapter: any = Adapter('prebidServer');
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
@@ -398,7 +427,7 @@ export function PrebidServer() {
       .newMetrics()
       .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
     done = adapterMetrics.startTiming('total').stopBefore(done);
-    bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {continuePropagation: false}));
+    bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {stopPropagation: true}));
 
     let { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
@@ -482,6 +511,12 @@ export function PrebidServer() {
   });
 }
 
+type PbsRequestData = {
+    endpointUrl: string;
+    requestJson: string;
+    customHeaders: Record<string, string>;
+}
+
 /**
  * Build and send the appropriate HTTP request over the network, then interpret the response.
  * @param s2sBidRequest
@@ -503,7 +538,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
     .filter(uniques);
 
   const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
-  const requestData = {
+  const requestData: PbsRequestData = {
     endpointUrl: getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
     requestJson: request && JSON.stringify(request),
     customHeaders: s2sBidRequest?.s2sConfig?.customHeaders ?? {},
@@ -535,9 +570,9 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
             onResponse(true, requestedBidders, result);
           }
         },
-        error: function () {
+        error: function (...args) {
           networkDone();
-          onError.apply(this, arguments);
+          onError.apply(this, args);
         }
       },
       requestData.requestJson,
@@ -567,4 +602,4 @@ function getAtagData(response) {
   return response?.ext?.prebid?.analytics?.tags;
 }
 
-adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');
+adapterManager.registerBidAdapter(PrebidServer(), 'prebidServer');
