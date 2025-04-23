@@ -7,7 +7,7 @@ Module Type: Bidder
 Maintainer: prebid@mobilefuse.com
 GVL ID: 909
 
-The MobileFuse adapter supports banner and video formats. It supports OpenRTB 2.6 request fields and standard TCF privacy signals, including GPP, GDPR, and CCPA (USP). User ID modules such as SharedID, UID2, and ID5 are also supported via `userIdAsEids`.
+The MobileFuse adapter supports banner and video formats. It supports OpenRTB 2.6 request fields and standard US & Canada privacy signals, including GP and US Privacy. User ID modules such as UID2, SharedID, and ID5 are also supported.
 
 ## Supported Media Types
 - Banner
@@ -68,19 +68,15 @@ var adUnits = [
 ];
 ```
 
-## Prebid Support Features
-
-| Feature               | Supported |
-|-----------------------|-----------|
-| Multi-format (Banner & Video) | Yes       |
-| Supply Chain Object (`schain`) | Yes       |
-| Floor Module Support (`getFloor`) | Yes   |
-| User Sync (iframe)     | Yes       |
-| GDPR Support           | Yes       |
-| USP/CCPA Support       | Yes       |
-| GPP Support            | Yes       |
-| User ID Support via `userIdAsEids` | Yes |
-| OpenRTB 2.6 Compliance | Yes       |
-
 ## User Sync
-The adapter supports iframe-based user syncing. Sync URLs include `gpp`, `gpp_sid`, `gdpr`, `gdpr_consent`, and `us_privacy` when applicable.
+The adapter supports iframe-based user syncing. It's highly recommended to enable iframe syncing in order to improve monetization.
+
+```javascript
+pbjs.setConfig({
+  //...
+   userSync: {
+      iframeEnabled: true
+   }
+  //...
+});
+```
