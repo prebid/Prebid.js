@@ -437,7 +437,7 @@ declare module './prebidGlobal' {
         setConfig;
         setBidderConfig;
         processQueue: typeof processQueue;
-        triggerBilling;
+        triggerBilling: typeof triggerBilling;
     }
 }
 
@@ -1181,15 +1181,20 @@ const processQueue = delayIfPrerendering(() => pbjsInstance.delayPrerendering, f
 addApiMethod('processQueue', processQueue, false);
 
 /**
- * @alias module:pbjs.triggerBilling
+ * Manually trigger billing for a winning bid, idendified either by ad ID or ad unit code.
+ * Used in conjunction with `adUnit.deferBilling`.
  */
-pbjsInstance.triggerBilling = ({adId, adUnitCode}) => {
-  auctionManager.getAllWinningBids()
-    .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
-    .forEach((bid) => {
-      adapterManager.triggerBilling(bid);
-      renderIfDeferred(bid);
-    });
-};
+function triggerBilling({adId, adUnitCode}: {
+    adId?: string;
+    adUnitCode?: AdUnitCode
+}) {
+    auctionManager.getAllWinningBids()
+        .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
+        .forEach((bid) => {
+            adapterManager.triggerBilling(bid);
+            renderIfDeferred(bid);
+        });
+}
+addApiMethod('triggerBilling', triggerBilling);
 
 export default pbjsInstance;
