@@ -681,15 +681,15 @@ type RequestBidsResult = {
     /**
      * Bids received, grouped by ad unit.
      */
-    bids: ByAdUnit<WrapsInBids<Bid>>;
+    bids?: ByAdUnit<WrapsInBids<Bid>>;
     /**
      * True if any bidder timed out.
      */
-    timedOut: boolean;
+    timedOut?: boolean;
     /**
      * The auction's ID
      */
-    auctionId: Identifier;
+    auctionId?: Identifier;
 }
 
 export type PrivRequestBidsOptions = RequestBidsOptions & {
