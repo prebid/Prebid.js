@@ -34,3 +34,16 @@ export interface BannerMediaType extends BaseMediaType, Partial<Pick<ORTBImp['ba
      */
     sizes?: Size | Size[]
 }
+
+declare module './bidfactory' {
+    interface BannerBidResponseProperties {
+        /**
+         * Ad markup. Required unless adUrl is provided.
+         */
+        ad?: string;
+        /**
+         * Ad URL. Required unless ad is provided.
+         */
+        adUrl?: string;
+    }
+}
