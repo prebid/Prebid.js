@@ -26,12 +26,29 @@ export function setDebounceDelay(delay) {
   debounceDelay = delay;
 }
 
-export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
+export type AnalyticsProvider = string;
+
+export interface AnalyticsProviderConfig {
+    [provider: AnalyticsProvider]: {
+        [key: string]: unknown;
+    }
+}
+
+export type AnalyticsOptions<P extends AnalyticsProvider> = AnalyticsProviderConfig[P] & {
+    provider: P;
+    options?: {
+        sampling?: number;
+    }
+    includeEvents?: string[];
+    excludeEvents?: string[];
+};
+
+export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }) {
   const queue = [];
   let handlers;
   let enabled = false;
   let sampled = true;
-  let provider;
+  let provider: PROVIDER;
 
   const emptyQueue = (() => {
     let running = false;
@@ -87,13 +104,14 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     }
   });
 
-  function _track({ eventType, args }) {
+  function _track(arg) {
+      const {eventType, args} = arg;
     if (this.getAdapterType() === BUNDLE) {
-      window[global](handler, eventType, args);
+        (window[global] as any)(handler, eventType, args);
     }
 
     if (this.getAdapterType() === ENDPOINT) {
-      _callEndpoint(...arguments);
+      _callEndpoint(arg);
     }
   }
 
@@ -114,9 +132,8 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     emptyQueue();
   }
 
-  function _enable(config) {
+  function _enable(config: AnalyticsOptions<PROVIDER>) {
     provider = config?.provider;
-    var _this = this;
 
     if (typeof config === 'object' && typeof config.options === 'object') {
       sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);
@@ -141,7 +158,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         }
 
         const { eventType, args } = event;
-        _enqueue.call(_this, { eventType, args });
+        _enqueue.call(this, { eventType, args });
       });
 
       // Next register event listeners to send data immediately
