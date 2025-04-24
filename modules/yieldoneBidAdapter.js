@@ -119,6 +119,12 @@ export const spec = {
         payload.uid2id = uid2;
       }
 
+      // GPID
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+      if (isStr(gpid) && !isEmpty(gpid)) {
+        payload.gpid = gpid;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
