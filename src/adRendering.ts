@@ -29,11 +29,11 @@ const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 declare module './events' {
     interface Events {
-        [EVENTS.BID_WON]: Bid;
-        [EVENTS.AD_RENDER_FAILED]: AdRenderFailedData;
-        [EVENTS.AD_RENDER_SUCCEEDED]: AdRenderSucceededData;
-        [EVENTS.STALE_RENDER]: Bid;
-        [EVENTS.EXPIRED_RENDER]: Bid;
+        [EVENTS.BID_WON]: [Bid];
+        [EVENTS.AD_RENDER_FAILED]: [AdRenderFailedData];
+        [EVENTS.AD_RENDER_SUCCEEDED]: [AdRenderSucceededData];
+        [EVENTS.STALE_RENDER]: [Bid];
+        [EVENTS.EXPIRED_RENDER]: [Bid];
     }
 }
 

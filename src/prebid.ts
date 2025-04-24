@@ -703,7 +703,7 @@ interface RequestBids {
 
 declare module './events' {
     interface Events {
-        [REQUEST_BIDS]: void;
+        [REQUEST_BIDS]: [];
     }
 }
 
@@ -864,7 +864,7 @@ requestBids.before(executeCallbacks, 49);
 
 declare module './events' {
     interface Events {
-        [ADD_AD_UNITS]: void;
+        [ADD_AD_UNITS]: [];
     }
 }
 /**

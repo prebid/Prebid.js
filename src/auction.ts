@@ -79,15 +79,15 @@ export type AuctionProperties = ReturnType<ReturnType<typeof newAuction>['getPro
 
 declare module './events' {
     interface Events {
-        [EVENTS.AUCTION_INIT]: AuctionProperties;
-        [EVENTS.AUCTION_END]: AuctionProperties;
-        [EVENTS.AUCTION_TIMEOUT]: AuctionProperties;
-        [EVENTS.BID_ACCEPTED]: Partial<Bid>;
-        [EVENTS.BID_REJECTED]: Partial<Bid>;
-        [EVENTS.BID_TIMEOUT]: BidRequest<any>[];
-        [EVENTS.NO_BID]: BidRequest<any>;
-        [EVENTS.BID_RESPONSE]: Bid;
-        [EVENTS.BID_ADJUSTMENT]: Partial<Bid>;
+        [EVENTS.AUCTION_INIT]: [AuctionProperties];
+        [EVENTS.AUCTION_END]: [AuctionProperties];
+        [EVENTS.AUCTION_TIMEOUT]: [AuctionProperties];
+        [EVENTS.BID_ACCEPTED]: [Partial<Bid>];
+        [EVENTS.BID_REJECTED]: [Partial<Bid>];
+        [EVENTS.BID_TIMEOUT]: [BidRequest<any>[]];
+        [EVENTS.NO_BID]: [BidRequest<any>];
+        [EVENTS.BID_RESPONSE]: [Bid];
+        [EVENTS.BID_ADJUSTMENT]: [Partial<Bid>];
     }
 }
 

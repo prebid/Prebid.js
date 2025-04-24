@@ -29,6 +29,7 @@ import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 import type {AnyFunction} from "../types/functions.d.ts";
+import type {BidderRequest} from "../adapterManager.ts";
 
 
 /**
@@ -200,6 +201,12 @@ export const guardTids: any = memoize(({bidderCode}) => {
     })
   }
 });
+
+declare module '../events' {
+    interface Events {
+        [EVENTS.BIDDER_DONE]: [BidderRequest<any>];
+    }
+}
 
 /**
  * Make a new bidder from the given spec. This is exported mainly for testing.

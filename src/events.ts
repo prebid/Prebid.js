@@ -15,26 +15,26 @@ export interface EventNames {
     core: CoreEvent;
 }
 type AllEvents = {
-    [K in EventNames[keyof EventNames]]: unknown;
+    [K in EventNames[keyof EventNames]]: unknown[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Events extends AllEvents {
+    // map from event name to the type of their arguments
     // this is extended (defining event types) close to where they are emitted
 }
 
 export type EventIDs = {
-    [K in keyof Events]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][(typeof EVENT_ID_PATHS)[K]] : never;
+    [K in keyof Events]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
 };
 
-export type EventArgs<E extends keyof Events> = Events[E] extends void ? unknown[] : [Events[E], ...extraArgs: unknown[]]
-export type EventHandler<E extends keyof Events> = (...args: EventArgs<E>) => void;
+export type EventHandler<E extends keyof Events> = (...args: Events[E]) => void;
 
 export type EventRecord<E extends keyof Events> = {
-    eventType: E,
-    args: Events[E],
-    id: E extends keyof EventIDs ? EventIDs[E] : undefined,
-    elapsedTime: number
+    eventType: E;
+    args: Events[E][0];
+    id: EventIDs[E];
+    elapsedTime: number;
 }
 
 const TTL_CONFIG = 'eventHistoryTTL';
@@ -131,7 +131,7 @@ const _public = (function () {
               utils.logError('Wrong event name : ' + eventName + ' Valid event names :' + allEvents);
           }
       },
-      emit: function <E extends keyof Events>(eventName: E, ...args: EventArgs<E>) {
+      emit: function <E extends keyof Events>(eventName: E, ...args: Events[E]) {
           _dispatch(eventName, args);
       },
       off: function<E extends keyof Events>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {

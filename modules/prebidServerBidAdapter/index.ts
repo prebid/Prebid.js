@@ -418,9 +418,9 @@ export type PbsAnalytics = SeatNonBid & {
 
 declare module '../../src/events' {
     interface Events {
-        [EVENTS.SEAT_NON_BID]: SeatNonBid;
-        [EVENTS.PBS_ANALYTICS]: PbsAnalytics;
-        [EVENTS.BEFORE_PBS_HTTP]: PbsRequestData;
+        [EVENTS.SEAT_NON_BID]: [SeatNonBid];
+        [EVENTS.PBS_ANALYTICS]: [PbsAnalytics];
+        [EVENTS.BEFORE_PBS_HTTP]: [PbsRequestData];
     }
 }
 
