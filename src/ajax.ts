@@ -24,11 +24,43 @@ const GET = 'GET';
 const POST = 'POST';
 const CTYPE = 'Content-Type';
 
+export interface AjaxOptions {
+    /**
+     * HTTP method.
+     */
+    method?: string;
+    /**
+     * Custom HTTP headers.
+     */
+    customHeaders?: Record<string, string>;
+    /**
+     * Content type.
+     */
+    contentType?: string;
+    /**
+     * Whether 3rd party cookies (and some other less relevant features, like HTTP auth)_
+     * should be enabled.
+     */
+    withCredentials?: boolean;
+    /**
+     * Fetch keepalive flag.
+     */
+    keepalive?: boolean
+    /**
+     * Whether chrome's `Sec-Browing-Topics` header should be sent
+     */
+    browsingTopics?: boolean
+    /**
+     * Whether chrome's PAAPI headers should be sent.
+     */
+    adAuctionHeaders?: boolean;
+}
+
 /**
  * transform legacy `ajax` parameters into a fetch request.
  * @returns {Request}
  */
-export function toFetchRequest(url, data, options = {}) {
+export function toFetchRequest(url, data, options: AjaxOptions = {}) {
   const method = options.method || (data ? POST : GET);
   if (method === GET && data) {
     const urlInfo = parseUrl(url, options);
@@ -37,7 +69,7 @@ export function toFetchRequest(url, data, options = {}) {
   }
   const headers = new Headers(options.customHeaders);
   headers.set(CTYPE, options.contentType || 'text/plain');
-  const rqOpts = {
+  const rqOpts: any = {
     method,
     headers
   }
@@ -68,9 +100,8 @@ export function toFetchRequest(url, data, options = {}) {
  * If provided, `request` and `done` should be functions accepting a single argument.
  * `request` is invoked at the beginning of each request, and `done` at the end; both are passed its origin.
  *
- * @returns {function(*, {}?): Promise<Response>}
  */
-export function fetcherFactory(timeout = 3000, {request, done} = {}) {
+export function fetcherFactory(timeout = 3000, {request, done}: any = {}): typeof window['fetch'] {
   let fetcher = (resource, options) => {
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
@@ -84,7 +115,7 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
 
   if (request != null || done != null) {
     fetcher = ((fetch) => function (resource, options) {
-      const origin = new URL(resource?.url == null ? resource : resource.url, document.location).origin;
+      const origin = new URL(resource?.url == null ? resource : resource.url, document.location as unknown as string).origin;
       let req = fetch(resource, options);
       request && request(origin);
       if (done) req = req.finally(() => done(origin));
@@ -94,12 +125,19 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
   return fetcher;
 }
 
-function toXHR({status, statusText = '', headers, url}, responseText) {
-  let xml = 0;
-  function getXML(onError) {
-    if (xml === 0) {
+export type XHR = ReturnType<typeof toXHR>;
+
+function toXHR({status, statusText = '', headers, url}: {
+    status: number;
+    statusText?: string;
+    headers?: Response['headers'];
+    url?: string;
+}, responseText: string) {
+  let xml: Document;
+  function getXML(onError?) {
+    if (xml === undefined) {
       try {
-        xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
+        xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0] as any)
       } catch (e) {
         xml = null;
         onError && onError(e)
@@ -130,12 +168,14 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
 /**
  * attach legacy `ajax` callbacks to a fetch promise.
  */
-export function attachCallbacks(fetchPm, callback) {
+export function attachCallbacks(fetchPm: Promise<Response>, callback: AjaxCallback) {
   const {success, error} = typeof callback === 'object' && callback != null ? callback : {
     success: typeof callback === 'function' ? callback : () => null,
     error: (e, x) => logError('Network error', e, x)
   };
-  return fetchPm.then(response => response.text().then((responseText) => [response, responseText]))
+  return fetchPm.then(response => response
+      .text()
+      .then((responseText) => [response, responseText] as [Response, string]))
     .then(([response, responseText]) => {
       const xhr = toXHR(response, responseText);
       response.ok || response.status === 304 ? success(responseText, xhr) : error(response.statusText, xhr);
@@ -145,9 +185,13 @@ export function attachCallbacks(fetchPm, callback) {
     );
 }
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
+export type AjaxCallbackFn = (responseText: string, xhr: XHR) => void;
+export type AjaxCallback = AjaxCallbackFn | { success?: AjaxCallbackFn; error?: AjaxCallbackFn };
+
+
+export function ajaxBuilder(timeout = 3000, {request, done} = {} as any) {
   const fetcher = fetcherFactory(timeout, {request, done});
-  return function (url, callback, data, options = {}) {
+  return function (url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
   };
 }

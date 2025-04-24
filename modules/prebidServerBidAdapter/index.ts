@@ -276,8 +276,8 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent),
     (response) => {
       try {
-        response = JSON.parse(response);
-        doAllSyncs(response.bidder_status, s2sConfig);
+        const responseJson = JSON.parse(response);
+        doAllSyncs(responseJson.bidder_status, s2sConfig);
       } catch (e) {
         logError(e);
       }
