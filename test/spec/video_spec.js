@@ -46,7 +46,7 @@ describe('video.js', function () {
       });
     });
     describe('should set plcmt = 2 when', () => {
-      [2, 6].forEach(playbackmethod => {
+      [[2], [6]].forEach(playbackmethod => {
         it(`playbackmethod is "${playbackmethod}"`, () => {
           expect(fillDefaults({playbackmethod})).to.eql({
             playbackmethod,

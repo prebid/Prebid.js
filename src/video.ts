@@ -69,7 +69,7 @@ export function fillVideoDefaults(adUnit: AdUnitDefinition) {
   if (video != null && video.plcmt == null) {
     if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
       video.plcmt = 4;
-    } else if (([2, 6] as any).includes(video.playbackmethod)) {
+    } else if (video.playbackmethod?.some?.(method => [2, 6].includes(method))) {
       video.plcmt = 2;
     }
   }
