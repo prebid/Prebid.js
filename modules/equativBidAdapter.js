@@ -181,7 +181,7 @@ export const spec = {
             if (deepAccess(bid, 'ext.feedback_token')) {
               tokens[bid.impid] = bid.ext.feedback_token;
             }
-        
+
             bid.ttl = typeof bid.exp === 'number' && bid.exp > 0 ? bid.exp : DEFAULT_TTL;
           })
         );
