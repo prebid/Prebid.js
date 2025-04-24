@@ -185,8 +185,9 @@ export function attachCallbacks(fetchPm: Promise<Response>, callback: AjaxCallba
     );
 }
 
-export type AjaxCallbackFn = (responseText: string, xhr: XHR) => void;
-export type AjaxCallback = AjaxCallbackFn | { success?: AjaxCallbackFn; error?: AjaxCallbackFn };
+export type AjaxSuccessCallback = (responseText: string, xhr: XHR) => void;
+export type AjaxErrorCallback = (statusText: string, xhr: XHR) => void;
+export type AjaxCallback = AjaxSuccessCallback | { success?: AjaxErrorCallback; error?: AjaxSuccessCallback };
 
 
 export function ajaxBuilder(timeout = 3000, {request, done} = {} as any) {
@@ -212,3 +213,5 @@ export function sendBeacon(url, data) {
 
 export const ajax = ajaxBuilder();
 export const fetch = fetcherFactory();
+
+export type Ajax = typeof ajax;

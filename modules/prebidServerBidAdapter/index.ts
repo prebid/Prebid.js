@@ -30,7 +30,7 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 import type {Identifier, BidderCode} from '../../src/types/common.d.ts';
 import type {Metrics} from "../../src/utils/perfMetrics.ts";
-import type {ORTBResponse} from "../../src/types/ortb/response";
+import type {ORTBResponse} from "../../src/types/ortb/response.d.ts";
 
 const getConfig = config.getConfig;
 

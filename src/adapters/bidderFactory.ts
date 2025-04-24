@@ -1,5 +1,5 @@
 import Adapter from '../adapter.js';
-import adapterManager from '../adapterManager.js';
+import adapterManager, {type BidRequest, type BidderRequest} from '../adapterManager.js';
 import {config} from '../config.js';
 import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
@@ -28,8 +28,9 @@ import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
-import type {AnyFunction} from "../types/functions.d.ts";
-import type {BidderRequest} from "../adapterManager.ts";
+import type {AnyFunction, Wraps} from "../types/functions.d.ts";
+import type {BidderCode} from "../types/common.d.ts";
+import type {Ajax, AjaxOptions, XHR} from "../ajax.ts";
 
 
 /**
@@ -129,6 +130,37 @@ import type {BidderRequest} from "../adapterManager.ts";
 const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 const TIDS = ['auctionId', 'transactionId'];
 
+export interface AdapterRequest {
+    url: string;
+    data: any;
+    method?: 'GET' | 'POST';
+    options?: Omit<AjaxOptions, 'method'>;
+}
+
+export interface ServerResponse {
+    body: any;
+    headers: {
+        get(header: string): string;
+    }
+}
+
+export interface ExtendedResponse {
+    bids?: BidResponse[]
+}
+
+export type AdapterResponse = BidResponse | BidResponse[] | ExtendedResponse;
+
+export type BidderError<B extends BidderCode> = {
+    error: XHR;
+    bidderRequest: BidderRequest<B>;
+}
+
+export interface BidderSpec<BIDDER extends BidderCode> {
+    code: BIDDER;
+    buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: BidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
+    interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
+}
+
 /**
  * Register a bidder with prebid, using the given spec.
  *
@@ -205,6 +237,8 @@ export const guardTids: any = memoize(({bidderCode}) => {
 declare module '../events' {
     interface Events {
         [EVENTS.BIDDER_DONE]: [BidderRequest<any>];
+        [EVENTS.BEFORE_BIDDER_HTTP]: [BidderRequest<any>, AdapterRequest]
+        [EVENTS.BIDDER_ERROR]: [BidderError<any>];
     }
 }
 
@@ -271,7 +305,7 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        onPaapi: (paapiConfig) => {
+        onPaapi: (paapiConfig: any) => {
           const bidRequest = bidRequestMap[paapiConfig.bidId];
           if (bidRequest) {
             addPaapiConfig(bidRequest, paapiConfig);
@@ -288,7 +322,7 @@ export function newBidder(spec) {
           events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`, {bidRequests: validBidRequests});
         },
-        onBid: (bidResponse: BidResponse) => {
+        onBid: (bidResponse) => {
           const bidRequest = bidRequestMap[bidResponse.requestId];
           const bid = bidResponse as Bid;
           if (bidRequest) {
@@ -352,25 +386,51 @@ const RESPONSE_PROPS = ['bids', 'paapi']
  * @param bids bid requests to run
  * @param bidderRequest the bid request object that `bids` is connected to
  * @param ajax ajax method to use
- * @param wrapCallback {function(callback)} a function used to wrap every callback (for the purpose of `config.currentBidder`)
- * @param onRequest {function({})} invoked once for each HTTP request built by the adapter - with the raw request
- * @param onResponse {function({})} invoked once on each successful HTTP response - with the raw response
- * @param onError {function(String, {})} invoked once for each HTTP error - with status code and response
- * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
- * @param onCompletion {function()} invoked once when all bid requests have been processed
+ * @param wrapCallback a function used to wrap every callback (for the purpose of `config.currentBidder`)
  */
-export const processBidderRequests = hook('async', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}) {
+export const processBidderRequests = hook('async', function<B extends BidderCode>(
+    spec: BidderSpec<B>,
+    bids: BidRequest<B>[],
+    bidderRequest: BidderRequest<B>,
+    ajax: Ajax,
+    wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
+    {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}: {
+        /**
+         * invoked once for each HTTP request built by the adapter - with the raw request
+         */
+        onRequest: (request: AdapterRequest) => void;
+        /**
+         * invoked once on each successful HTTP response - with the raw response
+         */
+        onResponse: (response: ServerResponse) => void;
+        /**
+         * invoked once for each HTTP error - with status description and response
+         */
+        onError: (errorMessage: string, xhr: XHR) => void;
+        /**
+         *  invoked once for each bid in the response - with the bid as returned by interpretResponse
+         */
+        onBid: (bid: BidResponse) => void;
+        /**
+         * invoked once with each member of the adapter response's 'paapi' array.
+         */
+        onPaapi: (paapi: unknown) => void;
+        /**
+         * invoked once when all bid requests have been processed
+         */
+        onCompletion: () => void;
+}) {
   const metrics = adapterMetrics(bidderRequest);
   onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
   const tidGuard = guardTids(bidderRequest);
-  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest)));
+  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))) as AdapterRequest[];
+  if (!Array.isArray(requests)) {
+      requests = [requests];
+  }
 
   if (!requests || requests.length === 0) {
     onCompletion();
     return;
-  }
-  if (!Array.isArray(requests)) {
-    requests = [requests];
   }
 
   const requestDone = delayExecution(onCompletion, requests.length);
@@ -485,7 +545,7 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
         );
         break;
       default:
-        logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
+        logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.method} must be GET or POST`);
         requestDone();
     }
 
