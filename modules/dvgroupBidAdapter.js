@@ -50,7 +50,6 @@ export const spec = {
     if (!response?.body) {
       return [];
     }
-
     const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
@@ -71,13 +70,12 @@ export const spec = {
         return syncs;
       }
 
-      let params = `us_privacy=${uspConsent || ''}`;
-      params +=`&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
-      if (typeof gdprConsent?.gdprApplies === 'boolean') {
-        params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
-      }
-
       if (syncOptions.pixelEnabled) {
+        let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
+        if (typeof gdprConsent?.gdprApplies === 'boolean') {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        }
+
         syncs.push({
           type: 'image',
           url: `//${SYNC_ENDPOINT}/match/sp?${params}`
