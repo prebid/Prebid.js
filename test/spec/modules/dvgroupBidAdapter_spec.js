@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/dvGroupBidAdapter.js';
+import { spec } from 'modules/dvgroupBidAdapter.js';
 import { deepClone } from 'src/utils.js';
 
 describe('dvgroupBidAdapterTests', function () {
