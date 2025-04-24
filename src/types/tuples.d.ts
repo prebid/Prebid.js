@@ -14,5 +14,5 @@ export type AllExceptLast<T extends readonly any[]> =
 /**
  * Repeat<T, L> => tuple of length L where each member is of type T
  */
-export type Repeat<T, L extends number> = AddUntil<T, [], L>;
+export type Repeat<T, L extends number> = number extends L ? T[] : AddUntil<T, [], L>;
 

@@ -66,8 +66,6 @@ export function isBoolean(object): object is boolean {
 export const isInteger: (value) => value is number = Number.isInteger.bind(Number);
 
 
-export function isArrayOfNums<L extends number>(val, size: L): val is Repeat<number, L>;
-export function isArrayOfNums(val): val is number[];
-export function isArrayOfNums(val, size?: number): val is number[] {
+export function isArrayOfNums<L extends number>(val, size?: L): val is Repeat<number, L> {
     return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
