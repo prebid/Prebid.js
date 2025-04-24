@@ -1,5 +1,6 @@
 import {klona} from "klona/json";
 import type {AnyFunction} from "../types/functions.d.ts";
+import type {Repeat} from "../types/tuples.d.ts";
 
 export function deepClone<T>(obj: T): T {
     return (klona(obj) || {}) as T;
@@ -56,4 +57,17 @@ export function isPlainObject(object): object is Record<any, unknown> {
 
 export function isBoolean(object): object is boolean {
     return isA(object, tBoolean);
+}
+
+/**
+ * Checks input is integer or not
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
+ */
+export const isInteger: (value) => value is number = Number.isInteger.bind(Number);
+
+
+export function isArrayOfNums<L extends number> (val, size: L): val is Repeat<number, L>;
+export function isArrayOfNums(val): val is number[]
+export function isArrayOfNums(val, size?: number): val is number[] {
+    return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }

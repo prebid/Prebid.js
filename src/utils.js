@@ -875,13 +875,6 @@ export function unsupportedBidderMessage(adUnit, bidder) {
 }
 
 /**
- * Checks input is integer or not
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
- * @param {*} value
- */
-export const isInteger = Number.isInteger.bind(Number);
-
-/**
  * Returns a new object with undefined properties removed from given object
  * @param obj the object to clean
  */
@@ -921,10 +914,6 @@ export function pick(obj, properties) {
 
     return newObj;
   }, {});
-}
-
-export function isArrayOfNums(val, size) {
-  return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
 
 export function parseQS(query) {
