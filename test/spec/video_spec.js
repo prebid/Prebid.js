@@ -89,7 +89,68 @@ describe('video.js', function () {
           expect(fillDefaults(video).plcmt).to.eql(expected);
         })
       })
-    })
+    });
+    describe('video.playerSize', () => {
+      Object.entries({
+        'single size': [1, 2],
+        'single size, wrapped in array': [[1, 2]],
+        'multiple sizes': [[1, 2], [3, 4]]
+      }).forEach(([t, playerSize]) => {
+        it(`should set w/h from playerSize (${t})`, () => {
+          const adUnit = {
+            mediaTypes: {
+              video: {
+                playerSize
+              }
+            }
+          }
+          fillVideoDefaults(adUnit);
+
+          sinon.assert.match(adUnit.mediaTypes.video, {
+            w: 1,
+            h: 2
+          });
+        });
+        it('should not override w/h when they exist', () => {
+          const adUnit = {
+            mediaTypes: {
+              video: {
+                playerSize,
+                w: 123
+              }
+            }
+          }
+          fillVideoDefaults(adUnit);
+          expect(adUnit.mediaTypes.video.w).to.eql(123);
+        })
+      });
+
+      it('should set playerSize from w/h (if they are not defined)', () => {
+        const adUnit = {
+          mediaTypes: {
+            video: {
+              w: 1,
+              h: 2
+            }
+          }
+        }
+        fillVideoDefaults(adUnit);
+        expect(adUnit.mediaTypes.video.playerSize).to.eql([[1, 2]]);
+      });
+      it('should not override playerSize', () => {
+        const adUnit = {
+          mediaTypes: {
+            video: {
+              playerSize: [1, 2],
+              w: 3,
+              h: 4
+            }
+          }
+        }
+        fillVideoDefaults(adUnit);
+        expect(adUnit.mediaTypes.video.playerSize).to.eql([1, 2]);
+      })
+    });
   })
 
   describe('validateOrtbVideoFields', () => {

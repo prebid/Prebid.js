@@ -58,21 +58,45 @@ export type VideoContext = typeof INSTREAM | typeof OUTSTREAM | typeof ADPOD;
 
 export interface VideoMediaType extends BaseMediaType, Pick<ORTBImp['video'], (typeof ORTB_PARAMS)[number][0]> {
     context: VideoContext;
-    /**
-     * @deprecated - use w & h instead.
-     */
     playerSize?: Size | Size[];
 }
 
 export function fillVideoDefaults(adUnit: AdUnitDefinition) {
-  const video = adUnit?.mediaTypes?.video;
-  if (video != null && video.plcmt == null) {
-    if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
-      video.plcmt = 4;
-    } else if (video.playbackmethod?.some?.(method => [2, 6].includes(method))) {
-      video.plcmt = 2;
+    const video = adUnit?.mediaTypes?.video;
+    if (video != null) {
+        if (video.plcmt == null) {
+            if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
+                video.plcmt = 4;
+            } else if (video.playbackmethod?.some?.(method => [2, 6].includes(method))) {
+                video.plcmt = 2;
+            }
+        }
+        const playerSize = isArrayOfNums(video.playerSize, 2)
+            ? video.playerSize
+            : Array.isArray(video.playerSize) && isArrayOfNums(video.playerSize[0]) ? video.playerSize[0] : null;
+        const size: [number, number] = isNumber(video.w) && isNumber(video.h) ? [video.w, video.h] : null;
+        let conflict = false;
+        if (playerSize == null) {
+            if (size != null) {
+                if (video.playerSize != null) {
+                    conflict = true;
+                } else {
+                    video.playerSize = [size];
+                }
+            }
+        } else {
+            ['w', 'h'].forEach((prop, i) => {
+                if (video[prop] != null && video[prop] !== playerSize[i]) {
+                    conflict = true;
+                } else {
+                    video[prop] = playerSize[i];
+                }
+            })
+        }
+        if (conflict) {
+            logWarn(`Ad unit "${adUnit.code} has conflicting playerSize and w/h`, adUnit)
+        }
     }
-  }
 }
 
 /**

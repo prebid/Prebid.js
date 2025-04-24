@@ -12,7 +12,7 @@ export type AllExceptLast<T extends readonly any[]> =
     [...T] extends [...rest: infer R, last: any] ? R : IfUnbounded<T, T, []>;
 
 /**
- * RepeaT<T, L> => tuple of length L where each member is of type T
+ * Repeat<T, L> => tuple of length L where each member is of type T
  */
 export type Repeat<T, L extends number> = AddUntil<T, [], L>;
 
