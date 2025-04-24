@@ -31,7 +31,7 @@ import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
-import type {Bid} from "./bidfactory.ts";
+import type {Bid, BidResponse} from "./bidfactory.ts";
 import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
 import type {TargetingMap} from "./targeting.ts";
 import type {AdUnit} from "./adUnits.ts";
@@ -405,6 +405,11 @@ export const bidsBackCallback = hook('async', function (adUnits, callback) {
     callback();
   }
 }, 'bidsBackCallback');
+
+export type AddBidResponse = {
+    (adUnitCode: AdUnitCode, bid: BidResponse): void;
+    reject(adUnitCode: AdUnitCode, bid: BidResponse, reason: typeof REJECTION_REASON[keyof typeof REJECTION_REASON]) : void;
+}
 
 export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionManager.index} = {}) {
   let outstandingBidsAdded = 0;

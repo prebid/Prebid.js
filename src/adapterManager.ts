@@ -149,7 +149,7 @@ export interface StoredBidRequest extends BaseBidRequest {
 }
 type BidderBidRequest<BIDDER extends BidderCode> = BaseBidRequest & AdUnitBidderBid<BIDDER>;
 
-export type BidRequest<BIDDER extends BidderCode | null> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<BIDDER>;
+export type BidRequest<BIDDER extends (BidderCode | null)> = BIDDER extends null ? StoredBidRequest : BidderBidRequest<BIDDER>;
 
 export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
     /**
@@ -179,7 +179,7 @@ export interface BaseBidderRequest<BIDDER extends BidderCode | null> {
     timeout: number;
     refererInfo: RefererInfo;
     metrics: Metrics;
-    gpdrConsent?: ReturnType<typeof gdprDataHandler['getConsentData']>;
+    gdprConsent?: ReturnType<typeof gdprDataHandler['getConsentData']>;
     uspConsent?: ReturnType<typeof uspDataHandler['getConsentData']>;
     gppConsent?: ReturnType<typeof gppDataHandler['getConsentData']>;
 }

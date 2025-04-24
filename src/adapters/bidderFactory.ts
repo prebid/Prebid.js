@@ -1,5 +1,9 @@
 import Adapter from '../adapter.js';
-import adapterManager, {type BidRequest, type BidderRequest} from '../adapterManager.js';
+import adapterManager, {
+    type BidderRequest,
+    type BidRequest,
+    type ClientBidderRequest
+} from '../adapterManager.js';
 import {config} from '../config.js';
 import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
@@ -9,16 +13,16 @@ import {EVENTS, REJECTION_REASON, STATUS} from '../constants.js';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import {
-  delayExecution,
-  isArray,
-  isPlainObject,
-  logError,
-  logWarn,
-  memoize,
-  parseQueryStringParameters,
-  parseSizesInput,
-  pick,
-  uniques
+    delayExecution,
+    isArray,
+    isPlainObject,
+    logError,
+    logWarn,
+    memoize,
+    parseQueryStringParameters,
+    parseSizesInput,
+    pick,
+    uniques
 } from '../utils.js';
 import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
@@ -31,6 +35,7 @@ import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activ
 import type {AnyFunction, Wraps} from "../types/functions.d.ts";
 import type {BidderCode} from "../types/common.d.ts";
 import type {Ajax, AjaxOptions, XHR} from "../ajax.ts";
+import type {AddBidResponse} from "../auction.ts";
 
 
 /**
@@ -157,8 +162,10 @@ export type BidderError<B extends BidderCode> = {
 
 export interface BidderSpec<BIDDER extends BidderCode> {
     code: BIDDER;
-    buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: BidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
+    isBidRequestValid(request: BidRequest<BIDDER>): boolean;
+    buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
     interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
+    onBidBillable?: (bid: Bid) => void;
 }
 
 /**
@@ -248,13 +255,20 @@ declare module '../events' {
  *
  * @param {BidderSpec} spec
  */
-export function newBidder(spec) {
+export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   return Object.assign(Adapter(spec.code), {
-    getSpec: function() {
+    getSpec: function(): BidderSpec<B> {
       return Object.freeze(Object.assign({}, spec));
     },
     registerSyncs,
-    callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse, configEnabledCallback) {
+    callBids: function(
+        bidderRequest: ClientBidderRequest<B>,
+        addBidResponse: AddBidResponse,
+        done: () => void,
+        ajax: Ajax,
+        onTimelyResponse: (bidder: BidderCode) => void,
+        configEnabledCallback: <T extends AnyFunction>(fn: T) => Wraps<T>
+    ) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
@@ -293,13 +307,9 @@ export function newBidder(spec) {
       const bidRequestMap = {};
       validBidRequests.forEach(bid => {
         bidRequestMap[bid.bidId] = bid;
-        // Delete this once we are 1.0
-        if (!bid.adUnitCode) {
-          bid.adUnitCode = bid.placementCode
-        }
       });
 
-      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
+      processBidderRequests(spec, validBidRequests as any, bidderRequest, ajax, configEnabledCallback, {
         onRequest: requestObject => events.emit(EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
@@ -377,7 +387,6 @@ export function newBidder(spec) {
 }
 
 const RESPONSE_PROPS = ['bids', 'paapi']
-
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
  * them over the network, and parsing the responses.
@@ -391,7 +400,7 @@ const RESPONSE_PROPS = ['bids', 'paapi']
 export const processBidderRequests = hook('async', function<B extends BidderCode>(
     spec: BidderSpec<B>,
     bids: BidRequest<B>[],
-    bidderRequest: BidderRequest<B>,
+    bidderRequest: ClientBidderRequest<B>,
     ajax: Ajax,
     wrapCallback: <T extends AnyFunction>(fn: T) => Wraps<T>,
     {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}: {
