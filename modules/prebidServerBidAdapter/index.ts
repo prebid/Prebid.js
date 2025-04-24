@@ -30,6 +30,7 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 import type {Identifier, BidderCode} from '../../src/types/common.d.ts';
 import type {Metrics} from "../../src/utils/perfMetrics.ts";
+import type {ORTBResponse} from "../../src/types/ortb/response";
 
 const getConfig = config.getConfig;
 
@@ -389,20 +390,30 @@ function getConsentData(bidRequests) {
 }
 
 export type SeatNonBid = {
-    seatnonbid: any;
+    /**
+     * Auction ID associated with the PBS response.
+     */
     auctionId: Identifier;
+    /**
+     * The PBS response's `ext.seatnonbid`.
+     */
+    seatnonbid: unknown;
+    /**
+     * Bidders that were included in the request to PBS.
+     */
     requestedBidders: BidderCode[];
-    response: any;
+    /**
+     * PBS response data.
+     */
+    response: ORTBResponse;
     adapterMetrics: Metrics;
 }
 
-export type PbsAnalytics = {
-    seatnonbid: any;
-    atag: any;
-    auctionId: Identifier;
-    requestedBidders: BidderCode[];
-    response: any;
-    adapterMetrics: Metrics;
+export type PbsAnalytics = SeatNonBid & {
+    /**
+     * The PBS response's `ext.prebid.analytics.tags`.
+     */
+    atag: unknown;
 }
 
 declare module '../../src/events' {
@@ -456,7 +467,7 @@ export function PrebidServer() {
           }
           // pbs analytics event
           if (seatNonBidData || atagData) {
-            const data = {
+            const data: PbsAnalytics = {
               seatnonbid: seatNonBidData,
               atag: atagData,
               auctionId: bidRequests[0].auctionId,
