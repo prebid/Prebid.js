@@ -1025,6 +1025,24 @@ describe('Equativ bid adapter tests', () => {
       delete response.body.seatbid;
       expect(spec.interpretResponse(response, request)).to.not.throw;
     });
+
+    it('should pass exp as ttl parameter with its value', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+
+      const response = utils.deepClone(SAMPLE_RESPONSE);
+      const bidId = 'abcd1234';
+      const impIdMap = getImpIdMap();
+
+      response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+      response.body.seatbid[0].bid[0].exp = 120;
+
+      const result = spec.interpretResponse(response, request);
+
+      expect(result.bids[0]).to.have.property('ttl').that.eq(120);
+    });
   });
 
   describe('isBidRequestValid', () => {

@@ -14,6 +14,7 @@ import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/u
 const BIDDER_CODE = 'equativ';
 const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
 const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
+const DEFAULT_TTL = 300;
 const LOG_PREFIX = 'Equativ:';
 const PID_STORAGE_NAME = 'eqt_pid';
 
@@ -176,9 +177,12 @@ export const spec = {
         .forEach(seat =>
           seat.bid.forEach(bid => {
             bid.impid = impIdMap[bid.impid];
+
             if (deepAccess(bid, 'ext.feedback_token')) {
               tokens[bid.impid] = bid.ext.feedback_token;
             }
+        
+            bid.ttl = typeof bid.exp === 'number' && bid.exp > 0 ? bid.exp : DEFAULT_TTL;
           })
         );
     }
@@ -237,7 +241,7 @@ export const spec = {
 export const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 300,
+    ttl: DEFAULT_TTL
   },
 
   imp(buildImp, bidRequest, context) {

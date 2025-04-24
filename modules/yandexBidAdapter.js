@@ -55,6 +55,7 @@ const DEFAULT_CURRENCY = 'EUR';
  */
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
+const ADAPTER_VERSION = '2.0.0';
 
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
@@ -139,6 +140,7 @@ export const spec = {
       const queryParams = {
         'imp-id': impId,
         'target-ref': targetRef || ortb2?.site?.domain,
+        'adapter-version': ADAPTER_VERSION,
         'ssp-id': SSP_ID,
       };
 
@@ -153,6 +155,8 @@ export const spec = {
         id: impId,
         banner: mapBanner(bidRequest),
         native: mapNative(bidRequest),
+        displaymanager: 'Prebid.js',
+        displaymanagerver: '$prebid.version$',
       };
 
       const bidfloor = getBidfloor(bidRequest);
