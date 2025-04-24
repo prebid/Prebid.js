@@ -10,7 +10,7 @@ import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystem/uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
 /**
