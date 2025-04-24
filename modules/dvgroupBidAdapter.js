@@ -16,12 +16,6 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30
   },
-  request(buildRequest, imps, bidderRequest, context) {
-    const request = buildRequest(imps, bidderRequest, context);
-    deepSetValue(request, 'ext.prebid', true);
-
-    return request;
-  },
   bidResponse(buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.adm = replaceAuctionPrice(bidResponse.adm, bidResponse.price);
@@ -60,12 +54,11 @@ export const spec = {
     const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
+      bid.ttl = bid.ttl || TIME_TO_LIVE;
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
       if (bid.meta.advertiserDomains.length == 0) {
         bid.meta.advertiserDomains.push(ADOMAIN);
       }
-
-      bid.ttl = bid.ttl || TIME_TO_LIVE;
     });
 
     return bids;
@@ -78,7 +71,8 @@ export const spec = {
         return syncs;
       }
 
-      let params = `us_privacy=${uspConsent || ''}&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
+      let params = `us_privacy=${uspConsent || ''}`;
+      params +=`&gdpr_consent=${gdprConsent?.consentString ? gdprConsent.consentString : ''}`;
       if (typeof gdprConsent?.gdprApplies === 'boolean') {
         params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
       }
