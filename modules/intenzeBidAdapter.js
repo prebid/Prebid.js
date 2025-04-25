@@ -9,9 +9,9 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'gothamads';
+const BIDDER_CODE = 'intenze';
 const ACCOUNTID_MACROS = '[account_id]';
-const URL_ENDPOINT = `https://us-e-node1.gothamads.com/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
+const URL_ENDPOINT = `https://lb-east.intenze.co/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
 const NATIVE_ASSET_IDS = {
   0: 'title',
   2: 'icon',
@@ -136,10 +136,10 @@ export const spec = {
    */
   interpretResponse: (serverResponse) => {
     if (!serverResponse || !serverResponse.body) return [];
-    let GothamAdsResponse = serverResponse.body;
+    let responses = serverResponse.body;
 
     let bids = [];
-    for (let response of GothamAdsResponse) {
+    for (let response of responses) {
       let mediaType = response.seatbid[0].bid[0].ext && response.seatbid[0].bid[0].ext.mediaType ? response.seatbid[0].bid[0].ext.mediaType : BANNER;
 
       let bid = {
