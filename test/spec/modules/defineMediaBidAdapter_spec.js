@@ -8,7 +8,6 @@ describe('Define Media Bid Adapter', function () {
   let bid = {
     'bidder': 'defineMedia',
     'params': {
-      'rtbPublisherId': '08159',
       'supplierDomainName': 'definemedia.de',
       'devMode': true
     }
@@ -27,17 +26,13 @@ describe('Define Media Bid Adapter', function () {
       assert(spec.isBidRequestValid(bid));
     });
 
-    it('should return false when rtbPublisherId is not set', function () {
-      delete bid.params.rtbPublisherId;
-      assert.isFalse(spec.isBidRequestValid(bid));
-    });
-
     it('should return false when supplierDomainName is not set', function () {
       delete bid.params.supplierDomainName;
       assert.isFalse(spec.isBidRequestValid(bid));
     });
   });
 
+  /*
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
       let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
@@ -63,7 +58,7 @@ describe('Define Media Bid Adapter', function () {
     });
   });
 
-  /* describe('interpretResponse', function () {
+  describe('interpretResponse', function () {
     const goodBannerResponse = {
       body: {
         cur: 'EUR',

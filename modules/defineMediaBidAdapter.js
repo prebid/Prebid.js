@@ -34,30 +34,29 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    if (validBidRequests.length !== 1) {
-      utils.logWarn(`[${BIDDER_CODE}] buildRequests called with invalid number of validBidRequests:`, validBidRequests.length);
-      return [];
-    }
+    return validBidRequests?.map(function(req) {
+      console.log(req)
+      const oneBidRequest = [JSON.parse(JSON.stringify(req))];
+      const ortbRequest = converter.toORTB({oneBidRequest, bidderRequest});
 
-    const ortbRequest = converter.toORTB({validBidRequests, bidderRequest});
-    const params = validBidRequests[0].params;
-    const isDevMode = Boolean(params?.devMode);
-    const endpointUrl = isDevMode ? ENDPOINT_URL_DEV : ENDPOINT_URL_PROD;
+      const params = oneBidRequest[0].params;
+      const isDevMode = Boolean(params?.devMode);
+      const endpointUrl = isDevMode ? ENDPOINT_URL_DEV : ENDPOINT_URL_PROD;
 
-    utils.deepSetValue(ortbRequest, 'source.schain.complete', 1);
-    utils.deepSetValue(ortbRequest, 'source.schain.nodes.0.asi', '' + params.supplierDomainName);
+      utils.deepSetValue(ortbRequest, 'source.schain.complete', 1);
+      utils.deepSetValue(ortbRequest, 'source.schain.nodes.0.asi', '' + params.supplierDomainName);
 
-    utils.logInfo(`[${BIDDER_CODE}] Mapped ORTB Request:`, ortbRequest);
-
-    return [{
-      method: METHOD,
-      url: endpointUrl,
-      data: ortbRequest,
-      options: {
-        contentType: 'application/json',
-        withCredentials: false
+      utils.logInfo(`[${BIDDER_CODE}] Mapped ORTB Request from`, oneBidRequest, ' to ', ortbRequest);
+      return {
+        method: METHOD,
+        url: endpointUrl,
+        data: ortbRequest,
+        options: {
+          contentType: 'application/json',
+          withCredentials: false
+        }
       }
-    }];
+    });
   },
 
   interpretResponse: (serverResponse, request) => {
