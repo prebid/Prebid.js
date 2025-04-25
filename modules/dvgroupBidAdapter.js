@@ -8,7 +8,6 @@ const BIDDER_CODE = 'dvgroup';
 const DEFAULT_ENDPOINT = 'rtb.dvgroup.com';
 const SYNC_ENDPOINT = 'sync.dvgroup.com';
 const SSP_PREBID_UID = 'prebidssp';
-const ADOMAIN = 'dvgroup.com';
 const TIME_TO_LIVE = 360;
 
 const converter = ortbConverter({
@@ -58,7 +57,7 @@ export const spec = {
       bid.ttl = bid.ttl || TIME_TO_LIVE;
       bid.meta.advertiserDomains = bid.meta.advertiserDomains || [];
       if (bid.meta.advertiserDomains.length == 0) {
-        bid.meta.advertiserDomains.push(ADOMAIN);
+        bid.meta.advertiserDomains.push('dvgroup.com');
       }
     });
 
