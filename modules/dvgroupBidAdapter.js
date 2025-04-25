@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
-import {deepAccess, deepClone, deepSetValue, replaceAuctionPrice} from '../src/utils.js';
+import {deepAccess, deepClone, replaceAuctionPrice} from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'dvgroup';
@@ -32,6 +32,7 @@ export const spec = {
   buildRequests: function(bids, bidderRequest) {
     return bids.map((bid) => {
       let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      let bidMediaType = deepAccess(bid, 'mediaTypes.video');
       return {
         method: 'POST',
         url: `https://${endpoint}/bid?sspuid=${SSP_PREBID_UID}`,
@@ -39,7 +40,7 @@ export const spec = {
           bidRequests: [bid],
           bidderRequest: deepClone(bidderRequest),
           context: {
-            mediaType: deepAccess(bid, 'mediaTypes.video') ? VIDEO : BANNER
+            mediaType: bidMediaType ? VIDEO : BANNER
           },
         }),
       };
@@ -50,6 +51,7 @@ export const spec = {
     if (!response?.body) {
       return [];
     }
+    
     const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
