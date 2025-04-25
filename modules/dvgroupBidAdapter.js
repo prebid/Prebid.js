@@ -51,7 +51,7 @@ export const spec = {
     if (!response?.body) {
       return [];
     }
-    
+
     const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
     bids.forEach((bid) => {
       bid.meta = bid.meta || {};
