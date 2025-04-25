@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: GothamAds SSP Bidder Adapter
+Module Name: Intenze SSP Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: support@gothamads.com
+Maintainer: connect@intenze.co
 ```
 
 # Description
 
-Module that connects to GothamAds SSP demand sources
+Module that connects to Intenze SSP demand sources
 
 # Test Parameters
 ```
@@ -20,7 +20,7 @@ Module that connects to GothamAds SSP demand sources
                               }
                               },
                 bids: [{
-                        bidder: 'gothamads',
+                        bidder: 'intenze',
                         params: {
                                 placementId: 'hash',
                             accountId: 'accountId'
@@ -60,7 +60,7 @@ Module that connects to GothamAds SSP demand sources
 
                     },
                     bids: [    {
-                            bidder: 'gothamads',
+                            bidder: 'intenze',
                             params: {
                                     placementId: 'hash',
                             accountId: 'accountId'
@@ -92,7 +92,7 @@ Module that connects to GothamAds SSP demand sources
     } },
     bids: [
     {
-                bidder: 'gothamads',
+                bidder: 'intenze',
                 params: {
                         placementId: 'hash',
                     accountId: 'accountId'
