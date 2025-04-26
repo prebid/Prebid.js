@@ -19,10 +19,6 @@ import {
   parseSizesInput,
   pick,
   uniques,
-  // eslint-disable-next-line no-unused-vars
-  isStr,
-  // eslint-disable-next-line no-unused-vars
-  isJsonObject,
   isGzipCompressionSupported,
   compressDataWithGZip,
   getParameterByName,

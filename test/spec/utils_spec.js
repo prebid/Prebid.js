@@ -1323,12 +1323,23 @@ describe('Utils', function () {
     });
 
     it('should compress data correctly when CompressionStream is available', async () => {
-      const data = 'Test data';
+      const data = JSON.stringify({ test: 'data' });
       const compressedData = await utils.compressDataWithGZip(data);
-
+  
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
       expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
+    });
+  
+    it('should throw an error if invalid JSON is passed', async () => {
+      const invalidData = 'Test data';
+  
+      try {
+        await utils.compressDataWithGZip(invalidData);
+        throw new Error('Expected compressDataWithGZip to throw');
+      } catch (err) {
+        expect(err.message).to.equal('Data cannot be stringified to valid JSON.');
+      }
     });
   });
 });

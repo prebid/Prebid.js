@@ -1419,11 +1419,18 @@ export const isGzipCompressionSupported = (function () {
 
 // Make sure to use isGzipCompressionSupported before calling this function
 export async function compressDataWithGZip(data) {
-  const encoder = new TextEncoder();
-  const encodedData = encoder.encode(data); // Convert to Uint8Array
-  // eslint-disable-next-line no-unused-vars
-  const originalSize = encodedData.length; // Get original data size in bytes
+  if (typeof data !== 'string') {
+    data = JSON.stringify(data);
+  }
 
+  try {
+    JSON.parse(data);
+  } catch (e) {
+    throw new Error('Data cannot be stringified to valid JSON.');
+  }
+
+  const encoder = new TextEncoder();
+  const encodedData = encoder.encode(data);
   const compressedStream = new Blob([encodedData])
     .stream()
     .pipeThrough(new window.CompressionStream('gzip'));
@@ -1431,12 +1438,4 @@ export async function compressDataWithGZip(data) {
   const compressedBlob = await new Response(compressedStream).blob();
   const compressedArrayBuffer = await compressedBlob.arrayBuffer();
   return new Uint8Array(compressedArrayBuffer);
-
-  // const compressedSize = compressedBlob.size; // Get compressed data size in bytes
-  // return {
-  //   originalSize,
-  //   compressedSize,
-  //   compressionRatio: (compressedSize / originalSize * 100).toFixed(2) + '%',
-  //   compressedBlob
-  // };
 }
