@@ -1405,8 +1405,7 @@ export const isGzipCompressionSupported = (function () {
       if (typeof window.CompressionStream === 'undefined') {
         cachedResult = false;
       } else {
-        // eslint-disable-next-line no-unused-vars
-        let newCompressionStream = new window.CompressionStream('gzip'); // Will throw an error if unsupported
+        (() => new window.CompressionStream('gzip'))();
         cachedResult = true;
       }
     } catch (error) {
