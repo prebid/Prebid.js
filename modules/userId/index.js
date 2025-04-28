@@ -117,7 +117,7 @@
  * @typedef {{[idKey: string]: () => SubmoduleContainer[]}} SubmodulePriorityMap
  */
 
-import {find, findBy} from '../../src/polyfill.js';
+import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
@@ -144,6 +144,7 @@ import {
   logInfo,
   logWarn,
   deepEqual,
+  findBy,
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, PbPromise, delay} from '../../src/utils/promise.js';
@@ -1125,7 +1126,7 @@ function updateEIDConfig(submodules) {
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
-export function generateSubmoduleContainers(prevSubmodules, registry, options, configs) {
+export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
   const {autoRefresh, retainConfig} = options;
   const normalizer = (val) => (val || '').toLowerCase();
   return registry
@@ -1169,7 +1170,7 @@ function updateSubmodules(options = {}) {
     return;
   }
 
-  const updatedContainers = generateSubmoduleContainers(submodules, submoduleRegistry, options, configs);
+  const updatedContainers = generateSubmoduleContainers(options, configs);
   submodules.splice(0, submodules.length);
   submodules.push(...updatedContainers);
 

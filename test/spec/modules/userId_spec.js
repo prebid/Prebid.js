@@ -3161,7 +3161,7 @@ describe('User ID', function () {
         createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
       ];
       const configRegistry = [{ name: 'sharedId' }];
-      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {}, configRegistry);
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
     });
@@ -3177,7 +3177,7 @@ describe('User ID', function () {
         createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
       ];
       const configRegistry = [{ name: 'sharedId' }];
-      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {}, configRegistry);
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(1);
       expect(result[0].submodule.name).to.eql('sharedId');
     });
@@ -3191,7 +3191,7 @@ describe('User ID', function () {
         createMockIdSubmodule('shouldBeKept', { id: { uid2: { id: 'uid2_value' } } }, null, null),
       ];
       const configRegistry = [{ name: 'sharedId' }];
-      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {retainConfig: true}, configRegistry);
+      const result = generateSubmoduleContainers({retainConfig: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(2);
       expect(result[0].submodule.name).to.eql('sharedId');
       expect(result[1].submodule.name).to.eql('shouldBeKept');
@@ -3212,7 +3212,7 @@ describe('User ID', function () {
         {name: 'new'},
         {name: 'unchanged', auctionDelay: 300},
       ];
-      const result = generateSubmoduleContainers(previousSubmoduleContainers, submoduleRegistry, {autoRefresh: true}, configRegistry);
+      const result = generateSubmoduleContainers({autoRefresh: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
       expect(result).to.have.lengthOf(3);
       const itemsWithRefreshIds = result.filter(item => item.refreshIds);
       const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
