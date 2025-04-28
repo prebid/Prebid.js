@@ -165,8 +165,16 @@ export interface BidderSpec<BIDDER extends BidderCode> {
     isBidRequestValid(request: BidRequest<BIDDER>): boolean;
     buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
     interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
+    onBidWon?: (bid: Bid) => void;
     onBidBillable?: (bid: Bid) => void;
+    onBidderError?: (error: BidderError<BIDDER>) => void;
+    onBidViewable?: (bid: Bid) => void;
+    onSetTargeting?: (bid: Bid) => void;
+    onAdRenderSucceeded?: (bid: Bid) => void;
+    onDataDeletionRequest?: (bidderRequests: BidderRequest<BIDDER>[], cmpRegisterDeletionResponse: any) => void;
+    onTimeout?: (bidRequests: (BidRequest<BIDDER> & { timeout: number })[]) => void;
 }
+
 
 /**
  * Register a bidder with prebid, using the given spec.
