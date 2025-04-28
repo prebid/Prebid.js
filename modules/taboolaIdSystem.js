@@ -166,6 +166,11 @@ function saveUserIdInLocalStorage(id) {
  * Instead, we parse "data.user.id" and store it in local storage.
  */
 function callTaboolaUserSync(submoduleConfig, currentId, callback) {
+  const skipSync = submoduleConfig?.params?.shouldSkipSync ?? true;
+  if (skipSync) {
+    callback(currentId ? {taboolaId: currentId} : undefined);
+    return;
+  }
   const syncUrl = buildTaboolaSyncUrl();
   ajax(
     syncUrl,
@@ -175,8 +180,7 @@ function callTaboolaUserSync(submoduleConfig, currentId, callback) {
           const data = JSON.parse(response);
           if (data && data.user && data.user.id) {
             saveUserIdInLocalStorage(data.user.id);
-            // eslint-disable-next-line standard/no-callback-literal
-            callback({taboolaId: data.user.id});
+            callback(data.user.id ? {taboolaId: data.user.id} : undefined);
             return;
           }
         } catch (err) {
