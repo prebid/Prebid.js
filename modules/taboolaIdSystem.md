@@ -36,9 +36,6 @@ The below parameters apply only to the IDx integration.
                  name: 'taboolaId',
                  type: 'html5', // or 'cookie' or 'html5&cookie'
                  expires: 365 // days
-               },
-               params: {
-                 shouldSkipSync: true      // Override sync call, Optional (defaults to true)
                }
             }
          ]

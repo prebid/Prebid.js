@@ -168,7 +168,6 @@ function saveUserIdInLocalStorage(id) {
 function callTaboolaUserSync(submoduleConfig, currentId, callback) {
   const skipSync = submoduleConfig?.params?.shouldSkipSync ?? true;
   if (skipSync) {
-    // eslint-disable-next-line standard/no-callback-literal
     callback(currentId ? {taboolaId: currentId} : undefined);
     return;
   }
@@ -181,8 +180,7 @@ function callTaboolaUserSync(submoduleConfig, currentId, callback) {
           const data = JSON.parse(response);
           if (data && data.user && data.user.id) {
             saveUserIdInLocalStorage(data.user.id);
-            // eslint-disable-next-line standard/no-callback-literal
-            callback({taboolaId: data.user.id});
+            callback(data.user.id ? {taboolaId: data.user.id} : undefined);
             return;
           }
         } catch (err) {
