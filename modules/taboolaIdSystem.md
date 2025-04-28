@@ -38,7 +38,7 @@ The below parameters apply only to the IDx integration.
                  expires: 365 // days
                },
                params: {
-                 shouldSkipSync: false      // Optional (defaults to true)
+                 shouldSkipSync: true      // Override sync call, Optional (defaults to true)
                }
             }
          ]
