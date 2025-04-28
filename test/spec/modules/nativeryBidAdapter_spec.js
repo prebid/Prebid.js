@@ -36,19 +36,9 @@ const bidRequests = [
 describe('NativeryAdapter', function () {
   const adapter = newBidder(spec);
   let sandBox;
-  let deepAccessStub;
-  let logWarnSpy;
-  let logErrorSpy;
 
   beforeEach(() => {
     sandBox = sinon.createSandbox();
-    deepAccessStub = sandBox.stub();
-    logWarnSpy = sandBox.spy(utils.logWarn);
-    logErrorSpy = sandBox.spy(utils.logError);
-
-    // Sovrascrivi le funzioni globali usate nella funzione da testare
-    utils.logWarn = logWarnSpy;
-    utils.logError = logErrorSpy;
   });
 
   afterEach(() => sandBox.restore());
@@ -159,6 +149,7 @@ describe('NativeryAdapter', function () {
     });
 
     it('dovrebbe loggare un warning se deepAccess restituisce errori, ma comunque ritornare bids', function () {
+      const logWarnSpy = sinon.spy(utils, 'logWarn');
       const bidsMock = [{ bid: 1 }];
       const bidderRequest = spec.buildRequests(bidRequests, {});
 
@@ -178,14 +169,12 @@ describe('NativeryAdapter', function () {
 
       const result = spec.interpretResponse(serverResponse, bidderRequest);
       expect(result).to.deep.equal(bidsMock);
-      sinon.assert.calledOnce(logWarnSpy);
-      sinon.assert.calledWith(
-        logWarnSpy,
-        'Nativery: Error in bid response ' + JSON.stringify(errors)
-      );
+      expect(logWarnSpy.calledOnceWithExactly(`Nativery: Error in bid response ${JSON.stringify(errors)}`)).to.be.true;
+      logWarnSpy.restore();
     });
 
     it('dovrebbe ritornare [] e loggare un errore se converter.fromORTB lancia un errore', function () {
+      const logErrorSpy = sinon.spy(utils, 'logError');
       const bidderRequest = spec.buildRequests(bidRequests, {});
 
       const serverResponse = {
@@ -199,11 +188,8 @@ describe('NativeryAdapter', function () {
 
       const result = spec.interpretResponse(serverResponse, bidderRequest);
       expect(result).to.be.an('array').that.is.empty;
-      sinon.assert.calledOnce(logErrorSpy);
-      sinon.assert.calledWith(
-        logErrorSpy,
-        'Nativery: unhandled error in bid response ' + error.message
-      );
+      expect(logErrorSpy.calledOnceWithExactly(`Nativery: unhandled error in bid response ${error.message}`)).to.be.true;
+      logErrorSpy.restore();
     });
   });
 });
