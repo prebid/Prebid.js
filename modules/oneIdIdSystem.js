@@ -1,5 +1,5 @@
 /**
- * This module adds AdriverId to the User ID module
+ * This module adds OneId to the User ID module
  * The {@link module:modules/userId} module is required
  * @module modules/oneIdIdSystem
  * @requires module:modules/userId
@@ -138,7 +138,7 @@ export const oneIdIdSystem = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{adriverId:string}}
+   * @returns {{oneId:string}}
    */
   decode(value) {
     return { adrcid: value };
