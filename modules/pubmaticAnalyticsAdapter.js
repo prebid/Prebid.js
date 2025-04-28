@@ -436,9 +436,10 @@ function getListOfIdentityPartners() {
     }
     return mapping;
   }, {});
-  return Object.keys(availableUserIds).map(storageName =>
+  const identityPartners = Object.keys(availableUserIds).map(storageName =>
     identityModuleNameMap[storageName] || storageName
   );
+  return identityPartners.length > 0 ? identityPartners : undefined;
 }
 
 function executeBidsLoggerCall(e, highestCpmBids) {
