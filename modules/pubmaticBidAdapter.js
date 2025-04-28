@@ -65,19 +65,22 @@ const converter = ortbConverter({
     const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
     const { adUnitCode, mediaTypes, rtd } = bidRequest;
     const imp = buildImp(bidRequest, context);
+
+    // Check if the imp object does not have banner, video, or native
+
+    if (!imp.hasOwnProperty('banner') && !imp.hasOwnProperty('video') && !imp.hasOwnProperty('native')) {
+      return null;
+    }
     if (deals) addPMPDeals(imp, deals);
     if (dctr) addDealCustomTargetings(imp, dctr);
     if (rtd?.jwplayer) addJWPlayerSegmentData(imp, rtd.jwplayer);
     imp.bidfloor = _parseSlotParam('kadfloor', kadfloor);
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
     setFloorInImp(imp, bidRequest);
-    if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot, adUnitCode, imp);
-    if (imp.hasOwnProperty('video')) updateVideoImp(imp.video, mediaTypes?.video, adUnitCode, imp);
+    if (imp.hasOwnProperty('banner')) updateBannerImp(imp.banner, adSlot);
+    if (imp.hasOwnProperty('video')) updateVideoImp(mediaTypes?.video, adUnitCode, imp);
     if (imp.hasOwnProperty('native')) updateNativeImp(imp, mediaTypes?.native);
-    // Check if the imp object does not have banner, video, or native
-    if (!imp.hasOwnProperty('banner') && !imp.hasOwnProperty('video') && !imp.hasOwnProperty('native')) {
-      return null;
-    }
+    if (imp.hasOwnProperty('banner') || imp.hasOwnProperty('video')) addViewabilityToImp(imp, adUnitCode, bidRequest?.sizes);
     if (pmzoneid) imp.ext.pmZoneId = pmzoneid;
     setImpTagId(imp, adSlot.trim(), hashedKey);
     setImpFields(imp);
@@ -304,7 +307,7 @@ const setFloorInImp = (imp, bid) => {
   if (isMultiFormatRequest) removeGranularFloor(imp, requestedMediatypes);
 }
 
-const updateBannerImp = (bannerObj, adSlot, adUnitCode, imp) => {
+const updateBannerImp = (bannerObj, adSlot) => {
   let slot = adSlot.split(':');
   let splits = slot[0]?.split('@');
   splits = splits?.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
@@ -321,13 +324,6 @@ const updateBannerImp = (bannerObj, adSlot, adUnitCode, imp) => {
     (item) => !(item.w === bannerObj.w && item.h === bannerObj.h)
   );
   bannerObj.pos ??= 0;
-
-  // Get sizes for viewability measurement
-  const sizes = bannerObj.format.concat([{ w: bannerObj.w, h: bannerObj.h }]);
-  const minSize = _getMinSize(sizes);
-
-  // Add viewability at the imp level
-  addViewabilityToImp(imp, adUnitCode, { w: minSize.w, h: minSize.h });
 }
 
 const setImpTagId = (imp, adSlot, hashedKey) => {
@@ -351,7 +347,8 @@ const updateNativeImp = (imp, nativeParams) => {
   }
 }
 
-const updateVideoImp = (videoImp, videoParams, adUnitCode, imp) => {
+const updateVideoImp = (videoParams, adUnitCode, imp) => {
+  const videoImp = imp.video;
   if (!deepAccess(videoParams, 'plcmt')) {
     logWarn(MSG_VIDEO_PLCMT_MISSING + ' for ' + adUnitCode);
   };
@@ -359,26 +356,6 @@ const updateVideoImp = (videoImp, videoParams, adUnitCode, imp) => {
     delete imp.video;
     logWarn(`${LOG_WARN_PREFIX}Error: Missing ${!videoParams ? 'video config params' : 'video size params (playersize or w&h)'} for adunit: ${adUnitCode} with mediaType set as video. Ignoring video impression in the adunit.`);
     return;
-  }
-
-  // Get video dimensions from either playerSize or w/h dimensions
-  let videoSize = { w: 0, h: 0 };
-
-  // Use the existing dimensions if available
-  if (videoImp.w && videoImp.h) {
-    videoSize.w = videoImp.w;
-    videoSize.h = videoImp.h;
-  } else if (videoParams.playerSize) {
-    const playerSize = Array.isArray(videoParams.playerSize[0])
-      ? videoParams.playerSize[0] : videoParams.playerSize;
-    videoSize.w = parseInt(playerSize[0], 10);
-    videoSize.h = parseInt(playerSize[1], 10);
-  }
-
-  // Calculate viewability if we have valid dimensions
-  if (videoSize.w > 0 && videoSize.h > 0) {
-    // Add viewability at the imp level
-    addViewabilityToImp(imp, adUnitCode, videoSize);
   }
 }
 
@@ -705,10 +682,7 @@ export function _getViewability(element, topWin, { w, h } = {}) {
  * @returns {Object} The smallest size object
  */
 function _getMinSize(sizes) {
-  if (!sizes || !sizes.length) {
-    return { w: 0, h: 0 };
-  }
-  return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min, sizes[0]);
+  return (!sizes || !sizes.length ? { w: 0, h: 0 } : sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min, sizes[0]));
 }
 
 /**
@@ -717,15 +691,22 @@ function _getMinSize(sizes) {
  * @param {string} adUnitCode - The ad unit code for element identification
  * @param {Object} size - Size object with width and height properties
  */
-export const addViewabilityToImp = (imp, adUnitCode, size) => {
+export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
+  let elementSize = { w: 0, h: 0 };
+
+  if (imp.video?.w > 0 && imp.video?.h > 0) {
+    elementSize.w = imp.video.w;
+    elementSize.h = imp.video.h;
+  } else {
+    elementSize = _getMinSize(sizes);
+  }
   const element = document.getElementById(adUnitCode);
   if (!element) return;
 
   const viewabilityAmount = _isViewabilityMeasurable(element)
-    ? _getViewability(element, getWindowTop(), size)
+    ? _getViewability(element, getWindowTop(), elementSize)
     : 'na';
 
-  // Initialize ext object if it doesn't exist
   if (!imp.ext) {
     imp.ext = {};
   }
