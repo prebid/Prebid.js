@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec, converter } from 'modules/nativeryBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as utils from '../../../src/utils';
+import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://hb.nativery.com/openrtb2/auction';
 const MAX_IMPS_PER_REQUEST = 10;
