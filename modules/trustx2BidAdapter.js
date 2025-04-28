@@ -12,6 +12,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -25,7 +26,10 @@ const BID_TTL = 300;
 const NET_REVENUE = true;
 const SUPPORTED_CURRENCY = 'USD';
 const OUTSTREAM_PLAYER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const USYNC_DELETE_URL = 'https://ads.trustx.org/usync-delete';
 const ADAPTER_VERSION = '1.0';
+const USER_ID_KEY = 'trustx2uid';
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const ortbAdapterConverter = ortbConverter({
   context: {
@@ -76,6 +80,17 @@ const ortbAdapterConverter = ortbConverter({
       deepSetValue(requestObj, 'regs.coppa', 1);
     }
 
+    // DSA
+    if (bidderRequest.ortb2?.regs?.ext?.dsa) {
+      if (!requestObj.regs) {
+        requestObj.regs = {ext: {}};
+      }
+      if (!requestObj.regs.ext) {
+        requestObj.regs.ext = {};
+      }
+      requestObj.regs.ext.dsa = bidderRequest.ortb2.regs.ext.dsa;
+    }
+
     // User IDs (eIDs)
     if (bidderRequest.bidRequests && bidderRequest.bidRequests.length > 0) {
       const bidRequest = bidderRequest.bidRequests[0];
@@ -105,7 +120,7 @@ const ortbAdapterConverter = ortbConverter({
       if (!requestObj.site) requestObj.site = {};
       
       // Common site fields
-      const siteFields = ['name', 'domain', 'page', 'ref', 'search', 'keywords', 'cat', 'sectioncat', 'pagecat'];
+      const siteFields = ['name', 'domain', 'page', 'ref', 'search', 'keywords', 'cat', 'pagecat'];
       siteFields.forEach(field => {
         if (site[field]) {
           requestObj.site[field] = site[field];
@@ -117,7 +132,7 @@ const ortbAdapterConverter = ortbConverter({
         if (!requestObj.site.content) requestObj.site.content = {};
         
         // Copy content fields
-        const contentFields = ['id', 'title', 'series', 'season', 'episode', 'genre', 'contentrating', 'language'];
+        const contentFields = ['id', 'title', 'series', 'season', 'episode', 'genre'];
         contentFields.forEach(field => {
           if (site.content[field]) {
             requestObj.site.content[field] = site.content[field];
@@ -239,6 +254,14 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
+
+    const userId = deepAccess(serverResponse, 'body.ext.userid');
+    if (userId && config.getConfig('localStorageWriteAllowed')) {
+      if (storage.localStorageIsEnabled()) {
+        storage.setDataInLocalStorage(USER_ID_KEY, userId);
+      }
+    }
+
     return ortbAdapterConverter.fromORTB({
       response: serverResponse.body,
       request: bidRequest.data
@@ -250,12 +273,9 @@ export const spec = {
    *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @param {object} gdprConsent GDPR consent data
-   * @param {object} uspConsent USP consent data
-   * @param {object} gppConsent GPP consent data
    * @return {object[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function(syncOptions, serverResponses) {
     logInfo('trustx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     let syncElements = [];
 
@@ -294,6 +314,23 @@ export const spec = {
 
     logInfo('trustx.getUserSyncs result=%o', syncElements);
     return syncElements;
+  },
+
+  /**
+   * Handle data deletion requests
+   * This will both delete local storage data and notify the server
+  */
+  onDataDeletionRequest: function(data) {
+
+    if (storage.localStorageIsEnabled()) {
+      storage.removeDataFromLocalStorage(USER_ID_KEY);
+    }
+    
+    ajax(USYNC_DELETE_URL, null, null, {
+      method: 'GET',
+      withCredentials: true,
+      browsingTopics: false
+    });
   },
 };
 
