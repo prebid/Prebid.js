@@ -27,7 +27,7 @@ export const spec = {
   aliases: [],
   supportedMediaTypes: [VIDEO],
   isBidRequestValid: function(bid) {
-    return bid.bidder === BIDDER_CODE && bid.params && Object.keys(bid.params).length > 0 &&
+    return bid.params && Object.keys(bid.params).length > 0 &&
       ((isSet(bid.params.publisherId) && parseInt(bid.params.publisherId) > 0) || (isSet(bid.params.placementId) && parseInt(bid.params.placementId) > 0)) &&
       bid.params.siteId != null;
   },
