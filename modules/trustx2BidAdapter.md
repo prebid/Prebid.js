@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name:  TRUSTX Bid Adapter
+Module Name:  TrustX 2.0 Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer:   prebid@trustx.org
 ```
@@ -9,7 +9,7 @@ Maintainer:   prebid@trustx.org
 # Description
 
 Module that connects to TRUSTX's premium demand sources.
-TRUSTX bid adapter supports Banner and Video ad formats with advanced targeting capabilities.
+TrustX 2.0 bid adapter supports Banner and Video ad formats with advanced targeting capabilities.
 
 # Test Parameters
 
