@@ -1,4 +1,4 @@
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import {
   deepAccess,
@@ -18,7 +18,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'nativery';
 const BIDDER_ALIAS = ['nat'];
 const ENDPOINT = 'https://hb.nativery.com/openrtb2/auction';
-const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'EUR';
 const TTL = 30;
 const MAX_IMPS_PER_REQUEST = 10;
 const GVLID = 1133;
@@ -43,7 +43,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: BIDDER_ALIAS,
-  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
