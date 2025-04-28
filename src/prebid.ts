@@ -703,6 +703,9 @@ interface RequestBids {
 
 declare module './events' {
     interface Events {
+        /**
+         * Fired when `requestBids` is called.
+         */
         [REQUEST_BIDS]: [];
     }
 }
@@ -864,6 +867,9 @@ requestBids.before(executeCallbacks, 49);
 
 declare module './events' {
     interface Events {
+        /**
+         * Fired when `.addAdUniuts` is called.
+         */
         [ADD_AD_UNITS]: [];
     }
 }

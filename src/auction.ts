@@ -79,14 +79,43 @@ export type AuctionProperties = ReturnType<ReturnType<typeof newAuction>['getPro
 
 declare module './events' {
     interface Events {
+        /**
+         * Fired when an auction starts.
+         */
         [EVENTS.AUCTION_INIT]: [AuctionProperties];
+        /**
+         * Fired when an auction ends.
+         */
         [EVENTS.AUCTION_END]: [AuctionProperties];
+        /**
+         * Fired when an auction times out (at least some of the bid adapters
+         * did not reply before the timeout.
+         */
         [EVENTS.AUCTION_TIMEOUT]: [AuctionProperties];
-        [EVENTS.BID_ACCEPTED]: [Partial<Bid>];
-        [EVENTS.BID_REJECTED]: [Partial<Bid>];
+        /**
+         * Fired when an auction times out.
+         */
         [EVENTS.BID_TIMEOUT]: [BidRequest<any>[]];
+        /**
+         * Fired when a bid is received.
+         */
+        [EVENTS.BID_ACCEPTED]: [Partial<Bid>];
+        /**
+         * Fired when a bid is rejected.
+         */
+        [EVENTS.BID_REJECTED]: [Partial<Bid>];
+        /**
+         * Fired once for each bid request (unique combination of auction, ad unit and bidder)
+         * that produced no bid.
+         */
         [EVENTS.NO_BID]: [BidRequest<any>];
+        /**
+         * Fired when a bid is received.
+         */
         [EVENTS.BID_RESPONSE]: [Bid];
+        /**
+         * Fired once for each bid, immediately after its adjustment (see bidCpmAdjustment).
+         */
         [EVENTS.BID_ADJUSTMENT]: [Partial<Bid>];
     }
 }

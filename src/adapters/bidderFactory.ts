@@ -251,8 +251,19 @@ export const guardTids: any = memoize(({bidderCode}) => {
 
 declare module '../events' {
     interface Events {
+        /**
+         * Fired once for each bidder in each auction (or twice if the bidder is configured for both client and s2s),
+         * after processing for that bidder (for that auction) is complete.
+         */
         [EVENTS.BIDDER_DONE]: [BidderRequest<any>];
+        /**
+         * Fired just before a client bid adapter makes an HTTP request to its exchange.
+         */
         [EVENTS.BEFORE_BIDDER_HTTP]: [BidderRequest<any>, AdapterRequest]
+        /**
+         * Fired when a bid adapter's HTTP request results in something other than HTTP 2xx or 304.
+         * In the case of Prebid Server, this is repeated for each s2s bidder.
+         */
         [EVENTS.BIDDER_ERROR]: [BidderError<any>];
     }
 }

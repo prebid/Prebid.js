@@ -29,10 +29,26 @@ const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 declare module './events' {
     interface Events {
+        /**
+         * Fired when a bid is rendered (successfully or not).
+         */
         [EVENTS.BID_WON]: [Bid];
+        /**
+         * Fired when a bid failed to render.
+         */
         [EVENTS.AD_RENDER_FAILED]: [AdRenderFailedData];
+        /**
+         * Fired when a bid was rendered successfully.
+         */
         [EVENTS.AD_RENDER_SUCCEEDED]: [AdRenderSucceededData];
+        /**
+         * Fired when a bid that was previously rendered is rendered again.
+         */
         [EVENTS.STALE_RENDER]: [Bid];
+        /**
+         * Fired when an expired bid is rendered. A bid expires after `.ttl` seconds from
+         * the time it was received.
+         */
         [EVENTS.EXPIRED_RENDER]: [Bid];
     }
 }

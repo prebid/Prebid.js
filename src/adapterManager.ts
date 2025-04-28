@@ -391,7 +391,13 @@ export const partitionBidders = hook('sync', _partitionBidders, 'partitionBidder
 
 declare module './events' {
     interface Events {
+        /**
+         * Fired once per auction, just before bid requests are generated.
+         */
         [EVENTS.BEFORE_REQUEST_BIDS]: [AdUnit[]];
+        /**
+         * Fired once for each bidder in each auction (or twice for bidders that are configured for both client and s2s).
+         */
         [EVENTS.BID_REQUESTED]: [BidderRequest<any>];
     }
 }
