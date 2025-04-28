@@ -389,6 +389,13 @@ export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SB
 
 export const partitionBidders = hook('sync', _partitionBidders, 'partitionBidders');
 
+declare module './events' {
+    interface Events {
+        [EVENTS.BEFORE_REQUEST_BIDS]: [AdUnit[]];
+        [EVENTS.BID_REQUESTED]: [BidderRequest<any>];
+    }
+}
+
 declare module './hook' {
     interface NamedHooks {
         makeBidRequests: typeof adapterManager.makeBidRequests;

@@ -165,6 +165,13 @@ type TargetingArray = ByAdUnit<TargetingValueLists[]>[];
 type AdUnitPredicate = (adUnitCode: AdUnitCode) => boolean;
 export type SlotMatchingFn = (slot: googletag.Slot) => AdUnitPredicate;
 
+
+declare module './events' {
+    interface Events {
+        [EVENTS.SET_TARGETING]: [ByAdUnit<GPTTargetingValues>];
+    }
+}
+
 export function newTargeting(auctionManager) {
   let latestAuctionForAdUnit = {};
 
