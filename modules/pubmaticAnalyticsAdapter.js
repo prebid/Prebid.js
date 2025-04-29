@@ -428,6 +428,7 @@ function getFloorFetchStatus(floorData) {
 
 function getListOfIdentityPartners() {
   const namespace = getGlobal();
+  const publisherProvidedEids = namespace.getConfig("ortb2.user.eids") || [];
   const availableUserIds = namespace.adUnits[0]?.bids[0]?.userId || {};
   const identityModules = namespace.getConfig('userSync')?.userIds || [];
   const identityModuleNameMap = identityModules.reduce((mapping, module) => {
@@ -436,9 +437,16 @@ function getListOfIdentityPartners() {
     }
     return mapping;
   }, {});
-  const identityPartners = Object.keys(availableUserIds).map(storageName =>
+
+  const userIdPartners = Object.keys(availableUserIds).map(storageName =>
     identityModuleNameMap[storageName] || storageName
   );
+
+  const publisherProvidedEidList = publisherProvidedEids.map(eid =>
+    identityModuleNameMap[eid.source] || eid.source
+  );
+  
+  const identityPartners = Array.from(new Set([...userIdPartners, ...publisherProvidedEidList]));
   return identityPartners.length > 0 ? identityPartners : undefined;
 }
 
