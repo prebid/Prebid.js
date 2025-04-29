@@ -427,9 +427,9 @@ function getFloorFetchStatus(floorData) {
 }
 
 function getListOfIdentityPartners() {
-  const pbjs = getGlobal();
-  const availableUserIds = pbjs.adUnits[0]?.bids[0]?.userId || {};
-  const identityModules = pbjs.getConfig('userSync')?.userIds || [];
+  const namespace = getGlobal();
+  const availableUserIds = namespace.adUnits[0]?.bids[0]?.userId || {};
+  const identityModules = namespace.getConfig('userSync')?.userIds || [];
   const identityModuleNameMap = identityModules.reduce((mapping, module) => {
     if (module.storage?.name) {
       mapping[module.storage.name] = module.name;
