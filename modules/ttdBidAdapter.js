@@ -14,7 +14,7 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2024.07.26';
+const BIDADAPTERVERSION = 'TTD-PREBID-2025.04.25';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -404,6 +404,7 @@ export const spec = {
       device: getDevice(firstPartyData),
       user: getUser(bidderRequest, firstPartyData),
       at: 1,
+      tmax: Math.max(bidderRequest.timeout || 400, 400),
       cur: ['USD'],
       regs: getRegs(bidderRequest),
       source: getSource(validBidRequests, bidderRequest),
@@ -440,7 +441,7 @@ export const spec = {
       url: url,
       data: topLevel,
       options: {
-        withCredentials: true
+        withCredentials: true,
       }
     };
 

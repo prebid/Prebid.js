@@ -1,0 +1,147 @@
+<html>
+
+<head>
+    <link href="https://vjs.zencdn.net/7.20.2/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.css"
+          integrity="sha512-0gIqgiX1dWTChdWUl8XGIBDFvLo7aTvmd6FAhJjzWx5bzYsCJTiPJLKqLF3q31IN4Kfrc0NbTO+EthoT6O0olQ=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.css"
+          integrity="sha512-vvsEsf+dZDp6wbommO1Jbb2bpFhVQjw6pIzfE5fUY5Fgkmsgn/16sQWegqrd236T69kK5F1SbGZ+yK46a9il5A=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://vjs.zencdn.net/7.20.2/video.min.js"></script>
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.js"
+            integrity="sha512-XjyyAijQGlXZET35toG8igvVs8HvfVgKXGnbfAs2EpZ0o8vjJoIrxL9RBBQbQjzAODIe0jvWelFfZOA3Z/vdWg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.js"
+            integrity="sha512-9ocW9fl8CKJhZp4cmDpLDGPuTQ93gvw1iIS6daMYc5Y0Xh1all8iwdoI+iNmZpiydpdDGyKMTriXDX0wfs2OEg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+
+    <script async src="../../../build/dev/prebid.js"></script>
+
+    <title>VideoJS with Local Cache & GAM Ad Server Mediation</title>
+
+    <!--This demo configures the video provider to use GAM Ad Server as mediation. Listens to Video events that are fired when an ad impression or ad error came from a bid. -->
+
+    <script>
+      const vastXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://adplayer.pro/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"640\" height=\"360\" type=\"video/mp4\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://static.adplayer.pro/video/demo_v2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
+
+      // Setup ad units
+      var adUnits = [{
+        code: 'div-gpt-ad-51545-0',
+        mediaTypes: {
+          video: {
+            playerSize: [640, 360], 
+          }
+        },
+        video: {
+          divId: 'player', // required to indicate which player is being used to render this ad unit.
+        },
+        bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }, {
+          bidder: 'ix',
+          params: {
+            siteId: '300',
+          }
+        }]
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          cache: {
+            useLocal: true
+          },
+          video: {
+            providers: [{
+              divId: 'player',
+              vendorCode: 2, // videojs vendorCode
+              playerConfig: {
+                params: {
+                  adPluginConfig: {
+                    numRedirects: 10
+                  },
+                  vendorConfig: {
+                    controls: true,
+                    autoplay: false,
+                    preload: "auto",
+                    advertising: { client: 'googima' }
+                  }
+                }
+              },
+              // Configure your Ad Server Integration
+              adServer: {
+                vendorCode: 'gam',
+                baseAdTagUrl: 'https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp'
+              },
+            },]
+          },
+          targetingControls: {
+            allowTargetingKeys: ['BIDDER', 'AD_ID', 'PRICE_BUCKET', 'SIZE', 'DEAL', 'SOURCE', 'FORMAT', 'UUID', 'CACHE_ID', 'CACHE_HOST', 'ADOMAIN']
+          },
+          debugging: {
+            enabled: true,
+            intercept: [
+              {
+                when: {
+                  adUnitCode: 'div-gpt-ad-51545-0',
+                },
+                then: {
+                  cpm: 35,
+                  mediaType: "video",
+                  vastXml
+                }
+              },
+            ]
+          }
+        });
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.onEvent('videoSetupComplete', e => {
+          // Load media with its Metadata when the video player is done instantiating.
+          videojs('player').loadMedia({
+            id: 'XYXYXYXY',
+            src: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+            title: 'Subaru Outback On Street And Dirt',
+            description: 'Smoking Tire takes the all-new Subaru Outback to the highest point we can find in hopes our customer-appreciation Balloon Launch will get some free T-shirts into the hands of our viewers.',
+            type: 'video/mp4'
+          });
+        });
+
+        pbjs.onEvent('videoSetupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
+
+        pbjs.onEvent('videoAdRequest', (e) => {
+          console.log('videos pb ad request: ', e);
+        });
+
+        pbjs.onEvent('videoBidError', e => {
+          console.log('An Ad Error came from a Bid: ', e);
+        });
+
+        pbjs.onEvent('videoBidImpression', e => {
+          console.log('An Ad Impression came from a Bid: ', e);
+        });
+
+        pbjs.requestBids();
+      });
+    </script>
+</head>
+
+<body>
+<h2>VideoJS with GAM Ad Server Mediation</h2>
+<h5>Div-1: Player placeholder div</h5>
+<video-js id='player' class="vjs-big-play-centered"></video-js>
+</body>
+
+</html>

@@ -114,7 +114,7 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
     return xml;
   }
   return {
-    // eslint-disable-next-line prebid/no-global
+    // eslint-disable-next-line no-restricted-globals
     readyState: XMLHttpRequest.DONE,
     status,
     statusText,

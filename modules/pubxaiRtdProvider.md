@@ -37,7 +37,7 @@ pbjs.setConfig({
 			waitForIt: true,
 			params: {
 				pubxId: `<publisher_id>`,
-				endpoint: `<publisher_endpoint>`, // (optional)
+				endpoint: `<publisher_endpoint>`,
 				floorMin: `<floorMin>`, // (optional)
 				enforcement: `<enforcement>`, // (optional)
 				data: `<defaultConfig>` // (optional)
@@ -57,7 +57,7 @@ pbjs.setConfig({
 | waitForIt          | Boolean | Should be `true` if an `auctionDelay` is defined (optional)    | `false`                    |
 | params             | Object  |                                                                |                            |
 | params.pubxId      | String  | Publisher ID                                                   |                            |
-| params.endpoint    | String  | URL to retrieve floor data (optional)                          | `https://floor.pbxai.com/` |
+| params.endpoint    | String  | URL to retrieve floor data                     		|			     |
 | params.floorMin    | Number  | Minimum CPM floor (optional)                                   | `None`                     |
 | params.enforcement | Object  | Enforcement behavior within the Price Floors Module (optional) | `None`                     |
 | params.data        | Object  | Default floor data provided by pubX.ai (optional)              | `None`                     |
