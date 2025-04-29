@@ -283,7 +283,7 @@ describe('trustx2BidAdapter', function() {
 
     it('should return expected request object', function() {
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(bidRequest.url).equal('https://ads.dev.trustx.org/pbhb?publisher_id=trustx-pub-1&placement_id=987654');
+      expect(bidRequest.url).equal('https://ads.trustx.org/pbhb?publisher_id=trustx-pub-1&placement_id=987654');
       expect(bidRequest.method).equal('POST');
     });
   });
