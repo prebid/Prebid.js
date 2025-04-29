@@ -194,7 +194,7 @@ export const spec = {
   code: BIDDER_CODE,
   VERSION: ADAPTER_VERSION,
   supportedMediaTypes: [BANNER, VIDEO],
-  ENDPOINT: 'https://ads.dev.trustx.org/pbhb',
+  ENDPOINT: 'https://ads.trustx.org/pbhb',
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -276,7 +276,7 @@ export const spec = {
    * @return {object[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, serverResponses) {
-    logInfo('trustx.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
+    logInfo('trustx2.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     let syncElements = [];
 
     // Early return if sync is completely disabled
@@ -312,7 +312,7 @@ export const spec = {
       }
     });
 
-    logInfo('trustx.getUserSyncs result=%o', syncElements);
+    logInfo('trustx2.getUserSyncs result=%o', syncElements);
     return syncElements;
   },
 
