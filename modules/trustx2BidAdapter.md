@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name:  TrustX 2.0 Bid Adapter
+Module Name:  TRUSTX 2.0 Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer:   prebid@trustx.org
 ```
@@ -9,7 +9,7 @@ Maintainer:   prebid@trustx.org
 # Description
 
 Module that connects to TRUSTX's premium demand sources.
-TrustX 2.0 bid adapter supports Banner and Video ad formats with advanced targeting capabilities.
+TRUSTX 2.0 bid adapter supports Banner and Video ad formats with advanced targeting capabilities.
 
 # Test Parameters
 
@@ -93,7 +93,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 ```
 
 ## Outstream Video
-TRUSTX also supports outstream video format that can be displayed in non-video placements.
+TRUSTX 2.0 also supports outstream video format that can be displayed in non-video placements.
 
 ```
   var adUnits = [
@@ -176,7 +176,7 @@ var adUnits = [
 # Additional Configuration Options
 
 ## GPP/GCC Support
-TRUSTX fully supports Global Privacy Platform (GPP) and Global Cookie Consent (GCC) standards.
+TRUSTX 2.0 fully supports Global Privacy Platform (GPP) and Global Cookie Consent (GCC) standards.
 
 ## GDPR, CCPA and other Privacy Regulations
-TRUSTX is fully compliant with GDPR, CCPA, and other global privacy regulations.
+TRUSTX 2.0 is fully compliant with GDPR, CCPA, and other global privacy regulations.
