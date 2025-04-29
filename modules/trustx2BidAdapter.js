@@ -1,11 +1,11 @@
 import {
   logInfo,
-  logWarn,
   logError,
   logMessage,
   deepAccess,
   deepSetValue,
-  mergeDeep
+  mergeDeep,
+  ajax
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -60,12 +60,12 @@ const ortbAdapterConverter = ortbConverter({
       deepSetValue(requestObj, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(requestObj, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
-    
+
     // CCPA
     if (bidderRequest.uspConsent) {
       deepSetValue(requestObj, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
-    
+
     // GPP
     if (bidderRequest.gppConsent?.gppString) {
       deepSetValue(requestObj, 'regs.gpp', bidderRequest.gppConsent.gppString);
@@ -97,7 +97,7 @@ const ortbAdapterConverter = ortbConverter({
       if (bidRequest.userIdAsEids && bidRequest.userIdAsEids.length > 0) {
         deepSetValue(requestObj, 'user.ext.eids', bidRequest.userIdAsEids);
       }
-      
+
       // Supply Chain (schain)
       if (bidRequest.schain) {
         deepSetValue(requestObj, 'source.ext.schain', bidRequest.schain);
@@ -118,7 +118,7 @@ const ortbAdapterConverter = ortbConverter({
     if (bidderRequest.ortb2?.site) {
       const site = bidderRequest.ortb2.site;
       if (!requestObj.site) requestObj.site = {};
-      
+
       // Common site fields
       const siteFields = ['name', 'domain', 'page', 'ref', 'search', 'keywords', 'cat', 'pagecat'];
       siteFields.forEach(field => {
@@ -126,11 +126,11 @@ const ortbAdapterConverter = ortbConverter({
           requestObj.site[field] = site[field];
         }
       });
-      
+
       // Content data
       if (site.content) {
         if (!requestObj.site.content) requestObj.site.content = {};
-        
+
         // Copy content fields
         const contentFields = ['id', 'title', 'series', 'season', 'episode', 'genre'];
         contentFields.forEach(field => {
@@ -138,14 +138,14 @@ const ortbAdapterConverter = ortbConverter({
             requestObj.site.content[field] = site.content[field];
           }
         });
-        
+
         // Content data segments
         if (site.content.data) {
           if (!requestObj.site.content.data) requestObj.site.content.data = [];
           requestObj.site.content.data = requestObj.site.content.data.concat(site.content.data);
         }
       }
-      
+
       // Site extensions
       if (site.ext) {
         if (!requestObj.site.ext) requestObj.site.ext = {};
@@ -173,7 +173,6 @@ const ortbAdapterConverter = ortbConverter({
     if (responseMediaType === VIDEO) {
       context.vastXml = bid.adm;
     }
-    
 
     const bidResponseObj = buildBidResponse(bid, context);
 
@@ -225,18 +224,18 @@ export const spec = {
       context: {contextMediaType: adType}
     });
 
-    let publisher_id = validBidRequests[0].params.publisher_id;
-    let placement_id = validBidRequests[0].params.placement_id;
+    let publisherId = validBidRequests[0].params.publisher_id;
+    let placementId = validBidRequests[0].params.placement_id;
 
     if (validBidRequests[0].params.e2etest) {
       logMessage('trustx2 test mode enabled');
-      publisher_id = 'test';
+      publisherId = 'test';
     }
 
-    let endpointUrl = `${spec.ENDPOINT}?publisher_id=${publisher_id}`;
+    let endpointUrl = `${spec.ENDPOINT}?publisher_id=${publisherId}`;
 
-    if (placement_id) {
-      endpointUrl += `&placement_id=${placement_id}`;
+    if (placementId) {
+      endpointUrl += `&placement_id=${placementId}`;
     }
 
     return {
@@ -254,7 +253,6 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-
     const userId = deepAccess(serverResponse, 'body.ext.userid');
     if (userId && config.getConfig('localStorageWriteAllowed')) {
       if (storage.localStorageIsEnabled()) {
@@ -302,7 +300,7 @@ export const spec = {
           });
         });
 
-        // Per requirement: If iframeEnabled, return only iframes; 
+        // Per requirement: If iframeEnabled, return only iframes;
         // if not iframeEnabled but pixelEnabled, return only pixels
         if (syncOptions.iframeEnabled) {
           syncElements = syncElements.filter(s => s.type === 'iframe');
@@ -319,13 +317,11 @@ export const spec = {
   /**
    * Handle data deletion requests
    * This will both delete local storage data and notify the server
-  */
+   */
   onDataDeletionRequest: function(data) {
-
     if (storage.localStorageIsEnabled()) {
       storage.removeDataFromLocalStorage(USER_ID_KEY);
     }
-    
     ajax(USYNC_DELETE_URL, null, null, {
       method: 'GET',
       withCredentials: true,
