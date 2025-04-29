@@ -248,7 +248,7 @@ export class AdapterHelpers {
 
       if (bid.params && bid.params[0]) {
         params.publisherId = bid.params[0].publisherId;
-        params.networkId = bid.params[0].accountId;
+        params.accountId = bid.params[0].accountId;
         params.supplyId = bid.params[0].tagId;
       }
 
