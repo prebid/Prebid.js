@@ -85,6 +85,12 @@ describe('Yandex adapter', function () {
       expect(requests[0].data.site?.content?.language).to.be.undefined;
     });
 
+    it('should return displaymanager', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(requests[0].data.imp[0].displaymanagerver).to.not.be.undefined;
+    });
+
     /** @type {import('../../../src/auction').BidderRequest} */
     const bidderRequest = {
       ortb2: {
