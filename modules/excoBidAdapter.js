@@ -18,8 +18,10 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 
+const BASE_URL = '//v.ex.co';
 export const SID = window.excoPid || generateUUID();
-export const ENDPOINT = '//v.ex.co/se/openrtb/hb/pbjs';
+export const ENDPOINT = `${BASE_URL}/se/openrtb/hb/pbjs`;
+const EVT_ENDPOINT = `${BASE_URL}/event`;
 const SYNC_URL = '//cdn.ex.co/sync/e15e216-l/cookie_sync.html';
 export const BIDDER_CODE = 'exco';
 const VERSION = '0.0.2';
@@ -220,6 +222,64 @@ export class AdapterHelpers {
         }
       }
     });
+  }
+
+  getPixelUrl(data, eventName) {
+    const bid = data[0];
+    const params = {
+      adapterVersion: VERSION,
+      prebidVersion: '$prebid.version$',
+      pageLoadUid: SID,
+      eventName,
+      extraData: {
+        timepassed: bid.metrics.timeSince('requestBids'),
+      }
+    };
+
+    if (bid) {
+      params.adUnitCode = bid.adUnitCode;
+      params.auctionId = bid.auctionId;
+      params.bidId = bid.bidId;
+      params.bidderRequestId = bid.bidderRequestId;
+      params.bidderRequestsCount = bid.bidderRequestsCount;
+      params.bidderWinsCount = bid.bidderWinsCount;
+      params.maxBidderCalls = bid.maxBidderCalls;
+      params.transactionId = bid.transactionId;
+
+      if (bid.params && bid.params[0]) {
+        params.publisherId = bid.params[0].publisherId;
+        params.networkId = bid.params[0].accountId;
+        params.supplyId = bid.params[0].tagId;
+      }
+
+      if (bid.ortb2.device) {
+        params.width = bid.ortb2.device.w;
+        params.height = bid.ortb2.device.h;
+      }
+
+      if (bid.ortb2.site) {
+        params.domain = bid.ortb2.site.domain;
+        params.parentUrl = bid.ortb2.site.page;
+        params.parentReferrer = bid.ortb2.site.referrer;
+      }
+
+      if (bid.ortb2.app) {
+        params.environment = 'app';
+      }
+    }
+
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (typeof value === 'object' && Array.isArray(value) === false) {
+        Object.entries(value).forEach(([k, v]) => {
+          searchParams.append(`${key}.${k}`, v);
+        });
+      } else if (value !== undefined) {
+        searchParams.append(key, value);
+      }
+    });
+
+    return `${EVT_ENDPOINT}?${searchParams}`;
   }
 
   log(severity, message) {
@@ -426,7 +486,11 @@ export const spec = {
    * @param {Object} data - Contains timeout specific data
    */
   onTimeout: function (data) {
-    // TBD
+    const pixelUrl = helpers.getPixelUrl(data, 'mcd_bidder_auction_timeout');
+
+    if (pixelUrl) {
+      triggerPixel(pixelUrl);
+    }
   },
 
   /**
