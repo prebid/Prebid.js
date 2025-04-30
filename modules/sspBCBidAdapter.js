@@ -620,7 +620,6 @@ const spec = {
     const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const slotId = setOnAny(validBidRequests, 'params.id');
-    const tcid = setOnAny(validBidRequests, 'params.tcid');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
     const domain = setOnAny(validBidRequests, 'params.domain') || bidderRequest.refererInfo.domain;
@@ -660,32 +659,6 @@ const spec = {
     applyClientHints(payload);
     applyUserIds(validBidRequests[0], payload);
     applyTopics(bidderRequest, payload);
-
-    if (tcid && slotId) {
-      logWarn(`Enable test for creative ${tcid}`);
-
-      payload.user.data.push({
-        id: '5',
-        name: 'TcidMa',
-        segment: [
-          {
-            name: slotId,
-            value: tcid
-          }
-        ]
-      });
-
-      payload.user.data.push({
-        id: '15',
-        name: 'Versions',
-        segment: [
-          {
-            name: 'inver',
-            value: '2'
-          }
-        ]
-      });
-    }
 
     return {
       method: 'POST',
