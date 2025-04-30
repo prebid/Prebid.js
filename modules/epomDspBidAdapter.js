@@ -41,31 +41,8 @@ export const spec = {
           logWarn(`[${BIDDER_CODE}] Missing endpoint for bid request.`);
           return null;
         }
-
         const payload = {
           ...deepClone(bid),
-          id: bid.bidId || 'default-id',
-          imp: [
-            {
-              id: bid.bidId,
-              tagid: bid.adUnitCode,
-              bidfloor: getBidFloor(bid),
-              banner: {
-                w: bid.sizes[0][0],
-                h: bid.sizes[0][1],
-              },
-            }
-          ],
-          site: {
-            domain: bidderRequest?.refererInfo?.domain || 'unknown.com',
-            page: bidderRequest?.refererInfo?.referer || 'https://unknown.com',
-            publisher: { id: 'unknown-publisher' }
-          },
-          device: {
-            ua: navigator.userAgent || '',
-            ip: '0.0.0.0',
-            devicetype: 2,
-          },
           referer: bidderRequest?.refererInfo?.referer,
           gdprConsent: bidderRequest?.gdprConsent,
           uspConsent: bidderRequest?.uspConsent,
@@ -89,30 +66,32 @@ export const spec = {
     }
   },
 
-  interpretResponse(serverResponse) {
+  interpretResponse(serverResponse, request) {
     const bidResponses = [];
     const response = serverResponse.body;
 
-    if (response && Array.isArray(response.bids)) {
-      response.bids.forEach((bid) => {
-        if (bid.cpm && bid.ad && bid.width && bid.height) {
+    if (response && response.seatbid && Array.isArray(response.seatbid)) {
+      response.seatbid.forEach(seat => {
+        seat.bid.forEach(bid => {
           bidResponses.push({
-            requestId: bid.requestId,
-            cpm: bid.cpm,
-            currency: bid.currency,
-            width: bid.width,
-            height: bid.height,
-            ad: bid.ad,
-            creativeId: bid.creativeId || bid.requestId,
-            ttl: typeof bid.ttl === 'number' ? bid.ttl : 300,
-            netRevenue: bid.netRevenue !== false,
+            requestId: request.data.bidId || bid.impid,
+            cpm: bid.price,
+            nurl: bid.nurl,
+            currency: response.cur || 'USD',
+            width: bid.w,
+            height: bid.h,
+            ad: bid.adm,
+            creativeId: bid.crid || bid.adid,
+            ttl: 300,
+            netRevenue: true,
+            meta: {
+              advertiserDomains: bid.adomain || []
+            }
           });
-        } else {
-          logWarn(`[${BIDDER_CODE}] Invalid bid response:`, bid);
-        }
+        });
       });
     } else {
-      logError(`[${BIDDER_CODE}] Empty or invalid server response:`, serverResponse);
+      logError(`[${BIDDER_CODE}] Empty or invalid response`, serverResponse);
     }
 
     return bidResponses;
