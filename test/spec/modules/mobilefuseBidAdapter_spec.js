@@ -48,6 +48,7 @@ const serverResponse = {
         w: 300,
         h: 250,
         mtype: 1,
+        adomain: ['example.com'],
       }],
     }],
   }
@@ -86,6 +87,7 @@ describe('mobilefuseBidAdapter', function () {
     expect(bid.ad).to.equal('<div>Ad Markup</div>');
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
+    expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
   });
 
   it('should return user syncs with proper query params', function () {
