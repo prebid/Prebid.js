@@ -7,6 +7,7 @@ import { getBidIdParameter, isEmpty } from '../src/utils.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
@@ -67,12 +68,12 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {ServerResponse} serverResponse
+   * @param {BidRequest} bidRequest
+   * @returns {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (bidderResponse, requests) {
-    const res = bidderResponse.body;
+  interpretResponse: function (serverResponse, bidRequest) {
+    const res = serverResponse.body;
     if (isEmpty(res)) {
       return [];
     }
