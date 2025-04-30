@@ -13,9 +13,8 @@ import {
   parseUrl,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
@@ -61,6 +60,7 @@ const converter = ortbConverter({
   request: function (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     request.at = 1;
+    request.cur = ['USD'];
     if (context.bidRequests) {
       const bidRequest = context.bidRequests[0];
       setSiteId(bidRequest, request);
@@ -96,7 +96,7 @@ const converter = ortbConverter({
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-    return response.bids;
+    return response;
   },
   overrides: {
     imp: {
@@ -127,7 +127,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: ['cnvr', 'epsilon'], // short code
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -177,21 +177,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    return converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
-  },
-
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
-      'site_id': 'string',
-      'secure': 'number',
-      'mobile': 'number'
-    }, params);
+    const ortbBids = converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
+    return ortbBids;
   },
 
   /**

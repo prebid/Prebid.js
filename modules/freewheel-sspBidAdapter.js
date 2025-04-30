@@ -76,7 +76,7 @@ function getPricing(xmlNode) {
     var priceNode = pricingExtNode.querySelector('Price');
     princingData = {
       currency: priceNode.getAttribute('currency'),
-      price: priceNode.textContent || priceNode.innerText
+      price: priceNode.textContent
     };
   } else {
     logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
@@ -110,7 +110,7 @@ function getAdvertiserDomain(xmlNode) {
   // Currently we only return one Domain
   if (brandExtNode) {
     var domainNode = brandExtNode.querySelector('Domain');
-    domain.push(domainNode.textContent || domainNode.innerText);
+    domain.push(domainNode.textContent);
   } else {
     logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
   }
@@ -231,7 +231,7 @@ function getBidFloor(bid, config) {
       mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (e) {
     return -1;
   }

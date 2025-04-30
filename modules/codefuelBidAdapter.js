@@ -1,4 +1,4 @@
-import {deepAccess, isArray} from '../src/utils.js';
+import {isArray, setOnAny} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -146,15 +146,6 @@ function getDeviceType() {
     return 4; // 'mobile'
   }
   return 2; // 'desktop'
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

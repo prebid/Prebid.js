@@ -5,8 +5,9 @@ import { ajaxBuilder } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
-import { generateUUID, logInfo } from '../src/utils.js';
+import { deepClone, hasNonSerializableProperty, generateUUID, logInfo } from '../src/utils.js';
 import { EVENTS } from '../src/constants.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
@@ -38,12 +39,7 @@ let _bidRequestTimeout = 0;
 let flushInterval;
 let invisiblyAnalyticsEnabled = false;
 
-const w = window;
-const d = document;
-let e = d.documentElement;
-let g = d.getElementsByTagName('body')[0];
-let x = w.innerWidth || e.clientWidth || g.clientWidth;
-let y = w.innerHeight || e.clientHeight || g.clientHeight;
+const { width: x, height: y } = getViewportSize();
 
 let _pageView = {
   eventType: 'pageView',
@@ -133,7 +129,12 @@ function flush() {
 }
 
 function handleEvent(eventType, eventArgs) {
-  eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
+  if (eventArgs) {
+    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
+  } else {
+    eventArgs = {}
+  }
+
   let invisiblyEvent = {};
 
   switch (eventType) {

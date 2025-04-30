@@ -3,6 +3,7 @@ import {spec} from 'modules/vibrantmediaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
+import { getWinDimensions } from '../../../src/utils';
 
 const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com/prebid';
 
@@ -61,12 +62,6 @@ describe('VibrantMediaBidAdapter', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
-
-  describe('transformBidParams', function () {
-    it('transforms bid params correctly', function () {
-      expect(spec.transformBidParams(VALID_VIDEO_BID_PARAMS)).to.deep.equal(VALID_VIDEO_BID_PARAMS);
-    });
-  })
 
   let bidRequest;
 
@@ -551,9 +546,9 @@ describe('VibrantMediaBidAdapter', function () {
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
 
-      expect(payload.window).to.exist;
-      expect(payload.window.width).to.equal(window.innerWidth);
-      expect(payload.window.height).to.equal(window.innerHeight);
+      expect(payload.window).to.exist; 
+      expect(payload.window.width).to.equal(getWinDimensions().innerWidth);
+      expect(payload.window.height).to.equal(getWinDimensions().innerHeight);
     });
 
     it('should add the top-level sizes to the bid request, if present', function () {
@@ -1077,13 +1072,9 @@ describe('VibrantMediaBidAdapter', function () {
   describe('Flow tests', function () {
     describe('For successive API calls to the public functions', function () {
       it('should succeed with one media type per bid', function () {
-        const transformedBannerBidParams = spec.transformBidParams(VALID_BANNER_BID_PARAMS);
-        const transformedVideoBidParams = spec.transformBidParams(VALID_VIDEO_BID_PARAMS);
-        const transformedNativeBidParams = spec.transformBidParams(VALID_NATIVE_BID_PARAMS);
-
         const bannerBid = {
           bidder: 'vibrantmedia',
-          params: transformedBannerBidParams,
+          params: VALID_BANNER_BID_PARAMS,
           mediaTypes: {
             banner: {
               sizes: DEFAULT_BID_SIZES,
@@ -1097,7 +1088,7 @@ describe('VibrantMediaBidAdapter', function () {
         };
         const videoBid = {
           bidder: 'vibrantmedia',
-          params: transformedVideoBidParams,
+          params: VALID_VIDEO_BID_PARAMS,
           mediaTypes: {
             video: {
               context: OUTSTREAM,
@@ -1112,7 +1103,7 @@ describe('VibrantMediaBidAdapter', function () {
         };
         const nativeBid = {
           bidder: 'vibrantmedia',
-          params: transformedNativeBidParams,
+          params: VALID_NATIVE_BID_PARAMS,
           mediaTypes: {
             native: {
               image: {
@@ -1178,10 +1169,9 @@ describe('VibrantMediaBidAdapter', function () {
       });
 
       it('should succeed with multiple media types for a single bid', function () {
-        const bidParams = spec.transformBidParams(VALID_VIDEO_BID_PARAMS);
         const bid = {
           bidder: 'vibrantmedia',
-          params: bidParams,
+          params: VALID_VIDEO_BID_PARAMS,
           mediaTypes: {
             banner: {
               sizes: DEFAULT_BID_SIZES

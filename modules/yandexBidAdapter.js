@@ -1,8 +1,8 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel } from '../src/utils.js';
+import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -128,7 +128,7 @@ export const spec = {
       timeout = bidderRequest.timeout;
     }
 
-    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest);
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
@@ -175,13 +175,20 @@ export const spec = {
         device: ortb2?.device,
       };
 
+      if (!data?.site?.content?.language) {
+        const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
+        if (documentLang) {
+          deepSetValue(data, 'site.content.language', documentLang);
+        }
+      }
+
       const eids = deepAccess(bidRequest, 'userIdAsEids');
       if (eids && eids.length) {
         deepSetValue(data, 'user.ext.eids', eids);
       }
 
       const queryParamsString = formatQS(queryParams);
-      return {
+      const request = {
         method: 'POST',
         url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
         data,
@@ -190,6 +197,10 @@ export const spec = {
         },
         bidRequest,
       };
+
+      logInfo('ServerRequest', request);
+
+      return request;
     });
   },
 

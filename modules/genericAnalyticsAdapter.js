@@ -142,7 +142,7 @@ export function defaultHandler({url, method, batchSize, ajax = ajaxBuilder()}) {
   const serialize = method === 'GET' ? (data) => ({data: JSON.stringify(data)}) : (data) => JSON.stringify(data);
 
   return function (events) {
-    ajax(url, callbacks, serialize(extract(events)), {method})
+    ajax(url, callbacks, serialize(extract(events)), {method, keepalive: true})
   }
 }
 

@@ -696,7 +696,9 @@ describe('UnrulyAdapter', function () {
       it('should return an array with 2 items and enabled protected audience', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',
-          'fledgeEnabled': true,
+          'paapi': {
+            enabled: true
+          },
           'bids': [
             {
               'bidder': 'unruly',
@@ -782,7 +784,9 @@ describe('UnrulyAdapter', function () {
       it('should return an array with 2 items and enabled protected audience on only one unit', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',
-          'fledgeEnabled': true,
+          'paapi': {
+            enabled: true
+          },
           'bids': [
             {
               'bidder': 'unruly',
@@ -1043,7 +1047,7 @@ describe('UnrulyAdapter', function () {
             mediaType: 'video'
           }
         ],
-        'fledgeAuctionConfigs': [{
+        'paapi': [{
           'bidId': bidId,
           'config': {
             'seller': 'https://nexxen.tech',
@@ -1107,7 +1111,7 @@ describe('UnrulyAdapter', function () {
 
       expect(adapter.interpretResponse(mockServerResponse, originalRequest)).to.deep.equal({
         'bids': [],
-        'fledgeAuctionConfigs': [{
+        'paapi': [{
           'bidId': bidId,
           'config': {
             'seller': 'https://nexxen.tech',

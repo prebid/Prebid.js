@@ -1,6 +1,7 @@
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isArrayOfNums,
@@ -114,8 +115,8 @@ export const spec = {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
         serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
-        serverRequest.w = LOCAL_WINDOW.innerWidth;
-        serverRequest.h = LOCAL_WINDOW.innerHeight;
+        serverRequest.w = getWinDimensions().innerWidth;
+        serverRequest.h = getWinDimensions().innerHeight;
       }
 
       const mtp = window.navigator.maxTouchPoints;
@@ -177,7 +178,7 @@ export const spec = {
         serverRequest.topics = topicsData;
       }
       if (eids.length) {
-        serverRequest.user = { eids };
+        deepSetValue(serverRequest, 'user.ext.eids', eids);
       };
       serverRequests.push({
         method: 'POST',
@@ -257,7 +258,9 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
+  const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -274,6 +277,12 @@ function addPlacement(request) {
   }
   if (gpid) {
     placementInfo.gpid = gpid;
+  }
+  if (tagid) {
+    placementInfo.tagid = tagid;
+  }
+  if (divid) {
+    placementInfo.divid = divid;
   }
 
   // get the transaction id for the banner bid.
@@ -337,8 +346,7 @@ function createNewVideoBid(response, bidRequest) {
       mediaType: VIDEO,
     },
   };
-
-  if (imp.video.placement && imp.video.placement !== 1) {
+  if (imp.video.plcmt && imp.video.plcmt !== 1) {
     const renderer = Renderer.install({
       url: OUTSTREAM_VIDEO_PLAYER_URL,
       config: {
@@ -349,7 +357,7 @@ function createNewVideoBid(response, bidRequest) {
         allowVpaid: true,
         autoPlay: true,
         preload: true,
-        mute: true
+        mute: true,
       },
       id: imp.tagid,
       loaded: false,
@@ -471,7 +479,9 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
+  const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
@@ -508,6 +518,12 @@ function openRtbImpression(bidRequest) {
   }
   if (gpid) {
     imp.ext.gpid = gpid;
+  }
+  if (tagid) {
+    imp.ext.tagid = tagid;
+  }
+  if (divid) {
+    imp.ext.divid = divid;
   }
   return imp;
 }
@@ -653,19 +669,11 @@ function validateVideoParams(bid) {
     validate('video.mimes', val => isDefined(val), paramRequired);
     validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
-
-    const placement = validate('video.placement', val => isDefined(val), paramRequired);
-    validate('video.placement', val => val >= 1 && val <= 5, paramInvalid);
-    if (placement === 1) {
-      validate('video.startdelay', val => isDefined(val),
-        (field, v) => paramRequired(field, v, 'placement == 1'));
-      validate('video.startdelay', val => isNumber(val), paramInvalid, 'number, ex: 5');
-    }
-
     validate('video.protocols', val => isDefined(val), paramRequired);
 
     validate('video.api', val => isDefined(val), paramRequired);
-    validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    // PS-6597 - Allow video.api to be any number greater than 0
+    validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
     validate('video.playbackmethod', val => !isDefined(val) || isArrayOfNums(val), paramInvalid,

@@ -58,11 +58,29 @@ describe('Outbrain Adapter', function () {
           minduration: 3,
           maxduration: 10,
           startdelay: 2,
-          placement: 4,
+          plcmt: 4,
+          placement: 5,
           linearity: 1
         }
       }
     }
+
+    const ortb2WithDeviceData = {
+      ortb2: {
+        device: {
+          w: 980,
+          h: 1720,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+          language: 'en',
+          devicetype: 1,
+          make: 'Apple',
+          model: 'iPhone 12 Pro Max',
+          os: 'iOS',
+          osv: '17.4'
+        }
+      }
+    };
 
     describe('isBidRequestValid', function () {
       before(() => {
@@ -389,7 +407,8 @@ describe('Outbrain Adapter', function () {
                 minduration: 3,
                 maxduration: 10,
                 startdelay: 2,
-                placement: 4,
+                placement: 5,
+                plcmt: 4,
                 linearity: 1
               }
             }
@@ -619,6 +638,19 @@ describe('Outbrain Adapter', function () {
         const resData = JSON.parse(res.data)
         expect(resData.imp[0].native.request).to.equal(JSON.stringify(expectedNativeAssets));
       });
+
+      it('should pass ortb2 device data', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        };
+
+        const res = spec.buildRequests(
+          [bidRequest],
+          {...commonBidderRequest, ...ortb2WithDeviceData},
+        );
+        expect(JSON.parse(res.data).device).to.deep.equal(ortb2WithDeviceData.ortb2.device);
+      });
     })
 
     describe('interpretResponse', function () {
@@ -671,7 +703,7 @@ describe('Outbrain Adapter', function () {
             cpm: 1.1,
             creativeId: '28023739',
             ttl: 360,
-            netRevenue: false,
+            netRevenue: true,
             currency: 'USD',
             mediaType: 'native',
             nurl: 'http://example.com/win/${AUCTION_PRICE}',
@@ -748,7 +780,7 @@ describe('Outbrain Adapter', function () {
             cpm: 1.1,
             creativeId: '29998660',
             ttl: 360,
-            netRevenue: false,
+            netRevenue: true,
             currency: 'USD',
             mediaType: 'banner',
             nurl: 'http://example.com/win/${AUCTION_PRICE}',
@@ -811,7 +843,7 @@ describe('Outbrain Adapter', function () {
             cpm: 1.1,
             creativeId: '29998660',
             ttl: 360,
-            netRevenue: false,
+            netRevenue: true,
             currency: 'USD',
             mediaType: 'video',
             nurl: 'http://example.com/win/${AUCTION_PRICE}',

@@ -32,7 +32,17 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll', 'iionads', 'apester'],
+  aliases: [
+    { code: 'pll' },
+    { code: 'iionads', gvlid: 1358 },
+    { code: 'apester' },
+    { code: 'adsyield' },
+    { code: 'tgm' },
+    { code: 'adtg_org' },
+    { code: 'velonium' },
+    { code: 'orangeclickmedia', gvlid: 1148 },
+    { code: 'streamvision' }
+  ],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -128,7 +138,10 @@ function buildRequest(winTop, host, adUnits, bidderRequest) {
       deviceWidth: winTop.screen.width,
       deviceHeight: winTop.screen.height,
       adUnits: adUnits,
-      sua: bidderRequest?.ortb2?.device?.sua
+      ortb2: bidderRequest?.ortb2,
+      refererInfo: bidderRequest?.refererInfo,
+      sua: bidderRequest?.ortb2?.device?.sua,
+      page: bidderRequest?.ortb2?.site?.page || bidderRequest?.refererInfo?.page
     }
   }
 }
@@ -163,6 +176,7 @@ function buildPlacement(bidRequest) {
         }
       }),
       type: bidRequest.params.adUnitType.toUpperCase(),
+      ortb2Imp: bidRequest.ortb2Imp,
       publisherId: bidRequest.params.publisherId,
       userIdAsEids: bidRequest.userIdAsEids,
       supplyChain: bidRequest.schain,
@@ -170,8 +184,7 @@ function buildPlacement(bidRequest) {
       custom2: bidRequest.params.custom2,
       custom3: bidRequest.params.custom3,
       custom4: bidRequest.params.custom4,
-      custom5: bidRequest.params.custom5,
-      page: bidRequest.refererInfo.page
+      custom5: bidRequest.params.custom5
     }
   }
 }

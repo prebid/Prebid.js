@@ -1,8 +1,9 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
+import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'widespace';
 const WS_ADAPTER_VERSION = '2.0.1';
@@ -194,8 +195,8 @@ function pixelSyncPossibility() {
 }
 
 function visibleOnLoad(element) {
-  if (element && element.getBoundingClientRect) {
-    const topPos = element.getBoundingClientRect().top;
+  if (element) {
+    const topPos = getBoundingClientRect(element).top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
   }
   return '';
@@ -212,7 +213,7 @@ function getLcuid() {
 }
 
 function encodedParamValue(value) {
-  const requiredStringify = typeof JSON.parse(JSON.stringify(value)) === 'object';
+  const requiredStringify = typeof deepClone(value) === 'object';
   return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 

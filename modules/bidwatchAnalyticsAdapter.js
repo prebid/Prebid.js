@@ -3,6 +3,7 @@ import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { deepClone } from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
@@ -113,7 +114,7 @@ function addTimeout(args) {
   let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
   argsDereferenced = stringArgs;
   argsDereferenced.forEach((attr) => {
-    argsCleaned.push(filterAttributes(JSON.parse(JSON.stringify(attr)), false));
+    argsCleaned.push(filterAttributes(deepClone(attr), false));
   });
   if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);

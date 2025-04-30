@@ -1,4 +1,3 @@
-import {config} from '../src/config.js';
 import { deepAccess, deepSetValue, generateUUID, logError, logInfo } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -7,6 +6,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -22,7 +22,7 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '4.0';
+const BIDDER_VERSION = '5.0';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
@@ -33,6 +33,9 @@ const ALIASES = [
   { code: 'league-m', gvlid: 965 },
   { code: 'prjads' },
   { code: 'pubtech' },
+  { code: '1accord', gvlid: 965 },
+  { code: 'easybid', gvlid: 1068 },
+  { code: 'prismassp', gvlid: 965 }
 ];
 
 export const storage = getStorageManager({
@@ -63,10 +66,17 @@ export function getNexx360LocalStorage() {
   }
 }
 
-function getAdContainer(container) {
-  if (document.getElementById(container)) {
-    return document.getElementById(container);
+/**
+ * Get the AMX ID
+ * @return { string | false } false if localstorageNotEnabled
+ */
+export function getAmxId() {
+  if (!storage.localStorageIsEnabled()) {
+    logInfo(`localstorage not enabled for Nexx360`);
+    return false;
   }
+  const amxId = storage.getDataFromLocalStorage('__amuidpb');
+  return amxId || false;
 }
 
 const converter = ortbConverter({
@@ -75,45 +85,58 @@ const converter = ortbConverter({
     ttl: 90, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   imp(buildImp, bidRequest, context) {
-    // console.log(bidRequest, context);
     const imp = buildImp(bidRequest, context);
-    const tagid = bidRequest.params.adUnitName ? bidRequest.params.adUnitName : bidRequest.adUnitCode;
-    deepSetValue(imp, 'tagid', tagid);
+    deepSetValue(imp, 'tagid', bidRequest.adUnitCode);
     deepSetValue(imp, 'ext.adUnitCode', bidRequest.adUnitCode);
-    const divId = bidRequest.params.divId ? bidRequest.params.divId : bidRequest.adUnitCode;
+    if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
+    if (bidRequest.params.adUnitName) deepSetValue(imp, 'ext.adUnitName', bidRequest.params.adUnitName);
+    const divId = bidRequest.params.divId || bidRequest.adUnitCode;
     deepSetValue(imp, 'ext.divId', divId);
-    const slotEl = getAdContainer(divId);
+    const slotEl = document.getElementById(divId);
     if (slotEl) {
       deepSetValue(imp, 'ext.dimensions.slotW', slotEl.offsetWidth);
       deepSetValue(imp, 'ext.dimensions.slotH', slotEl.offsetHeight);
       deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
     }
-    deepSetValue(imp, 'ext.nexx360', bidRequest.params.tagId);
-    deepSetValue(imp, 'ext.nexx360.tagId', bidRequest.params.tagId);
-    deepSetValue(imp, 'ext.nexx360.videoTagId', bidRequest.params.videoTagId);
-    deepSetValue(imp, 'ext.nexx360.allBids', bidRequest.params.allBids);
+    if (bidRequest.params.tagId) deepSetValue(imp, 'ext.nexx360.tagId', bidRequest.params.tagId);
+    if (bidRequest.params.placement) deepSetValue(imp, 'ext.nexx360.placement', bidRequest.params.placement);
+    if (bidRequest.params.videoTagId) deepSetValue(imp, 'ext.nexx360.videoTagId', bidRequest.params.videoTagId);
+    if (bidRequest.params.allBids) deepSetValue(imp, 'ext.nexx360.allBids', bidRequest.params.allBids);
     if (imp.video) {
       const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
       const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
       deepSetValue(imp, 'video.ext.playerSize', playerSize);
       deepSetValue(imp, 'video.ext.context', videoContext);
     }
-
-    if (bidRequest.params.adUnitName) deepSetValue(imp, 'ext.adUnitName', bidRequest.params.adUnitName);
-    if (bidRequest.params.adUnitPath) deepSetValue(imp, 'ext.adUnitPath', bidRequest.params.adUnitPath);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const nexx360LocalStorage = getNexx360LocalStorage();
-    if (nexx360LocalStorage) deepSetValue(request, 'ext.nexx360Id', nexx360LocalStorage.nexx360Id);
+    if (nexx360LocalStorage) {
+      deepSetValue(request, 'ext.localStorage.nexx360Id', nexx360LocalStorage.nexx360Id);
+    }
+    const amxId = getAmxId();
+    if (amxId) deepSetValue(request, 'ext.localStorage.amxId', amxId);
     deepSetValue(request, 'ext.version', '$prebid.version$');
     deepSetValue(request, 'ext.source', 'prebid.js');
     deepSetValue(request, 'ext.pageViewId', PAGE_VIEW_ID);
     deepSetValue(request, 'ext.bidderVersion', BIDDER_VERSION);
-    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || 'USD']);
-    if (!request.user) deepSetValue(request, 'user', {});
+    deepSetValue(request, 'cur', [getCurrencyFromBidderRequest(bidderRequest) || 'USD']);
+    if (!request.user) request.user = {};
+    if (getAmxId()) {
+      if (!request.user.ext) request.user.ext = {};
+      if (!request.user.ext.eids) request.user.ext.eids = [];
+      request.user.ext.eids.push({
+        source: 'amxdt.net',
+        uids: [{
+          id: `${getAmxId()}`,
+          atype: 1
+        }]
+      });
+    }
+
     return request;
   },
 });
@@ -141,8 +164,8 @@ function isBidRequestValid(bid) {
     logError('bid.params.allBids needs to be a boolean');
     return false;
   }
-  if (!bid.params.tagId && !bid.params.videoTagId && !bid.params.nativeTagId) {
-    logError('bid.params.tagId or bid.params.videoTagId or  bid.params.nativeTagId must be defined');
+  if (!bid.params.tagId && !bid.params.videoTagId && !bid.params.nativeTagId && !bid.params.placement) {
+    logError('bid.params.tagId or bid.params.videoTagId or bid.params.nativeTagId or bid.params.placement must be defined');
     return false;
   }
   return true;
@@ -179,16 +202,17 @@ function interpretResponse(serverResponse) {
   const { bidderSettings } = getGlobal();
   const allowAlternateBidderCodes = bidderSettings && bidderSettings.standard ? bidderSettings.standard.allowAlternateBidderCodes : false;
 
-  let bids = [];
-  respBody.seatbid.forEach(seatbid => {
-    bids = [...bids, ...seatbid.bid.map(bid => {
+  let responses = [];
+  for (let i = 0; i < respBody.seatbid.length; i++) {
+    const seatbid = respBody.seatbid[i];
+    for (let j = 0; j < seatbid.bid.length; j++) {
+      const bid = seatbid.bid[j];
       const response = {
         requestId: bid.impid,
         cpm: bid.price,
         width: bid.w,
         height: bid.h,
         creativeId: bid.crid,
-        dealId: bid.dealid,
         currency: respBody.cur,
         netRevenue: true,
         ttl: 120,
@@ -198,6 +222,7 @@ function interpretResponse(serverResponse) {
           demandSource: bid.ext.ssp,
         },
       };
+      if (bid.dealid) response.dealid = bid.dealid;
       if (allowAlternateBidderCodes) response.bidderCode = `n360_${bid.ext.ssp}`;
 
       if (bid.ext.mediaType === BANNER) {
@@ -211,7 +236,7 @@ function interpretResponse(serverResponse) {
 
       if (bid.ext.mediaType === OUTSTREAM) {
         response.renderer = createRenderer(bid, OUTSTREAM_RENDERER_URL);
-        response.divId = bid.ext.divId
+        if (bid.ext.divId) response.divId = bid.ext.divId
       };
       if (bid.ext.mediaType === NATIVE) {
         try {
@@ -220,10 +245,10 @@ function interpretResponse(serverResponse) {
           }
         } catch (e) {}
       }
-      return response;
-    })];
-  });
-  return bids;
+      responses.push(response);
+    }
+  }
+  return responses;
 }
 
 /**

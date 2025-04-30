@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -15,7 +14,6 @@ import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
-const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
@@ -130,8 +128,8 @@ export const spec = {
       id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
-      site: params.site ? params.site : {},
-      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
+      site: {...bidderRequest?.ortb2?.site, ...params?.site},
+      device: {...bidderRequest?.ortb2?.device, ...params?.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -148,6 +146,18 @@ export const spec = {
     payload.device.language = navigator.language;
     payload.device.w = screen.width;
     payload.device.h = screen.height;
+
+    if (bidderRequest.ortb2?.user?.geo && bidderRequest.ortb2?.device?.geo) {
+      payload.device.geo = { ...payload.device.geo, ...bidderRequest.ortb2?.device.geo };
+      payload.user.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+    } else {
+      if (bidderRequest.ortb2?.user?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+      }
+      if (bidderRequest.ortb2?.device?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.device.geo };
+      }
+    }
 
     if (bidderRequest?.ortb2?.device?.sua) {
       payload.device.sua = bidderRequest.ortb2.device.sua;
@@ -179,6 +189,14 @@ export const spec = {
 
     if (bidderRequest?.timeout) {
       payload.tmax = bidderRequest.timeout;
+    }
+
+    if (bidderRequest?.ortb2?.bcat) {
+      payload.bcat = bidderRequest.ortb2.bcat;
+    }
+
+    if (bidderRequest?.ortb2?.badv) {
+      payload.badv = bidderRequest.ortb2.badv;
     }
 
     provideEids(validBidRequests[0], payload);
@@ -267,25 +285,6 @@ export const spec = {
         type: 'image',
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
-    }
-  },
-
-  onTimeout: function(timeoutData) {
-    if (timeoutData) {
-      const payload = timeoutData.map(d => ({
-        bidder: d?.bidder,
-        shortname: d?.params?.map(p => p?.tags?.shortname).find(p => p),
-        sid: d?.params?.map(p => p?.sid).find(p => p),
-        country: d?.ortb2?.device?.geo?.country,
-        devicetype: d?.ortb2?.device?.devicetype
-      }));
-      ajax(TIMEOUT_URL, null, JSON.stringify(payload), {
-        method: 'POST',
-        options: {
-          withCredentials: false,
-          contentType: 'application/json'
-        }
-      });
     }
   }
 }

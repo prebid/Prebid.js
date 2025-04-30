@@ -17,7 +17,8 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
 
 const ENDPOINTS = {
-  'gamoshi': 'https://rtb.gamoshi.io'
+  'gamoshi': 'https://rtb.gamoshi.io',
+  'cleanmedianet': 'https://bidder.cleanmediaads.com'
 };
 
 const DEFAULT_TTL = 360;
@@ -66,7 +67,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
-  aliases: ['gambid', '9MediaOnline'],
+  aliases: ['gambid', 'cleanmedianet'],
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -81,7 +82,9 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const {adUnitCode, mediaTypes, params, sizes, bidId} = bidRequest;
-      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
+
+      const bidderCode = bidderRequest.bidderCode || 'gamoshi';
+      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS[bidderCode] || 'https://rtb.gamoshi.io';
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
         id: bidderRequest.bidderRequestId,
@@ -157,7 +160,7 @@ export const spec = {
               maxduration: bidRequest.mediaTypes.video.maxduration,
               api: bidRequest.mediaTypes.video.api,
               skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
-              placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
+              plcmt: bidRequest.mediaTypes.video.plcmt || bidRequest.params.video.plcmt,
               minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
               playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
               startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay

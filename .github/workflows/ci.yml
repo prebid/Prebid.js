@@ -20,7 +20,7 @@ jobs:
       - run: npm install && npm install -g gulp
 
       - name: Run tests
-        run: node_modules/.bin/gulp test --file test/spec/modules/ringieraxelspringerBidAdapter_spec.js,test/spec/modules/dasBidAdapter_spec.js
+        run: node_modules/.bin/gulp test --file test/spec/modules/ringieraxelspringerBidAdapter_spec.js --file test/spec/modules/dasBidAdapter_spec.js
 
       - name: build
         run: node_modules/.bin/gulp build --modules=modules.json

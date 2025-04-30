@@ -38,7 +38,7 @@ function flagErrors(context, node, importPath) {
     }
 
     // do not allow imports outside `creative`
-    if (isInDirectory(absFileDir, CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
+    if ((isInDirectory(absFileDir, CREATIVE_PATH) || absFileDir == CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
       context.report(node, `import "${importPath}": importing from outside creative is not allowed`);
     }
 
@@ -53,31 +53,5 @@ function flagErrors(context, node, importPath) {
 }
 
 module.exports = {
-  rules: {
-    'validate-imports': {
-      meta: {
-        docs: {
-          description: 'validates module imports can be found without custom webpack resolvers, are in module whitelist, and not module entry points'
-        }
-      },
-      create: function(context) {
-        return {
-          "CallExpression[callee.name='require']"(node) {
-            let importPath = _.get(node, ['arguments', 0, 'value']);
-            if (importPath) {
-              flagErrors(context, node, importPath);
-            }
-          },
-          ImportDeclaration(node) {
-            let importPath = node.source.value.trim();
-            flagErrors(context, node, importPath);
-          },
-          'ExportNamedDeclaration[source]'(node) {
-            let importPath = node.source.value.trim();
-            flagErrors(context, node, importPath);
-          }
-        }
-      }
-    }
-  }
-};
+  flagErrors
+}

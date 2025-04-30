@@ -1,9 +1,10 @@
-import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject} from '../src/utils.js';
+import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -69,7 +70,7 @@ export const spec = {
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-    const currency = config.getConfig('currency.adServerCurrency') || 'USD';
+    const currency = getCurrencyFromBidderRequest(bidderRequest) || 'USD';
     var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
     const adRequestsContainFloors = adRequests.some(r => r.flr !== undefined);
 
@@ -324,12 +325,12 @@ function getDeviceIfa() {
 
 function getDeviceWidth() {
   const device = config.getConfig('device') || {};
-  return device.w || window.innerWidth;
+  return device.w || getWinDimensions().innerWidth;
 }
 
 function getDeviceHeight() {
   const device = config.getConfig('device') || {};
-  return device.h || window.innerHeight;
+  return device.h || getWinDimensions().innerHeight;
 }
 
 function getCoppa() {

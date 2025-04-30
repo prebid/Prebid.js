@@ -243,7 +243,7 @@ describe('sovrnBidAdapter', function() {
       it('when FLEDGE is enabled, should send ortb2imp.ext.ae', function () {
         const bidderRequest = {
           ...baseBidderRequest,
-          fledgeEnabled: true
+          paapi: {enabled: true}
         }
         const bidRequest = {
           ...baseBidRequest,
@@ -273,7 +273,9 @@ describe('sovrnBidAdapter', function() {
       it('when FLEDGE is enabled, but env is malformed, should not send ortb2imp.ext.ae', function () {
         const bidderRequest = {
           ...baseBidderRequest,
-          fledgeEnabled: true
+          paapi: {
+            enabled: true
+          }
         }
         const bidRequest = {
           ...baseBidRequest,
@@ -418,6 +420,31 @@ describe('sovrnBidAdapter', function() {
       expect(regs.gpp_sid).to.be.an('array')
       expect(regs.gpp_sid).to.include(8)
     })
+
+    it('should add ORTB2 device data to the request', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          device: {
+            w: 980,
+            h: 1720,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+            language: 'en',
+            devicetype: 1,
+            make: 'Apple',
+            model: 'iPhone 12 Pro Max',
+            os: 'iOS',
+            osv: '17.4',
+          },
+        },
+      };
+
+      const request = spec.buildRequests([baseBidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.device).to.deep.equal(bidderRequest.ortb2.device);
+    });
 
     it('should not send gpp info when gppConsent is not defined', function () {
       const bidderRequest = {
@@ -844,26 +871,56 @@ describe('sovrnBidAdapter', function() {
           }]
         }],
         ext: {
-          fledge_auction_configs: {
-            'test_bid_id': {
-              seller: 'ap.lijit.com',
-              interestGroupBuyers: ['dsp1.com'],
-              sellerTimeout: 0,
-              perBuyerSignals: {
-                'dsp1.com': {
-                  bid_macros: 0.1,
-                  disallowed_adv_ids: [
-                    '8765',
-                    '4321'
-                  ],
-                }
+          seller: 'seller.lijit.com',
+          decisionLogicUrl: 'https://decision.lijit.com',
+          igbid: [{
+            impid: 'test_imp_id',
+            igbuyer: [{
+              igdomain: 'ap.lijit.com',
+              buyerdata: {
+                base_bid_micros: 0.1,
+                use_bid_multiplier: true,
+                multiplier: '1.3'
               }
-            }
-          }
+            }, {
+              igdomain: 'buyer2.com',
+              buyerdata: {}
+            }, {
+              igdomain: 'buyer3.com',
+              buyerdata: {}
+            }]
+          }, {
+            impid: 'test_imp_id_2',
+            igbuyer: [{
+              igdomain: 'ap2.lijit.com',
+              buyerdata: {
+                base_bid_micros: '0.2',
+              }
+            }]
+          }, {
+            impid: '',
+            igbuyer: [{
+              igdomain: 'ap3.lijit.com',
+              buyerdata: {
+                base_bid_micros: '0.3',
+              }
+            }]
+          }, {
+            impid: 'test_imp_id_3',
+            igbuyer: [{
+              igdomain: '',
+              buyerdata: {
+                base_bid_micros: '0.3',
+              }
+            }]
+          }, {
+            impid: 'test_imp_id_4',
+            igbuyer: []
+          }]
         }
       }
     }
-    let invalidFledgeResponse = {
+    let emptyFledgeResponse = {
       body: {
         id: '37386aade21a71',
         seatbid: [{
@@ -879,25 +936,73 @@ describe('sovrnBidAdapter', function() {
           }]
         }],
         ext: {
-          fledge_auction_configs: {
+          igbid: {
           }
         }
       }
     }
-    it('should return fledge auction configs alongside bids', function () {
+    let expectedResponse = {
+      requestId: '263c448586f5a1',
+      cpm: 0.45882675,
+      width: 728,
+      height: 90,
+      creativeId: 'creativelycreatedcreativecreative',
+      dealId: null,
+      currency: 'USD',
+      netRevenue: true,
+      mediaType: 'banner',
+      ttl: 60000,
+      meta: { advertiserDomains: [] },
+      ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
+    }
+    let expectedFledgeResponse = [
+      {
+        bidId: 'test_imp_id',
+        config: {
+          seller: 'seller.lijit.com',
+          decisionLogicUrl: 'https://decision.lijit.com',
+          sellerTimeout: undefined,
+          auctionSignals: {},
+          interestGroupBuyers: ['ap.lijit.com', 'buyer2.com', 'buyer3.com'],
+          perBuyerSignals: {
+            'ap.lijit.com': {
+              base_bid_micros: 0.1,
+              use_bid_multiplier: true,
+              multiplier: '1.3'
+            },
+            'buyer2.com': {},
+            'buyer3.com': {}
+          }
+        }
+      },
+      {
+        bidId: 'test_imp_id_2',
+        config: {
+          seller: 'seller.lijit.com',
+          decisionLogicUrl: 'https://decision.lijit.com',
+          sellerTimeout: undefined,
+          auctionSignals: {},
+          interestGroupBuyers: ['ap2.lijit.com'],
+          perBuyerSignals: {
+            'ap2.lijit.com': {
+              base_bid_micros: '0.2',
+            }
+          }
+        }
+      }
+    ]
+
+    it('should return valid fledge auction configs alongside bids', function () {
       const result = spec.interpretResponse(fledgeResponse)
       expect(result).to.have.property('bids')
-      expect(result).to.have.property('fledgeAuctionConfigs')
-      expect(result.fledgeAuctionConfigs.length).to.equal(1)
-      expect(result.fledgeAuctionConfigs[0].bidId).to.equal('test_bid_id')
-      expect(result.fledgeAuctionConfigs[0].config).to.not.be.undefined
-      expect(result.fledgeAuctionConfigs[0].config).to.contain.keys('seller', 'interestGroupBuyers', 'sellerTimeout', 'perBuyerSignals')
+      expect(result).to.have.property('paapi')
+      expect(result.paapi.length).to.equal(2)
+      expect(result.paapi).to.deep.equal(expectedFledgeResponse)
     })
-    it('should ignore invalid fledge auction configs', function () {
-      const result = spec.interpretResponse(invalidFledgeResponse)
-      expect(result).to.have.property('bids')
-      expect(result).to.have.property('fledgeAuctionConfigs')
-      expect(result.fledgeAuctionConfigs.length).to.equal(0)
+    it('should ignore empty fledge auction configs array', function () {
+      const result = spec.interpretResponse(emptyFledgeResponse)
+      expect(result.length).to.equal(1)
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
     })
   })
 

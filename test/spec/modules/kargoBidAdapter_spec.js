@@ -300,7 +300,7 @@ describe('kargo adapter tests', function() {
           domain,
           isAmp: false,
           location: topUrl,
-          numIframs: 0,
+          numIframes: 0,
           page: topUrl,
           reachedTop: true,
           ref: referer,
@@ -428,12 +428,12 @@ describe('kargo adapter tests', function() {
           }
         }
       }]);
-      expect(payload.ext).to.deep.equal({ ortb2: {
+      expect(payload.ext.ortb2).to.deep.equal({
         user: { key: 'value' }
-      }});
+      });
 
       payload = getPayloadFromTestBids(testBids);
-      expect(payload.ext).to.be.undefined;
+      expect(payload.ext.ortb2).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
@@ -450,9 +450,33 @@ describe('kargo adapter tests', function() {
           }
         }
       }]);
-      expect(payload.ext).to.deep.equal({ortb2: {
+      expect(payload.ext.ortb2).to.deep.equal({
         user: { key: 'value' }
-      }});
+      }
+      );
+    });
+
+    it('copies the refererInfo object from bidderRequest if present', function() {
+      let payload;
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.ext.refererInfo).to.deep.equal({
+        canonicalUrl: 'https://random.com/this/is/a/url',
+        domain: 'random.com',
+        isAmp: false,
+        location: 'https://random.com/this/is/a/url',
+        numIframes: 0,
+        page: 'https://random.com/this/is/a/url',
+        reachedTop: true,
+        ref: 'https://random.com/',
+        stack: [
+          'https://random.com/this/is/a/url'
+        ],
+        topmostLocation: 'https://random.com/this/is/a/url'
+      });
+
+      delete bidderRequest.refererInfo
+      payload = getPayloadFromTestBids(testBids);
+      expect(payload.ext).to.be.undefined;
     });
 
     it('pulls the site category from the first bids ortb2 object', function() {
@@ -1807,21 +1831,69 @@ describe('kargo adapter tests', function() {
         advertiserDomains: [ 'https://foo.com', 'https://bar.com' ]
       });
     });
+
+    it('should return paapi if provided in bid response', function () {
+      const auctionConfig = {
+        seller: 'https://kargo.com',
+        decisionLogicUrl: 'https://kargo.com/decision_logic.js',
+        interestGroupBuyers: ['https://some_buyer.com'],
+        perBuyerSignals: {
+          'https://some_buyer.com': { a: 1 }
+        }
+      }
+
+      const body = response.body;
+      for (const key in body) {
+        if (body.hasOwnProperty(key)) {
+          if (key % 2 !== 0) { // Add auctionConfig to every other object
+            body[key].auctionConfig = auctionConfig;
+          }
+        }
+      }
+
+      let result = spec.interpretResponse(response, bidderRequest);
+
+      // Test properties of bidResponses
+      result.bids.forEach(bid => {
+        expect(bid).to.have.property('requestId');
+        expect(bid).to.have.property('cpm');
+        expect(bid).to.have.property('width');
+        expect(bid).to.have.property('height');
+        expect(bid).to.have.property('ttl');
+        expect(bid).to.have.property('creativeId');
+        expect(bid.netRevenue).to.be.true;
+        expect(bid).to.have.property('meta').that.is.an('object');
+      });
+
+      // Test properties of paapi
+      expect(result.paapi).to.have.lengthOf(3);
+
+      const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
+      result.paapi.forEach(config => {
+        expect(config).to.have.property('bidId');
+        expect(expectedBidIds).to.include(config.bidId);
+
+        expect(config).to.have.property('config').that.is.an('object');
+        expect(config.config).to.have.property('seller', 'https://kargo.com');
+        expect(config.config).to.have.property('decisionLogicUrl', 'https://kargo.com/decision_logic.js');
+        expect(config.config.interestGroupBuyers).to.be.an('array').that.includes('https://some_buyer.com');
+        expect(config.config.perBuyerSignals).to.have.property('https://some_buyer.com').that.deep.equals({ a: 1 });
+      });
+    });
   });
 
   describe('getUserSyncs', function() {
     let crb = {};
     const clientId = 'random-client-id-string';
-    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=0&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
+    const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
 
-    function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=0&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
+    function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
       let syncs = [];
-      for (let i = 0; i < 5; i++) {
-        syncs.push({
-          type: 'iframe',
-          url: baseUrl.replace(/idx=\d+&/, `idx=${i}&`),
-        });
-      }
+
+      syncs.push({
+        type: 'iframe',
+        url: baseUrl
+      });
 
       return syncs;
     }
@@ -1958,31 +2030,49 @@ describe('kargo adapter tests', function() {
     });
   });
 
-  describe('onTimeout', function() {
+  describe('onTimeout', function () {
+    let fetchStub;
+
     beforeEach(function () {
-      sinon.stub(utils, 'triggerPixel');
+      fetchStub = sinon.stub(global, 'fetch').resolves(); // Stub fetch globally
     });
 
     afterEach(function () {
-      utils.triggerPixel.restore();
+      fetchStub.restore(); // Restore the original fetch function
     });
 
-    it('does not call triggerPixel if timeout data is not provided', function() {
+    it('does not call fetch if timeout data is not provided', function () {
       spec.onTimeout(null);
-      expect(utils.triggerPixel.callCount).to.equal(0);
+      expect(fetchStub.callCount).to.equal(0);
     });
 
-    it('calls triggerPixel if any timeout data is provided', function() {
+    it('calls fetch with the correct URLs if timeout data is provided', function () {
       spec.onTimeout([
-        {auctionId: 'test-auction-id', timeout: 400},
-        {auctionId: 'test-auction-id-2', timeout: 100},
-        {auctionId: 'test-auction-id-3', timeout: 450},
-        {auctionId: 'test-auction-id-4', timeout: 500},
+        { auctionId: 'test-auction-id', timeout: 400 },
+        { auctionId: 'test-auction-id-2', timeout: 100 },
+        { auctionId: 'test-auction-id-3', timeout: 450 },
+        { auctionId: 'test-auction-id-4', timeout: 500 },
       ]);
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id&ato=400')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-2&ato=100')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-3&ato=450')).to.be.true;
-      expect(utils.triggerPixel.calledWith('https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-4&ato=500')).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id&ato=400',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-2&ato=100',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-3&ato=450',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
+
+      expect(fetchStub.calledWith(
+        'https://krk2.kargo.com/api/v1/event/timeout?aid=test-auction-id-4&ato=500',
+        { method: 'GET', keepalive: true }
+      )).to.be.true;
     });
   });
 });

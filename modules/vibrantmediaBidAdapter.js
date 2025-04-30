@@ -7,7 +7,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * Note: Only BANNER and VIDEO are currently supported by the prebid server.
  */
 
-import {logError, triggerPixel} from '../src/utils.js';
+import {getWinDimensions, logError, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
@@ -98,17 +98,6 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   /**
-   * Transforms the 'raw' bid params into ones that this adapter can use, prior to creating the bid request.
-   *
-   * @param {object} bidParams the params to transform.
-   *
-   * @returns {object} the bid params.
-   */
-  transformBidParams: function(bidParams) {
-    return bidParams;
-  },
-
-  /**
    * Determines whether or not the given bid request is valid. For all bid requests passed to the buildRequests
    * function, each will have been passed to this function and this function will have returned true.
    *
@@ -149,8 +138,8 @@ export const spec = {
       gdpr: bidderRequest.gdprConsent,
       usp: bidderRequest.uspConsent,
       window: {
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: getWinDimensions().innerWidth,
+        height: getWinDimensions().innerHeight,
       },
       biddata: transformedBidRequests,
     };

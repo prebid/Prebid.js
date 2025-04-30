@@ -12,12 +12,16 @@
 import {ajaxBuilder} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
+import {generateUUID, logError, logWarn} from './utils.js';
+import {addBidToAuction} from './auction.js';
 
 /**
  * Might be useful to be configurable in the future
  * Depending on publisher needs
  */
 const ttlBufferInSeconds = 15;
+
+export const vastLocalCache = new Map();
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -39,7 +43,7 @@ const ttlBufferInSeconds = 15;
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param {string} uri The URI where the VAST content can be found.
- * @param {string} impUrl An impression tracker URL for the delivery of the video ad
+ * @param {(string|string[])} impTrackerURLs An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
 function wrapURI(uri, impTrackerURLs) {
@@ -65,10 +69,12 @@ function wrapURI(uri, impTrackerURLs) {
  * the bid can't be converted cleanly.
  *
  * @param {CacheableBid} bid
- * @param index
+ * @param {Object} [options] - Options object.
+ * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`.
+ * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  const vastValue = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   let payload = {
@@ -136,6 +142,10 @@ function shimStorageCallback(done) {
   }
 }
 
+function getVastXml(bid) {
+  return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+};
+
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
  *
@@ -157,3 +167,100 @@ export function store(bids, done, getAjax = ajaxBuilder) {
 export function getCacheUrl(id) {
   return `${config.getConfig('cache.url')}?uuid=${id}`;
 }
+
+export const storeLocally = (bid) => {
+  const vastXml = getVastXml(bid);
+  const bidVastUrl = URL.createObjectURL(new Blob([vastXml], { type: 'text/xml' }));
+
+  assignVastUrlAndCacheId(bid, bidVastUrl);
+
+  vastLocalCache.set(bid.videoCacheKey, bidVastUrl);
+};
+
+const assignVastUrlAndCacheId = (bid, vastUrl, videoCacheKey) => {
+  bid.videoCacheKey = videoCacheKey || generateUUID();
+  if (!bid.vastUrl) {
+    bid.vastUrl = vastUrl;
+  }
+}
+
+export const _internal = {
+  store
+}
+
+export function storeBatch(batch) {
+  const bids = batch.map(entry => entry.bidResponse)
+  function err(msg) {
+    logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids)
+  }
+  _internal.store(bids, function (error, cacheIds) {
+    if (error) {
+      err(error)
+    } else if (batch.length !== cacheIds.length) {
+      logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`)
+    } else {
+      cacheIds.forEach((cacheId, i) => {
+        const {auctionInstance, bidResponse, afterBidAdded} = batch[i];
+        if (cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+        } else {
+          assignVastUrlAndCacheId(bidResponse, getCacheUrl(bidResponse.videoCacheKey), cacheId.uuid);
+          addBidToAuction(auctionInstance, bidResponse);
+          afterBidAdded();
+        }
+      });
+    }
+  });
+};
+
+let batchSize, batchTimeout, cleanupHandler;
+if (FEATURES.VIDEO) {
+  config.getConfig('cache', ({cache}) => {
+    batchSize = typeof cache.batchSize === 'number' && cache.batchSize > 0
+      ? cache.batchSize
+      : 1;
+    batchTimeout = typeof cache.batchTimeout === 'number' && cache.batchTimeout > 0
+      ? cache.batchTimeout
+      : 0;
+
+    // removing blobs that are not going to be used
+    if (cache.useLocal && !cleanupHandler) {
+      cleanupHandler = auctionManager.onExpiry((auction) => {
+        auction.getBidsReceived()
+          .forEach((bid) => {
+            const vastUrl = vastLocalCache.get(bid.videoCacheKey)
+            if (vastUrl && vastUrl.startsWith('blob')) {
+              URL.revokeObjectURL(vastUrl);
+            }
+            vastLocalCache.delete(bid.videoCacheKey);
+          })
+      });
+    }
+  });
+}
+
+export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
+  let batches = [[]];
+  let debouncing = false;
+  const noTimeout = cb => cb();
+
+  return function (auctionInstance, bidResponse, afterBidAdded) {
+    const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
+    if (batches[batches.length - 1].length >= batchSize) {
+      batches.push([]);
+    }
+
+    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
+
+    if (!debouncing) {
+      debouncing = true;
+      batchFunc(() => {
+        batches.forEach(cache);
+        batches = [[]];
+        debouncing = false;
+      }, batchTimeout);
+    }
+  };
+};
+
+export const batchAndStore = batchingCache();

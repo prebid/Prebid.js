@@ -1,5 +1,5 @@
 [
-  "consentManagement",
+  "consentManagementTcf",
   "rubiconBidAdapter",
   "appnexusBidAdapter",
   "openxBidAdapter",
@@ -9,7 +9,6 @@
   "criteoBidAdapter",
   "rtbhouseBidAdapter",
   "categoryTranslation",
-  "dfpAdServerVideo",
   "smartadserverBidAdapter",
   "prebidServerBidAdapter",
   "ringieraxelspringerAnalyticsAdapter",
@@ -23,12 +22,16 @@
   "teadsBidAdapter",
   "invibesBidAdapter",
   "carodaBidAdapter",
-  "fledgeForGpt",
   "adqueryIdSystem",
   "topicsFpdModule",
   "priceFloors",
   "visxBidAdapter",
   "currency",
   "justIdSystem",
-  "dasBidAdapter"
+  "dasBidAdapter",
+  "paapi",
+  "paapiForGpt",
+  "dfpAdServerVideo",
+  "criteoIdSystem",
+  "connectadBidAdapter"
 ]

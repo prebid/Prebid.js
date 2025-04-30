@@ -2,6 +2,8 @@ import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getBrowser, getOS} from '../libraries/userAgentUtils/index.js';
+import {browserTypes, osTypes} from '../libraries/userAgentUtils/userAgentTypes.enums.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -109,6 +111,12 @@ export const spec = {
       const id5id = deepAccess(bidRequest, 'userId.id5id.uid');
       if (isStr(id5id) && !isEmpty(id5id)) {
         payload.id5Id = id5id;
+      }
+
+      // UID2.0
+      const uid2 = deepAccess(bidRequest, 'userId.uid2.id');
+      if (isStr(uid2) && !isEmpty(uid2)) {
+        payload.uid2id = uid2;
       }
 
       return {
@@ -219,10 +227,12 @@ export const spec = {
   /**
    * Register the user sync pixels which should be dropped after the auction.
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
    * @returns {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    if (syncOptions.iframeEnabled && !skipSync(gdprConsent)) {
       return [{
         type: 'iframe',
         url: USER_SYNC_URL
@@ -391,6 +401,22 @@ function cmerRender(bid) {
   bid.renderer.push(() => {
     window.CMERYONEPREBID.renderPrebid(bid);
   });
+}
+
+/**
+ * Stop sending push_sync requests in case it's either Safari browser OR iOS device OR GDPR applies.
+ * Data extracted from navigator's userAgent
+ * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
+ */
+function skipSync(gdprConsent) {
+  return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent);
+}
+
+/**
+ * Check if GDPR applies.
+ */
+function gdprApplies(gdprConsent) {
+  return gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies;
 }
 
 registerBidder(spec);

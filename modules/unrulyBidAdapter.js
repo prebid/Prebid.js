@@ -31,7 +31,7 @@ const addBidFloorInfo = (validBid) => {
         currency: 'USD',
         mediaType: key,
         size: '*'
-      }).floor || 0;
+      })?.floor || 0;
     } else {
       floor = validBid.params.floor || 0;
     }
@@ -226,7 +226,7 @@ export const adapter = {
       'options': {
         'contentType': 'application/json'
       },
-      'protectedAudienceEnabled': bidderRequest.fledgeEnabled
+      'protectedAudienceEnabled': bidderRequest.paapi?.enabled
     }, validBidRequests, bidderRequest);
   },
 
@@ -261,7 +261,7 @@ export const adapter = {
 
     return {
       bids,
-      fledgeAuctionConfigs
+      paapi: fledgeAuctionConfigs
     };
   }
 };

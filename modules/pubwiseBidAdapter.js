@@ -1,5 +1,5 @@
 
-import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError } from '../src/utils.js';
+import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -63,6 +63,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
   'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
@@ -666,7 +667,7 @@ function _addFloorFromFloorModule(impObj, bid) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
         let floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
-        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
+        if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
           let mediaTypeFloor = parseFloat(floorInfo.floor);
           bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
         }
@@ -862,19 +863,19 @@ function _logMessage(textValue, objectValue) {
   logMessage(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logInfo(textValue, objectValue) {
   objectValue = objectValue || '';
   logInfo(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logWarn(textValue, objectValue) {
   objectValue = objectValue || '';
   logWarn(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logError(textValue, objectValue) {
   objectValue = objectValue || '';
   logError(LOG_PREFIX + textValue, objectValue);

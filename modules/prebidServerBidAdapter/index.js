@@ -1,10 +1,8 @@
 import Adapter from '../../src/adapter.js';
 import {
-  deepAccess,
   deepClone,
   flatten,
   generateUUID,
-  getPrebidInternal,
   insertUserSyncIframe,
   isNumber,
   isPlainObject,
@@ -16,16 +14,16 @@ import {
   triggerPixel,
   uniques,
 } from '../../src/utils.js';
-import { EVENTS, REJECTION_REASON, S2S } from '../../src/constants.js';
+import {EVENTS, REJECTION_REASON, S2S} from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
+import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
-import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../../src/utils/gdpr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
@@ -36,8 +34,6 @@ const getConfig = config.getConfig;
 const TYPE = S2S.SRC;
 let _syncCount = 0;
 let _s2sConfigs;
-
-let eidPermissions;
 
 /**
  * @typedef {Object} AdapterOptions
@@ -82,6 +78,7 @@ let eidPermissions;
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {Object} [extPrebid] properties will be merged into request.ext.prebid
  * @property {Object} [ortbNative] base value for imp.native.request
+ * @property {Number} [maxTimeout]
  */
 
 /**
@@ -89,7 +86,6 @@ let eidPermissions;
  */
 export const s2sDefaultConfig = {
   bidders: Object.freeze([]),
-  timeout: 1000,
   syncTimeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
@@ -100,7 +96,8 @@ export const s2sDefaultConfig = {
     eventtrackers: [
       {event: 1, methods: [1, 2]}
     ],
-  }
+  },
+  maxTimeout: 1500
 };
 
 config.setDefaults({
@@ -108,45 +105,45 @@ config.setDefaults({
 });
 
 /**
- * @param {S2SConfig} option
+ * @param {S2SConfig} s2sConfig
  * @return {boolean}
  */
-function updateConfigDefaultVendor(option) {
-  if (option.defaultVendor) {
-    let vendor = option.defaultVendor;
-    let optionKeys = Object.keys(option);
+function updateConfigDefaults(s2sConfig) {
+  if (s2sConfig.defaultVendor) {
+    let vendor = s2sConfig.defaultVendor;
+    let optionKeys = Object.keys(s2sConfig);
     if (S2S_VENDORS[vendor]) {
       // vendor keys will be set if either: the key was not specified by user
       // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(S2S_VENDORS[vendor]).forEach((vendorKey) => {
-        if (s2sDefaultConfig[vendorKey] === option[vendorKey] || !includes(optionKeys, vendorKey)) {
-          option[vendorKey] = S2S_VENDORS[vendor][vendorKey];
+        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !includes(optionKeys, vendorKey)) {
+          s2sConfig[vendorKey] = S2S_VENDORS[vendor][vendorKey];
         }
       });
     } else {
       logError('Incorrect or unavailable prebid server default vendor option: ' + vendor);
       return false;
     }
+  } else {
+    if (s2sConfig.adapter == null) {
+      s2sConfig.adapter = 'prebidServer';
+    }
   }
-  // this is how we can know if user / defaultVendor has set it, or if we should default to false
-  return option.enabled = typeof option.enabled === 'boolean' ? option.enabled : false;
+  return true;
 }
 
 /**
- * @param {S2SConfig} option
+ * @param {S2SConfig} s2sConfig
  * @return {boolean}
  */
-function validateConfigRequiredProps(option) {
-  const keys = Object.keys(option);
-  if (['accountId', 'endpoint'].filter(key => {
-    if (!includes(keys, key)) {
+function validateConfigRequiredProps(s2sConfig) {
+  for (const key of ['accountId', 'endpoint']) {
+    if (s2sConfig[key] == null) {
       logError(key + ' missing in server to server config');
-      return true;
+      return false;
     }
-    return false;
-  }).length > 0) {
-    return false;
   }
+  return true;
 }
 
 // temporary change to modify the s2sConfig for new format used for endpoint URLs;
@@ -167,40 +164,43 @@ function formatUrlParams(option) {
   });
 }
 
+export function validateConfig(options) {
+  if (!options) {
+    return;
+  }
+  options = Array.isArray(options) ? options : [options];
+  const activeBidders = new Set();
+  return options.filter(s2sConfig => {
+    formatUrlParams(s2sConfig);
+    if (
+      updateConfigDefaults(s2sConfig) &&
+      validateConfigRequiredProps(s2sConfig) &&
+      s2sConfig.enabled
+    ) {
+      if (Array.isArray(s2sConfig.bidders)) {
+        s2sConfig.bidders = s2sConfig.bidders.filter(bidder => {
+          if (activeBidders.has(bidder)) {
+            return false;
+          } else {
+            activeBidders.add(bidder);
+            return true;
+          }
+        })
+      }
+      return true;
+    } else {
+      logWarn('prebidServer: s2s config is disabled', s2sConfig);
+    }
+  })
+}
+
 /**
  * @param {(S2SConfig[]|S2SConfig)} options
  */
 function setS2sConfig(options) {
-  if (!options) {
-    return;
-  }
-  const normalizedOptions = Array.isArray(options) ? options : [options];
-
-  const activeBidders = [];
-  const optionsValid = normalizedOptions.every((option, i, array) => {
-    formatUrlParams(options);
-    const updateSuccess = updateConfigDefaultVendor(option);
-    if (updateSuccess !== false) {
-      const valid = validateConfigRequiredProps(option);
-      if (valid !== false) {
-        if (Array.isArray(option['bidders'])) {
-          array[i]['bidders'] = option['bidders'].filter(bidder => {
-            if (activeBidders.indexOf(bidder) === -1) {
-              activeBidders.push(bidder);
-              return true;
-            }
-            return false;
-          });
-        }
-        return true;
-      }
-    }
-    logWarn('prebidServer: s2s config is disabled');
-    return false;
-  });
-
-  if (optionsValid) {
-    return _s2sConfigs = normalizedOptions;
+  options = validateConfig(options);
+  if (options.length) {
+    _s2sConfigs = options;
   }
 }
 getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
@@ -367,66 +367,13 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   });
 }
 
-/**
- * map wurl to auction id and adId for use in the BID_WON event
- */
-let wurlMap = {};
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @param {string} wurl events.winurl passed from prebidServer as wurl
- */
-function addWurl(auctionId, adId, wurl) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = wurl;
-  }
-}
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- */
-function removeWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = undefined;
-  }
-}
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @return {(string|undefined)} events.winurl which was passed as wurl
- */
-function getWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    return wurlMap[`${auctionId}${adId}`];
-  }
-}
-
-/**
- * remove all cached wurls
- */
-export function resetWurlMap() {
-  wurlMap = {};
-}
-
-/**
- * BID_WON event to request the wurl
- * @param {Bid} bid the winning bid object
- */
-function bidWonHandler(bid) {
-  const wurl = getWurl(bid.auctionId, bid.adId);
-  if (isStr(wurl)) {
-    logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
-    triggerPixel(wurl);
-
-    // remove from wurl cache, since the wurl url was called
-    removeWurl(bid.auctionId, bid.adId);
-  }
-}
-
 function getMatchingConsentUrl(urlProp, gdprConsent) {
-  return hasPurpose1Consent(gdprConsent) ? urlProp.p1Consent : urlProp.noP1Consent;
+  const hasPurpose = hasPurpose1Consent(gdprConsent);
+  const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent
+  if (!url) {
+    logWarn('Missing matching consent URL when gdpr=' + hasPurpose);
+  }
+  return url;
 }
 
 function getConsentData(bidRequests) {
@@ -447,7 +394,7 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
+    const adapterMetrics = s2sBidRequest.metrics = useMetrics(bidRequests?.[0]?.metrics)
       .newMetrics()
       .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
     done = adapterMetrics.startTiming('total').stopBefore(done);
@@ -457,8 +404,9 @@ export function PrebidServer() {
 
     if (Array.isArray(_s2sConfigs)) {
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
+        const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
         let syncBidders = s2sBidRequest.s2sConfig.bidders
-          .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
+          .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
         queueSync(syncBidders, gdprConsent, uspConsent, gppConsent, s2sBidRequest.s2sConfig);
@@ -469,7 +417,8 @@ export function PrebidServer() {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
-          if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
+          const { seatNonBidData, atagData } = getAnalyticsFlags(s2sBidRequest.s2sConfig, response)
+          if (seatNonBidData) {
             events.emit(EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
               auctionId: bidRequests[0].auctionId,
@@ -478,11 +427,28 @@ export function PrebidServer() {
               adapterMetrics
             });
           }
+          // pbs analytics event
+          if (seatNonBidData || atagData) {
+            const data = {
+              seatnonbid: seatNonBidData,
+              atag: atagData,
+              auctionId: bidRequests[0].auctionId,
+              requestedBidders,
+              response,
+              adapterMetrics
+            }
+            events.emit(EVENTS.PBS_ANALYTICS, data);
+          }
           done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
         onError(msg, error) {
-          logError(`Prebid server call failed: '${msg}'`, error);
+          const {p1Consent = '', noP1Consent = ''} = s2sBidRequest?.s2sConfig?.endpoint || {};
+          if (p1Consent === noP1Consent) {
+            logError(`Prebid server call failed: '${msg}'. Endpoint: "${p1Consent}"}`, error);
+          } else {
+            logError(`Prebid server call failed: '${msg}'. Endpoints: p1Consent "${p1Consent}", noP1Consent "${noP1Consent}"}`, error);
+          }
           bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest }));
           done(error.timedOut);
         },
@@ -495,23 +461,19 @@ export function PrebidServer() {
           } else {
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
               addBidResponse(adUnit, bid);
-              if (bid.pbsWurl) {
-                addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
-              }
             } else {
               addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
           }
         },
         onFledge: (params) => {
-          addComponentAuction({auctionId: bidRequests[0].auctionId, ...params}, params.config);
+          config.runWithBidder(params.bidder, () => {
+            addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
+          })
         }
       })
     }
   };
-
-  // Listen for bid won to call wurl
-  events.on(EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,
@@ -530,7 +492,7 @@ export function PrebidServer() {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
+export const processPBSRequest = hook('async', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
@@ -540,24 +502,28 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .reduce(flatten, [])
     .filter(uniques);
 
-  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders, eidPermissions));
-  const requestJson = request && JSON.stringify(request);
-  logInfo('BidRequest: ' + requestJson);
-  const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
-  if (request && requestJson && endpointUrl) {
+  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
+  const requestData = {
+    endpointUrl: getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+    requestJson: request && JSON.stringify(request),
+    customHeaders: s2sBidRequest?.s2sConfig?.customHeaders ?? {},
+  };
+  events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
+  logInfo('BidRequest: ' + requestData);
+  if (request && requestData.requestJson && requestData.endpointUrl) {
     const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
-      endpointUrl,
+      requestData.endpointUrl,
       {
         success: function (response) {
           networkDone();
           let result;
           try {
             result = JSON.parse(response);
-            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+            const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
-            if (fledgeAuctionConfigs) {
-              fledgeAuctionConfigs.forEach(onFledge);
+            if (paapi) {
+              paapi.forEach(onFledge);
             }
           } catch (error) {
             logError(error);
@@ -574,11 +540,12 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           onError.apply(this, arguments);
         }
       },
-      requestJson,
+      requestData.requestJson,
       {
         contentType: 'text/plain',
         withCredentials: true,
-        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig))
+        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
+        customHeaders: requestData.customHeaders
       }
     );
   } else {
@@ -586,18 +553,18 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   }
 }, 'processPBSRequest');
 
-function shouldEmitNonbids(s2sConfig, response) {
-  return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
+function getAnalyticsFlags(s2sConfig, response) {
+  return {
+    atagData: getAtagData(response),
+    seatNonBidData: getNonBidData(s2sConfig, response)
+  }
+}
+function getNonBidData(s2sConfig, response) {
+  return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid : undefined;
 }
 
-/**
- * Global setter that sets eids permissions for bidders
- * This setter is to be used by userId module when included
- * @param {Array} newEidPermissions
- */
-function setEidPermissions(newEidPermissions) {
-  eidPermissions = newEidPermissions;
+function getAtagData(response) {
+  return response?.ext?.prebid?.analytics?.tags;
 }
-getPrebidInternal().setEidPermissions = setEidPermissions;
 
 adapterManager.registerBidAdapter(new PrebidServer(), 'prebidServer');

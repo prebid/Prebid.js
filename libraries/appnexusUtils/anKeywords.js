@@ -136,7 +136,7 @@ export function getANMapFromOrtbSegments(ortb2) {
     let ortbSegsArrObj = deepAccess(ortb2, path) || [];
     ortbSegsArrObj.forEach(segObj => {
       // only read segment data from known sources
-      const segtax = ORTB_SEGTAX_KEY_MAP[deepAccess(segObj, 'ext.segtax')];
+      const segtax = ORTB_SEGTAX_KEY_MAP[segObj?.ext?.segtax];
       if (segtax) {
         segObj.segment.forEach(seg => {
           // if source was in multiple locations of ortb or had multiple segments in same area, stack them together into an array

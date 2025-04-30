@@ -4,6 +4,7 @@ import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'smarthub'
+const bidderAlias = 'markapp'
 
 describe('SmartHubBidAdapter', function () {
   const bids = [
@@ -26,12 +27,29 @@ describe('SmartHubBidAdapter', function () {
     },
     {
       bidId: getUniqueIdentifierStr(),
+      bidder: bidderAlias,
+      mediaTypes: {
+        [BANNER]: {
+          sizes: [[400, 350]]
+        }
+      },
+      params: {
+        seat: 'testSeat',
+        token: 'testBanner',
+        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
+        minBidfloor: 9,
+        pos: 1,
+      }
+    },
+    {
+      bidId: getUniqueIdentifierStr(),
       bidder: bidder,
       mediaTypes: {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
           maxduration: 60,
+          plcmt: 1,
         }
       },
       params: {
@@ -88,7 +106,9 @@ describe('SmartHubBidAdapter', function () {
 
   const bidderRequest = {
     uspConsent: '1---',
-    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+    gdprConsent: {
+      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw'
+    },
     refererInfo: {
       page: 'https://test.com'
     },
@@ -105,7 +125,7 @@ describe('SmartHubBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let [serverRequest] = spec.buildRequests(bids, bidderRequest);
+    let [serverRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -119,7 +139,11 @@ describe('SmartHubBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://testname-prebid.smart-hub.io/pbjs');
+      expect(serverRequest.url).to.equal(`https://prebid.attekmi.com/pbjs?partnerName=testname`);
+    });
+
+    it('Returns valid URL if alias', function () {
+      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.attekmi.com/pbjs`);
     });
 
     it('Returns general data valid', function () {
@@ -135,7 +159,11 @@ describe('SmartHubBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp',
+        'battr'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -144,7 +172,7 @@ describe('SmartHubBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       expect(data.coppa).to.be.a('number');
-      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr.consentString).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
       expect(data.placements).to.have.lengthOf(3);
@@ -176,6 +204,7 @@ describe('SmartHubBidAdapter', function () {
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.plcmt).to.be.an('number');
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -189,8 +218,8 @@ describe('SmartHubBidAdapter', function () {
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest[0].data;
       expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('string');
-      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
+      expect(data.gdpr.consentString).to.be.a('string');
+      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
     });
@@ -388,6 +417,44 @@ describe('SmartHubBidAdapter', function () {
       };
       let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    it('Should return array of objects with GDPR values', function() {
+      const syncData = spec.getUserSyncs({}, {}, {
+        consentString: 'ALL',
+        gdprApplies: true,
+      }, {});
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+    });
+    it('Should return array of objects with CCPA values', function() {
+      const syncData = spec.getUserSyncs({}, {}, {}, {
+        consentString: '1---'
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+    });
+    it('Should return array of objects with GPP values', function() {
+      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+        gppString: 'ab12345',
+        applicableSections: [8]
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gpp=ab12345&gpp_sid=8&coppa=0')
     });
   });
 });

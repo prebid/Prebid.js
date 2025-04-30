@@ -1,4 +1,4 @@
-import {logInfo} from '../src/utils.js';
+import {getWinDimensions, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -14,7 +14,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 11,
+  PREBID_VERSION: 13,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
@@ -22,7 +22,7 @@ const CONSTANTS = {
   DISABLE_USER_SYNC: true
 };
 
-const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -40,7 +40,7 @@ export const spec = {
   buildRequests: buildRequest,
   /**
    * @param {*} responseObj
-   * @param {requestParams} bidRequests
+   * @param {*} requestParams
    * @return {Bid[]} An array of bids which
    */
   interpretResponse: function (responseObj, requestParams) {
@@ -132,7 +132,6 @@ function buildRequest(bidRequests, bidderRequest) {
     window.invibes.placementIds.push(bidRequest.params.placementId);
 
     _placementIds.push(bidRequest.params.placementId);
-    _placementIds.push(bidRequest.params.placementId);
     _adUnitCodes.push(bidRequest.adUnitCode);
     _domainId = _domainId || bidRequest.params.domainId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
@@ -141,7 +140,7 @@ function buildRequest(bidRequests, bidderRequest) {
     _userId = _userId || bidRequest.userId;
   });
 
-  invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent);
+  invibes.optIn = invibes.optIn || readGdprConsent(bidderRequest.gdprConsent, bidderRequest.uspConsent);
 
   invibes.visitId = invibes.visitId || generateRandomId();
 
@@ -167,8 +166,8 @@ function buildRequest(bidRequests, bidderRequest) {
     pcids: Object.keys(invibes.pushedCids).join(','),
 
     vId: invibes.visitId,
-    width: topWin.innerWidth,
-    height: topWin.innerHeight,
+    width: getWinDimensions().innerWidth,
+    height: getWinDimensions().innerHeight,
 
     oi: invibes.optIn,
 
@@ -177,11 +176,21 @@ function buildRequest(bidRequests, bidderRequest) {
     li: invibes.legitimateInterests.toString(),
 
     tc: invibes.gdpr_consent,
+    uspc: bidderRequest.uspConsent,
     isLocalStorageEnabled: storage.hasLocalStorage(),
     preventPageViewEvent: preventPageViewEvent,
     isPlacementRefresh: isPlacementRefresh,
-    isInfiniteScrollPage: isInfiniteScrollPage,
+    isInfiniteScrollPage: isInfiniteScrollPage
   };
+
+  if (bidderRequest.refererInfo && bidderRequest.refererInfo.ref) {
+    data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300);
+  }
+
+  let hid = invibes.getCookie('handIid');
+  if (hid) {
+    data.handIid = hid;
+  }
 
   let lid = readFromLocalStorage('ivbsdid');
   if (!lid) {
@@ -490,7 +499,7 @@ function renderCreative(bidModel) {
 }
 
 function readFromLocalStorage(key) {
-  if (invibes.GdprModuleInstalled && (!invibes.optIn || !invibes.purposes[0])) {
+  if ((invibes.GdprModuleInstalled || invibes.UspModuleInstalled) && (!invibes.optIn || !invibes.purposes[0])) {
     return;
   }
 
@@ -584,20 +593,15 @@ function buildSyncUrl() {
   return syncUrl;
 }
 
-function readGdprConsent(gdprConsent) {
+function readGdprConsent(gdprConsent, usConsent) {
+  invibes.GdprModuleInstalled = false;
+  invibes.UspModuleInstalled = false;
   if (gdprConsent && gdprConsent.vendorData) {
     invibes.GdprModuleInstalled = true;
     invibes.gdpr_consent = getVendorConsentData(gdprConsent.vendorData);
 
     if (!gdprConsent.vendorData.gdprApplies || gdprConsent.vendorData.hasGlobalConsent) {
-      var index;
-      for (index = 0; index < invibes.purposes.length; ++index) {
-        invibes.purposes[index] = true;
-      }
-
-      for (index = 0; index < invibes.legitimateInterests.length; ++index) {
-        invibes.legitimateInterests[index] = true;
-      }
+      setAllPurposesAndLegitimateInterests(true);
       return 2;
     }
 
@@ -627,10 +631,27 @@ function readGdprConsent(gdprConsent) {
     }
 
     return 2;
+  } else if (usConsent && usConsent.length > 2) {
+    invibes.UspModuleInstalled = true;
+    if (usConsent[2] == 'N') {
+      setAllPurposesAndLegitimateInterests(true);
+      return 2;
+    }
   }
 
-  invibes.GdprModuleInstalled = false;
+  setAllPurposesAndLegitimateInterests(false);
   return 0;
+}
+
+function setAllPurposesAndLegitimateInterests(value) {
+  var index;
+  for (index = 0; index < invibes.purposes.length; ++index) {
+    invibes.purposes[index] = value;
+  }
+
+  for (index = 0; index < invibes.legitimateInterests.length; ++index) {
+    invibes.legitimateInterests[index] = value;
+  }
 }
 
 function tryCopyValueToArray(value, target, length) {
@@ -743,7 +764,7 @@ invibes.getCookie = function (name) {
     return;
   }
 
-  if (invibes.GdprModuleInstalled && (!invibes.optIn || !invibes.purposes[0])) {
+  if ((invibes.GdprModuleInstalled || invibes.UspModuleInstalled) && (!invibes.optIn || !invibes.purposes[0])) {
     return;
   }
 
