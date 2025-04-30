@@ -87,24 +87,34 @@ function interpretResponse(response, request) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-  if (!syncOptions.iframeEnabled) {
-    return [];
+  if (syncOptions.iframeEnabled) {
+    const params = [];
+
+    if (gppConsent) {
+      params.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+      params.push('gpp_sid=' + gppConsent.applicableSections.join(','));
+    }
+
+    if (uspConsent) {
+      params.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+
+    const querystring = params.length ? `?${params.join('&')}` : '';
+
+    return [{type: 'iframe', url: `${SYNC_URL}${querystring}`}];
   }
 
-  const params = [];
+  const pixels = [];
 
-  if (gppConsent) {
-    params.push('gpp=' + encodeURIComponent(gppConsent.gppString));
-    params.push('gpp_sid=' + gppConsent.applicableSections.join(','));
-  }
+  serverResponses.forEach(response => {
+    if (response.body.ext && response.body.ext.syncs) {
+      response.body.ext.syncs.forEach(url => {
+        pixels.push({type: 'image', url: url});
+      });
+    }
+  });
 
-  if (uspConsent) {
-    params.push('us_privacy=' + encodeURIComponent(uspConsent));
-  }
-
-  const querystring = params.length ? `?${params.join('&')}` : '';
-
-  return [{type: 'iframe', url: `${SYNC_URL}${querystring}`}];
+  return pixels;
 }
 
 function getBidfloor(bidRequest) {

@@ -69,14 +69,20 @@ var adUnits = [
 ```
 
 ## User Sync
-The adapter supports iframe-based user syncing. It's highly recommended to enable iframe syncing in order to improve monetization.
+The adapter supports both iframe-based and pixel user syncing. It's recommended to enable iframe syncing in order to improve monetization.
 
 ```javascript
 pbjs.setConfig({
   //...
-   userSync: {
-      iframeEnabled: true
-   }
+  userSync: {
+    filterSettings: {
+      iframe: {
+        // '*' means all bidders, you could limit to just ['mobilefuse']
+        bidders: '*',
+        filter: 'include'
+      }
+    }
+  }
   //...
 });
 ```
