@@ -257,7 +257,7 @@ export function newConfig() {
    * Returns base config with bidder overrides (if there is currently a bidder)
    * @private
    */
-    function _getConfig() {
+  function _getConfig() {
     if (currBidder && bidderConfig && isPlainObject(bidderConfig[currBidder])) {
       const curr = bidderConfig[currBidder];
       const topics = new Set([...Object.keys(config), ...Object.keys(curr)]);
@@ -274,7 +274,6 @@ export function newConfig() {
     }
     return { ...config };
   }
-
 
   function _getRestrictedConfig() {
     // This causes reading 'ortb2' to throw an error; with prebid 7, that will almost
