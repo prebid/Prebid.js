@@ -153,13 +153,23 @@ function constructQueryString(anId, adUnits, pageUrl, adUnitPath) {
 }
 
 function parseResponse(result) {
-  let iasResponse = {};
   try {
-    iasResponse = JSON.parse(result);
+    mergeResponseData(JSON.parse(result));
   } catch (err) {
     utils.logError('error', err);
   }
+}
+
+function mergeResponseData(iasResponse) {
+  const prevSlots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
+
   iasTargeting = iasResponse;
+
+  const slots = iasResponse[SLOTS_OBJECT_FIELD_NAME] || {};
+
+  Object.keys(prevSlots)
+    .filter((adUnit) => adUnit in slots === false)
+    .forEach((adUnit) => (slots[adUnit] = prevSlots[adUnit]));
 }
 
 function getTargetingData(adUnits, config, userConsent) {
