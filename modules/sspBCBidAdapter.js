@@ -37,6 +37,11 @@ var nativeAssetMap = {
 };
 
 /**
+ * currency used in bidRequest - updated on request
+ */
+var requestCurrency = DEFAULT_CURRENCY;
+
+/**
  * return native asset type, based on asset id
  * @param {number} id - native asset id
  * @returns {string} asset type
@@ -263,7 +268,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
-  const currency = getCurrency();
+  const currency = requestCurrency
   let result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
@@ -274,7 +279,7 @@ const getHighestFloor = (slot) => {
         const { floor: currentFloor = 0 } = slot.getFloor({
           mediaType: 'banner',
           size: next,
-          currency
+          currency,
         }) || {};
         return prev > currentFloor ? prev : currentFloor;
       }, 0);
@@ -605,12 +610,17 @@ const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
+    // update auction currency
+    requestCurrency = getCurrency(bidderRequest);
+
     if ((!validBidRequests) || (validBidRequests.length < 1)) {
       return false;
     }
 
     const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
+    const slotId = setOnAny(validBidRequests, 'params.id');
+    const tcid = setOnAny(validBidRequests, 'params.tcid');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
     const domain = setOnAny(validBidRequests, 'params.domain') || bidderRequest.refererInfo.domain;
@@ -633,7 +643,7 @@ const spec = {
         content: { language: getContentLanguage() },
       },
       imp: validBidRequests.map(slot => mapImpression(slot)),
-      cur: [getCurrency(bidderRequest)],
+      cur: [requestCurrency],
       tmax,
       user: {},
       regs,
@@ -650,6 +660,32 @@ const spec = {
     applyClientHints(payload);
     applyUserIds(validBidRequests[0], payload);
     applyTopics(bidderRequest, payload);
+
+    if (tcid && slotId) {
+      logWarn(`Enable test for creative ${tcid}`);
+
+      payload.user.data.push({
+        id: '5',
+        name: 'TcidMa',
+        segment: [
+          {
+            name: slotId,
+            value: tcid
+          }
+        ]
+      });
+
+      payload.user.data.push({
+        id: '15',
+        name: 'Versions',
+        segment: [
+          {
+            name: 'inver',
+            value: '2'
+          }
+        ]
+      });
+    }
 
     return {
       method: 'POST',
