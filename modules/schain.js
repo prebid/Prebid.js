@@ -21,7 +21,7 @@ const shouldBeAString = ' should be a string';
 const shouldBeAnInteger = ' should be an Integer';
 const shouldBeAnObject = ' should be an object';
 const shouldBeAnArray = ' should be an Array';
-let skipValidation = true; // Default to true (skip validation)
+let skipValidation = true; // Default to true (skip validation )
 
 
 // validate the supply chain object
