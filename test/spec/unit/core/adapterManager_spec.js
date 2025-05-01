@@ -4,7 +4,7 @@ import adapterManager, {
   coppaDataHandler,
   _partitionBidders,
   PARTITIONS,
-  getS2SBidderSet, _filterBidsForAdUnit, dep
+  getS2SBidderSet, filterBidsForAdUnit, dep
 } from 'src/adapterManager.js';
 import {
   getAdUnits,
@@ -2890,8 +2890,11 @@ describe('adapterManager tests', function () {
     });
 
     describe('filterBidsForAdUnit', () => {
+      before(() => {
+        filterBidsForAdUnit.removeAll();
+      })
       function filterBids(bids, s2sConfig) {
-        return _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders});
+        return filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders});
       }
       it('should not filter any bids when s2sConfig == null', () => {
         const bids = ['untouched', 'data'];
