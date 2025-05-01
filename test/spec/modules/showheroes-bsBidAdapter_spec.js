@@ -102,7 +102,9 @@ describe('shBidAdapter', () => {
       ...schain,
       ...{uspConsent: uspConsent},
     };
-    bidRequest.schain = schain.schain.config;
+    bidRequest.ortb2 = {
+      source: {schain: schain.schain.config}
+    };
     const getFloorResponse = {currency: 'EUR', floor: 3};
     bidRequest.getFloor = () => getFloorResponse;
     const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest(fullRequest));
@@ -110,7 +112,7 @@ describe('shBidAdapter', () => {
     expect(payload.regs.ext.gdpr).to.eql(Number(gdpr.gdprConsent.gdprApplies));
     expect(payload.regs.ext.us_privacy).to.eql(uspConsent);
     expect(payload.user.ext.consent).to.eql(gdpr.gdprConsent.consentString);
-    expect(payload.source.ext.schain).to.eql(bidRequest.schain);
+    expect(payload.source.ext.schain).to.eql(bidRequest.ortb2.source.schain);
     expect(payload.test).to.eql(0);
     expect(payload.imp[0].bidfloor).eql(3);
     expect(payload.imp[0].bidfloorcur).eql('EUR');

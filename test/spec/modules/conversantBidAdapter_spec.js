@@ -453,8 +453,8 @@ describe('Conversant adapter tests', function() {
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
     const bidsWithSchain = bidRequests.map((bid) => {
       return Object.assign({
-        schain: schain
-      }, bid);
+        ortb2: {source: {schain: schain}}
+      }, bid);  
     });
     const request = spec.buildRequests(bidsWithSchain, bidderRequest);
     const payload = request.data;

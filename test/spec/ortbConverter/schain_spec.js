@@ -4,7 +4,7 @@ describe('pbjs - ortb source.ext.schain', () => {
   it('sets schain from request', () => {
     const req = {};
     setOrtbSourceExtSchain(req, {}, {
-      bidRequests: [{schain: {s: 'chain'}}]
+      bidRequests: [{ortb2: {source: {schain: {s: 'chain'}}}}]
     });
     expect(req.source.ext.schain).to.eql({s: 'chain'});
   });
