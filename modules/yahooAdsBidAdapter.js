@@ -27,7 +27,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'admixer.net',
   'adserver.org',
   'adtelligent.com',
-  'akamai.com',
   'amxdt.net',
   'audigent.com',
   'britepool.com',

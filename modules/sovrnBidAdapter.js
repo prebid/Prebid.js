@@ -13,7 +13,6 @@ import {
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
-  ADPOD,
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
@@ -32,7 +31,6 @@ const ORTB_VIDEO_PARAMS = {
 }
 
 const REQUIRED_VIDEO_PARAMS = {
-  context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols

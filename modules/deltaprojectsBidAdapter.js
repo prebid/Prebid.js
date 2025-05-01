@@ -21,8 +21,6 @@ export const USERSYNC_URL = 'https://userservice.de17a.com/getuid/prebid';
 function isBidRequestValid(bid) {
   if (!bid) return false;
 
-  if (bid.bidder !== BIDDER_CODE) return false;
-
   // publisher id is required
   const publisherId = deepAccess(bid, 'params.publisherId')
   if (!publisherId) {
