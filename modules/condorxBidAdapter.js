@@ -8,7 +8,7 @@ const API_URL = 'https://api.condorx.io/cxb/get.json';
 const REQUEST_METHOD = 'GET';
 const MAX_SIZE_DEVIATION = 0.05;
 const SUPPORTED_AD_SIZES = [
-  [100, 100], [200, 200], [300, 250], [400, 200], [300, 200], [600, 600], [236, 202], [1080, 1920], [300, 374]
+  [100, 100], [200, 200], [300, 250], [336, 280], [400, 200], [300, 200], [600, 600], [236, 202], [1080, 1920], [300, 374]
 ];
 
 function getBidRequestUrl(bidRequest, bidderRequest) {
@@ -76,13 +76,18 @@ function parseBannerAdResponse(tile, response) {
   return `<html><body>${style}<div id="__CONDORX__BANNER"><a href="${tile.clickUrl}" target=_blank><img class="__condorx_banner_image" src="${getTileImageUrl(tile)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${tile.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
 }
 
-function getAdSize(bidRequest) {
+function getValidAdSize(bidRequest) {
+  const sizes = getBidderAdSizes(bidRequest);
+  return sizes.find(isValidAdSize);
+}
+
+function getBidderAdSizes(bidRequest) {
   if (bidRequest.sizes && bidRequest.sizes.length > 0) {
-    return bidRequest.sizes[0];
+    return bidRequest.sizes;
   } else if (bidRequest.nativeParams && bidRequest.nativeParams.image && bidRequest.nativeParams.image.sizes) {
-    return bidRequest.nativeParams.image.sizes;
+    return [bidRequest.nativeParams.image.sizes];
   }
-  return [-1, -1];
+  return [[-1, -1]];
 }
 
 function isValidAdSize([width, height]) {
@@ -110,7 +115,7 @@ export const bidderSpec = {
       bidRequest.params.hasOwnProperty('website') &&
       !isNaN(bidRequest.params.widget) &&
       !isNaN(bidRequest.params.website) &&
-      isValidAdSize(getAdSize(bidRequest));
+      !!getValidAdSize(bidRequest);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -122,7 +127,7 @@ export const bidderSpec = {
     return validBidRequests.map(bidRequest => {
       if (bidRequest.params) {
         const mediaType = bidRequest.hasOwnProperty('nativeParams') ? 1 : 2;
-        const [imageWidth, imageHeight] = getAdSize(bidRequest);
+        const [imageWidth, imageHeight] = getValidAdSize(bidRequest);
         const widgetId = bidRequest.params.widget;
         const websiteId = bidRequest.params.website;
         const pageUrl = getBidRequestUrl(bidRequest, bidderRequest);
@@ -164,9 +169,9 @@ export const bidderSpec = {
         width: response.imageWidth,
         height: response.imageHeight,
         creativeId: tile.postId,
-        cpm: tile.pecpm || (tile.ecpm / 100),
+        cpm: tile.pcpm || (tile.ecpm / 100),
         currency: 'USD',
-        netRevenue: !!tile.pecpm,
+        netRevenue: !!tile.pcpm,
         ttl: 360,
         meta: { advertiserDomains: tile.domain ? [tile.domain] : [] },
       };
