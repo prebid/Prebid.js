@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import {logError, isPlainObject} from '../src/utils.js';
+import {logError, isPlainObject, getWinDimensions} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import AES from 'crypto-js/aes.js';
@@ -83,8 +83,8 @@ export function decryptData(encryptedText) {
 
 function collectDeviceInfo() {
   return {
-    windowInnerHeight: window.innerHeight,
-    windowInnerWidth: window.innerWidth,
+    windowInnerHeight: getWinDimensions().innerHeight,
+    windowInnerWidth: getWinDimensions().innerWidth,
     devicePixelRatio: window.devicePixelRatio,
     windowScreenHeight: window.screen.height,
     windowScreenWidth: window.screen.width,
