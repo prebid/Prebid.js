@@ -5,6 +5,10 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'ias';
@@ -161,15 +165,15 @@ function parseResponse(result) {
 }
 
 function mergeResponseData(iasResponse) {
-  const prevSlots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
+  const cachedSlots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
 
   iasTargeting = iasResponse;
 
-  const slots = iasResponse[SLOTS_OBJECT_FIELD_NAME] || {};
+  const slots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
 
-  Object.keys(prevSlots)
+  Object.keys(cachedSlots)
     .filter((adUnit) => adUnit in slots === false)
-    .forEach((adUnit) => (slots[adUnit] = prevSlots[adUnit]));
+    .forEach((adUnit) => (slots[adUnit] = cachedSlots[adUnit]));
 }
 
 function getTargetingData(adUnits, config, userConsent) {
