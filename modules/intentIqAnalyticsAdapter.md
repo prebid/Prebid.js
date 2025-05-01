@@ -60,7 +60,8 @@ currency: 'USD', // Currency for the CPM value.
 originalCpm: 1.5, // Original CPM value.
 originalCurrency: 'USD', // Original currency.
 status: 'rendered', // Auction status, e.g., 'rendered'.
-placementId: 'div-1' // ID of the ad placement.
+placementId: 'div-1', // ID of the ad placement.
+adType: 'banner' // Specifies the type of ad served
 }
 ```
 
@@ -76,6 +77,7 @@ placementId: 'div-1' // ID of the ad placement.
 | originalCurrency    | String    | Currency of the original auction                                                                                                                 | USD                           | No        |
 | status              | String    | Status of the impression. Leave empty or undefined if Prebid is not the bidding platform                                                          | rendered                      | No        |
 | placementId         | String    | Unique identifier of the ad unit on the webpage that showed this ad                                                                               | div-1                         | No        |
+| adType              | String    | Specifies the type of ad served. Possible values: “banner“, “video“, “native“, “audio“.                                                           | banner                        | No        |
 
 
 To report the auction win, call the function as follows:
