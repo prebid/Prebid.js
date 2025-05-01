@@ -1,7 +1,6 @@
 import {config} from '../src/config.js';
 import adapterManager from '../src/adapterManager.js';
 import {
-  _each,
   deepAccess,
   deepClone,
   deepSetValue,
@@ -22,13 +21,8 @@ const shouldBeAString = ' should be a string';
 const shouldBeAnInteger = ' should be an Integer';
 const shouldBeAnObject = ' should be an object';
 const shouldBeAnArray = ' should be an Array';
-const MODE = {
-  STRICT: 'strict',
-  RELAXED: 'relaxed',
-  OFF: 'off'
-};
-const MODES = []; // an array of modes
-_each(MODE, mode => MODES.push(mode));
+let skipValidation = true; // Default to true (skip validation)
+
 
 // validate the supply chain object
 export function isSchainObjectValid(schainObject, returnOnError) {
@@ -143,22 +137,24 @@ export function isValidSchainConfig(schainObject) {
   return true;
 }
 
-function resolveSchainConfig(schainObject, bidder) {
-  let mode = MODE.STRICT;
+function handleSetConfigFlag(config) {
+  // Calculate skipValidation from the FPD config
+  if (config && typeof config === 'object') {
+    skipValidation = config.skipValidations !== false;
+  }
+}
 
+function resolveSchainConfig(schainObject, bidder) {
   if (isValidSchainConfig(schainObject)) {
-    if (isStr(schainObject.validation) && MODES.indexOf(schainObject.validation) != -1) {
-      mode = schainObject.validation;
-    }
-    if (mode === MODE.OFF) {
-      // no need to validate
+    if (skipValidation) {
+      // Skip validation if skipValidations is true (default)
       return schainObject.config;
     } else {
-      // if strict mode and config is invalid, reject config + throw error; otherwise allow config to go through
-      if (isSchainObjectValid(schainObject.config, !!(mode === MODE.STRICT))) {
+      // Perform strict validation if skipValidations is false
+      if (isSchainObjectValid(schainObject.config, true)) {
         return schainObject.config;
       } else {
-        logError(schainErrorPrefix + `due to the 'strict' validation setting, this schain config will not be passed to bidder '${bidder}'.  See above error for details.`);
+        logError(schainErrorPrefix + `due to validation failure, this schain config will not be passed to bidder '${bidder}'.  See above error for details.`);
       }
     }
   }
@@ -181,7 +177,16 @@ export function makeBidRequestsHook(fn, bidderRequests) {
     bidderRequest.bids.forEach(bid => {
       let result = resolveSchainConfig(schainConfig, bidder);
       if (result) {
-        bid.schain = deepClone(result);
+        // Initialize ortb2 object if it doesn't exist
+        if (!bid.ortb2) {
+          bid.ortb2 = {};
+        }
+        // Initialize source object if it doesn't exist
+        if (!bid.ortb2.source) {
+          bid.ortb2.source = {};
+        }
+        // Set the schain in ortb2.source.schain
+        bid.ortb2.source.schain = deepClone(result);
       }
     });
   });
@@ -197,7 +202,8 @@ init()
 
 export function setOrtbSourceExtSchain(ortbRequest, bidderRequest, context) {
   if (!deepAccess(ortbRequest, 'source.ext.schain')) {
-    const schain = deepAccess(context, 'bidRequests.0.schain');
+    // Look for schain in the new location: ortb2.source.schain
+    const schain = deepAccess(context, 'bidRequests.0.ortb2.source.schain');
     if (schain) {
       deepSetValue(ortbRequest, 'source.ext.schain', schain);
     }
@@ -205,3 +211,6 @@ export function setOrtbSourceExtSchain(ortbRequest, bidderRequest, context) {
 }
 
 registerOrtbProcessor({type: REQUEST, name: 'sourceExtSchain', fn: setOrtbSourceExtSchain});
+
+// handler to read the skipValidation flag
+config.getConfig('firstPartyData', config => handleSetConfigFlag(config.firstPartyData));

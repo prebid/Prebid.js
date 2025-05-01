@@ -1106,7 +1106,7 @@ describe('OpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            schain: schainConfig
+            ortb2: {source: {schain: schainConfig}}
           }];
         });
 
