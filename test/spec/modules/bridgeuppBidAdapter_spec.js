@@ -46,14 +46,6 @@ describe('bridgeuppBidAdapter_spec', function () {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-    it('should return false when missing bidder', function () {
-      delete bid.bidder;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-    it('should return false when bidder is not valid', function () {
-      bid.bidder = 'invalid-bidder';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
     it('should return false when missing siteId', function () {
       delete bid.params.siteId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);

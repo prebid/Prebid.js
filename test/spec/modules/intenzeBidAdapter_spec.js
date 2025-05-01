@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/gothamadsBidAdapter.js';
+import { spec } from 'modules/intenzeBidAdapter';
 import { config } from 'src/config.js';
 
 const NATIVE_BID_REQUEST = {
@@ -32,7 +32,7 @@ const NATIVE_BID_REQUEST = {
       }
     }
   },
-  bidder: 'gothamads',
+  bidder: 'intenze',
   params: {
     placementId: 'hash',
     accountId: 'accountId'
@@ -51,7 +51,7 @@ const BANNER_BID_REQUEST = {
       ]
     }
   },
-  bidder: 'gothamads',
+  bidder: 'intenze',
   params: {
     placementId: 'hash',
     accountId: 'accountId'
@@ -96,7 +96,7 @@ const VIDEO_BID_REQUEST = {
     }
   },
 
-  bidder: 'gothamads',
+  bidder: 'intenze',
   params: {
     placementId: 'hash',
     accountId: 'accountId'
@@ -189,7 +189,7 @@ const NATIVE_BID_RESPONSE = {
   }],
 };
 
-describe('GothamAdsAdapter', function () {
+describe('IntenzeAdapter', function () {
   describe('with COPPA', function () {
     beforeEach(function () {
       sinon.stub(config, 'getConfig')
@@ -235,7 +235,7 @@ describe('GothamAdsAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://us-e-node1.gothamads.com/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
     });
 
     it('Returns empty data if no valid requests are passed', function () {
@@ -265,7 +265,7 @@ describe('GothamAdsAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://us-e-node1.gothamads.com/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
     });
   });
 
@@ -284,7 +284,7 @@ describe('GothamAdsAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://us-e-node1.gothamads.com/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.equal('https://lb-east.intenze.co/bid?pass=accountId&integration=prebidjs');
     });
   });
 

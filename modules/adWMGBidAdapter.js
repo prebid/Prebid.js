@@ -14,10 +14,6 @@ export const spec = {
   aliases: ['wmg'],
   supportedMediaTypes: [BANNER],
   isBidRequestValid: (bid) => {
-    if (bid.bidder !== BIDDER_CODE) {
-      return false;
-    }
-
     if (!(bid.params.publisherId)) {
       return false;
     }

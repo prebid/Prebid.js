@@ -159,7 +159,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
-    if (!bid || bid.bidder !== BIDDER_CODE || !bid.params.siteId) {
+    if (!bid || !bid.params.siteId) {
       logWarn('Bridgeupp - bid is not valid, reach out to support@bridgeupp.com');
       return false;
     }

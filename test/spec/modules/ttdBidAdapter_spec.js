@@ -262,6 +262,29 @@ describe('ttdBidAdapter', function () {
       expect(request.data).to.be.not.null;
     });
 
+    it('bid request should parse tmax or have a default and minimum', function () {
+      const requestWithoutTimeout = {
+        ...baseBidderRequest,
+        timeout: null
+      };
+      var requestBody = testBuildRequests(baseBannerBidRequests, requestWithoutTimeout).data;
+      expect(requestBody.tmax).to.be.equal(400);
+      
+      const requestWithTimeout = {
+        ...baseBidderRequest,
+        timeout: 600
+      };
+      requestBody = testBuildRequests(baseBannerBidRequests, requestWithTimeout).data;
+      expect(requestBody.tmax).to.be.equal(600);
+
+      const requestWithLowerTimeout = {
+        ...baseBidderRequest,
+        timeout: 300
+      };
+      requestBody = testBuildRequests(baseBannerBidRequests, requestWithLowerTimeout).data;
+      expect(requestBody.tmax).to.be.equal(400);
+    });
+
     it('sets bidrequest.id to bidderRequestId', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.id).to.equal('18084284054531');
