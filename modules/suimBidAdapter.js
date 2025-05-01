@@ -59,7 +59,7 @@ export const spec = {
         url: ENDPOINT,
         data: data,
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: false,
         },
       };
