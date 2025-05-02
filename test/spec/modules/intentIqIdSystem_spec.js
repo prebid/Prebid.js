@@ -1,7 +1,13 @@
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { intentIqIdSubmodule, decryptData, handleClientHints, firstPartyData as moduleFPD } from '../../../modules/intentIqIdSystem';
+import {
+  intentIqIdSubmodule,
+  decryptData,
+  handleClientHints,
+  firstPartyData as moduleFPD,
+  isCMPStringTheSame, createPixelUrl
+} from '../../../modules/intentIqIdSystem';
 import {storage, readData} from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
@@ -587,6 +593,85 @@ describe('IntentIQ tests', function () {
     const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5'], storage);
     const expectedClientHints = handleClientHints(testClientHints);
     expect(savedClientHints).to.equal(expectedClientHints);
+  });
+
+  it('should return true if CMP strings are the same', function () {
+    const fpData = { gdprString: '123', gppString: '456', uspString: '789' };
+    const cmpData = { gdprString: '123', gppString: '456', uspString: '789' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.true;
+  });
+
+  it('should return false if gdprString is different', function () {
+    const fpData = { gdprString: '123', gppString: '456', uspString: '789' };
+    const cmpData = { gdprString: '321', gppString: '456', uspString: '789' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  it('should return false if gppString is different', function () {
+    const fpData = { gdprString: '123', gppString: '456', uspString: '789' };
+    const cmpData = { gdprString: '123', gppString: '654', uspString: '789' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  it('should return false if uspString is different', function () {
+    const fpData = { gdprString: '123', gppString: '456', uspString: '789' };
+    const cmpData = { gdprString: '123', gppString: '456', uspString: '987' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  it('should return false if one of the properties is missing in fpData', function () {
+    const fpData = { gdprString: '123', gppString: '456' };
+    const cmpData = { gdprString: '123', gppString: '456', uspString: '789' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  it('should return false if one of the properties is missing in cmpData', function () {
+    const fpData = { gdprString: '123', gppString: '456', uspString: '789' };
+    const cmpData = { gdprString: '123', gppString: '456' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  it('should return true if both objects are empty', function () {
+    const fpData = {};
+    const cmpData = {};
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.true;
+  });
+
+  it('should return false if one object is empty and another is not', function () {
+    const fpData = {};
+    const cmpData = { gdprString: '123', gppString: '456', uspString: '789' };
+
+    expect(isCMPStringTheSame(fpData, cmpData)).to.be.false;
+  });
+
+  it('should add clientHints to the URL if provided', function () {
+    const firstPartyData = {};
+    const clientHints = 'exampleClientHints';
+    const configParams = { partner: 'testPartner', domainName: 'example.com' };
+    const partnerData = {};
+    const cmpData = {};
+
+    const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData);
+
+    expect(url).to.include(`&uh=${encodeURIComponent(clientHints)}`);
+  });
+
+  it('should not add clientHints to the URL if not provided', function () {
+    const firstPartyData = {};
+    const configParams = { partner: 'testPartner', domainName: 'example.com' };
+    const partnerData = {};
+    const cmpData = {};
+
+    const url = createPixelUrl(firstPartyData, undefined, configParams, partnerData, cmpData);
+
+    expect(url).to.not.include('&uh=');
   });
 
   it('should run callback from params', async () => {
