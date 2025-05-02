@@ -1824,7 +1824,7 @@ describe('adapterManager tests', function () {
       })
     })
 
-    it('should set pbsHost is exists on bid', function () {
+    it('should set pbsHost if it exists on bid', function () {
       const previousState = config.getConfig('s2sConfig');
       config.setConfig({s2sConfig: { enabled: true, bidders: ['appnexus'] }});
       hook.ready();
