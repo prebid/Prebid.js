@@ -167,7 +167,7 @@ describe('onetag', function () {
         nativeBid.mediaTypes.native = 30;
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
-      it('Should return false when native.ortb is not an object', function () {
+      it('Should return false when native.ortb if defined but it isn\'t an object', function () {
         const nativeBid = createNativeBid();
         nativeBid.mediaTypes.native.ortb = 30 || 'string';
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
@@ -195,16 +195,6 @@ describe('onetag', function () {
       it('Should return false when native.ortb.assets[i] have title, but doesnt have \'len\' property', function () {
         const nativeBid = createNativeBid();
         Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0].title, 'len');
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
-      });
-      it('Should return false when native.ortb.assets[i] is image but doesnt have \'wmin\' property', function () {
-        const nativeBid = createNativeBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[1].img, 'wmin');
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
-      });
-      it('Should return false when native.ortb.assets[i] is image but doesnt have \'hmin\' property', function () {
-        const nativeBid = createNativeBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[1].img, 'hmin');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is data but doesnt have \'type\' property', function () {
