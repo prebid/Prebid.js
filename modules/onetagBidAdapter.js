@@ -84,8 +84,7 @@ const isValidAsset = function(asset) {
   const hasValidContent = asset.title || asset.img || asset.data || asset.video;
   if (!hasValidContent) return false;
   if (asset.title && (!asset.title.len || !Number.isInteger(asset.title.len))) return false;
-  if (asset.img && ((!asset.img.wmin || !Number.isInteger(asset.img.wmin)) || (!asset.img.hmin || !Number.isInteger(asset.img.hmin)))) return false;
-  if (asset.data && !asset.data.type) return false;
+  if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) return false;
   if (asset.video && (!asset.video.mimes || !asset.video.minduration || !asset.video.maxduration || !asset.video.protocols)) return false;
   return true;
 }
