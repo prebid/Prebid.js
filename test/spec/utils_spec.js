@@ -1352,34 +1352,4 @@ describe('getWinDimensions', () => {
     getWinDimensions();
     sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
-
-  describe('findBy', () => {
-    it('should find item by one the values', () => {
-      const array = [
-        {id: 1, name: 'foo', field: 'field'},
-        {id: 2, name: 'bar', field: 'field'},
-      ];
-      const item = findBy(array, 'name', ['alias', 'bar'], null);
-      expect(item?.id).to.eql(2);
-    });
-
-    it('should find item using normalizer', () => {
-      const array = [
-        {id: 1, quantity: '1', field: 'field'},
-        {id: 2, quantity: '2', field: 'field'},
-      ];
-      const item = findBy(array, 'quantity', [2], null, (v) => Number(v));
-      expect(item?.id).to.eql(2);
-    });
-
-    it('should find item on nested level', () => {
-      const array = [
-        {id: 1, job: {name: 'EY'}, field: 'field'},
-        {id: 2, job: {name: 'KPMG'}, field: 'field'},
-        {id: 3, job: {name: 'PwC'}, field: 'field'},
-      ];
-      const item = findBy(array, 'job.name', ['kpmg'], null, (v) => v.toLowerCase());
-      expect(item?.id).to.eql(2);
-    });
-  });
 });

@@ -144,7 +144,6 @@ import {
   logInfo,
   logWarn,
   deepEqual,
-  findBy,
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, PbPromise, delay} from '../../src/utils/promise.js';
@@ -1131,15 +1130,15 @@ function updateEIDConfig(submodules) {
 
 export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
   const {autoRefresh, retainConfig} = options;
-  const normalizer = (val) => (val || '').toLowerCase();
   return registry
     .reduce((acc, submodule) => {
       const {name, aliasName} = submodule;
-      const submoduleConfig = findBy(configs, 'name', [name, aliasName], null, normalizer);
+      const matchesName = (query) => [name, aliasName].some(value => value?.toLowerCase() === query.toLowerCase());
+      const submoduleConfig = configs.find((configItem) => matchesName(configItem.name));
 
       if (!submoduleConfig) {
         if (!retainConfig) return acc;
-        const previousSubmodule = findBy(prevSubmodules, 'config.name', [name, aliasName], normalizer);
+        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
         return previousSubmodule ? [...acc, previousSubmodule] : acc;
       }
 
@@ -1155,7 +1154,7 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
       };
 
       if (autoRefresh) {
-        const previousSubmodule = findBy(prevSubmodules, 'config.name', [name, aliasName], normalizer);
+        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
         newSubmoduleContainer.refreshIds = !previousSubmodule || !deepEqual(newSubmoduleContainer.config, previousSubmodule.config);
       }
 

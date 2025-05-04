@@ -1378,11 +1378,3 @@ export function triggerNurlWithCpm(bid, cpm) {
     triggerPixel(bid.nurl);
   }
 }
-
-export function findBy(arr, field, values, thisArg, normalizer = (v) => v) {
-  function getFieldByNestedValue(obj, path) {
-    return path.split('.').reduce((acc, key) => acc?.[key], obj);
-  }
-  const pred = (item) => values.some(value => normalizer(value) === normalizer(getFieldByNestedValue(item, field)));
-  return arr && arr.find(pred, thisArg);
-}
