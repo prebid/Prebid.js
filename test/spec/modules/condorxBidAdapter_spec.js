@@ -148,7 +148,7 @@ describe('CondorX Bid Adapter Tests', function () {
             domain: 'condorx.test',
             title: 'Test title',
             clickUrl: '//click.test',
-            pecpm: 0.5,
+            pcpm: 0.5,
             url: '//url.test',
             displayName: 'Test sponsoredBy',
             trackers: {
