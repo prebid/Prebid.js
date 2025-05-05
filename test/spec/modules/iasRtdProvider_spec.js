@@ -179,8 +179,55 @@ describe('iasRtdProvider is a RTD provider that', function () {
         expect(targeting['one-div-id']['fr']).to.be.eq('false');
         expect(targeting['one-div-id']['ias_id']).to.be.eq('4813f7a2-1f22-11ec-9bfd-0a1107f94461');
       });
-    })
-  });
+      it('it merges response data', function () {
+        const callback = sinon.spy();
+        
+        iasSubModule.getBidRequestData({
+          adUnits: [
+            {code: 'adunit-1'},
+            {code: 'adunit-2'},
+          ],
+        }, callback, config);
+
+        let request = server.requests[0];
+        request.respond(200, responseHeader, JSON.stringify(mergeRespData1));
+
+        const targeting1 = iasSubModule.getTargetingData(['adunit-1', 'adunit-2'], config);
+
+        expect(targeting1['adunit-1']['adt']).to.be.eq('veryLow');
+        expect(targeting1['adunit-1']['fr']).to.be.eq('false');
+        expect(targeting1['adunit-1']['ias_id']).to.be.eq('id1');
+
+        expect(targeting1['adunit-2']['adt']).to.be.eq('veryLow');
+        expect(targeting1['adunit-2']['fr']).to.be.eq('false');
+        expect(targeting1['adunit-2']['ias_id']).to.be.eq('id2');
+        
+        iasSubModule.getBidRequestData({
+          adUnits: [
+            {code: 'adunit-2'},
+            {code: 'adunit-3'},
+          ],
+        }, callback, config);
+
+        request = server.requests[1];
+        request.respond(200, responseHeader, JSON.stringify(mergeRespData2));
+
+        const targeting2 = iasSubModule.getTargetingData(['adunit-3', 'adunit-1', 'adunit-2'], config);
+
+        expect(targeting2['adunit-1']['adt']).to.be.eq('high');
+        expect(targeting2['adunit-1']['fr']).to.be.eq('true');
+        expect(targeting2['adunit-1']['ias_id']).to.be.eq('id1');
+
+        expect(targeting2['adunit-2']['adt']).to.be.eq('high');
+        expect(targeting2['adunit-2']['fr']).to.be.eq('true');
+        expect(targeting2['adunit-2']['ias_id']).to.be.eq('id2');
+
+        expect(targeting2['adunit-3']['adt']).to.be.eq('high');
+        expect(targeting2['adunit-3']['fr']).to.be.eq('true');
+        expect(targeting2['adunit-3']['ias_id']).to.be.eq('id3');
+      });
+    });
+  })
 });
 
 const config = {
@@ -235,4 +282,18 @@ const data = {
   custom: { 'ias-kw': ['IAS_5995_KW', 'IAS_7066_KW', 'IAS_7232_KW', 'IAS_7364_KW', 'IAS_3894_KW', 'IAS_6535_KW', 'IAS_6153_KW', 'IAS_5238_KW', 'IAS_7393_KW', 'IAS_1499_KW', 'IAS_7376_KW', 'IAS_1035_KW', 'IAS_6566_KW', 'IAS_1058_KW', 'IAS_11338_724_KW', 'IAS_7301_KW', 'IAS_15969_725_KW', 'IAS_6358_KW', 'IAS_710_KW', 'IAS_5445_KW', 'IAS_3822_KW', 'IAS_4901_KW', 'IAS_5806_KW', 'IAS_460_KW', 'IAS_11461_702_KW', 'IAS_5681_KW', 'IAS_17609_1240_KW', 'IAS_6634_KW', 'IAS_5597_KW'] },
   fr: 'false',
   slots: { 'one-div-id': { id: '4813f7a2-1f22-11ec-9bfd-0a1107f94461' } }
+};
+
+const mergeRespData1 = {
+  brandSafety: { adt: 'veryLow' },
+  custom: { 'ias-kw': ['IAS_5995_KW'] },
+  fr: 'false',
+  slots: { 'adunit-1': { id: 'id1' }, 'adunit-2': {id: 'id2'} }
+};
+
+const mergeRespData2 = {
+  brandSafety: { adt: 'high' },
+  custom: { 'ias-kw': ['IAS_5995_KW'] },
+  fr: 'true',
+  slots: { 'adunit-2': {id: 'id2'}, 'adunit-3': { id: 'id3' } }
 };
