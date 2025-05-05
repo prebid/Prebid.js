@@ -53,9 +53,9 @@ const DEFAULT_CURRENCY = 'EUR';
 /**
  * @type {MediaType[]}
  */
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.0.0';
+const ADAPTER_VERSION = '2.1.0';
 
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
@@ -155,6 +155,7 @@ export const spec = {
         id: impId,
         banner: mapBanner(bidRequest),
         native: mapNative(bidRequest),
+        video: mapVideo(bidRequest),
         displaymanager: 'Prebid.js',
         displaymanagerver: '$prebid.version$',
       };
@@ -305,6 +306,30 @@ function mapBanner(bidRequest) {
 }
 
 /**
+ * Maps video parameters from bid request to OpenRTB video object.
+ * @param {ExtendedBidRequest} bidRequest
+ */
+function mapVideo(bidRequest) {
+  const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoParams) {
+      const { sizes, playerSize } = videoParams;
+
+      const format = (playerSize || sizes)?.map((size) => ({ w: size[0], h: size[1] }));
+
+      const [firstSize] = format || [];
+
+      delete videoParams.sizes;
+
+      return {
+          ...videoParams,
+          w: firstSize?.w,
+          h: firstSize?.h,
+          format,
+      };
+  }
+}
+
+/**
  * @param {ExtendedBidRequest} bidRequest
  */
 function mapNative(bidRequest) {
@@ -421,6 +446,9 @@ function interpretResponse(serverResponse, { bidRequest }) {
     if (bidReceived.adm.indexOf('{') === 0) {
       prBid.mediaType = NATIVE;
       prBid.native = interpretNativeAd(bidReceived, price, currency);
+    } else if (bidReceived.adm.indexOf('<VAST') > -1) {
+      prBid.mediaType = VIDEO;
+      prBid.vastXml = bidReceived.adm;
     } else {
       prBid.mediaType = BANNER;
       prBid.ad = bidReceived.adm;
