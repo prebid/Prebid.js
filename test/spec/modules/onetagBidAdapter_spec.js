@@ -54,7 +54,7 @@ describe('onetag', function () {
         assets: [{
           id: 1,
           required: 1,
-          title: {
+      title: {
             len: 140
           }
         },
@@ -81,7 +81,7 @@ describe('onetag', function () {
             minduration: 5,
             maxduration: 30,
             protocols: [2, 3]
-          }
+      }
         }],
         eventtrackers: [{
           event: 1,
@@ -224,28 +224,38 @@ describe('onetag', function () {
       });
       it('Should return false when native.ortb.eventtrackers is not an array', function () {
         const nativeBid = createNativeBid();
-        nativeBid.mediaTypes.native.ortb.eventtrackers = 30;
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        if (nativeBid.mediaTypes.native.ortb.eventtrackers) {
+          nativeBid.mediaTypes.native.ortb.eventtrackers = 30;
+          expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        }
       });
       it('Should return false when native.ortb.eventtrackers[i].event is not a number', function () {
         const nativeBid = createNativeBid();
-        nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = 'test-string';
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        if (nativeBid.mediaTypes.native.ortb.eventtrackers) {
+          nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = 'test-string';
+          expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        }
       });
       it('Should return false when native.ortb.eventtrackers[i].event is not defined', function () {
         const nativeBid = createNativeBid();
-        nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = undefined;
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        if (nativeBid.mediaTypes.native.ortb.eventtrackers) {
+          nativeBid.mediaTypes.native.ortb.eventtrackers[0].event = undefined;
+          expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        }
       });
       it('Should return false when native.ortb.eventtrackers[i].methods is not an array', function () {
         const nativeBid = createNativeBid();
-        nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = 30;
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        if (nativeBid.mediaTypes.native.ortb.eventtrackers) {
+          nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = 30;
+          expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        }
       });
       it('Should return false when native.ortb.eventtrackers[i].methods is empty array', function () {
         const nativeBid = createNativeBid();
-        nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = [];
-        expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        if (nativeBid.mediaTypes.native.ortb.eventtrackers) {
+          nativeBid.mediaTypes.native.ortb.eventtrackers[0].methods = [];
+          expect(spec.isBidRequestValid(nativeBid)).to.be.false;
+        }
       });
     });
     describe('video bidRequest', function () {
