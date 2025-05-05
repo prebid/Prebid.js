@@ -15,14 +15,12 @@ import {
   logError,
   isStr,
   generateUUID,
-  triggerPixel,
 } from '../src/utils.js';
 
-const BASE_URL = '//v.ex.co';
 export const SID = window.excoPid || generateUUID();
-export const ENDPOINT = `${BASE_URL}/se/openrtb/hb/pbjs`;
-const EVT_ENDPOINT = `${BASE_URL}/event`;
-const SYNC_URL = '//cdn.ex.co/sync/e15e216-l/cookie_sync.html';
+export const ENDPOINT = 'https://v.ex.co/se/openrtb/hb/pbjs';
+const SYNC_URL = 'https://cdn.ex.co/sync/e15e216-l/cookie_sync.html';
+
 export const BIDDER_CODE = 'exco';
 const VERSION = '0.0.2';
 const CURRENCY = 'USD';
@@ -224,7 +222,7 @@ export class AdapterHelpers {
     });
   }
 
-  getPixelUrl(data, eventName) {
+  getEventUrl(data, eventName) {
     const bid = data[0];
     const params = {
       adapterVersion: VERSION,
@@ -279,7 +277,14 @@ export class AdapterHelpers {
       }
     });
 
-    return `${EVT_ENDPOINT}?${searchParams}`;
+    return `https://v.ex.co/event?${searchParams}`;
+  }
+
+  triggerUrl(url) {
+    fetch(url, {
+      keepalive: true,
+      credentials: 'include'
+    });
   }
 
   log(severity, message) {
@@ -486,10 +491,10 @@ export const spec = {
    * @param {Object} data - Contains timeout specific data
    */
   onTimeout: function (data) {
-    const pixelUrl = helpers.getPixelUrl(data, 'mcd_bidder_auction_timeout');
+    const eventUrl = helpers.getEventUrl(data, 'mcd_bidder_auction_timeout');
 
-    if (pixelUrl) {
-      triggerPixel(pixelUrl);
+    if (eventUrl) {
+      helpers.triggerUrl(eventUrl);
     }
   },
 
@@ -503,18 +508,10 @@ export const spec = {
     }
 
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
-      triggerPixel(
+      helpers.triggerUrl(
         helpers.replaceMacro(bid.nurl)
       );
     }
-  },
-
-  /**
-   * Register bidder specific code, which will execute if the bidder responded with an error
-   * @param {{error: Error, bidderRequest: object}} details - An object with the XMLHttpRequest error and the bid request object
-   */
-  onBidderError: function (details) {
-    // TBD
   },
 };
 

@@ -296,6 +296,7 @@ describe('ExcoBidAdapter', function () {
   });
 
   describe('onTimeout', function () {
+    let stubbedFetch;
     const bid = {
       bidder: adapter.code,
       adUnitCode: 'adunit-code',
@@ -312,43 +313,43 @@ describe('ExcoBidAdapter', function () {
     };
 
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
+      stubbedFetch = sinon.stub(window, 'fetch');
     });
     afterEach(function() {
-      utils.triggerPixel.restore();
+      stubbedFetch.restore();
     });
 
     it('should exists and be a function', () => {
       expect(adapter.onTimeout).to.exist.and.to.be.a('function');
     });
 
-    it('Should create and call pixel url', function() {
-      const pixelUrl = helpers.getPixelUrl([bid], 'mcd_bidder_auction_timeout');
+    it('Should create event url', function() {
+      const pixelUrl = helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout');
       adapter.onTimeout([bid]);
-
-      expect(utils.triggerPixel.calledWith(pixelUrl)).to.be.true;
-      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(stubbedFetch.calledWith(pixelUrl)).to.be.true;
     });
 
-    it('Should trigger pixel', function() {
+    it('Should trigger event url', function() {
       adapter.onTimeout([bid]);
-      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(stubbedFetch.callCount).to.equal(1);
     });
   });
 
   describe('onBidWon', function() {
+    let stubbedFetch;
+
     beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
+      stubbedFetch = sinon.stub(window, 'fetch');
     });
     afterEach(function() {
-      utils.triggerPixel.restore();
+      stubbedFetch.restore();
     });
 
     it('should exists and be a function', () => {
       expect(adapter.onBidWon).to.exist.and.to.be.a('function');
     });
 
-    it('Should trigger pixel if bid nurl', function() {
+    it('Should trigger event if bid nurl', function() {
       const bid = {
         bidder: adapter.code,
         adUnitCode: 'adunit-code',
@@ -362,7 +363,7 @@ describe('ExcoBidAdapter', function () {
       };
 
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.callCount).to.equal(1);
+      expect(stubbedFetch.callCount).to.equal(1);
     });
 
     it('Should not trigger pixel if no bid nurl', function() {
@@ -378,7 +379,7 @@ describe('ExcoBidAdapter', function () {
       };
 
       adapter.onBidWon(bid);
-      expect(utils.triggerPixel.callCount).to.equal(0);
+      expect(stubbedFetch.callCount).to.equal(0);
     });
   });
 });
