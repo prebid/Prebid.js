@@ -619,7 +619,6 @@ const spec = {
 
     const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
-    const slotId = setOnAny(validBidRequests, 'params.id');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
     const domain = setOnAny(validBidRequests, 'params.domain') || bidderRequest.refererInfo.domain;
