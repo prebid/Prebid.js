@@ -1824,6 +1824,22 @@ describe('adapterManager tests', function () {
       })
     })
 
+    it('should set pbsHost if it exists on bid', function () {
+      const previousState = config.getConfig('s2sConfig');
+      config.setConfig({s2sConfig: { enabled: true, bidders: ['appnexus'] }});
+      hook.ready();
+      adUnits = [utils.deepClone(getAdUnits()[0])];
+      adUnits[0].bids.splice(1);
+      adUnits[0].bids[0].bidder = 'appnexus';
+      adUnits[0].bids[0].pbsHost = 'adnx';
+
+      let bidRequests = makeBidRequests([adUnits[0]]);
+      expect(bidRequests[0].bidderCode).to.equal('appnexus');
+      expect(bidRequests[0].pbsHost).to.equal('adnx');
+
+      config.setConfig({s2sConfig: previousState});
+    });
+
     it('should set and increment bidRequestsCounter', () => {
       const [au1, au2] = adUnits;
       makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
@@ -2887,11 +2903,28 @@ describe('adapterManager tests', function () {
           sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
         });
       });
+
+      it('should partition to server if pbsHost is in server bidders', () => {
+        const adUnits = [{
+          bids: [{
+            bidder: 'A',
+          }, {
+            bidder: 'B',
+            pbsHost: 'B-2'
+          }]
+        }];
+        s2sBidders = new Set(['B-2']);
+        const s2sConfig = {};
+        expect(partition(adUnits, s2sConfig)).to.eql({
+          [PARTITIONS.CLIENT]: ['A'],
+          [PARTITIONS.SERVER]: ['B']
+        });
+      });
     });
 
     describe('filterBidsForAdUnit', () => {
-      function filterBids(bids, s2sConfig) {
-        return _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders});
+      function filterBids(bids, s2sConfig, getBidders) {
+        return _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders: getBidders ?? getS2SBidders});
       }
       it('should not filter any bids when s2sConfig == null', () => {
         const bids = ['untouched', 'data'];
@@ -2903,6 +2936,13 @@ describe('adapterManager tests', function () {
         const s2sConfig = {};
         expect(filterBids(['A', 'C', 'D'].map((code) => ({bidder: code})), s2sConfig)).to.eql([{bidder: 'A'}]);
         sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
+      })
+
+      it('should not filter bidders that match a bids pbsHost but not bidder code', () => {
+        const s2sConfig = {};
+        const bids = ['A', 'C', 'D'].map((code) => ({bidder: code, pbsHost: `${code}Z`}));
+        const getBidders = () => new Set(['AZ', 'B']);
+        expect(filterBids(bids, s2sConfig, getBidders)).to.eql([{bidder: 'A', pbsHost: 'AZ'}]);
       })
     });
   });
