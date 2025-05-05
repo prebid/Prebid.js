@@ -496,6 +496,18 @@ describe('Yandex adapter', function () {
         });
       });
     });
+
+    it('should include eventtrackers in the native request', function () {
+      const nativeParams = buildRequestAndGetNativeParams({
+        mediaTypes: {
+          native: {
+            title: { required: true },
+          },
+        },
+      });
+
+      expect(nativeParams.eventtrackers).to.deep.equal([{ event: 1, methods: [1] }]);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -698,6 +710,114 @@ describe('Yandex adapter', function () {
             height: 32,
           },
         });
+      });
+
+      it('should add eventtrackers urls to impressionTrackers', function () {
+        bannerRequest.bidRequest = {
+          mediaType: NATIVE,
+          bidId: 'bidid-1',
+        };
+
+        const nativeAdmResponse = getNativeAdmResponse();
+        nativeAdmResponse.native.eventtrackers = [
+          {
+            event: 1, // TRACKER_EVENTS.impression
+            method: 1, // TRACKER_METHODS.img
+            url: 'https://example.com/imp-event-tracker',
+          },
+          {
+            event: 2,
+            method: 2,
+            url: 'https://example.com/skip-me',
+          },
+        ];
+
+        const bannerResponse = {
+          body: {
+            seatbid: [
+              {
+                bid: [
+                  {
+                    impid: 1,
+                    price: 0.3,
+                    adm: JSON.stringify(nativeAdmResponse),
+                  },
+                ],
+              },
+            ],
+          },
+        };
+
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
+
+        expect(bid.native.impressionTrackers).to.include(
+          'https://example.com/imptracker'
+        );
+        expect(bid.native.impressionTrackers).to.include(
+          'https://example.com/imp-event-tracker'
+        );
+        expect(bid.native.impressionTrackers).to.not.include('https://example.com/skip-me');
+      });
+
+      it('should handle missing imptrackers', function () {
+        bannerRequest.bidRequest = {
+          mediaType: NATIVE,
+          bidId: 'bidid-1',
+        };
+
+        const nativeAdmResponse = getNativeAdmResponse();
+        delete nativeAdmResponse.native.imptrackers;
+        nativeAdmResponse.native.eventtrackers = [{
+          event: 1,
+          method: 1,
+          url: 'https://example.com/fallback-tracker'
+        }];
+
+        const bannerResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: 1,
+                price: 0.3,
+                adm: JSON.stringify(nativeAdmResponse)
+              }]
+            }]
+          }
+        };
+
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
+
+        expect(bid.native.impressionTrackers)
+          .to.deep.equal(['https://example.com/fallback-tracker']);
+      });
+
+      it('should handle missing eventtrackers', function () {
+        bannerRequest.bidRequest = {
+          mediaType: NATIVE,
+          bidId: 'bidid-1',
+        };
+
+        const nativeAdmResponse = getNativeAdmResponse();
+
+        const bannerResponse = {
+          body: {
+            seatbid: [{
+              bid: [{
+                impid: 1,
+                price: 0.3,
+                adm: JSON.stringify(nativeAdmResponse)
+              }]
+            }]
+          }
+        };
+
+        const result = spec.interpretResponse(bannerResponse, bannerRequest);
+        const bid = result[0];
+
+        expect(bid.native.impressionTrackers)
+          .to.deep.equal(['https://example.com/imptracker']);
       });
     });
   });
