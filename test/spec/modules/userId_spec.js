@@ -38,6 +38,7 @@ import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import {generateSubmoduleContainers} from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import { addIdData } from '../../../modules/userId/index.js';
 
@@ -3220,5 +3221,73 @@ describe('User ID', function () {
         unregisterRule();
       });
     })
+  });
+
+  describe('generateSubmoduleContainers', () => {
+    it('should properly map registry to submodule containers for empty previous submodule containers', () => {
+      const previousSubmoduleContainers = [];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('mockId1Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].submodule.name).to.eql('sharedId');
+    });
+
+    it('should properly map registry to submodule containers for non-empty previous submodule containers', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'notSharedId'}, config: {name: 'notSharedId'}},
+        {submodule: {name: 'notSharedId2'}, config: {name: 'notSharedId2'}},
+      ];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('mockId1Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].submodule.name).to.eql('sharedId');
+    });
+
+    it('should properly map registry to submodule containers for retainConfig flag', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'shouldBeKept'}, config: {name: 'shouldBeKept'}},
+      ];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('shouldBeKept', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({retainConfig: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[1].submodule.name).to.eql('shouldBeKept');
+    });
+
+    it('should properly map registry to submodule containers for autoRefresh flag', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'modified'}, config: {name: 'modified', auctionDelay: 300}},
+        {submodule: {name: 'unchanged'}, config: {name: 'unchanged', auctionDelay: 300}},
+      ];
+      const submoduleRegistry = [
+        createMockIdSubmodule('modified', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('new', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('unchanged', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [
+        {name: 'modified', auctionDelay: 200},
+        {name: 'new'},
+        {name: 'unchanged', auctionDelay: 300},
+      ];
+      const result = generateSubmoduleContainers({autoRefresh: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(3);
+      const itemsWithRefreshIds = result.filter(item => item.refreshIds);
+      const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
+      expect(submoduleNames).to.deep.eql(['modified', 'new']);
+    });
   });
 });
