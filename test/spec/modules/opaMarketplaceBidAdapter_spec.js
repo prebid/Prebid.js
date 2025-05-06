@@ -491,6 +491,10 @@ describe('OpaMarketplaceBidAdapter', function () {
 
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
       const url = new URL(result[0].url);
+      expect(result).to.deep.equal([{
+        'url': 'https://sync.opamarketplace.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
+        'type': 'image'
+      }]);
       expect(url.searchParams.get('gdpr_consent')).to.equal('consent_string');
       expect(url.searchParams.get('us_privacy')).to.equal('usp_string');
       expect(url.searchParams.get('gpp')).to.equal('gpp_string');
