@@ -33,5 +33,6 @@
   "paapiForGpt",
   "dfpAdServerVideo",
   "criteoIdSystem",
-  "connectadBidAdapter"
+  "connectadBidAdapter",
+  "anPspParamsConverter"
 ]
