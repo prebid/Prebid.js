@@ -110,7 +110,7 @@ partitionBidders.before(function (next, adUnits, s2sConfigs) {
     }
   });
 
-  next.bail(getBidderCodes(adUnits).reduce((memo, bidder) => {
+  next.bail(getBidderCodes(adUnits).reduce((memo, {bidder}) => {
     if (serverBidders.has(bidder)) {
       memo[SERVER].push(bidder);
     }
