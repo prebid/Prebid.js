@@ -249,42 +249,51 @@ describe('onetag', function () {
       it('Should return false when native.ortb.assets[i] doesnt have any of \'title\', \'img\', \'data\' and \'video\' properties', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0], 'title');
-        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[0], 'title');
+        const titleIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        const legacyTitleIndex = nativeLegacyBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[titleIndex], 'title');
+        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[legacyTitleIndex], 'title');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] have title, but doesnt have \'len\' property', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[0].title, 'len');
-        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[0].title, 'len');
+        const titleIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        const legacyTitleIndex = nativeLegacyBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.title);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[titleIndex].title, 'len');
+        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[legacyTitleIndex].title, 'len');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is data but doesnt have \'type\' property', function () {
         const nativeBid = createNativeBid();
         const nativeLegacyBid = createNativeLegacyBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[2].data, 'type');
-        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[2].data, 'type');
+        const dataIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.data);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[dataIndex].data, 'type');
+        Reflect.deleteProperty(nativeLegacyBid.mediaTypes.native.ortb.assets[dataIndex].data, 'type');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false && expect(spec.isBidRequestValid(nativeLegacyBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is video but doesnt have \'mimes\' property', function () {
         const nativeBid = createNativeBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'mimes');
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'mimes');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is video but doesnt have \'minduration\' property', function () {
         const nativeBid = createNativeBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'minduration');
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'minduration');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is video but doesnt have \'maxduration\' property', function () {
         const nativeBid = createNativeBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'maxduration');
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'maxduration');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
       it('Should return false when native.ortb.assets[i] is video but doesnt have \'protocols\' property', function () {
         const nativeBid = createNativeBid();
-        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[3].video, 'protocols');
+        const videoIndex = nativeBid.mediaTypes.native.ortb.assets.findIndex(asset => asset.video);
+        Reflect.deleteProperty(nativeBid.mediaTypes.native.ortb.assets[videoIndex].video, 'protocols');
         expect(spec.isBidRequestValid(nativeBid)).to.be.false;
       });
       it('Should return false when native.ortb.eventtrackers is not an array', function () {
