@@ -13,6 +13,7 @@ import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+import { getWinDimensions } from '../src/utils.js';
 /**
  * @typedef {import('../libraries/video/shared/state.js').State} State
  */
@@ -208,6 +209,22 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
     try {
       player.ima.changeAdTag(adTagUrl);
+      player.ima.requestAds();
+    } catch (e) {
+      /*
+      Handling is not required; ad errors are emitted automatically by video.js
+       */
+    }
+  }
+
+  function setAdXml(vastXml) {
+    if (!player.ima || !vastXml) {
+      return;
+    }
+
+    // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
+    try {
+      player.ima.controller.settings.adsResponse = vastXml;
       player.ima.requestAds();
     } catch (e) {
       /*
@@ -501,6 +518,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,
+    setAdXml,
     onEvent,
     offEvent,
     destroy
@@ -597,8 +615,8 @@ export const utils = {
   },
 
   getPositionCode: function({left, top, width, height}) {
-    const bottom = window.innerHeight - top - height;
-    const right = window.innerWidth - left - width;
+    const bottom = getWinDimensions().innerHeight - top - height;
+    const right = getWinDimensions().innerWidth - left - width;
 
     if (left < 0 || right < 0 || top < 0) {
       return AD_POSITION.UNKNOWN;

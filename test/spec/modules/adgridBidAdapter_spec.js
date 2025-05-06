@@ -6,6 +6,15 @@ const globalConfig = {
   endPoint: 'https://api-prebid.adgrid.io/api/v1/auction'
 };
 
+const userConfig = {
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+    vendorData: {}
+  },
+  uspConsent: '123456'
+};
+
 describe('AdGrid Bid Adapter', function () {
   const bannerRequest = [{
     bidId: 123456,
@@ -16,7 +25,8 @@ describe('AdGrid Bid Adapter', function () {
       }
     },
     params: {
-      domainId: 12345
+      domainId: 12345,
+      placement: 'leaderboard'
     }
   }];
 
@@ -32,17 +42,18 @@ describe('AdGrid Bid Adapter', function () {
       }
     },
     params: {
-      domainId: 12345
+      domainId: 12345,
+      placement: 'video1'
     }
   }];
 
   describe('isBidRequestValid', function () {
-    it('Should return true when domainId exist inside params object', function () {
+    it('Should return true when domainId and placement exist inside params object', function () {
       const isBidValid = spec.isBidRequestValid(bannerRequest[0]);
       expect(isBidValid).to.be.true;
     });
 
-    it('Should return false when domainId is not exist inside params object', function () {
+    it('Should return false when domainId and placement are not exist inside params object', function () {
       const isBidNotValid = spec.isBidRequestValid(null);
       expect(isBidNotValid).to.be.false;
     });
@@ -126,6 +137,37 @@ describe('AdGrid Bid Adapter', function () {
       expect(bid.width).to.equal(receivedBid.width);
       expect(bid.height).to.equal(receivedBid.height);
       expect(bid.currency).to.equal(receivedBid.currency);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const response = { body: { cookies: [] } };
+
+    it('Validate the user sync without cookie', function () {
+      var syncs = spec.getUserSyncs({}, [response], userConfig.gdprConsent, userConfig.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Validate the user sync with cookie', function () {
+      response.body.ext = {
+        cookies: [{ 'type': 'image', 'url': 'https://cookie-sync.org/' }]
+      };
+      var syncs = spec.getUserSyncs({}, [response], userConfig.gdprConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0]).to.have.property('type').and.to.equal('image');
+      expect(syncs[0]).to.have.property('url').and.to.equal('https://cookie-sync.org/');
+    });
+
+    it('Validate the user sync with no bid', function () {
+      var syncs = spec.getUserSyncs({}, null, userConfig.gdprConsent, userConfig.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Validate the user sync with no bid body', function () {
+      var syncs = spec.getUserSyncs({}, [], userConfig.gdprConsent, userConfig.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+      var syncs = spec.getUserSyncs({}, [{}], userConfig.gdprConsent, userConfig.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
     });
   });
 });

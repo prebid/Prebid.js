@@ -49,6 +49,7 @@ import {isActivityAllowed} from './activities/rules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
 import {redactor} from './activities/redactor.js';
+import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -163,7 +164,7 @@ export function _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders = getS2SBid
     return bids;
   } else {
     const serverBidders = getS2SBidders(s2sConfig);
-    return bids.filter((bid) => serverBidders.has(bid.bidder))
+    return bids.filter((bid) => serverBidders.has(bid.pbsHost ?? bid.bidder))
   }
 }
 export const filterBidsForAdUnit = hook('sync', _filterBidsForAdUnit, 'filterBidsForAdUnit');
@@ -245,8 +246,8 @@ export function getS2SBidderSet(s2sConfigs) {
  */
 export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SBidderSet} = {}) {
   const serverBidders = getS2SBidders(s2sConfigs);
-  return getBidderCodes(adUnits).reduce((memo, bidder) => {
-    const partition = serverBidders.has(bidder) ? PARTITIONS.SERVER : PARTITIONS.CLIENT;
+  return getBidderCodes(adUnits).reduce((memo, {bidder, pbsHost}) => {
+    const partition = serverBidders.has(pbsHost || bidder) ? PARTITIONS.SERVER : PARTITIONS.CLIENT;
     memo[partition].push(bidder);
     return memo;
   }, {[PARTITIONS.CLIENT]: [], [PARTITIONS.SERVER]: []})
@@ -318,13 +319,16 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
         const metrics = auctionMetrics.fork();
+        const bids = hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics });
+        const pbsHost = bids?.find(bid => bid.pbsHost)?.pbsHost;
         const bidderRequest = addOrtb2({
           bidderCode,
           auctionId,
           bidderRequestId,
           uniquePbsTid,
-          bids: hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics }),
+          bids,
           auctionStart: auctionStart,
+          pbsHost,
           timeout: s2sConfig.timeout,
           src: S2S.SRC,
           refererInfo,
@@ -419,7 +423,9 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   let counter = 0;
 
   _s2sConfigs.forEach((s2sConfig) => {
-    if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
+    const uniqueServerBid = uniqueServerBidRequests[counter];
+
+    if (s2sConfig && uniqueServerBid && getS2SBidderSet(s2sConfig).has(uniqueServerBid.pbsHost || uniqueServerBid.bidderCode)) {
       // s2s should get the same client side timeout as other client side requests.
       const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, 's2s'),
@@ -427,8 +433,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       } : undefined);
       let adaptersServerSide = s2sConfig.bidders;
       const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
-      let uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
-      let adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
+      let uniquePbsTid = uniqueServerBid.uniquePbsTid;
+      let adUnitsS2SCopy = uniqueServerBid.adUnitsS2SCopy;
 
       let uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
@@ -445,7 +451,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
             }
           });
 
-          const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
+          const bidders = getBidderCodes(s2sBidRequest.ad_units).filter(({bidder, pbsHost}) => adaptersServerSide.includes(pbsHost) || adaptersServerSide.includes(bidder));
           logMessage(`CALLING S2S HEADER BIDDERS ==== ${bidders.length > 0 ? bidders.join(', ') : 'No bidder specified, using "ortb2Imp" definition(s) only'}`);
 
           // fire BID_REQUESTED event for each s2s bidRequest
@@ -689,9 +695,8 @@ adapterManager.triggerBilling = (() => {
   return (bid) => {
     if (!BILLED.has(bid)) {
       BILLED.add(bid);
-      if (bid.source === S2S.SRC && bid.burl) {
-        internal.triggerPixel(bid.burl);
-      }
+      (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_IMPRESSION]?.[TRACKER_METHOD_IMG] || [])
+        .forEach((url) => internal.triggerPixel(url));
       tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
     }
   }

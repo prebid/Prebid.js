@@ -185,8 +185,8 @@ export const enrichBidderRequest = (reqBidsConfigObj, bidderCode, wurflData) => 
     enrichOrtb2DeviceData('h', wurflData.resolution_height, device, ortb2data);
     enrichOrtb2DeviceData('w', wurflData.resolution_width, device, ortb2data);
     enrichOrtb2DeviceData('ppi', wurflData.pixel_density, device, ortb2data);
-    enrichOrtb2DeviceData('pxratio', wurflData.density_class, device, ortb2data);
-    enrichOrtb2DeviceData('js', wurflData.ajax_support_javascript, device, ortb2data);
+    enrichOrtb2DeviceData('pxratio', toNumber(wurflData.density_class), device, ortb2data);
+    enrichOrtb2DeviceData('js', toNumber(wurflData.ajax_support_javascript), device, ortb2data);
   }
   ortb2data.device.ext['wurfl'] = wurflData
   mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: ortb2data });
@@ -243,6 +243,20 @@ function enrichOrtb2DeviceData(key, value, device, ortb2data) {
     return;
   }
   ortb2data.device[key] = value;
+}
+
+/**
+ * toNumber converts a given value to a number.
+ * Returns `undefined` if the conversion results in `NaN`.
+ * @param {any} value - The value to convert to a number.
+ * @returns {number|undefined} The converted number, or `undefined` if the conversion fails.
+ */
+export function toNumber(value) {
+  if (value === '' || value === null) {
+    return undefined;
+  }
+  const num = Number(value);
+  return Number.isNaN(num) ? undefined : num;
 }
 
 /**
