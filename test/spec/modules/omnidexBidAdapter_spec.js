@@ -437,6 +437,7 @@ describe('OmnidexBidAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
+    let adapter;
     afterEach(() => {
       config.resetConfig();
       $$PREBID_GLOBAL$$.bidderSettings = {};
