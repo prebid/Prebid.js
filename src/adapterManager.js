@@ -172,7 +172,13 @@ export function _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders = getS2SBid
     return bids;
   } else {
     const serverBidders = getS2SBidders(s2sConfig);
-    return bids.filter((bid) => serverBidders.has(bid.bidder))
+    return bids.filter((bid) => {
+      if (!serverBidders.has(bid.bidder)) return false;
+      if (bid.s2sConfigName == null) return true;
+      const configName = getConfigName(s2sConfig);
+      const allowedS2SConfigs = Array.isArray(bid.s2sConfigName) ? bid.s2sConfigName : [bid.s2sConfigName];
+      return allowedS2SConfigs.includes(configName);
+    })
   }
 }
 export const filterBidsForAdUnit = hook('sync', _filterBidsForAdUnit, 'filterBidsForAdUnit');
