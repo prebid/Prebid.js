@@ -80,9 +80,17 @@ var _analyticsRegistry = {};
 
 const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
+function getConfigName(s2sConfig) {
+  // According to our docs, "module" bid (stored impressions)
+  // have params.configName referring to s2sConfig.name,
+  // but for a long while this was checking against s2sConfig.configName.
+  // Keep allowing s2sConfig.configName to avoid the breaking change
+  return s2sConfig.configName ?? s2sConfig.name;
+}
+
 export function s2sActivityParams(s2sConfig) {
   return activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
-    [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
+    [ACTIVITY_PARAM_S2S_NAME]: getConfigName(s2sConfig)
   });
 }
 
@@ -175,7 +183,9 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
-    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && b.params?.configName === s2sConfig.configName);
+    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && (
+      b.params?.configName === getConfigName(s2sConfig)
+    ));
     if (s2sBids.length === 1) {
       adUnit.s2sBid = s2sBids[0];
       hasModuleBids = true;

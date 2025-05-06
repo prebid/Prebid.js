@@ -1972,11 +1972,12 @@ describe('adapterManager tests', function () {
               {
                 enabled: true,
                 adapter: 'mockS2S1',
-                configName: 'mock1',
+                name: 'mock1',
               },
               {
                 enabled: true,
                 adapter: 'mockS2S2',
+                // for backwards compatibility, allow "configName" instead of the more sensible "name"
                 configName: 'mock2',
               }
             ]
