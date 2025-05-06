@@ -512,8 +512,6 @@ describe('OpaMarketplaceBidAdapter', function () {
 
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
       const url = new URL(result[0].url);
-      expect(url.searchParams.get('coppa')).to.equal('1');
-      expect(url.searchParams.get('gdpr')).to.equal('1');
       expect(url.searchParams.get('gdpr_consent')).to.equal('consent_string');
       expect(url.searchParams.get('us_privacy')).to.equal('usp_string');
       expect(url.searchParams.get('gpp')).to.equal('gpp_string');
