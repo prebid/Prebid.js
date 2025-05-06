@@ -204,18 +204,10 @@ function getTopWindowQueryParams() {
   }
 }
 
-function freshAdapter() {
-  delete require.cache[require.resolve('modules/opaMarketplaceBidAdapter')];
-  return require('modules/opaMarketplaceBidAdapter').spec;
-}
-
-function resetPbConfig() {
-  config.resetConfig();
-  $$PREBID_GLOBAL$$.bidderSettings = {};
-  window.localStorage.clear();
-}
-
 describe('OpaMarketplaceBidAdapter', function () {
+  before(() => config.resetConfig());
+  after(() => config.resetConfig());
+
   describe('validate spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
@@ -443,19 +435,6 @@ describe('OpaMarketplaceBidAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    let adapter;
-    let clock;
-
-    beforeEach(() => {
-      resetPbConfig();
-      adapter = freshAdapter();
-      clock = useFakeTimers();
-    });
-
-    afterEach(() => {
-      clock.restore();
-    });
-
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.have.length(1);
