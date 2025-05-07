@@ -467,6 +467,23 @@ describe('GoldbachBidAdapter', function () {
       expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
       expect(userSyncs[0].url).to.contain('xandrId=$UID');
     })
+
+    it('user-syncs use gdpr signal', function () {
+      let gdprConsent = {
+        gdprApplies: true,
+        consentString: 'test-consent-string',
+        vendorData: {
+          purpose: {
+            consents: 1
+          }
+        }};
+      let synOptions = {pixelEnabled: true, iframeEnabled: true};
+      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+      expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
+      expect(userSyncs[0].url).to.contain('xandrId=$UID');
+      expect(userSyncs[0].url).to.contain(`gdpr_consent=${gdprConsent.consentString}`);
+      expect(userSyncs[0].url).to.contain(`gdpr=1`);
+    })
   });
 
   describe('getUserSyncs storage', function () {
