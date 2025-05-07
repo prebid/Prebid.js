@@ -169,7 +169,6 @@ describe('dasBidAdapter', function () {
       const urlParts = request.url.split('?');
       expect(urlParts.length).to.equal(2);
 
-
       const params = new URLSearchParams(urlParts[1]);
       expect(params.has('data')).to.be.true;
 
@@ -224,5 +223,172 @@ describe('dasBidAdapter', function () {
       expect(spec.interpretResponse({ body: {} })).to.be.an('array').that.is.empty;
       expect(spec.interpretResponse({ body: { seatbid: [] } })).to.be.an('array').that.is.empty;
     });
+
+    it('should return proper bid response for native', function () {
+      const nativeResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'bid123',
+              price: 3.5,
+              w: 1,
+              h: 1,
+              adm: JSON.stringify({
+                fields: {
+                  Body: 'Ruszyła sprzedaż mieszkań przy Metrze Dworzec Wileński',
+                  Calltoaction: 'SPRAWDŹ',
+                  Headline: 'Gotowe mieszkania w świetnej lokalizacji (test)',
+                  Image: 'https://ocdn.eu/example.jpg',
+                  Sponsorlabel: 'tak',
+                  Thirdpartyclicktracker: '',
+                  Thirdpartyimpressiontracker: '',
+                  Thirdpartyimpressiontracker2: '',
+                  borderColor: '#CECECE',
+                  click: 'https://mieszkaniaprzymetrodworzec.pl',
+                  responsive: 'nie'
+                },
+                tplCode: '1746213/Native-In-Feed',
+                meta: {
+                  inIFrame: false,
+                  autoscale: 0,
+                  width: '1',
+                  height: '1',
+                  adid: 'das,1778361,669261',
+                  actioncount: 'https://csr.onet.pl/eclk/...',
+                  slot: 'right2',
+                  adclick: 'https://csr.onet.pl/clk/...',
+                  container_wrapper: '<div id="[CREATIVE_APPEND_THIS]"><div style="...">REKLAMA</div></div>',
+                  prebid_native: true
+                }
+              }),
+              mtype: 4
+            }]
+          }],
+          cur: 'USD'
+        }
+      };
+
+      const bidResponses = spec.interpretResponse(nativeResponse);
+
+      expect(bidResponses).to.be.an('array').with.lengthOf(1);
+      expect(bidResponses[0]).to.deep.include({
+        requestId: 'bid123',
+        cpm: 3.5,
+        currency: 'USD',
+        width: 1,
+        height: 1,
+        native: {
+          title: 'Gotowe mieszkania w świetnej lokalizacji (test)',
+          body: 'Ruszyła sprzedaż mieszkań przy Metrze Dworzec Wileński',
+          cta: 'SPRAWDŹ',
+          image: {
+            url: 'https://ocdn.eu/example.jpg',
+            width: '1',
+            height: '1'
+          },
+          icon: {
+            url: '',
+            width: '1',
+            height: '1'
+          },
+          clickUrl: 'https://csr.onet.pl/clk/...https://mieszkaniaprzymetrodworzec.pl',
+          body2: '',
+          sponsoredBy: '',
+          clickTrackers: [],
+          impressionTrackers: [],
+          javascriptTrackers: [],
+          sendTargetingKeys: false
+        },
+        netRevenue: true,
+        ttl: 300,
+        mediaType: 'native'
+      });
+
+      expect(bidResponses[0]).to.not.have.property('ad');
+    });
+  });
+
+  it('should return empty object when adm in a native response is not JSON', function () {
+    const nativeResponse = {
+      body: {
+        seatbid: [{
+          bid: [{
+            impid: 'bad1',
+            price: 2.0,
+            w: 1,
+            h: 1,
+            adm: 'not-a-json-string',
+            mtype: 4
+          }]
+        }],
+        cur: 'USD'
+      }
+    };
+
+    const bidResponses = spec.interpretResponse(nativeResponse);
+    expect(bidResponses[0].native).to.deep.equal({});
+  });
+
+  it('should return empty object when adm in a native response is missing required fields/meta', function () {
+    const nativeResponse = {
+      body: {
+        seatbid: [{
+          bid: [{
+            impid: 'bad2',
+            price: 2.0,
+            w: 1,
+            h: 1,
+            adm: JSON.stringify({ fields: {} }),
+            mtype: 4
+          }]
+        }],
+        cur: 'USD'
+      }
+    };
+
+    const bidResponses = spec.interpretResponse(nativeResponse);
+    expect(bidResponses[0].native).to.deep.equal({});
+  });
+
+  it('should return empty object when adm in a native response is empty JSON object', function () {
+    const nativeResponse = {
+      body: {
+        seatbid: [{
+          bid: [{
+            impid: 'bad3',
+            price: 2.0,
+            w: 1,
+            h: 1,
+            adm: JSON.stringify({}),
+            mtype: 4
+          }]
+        }],
+        cur: 'USD'
+      }
+    };
+
+    const bidResponses = spec.interpretResponse(nativeResponse);
+    expect(bidResponses[0].native).to.deep.equal({});
+  });
+
+  it('should return empty object when adm in a native response is null or missing', function () {
+    const nativeResponse = {
+      body: {
+        seatbid: [{
+          bid: [{
+            impid: 'bad4',
+            price: 2.0,
+            w: 1,
+            h: 1,
+            adm: null,
+            mtype: 4
+          }]
+        }],
+        cur: 'USD'
+      }
+    };
+
+    const bidResponses = spec.interpretResponse(nativeResponse);
+    expect(bidResponses[0].native).to.deep.equal({});
   });
 });

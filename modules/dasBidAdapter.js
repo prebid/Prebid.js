@@ -1,8 +1,9 @@
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { parseNativeResponse } from '../libraries/raspUtils/raspUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess } from '../src/utils.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { deepAccess, safeJSONParse } from '../src/utils.js';
 
 const BIDDER_CODE = 'das';
 
@@ -129,6 +130,13 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
         })),
       };
     }
+    if (bid.mediaTypes?.native) {
+      imp.native = {
+        // TODO: request: JSON.stringify(bid.mediaTypes.native) is too large
+        request: JSON.stringify({}),
+        ver: '1.2',
+      };
+    }
 
     return imp;
   });
@@ -184,6 +192,16 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
   return request;
 }
 
+function prepareNativeMarkup(bid) {
+  const parsedNativeMarkup = safeJSONParse(bid.adm)
+  const ad = {
+    data: parsedNativeMarkup || {},
+    ems_link: bid.ext?.ems_link || '',
+  };
+  const nativeResponse = parseNativeResponse(ad) || {};
+  return nativeResponse;
+}
+
 function interpretResponse(serverResponse) {
   const bidResponses = [];
   const response = serverResponse.body;
@@ -209,12 +227,16 @@ function interpretResponse(serverResponse) {
           advertiserDomains: bid.adomain || [],
         },
       };
-      // first implementation only supports banner
+
       if (bid.mtype === 1) {
         bidResponse.mediaType = BANNER;
         bidResponse.ad = bid.adm;
-        bidResponses.push(bidResponse);
+      } else if (bid.mtype === 4) {
+        bidResponse.mediaType = NATIVE;
+        bidResponse.native = prepareNativeMarkup(bid);
+        delete bidResponse.ad;
       }
+      bidResponses.push(bidResponse);
     });
   });
 
