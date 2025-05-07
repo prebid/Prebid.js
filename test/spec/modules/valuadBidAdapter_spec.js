@@ -18,7 +18,8 @@ describe('ValuadAdapter', function () {
   let requestToServer;
   let validBidRequests;
   let bidderRequest;
-  let navigatorStub;
+  let sandbox;
+  let clock;
 
   before(function() {
     validBidRequests = [
@@ -70,11 +71,113 @@ describe('ValuadAdapter', function () {
           ext: {
             data: { pageType: 'article' }
           }
+        },
+        device: {
+          w: 1920,
+          h: 1080,
+          language: 'en-US'
         }
       }
     };
+  });
 
-    navigatorStub = { userAgent: 'Test User Agent', language: 'en-US' };
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+    clock = sinon.useFakeTimers();
+
+    // Stub performance timing
+    const performanceStub = {
+      timing: {
+        navigationStart: 100,
+        domContentLoadedEventEnd: 1000
+      }
+    };
+    Object.defineProperty(window, 'performance', {
+      value: performanceStub,
+      configurable: true,
+      writable: true
+    });
+
+    // Stub navigator
+    const navigatorStub = {
+      userAgent: 'Test User Agent',
+      language: 'en-US'
+    };
+    Object.defineProperty(window, 'navigator', {
+      value: navigatorStub,
+      configurable: true,
+      writable: true
+    });
+
+    // Stub utility functions
+    sandbox.stub(utils, 'getWindowTop').returns({
+      location: { href: 'http://test.com/page' },
+      document: {
+        referrer: 'http://referrer.com',
+        documentElement: {
+          clientWidth: 1200,
+          scrollHeight: 2000,
+          scrollWidth: 1200
+        }
+      },
+      innerWidth: 1200,
+      innerHeight: 800,
+      screen: { width: 1920, height: 1080 },
+      pageXOffset: 0,
+      pageYOffset: 0
+    });
+
+    sandbox.stub(utils, 'getWindowSelf').returns({
+      location: { href: 'http://test.com/page' },
+      document: {
+        referrer: 'http://referrer.com',
+        documentElement: {
+          clientWidth: 1200,
+          scrollHeight: 2000,
+          scrollWidth: 1200
+        }
+      },
+      innerWidth: 1200,
+      innerHeight: 800,
+      screen: { width: 1920, height: 1080 },
+      pageXOffset: 0,
+      pageYOffset: 0
+    });
+
+    sandbox.stub(utils, 'canAccessWindowTop').returns(true);
+    sandbox.stub(utils, 'getDNT').returns(false);
+    sandbox.stub(utils, 'generateUUID').returns('test-uuid');
+
+    sandbox.stub(refererDetection, 'parseDomain').returns('test.com');
+
+    sandbox.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({
+      gptSlot: '/123/adunit',
+      divId: 'div-gpt-ad-123'
+    });
+
+    sandbox.stub(config, 'getConfig').withArgs('coppa').returns(false);
+
+    sandbox.stub(BoundingClientRect, 'getBoundingClientRect').returns({
+      left: 10,
+      top: 20,
+      right: 310,
+      bottom: 270,
+      width: 300,
+      height: 250
+    });
+
+    _VALUAD.pageviewId = 'test-pageview-id';
+    _VALUAD.sessionId = 'test-session-id';
+    _VALUAD.sessionStartTime = 1678886400000;
+    _VALUAD.pageLoadTime = 900;
+    _VALUAD.userActivity = { lastActivityTime: 1678886405000, pageviewCount: 1 };
+
+    requestToServer = spec.buildRequests(validBidRequests, bidderRequest)[0];
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+    clock.restore();
   });
 
   describe('inherited functions', function () {
@@ -136,56 +239,6 @@ describe('ValuadAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let sandbox;
-    let clock;
-    let getWindowTopStub;
-    let getWindowSelfStub;
-    let detectRefererStub;
-    let getGptSlotInfoStub;
-    let getConfigStub;
-    let getBoundingClientRectStub;
-    let performanceStub;
-
-    beforeEach(function () {
-      sandbox = sinon.sandbox.create();
-      clock = sinon.useFakeTimers();
-
-      getWindowTopStub = sandbox.stub(utils, 'getWindowTop').returns({ location: { href: 'http://test.com/page' }, document: { referrer: 'http://referrer.com' } });
-      getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf').returns({ location: { href: 'http://test.com/page' }, document: { referrer: 'http://referrer.com' }, innerWidth: 1200, innerHeight: 800, screen: { width: 1920, height: 1080 } });
-      sandbox.stub(utils, 'canAccessWindowTop').returns(true);
-      sandbox.stub(utils, 'getDNT').returns(false);
-      sandbox.stub(utils, 'generateUUID').returns('test-uuid');
-
-      detectRefererStub = sandbox.stub(refererDetection, 'parseDomain').returns('test.com');
-
-      getGptSlotInfoStub = sandbox.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({ gptSlot: '/123/adunit' });
-
-      getConfigStub = sandbox.stub(config, 'getConfig');
-      getConfigStub.withArgs('coppa').returns(false);
-
-      getBoundingClientRectStub = sandbox.stub(BoundingClientRect, 'getBoundingClientRect').returns({ left: 10, top: 20, right: 310, bottom: 270, width: 300, height: 250 });
-
-      performanceStub = { timing: { navigationStart: 100, domContentLoadedEventEnd: 1000 } };
-      Object.defineProperty(global, 'performance', { value: performanceStub, configurable: true, writable: true });
-
-      Object.defineProperty(global, 'navigator', { value: navigatorStub, configurable: true, writable: true });
-
-      _VALUAD.pageviewId = 'test-pageview-id';
-      _VALUAD.sessionId = 'test-session-id';
-      _VALUAD.sessionStartTime = 1678886400000;
-      _VALUAD.pageLoadTime = 900;
-      _VALUAD.userActivity = { lastActivityTime: 1678886405000, pageviewCount: 1 };
-
-      requestToServer = spec.buildRequests(validBidRequests, bidderRequest)[0];
-    });
-
-    afterEach(function () {
-      sandbox.restore();
-      clock.restore();
-      delete global.performance;
-      delete global.navigator;
-    });
-
     it('should return a valid server request object', function () {
       expect(requestToServer).to.exist;
       expect(requestToServer).to.be.an('object');
@@ -213,8 +266,8 @@ describe('ValuadAdapter', function () {
       expect(payload.site.ext.data.pageType).to.equal('article');
 
       expect(payload.device).to.exist;
-      expect(payload.device.userAgent).to.equal(navigatorStub.userAgent);
-      expect(payload.device.language).to.equal(navigatorStub.language);
+      expect(payload.device.userAgent).to.equal('Test User Agent');
+      expect(payload.device.language).to.equal('en-US');
       expect(payload.device.dnt).to.equal(0);
       expect(payload.device.js).to.equal(1);
       expect(payload.device.w).to.equal(1920);
@@ -284,8 +337,6 @@ describe('ValuadAdapter', function () {
     let serverResponse;
 
     beforeEach(function() {
-      Object.defineProperty(global, 'navigator', { value: navigatorStub, configurable: true, writable: true });
-
       serverResponse = {
         body: {
           id: 'test-response-id',
@@ -318,10 +369,6 @@ describe('ValuadAdapter', function () {
           }
         }
       };
-    });
-
-    afterEach(function() {
-      delete global.navigator;
     });
 
     it('should return an array of valid bid responses', function () {
