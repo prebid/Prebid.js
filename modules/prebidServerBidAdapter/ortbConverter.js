@@ -1,7 +1,7 @@
 import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
 import {deepClone, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
 import {config} from '../../src/config.js';
-import {S2S, STATUS} from '../../src/constants.js';
+import {S2S} from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
@@ -110,7 +110,7 @@ const PBS_CONVERTER = ortbConverter({
     // because core has special treatment for PBS adapter responses, we need some additional processing
     bidResponse.requestTimestamp = context.requestTimestamp;
     return {
-      bid: Object.assign(createBid(STATUS.GOOD, {
+      bid: Object.assign(createBid({
         src: S2S.SRC,
         bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
         transactionId: context.adUnit.transactionId,

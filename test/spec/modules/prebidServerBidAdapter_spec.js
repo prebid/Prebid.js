@@ -3259,9 +3259,6 @@ describe('S2S Adapter', function () {
       expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
 
       expect(addBidResponse.firstCall.args[1]).to.have.property('requestId', '123');
-
-      expect(addBidResponse.firstCall.args[1])
-        .to.have.property('statusMessage', 'Bid available');
     });
 
     it('should have dealId in bidObject', function () {
@@ -3378,7 +3375,6 @@ describe('S2S Adapter', function () {
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 0.5);
@@ -3492,7 +3488,6 @@ describe('S2S Adapter', function () {
 
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
         expect(response).to.have.property('mediaType', 'video');
         expect(response).to.have.property('bidderCode', 'appnexus');
@@ -3526,7 +3521,6 @@ describe('S2S Adapter', function () {
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
 
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('videoCacheKey', 'abcd1234');
         expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=abcd1234');
       });
@@ -3593,7 +3587,6 @@ describe('S2S Adapter', function () {
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
 
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('videoCacheKey', 'a5ad3993');
         expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
       }
@@ -3673,7 +3666,6 @@ describe('S2S Adapter', function () {
 
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('adm').deep.equal(RESPONSE_OPENRTB_NATIVE.seatbid[0].bid[0].adm);
         expect(response).to.have.property('mediaType', 'native');
         expect(response).to.have.property('bidderCode', 'appnexus');
