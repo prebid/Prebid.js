@@ -1,0 +1,157 @@
+import { expect } from 'chai';
+import { spec } from 'modules/risemediatechBidAdapter.js';
+
+describe('RiseMediaTech adapter', () => {
+  const validBidRequest = {
+    bidder: 'risemediatech',
+    params: {
+      publisherId: '12345',
+      adSlot: '/1234567/adunit',
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [728, 90]],
+      },
+    },
+    bidId: '1abc',
+    auctionId: '2def',
+  };
+
+  const bidderRequest = {
+    refererInfo: {
+      page: 'https://example.com',
+    },
+    timeout: 3000,
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: 'consent123',
+    },
+    uspConsent: '1YNN',
+  };
+
+  const serverResponse = {
+    body: {
+      id: '2def',
+      seatbid: [
+        {
+          bid: [
+            {
+              id: '1abc',
+              impid: '1abc',
+              price: 1.5,
+              adm: '<div>Ad</div>',
+              w: 300,
+              h: 250,
+              crid: 'creative123',
+              adomain: ['example.com'],
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  describe('isBidRequestValid', () => {
+    it('should return true for valid bid request', () => {
+      expect(spec.isBidRequestValid(validBidRequest)).to.equal(true);
+    });
+
+    it('should return false if publisherId is missing', () => {
+      const invalidBidRequest = { ...validBidRequest };
+      delete invalidBidRequest.params.publisherId;
+      expect(spec.isBidRequestValid(invalidBidRequest)).to.equal(false);
+    });
+
+    it('should return false if adSlot is missing', () => {
+      const invalidBidRequest = { ...validBidRequest };
+      delete invalidBidRequest.params.adSlot;
+      expect(spec.isBidRequestValid(invalidBidRequest)).to.equal(false);
+    });
+
+    it('should return false for invalid video bid request', () => {
+      const invalidVideoRequest = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: [],
+          },
+        },
+      };
+      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
+    });
+  });
+
+  describe('buildRequests', () => {
+    it('should build a valid server request', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      expect(request).to.be.an('object');
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('http://localhost:8082/ads/rtb/prebid/js');
+      expect(request.data).to.be.an('object');
+    });
+
+    it('should include GDPR and USP consent in the request', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const { regs, user } = request.data;
+      expect(regs.ext).to.have.property('gdpr', 1);
+      expect(user.ext).to.have.property('consent', 'consent123');
+      expect(regs.ext).to.have.property('us_privacy', '1YNN');
+    });
+
+    it('should include banner impressions in the request', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const { imp } = request.data;
+      expect(imp).to.be.an('array');
+      expect(imp[0]).to.have.property('banner');
+      expect(imp[0].banner).to.have.property('format').with.lengthOf(2);
+    });
+  });
+
+  describe('interpretResponse', () => {
+    it('should interpret the server response correctly', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids).to.be.an('array').with.lengthOf(1);
+      const bid = bids[0];
+      expect(bid).to.have.property('requestId', '1abc');
+      expect(bid).to.have.property('cpm', 1.5);
+      expect(bid).to.have.property('width', 300);
+      expect(bid).to.have.property('height', 250);
+      expect(bid).to.have.property('creativeId', 'creative123');
+      expect(bid).to.have.property('currency', 'USD');
+      expect(bid).to.have.property('netRevenue', true);
+      expect(bid).to.have.property('ttl', 300);
+    });
+
+    it('should return an empty array if no bids are present', () => {
+      const emptyResponse = { body: { seatbid: [] } };
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(emptyResponse, request);
+      expect(bids).to.be.an('array').with.lengthOf(0);
+    });
+  });
+
+  describe('getUserSyncs', () => {
+    it('should return iframe sync if iframeEnabled is true', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
+      expect(syncs).to.be.an('array').with.lengthOf(1);
+      expect(syncs[0]).to.have.property('type', 'iframe');
+      expect(syncs[0]).to.have.property('url').that.includes('https://sync.risemediatech.com/iframe');
+    });
+
+    it('should return image sync if iframeEnabled is false', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
+      expect(syncs).to.be.an('array').with.lengthOf(1);
+      expect(syncs[0]).to.have.property('type', 'image');
+      expect(syncs[0]).to.have.property('url').that.includes('https://sync.risemediatech.com/image');
+    });
+
+    it('should include GDPR and USP consent in the sync URL', () => {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, [], bidderRequest.gdprConsent, bidderRequest.uspConsent);
+      const syncUrl = syncs[0].url;
+      expect(syncUrl).to.include('gdpr=1');
+      expect(syncUrl).to.include('gdpr_consent=consent123');
+      expect(syncUrl).to.include('us_privacy=1YNN');
+    });
+  });
+});
