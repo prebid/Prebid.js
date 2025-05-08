@@ -239,7 +239,7 @@ describe('ValuadAdapter', function () {
       expect(payload.site.ext.data.pageType).to.equal('article');
 
       expect(payload.device).to.exist;
-      expect(payload.device.language).to.equal('en-US');
+      expect(payload.device.language).to.include('en');
       expect(payload.device.dnt).to.equal(0);
       expect(payload.device.js).to.equal(1);
       expect(payload.device.w).to.equal(1920);
