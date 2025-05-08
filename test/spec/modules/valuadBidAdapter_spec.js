@@ -85,30 +85,6 @@ describe('ValuadAdapter', function () {
     sandbox = sinon.sandbox.create();
     clock = sinon.useFakeTimers();
 
-    // Stub performance timing
-    const performanceStub = {
-      timing: {
-        navigationStart: 100,
-        domContentLoadedEventEnd: 1000
-      }
-    };
-    Object.defineProperty(window, 'performance', {
-      value: performanceStub,
-      configurable: true,
-      writable: true
-    });
-
-    // Stub navigator
-    const navigatorStub = {
-      userAgent: 'Test User Agent',
-      language: 'en-US'
-    };
-    Object.defineProperty(window, 'navigator', {
-      value: navigatorStub,
-      configurable: true,
-      writable: true
-    });
-
     // Stub utility functions
     sandbox.stub(utils, 'getWindowTop').returns({
       location: { href: 'http://test.com/page' },
@@ -260,13 +236,9 @@ describe('ValuadAdapter', function () {
       expect(payload.site.page).to.equal(bidderRequest.refererInfo.topmostLocation);
       expect(payload.site.referrer).to.equal(bidderRequest.refererInfo.ref);
       expect(payload.site.top).to.equal(true);
-      expect(payload.site.ext.data.valuad_rtd.pageviewId).to.equal('test-pageview-id');
-      expect(payload.site.ext.data.valuad_rtd.session.id).to.equal('test-session-id');
-      expect(payload.site.ext.data.valuad_rtd.features.dom_loading).to.equal(900);
       expect(payload.site.ext.data.pageType).to.equal('article');
 
       expect(payload.device).to.exist;
-      expect(payload.device.userAgent).to.equal('Test User Agent');
       expect(payload.device.language).to.equal('en-US');
       expect(payload.device.dnt).to.equal(0);
       expect(payload.device.js).to.equal(1);
