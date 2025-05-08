@@ -4,6 +4,7 @@ import { find } from 'src/polyfill.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
+import { hasTypeNative } from '../../../modules/onetagBidAdapter';
 
 const NATIVE_SUFFIX = 'Ad';
 
@@ -203,11 +204,8 @@ describe('onetag', function () {
     });
     describe('banner bidRequest', function () {
       it('Should return false when the sizes array is empty', function () {
-        // TODO (dgirardi): this test used to pass because `bannerBid` was global state
-        // and other test code made it invalid for reasons other than sizes.
-        // cleaning up the setup code, it now (correctly) fails.
-        bannerBid.sizes = [];
-        // expect(spec.isBidRequestValid(bannerBid)).to.be.false;
+        bannerBid.mediaTypes.banner.sizes = [];
+        expect(spec.isBidRequestValid(bannerBid)).to.be.false;
       });
     });
     describe('native bidRequest', function () {
@@ -388,7 +386,7 @@ describe('onetag', function () {
   describe('buildRequests', function () {
     let serverRequest, data;
     before(() => {
-      serverRequest = spec.buildRequests([bannerBid, instreamVideoBid, nativeBid]);
+      serverRequest = spec.buildRequests([bannerBid, instreamVideoBid, nativeBid, nativeLegacyBid]);
       data = JSON.parse(serverRequest.data);
     });
 
@@ -451,6 +449,21 @@ describe('onetag', function () {
             'type',
             'priceFloors'
           );
+        } else if (hasTypeNative(bid)) {
+          expect(bid).to.have.all.keys(
+            'adUnitCode',
+            'auctionId',
+            'bidId',
+            'bidderRequestId',
+            'pubId',
+            'ortb2Imp',
+            'transactionId',
+            'mediaTypeInfo',
+            'sizes',
+            'type',
+            'priceFloors'
+          ) &&
+          expect(bid.mediaTypeInfo).to.have.key('ortb');
         } else if (isValid(BANNER, bid)) {
           expect(bid).to.have.all.keys(
             'adUnitCode',

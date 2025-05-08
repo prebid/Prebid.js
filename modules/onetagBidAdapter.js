@@ -40,6 +40,10 @@ export function hasTypeVideo(bid) {
   return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
 }
 
+export function hasTypeNative(bid) {
+  return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.native !== 'undefined';
+}
+
 export function isValid(type, bid) {
   if (type === BANNER) {
     return parseSizes(bid).length > 0;
@@ -329,19 +333,19 @@ function requestsToBids(bidRequests) {
     return bannerObj;
   });
   const nativeBidRequests = bidRequests.filter(bidRequest => isValid(NATIVE, bidRequest)).map(bidRequest => {
-    const bannerObj = {};
-    setGeneralInfo.call(bannerObj, bidRequest);
-    bannerObj['sizes'] = parseSizes(bidRequest);
-    bannerObj['type'] = NATIVE + NATIVE_SUFFIX;
-    bannerObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.native);
+    const nativeObj = {};
+    setGeneralInfo.call(nativeObj, bidRequest);
+    nativeObj['sizes'] = parseSizes(bidRequest);
+    nativeObj['type'] = NATIVE + NATIVE_SUFFIX;
+    nativeObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.native);
     if (!isNativeOrtbVersion(bidRequest)) {
       const ortbConversion = toOrtbNativeRequest(bidRequest.nativeParams);
-      bannerObj['mediaTypeInfo'] = {};
-      bannerObj['mediaTypeInfo'].adTemplate = bidRequest.nativeParams.adTemplate;
-      bannerObj['mediaTypeInfo'].ortb = ortbConversion;
+      nativeObj['mediaTypeInfo'] = {};
+      nativeObj['mediaTypeInfo'].adTemplate = bidRequest.nativeParams.adTemplate;
+      nativeObj['mediaTypeInfo'].ortb = ortbConversion;
     }
-    bannerObj['priceFloors'] = getBidFloor(bidRequest, NATIVE, bannerObj['sizes']);
-    return bannerObj;
+    nativeObj['priceFloors'] = getBidFloor(bidRequest, NATIVE, nativeObj['sizes']);
+    return nativeObj;
   });
   return videoBidRequests.concat(bannerBidRequests).concat(nativeBidRequests);
 }
@@ -473,20 +477,24 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 }
 
 function getBidFloor(bidRequest, mediaType, sizes) {
-  const priceFloors = [];
-  if (typeof bidRequest.getFloor === 'function') {
-    sizes.forEach(size => {
-      const floor = bidRequest.getFloor({
-        currency: 'EUR',
-        mediaType: mediaType || '*',
-        size: [size.width, size.height]
-      }) || {};
-      floor.size = deepClone(size);
-      if (!floor.floor) { floor.floor = null; }
-      priceFloors.push(floor);
-    });
+  if (typeof bidRequest.getFloor !== 'function') return [];
+  const getFloorObject = (size) => {
+    const floorData = bidRequest.getFloor({
+      currency: 'EUR',
+      mediaType: mediaType || '*',
+      size: size || '*'
+    }) || {};
+
+    return {
+      ...floorData,
+      size: size ? deepClone(size) : undefined,
+      floor: floorData.floor != null ? floorData.floor : null
+    };
+  };
+  if (Array.isArray(sizes) && sizes.length > 0) {
+    return sizes.map(size => getFloorObject([size.width, size.height]));
   }
-  return priceFloors;
+  return [getFloorObject('*')];
 }
 
 export function isSchainValid(schain) {
