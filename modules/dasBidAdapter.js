@@ -145,15 +145,16 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     id: bidderRequest.bidderRequestId,
     imp,
     site: {
+      ...bidderRequest.ortb2?.site,
       id: customParams.site,
       page: customParams.du,
       ref: customParams.dr,
       ext: {
+        ...bidderRequest.ortb2?.site?.ext,
         area: customParams.area,
         kwrd: customParams.kwrd,
         dv: customParams.DV
       },
-      ...bidderRequest.ortb2.site,
     },
     user: {
       ext: {
