@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { logInfo, logWarn } from '../src/utils.js';
 
 const BIDDER_CODE = 'risemediatech';
 const ENDPOINT_URL = 'http://localhost:8082/ads/rtb/prebid/js';
@@ -16,16 +17,16 @@ const converter = ortbConverter({
     currency: DEFAULT_CURRENCY,
   },
   imp(buildImp, bidRequest, context) {
-    console.log('Building impression object for bidRequest:', bidRequest);
+    logInfo('Building impression object for bidRequest:', bidRequest);
     const imp = buildImp(bidRequest, context);
     const { mediaTypes } = bidRequest;
 
     if (mediaTypes[BANNER]) {
-      console.log('Adding banner media type to impression:', mediaTypes[BANNER]);
+      logInfo('Adding banner media type to impression:', mediaTypes[BANNER]);
       imp.banner = { format: mediaTypes[BANNER].sizes.map(([w, h]) => ({ w, h })) };
     } else if (mediaTypes[VIDEO]) {
-      console.log('Adding video media type to impression:', mediaTypes[VIDEO]);
-      imp.video = { 
+      logInfo('Adding video media type to impression:', mediaTypes[VIDEO]);
+      imp.video = {
         ...mediaTypes[VIDEO],
         mimes: bidRequest.params.mimes,
         minduration: bidRequest.params.minduration,
@@ -33,27 +34,27 @@ const converter = ortbConverter({
         startdelay: bidRequest.params.startdelay,
         maxseq: bidRequest.params.maxseq,
         poddur: bidRequest.params.poddur,
-        protocols: bidRequest.params.protocols 
+        protocols: bidRequest.params.protocols
       };
     }
 
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    console.log('Building server request with impressions:', imps);
+    logInfo('Building server request with impressions:', imps);
     const request = buildRequest(imps, bidderRequest, context);
     request.cur = [DEFAULT_CURRENCY];
     request.tmax = bidderRequest.timeout;
     request.test = bidderRequest.test || 0;
 
     if (bidderRequest.gdprConsent) {
-      console.log('Adding GDPR consent information to request:', bidderRequest.gdprConsent);
+      logInfo('Adding GDPR consent information to request:', bidderRequest.gdprConsent);
       request.regs = { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0 } };
       request.user = { ext: { consent: bidderRequest.gdprConsent.consentString } };
     }
 
     if (bidderRequest.uspConsent) {
-      console.log('Adding USP consent information to request:', bidderRequest.uspConsent);
+      logInfo('Adding USP consent information to request:', bidderRequest.uspConsent);
       request.regs = request.regs || {};
       request.regs.ext = request.regs.ext || {};
       request.regs.ext.us_privacy = bidderRequest.uspConsent;
@@ -62,7 +63,7 @@ const converter = ortbConverter({
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    console.log('Building bid response for bid:', bid);
+    logInfo('Building bid response for bid:', bid);
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.meta = bidResponse.meta || {};
     bidResponse.meta.advertiserDomains = bid.adomain || [];
@@ -76,7 +77,7 @@ const converter = ortbConverter({
  * @returns {boolean} True if the bid request is valid.
  */
 const isBidRequestValid = (bid) => {
-  console.log('Validating bid request:', bid);
+  logInfo('Validating bid request:', bid);
   const { mediaTypes } = bid;
 
   if (mediaTypes?.[VIDEO]) {
@@ -84,15 +85,15 @@ const isBidRequestValid = (bid) => {
 
     // Validate required fields for Video
     if (!video.mimes || !Array.isArray(video.mimes) || video.mimes.length === 0) {
-      console.warn('Invalid video bid request: Missing or invalid mimes.');
+      logWarn('Invalid video bid request: Missing or invalid mimes.');
       return false;
     }
     if (video.w != null && video.w <= 0) {
-      console.warn('Invalid video bid request: Invalid width.');
+      logWarn('Invalid video bid request: Invalid width.');
       return false;
     }
     if (video.h != null && video.h <= 0) {
-      console.warn('Invalid video bid request: Invalid height.');
+      logWarn('Invalid video bid request: Invalid height.');
       return false;
     }
   }
@@ -107,7 +108,7 @@ const isBidRequestValid = (bid) => {
  * @returns {Object} Server request object.
  */
 const buildRequests = (validBidRequests, bidderRequest) => {
-  console.log('Building server request for valid bid requests:', validBidRequests);
+  logInfo('Building server request for valid bid requests:', validBidRequests);
   const request = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
   return {
     method: 'POST',
@@ -123,17 +124,17 @@ const buildRequests = (validBidRequests, bidderRequest) => {
  * @returns {Array} Array of bid objects.
  */
 const interpretResponse = (serverResponse, request) => {
-  console.log('Interpreting server response:', serverResponse);
+  logInfo('Interpreting server response:', serverResponse);
 
   if (!serverResponse || !serverResponse.body) {
-    console.warn('Server response is empty or invalid.');
+    logWarn('Server response is empty or invalid.');
     return [];
   }
 
   const { bids } = converter.fromORTB({ response: serverResponse.body, request: request.data });
 
   if (!bids || !Array.isArray(bids)) {
-    console.warn('No valid bids found in server response.');
+    logWarn('No valid bids found in server response.');
     return [];
   }
 
@@ -150,22 +151,22 @@ const interpretResponse = (serverResponse, request) => {
  * @returns {Array} Array of user sync objects.
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  console.log('Handling user syncs with options:', syncOptions);
+  logInfo('Handling user syncs with options:', syncOptions);
   const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
   let url = type === 'iframe' ? SYNC_URL_IFRAME : SYNC_URL_IMAGE;
 
   if (gdprConsent?.consentString) {
-    console.log('Adding GDPR consent information to user sync URL:', gdprConsent);
+    logInfo('Adding GDPR consent information to user sync URL:', gdprConsent);
     url += `?gdpr=${Number(gdprConsent.gdprApplies || 0)}&gdpr_consent=${gdprConsent.consentString}`;
   }
 
   if (uspConsent) {
-    console.log('Adding USP consent information to user sync URL:', uspConsent);
+    logInfo('Adding USP consent information to user sync URL:', uspConsent);
     url += `&us_privacy=${uspConsent}`;
   }
 
   if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-    console.log('Adding GPP consent information to user sync URL:', gppConsent);
+    logInfo('Adding GPP consent information to user sync URL:', gppConsent);
     url += `&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections.join(',')}`;
   }
 
