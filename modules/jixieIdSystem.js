@@ -114,7 +114,7 @@ function shouldCallSrv(logstr) {
   return (ts === undefined || (ts && now > ts));
 }
 
-        
+
 /** @type {Submodule} */
 export const jixieIdSubmodule = {
   /**

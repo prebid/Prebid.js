@@ -12,7 +12,7 @@ describe('JixieId  Submodule', () => {
   const CLIENTID1 = '822bc904-249b-11f0-9cd2-0242ac120002';
   const CLIENTID2 = '822bc904-249b-11f0-9cd2-0242ac120003';
   const IDLOG1 = '1745845981000_abc';
-  const IDLOG_VALID = `${Date.now() + 60*60*24*1000}_abc`;
+  const IDLOG_VALID = `${Date.now() + 60 * 60 * 24 * 1000}_abc`;
   const IDLOG_EXPIRED = `${Date.now() - 1000}_abc`;
   const ACCOUNTID = 'abcdefg';
   const STD_JXID_KEY = '_jxx';
@@ -53,7 +53,7 @@ describe('JixieId  Submodule', () => {
             const { callback } = jixieIdSubmodule.getId({
               params: {
                 stdjxidckname: STD_JXID_KEY,
-                pubExtIds:[
+                pubExtIds: [
                   {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
                   {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
                 ]
@@ -75,7 +75,7 @@ describe('JixieId  Submodule', () => {
             const { callback } = jixieIdSubmodule.getId({
               params: {
                 stdjxidckname: STD_JXID_KEY,
-                pubExtIds:[
+                pubExtIds: [
                   {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
                   {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
                 ]
@@ -97,7 +97,7 @@ describe('JixieId  Submodule', () => {
             const { callback } = jixieIdSubmodule.getId({
               params: {
                 stdjxidckname: STD_JXID_KEY,
-                pubExtIds:[
+                pubExtIds: [
                   {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
                   {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
                 ]
@@ -125,7 +125,7 @@ describe('JixieId  Submodule', () => {
             const { callback } = jixieIdSubmodule.getId({
               params: {
                 accountid: ACCOUNTID,
-                pubExtIds:[
+                pubExtIds: [
                   {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
                   {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
                 ]
@@ -153,7 +153,6 @@ describe('JixieId  Submodule', () => {
             expect(completeCallback.calledOnceWithExactly(CLIENTID1)).to.be.true;
             storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_PAST)
             storage.setDataInLocalStorage(EID_TYPE2_LSNAME, '');
-
           });
 
           it('should call the server and set the id and when telcocp (fire-n-forget) is given then that should be called too', () => {
@@ -161,7 +160,7 @@ describe('JixieId  Submodule', () => {
             const { callback } = jixieIdSubmodule.getId({
               params: {
                 stdjxidckname: STD_JXID_KEY,
-                pubExtIds:[
+                pubExtIds: [
                   {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
                   {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
                 ]
@@ -200,7 +199,7 @@ describe('JixieId  Submodule', () => {
             const { callback } = jixieIdSubmodule.getId({
               params: {
                 stdjxidckname: STD_JXID_KEY,
-                pubExtIds:[
+                pubExtIds: [
                   {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
                   {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
                 ]
@@ -214,8 +213,6 @@ describe('JixieId  Submodule', () => {
             setCookieStub.restore();
             storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_PAST)
             storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_VALID, COOKIE_EXPIRATION_PAST)
-
-            
           })
         });
         context('when has rather stale pbjs jixie cookie', () => {
@@ -232,7 +229,7 @@ describe('JixieId  Submodule', () => {
             const { callback } = jixieIdSubmodule.getId({
               params: {
                 stdjxidckname: STD_JXID_KEY,
-                pubExtIds:[
+                pubExtIds: [
                   {pname: EID_TYPE1_PARAMNAME, ckname: EID_TYPE1_COOKIENAME},
                   {pname: EID_TYPE2_PARAMNAME, lsname: EID_TYPE2_LSNAME}
                 ]
@@ -273,7 +270,6 @@ describe('JixieId  Submodule', () => {
             storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_EXPIRED, COOKIE_EXPIRATION_PAST);
             storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_PAST)
             storage.setDataInLocalStorage(EID_TYPE2_LSNAME, '');
-
           });
         });
 
