@@ -72,7 +72,7 @@ export const GRANULARITY_OPTIONS = {
   AUTO: 'auto',
   DENSE: 'dense',
   CUSTOM: 'custom'
-};
+} as const;
 
 export const TARGETING_KEYS = {
     BIDDER: 'hb_bidder',

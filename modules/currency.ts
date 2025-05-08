@@ -10,7 +10,7 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {on as onEvent, off as offEvent} from '../src/events.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
-import type {Currency} from "../src/types/common.d.ts";
+import type {Currency, BidderCode} from "../src/types/common.d.ts";
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -33,40 +33,61 @@ export let responseReady = defer<void>();
 const delayedAuctions = timeoutQueue();
 let auctionDelay = 0;
 
-/**
- * Configuration function for currency
- * @param {object} config
- * @param  {string} [config.adServerCurrency = 'USD']
- *  ISO 4217 3-letter currency code that represents the target currency. (e.g. 'EUR').  If this value is present,
- *  the currency conversion feature is activated.
- * @param  {number} [config.granularityMultiplier = 1]
- *  A decimal value representing how mcuh to scale the price granularity calculations.
- * @param  {object} config.bidderCurrencyDefault
- *  An optional argument to specify bid currencies for bid adapters.  This option is provided for the transitional phase
- *  before every bid adapter will specify its own bid currency.  If the adapter specifies a bid currency, this value is
- *  ignored for that bidder.
- *
- *  example:
- *  {
- *    rubicon: 'USD'
- *  }
- * @param  {string} [config.conversionRateFile = 'URL pointing to conversion file']
- *  Optional path to a file containing currency conversion data.  Prebid.org hosts a file that is used as the default,
- *  if not specified.
- * @param  {object} [config.rates]
- *  This optional argument allows you to specify the rates with a JSON object, subverting the need for a external
- *  config.conversionRateFile parameter.  If this argument is specified, the conversion rate file will not be loaded.
- *
- *  example:
- *  {
- *    'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
- *    'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
- *  }
- *  @param {object} [config.defaultRates]
- *  This optional currency rates definition follows the same format as config.rates, however it is only utilized if
- *  there is an error loading the config.conversionRateFile.
- */
-export function setConfig(config) {
+export interface CurrencyConfig {
+    /**
+     *  ISO 4217 3-letter currency code that represents the target currency. (e.g. 'EUR').  If this value is present,
+     *  the currency conversion feature is activated.
+     */
+    adServerCurrency: Currency;
+    /**
+     *  Optional URL to a file containing currency conversion data.  Prebid.org hosts a file that is used as the default,
+     *  if not specified.
+     */
+    conversionRateFile?: string;
+    /**
+     * Time (in milliseconds) that auctions should be delayed to wait for conversion rates to load. Default is 0.
+     */
+    auctionDelay?: number;
+    /**
+     * A decimal value representing how much to scale the price granularity calculations.
+     */
+    granularityMultiplier?: number;
+    /**
+     *  This optional argument allows you to specify the rates with a JSON object, subverting the need for a external
+     *  config.conversionRateFile parameter.  If this argument is specified, the conversion rate file will not be loaded.
+     *
+     *  example:
+     *  {
+     *    'GBP': { 'CNY': 8.8282, 'JPY': 141.7, 'USD': 1.2824 },
+     *    'USD': { 'CNY': 6.8842, 'GBP': 0.7798, 'JPY': 110.49 }
+     *  }
+     */
+    rates?: { [from: Currency]: { [to: Currency]: number } };
+    /**
+     *  This optional currency rates definition follows the same format as config.rates, however it is only utilized if
+     *  there is an error loading the config.conversionRateFile.
+     */
+    defaultRates?: CurrencyConfig['rates'];
+    /**
+     *  An optional argument to specify bid currencies for bid adapters.  This option is provided for the transitional phase
+     *  before every bid adapter will specify its own bid currency.  If the adapter specifies a bid currency, this value is
+     *  ignored for that bidder.
+     *
+     *  example:
+     *  {
+     *    rubicon: 'USD'
+     *  }
+     */
+    bidderCurrencyDefault?: { [bidder: BidderCode]: Currency };
+}
+
+declare module '../src/config' {
+    interface Config {
+        currency?: CurrencyConfig;
+    }
+}
+
+export function setConfig(config: CurrencyConfig) {
   ratesURL = DEFAULT_CURRENCY_RATE_URL;
 
   if (config.rates !== null && typeof config.rates === 'object') {

@@ -13,7 +13,7 @@ const MODE = {
   STRICT: 'strict',
   RELAXED: 'relaxed',
   OFF: 'off'
-};
+} as const;
 const MODES = []; // an array of modes
 _each(MODE, mode => MODES.push(mode));
 
@@ -95,8 +95,18 @@ export function checkDchainSyntax(bid, mode) {
   return true;
 }
 
+export interface DchainConfig {
+    validation?: typeof MODES[keyof typeof MODES];
+}
+
+declare module '../src/config' {
+    interface Config {
+        dchain?: DchainConfig;
+    }
+}
+
 function isValidDchain(bid) {
-  let mode = MODE.STRICT;
+  let mode: string = MODE.STRICT;
   const dchainConfig = config.getConfig('dchain');
 
   if (dchainConfig && isStr(dchainConfig.validation) && MODES.indexOf(dchainConfig.validation) != -1) {

@@ -14,8 +14,49 @@ import {
 } from './activities/params.js';
 import {MODULE_TYPE_BIDDER} from './activities/modules.js';
 import {activityParams} from './activities/activityParams.js';
+import type {BidderCode} from "./types/common.d.ts";
 
-export const USERSYNC_DEFAULT_CONFIG = {
+type SyncType = 'image' | 'iframe' | 'all';
+type SyncConfig = {
+    bidders: '*' | BidderCode[];
+    filter: 'include' | 'exclude'
+}
+type FilterSettings = {[K in SyncType]?: SyncConfig};
+
+export interface UserSyncConfig {
+    /**
+     * Enable/disable the user syncing feature. Default: true.
+     */
+    syncEnabled?: boolean;
+    /**
+     * Configure lists of adapters to include or exclude their user syncing based on the pixel type (image/iframe).
+     */
+    filterSettings?: FilterSettings;
+    /**
+     * Number of registered syncs allowed per adapter. Default: 5. To allow all, set to 0.
+     */
+    syncsPerBidder?: number;
+    /**
+     * Delay in milliseconds for user syncing (both bid adapter user sync pixels and userId module ID providers)
+     * after the auction ends. Default: 3000. Ignored by the userId module if auctionDelay > 0.
+     */
+    syncDelay?: number;
+    /**
+     * Delay in milliseconds of the auction to retrieve user ids via the userId module before the auction starts.
+     * Continues auction once all IDs are retrieved or delay times out. Does not apply to bid adapter user sync pixels. Default: 0.
+     */
+    auctionDelay?: number;
+    /**
+     * Enable/disable publisher to trigger user syncs by calling pbjs.triggerUserSyncs(). Default: false.
+     */
+    enableOverride?: boolean;
+    /**
+     * Enable/disable registered syncs for aliased adapters. Default: false.
+     */
+    aliasSyncEnabled?: boolean;
+}
+
+export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
   syncEnabled: true,
   filterSettings: {
     image: {
@@ -42,7 +83,7 @@ const storage = getCoreStorageManager('usersync');
  *   UserSync object needs in order to behave properly.
  */
 export function newUserSync(deps) {
-  let publicApi = {};
+  let publicApi: any = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
   let queue = getDefaultQueue();

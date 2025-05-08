@@ -172,6 +172,39 @@ declare module './events' {
     }
 }
 
+export interface TargetingControlsConfig {
+    /**
+     * Specifies the maximum number of characters the system can add to ad server targeting.
+     */
+    auctionKeyMaxChars?: number;
+    /**
+     * If enableSendAllBids is false, set this value to true to ensure that deals are sent along with the winning bid
+     */
+    alwaysIncludeDeals?: boolean;
+    /**
+     * Selects supported default targeting keys.
+     */
+    allowTargetingKeys?: (keyof DefaultTargeting)[];
+    /**
+     * Selects targeting keys to be supported in addition to the default ones
+     */
+    addTargetingKeys?: (keyof DefaultTargeting)[];
+    /**
+     * Selects supported default targeting keys.
+     */
+    allowSendAllBidsTargetingKeys?: (keyof DefaultTargeting)[];
+    /**
+     * Set to false to prevent custom targeting values from being set for non-winning bids
+     */
+    allBidsCustomTargeting?: boolean
+}
+
+declare module './config' {
+    interface Config {
+        targetingControls?: TargetingControlsConfig;
+    }
+}
+
 export function newTargeting(auctionManager) {
   let latestAuctionForAdUnit = {};
 
@@ -223,9 +256,9 @@ export function newTargeting(auctionManager) {
           if (addedKeys != null && allowedKeys != null) {
               throw new Error(TARGETING_KEY_CONFIGURATION_ERROR_MSG);
           } else if (addedKeys != null) {
-              allowedKeys = defaultKeys.concat(addedKeys);
+              allowedKeys = defaultKeys.concat(addedKeys) as any;
           } else {
-              allowedKeys = allowedKeys || defaultKeys;
+              allowedKeys = allowedKeys || defaultKeys as any;
           }
 
           if (Array.isArray(allowedKeys) && allowedKeys.length > 0) {

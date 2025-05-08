@@ -2,16 +2,6 @@
  * Module for getting and setting Prebid configuration.
 */
 
-/**
- * @typedef {Object} MediaTypePriceGranularity
- *
- * @property {(string|Object)} [banner]
- * @property {(string|Object)} [native]
- * @property {(string|Object)} [video]
- * @property {(string|Object)} [video-instream]
- * @property {(string|Object)} [video-outstream]
- */
-
 import {isValidPriceConfig} from './cpmBucketManager.js';
 import {arrayFrom as from, find, includes} from './polyfill.js';
 import {
@@ -28,6 +18,9 @@ import {
   mergeDeep
 } from './utils.js';
 import {DEBUG_MODE} from './constants.js';
+import type {UserSyncConfig} from "./userSync.ts";
+import type {DeepProperty, DeepPropertyName, TypeOfDeepProperty} from "./types/objects.d.ts";
+import type {BidderCode} from "./types/common.d.ts";
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
@@ -202,6 +195,73 @@ function attachProperties(config, useDefaultValues = true) {
   }
 }
 
+export interface Config {
+    /**
+     * Enable debug mode. In debug mode, Prebid.js will post additional messages to the browser console and cause
+     * Prebid Server to return additional information in its response.
+     */
+    debug?: boolean;
+    /**
+     * Global bidder timeout.
+     */
+    bidderTimeout?: number;
+    /**
+     * When true, the page will send keywords for all bidders to your ad server.
+     */
+    enableSendAllBids?: boolean;
+    /**
+     * Prebid.js currently allows for caching and reusing bids in a very narrowly defined scope.
+     * However, if you’d like, you can disable this feature and prevent Prebid.js from using anything but the latest bids for a given auction.
+     */
+    useBidCache?: boolean;
+    /**
+     * You can prevent Prebid.js from reading or writing cookies or HTML localstorage by setting this to false.
+     */
+    deviceAccess?: boolean;
+    /**
+     * Prebid core adds a timeout on XMLHttpRequest request to terminate the request once auction is timed out.
+     * Since Prebid is ignoring all the bids after timeout it does not make sense to continue the request after timeout.
+     * However, you have the option to disable this by using disableAjaxTimeout.
+     */
+    disableAjaxTimeout?: boolean;
+    /**
+     * Prebid.js will loop upward through nested iframes to find the top-most referrer. T
+     * his setting limits how many iterations it will attempt before giving up and not setting referrer.
+     */
+    maxNestedIframes?: number;
+    /**
+     * Prebid ensures that the bid response price doesn’t exceed the maximum bid.
+     * If the CPM (after currency conversion) is higher than the maxBid, the bid is rejected.
+     * The default maxBid value is 5000.
+     */
+    maxBid?: number;
+    userSync?: UserSyncConfig;
+}
+
+type PartialConfig = Partial<Config> & { [setting: string]: unknown };
+type BidderConfig = {
+    bidders: BidderCode[];
+    config: PartialConfig;
+}
+
+type TopicalConfig<S extends string> = {[K in DeepPropertyName<S>]: S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown};
+type UnregistrationFn = () => void;
+
+type GetConfigOptions = {
+    /**
+     * If true, the listener will be called immediately (instead of only on the next configuration change).
+     */
+    init?: boolean;
+}
+
+interface GetConfig {
+    (): Config;
+    <S extends DeepProperty<Config> | string>(setting: S): S extends DeepProperty<Config> ? TypeOfDeepProperty<Config, S> : unknown;
+    (topic: typeof ALL_TOPICS, listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
+    <S extends DeepProperty<Config> | string>(topic: S, listener: (config: TopicalConfig<S>) => void, options?: GetConfigOptions): UnregistrationFn;
+    (listener: (config: Config) => void, options?: GetConfigOptions): UnregistrationFn;
+}
+
 export function newConfig() {
   let listeners = [];
   let defaults;
@@ -295,7 +355,7 @@ export function newConfig() {
     return conf;
   }
 
-  const [getAnyConfig, getConfig] = [_getConfig, _getRestrictedConfig].map(accessor => {
+  const [getAnyConfig, getConfig]: [GetConfig, GetConfig] = [_getConfig, _getRestrictedConfig].map(accessor => {
     /*
      * Returns configuration object if called without parameters,
      * or single configuration property if given a string matching a configuration
@@ -312,20 +372,20 @@ export function newConfig() {
 
       return subscribe(...args);
     }
-  })
+  }) as any;
 
-  const [readConfig, readAnyConfig] = [getConfig, getAnyConfig].map(wrapee => {
+  const [readConfig, readAnyConfig]: [GetConfig, GetConfig] = [getConfig, getAnyConfig].map(wrapee => {
     /*
      * Like getConfig, except that it returns a deepClone of the result.
      */
     return function readConfig(...args) {
-      let res = wrapee(...args);
+      let res = (wrapee as any)(...args);
       if (res && typeof res === 'object') {
         res = deepClone(res);
       }
       return res;
     }
-  })
+  }) as any;
 
   /**
    * Internal API for modules (such as prebid-server) that might need access to all bidder config
@@ -335,10 +395,9 @@ export function newConfig() {
   }
 
   /*
-   * Sets configuration given an object containing key-value pairs and calls
-   * listeners that were added by the `subscribe` function
+   * Set configuration.
    */
-  function setConfig(options) {
+  function setConfig(options: PartialConfig) {
     if (!isPlainObject(options)) {
       logError('setConfig options must be an object');
       return;
@@ -403,7 +462,8 @@ export function newConfig() {
    * unsubscribe(); // no longer listening
    *
    */
-  function subscribe(topic, listener, options = {}) {
+  function subscribe(...args: any[]);
+  function subscribe(topic, listener, options: GetConfigOptions = {}) {
     let callback = listener;
 
     if (typeof topic !== 'string') {
@@ -455,7 +515,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config, mergeFlag = false) {
+  function setBidderConfig(config: BidderConfig, mergeFlag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -490,20 +550,20 @@ export function newConfig() {
     }
   }
 
-  function mergeConfig(obj) {
-    if (!isPlainObject(obj)) {
+  function mergeConfig(config: PartialConfig) {
+    if (!isPlainObject(config)) {
       logError('mergeConfig input must be an object');
       return;
     }
 
-    const mergedConfig = mergeDeep(_getConfig(), obj);
+    const mergedConfig = mergeDeep(_getConfig(), config);
 
     setConfig({ ...mergedConfig });
     return mergedConfig;
   }
 
-  function mergeBidderConfig(obj) {
-    return setBidderConfig(obj, true);
+  function mergeBidderConfig(config: BidderConfig) {
+    return setBidderConfig(config, true);
   }
 
   /**

@@ -35,6 +35,8 @@ import type {Bid, BidResponse} from "./bidfactory.ts";
 import type {AdUnitCode, BidderCode, Identifier, ORTBFragments} from './types/common.d.ts';
 import type {TargetingMap} from "./targeting.ts";
 import type {AdUnit} from "./adUnits.ts";
+import type {MediaType} from "./mediaTypes.ts";
+import type {VideoContext} from "./video.ts";
 
 const { syncUsers } = userSync;
 
@@ -117,6 +119,46 @@ declare module './events' {
          * Fired once for each bid, immediately after its adjustment (see bidCpmAdjustment).
          */
         [EVENTS.BID_ADJUSTMENT]: [Partial<Bid>];
+    }
+}
+
+export interface AuctionOptionsConfig {
+    /**
+     * Specifies bidders that the Prebid auction will no longer wait for before determining the auction has completed.
+     * This may be helpful if you find there are a number of low performing and/or high timeout bidders in your page’s rotation.
+     */
+    secondaryBidders?: BidderCode[]
+    /**
+     * When true, prevents banner bids from being rendered more than once. It should only be enabled after auto-refreshing is implemented correctly. Default is false.
+     */
+    suppressStaleRender?: boolean;
+    /**
+     * When true, prevent bids from being rendered if TTL is reached. Default is false.
+     */
+    suppressExpiredRender?: boolean;
+}
+
+export interface PriceBucketConfig {
+    buckets: {
+        precision?: number;
+        max: number;
+        increment: number;
+    }[];
+}
+
+
+declare module './config' {
+    interface Config {
+        /**
+         * Since browsers have a limit of how many requests they will allow to a specific domain before they block,
+         * Prebid.js will queue auctions that would cause requests to a specific origin to exceed that limit.
+         * The limit is different for each browser. Prebid.js defaults to a max of 4 requests per origin.
+         */
+        maxRequestsPerOrigin?: number;
+        auctionOptions?: AuctionOptionsConfig;
+        priceGranularity?: (typeof GRANULARITY_OPTIONS)[keyof typeof GRANULARITY_OPTIONS];
+        customPriceBucket?: PriceBucketConfig;
+        mediaTypePriceGranularity?: {[K in MediaType]?: PriceBucketConfig} & {[K in VideoContext as `${typeof VIDEO}-${K}`]?: PriceBucketConfig};
     }
 }
 
@@ -218,7 +260,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
-          let userSyncConfig = config.getConfig('userSync') || {};
+          let userSyncConfig = config.getConfig('userSync') ?? {} as any;
           if (!userSyncConfig.enableOverride) {
             // Delay the auto sync by the config delay
             syncUsers(userSyncConfig.syncDelay);
@@ -750,12 +792,6 @@ function setupBidTargeting(bidObject: Bid) {
   bidObject.adserverTargeting = Object.assign(bidObject.adserverTargeting || {}, keyValues);
 }
 
-/**
- * @param {MediaType} mediaType
- * @param mediaTypes media types map from adUnit
- * @param {MediaTypePriceGranularity} [mediaTypePriceGranularity]
- * @returns {(Object|string|undefined)}
- */
 export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
     if (FEATURES.VIDEO && mediaType === VIDEO) {

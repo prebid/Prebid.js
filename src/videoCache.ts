@@ -68,6 +68,48 @@ declare module './bidfactory' {
         videoCacheKey?: string;
     }
 }
+
+export interface CacheConfig {
+    /**
+     * The URL of the Prebid Cache server endpoint where VAST creatives will be sent.
+     */
+    url: string;
+    /**
+     * Flag determining whether to locally save VAST XML as a blob
+     */
+    useLocal?: boolean;
+    /**
+     * Timeout (in milliseconds) for network requests to the cache
+     */
+    timeout?: number;
+    /**
+     * Passes additional data to the url, used for additional event tracking data. Defaults to false.
+     */
+    vasttrack?: boolean;
+    /**
+     * If the bidder supplied their own cache key, setting this value to true adds a VAST wrapper around that URL,
+     * stores it in the cache defined by the url parameter, and replaces the original video cache key with the new one.
+     * This can dramatically simplify ad server setup because it means all VAST creatives reside behind a single URL.
+     * The tradeoff: this approach requires the video player to unwrap one extra level of VAST. Defaults to false.
+     */
+    ignoreBidderCacheKey?: boolean;
+    /**
+     * Enables video cache requests to be batched by a specified amount (defaults to 1) instead of making a single request per each video.
+     */
+    batchSize?: number;
+    /**
+     * Used in conjunction with batchSize, batchTimeout specifies how long to wait in milliseconds before sending
+     * a batch video cache request based on the value for batchSize (if present). A batch request will be made whether
+     * the batchSize amount was reached or the batchTimeout timer runs out. batchTimeout defaults to 0.
+     */
+    batchTimeout?: number;
+}
+
+declare module './config' {
+    interface Config {
+        cache?: CacheConfig;
+    }
+}
 /**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
  * the bid can't be converted cleanly.

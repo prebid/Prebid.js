@@ -14,11 +14,43 @@ import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
 import {PBS, registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {timedBidResponseHook} from '../../src/utils/perfMetrics.js';
+import type {BidderCode} from "../../src/types/common.d.ts";
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
 let multiConfig = {};
 let multibidUnits = {};
+
+type MultiBidConfig = ({
+    /**
+     * A bidder code.
+     */
+    bidder: BidderCode;
+    bidders: undefined
+} | {
+    /**
+     * Multiple bidder codes.
+     */
+    bidders: BidderCode[];
+    bidder: undefined;
+}) & {
+    /**
+     * The number of bids the named bidder(s) can supply. Max of 9.
+     */
+    maxBids: number;
+    /**
+     * An alternate (short) bidder code to send to the ad server. A number will be appended, starting from 2, e.g. hb_pb_PREFIX2.
+     * If not provided, the extra bids will not go to the ad server.
+     */
+    targetBiddercodePrefix?: string;
+}
+
+declare module '../../src/config' {
+    interface Config {
+        multibid?: MultiBidConfig[];
+    }
+}
+
 
 // Storing this globally on init for easy reference to configuration
 config.getConfig(MODULE_NAME, conf => {

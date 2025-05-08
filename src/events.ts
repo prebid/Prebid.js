@@ -37,6 +37,16 @@ export type EventRecord<E extends keyof Events> = {
     elapsedTime: number;
 }
 
+declare module './config' {
+    interface Config {
+        /**
+         * Maximum time (in seconds) that events should be kept in memory.
+         * By default, Prebid keeps in memory a log of every event since the initial page load, and makes it available to analytics adapters and getEvents().
+         */
+        [TTL_CONFIG]?: number;
+    }
+}
+
 const TTL_CONFIG = 'eventHistoryTTL';
 
 let eventTTL = null;
@@ -47,9 +57,9 @@ const eventsFired = ttlCollection<EventRecord<any>>({
   ttl: () => eventTTL,
 })
 
-config.getConfig(TTL_CONFIG, (val) => {
+config.getConfig(TTL_CONFIG, (cfg) => {
   const previous = eventTTL;
-  val = val?.[TTL_CONFIG];
+  const val = cfg?.[TTL_CONFIG];
   eventTTL = typeof val === 'number' ? val * 1000 : null;
   if (previous !== eventTTL) {
     eventsFired.refresh();
