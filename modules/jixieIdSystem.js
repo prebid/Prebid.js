@@ -42,8 +42,7 @@ function removeNullProp(obj) {
 
 /**
  * save the info returned by our endpoint into cookie
- * @param {number} maxAge
- * @returns {string}
+ * @param {object} response
  */
 function persistExtInfo(response) {
   let o = response;
@@ -62,7 +61,7 @@ function persistExtInfo(response) {
 /**
  * build the full url to call the jixie endpoint
  * @param {Object} params - config params from the pbjs setup
- * @param {Object} consentData
+ * @param {Object} gdprConsent
  * @returns {string} a full url to call by ajax
  */
 function buildIdCallUrl(params, gdprConsent) {
@@ -125,7 +124,7 @@ export const jixieIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @param {string} jixieId
+   * @param {string} value
    * @returns {{jixieId: string} | undefined}
    */
   decode(value) {
@@ -136,7 +135,7 @@ export const jixieIdSubmodule = {
    * Use a publink cookie first if it is present, otherwise use prebids copy, if neither are available callout to get a new id
    * @function
    * @param {SubmoduleConfig} [config] Config object with params and storage properties
-   * @param {ConsentData|undefined} consentData GDPR consent
+   * @param {ConsentData|undefined} gdprConsent GDPR consent
    * @returns {IdResponse}
    */
   getId(config, gdprConsent) {
