@@ -110,7 +110,7 @@ partitionBidders.before(function (next, adUnits, s2sConfigs) {
     }
   });
 
-  next.bail(getBidderCodes(adUnits).reduce((memo, {bidder}) => {
+  next.bail(getBidderCodes(adUnits).reduce((memo, bidder) => {
     if (serverBidders.has(bidder)) {
       memo[SERVER].push(bidder);
     }
@@ -123,12 +123,11 @@ partitionBidders.before(function (next, adUnits, s2sConfigs) {
 
 filterBidsForAdUnit.before(function(next, bids, s2sConfig) {
   if (s2sConfig == null) {
-    next.bail(bids.filter((bid) => !s2sTesting.clientTestBidders.size || bid.finalSource !== SERVER));
+    bids = bids.filter((bid) => !s2sTesting.clientTestBidders.size || bid.finalSource !== SERVER);
   } else {
-    const serverBidders = getS2SBidderSet(s2sConfig);
-    next.bail(bids.filter((bid) => serverBidders.has(bid.bidder) &&
-      (!doingS2STesting(s2sConfig) || bid.finalSource !== CLIENT)));
+    bids = bids.filter((bid) => !doingS2STesting(s2sConfig) || bid.finalSource !== CLIENT);
   }
+  next.call(this, bids, s2sConfig);
 });
 
 export default s2sTesting;

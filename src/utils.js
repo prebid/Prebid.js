@@ -644,20 +644,8 @@ export function getValue(obj, key) {
 
 export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
   // this could memoize adUnits
-  const seen = new Set();
-  return adUnits.reduce((acc, unit) => {
-    unit.bids.forEach(bid => {
-      const { bidder, pbsHost } = bid;
-      if (typeof bidder !== 'undefined') {
-        const key = `${bidder}-${pbsHost || ''}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          acc.push({ bidder, pbsHost });
-        }
-      }
-    });
-    return acc;
-  }, []);
+  return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
+    .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
 }
 
 export function isGptPubadsDefined() {
