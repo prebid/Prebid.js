@@ -227,77 +227,54 @@ function banner(bid) {
 
 function video(bid) {
   if (FEATURES.VIDEO) {
-    let minduration = utils.deepAccess(bid, 'mediaTypes.video.minduration');
-    const maxduration = utils.deepAccess(bid, 'mediaTypes.video.maxduration');
-    const playerSize = utils.deepAccess(bid, 'mediaTypes.video.playerSize');
-    const api = utils.deepAccess(bid, 'mediaTypes.video.api');
-    const mimes = utils.deepAccess(bid, 'mediaTypes.video.mimes');
-    const placement = utils.deepAccess(bid, 'mediaTypes.video.placement');
-    const plcmt = utils.deepAccess(bid, 'mediaTypes.video.plcmt');
-    const protocols = utils.deepAccess(bid, 'mediaTypes.video.protocols');
-    const playbackmethod = utils.deepAccess(bid, 'mediaTypes.video.playbackmethod');
-    const pos = utils.deepAccess(bid, 'mediaTypes.video.pos');
-    const startdelay = utils.deepAccess(bid, 'mediaTypes.video.startdelay');
-    const skip = utils.deepAccess(bid, 'mediaTypes.video.skip');
-    const skipmin = utils.deepAccess(bid, 'mediaTypes.video.skipmin');
-    const skipafter = utils.deepAccess(bid, 'mediaTypes.video.skipafter');
-    const minbitrate = utils.deepAccess(bid, 'mediaTypes.video.minbitrate');
-    const maxbitrate = utils.deepAccess(bid, 'mediaTypes.video.maxbitrate');
+    const v = bid?.mediaTypes?.video;
+    if (!v) return;
 
-    if (!minduration || !utils.isInteger(minduration)) {
-      minduration = 0;
-    }
-    let video = {
-      minduration: minduration,
-      maxduration: maxduration,
-      api: api,
-      mimes: mimes,
-      placement: placement,
-      protocols: protocols
+    const {
+      minduration = 0,
+      maxduration,
+      playerSize,
+      api,
+      mimes,
+      placement,
+      plcmt,
+      protocols,
+      playbackmethod,
+      pos,
+      startdelay,
+      skip,
+      skipmin,
+      skipafter,
+      minbitrate,
+      maxbitrate
+    } = v;
+
+    const video = {
+      minduration,
+      ...(maxduration !== undefined && { maxduration }),
+      ...(api && { api }),
+      ...(mimes && { mimes }),
+      ...(placement !== undefined && { placement }),
+      ...(plcmt !== undefined && { plcmt }),
+      ...(protocols && { protocols }),
+      ...(playbackmethod !== undefined && { playbackmethod }),
+      ...(pos !== undefined && { pos }),
+      ...(startdelay !== undefined && { startdelay }),
+      ...(skip !== undefined && { skip }),
+      ...(skipmin !== undefined && { skipmin }),
+      ...(skipafter !== undefined && { skipafter }),
+      ...(minbitrate !== undefined && { minbitrate }),
+      ...(maxbitrate !== undefined && { maxbitrate })
     };
 
-    if (typeof playerSize !== 'undefined') {
-      if (utils.isArray(playerSize[0])) {
-        video.w = parseInt(playerSize[0][0]);
-        video.h = parseInt(playerSize[0][1]);
-      } else if (utils.isNumber(playerSize[0])) {
-        video.w = parseInt(playerSize[0]);
-        video.h = parseInt(playerSize[1]);
-      }
+    if (playerSize) {
+      const [w, h] = Array.isArray(playerSize[0]) ? playerSize[0] : playerSize;
+      video.w = Number(w);
+      video.h = Number(h);
     }
 
-    if (playbackmethod) {
-      video.playbackmethod = playbackmethod;
-    }
-    if (plcmt) {
-      video.plcmt = plcmt;
-    }
-    if (pos) {
-      video.pos = pos;
-    }
-    if (startdelay && utils.isInteger(startdelay)) {
-      video.startdelay = startdelay;
-    }
-    if (skip && (skip === 0 || skip === 1)) {
-      video.skip = skip;
-    }
-    if (skipmin && utils.isInteger(skipmin)) {
-      video.skipmin = skipmin;
-    }
-    if (skipafter && utils.isInteger(skipafter)) {
-      video.skipafter = skipafter;
-    }
-    if (minbitrate && utils.isInteger(minbitrate)) {
-      video.minbitrate = minbitrate;
-    }
-    if (maxbitrate && utils.isInteger(maxbitrate)) {
-      video.maxbitrate = maxbitrate;
-    }
-
-    const battr = utils.deepAccess(bid, 'ortb2Imp.video.battr');
-    if (battr) {
-      video.battr = battr;
-    }
+    const battr = bid?.ortb2Imp?.video?.battr;
+    if (battr) video.battr = battr;
 
     return video;
   }
