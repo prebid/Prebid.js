@@ -8,6 +8,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { toOrtbNativeRequest } from '../src/native.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -39,6 +40,10 @@ export function hasTypeVideo(bid) {
   return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
 }
 
+export function hasTypeNative(bid) {
+  return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.native !== 'undefined';
+}
+
 export function isValid(type, bid) {
   if (type === BANNER) {
     return parseSizes(bid).length > 0;
@@ -49,12 +54,17 @@ export function isValid(type, bid) {
     }
   } else if (type === NATIVE) {
     if (typeof bid.mediaTypes.native !== 'object' || bid.mediaTypes.native === null) return false;
-
-    const assets = bid.mediaTypes.native?.ortb?.assets;
-    const eventTrackers = bid.mediaTypes.native?.ortb?.eventtrackers;
+    if (!isNativeOrtbVersion(bid)) {
+      if (bid.nativeParams === undefined) return false;
+      const ortbConversion = toOrtbNativeRequest(bid.nativeParams);
+      return ortbConversion && ortbConversion.assets && Array.isArray(ortbConversion.assets) && ortbConversion.assets.length > 0 && ortbConversion.assets.every(asset => isValidAsset(asset));
+    }
 
     let isValidAssets = false;
     let isValidEventTrackers = false;
+
+    const assets = bid.mediaTypes.native?.ortb?.assets;
+    const eventTrackers = bid.mediaTypes.native?.ortb?.eventtrackers;
 
     if (assets && Array.isArray(assets) && assets.length > 0 && assets.every(asset => isValidAsset(asset))) {
       isValidAssets = true;
@@ -80,12 +90,11 @@ const isValidEventTracker = function(et) {
 }
 
 const isValidAsset = function(asset) {
-  if (!asset.id || !Number.isInteger(asset.id)) return false;
+  if (!asset.hasOwnProperty("id") || !Number.isInteger(asset.id)) return false;
   const hasValidContent = asset.title || asset.img || asset.data || asset.video;
   if (!hasValidContent) return false;
   if (asset.title && (!asset.title.len || !Number.isInteger(asset.title.len))) return false;
-  if (asset.img && ((!asset.img.wmin || !Number.isInteger(asset.img.wmin)) || (!asset.img.hmin || !Number.isInteger(asset.img.hmin)))) return false;
-  if (asset.data && !asset.data.type) return false;
+  if (asset.data && (!asset.data.type || !Number.isInteger(asset.data.type))) return false;
   if (asset.video && (!asset.video.mimes || !asset.video.minduration || !asset.video.maxduration || !asset.video.protocols)) return false;
   return true;
 }
@@ -294,7 +303,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.2'
+      adapter: '1.1.3'
     }
   };
 }
@@ -324,15 +333,25 @@ function requestsToBids(bidRequests) {
     return bannerObj;
   });
   const nativeBidRequests = bidRequests.filter(bidRequest => isValid(NATIVE, bidRequest)).map(bidRequest => {
-    const bannerObj = {};
-    setGeneralInfo.call(bannerObj, bidRequest);
-    bannerObj['sizes'] = parseSizes(bidRequest);
-    bannerObj['type'] = NATIVE + NATIVE_SUFFIX;
-    bannerObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.native);
-    bannerObj['priceFloors'] = getBidFloor(bidRequest, NATIVE, bannerObj['sizes']);
-    return bannerObj;
+    const nativeObj = {};
+    setGeneralInfo.call(nativeObj, bidRequest);
+    nativeObj['sizes'] = parseSizes(bidRequest);
+    nativeObj['type'] = NATIVE + NATIVE_SUFFIX;
+    nativeObj['mediaTypeInfo'] = deepClone(bidRequest.mediaTypes.native);
+    if (!isNativeOrtbVersion(bidRequest)) {
+      const ortbConversion = toOrtbNativeRequest(bidRequest.nativeParams);
+      nativeObj['mediaTypeInfo'] = {};
+      nativeObj['mediaTypeInfo'].adTemplate = bidRequest.nativeParams.adTemplate;
+      nativeObj['mediaTypeInfo'].ortb = ortbConversion;
+    }
+    nativeObj['priceFloors'] = getBidFloor(bidRequest, NATIVE, nativeObj['sizes']);
+    return nativeObj;
   });
   return videoBidRequests.concat(bannerBidRequests).concat(nativeBidRequests);
+}
+
+function isNativeOrtbVersion(bidRequest) {
+  return bidRequest.mediaTypes.native.ortb && typeof bidRequest.mediaTypes.native.ortb === 'object';
 }
 
 function setGeneralInfo(bidRequest) {
@@ -458,20 +477,24 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 }
 
 function getBidFloor(bidRequest, mediaType, sizes) {
-  const priceFloors = [];
-  if (typeof bidRequest.getFloor === 'function') {
-    sizes.forEach(size => {
-      const floor = bidRequest.getFloor({
-        currency: 'EUR',
-        mediaType: mediaType || '*',
-        size: [size.width, size.height]
-      }) || {};
-      floor.size = deepClone(size);
-      if (!floor.floor) { floor.floor = null; }
-      priceFloors.push(floor);
-    });
+  if (typeof bidRequest.getFloor !== 'function') return [];
+  const getFloorObject = (size) => {
+    const floorData = bidRequest.getFloor({
+      currency: 'EUR',
+      mediaType: mediaType || '*',
+      size: size || '*'
+    }) || {};
+
+    return {
+      ...floorData,
+      size: size ? deepClone(size) : undefined,
+      floor: floorData.floor != null ? floorData.floor : null
+    };
+  };
+  if (Array.isArray(sizes) && sizes.length > 0) {
+    return sizes.map(size => getFloorObject([size.width, size.height]));
   }
-  return priceFloors;
+  return [getFloorObject('*')];
 }
 
 export function isSchainValid(schain) {
