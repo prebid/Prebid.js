@@ -195,7 +195,7 @@ describe('ortb -> pbjs banner conversion', () => {
       },
       expected: {
         mediaType: BANNER,
-        ad: 'mockAdmmockUrlPixel'
+        ad: 'mockUrlPixelmockAdm'
       }
     },
     {
