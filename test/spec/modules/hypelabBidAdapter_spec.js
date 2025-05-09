@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { server } from '../../mocks/xhr';
+import { getWinDimensions } from '../../../src/utils';
+import { getBoundingClientRect } from '../../../libraries/boundingClientRect/boundingClientRect';
 
 import {
   mediaSize,
@@ -100,6 +102,12 @@ const mockBidRequest = {
     bidRequestsCount: 1,
     bidderRequestsCount: 1,
     bidderWinsCount: 0,
+    floor: null,
+    dpr: 1,
+    wp: { ada: false, bnb: false, eth: false, sol: false, tron: false },
+    wpfs: { ada: [], bnb: [], eth: [], sol: [], tron: [] },
+    vp: [1920, 1080],
+    pp: [240, 360],
   },
   bidId: '2e02b562f700ae',
 };
@@ -163,6 +171,33 @@ describe('hypelabBidAdapter', function () {
       expect(data.dpr).to.be.a('number');
       expect(data.location).to.be.a('string');
       expect(data.floor).to.equal(null);
+      expect(data.dpr).to.equal(1);
+      expect(data.wp).to.deep.equal({
+        ada: false,
+        bnb: false,
+        eth: false,
+        sol: false,
+        tron: false,
+      });
+      expect(data.wpfs).to.deep.equal({
+        ada: [],
+        bnb: [],
+        eth: [],
+        sol: [],
+        tron: [],
+      });
+      const winDimensions = getWinDimensions();
+      expect(data.vp).to.deep.equal([
+      Math.max(
+        winDimensions?.document.documentElement.clientWidth || 0,
+        winDimensions?.innerWidth || 0
+      ),
+      Math.max(
+        winDimensions?.document.documentElement.clientHeight || 0,
+        winDimensions?.innerHeight || 0
+      ),
+    ]);
+      expect(data.pp).to.deep.equal(null);
     });
 
     describe('should set uuid to the first id in userIdAsEids', () => {
