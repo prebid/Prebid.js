@@ -481,6 +481,7 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
           : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
       })
     }
+
     switch (request.method) {
       case 'GET':
         ajax(
@@ -497,8 +498,23 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
         );
         break;
       case 'POST':
-        const enableGZipCompression = bidderSettings.get(spec.code, 'endpointCompression');
+        const enableGZipCompression = request.options?.endpointCompression;
         const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
+        const callAjax = ({ url, payload }) => {
+          ajax(
+            url,
+            {
+              success: onSuccess,
+              error: onFailure
+            },
+            payload,
+            getOptions({
+              method: 'POST',
+              contentType: 'text/plain',
+              withCredentials: true
+            })
+          );
+        };
 
         if (enableGZipCompression && debugMode) {
           logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
@@ -510,41 +526,10 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
             if (!url.searchParams.has('gzip')) {
               url.searchParams.set('gzip', '1');
             }
-
-            ajax(
-              url.href,
-              {
-                success: onSuccess,
-                error: onFailure
-              },
-              compressedPayload,
-              getOptions({
-                method: 'POST',
-                contentType: 'text/plain',
-                // adding below header creates a CORS preflight request so we should not pass it
-                // instead of adding this header we can pass a query parmeter (gzip=1) to let server know that the payload is compressed
-                // TODO: update URL to include query parameter gzip=1
-                // customHeaders: {
-                //  'Content-Encoding': 'gzip',
-                // },
-                withCredentials: true
-              })
-            );
+            callAjax({ url: url.href, payload: compressedPayload });
           });
         } else {
-          ajax(
-            request.url,
-            {
-              success: onSuccess,
-              error: onFailure
-            },
-            typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-            getOptions({
-              method: 'POST',
-              contentType: 'text/plain',
-              withCredentials: true
-            })
-          );
+          callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
         }
         break;
       default:

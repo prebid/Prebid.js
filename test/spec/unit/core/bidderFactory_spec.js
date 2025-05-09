@@ -1784,17 +1784,14 @@ describe('bidderFactory', () => {
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
 
-      window.$$PREBID_GLOBAL$$.bidderSettings = {
-        [CODE]: {
-          endpointCompression: true
-        }
-      };
-
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: url,
-        data: data
+        data: data,
+        options: {
+          endpointCompression: true
+        }
       });
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
@@ -1817,17 +1814,14 @@ describe('bidderFactory', () => {
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
 
-      window.$$PREBID_GLOBAL$$.bidderSettings = {
-        [CODE]: {
-          endpointCompression: true
-        }
-      };
-
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
         method: 'POST',
         url: url,
-        data: data
+        data: data,
+        options: {
+          endpointCompression: false
+        }
       });
 
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
@@ -1841,19 +1835,13 @@ describe('bidderFactory', () => {
       });
     });
 
-    it('should send uncompressed data if gzip is supported but disabled in settings', function (done) {
+    it('should send uncompressed data if gzip is supported but disabled in request options', function (done) {
       const bidder = newBidder(spec);
       const url = 'https://test.url.com';
       const data = { arg: 'value' };
       isGzipSupportedStub.returns(true);
       getParameterByNameStub.withArgs(DEBUG_MODE).returns('false');
       debugTurnedOnStub.returns(false);
-
-      window.$$PREBID_GLOBAL$$.bidderSettings = {
-        [CODE]: {
-          endpointCompression: false
-        }
-      };
 
       spec.isBidRequestValid.returns(true);
       spec.buildRequests.returns({
