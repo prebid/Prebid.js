@@ -381,6 +381,7 @@ describe('The video cache', function () {
     });
     afterEach(() => {
       sandbox.restore();
+      config.resetConfig();
     })
     it('should log an error when store replies with an error', () => {
       err = new Error('err');
@@ -395,7 +396,21 @@ describe('The video cache', function () {
       expect(el.bidResponse.videoCacheKey).to.not.exist;
       sinon.assert.notCalled(batch[0].afterBidAdded);
       sinon.assert.called(utils.logError);
-    })
+    });
+    it('should set bids\' videoCacheKey and vastUrl', () => {
+      config.setConfig({
+        cache: {
+          url: 'mock-cache'
+        }
+      })
+      const el = {auctionInstance: {addBidReceived: sinon.stub()}, bidResponse: {}, afterBidAdded: sinon.stub()};
+      cacheIds = [{uuid: 'mock-id'}]
+      storeBatch([el]);
+      sinon.assert.match(el.bidResponse, {
+        videoCacheKey: 'mock-id',
+        vastUrl: 'mock-cache?uuid=mock-id'
+      })
+    });
   })
 
   describe('local video cache', function() {
