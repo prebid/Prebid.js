@@ -639,6 +639,14 @@ describe('PubMatic adapter', () => {
         });
       });
 
+      describe('Request Options', () => {
+        it('should set endpointCompression to true in request options', () => {
+          const request = spec.buildRequests(validBidRequests, bidderRequest);
+          expect(request).to.have.property('options');
+          expect(request.options).to.have.property('endpointCompression').to.equal(true);
+        });
+      });
+
       describe('GROUPM', () => {
         let bidderSettingStub;
         beforeEach(() => {
