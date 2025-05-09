@@ -1226,7 +1226,7 @@ describe('The Criteo bidding adapter', function () {
       const bidRequests = [
         {
           bidder: 'criteo',
-          schain: expectedSchain,
+          ortb2: {source: {schain: expectedSchain}},
           adUnitCode: 'bid-123',
           mediaTypes: {
             banner: {

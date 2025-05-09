@@ -914,7 +914,9 @@ describe('stackadaptBidAdapter', function () {
         'ver': '1.0'
       };
 
-      clonedBidRequests[0].schain = schain;
+      clonedBidRequests[0].ortb2 = {
+        source: {schain: schain}
+      };
       clonedBidderRequest.bids = clonedBidRequests;
 
       const ortbRequest = spec.buildRequests(clonedBidRequests, clonedBidderRequest).data;

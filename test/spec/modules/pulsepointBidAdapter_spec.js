@@ -136,7 +136,7 @@ describe('PulsePoint Adapter Tests', function () {
       bidfloor: 1.5,
       badv: ['cocacola.com', 'lays.com']
     },
-    schain: {
+    ortb2: {source: {schain: {
       'ver': '1.0',
       'complete': 1,
       'nodes': [
@@ -149,7 +149,7 @@ describe('PulsePoint Adapter Tests', function () {
           'domain': 'publisher.com'
         }
       ]
-    },
+    }}}
   }];
 
   const bidderRequest = {

@@ -314,7 +314,6 @@ describe('#makeBidRequestsHook', function() {
 
   const globalSchainConfig = {
     'schain': {
-      'validation': 'off',
       'config': {
         'ver': '1.0',
         'complete': 1,
@@ -339,7 +338,6 @@ describe('#makeBidRequestsHook', function() {
     bidders: ['appnexus'],
     config: {
       'schain': {
-        'validation': 'strict',
         'config': {
           'ver': '1.0',
           'complete': 1,
@@ -366,7 +364,6 @@ describe('#makeBidRequestsHook', function() {
     bidders: ['appnexus'],
     config: {
       'schain': {
-        'validation': 'strict',
         'config': {
           'ver': '1.0',
           'complete': 1,
@@ -393,7 +390,6 @@ describe('#makeBidRequestsHook', function() {
     bidders: ['districtm'],
     config: {
       'schain': {
-        'validation': 'relaxed',
         'config': {
           'ver': '1.0',
           'complete': 1,
@@ -414,7 +410,6 @@ describe('#makeBidRequestsHook', function() {
     bidders: ['districtm'],
     config: {
       'schain': {
-        'validation': 'relaxed',
         'config': {
           'ver': 1,
           'complete': 1,
@@ -452,19 +447,37 @@ describe('#makeBidRequestsHook', function() {
     });
   });
 
-  it('should properly read from bidder schain + global schain configs', function() {
+  it('should properly read from bidder schain + global schain configs and set in ortb2.source.schain', function() {
     function testCallback(bidderRequests) {
-      expect(bidderRequests[0].bids[0].schain).to.exist;
-      expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);
-      expect(bidderRequests[1].bids[0].schain).to.exist;
-      expect(bidderRequests[1].bids[0].schain).to.deep.equal(goodRelaxedBidderConfig.config.schain.config);
-      expect(bidderRequests[2].bids[0].schain).to.exist;
-      expect(bidderRequests[2].bids[0].schain).to.deep.equal(goodStrictBidderConfig.config.schain.config);
+      // Check for rubicon (using global config)
+      expect(bidderRequests[0].bids[0].ortb2).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source.schain).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source.schain).to.deep.equal(globalSchainConfig.schain.config);
+      
+      // Check for districtm (using goodRelaxedBidderConfig)
+      expect(bidderRequests[1].bids[0].ortb2).to.exist;
+      expect(bidderRequests[1].bids[0].ortb2.source).to.exist;
+      expect(bidderRequests[1].bids[0].ortb2.source.schain).to.exist;
+      expect(bidderRequests[1].bids[0].ortb2.source.schain).to.deep.equal(goodRelaxedBidderConfig.config.schain.config);
+      
+      // Check for appnexus (using goodStrictBidderConfig)
+      expect(bidderRequests[2].bids[0].ortb2).to.exist;
+      expect(bidderRequests[2].bids[0].ortb2.source).to.exist;
+      expect(bidderRequests[2].bids[0].ortb2.source.schain).to.exist;
+      expect(bidderRequests[2].bids[0].ortb2.source.schain).to.deep.equal(goodStrictBidderConfig.config.schain.config);
     }
 
     const testBidderRequests = deepClone(bidderRequests);
     config.setBidderConfig(goodStrictBidderConfig);
     config.setBidderConfig(goodRelaxedBidderConfig);
+
+    // Set skipValidations to false to enable strict validation
+    config.setConfig({
+      firstPartyData: {
+        skipValidations: false
+      }
+    });
 
     makeBidRequestsHook(testCallback, testBidderRequests);
   });
@@ -472,24 +485,72 @@ describe('#makeBidRequestsHook', function() {
   it('should not share the same schain object between different bid requests', (done) => {
     config.setBidderConfig(goodStrictBidderConfig);
     makeBidRequestsHook((requests) => {
-      requests[0].bids[0].schain.field = 'value';
-      expect(requests[1].bids[0].schain.field).to.not.exist;
+      requests[0].bids[0].ortb2.source.schain.field = 'value';
+      expect(requests[1].bids[0].ortb2.source.schain.field).to.not.exist;
       done();
     }, deepClone(bidderRequests))
   });
 
-  it('should reject bad strict config but allow a bad relaxed config for bidders trying to override it', function () {
+  it('should reject bad config when skipValidations is false', function () {
     function testCallback(bidderRequests) {
-      expect(bidderRequests[0].bids[0].schain).to.exist;
-      expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);
-      expect(bidderRequests[1].bids[0].schain).to.exist;
-      expect(bidderRequests[1].bids[0].schain).to.deep.equal(badRelaxedBidderConfig.config.schain.config);
-      expect(bidderRequests[2].bids[0].schain).to.be.undefined;
+      // Check for rubicon (using global config)
+      expect(bidderRequests[0].bids[0].ortb2).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source.schain).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source.schain).to.deep.equal(globalSchainConfig.schain.config);
+      
+      // Check for districtm (should not have schain due to validation failure)
+      expect(bidderRequests[1].bids[0].ortb2).to.not.exist;
+      
+      // Check for appnexus (should not have schain due to validation failure)
+      expect(bidderRequests[2].bids[0].ortb2).to.not.exist;
     }
 
     const testBidderRequests = deepClone(bidderRequests);
     config.setBidderConfig(badStrictBidderConfig);
     config.setBidderConfig(badRelaxedBidderConfig);
+
+    // Set skipValidations to false to enable strict validation
+    config.setConfig({
+      firstPartyData: {
+        skipValidations: false
+      }
+    });
+
+    makeBidRequestsHook(testCallback, testBidderRequests);
+  });
+
+  it('should accept all configs when skipValidations is true (default)', function () {
+    function testCallback(bidderRequests) {
+      // Check for rubicon (using global config)
+      expect(bidderRequests[0].bids[0].ortb2).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source.schain).to.exist;
+      expect(bidderRequests[0].bids[0].ortb2.source.schain).to.deep.equal(globalSchainConfig.schain.config);
+      
+      // Check for districtm (should have schain despite validation issues)
+      expect(bidderRequests[1].bids[0].ortb2).to.exist;
+      expect(bidderRequests[1].bids[0].ortb2.source).to.exist;
+      expect(bidderRequests[1].bids[0].ortb2.source.schain).to.exist;
+      expect(bidderRequests[1].bids[0].ortb2.source.schain).to.deep.equal(badRelaxedBidderConfig.config.schain.config);
+      
+      // Check for appnexus (should have schain despite validation issues)
+      expect(bidderRequests[2].bids[0].ortb2).to.exist;
+      expect(bidderRequests[2].bids[0].ortb2.source).to.exist;
+      expect(bidderRequests[2].bids[0].ortb2.source.schain).to.exist;
+      expect(bidderRequests[2].bids[0].ortb2.source.schain).to.deep.equal(badStrictBidderConfig.config.schain.config);
+    }
+
+    const testBidderRequests = deepClone(bidderRequests);
+    config.setBidderConfig(badStrictBidderConfig);
+    config.setBidderConfig(badRelaxedBidderConfig);
+
+    // Set skipValidations to true to skip validation (default behavior)
+    config.setConfig({
+      firstPartyData: {
+        skipValidations: true
+      }
+    });
 
     makeBidRequestsHook(testCallback, testBidderRequests);
   });
