@@ -1,14 +1,19 @@
-import {getGlobal} from '../src/prebidGlobal.js';
-import {ajax} from '../src/ajax.js';
-import {config} from '../src/config.js';
-import * as utils from '../src/utils.js';
 import MD5 from 'crypto-js/md5.js';
+import { ACTIVITY_ENRICH_UFPD } from '../src/activities/activities.js';
+import { activityParams } from '../src/activities/activityParams.js';
+import { MODULE_TYPE_PREBID } from '../src/activities/modules.js';
+import { isActivityAllowed } from '../src/activities/rules.js';
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { logError, logInfo } from '../src/utils.js';
 
 let email;
 let conf;
 const LOG_PRE_FIX = 'ID-Library: ';
 const CONF_DEFAULT_OBSERVER_DEBOUNCE_MS = 250;
-const CONF_DEFAULT_FULL_BODY_SCAN = false;
+export const CONF_DEFAULT_FULL_BODY_SCAN = false;
+export const CONF_DEFAULT_INPUT_SCAN = false;
 const OBSERVER_CONFIG = {
   subtree: true,
   attributes: true,
@@ -18,18 +23,18 @@ const OBSERVER_CONFIG = {
   characterData: true,
   characterDataOldValue: false
 };
-const logInfo = createLogInfo(LOG_PRE_FIX);
-const logError = createLogError(LOG_PRE_FIX);
+const _logInfo = createLogInfo(LOG_PRE_FIX);
+const _logError = createLogError(LOG_PRE_FIX);
 
 function createLogInfo(prefix) {
   return function (...strings) {
-    utils.logInfo(prefix + ' ', ...strings);
+    logInfo(prefix + ' ', ...strings);
   }
 }
 
 function createLogError(prefix) {
   return function (...strings) {
-    utils.logError(prefix + ' ', ...strings);
+    logError(prefix + ' ', ...strings);
   }
 }
 
@@ -38,39 +43,39 @@ function getEmail(value) {
   if (!matched) {
     return null;
   }
-  logInfo('Email found: ' + matched[0]);
+  _logInfo('Email found: ' + matched[0]);
   return matched[0];
 }
 
 function bodyAction(mutations, observer) {
-  logInfo('BODY observer on debounce called');
+  _logInfo('BODY observer on debounce called');
   // If the email is found in the input element, disconnect the observer
   if (email) {
     observer.disconnect();
-    logInfo('Email is found, body observer disconnected');
+    _logInfo('Email is found, body observer disconnected');
     return;
   }
 
   const body = document.body.innerHTML;
   email = getEmail(body);
   if (email !== null) {
-    logInfo(`Email obtained from the body ${email}`);
+    _logInfo(`Email obtained from the body ${email}`);
     observer.disconnect();
-    logInfo('Post data on email found in body');
+    _logInfo('Post data on email found in body');
     postData();
   }
 }
 
 function targetAction(mutations, observer) {
-  logInfo('Target observer called');
+  _logInfo('Target observer called');
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
       email = node.textContent;
 
       if (email) {
-        logInfo('Email obtained from the target ' + email);
+        _logInfo('Email obtained from the target ' + email);
         observer.disconnect();
-        logInfo('Post data on email found in target');
+        _logInfo('Post data on email found in target');
         postData();
         return;
       }
@@ -78,19 +83,38 @@ function targetAction(mutations, observer) {
   }
 }
 
-function addInputElementsElementListner(conf) {
-  logInfo('Adding input element listeners');
+function addInputElementsElementListner() {
+  if (doesInputElementsHaveEmail()) {
+    _logInfo('Email found in input elements ' + email);
+    _logInfo('Post data on email found in target without');
+    postData();
+    return;
+  }
+  _logInfo('Adding input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
   for (var i = 0; i < inputs.length; i++) {
-    logInfo(`Original Value in Input = ${inputs[i].value}`);
+    _logInfo(`Original Value in Input = ${inputs[i].value}`);
     inputs[i].addEventListener('change', event => processInputChange(event));
     inputs[i].addEventListener('blur', event => processInputChange(event));
   }
 }
 
+function addFormInputElementsElementListner(id) {
+  _logInfo('Adding input element listeners');
+  if (doesFormInputElementsHaveEmail(id)) {
+    _logInfo('Email found in input elements ' + email);
+    postData();
+    return;
+  }
+  _logInfo('Adding input element listeners');
+  const input = document.getElementById(id);
+  input.addEventListener('change', event => processInputChange(event));
+  input.addEventListener('blur', event => processInputChange(event));
+}
+
 function removeInputElementsElementListner() {
-  logInfo('Removing input element listeners');
+  _logInfo('Removing input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
   for (var i = 0; i < inputs.length; i++) {
@@ -101,10 +125,10 @@ function removeInputElementsElementListner() {
 
 function processInputChange(event) {
   const value = event.target.value;
-  logInfo(`Modified Value of input ${event.target.value}`);
+  _logInfo(`Modified Value of input ${event.target.value}`);
   email = getEmail(value);
   if (email !== null) {
-    logInfo('Email found in input ' + email);
+    _logInfo('Email found in input ' + email);
     postData();
     removeInputElementsElementListner();
   }
@@ -124,7 +148,7 @@ function debounce(func, wait, immediate) {
     if (callNow) {
       func.apply(context, args);
     } else {
-      logInfo('Debounce wait time ' + wait);
+      _logInfo('Debounce wait time ' + wait);
       timeout = setTimeout(later, wait);
     }
   };
@@ -135,34 +159,28 @@ function handleTargetElement() {
 
   const targetElement = document.getElementById(conf.target);
   if (targetElement) {
-    email = targetElement.innerText;
+    email = targetElement.textContent;
 
     if (!email) {
-      logInfo('Finding the email with observer');
+      _logInfo('Finding the email with observer');
       targetObserver.observe(targetElement, OBSERVER_CONFIG);
     } else {
-      logInfo('Target found with target ' + email);
-      logInfo('Post data on email found in target with target');
+      _logInfo('Target found with target ' + email);
+      _logInfo('Post data on email found in target with target');
       postData();
     }
   }
 }
 
 function handleBodyElements() {
-  if (doesInputElementsHaveEmail()) {
-    logInfo('Email found in input elements ' + email);
-    logInfo('Post data on email found in target without');
-    postData();
-    return;
-  }
   email = getEmail(document.body.innerHTML);
   if (email !== null) {
-    logInfo('Email found in body ' + email);
-    logInfo('Post data on email found in the body without observer');
+    _logInfo('Email found in body ' + email);
+    _logInfo('Post data on email found in the body without observer');
     postData();
     return;
   }
-  addInputElementsElementListner();
+
   if (conf.fullscan === true) {
     const bodyObserver = new MutationObserver(debounce(bodyAction, conf.debounce, false));
     bodyObserver.observe(document.body, OBSERVER_CONFIG);
@@ -182,13 +200,24 @@ function doesInputElementsHaveEmail() {
   return false;
 }
 
+function doesFormInputElementsHaveEmail(formElementId) {
+  const input = document.getElementById(formElementId);
+  if (input) {
+    email = getEmail(input.value);
+    if (email !== null) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function syncCallback() {
   return {
     success: function () {
-      logInfo('Data synced successfully.');
+      _logInfo('Data synced successfully.');
     },
     error: function () {
-      logInfo('Data sync failed.');
+      _logInfo('Data sync failed.');
     }
   }
 }
@@ -197,15 +226,15 @@ function postData() {
   (getGlobal()).refreshUserIds();
   const userIds = (getGlobal()).getUserIds();
   if (Object.keys(userIds).length === 0) {
-    logInfo('No user ids');
+    _logInfo('No user ids');
     return;
   }
-  logInfo('Users' + userIds);
+  _logInfo('Users' + userIds);
   const syncPayload = {};
   syncPayload.hid = MD5(email).toString();
   syncPayload.uids = userIds;
   const payloadString = JSON.stringify(syncPayload);
-  logInfo(payloadString);
+  _logInfo(payloadString);
   ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
 }
 
@@ -213,6 +242,10 @@ function associateIds() {
   if (window.MutationObserver || window.WebKitMutationObserver) {
     if (conf.target) {
       handleTargetElement();
+    } else if (conf.formElementId) {
+      addFormInputElementsElementListner(conf.formElementId);
+    } else if (conf.inputscan) {
+      addInputElementsElementListner();
     } else {
       handleBodyElements();
     }
@@ -221,20 +254,32 @@ function associateIds() {
 
 export function setConfig(config) {
   if (!config) {
-    logError('Required confirguration not provided');
+    _logError('Required confirguration not provided');
     return;
   }
   if (!config.url) {
-    logError('The required url is not configured');
+    _logError('The required url is not configured');
+    return;
+  }
+  if (!isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_PREBID, 'idImportLibrary'))) {
+    _logError('Permission for id import was denied by CMP');
     return;
   }
   if (typeof config.debounce !== 'number') {
     config.debounce = CONF_DEFAULT_OBSERVER_DEBOUNCE_MS;
-    logInfo('Set default observer debounce to ' + CONF_DEFAULT_OBSERVER_DEBOUNCE_MS);
+    _logInfo('Set default observer debounce to ' + CONF_DEFAULT_OBSERVER_DEBOUNCE_MS);
   }
   if (typeof config.fullscan !== 'boolean') {
     config.fullscan = CONF_DEFAULT_FULL_BODY_SCAN;
-    logInfo('Set default fullscan ' + CONF_DEFAULT_FULL_BODY_SCAN);
+    _logInfo('Set default fullscan ' + CONF_DEFAULT_FULL_BODY_SCAN);
+  }
+  if (typeof config.inputscan !== 'boolean') {
+    config.inputscan = CONF_DEFAULT_INPUT_SCAN;
+    _logInfo('Set default input scan ' + CONF_DEFAULT_INPUT_SCAN);
+  }
+
+  if (typeof config.formElementId == 'string') {
+    _logInfo('Looking for formElementId ' + config.formElementId);
   }
   conf = config;
   associateIds();

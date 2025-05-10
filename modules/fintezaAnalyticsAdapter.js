@@ -1,11 +1,13 @@
+import { parseUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import { EVENTS } from '../src/constants.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const storage = getStorageManager();
-const CONSTANTS = require('../src/constants.json');
+const MODULE_CODE = 'finteza';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 const ANALYTICS_TYPE = 'endpoint';
 const FINTEZA_HOST = 'https://content.mql5.com/tr';
@@ -28,23 +30,15 @@ function getPageInfo() {
   }
 
   if (document.referrer) {
-    pageInfo.referrerDomain = utils.parseUrl(document.referrer).hostname;
+    pageInfo.referrerDomain = parseUrl(document.referrer).hostname;
   }
 
   return pageInfo;
 }
 
 function getUniqId() {
-  let cookies;
-
-  try {
-    cookies = parseCookies(document.cookie);
-  } catch (a) {
-    cookies = {};
-  }
-
   let isUniqFromLS;
-  let uniq = cookies[ UNIQ_ID_KEY ];
+  let uniq = storage.getCookie(UNIQ_ID_KEY);
   if (!uniq) {
     try {
       if (storage.hasLocalStorage()) {
@@ -76,7 +70,8 @@ function initFirstVisit() {
   let cookies;
 
   try {
-    cookies = parseCookies(document.cookie);
+    // TODO: commented out because of rule violations
+    cookies = {} // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
@@ -97,7 +92,8 @@ function initFirstVisit() {
 
   return visitDate;
 }
-
+// TODO: commented out because of rule violations
+/*
 function trim(string) {
   if (string.trim) {
     return string.trim();
@@ -136,6 +132,7 @@ function parseCookies(cookie) {
 
   return values;
 }
+*/
 
 function getRandAsStr(digits) {
   let str = '';
@@ -178,7 +175,8 @@ function initSession() {
   let isNew = false;
 
   try {
-    cookies = parseCookies(document.cookie);
+    // TODO: commented out because of rule violations
+    cookies = {} // parseCookies(document.cookie);
   } catch (a) {
     cookies = {};
   }
@@ -189,7 +187,7 @@ function initSession() {
       !checkSessionByExpires() ||
       !checkSessionByReferer() ||
       !checkSessionByDay()) {
-    sessionId = '' + timestamp + getRandAsStr(SESSION_RAND_PART);
+    sessionId = '' + timestamp + getRandAsStr(SESSION_RAND_PART); // lgtm [js/insecure-randomness]
     begin = timestamp;
 
     isNew = true;
@@ -269,7 +267,8 @@ function getTrackRequestLastTime() {
       );
     }
 
-    cookie = parseCookies(document.cookie);
+    // TODO: commented out because of rule violations
+    cookie = {} // parseCookies(document.cookie);
     cookie = cookie[ TRACK_TIME_KEY ];
     if (cookie) {
       return parseInt(cookie, 10);
@@ -336,16 +335,16 @@ function prepareTrackData(evtype, args) {
   let prepareParams = null;
 
   switch (evtype) {
-    case CONSTANTS.EVENTS.BID_REQUESTED:
+    case EVENTS.BID_REQUESTED:
       prepareParams = prepareBidRequestedParams;
       break;
-    case CONSTANTS.EVENTS.BID_RESPONSE:
+    case EVENTS.BID_RESPONSE:
       prepareParams = prepareBidResponseParams;
       break;
-    case CONSTANTS.EVENTS.BID_WON:
+    case EVENTS.BID_WON:
       prepareParams = prepareBidWonParams;
       break;
-    case CONSTANTS.EVENTS.BID_TIMEOUT:
+    case EVENTS.BID_TIMEOUT:
       prepareParams = prepareBidTimeoutParams;
       break;
   }
@@ -399,7 +398,7 @@ function sendTrackRequest(trackData) {
     );
     saveTrackRequestTime();
   } catch (err) {
-    utils.logError('Error on send data: ', err);
+    logError('Error on send data: ', err);
   }
 }
 
@@ -424,7 +423,7 @@ fntzAnalyticsAdapter.originEnableAnalytics = fntzAnalyticsAdapter.enableAnalytic
 
 fntzAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.id) {
-    utils.logError('Client ID (id) option is not defined. Analytics won\'t work');
+    logError('Client ID (id) option is not defined. Analytics won\'t work');
     return;
   }
 
@@ -447,7 +446,7 @@ fntzAnalyticsAdapter.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: fntzAnalyticsAdapter,
-  code: 'finteza'
+  code: MODULE_CODE,
 });
 
 export default fntzAnalyticsAdapter;

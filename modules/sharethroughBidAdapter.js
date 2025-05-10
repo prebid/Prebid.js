@@ -1,135 +1,270 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
 
-const VERSION = '3.4.0';
+const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
-const STR_ENDPOINT = 'https://btlr.sharethrough.com/WYu2BXv1/v1';
-const DEFAULT_SIZE = [1, 1];
+const SUPPLY_ID = 'WYu2BXv1';
+
+const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
+const IDENTIFIER_PREFIX = 'Sharethrough:';
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
-  b64EncodeUnicode,
-  handleIframe,
-  isLockedInFrame,
-  getProtocol
+  getProtocol,
 };
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
-
-  isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
+  supportedMediaTypes: [VIDEO, BANNER],
+  gvlid: 80,
+  isBidRequestValid: (bid) => !!bid.params.pkey,
 
   buildRequests: (bidRequests, bidderRequest) => {
-    return bidRequests.map(bidRequest => {
-      let query = {
-        placement_key: bidRequest.params.pkey,
-        bidId: bidRequest.bidId,
-        consent_required: false,
-        instant_play_capable: canAutoPlayHTML5Video(),
-        hbSource: 'prebid',
-        hbVersion: '$prebid.version$',
-        strVersion: VERSION
-      };
+    const timeout = bidderRequest.timeout;
+    const firstPartyData = bidderRequest.ortb2 || {};
 
-      Object.assign(query, handleUniversalIds(bidRequest));
+    const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+    const secure = nonHttp || sharethroughInternal.getProtocol().indexOf('https') > -1;
 
-      const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
-      query.secure = nonHttp || (sharethroughInternal.getProtocol().indexOf('https') > -1);
+    const req = {
+      id: generateUUID(),
+      at: 1,
+      cur: ['USD'],
+      tmax: timeout,
+      site: {
+        domain: deepAccess(bidderRequest, 'refererInfo.domain', window.location.hostname),
+        page: deepAccess(bidderRequest, 'refererInfo.page', window.location.href),
+        ref: deepAccess(bidderRequest, 'refererInfo.ref'),
+        ...firstPartyData.site,
+      },
+      device: {
+        ua: navigator.userAgent,
+        language: navigator.language,
+        js: 1,
+        dnt: navigator.doNotTrack === '1' ? 1 : 0,
+        h: window.screen.height,
+        w: window.screen.width,
+        ext: {},
+      },
+      regs: {
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        ext: {},
+      },
+      source: {
+        tid: bidderRequest.ortb2?.source?.tid,
+        ext: {
+          version: '$prebid.version$',
+          str: VERSION,
+          schain: bidRequests[0].schain,
+        },
+      },
+      bcat: deepAccess(bidderRequest.ortb2, 'bcat') || bidRequests[0].params.bcat || [],
+      badv: deepAccess(bidderRequest.ortb2, 'badv') || bidRequests[0].params.badv || [],
+      test: 0,
+    };
 
-      if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
-        query.consent_string = bidderRequest.gdprConsent.consentString;
+    if (bidderRequest.ortb2?.device?.ext?.cdep) {
+      req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
+    }
+
+    // if present, merge device object from ortb2 into `req.device`
+    if (bidderRequest?.ortb2?.device) {
+      mergeDeep(req.device, bidderRequest.ortb2.device);
+    }
+
+    req.user = nullish(firstPartyData.user, {});
+    if (!req.user.ext) req.user.ext = {};
+    req.user.ext.eids = bidRequests[0].userIdAsEids || [];
+
+    if (bidderRequest.gdprConsent) {
+      const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
+      req.regs.ext.gdpr = gdprApplies ? 1 : 0;
+      if (gdprApplies) {
+        req.user.ext.consent = bidderRequest.gdprConsent.consentString;
       }
+    }
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        query.consent_required = !!bidderRequest.gdprConsent.gdprApplies;
-      }
+    if (bidderRequest.uspConsent) {
+      req.regs.ext.us_privacy = bidderRequest.uspConsent;
+    }
 
-      if (bidderRequest && bidderRequest.uspConsent) {
-        query.us_privacy = bidderRequest.uspConsent
-      }
+    if (bidderRequest?.gppConsent?.gppString) {
+      req.regs.gpp = bidderRequest.gppConsent.gppString;
+      req.regs.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      req.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      req.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
 
-      if (config.getConfig('coppa') === true) {
-        query.coppa = true
-      }
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      req.regs.ext.dsa = bidderRequest.ortb2.regs.ext.dsa;
+    }
 
-      if (bidRequest.schain) {
-        query.schain = JSON.stringify(bidRequest.schain);
-      }
+    const imps = bidRequests
+      .map((bidReq) => {
+        const impression = { ext: {} };
 
-      const floor = getFloor(bidRequest);
-      if (floor) {
-        query.bidfloor = floor;
-      }
+        // mergeDeep(impression, bidReq.ortb2Imp); // leaving this out for now as we may want to leave stuff out on purpose
+        const tid = deepAccess(bidReq, 'ortb2Imp.ext.tid');
+        if (tid) impression.ext.tid = tid;
+        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid') || deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
+        if (gpid) impression.ext.gpid = gpid;
 
-      if (bidRequest.params.badv) {
-        query.badv = bidRequest.params.badv;
-      }
+        const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
-      if (bidRequest.params.bcat) {
-        query.bcat = bidRequest.params.bcat;
-      }
+        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
+          mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
+        }
 
-      // Data that does not need to go to the server,
-      // but we need as part of interpretResponse()
-      const strData = {
-        skipIframeBusting: bidRequest.params.iframe,
-        iframeSize: bidRequest.params.iframeSize,
-        sizes: bidRequest.sizes
-      };
+        if (videoRequest) {
+          // default playerSize, only change this if we know width and height are properly defined in the request
+          let [w, h] = [640, 360];
+          if (
+            videoRequest.playerSize &&
+            videoRequest.playerSize[0] &&
+            videoRequest.playerSize[0][0] &&
+            videoRequest.playerSize[0][1]
+          ) {
+            [w, h] = videoRequest.playerSize[0];
+          }
 
+          /**
+           * Applies a specified property to an impression object if it is present in the video request
+           * @param {string} prop A property to apply to the impression object
+           * @param {object} vidReq A video request object from which to extract the property
+           * @param {object} imp A video impression object to which to apply the property
+           */
+          const applyVideoProperty = (prop, vidReq, imp) => {
+            const propIsTypeArray = ['api', 'battr', 'mimes', 'playbackmethod', 'protocols'].includes(prop);
+            if (propIsTypeArray) {
+              const notAssignable = (!Array.isArray(vidReq[prop]) || vidReq[prop].length === 0) && vidReq[prop];
+              if (notAssignable) {
+                logWarn(`${IDENTIFIER_PREFIX} Invalid video request property: "${prop}" must be an array with at least 1 entry.  Value supplied: "${vidReq[prop]}".  This will not be added to the bid request.`);
+                return;
+              }
+            }
+            if (vidReq[prop]) {
+              imp.video[prop] = vidReq[prop];
+            }
+          };
+
+          impression.video = {
+            pos: nullish(videoRequest.pos, 0),
+            topframe: inIframe() ? 0 : 1,
+            w,
+            h,
+          };
+
+          const propertiesToConsider = [
+            'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
+          ]
+
+          propertiesToConsider.forEach(propertyToConsider => {
+            applyVideoProperty(propertyToConsider, videoRequest, impression);
+          });
+        } else {
+          impression.banner = {
+            pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
+            topframe: inIframe() ? 0 : 1,
+            format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
+          };
+          const battr = deepAccess(bidReq, 'mediaTypes.banner.battr', null) || deepAccess(bidReq, 'ortb2Imp.banner.battr')
+          if (battr) impression.banner.battr = battr
+        }
+
+        return {
+          id: bidReq.bidId,
+          tagid: String(bidReq.params.pkey),
+          secure: secure ? 1 : 0,
+          bidfloor: getBidRequestFloor(bidReq),
+          ...impression,
+        };
+      })
+      .filter((imp) => !!imp);
+
+    return imps.map((impression) => {
       return {
         method: 'POST',
         url: STR_ENDPOINT,
-        data: query,
-        strData: strData
+        data: {
+          ...req,
+          imp: [impression],
+        },
       };
-    })
+    });
   },
 
   interpretResponse: ({ body }, req) => {
-    if (!body || !body.creatives || !body.creatives.length) {
+    if (
+      !body ||
+      !body.seatbid ||
+      body.seatbid.length === 0 ||
+      !body.seatbid[0].bid ||
+      body.seatbid[0].bid.length === 0
+    ) {
       return [];
     }
 
-    const creative = body.creatives[0];
-    let size = DEFAULT_SIZE;
-    if (req.strData.iframeSize || req.strData.sizes.length) {
-      size = req.strData.iframeSize
-        ? req.strData.iframeSize
-        : getLargestSize(req.strData.sizes);
-    }
+    const fledgeAuctionEnabled = body.ext?.auctionConfigs;
 
-    return [{
-      requestId: req.data.bidId,
-      width: size[0],
-      height: size[1],
-      cpm: creative.cpm,
-      creativeId: creative.creative.creative_key,
-      dealId: creative.creative.deal_id,
-      currency: 'USD',
-      netRevenue: true,
-      ttl: 360,
-      meta: { advertiserDomains: creative.creative && creative.creative.adomain ? creative.creative.adomain : [] },
-      ad: generateAd(body, req)
-    }];
+    const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
+      // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
+      const response = {
+        requestId: bid.impid,
+        width: +bid.w,
+        height: +bid.h,
+        cpm: +bid.price,
+        creativeId: bid.crid,
+        dealId: bid.dealid || null,
+        mediaType: req.data.imp[0].video ? VIDEO : BANNER,
+        currency: body.cur || 'USD',
+        netRevenue: true,
+        ttl: 360,
+        ad: bid.adm,
+        nurl: bid.nurl,
+        meta: {
+          advertiserDomains: bid.adomain || [],
+          networkId: bid.ext?.networkId || null,
+          networkName: bid.ext?.networkName || null,
+          agencyId: bid.ext?.agencyId || null,
+          agencyName: bid.ext?.agencyName || null,
+          advertiserId: bid.ext?.advertiserId || null,
+          advertiserName: bid.ext?.advertiserName || null,
+          brandId: bid.ext?.brandId || null,
+          brandName: bid.ext?.brandName || null,
+          demandSource: bid.ext?.demandSource || null,
+          dchain: bid.ext?.dchain || null,
+          primaryCatId: bid.ext?.primaryCatId || null,
+          secondaryCatIds: bid.ext?.secondaryCatIds || null,
+          mediaType: bid.ext?.mediaType || null,
+        },
+      };
+
+      if (response.mediaType === VIDEO) {
+        response.ttl = 3600;
+        response.vastXml = bid.adm;
+      }
+
+      return response;
+    });
+
+    if (fledgeAuctionEnabled) {
+      return {
+        bids: bidsFromExchange,
+        paapi: body.ext?.auctionConfigs || {},
+      };
+    } else {
+      return bidsFromExchange;
+    }
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const syncParams = uspConsent ? `&us_privacy=${uspConsent}` : '';
-    const syncs = [];
-    const shouldCookieSync = syncOptions.pixelEnabled &&
-      serverResponses.length > 0 &&
-      serverResponses[0].body &&
-      serverResponses[0].body.cookieSyncUrls;
+  getUserSyncs: (syncOptions, serverResponses) => {
+    const shouldCookieSync =
+      syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    if (shouldCookieSync) {
-      serverResponses[0].body.cookieSyncUrls.forEach(url => {
-        syncs.push({ type: 'image', url: url + syncParams });
-      });
-    }
-
-    return syncs;
+    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
   },
 
   // Empty implementation for prebid core to be able to find it
@@ -139,172 +274,31 @@ export const sharethroughAdapterSpec = {
   onBidWon: (bid) => {},
 
   // Empty implementation for prebid core to be able to find it
-  onSetTargeting: (bid) => {}
+  onSetTargeting: (bid) => {},
 };
 
-function handleUniversalIds(bidRequest) {
-  if (!bidRequest.userId) return {};
-
-  const universalIds = {};
-
-  const ttd = utils.deepAccess(bidRequest, 'userId.tdid');
-  if (ttd) universalIds.ttduid = ttd;
-
-  const pubc = utils.deepAccess(bidRequest, 'userId.pubcid') || utils.deepAccess(bidRequest, 'crumbs.pubcid');
-  if (pubc) universalIds.pubcid = pubc;
-
-  const idl = utils.deepAccess(bidRequest, 'userId.idl_env');
-  if (idl) universalIds.idluid = idl;
-
-  const id5 = utils.deepAccess(bidRequest, 'userId.id5id.uid');
-  if (id5) {
-    universalIds.id5uid = { id: id5 };
-    const id5link = utils.deepAccess(bidRequest, 'userId.id5id.ext.linkType');
-    if (id5link) universalIds.id5uid.linkType = id5link;
-  }
-
-  const lipb = utils.deepAccess(bidRequest, 'userId.lipb.lipbid');
-  if (lipb) universalIds.liuid = lipb;
-
-  const shd = utils.deepAccess(bidRequest, 'userId.sharedid');
-  if (shd) universalIds.shduid = shd; // object with keys: id & third
-
-  return universalIds;
-}
-
-function getLargestSize(sizes) {
-  function area(size) {
-    return size[0] * size[1];
-  }
-
-  return sizes.reduce((prev, current) => {
-    if (area(current) > area(prev)) {
-      return current
-    } else {
-      return prev
-    }
-  });
-}
-
-function generateAd(body, req) {
-  const strRespId = `str_response_${req.data.bidId}`;
-
-  let adMarkup = `
-    <div data-str-native-key="${req.data.placement_key}" data-stx-response-name="${strRespId}">
-    </div>
-    <script>var ${strRespId} = "${b64EncodeUnicode(JSON.stringify(body))}"</script>
-  `;
-
-  if (req.strData.skipIframeBusting) {
-    // Don't break out of iframe
-    adMarkup = adMarkup + `<script src="https://native.sharethrough.com/assets/sfp.js"></script>`;
-  } else {
-    // Add logic to the markup that detects whether or not in top level document is accessible
-    // this logic will deploy sfp.js and/or iframe buster script(s) as appropriate
-    adMarkup = adMarkup + `
-      <script>
-        (${sharethroughInternal.isLockedInFrame.toString()})()
-      </script>
-      <script>
-        (${sharethroughInternal.handleIframe.toString()})()
-      </script>`;
-  }
-
-  return adMarkup;
-}
-
-function handleIframe () {
-  // only load iframe buster JS if we can access the top level document
-  // if we are 'locked in' to this frame then no point trying to bust out: we may as well render in the frame instead
-  var iframeBusterLoaded = false;
-  if (!window.lockedInFrame) {
-    var sfpIframeBusterJs = document.createElement('script');
-    sfpIframeBusterJs.src = 'https://native.sharethrough.com/assets/sfp-set-targeting.js';
-    sfpIframeBusterJs.type = 'text/javascript';
-    try {
-      window.document.getElementsByTagName('body')[0].appendChild(sfpIframeBusterJs);
-      iframeBusterLoaded = true;
-    } catch (e) {
-      utils.logError('Trouble writing frame buster script, error details:', e);
+function getBidRequestFloor(bid) {
+  let floor = null;
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner',
+      size: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
+    });
+    if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = parseFloat(floorInfo.floor);
     }
   }
-
-  var clientJsLoaded = (!iframeBusterLoaded) ? !!(window.STR && window.STR.Tag) : !!(window.top.STR && window.top.STR.Tag);
-  if (!clientJsLoaded) {
-    var sfpJs = document.createElement('script');
-    sfpJs.src = 'https://native.sharethrough.com/assets/sfp.js';
-    sfpJs.type = 'text/javascript';
-
-    // only add sfp js to window.top if iframe busting successfully loaded; otherwise, add to iframe
-    try {
-      if (iframeBusterLoaded) {
-        window.top.document.getElementsByTagName('body')[0].appendChild(sfpJs);
-      } else {
-        window.document.getElementsByTagName('body')[0].appendChild(sfpJs);
-      }
-    } catch (e) {
-      utils.logError('Trouble writing sfp script, error details:', e);
-    }
-  }
-}
-
-// determines if we are capable of busting out of the iframe we are in
-// if we catch a DOMException when trying to access top-level document, it means we're stuck in the frame we're in
-function isLockedInFrame () {
-  window.lockedInFrame = false;
-  try {
-    window.lockedInFrame = !window.top.document;
-  } catch (e) {
-    window.lockedInFrame = (e instanceof DOMException);
-  }
-}
-
-// See https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#The_Unicode_Problem
-function b64EncodeUnicode(str) {
-  return btoa(
-    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-      function toSolidBytes(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      }));
-}
-
-function canAutoPlayHTML5Video() {
-  const userAgent = navigator.userAgent;
-  if (!userAgent) return false;
-
-  const isAndroid = /Android/i.test(userAgent);
-  const isiOS = /iPhone|iPad|iPod/i.test(userAgent);
-  const chromeVersion = parseInt((/Chrome\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
-  const chromeiOSVersion = parseInt((/CriOS\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
-  const safariVersion = parseInt((/Version\/([0-9]+)/.exec(userAgent) || [0, 0])[1]);
-
-  if (
-    (isAndroid && chromeVersion >= 53) ||
-    (isiOS && (safariVersion >= 10 || chromeiOSVersion >= 53)) ||
-    !(isAndroid || isiOS)
-  ) {
-    return true;
-  } else {
-    return false;
-  }
+  return floor !== null ? floor : bid.params.floor;
 }
 
 function getProtocol() {
-  return document.location.protocol;
+  return window.location.protocol;
 }
 
-function getFloor(bid) {
-  if (utils.isFn(bid.getFloor)) {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
-      mediaType: 'banner',
-      size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
-    });
-    if (utils.isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === 'USD') {
-      return parseFloat(floorInfo.floor);
-    }
-  }
-  return null;
+// stub for ?? operator
+function nullish(input, def) {
+  return input === null || input === undefined ? def : input;
 }
 
 registerBidder(sharethroughAdapterSpec);

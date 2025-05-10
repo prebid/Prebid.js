@@ -1,18 +1,39 @@
-import { expect } from 'chai';
-import { ImproveDigitalAdServerJSClient, spec } from 'modules/improvedigitalBidAdapter.js';
-import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
+import {expect} from 'chai';
+import {CONVERTER, spec} from 'modules/improvedigitalBidAdapter.js';
+import {config} from 'src/config.js';
+import {deepClone} from 'src/utils.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
+import {deepSetValue} from '../../../src/utils';
+// load modules that register ORTB processors
+import 'src/prebid.js';
+import 'modules/currency.js';
+import 'modules/userId/index.js';
+import 'modules/multibid/index.js';
+import 'modules/priceFloors.js';
+import 'modules/consentManagementTcf.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/schain.js';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
+import {hook} from '../../../src/hook.js';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
 
 describe('Improve Digital Adapter Tests', function () {
-  const idClient = new ImproveDigitalAdServerJSClient('hb');
-
-  const METHOD = 'GET';
-  const URL = 'https://ice.360yield.com/hb';
-  const PARAM_PREFIX = 'jsonp=';
+  const METHOD = 'POST';
+  const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
+  const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
+  const PB_ENDPOINT = 'pb'; []
+  const AD_SERVER_URL = `${AD_SERVER_BASE_URL}/${PB_ENDPOINT}`;
+  const BASIC_ADS_URL = `${BASIC_ADS_BASE_URL}/${PB_ENDPOINT}`;
+  const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
+  const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
+  const INSTREAM_TYPE = 1;
+  const OUTSTREAM_TYPE = 3;
 
   const simpleBidRequest = {
     bidder: 'improvedigital',
     params: {
+      publisherId: 1234,
       placementId: 1053688
     },
     adUnitCode: 'div-gpt-ad-1499748733608-0',
@@ -22,11 +43,14 @@ describe('Improve Digital Adapter Tests', function () {
     auctionId: '192721e36a0239',
     mediaTypes: {
       banner: {
-        sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
+        sizes: [[300, 250], [160, 600]]
       }
     },
-    sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
+    sizes: [[300, 250], [160, 600]]
   };
+
+  const extendBidRequest = deepClone(simpleBidRequest);
+  extendBidRequest.params.extend = true;
 
   const videoParams = {
     skip: 1,
@@ -34,15 +58,26 @@ describe('Improve Digital Adapter Tests', function () {
     skipafter: 30
   }
 
-  const instreamBidRequest = utils.deepClone(simpleBidRequest);
-  instreamBidRequest.mediaTypes = {
-    video: {
-      context: 'instream',
-      playerSize: [640, 480]
+  const instreamBidRequest = {
+    bidder: 'improvedigital',
+    params: {
+      publisherId: 1234,
+      placementId: 123456
+    },
+    adUnitCode: 'video1',
+    transactionId: 'vf183e871-fbed-45f0-a427-c8a63c4c01eb',
+    bidId: '33e9500b21129f',
+    bidderRequestId: 'v2772c1e566670b',
+    auctionId: 'v192721e36a0239',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480]
+      }
     }
   };
 
-  const outstreamBidRequest = utils.deepClone(simpleBidRequest);
+  const outstreamBidRequest = deepClone(instreamBidRequest);
   outstreamBidRequest.mediaTypes = {
     video: {
       context: 'outstream',
@@ -50,58 +85,94 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const multiFormatBidRequest = utils.deepClone(simpleBidRequest);
+  const nativeBidRequest = deepClone(simpleBidRequest);
+  nativeBidRequest.mediaTypes = { native: {} };
+  nativeBidRequest.nativeParams = {
+    title: {required: true},
+    body: {required: true}
+  };
+
+  const multiFormatBidRequest = deepClone(simpleBidRequest);
   multiFormatBidRequest.mediaTypes = {
     banner: {
-      sizes: [[300, 250], [160, 600], ['blah', 150], [-1, 300], [300, -5]]
+      sizes: [[300, 250], [160, 600]]
     },
+    native: {},
     video: {
       context: 'outstream',
       playerSize: [640, 480]
     }
   };
 
-  const simpleSmartTagBidRequest = {
-    bidder: 'improvedigital',
-    bidId: '1a2b3c',
-    placementCode: 'placement1',
-    params: {
-      publisherId: 1032,
-      placementKey: 'data_team_test_hb_smoke_test'
+  multiFormatBidRequest.nativeParams = {
+    body: {
+      required: true
     }
   };
 
   const bidderRequest = {
-    bids: [simpleBidRequest]
+    ortb2: {
+      source: {
+        tid: 'mock-tid'
+      }
+    },
+    bids: [simpleBidRequest],
+  };
+
+  const extendBidderRequest = {
+    bids: [extendBidRequest],
   };
 
   const instreamBidderRequest = {
-    bids: [instreamBidRequest]
+    bids: [instreamBidRequest],
   };
 
   const outstreamBidderRequest = {
-    bids: [outstreamBidRequest]
+    bids: [outstreamBidRequest],
   };
 
   const multiFormatBidderRequest = {
-    bids: [multiFormatBidRequest]
+    bids: [multiFormatBidRequest],
+  };
+
+  const nativeBidderRequest = {
+    bids: [nativeBidRequest],
+  };
+
+  const gdprConsent = {
+    apiVersion: 2,
+    consentString: 'CONSENT',
+    vendorData: { purpose: { consents: { 1: true } } },
+    gdprApplies: true,
+    addtlConsent: '1~1.35.41.101',
   };
 
   const bidderRequestGdpr = {
     bids: [simpleBidRequest],
-    gdprConsent: {
-      consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-      vendorData: {},
-      gdprApplies: true
-    },
+    gdprConsent
   };
 
   const bidderRequestReferrer = {
     bids: [simpleBidRequest],
     refererInfo: {
-      referer: 'https://blah.com/test.html',
+      page: 'https://blah.com/test.html',
+      domain: 'blah.com'
     },
   };
+
+  function updateNativeParams(bidRequests) {
+    bidRequests = deepClone(bidRequests);
+    decorateAdUnitsWithNativeParams(bidRequests);
+    return bidRequests;
+  }
+
+  function formatPublisherUrl(baseUrl, publisherId) {
+    return `${baseUrl}/${publisherId}/${PB_ENDPOINT}`;
+  }
+
+  before(() => {
+    hook.ready();
+  });
 
   describe('isBidRequestValid', function () {
     it('should return false when no bid', function () {
@@ -113,12 +184,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false when both placementId and placementKey + publisherId are missing', function () {
-      const bid = { 'params': {} };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
-    it('should return false when only one of placementKey and publisherId is present', function () {
+    it('should return false when only one of placementId or publisherId is present', function () {
       let bid = {
         params: {
           publisherId: 1234
@@ -127,84 +193,145 @@ describe('Improve Digital Adapter Tests', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
       bid = {
         params: {
-          placementKey: 'xyz'
+          placementId: 1234
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return true when placementId is passed', function () {
+    it('should return true when both placementId and publisherId are passed', function () {
       expect(spec.isBidRequestValid(simpleBidRequest)).to.equal(true);
-    });
-
-    it('should return true when both placementKey and publisherId are passed', function () {
-      expect(spec.isBidRequestValid(simpleSmartTagBidRequest)).to.equal(true);
     });
   });
 
   describe('buildRequests', function () {
-    it('should make a well-formed request objects', function () {
-      const requests = spec.buildRequests([simpleBidRequest], bidderRequest);
-      expect(requests).to.be.an('array');
-      expect(requests.length).to.equal(1);
+    let getConfigStub = null;
+    let getGlobalStub = null;
 
-      const request = requests[0];
+    afterEach(function () {
+      if (getConfigStub) {
+        getConfigStub.restore();
+        getConfigStub = null;
+      }
+
+      if (getGlobalStub) {
+        getGlobalStub.restore();
+        getGlobalStub = null;
+      }
+    });
+
+    it('should make a well-formed request objects', async function () {
+      const request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest(bidderRequest))[0];
+      expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
-      expect(request.url).to.equal(URL);
-      expect(request.bidderRequest).to.deep.equal(bidderRequest);
-      expect(request.data.substring(0, PARAM_PREFIX.length)).to.equal(PARAM_PREFIX);
+      expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request).to.be.an('object');
-      expect(params.bid_request.id).to.be.a('string');
-      expect(params.bid_request.version).to.equal(`${spec.version}-${idClient.CONSTANTS.CLIENT_VERSION}`);
-      expect(params.bid_request.gdpr).to.not.exist;
-      expect(params.bid_request.us_privacy).to.not.exist;
-      expect(params.bid_request.schain).to.not.exist;
-      expect(params.bid_request.user).to.not.exist;
-      expect(params.bid_request.imp).to.deep.equal([
-        {
+      const payload = JSON.parse(request.data);
+      expect(payload).to.be.an('object');
+      expect(payload.id).to.be.a('string');
+      expect(payload.tmax).not.to.exist;
+      expect(payload.regs).to.not.exist;
+      expect(payload.schain).to.not.exist;
+      sinon.assert.match(payload.source, {tid: 'mock-tid'})
+      expect(payload.device).to.be.an('object');
+      expect(payload.user).to.not.exist;
+      sinon.assert.match(payload.imp, [
+        sinon.match({
           id: '33e9500b21129f',
-          pid: 1053688,
-          tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb',
-          banner: {}
-        }
+          secure: 1,
+          ext: {
+            bidder: {
+              placementId: 1053688,
+            }
+          },
+          banner: {
+            format: [
+              {w: 300, h: 250},
+              {w: 160, h: 600},
+            ]
+          }
+        })
       ]);
     });
 
     it('should make a well-formed request object for multi-format ad unit', function () {
-      const requests = spec.buildRequests([multiFormatBidRequest], multiFormatBidderRequest);
-      expect(requests).to.be.an('array');
-      expect(requests.length).to.equal(1);
-
-      const request = requests[0];
+      const request = spec.buildRequests(updateNativeParams([multiFormatBidRequest]), multiFormatBidderRequest)[0];
+      expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
-      expect(request.url).to.equal(URL);
-      expect(request.bidderRequest).to.deep.equal(multiFormatBidderRequest);
-      expect(request.data.substring(0, PARAM_PREFIX.length)).to.equal(PARAM_PREFIX);
+      expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request).to.be.an('object');
-      expect(params.bid_request.id).to.be.a('string');
-      expect(params.bid_request.version).to.equal(`${spec.version}-${idClient.CONSTANTS.CLIENT_VERSION}`);
-      expect(params.bid_request.gdpr).to.not.exist;
-      expect(params.bid_request.us_privacy).to.not.exist;
-      expect(params.bid_request.imp).to.deep.equal([
-        {
+      const payload = JSON.parse(request.data);
+      expect(payload).to.be.an('object');
+      sinon.assert.match(payload.imp, [
+        sinon.match({
           id: '33e9500b21129f',
-          pid: 1053688,
-          tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb',
-          banner: {}
-        }
+          secure: 1,
+          ext: {
+            bidder: {
+              placementId: 1053688,
+            }
+          },
+          ...(FEATURES.VIDEO && {
+            video: {
+              w: 640,
+              h: 480,
+              mimes: ['video/mp4'],
+            }
+          }),
+          banner: {
+            format: [
+              {w: 300, h: 250},
+              {w: 160, h: 600},
+            ]
+          }
+        })
       ]);
+      if (FEATURES.NATIVE) {
+        sinon.assert.match(payload.imp[0], {
+          native: {
+            ver: '1.2'
+          },
+        })
+        const nativeReq = JSON.parse(payload.imp[0].native.request);
+        sinon.assert.match(nativeReq, {
+          eventtrackers: [
+            {event: 1, methods: [1, 2]},
+          ],
+          'assets': [
+            sinon.match({'required': 1, 'data': {'type': 2}})
+          ]
+        });
+      }
     });
 
-    it('should set placementKey and publisherId for smart tags', function () {
-      const requests = spec.buildRequests([simpleSmartTagBidRequest], bidderRequest);
-      const params = JSON.parse(decodeURIComponent(requests[0].data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].pubid).to.equal(1032);
-      expect(params.bid_request.imp[0].pkey).to.equal('data_team_test_hb_smoke_test');
-    });
+    if (FEATURES.NATIVE) {
+      it('should make a well-formed native request', function () {
+        const payload = JSON.parse(spec.buildRequests(updateNativeParams([nativeBidRequest]), {})[0].data);
+        const nativeReq = JSON.parse(payload.imp[0].native.request);
+        sinon.assert.match(nativeReq, {
+          eventtrackers: [
+            {event: 1, methods: [1, 2]},
+          ],
+          assets: [
+            sinon.match({required: 1, title: {len: 140}}),
+            sinon.match({required: 1, data: {type: 2}})
+          ]
+        })
+      });
+
+      it('should not make native request when nativeOrtbRequest is undefined', function () {
+        const requests = updateNativeParams([nativeBidRequest]);
+        delete requests[0].nativeOrtbRequest;
+        const payload = JSON.parse(spec.buildRequests(requests, {})[0].data);
+        expect(payload.imp[0].native).to.not.exist;
+      });
+
+      it('should not make native request when no assets', function () {
+        const requests = updateNativeParams([{...nativeBidRequest, nativeParams: {}}])
+        const payload = JSON.parse(spec.buildRequests(requests, {})[0].data);
+        expect(payload.imp[0].native).to.not.exist;
+      });
+    }
 
     it('should add keyValues', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
@@ -214,227 +341,234 @@ describe('Improve Digital Adapter Tests', function () {
         ]
       };
       bidRequest.params.keyValues = keyValues;
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].kvw).to.deep.equal(keyValues);
-    });
-
-    it('should add single size filter', function () {
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      const size = {
-        w: 800,
-        h: 600
-      };
-      bidRequest.params.size = size;
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].banner).to.deep.equal(size);
-      // When single size filter is set, format shouldn't be populated. This
-      // is to maintain backward compatibily
-      expect(params.bid_request.imp[0].banner.format).to.not.exist;
+      const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].ext.bidder.keyValues).to.deep.equal(keyValues);
     });
 
     it('should add currency', function () {
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      const getConfigStub = sinon.stub(config, 'getConfig').returns('JPY');
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].currency).to.equal('JPY');
-      getConfigStub.restore();
+      config.setConfig({currency: {adServerCurrency: 'JPY'}});
+      try {
+        const bidRequest = Object.assign({}, simpleBidRequest);
+        const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.cur).to.deep.equal(['JPY']);
+      } finally {
+        config.resetConfig();
+      }
     });
 
-    it('should add bid floor', function () {
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      let request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
+    it('should add bid floor correctly', function () {
+      getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
+        convertCurrency: (cpm, from, to) => {
+          const conversionKeys = { 'EUR-USD': 1.75 };
+          const conversionRate = conversionKeys[`${from}-${to}`];
+          if (!conversionRate) {
+            throw new Error(`No conversion rate found for ${from}-${to}`);
+          }
+          return cpm * conversionRate;
+        }
+      });
+      const bidRequest = deepClone(simpleBidRequest);
+
       // Floor price currency shouldn't be populated without a floor price
-      expect(params.bid_request.imp[0].bidfloorcur).to.not.exist;
+      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].bidfloorcur).to.not.exist;
 
       // Default floor price currency
       bidRequest.params.bidFloor = 0.05;
-      request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].bidfloor).to.equal(0.05);
-      expect(params.bid_request.imp[0].bidfloorcur).to.equal('USD');
+      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
 
-      // Floor price currency
+      // Floor price sent as is when currency cannot be converted to default bid adapter currency
+      bidRequest.params.bidFloorCur = 'UAH';
+      bidRequest.params.bidFloor = 0.05;
+      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.05);
+      expect(payload.imp[0].bidfloorcur).to.equal('UAH');
+
+      // Floor price currency converted to default bid adapter currency
       bidRequest.params.bidFloorCur = 'eUR';
-      request = spec.buildRequests([bidRequest])[0];
-      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].bidfloor).to.equal(0.05);
-      expect(params.bid_request.imp[0].bidfloorcur).to.equal('EUR');
+      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(0.08750000000000001);
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
+
+      // getFloor defined -> use it over bidFloor
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      bidRequest.getFloor = () => getFloorResponse;
+      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+      expect(payload.imp[0].bidfloor).to.equal(3);
+      expect(payload.imp[0].bidfloorcur).to.equal('USD');
     });
 
-    it('should add GDPR consent string', function () {
+    it('should add GDPR consent string', async function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], bidderRequestGdpr)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.gdpr).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+      const payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
+      expect(payload.user.ext.consent).to.equal('CONSENT');
+      expect(payload.user.ext.ConsentedProvidersSettings.consented_providers).to.exist.and.to.deep.equal('1~1.35.41.101');
     });
 
-    it('should add CCPA consent string', function () {
+    it('should not add consented providers when empty', async function () {
+      const bidderRequestGdprEmptyAddtl = deepClone(bidderRequestGdpr);
+      bidderRequestGdprEmptyAddtl.gdprConsent.addtlConsent = '1~';
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], { uspConsent: '1YYY' })[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.us_privacy).to.equal('1YYY');
+      const payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdprEmptyAddtl))[0].data);
+      expect(payload.user.ext.consented_providers_settings).to.not.exist;
     });
 
-    it('should add referrer', function () {
+    it('should add ConsentedProvidersSettings when extend mode enabled', async function () {
+      const bidRequest = deepClone(extendBidRequest);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
+      expect(payload.user.ext.consent).to.equal('CONSENT');
+      expect(payload.user.ext.ConsentedProvidersSettings.consented_providers).to.exist.and.to.equal('1~1.35.41.101');
+      expect(payload.user.ext.consented_providers_settings).to.not.exist;
+    });
+
+    it('should add CCPA consent string', async function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.referrer).to.equal('https://blah.com/test.html');
+      const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}));
+      const payload = JSON.parse(request[0].data);
+      expect(payload.regs.ext.us_privacy).to.equal('1YYY');
+    });
+
+    it('should add COPPA flag', async function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('coppa').returns(true);
+      let bidRequest = Object.assign({}, simpleBidRequest);
+      let payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      expect(payload.regs.coppa).to.equal(1);
+      getConfigStub.withArgs('coppa').returns(false);
+      bidRequest = Object.assign({}, simpleBidRequest);
+      payload = JSON.parse(spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestGdpr))[0].data);
+      expect(payload.regs.coppa).to.equal(0);
+    });
+
+    it('should add referrer', async function () {
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest(bidderRequestReferrer))[0];
+      const payload = JSON.parse(request.data);
+      expect(payload.site.page).to.equal('https://blah.com/test.html');
+    });
+
+    it('should add timeout', function () {
+      const bidderRequestTimeout = deepClone(bidderRequest);
+      // Int
+      bidderRequestTimeout.timeout = 300;
+      const bidRequest = Object.assign({}, simpleBidRequest);
+      let request = spec.buildRequests([bidRequest], bidderRequestTimeout)[0];
+      expect(JSON.parse(request.data).tmax).to.equal(300);
+
+      // String
+      bidderRequestTimeout.timeout = '500';
+      request = spec.buildRequests([bidRequest], bidderRequestTimeout)[0];
+      expect(JSON.parse(request.data).tmax).to.equal(500);
     });
 
     it('should not add video params for banner', function () {
-      const bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
+      const bidRequest = deepClone(simpleBidRequest);
       bidRequest.params.video = videoParams;
       const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.not.exist;
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].video).to.not.exist;
     });
 
-    it('should add ad type for instream video', function () {
-      let bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
-      bidRequest.mediaType = 'video';
-      let request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
-      expect(params.bid_request.imp[0].video).to.not.exist;
+    if (FEATURES.VIDEO) {
+      it('should set video params for instream', function() {
+        const bidRequest = deepClone(instreamBidRequest);
+        delete bidRequest.mediaTypes.video.playerSize;
+        const videoParams = {
+          mimes: ['video/mp4'],
+          skip: 1,
+          skipmin: 5,
+          skipafter: 30,
+          minduration: 15,
+          maxduration: 60,
+          startdelay: 5,
+          minbitrate: 500,
+          maxbitrate: 2000,
+          w: 1024,
+          h: 640
+        };
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video).to.deep.include(videoParams);
+      });
 
-      bidRequest = JSON.parse(JSON.stringify(simpleBidRequest));
-      bidRequest.mediaTypes = {
-        video: {
-          context: 'instream',
-          playerSize: [640, 480]
+      it('should set video playerSize over video params', () => {
+        const bidRequest = deepClone(instreamBidRequest);
+        bidRequest.params.video = {
+          w: 1024, h: 640
         }
-      };
-      request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].ad_types).to.deep.equal(['video']);
-      expect(params.bid_request.imp[0].video).to.not.exist;
-    });
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video.h).equal(480);
+        expect(payload.imp[0].video.w).equal(640);
+      });
 
-    it('should not set ad type for outstream video', function() {
-      const request = spec.buildRequests([outstreamBidRequest])[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].ad_types).to.not.exist;
-      expect(params.bid_request.imp[0].video).to.not.exist;
-    });
+      it('should ignore invalid/unexpected video params', function() {
+        const bidRequest = deepClone(instreamBidRequest);
+        // 1
+        const videoTest = {
+          skip: 1,
+          skipmin: 5,
+          skipafter: 30
+        }
+        const videoTestInvParam = Object.assign({}, videoTest);
+        videoTestInvParam.blah = 1;
+        bidRequest.params.video = videoTestInvParam;
+        let request = spec.buildRequests([bidRequest], {})[0];
+        let payload = JSON.parse(request.data);
+        expect(payload.imp[0].video.blah).not.to.exist;
+      });
 
-    it('should not set ad type for multi-format bids', function() {
-      const request = spec.buildRequests([multiFormatBidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].ad_types).to.not.exist;
-      expect(params.bid_request.imp[0].video).to.not.exist;
-    });
-
-    it('should set video params for instream', function() {
-      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest])[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
-    });
-
-    it('should set skip params only if skip=1', function() {
-      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
-      // 1
-      const videoTest = {
-        skip: 1,
-        skipmin: 5,
-        skipafter: 30
-      }
-      bidRequest.params.video = videoTest;
-      let request = spec.buildRequests([bidRequest])[0];
-      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.deep.equal(videoTest);
-
-      // 0 - leave out skipmin and skipafter
-      videoTest.skip = 0;
-      bidRequest.params.video = videoTest;
-      request = spec.buildRequests([bidRequest])[0];
-      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.deep.equal({ skip: 0 });
-
-      // other
-      videoTest.skip = 'blah';
-      bidRequest.params.video = videoTest;
-      request = spec.buildRequests([bidRequest])[0];
-      params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.not.exist;
-    });
-
-    it('should ignore invalid/unexpected video params', function() {
-      const bidRequest = JSON.parse(JSON.stringify(instreamBidRequest));
-      // 1
-      const videoTest = {
-        skip: 1,
-        skipmin: 5,
-        skipafter: 30
-      }
-      const videoTestInvParam = Object.assign({}, videoTest);
-      videoTestInvParam.blah = 1;
-      bidRequest.params.video = videoTestInvParam;
-      let request = spec.buildRequests([bidRequest])[0];
-      let params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.deep.equal(videoTest);
-    });
-
-    it('should set video params for outstream', function() {
-      const bidRequest = JSON.parse(JSON.stringify(outstreamBidRequest));
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest])[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
-    });
-
-    it('should set video params for multi-format', function() {
-      const bidRequest = JSON.parse(JSON.stringify(multiFormatBidRequest));
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest])[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].video).to.deep.equal(videoParams);
-    });
-
-    it('should not set Prebid sizes in bid request for instream video', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
-      const request = spec.buildRequests([instreamBidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].banner.format).to.not.exist;
-      getConfigStub.restore();
-    });
-
-    it('should not set Prebid sizes in bid request for outstream video', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
-      const request = spec.buildRequests([outstreamBidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].banner.format).to.not.exist;
-      getConfigStub.restore();
-    });
-
-    it('should not set Prebid sizes in multi-format bid request', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
-      const request = spec.buildRequests([multiFormatBidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].banner.format).to.not.exist;
-      getConfigStub.restore();
-    });
+      it('should set video params for outstream', function() {
+        const bidRequest = deepClone(outstreamBidRequest);
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video).to.deep.equal({...{
+          mimes: ['video/mp4'],
+          w: bidRequest.mediaTypes.video.playerSize[0],
+          h: bidRequest.mediaTypes.video.playerSize[1],
+        },
+        ...videoParams});
+      });
+      //
+      it('should set video params for multi-format', function() {
+        const bidRequest = deepClone(multiFormatBidRequest);
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
+        const testVideoParams = Object.assign({
+          w: 640,
+          h: 480,
+          mimes: ['video/mp4'],
+        }, videoParams);
+        expect(payload.imp[0].video).to.deep.equal(testVideoParams);
+      });
+    }
 
     it('should add schain', function () {
       const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
       const bidRequest = Object.assign({}, simpleBidRequest);
       bidRequest.schain = schain;
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.schain).to.equal(schain);
+      const payload = JSON.parse(request.data);
+      expect(payload.source.ext.schain).to.equal(schain);
     });
 
     it('should add eids', function () {
-      const userId = { id5id:	{ uid: '1111' } };
+      const eids = [
+        {
+          source: 'id5-sync.com',
+          uids: [{
+            atype: 1,
+            id: '1111'
+          }]
+        }
+      ];
       const expectedUserObject = { ext: { eids: [{
         source: 'id5-sync.com',
         uids: [{
@@ -442,53 +576,62 @@ describe('Improve Digital Adapter Tests', function () {
           id: '1111'
         }]
       }]}};
-      const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.userId = userId;
-      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.user).to.deep.equal(expectedUserObject);
+      const request = spec.buildRequests([simpleBidRequest], {
+        ...bidderRequestReferrer,
+        ortb2: {user: {ext: {eids: eids}}}
+      })[0];
+      const payload = JSON.parse(request.data);
+      expect(payload.user).to.deep.equal(expectedUserObject);
     });
 
     it('should return 2 requests', function () {
       const requests = spec.buildRequests([
         simpleBidRequest,
-        simpleSmartTagBidRequest
+        instreamBidRequest
       ], bidderRequest);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(2);
-      expect(requests[0].bidderRequest).to.deep.equal(bidderRequest);
-      expect(requests[1].bidderRequest).to.deep.equal(bidderRequest);
     });
 
     it('should return one request in a single request mode', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
-      const requests = spec.buildRequests([
-        simpleBidRequest,
-        simpleSmartTagBidRequest
-      ], bidderRequest);
+      const requests = spec.buildRequests([ simpleBidRequest, instreamBidRequest ], bidderRequest);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(1);
-      getConfigStub.restore();
+      expect(requests[0].url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
+      const request = JSON.parse(requests[0].data);
+      expect(request.imp.length).to.equal(2);
+      expect(request.imp[0].banner).to.exist;
+      if (FEATURES.VIDEO) { expect(request.imp[1].video).to.exist; }
+    });
+
+    it('should create one request per endpoint in a single request mode', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
+      const requests = spec.buildRequests([ extendBidRequest, simpleBidRequest, instreamBidRequest ], bidderRequest);
+      expect(requests).to.be.an('array');
+      expect(requests.length).to.equal(2);
+      expect(requests[0].url).to.equal(EXTEND_URL);
+      expect(requests[1].url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
+      const adServerRequest = JSON.parse(requests[1].data);
+      expect(adServerRequest.imp.length).to.equal(2);
+      expect(adServerRequest.imp[0].banner).to.exist;
+      if (FEATURES.VIDEO) { expect(adServerRequest.imp[1].video).to.exist; }
     });
 
     it('should set Prebid sizes in bid request', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
       const request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].banner).to.deep.equal({
+      const payload = JSON.parse(request.data);
+      sinon.assert.match(payload.imp[0].banner, {
         format: [
           { w: 300, h: 250 },
           { w: 160, h: 600 }
         ]
       });
-      getConfigStub.restore();
     });
 
     it('should not add single size filter when using Prebid sizes', function () {
-      const getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
       const bidRequest = Object.assign({}, simpleBidRequest);
       const size = {
         w: 800,
@@ -496,521 +639,724 @@ describe('Improve Digital Adapter Tests', function () {
       };
       bidRequest.params.size = size;
       const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const params = JSON.parse(decodeURIComponent(request.data.substring(PARAM_PREFIX.length)));
-      expect(params.bid_request.imp[0].banner).to.deep.equal({
+      const payload = JSON.parse(request.data);
+      sinon.assert.match(payload.imp[0].banner, {
         format: [
           { w: 300, h: 250 },
           { w: 160, h: 600 }
         ]
       });
-      getConfigStub.restore();
+    });
+
+    it('should not set site when app is defined in FPD', function () {
+      const ortb2 = {app: {content: 'XYZ'}};
+      let request = spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2})[0];
+      let payload = JSON.parse(request.data);
+      expect(payload.site).does.not.exist;
+      expect(payload.app).does.exist;
+      expect(payload.app.content).does.exist.and.equal('XYZ');
+    });
+
+    it('should set correct site params', async function () {
+      let request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest(bidderRequestReferrer))[0];
+      let payload = JSON.parse(request.data);
+      expect(payload.site.content).does.not.exist;
+      expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
+      expect(payload.site.domain).does.exist.and.equal('blah.com');
+
+      const ortb2 = {site: {content: 'ZZZ'}};
+      request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest({...bidderRequestReferrer, ortb2}))[0];
+      payload = JSON.parse(request.data);
+      expect(payload.site.content).does.exist.and.equal('ZZZ');
+      expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
+      expect(payload.site.domain).does.exist.and.equal('blah.com');
+    });
+
+    it('should call basic ads endpoint when no consent for purpose 1', function () {
+      const consent = deepClone(gdprConsent);
+      deepSetValue(consent, 'vendorData.purpose.consents.1', false);
+      const bidderRequestWithConsent = deepClone(bidderRequest);
+      bidderRequestWithConsent.gdprConsent = consent;
+      const request = spec.buildRequests([simpleBidRequest], bidderRequestWithConsent)[0];
+      expect(request.url).to.equal(formatPublisherUrl(BASIC_ADS_BASE_URL, 1234));
+    });
+
+    it('should set extend params when extend mode enabled from global configuration', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      const bannerRequest = deepClone(simpleBidRequest);
+      const keyValues = { testKey: [ 'testValue' ] };
+      bannerRequest.params.keyValues = keyValues;
+
+      getConfigStub.withArgs('improvedigital.extend').returns(true);
+      const requests = spec.buildRequests([bannerRequest, instreamBidRequest], bidderRequest);
+      expect(requests[0].method).to.equal(METHOD);
+      expect(requests[0].url).to.equal(EXTEND_URL);
+      expect(requests[1].url).to.equal(EXTEND_URL);
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.bidder).to.not.exist;
+      expect(payload.imp[0].ext.prebid.bidder.improvedigital).to.deep.equal({
+        placementId: 1053688,
+        publisherId: 1234,
+        keyValues
+      });
+      expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal('1053688');
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.bidder).to.not.exist;
+      expect(payload.imp[0].ext.prebid.bidder.improvedigital.placementId).to.equal(123456);
+      expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal('123456');
+    });
+
+    it('should add max_bids param in imp.ext objects when bidLimit is specified in the bidderRequest', function () {
+      const bidderRequestDeepClone = deepClone(bidderRequest);
+      bidderRequestDeepClone.bidLimit = 3;
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequestDeepClone);
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.equal(3);
+    });
+
+    it('should not add max_bids param in imp.ext objects when bidLimit is not specified in the bidderRequest', function () {
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
+      // banner
+      let payload = JSON.parse(requests[0].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+      // video
+      payload = JSON.parse(requests[1].data);
+      expect(payload.imp[0].ext.max_bids).to.not.exist;
+    });
+
+    it('should set extend url when extend mode enabled in adunit params', function () {
+      const bidRequest = deepClone(extendBidRequest);
+      let request = spec.buildRequests([bidRequest], { bids: [bidRequest] })[0];
+      expect(request.url).to.equal(EXTEND_URL);
+
+      getConfigStub = sinon.stub(config, 'getConfig');
+
+      // adunit param takes precedence over the global config
+      getConfigStub.withArgs('improvedigital.extend').returns(false);
+      request = spec.buildRequests([bidRequest], { bids: [bidRequest] })[0];
+      expect(request.url).to.equal(EXTEND_URL);
+
+      bidRequest.params.extend = false;
+      getConfigStub.withArgs('improvedigital.extend').returns(true);
+      request = spec.buildRequests([bidRequest], { bids: [bidRequest] })[0];
+      expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
+
+      const requests = spec.buildRequests([bidRequest, instreamBidRequest], { bids: [bidRequest, instreamBidRequest] });
+      expect(requests.length).to.equal(2);
+      expect(requests[0].url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
+      expect(requests[1].url).to.equal(EXTEND_URL);
+    });
+
+    it('should add publisherId to request URL when available in request params', function() {
+      const bidRequest = deepClone(simpleBidRequest);
+      bidRequest.params.publisherId = 1000;
+      let request = spec.buildRequests([bidRequest], bidderRequest)[0];
+      expect(request).to.be.an('object');
+      sinon.assert.match(request, {
+        method: METHOD,
+        url: formatPublisherUrl(AD_SERVER_BASE_URL, 1000),
+        bidderRequest
+      });
+
+      const bidRequest2 = deepClone(simpleBidRequest)
+      bidRequest2.params.publisherId = 1002;
+
+      const bidRequest3 = deepClone(extendBidRequest)
+      bidRequest3.params.publisherId = 1002;
+
+      const request1 = spec.buildRequests([bidRequest, bidRequest2], bidderRequest)[0];
+      expect(request1.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1000));
+      const request2 = spec.buildRequests([bidRequest, bidRequest2], bidderRequest)[1];
+      expect(request2.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1002));
+      const request3 = spec.buildRequests([bidRequest, bidRequest3], bidderRequest)[1];
+      expect(request3.url).to.equal(EXTEND_URL);
+
+      // Enable single request mode
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
+      try {
+        spec.buildRequests([bidRequest, bidRequest2], bidderRequest)[0];
+      } catch (e) {
+        expect(e.name).to.exist.equal('Error')
+        expect(e.message).to.exist.equal(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`)
+      }
+
+      bidRequest2.params.publisherId = null;
+      request = spec.buildRequests([bidRequest, bidRequest2], bidderRequest)[0];
+      expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1000));
+
+      const consent = deepClone(gdprConsent);
+      deepSetValue(consent, 'vendorData.purpose.consents.1', false);
+      const bidderRequestWithConsent = deepClone(bidderRequest);
+      bidderRequestWithConsent.gdprConsent = consent;
+      request = spec.buildRequests([bidRequest], bidderRequestWithConsent)[0];
+      expect(request.url).to.equal(formatPublisherUrl(BASIC_ADS_BASE_URL, 1000));
+
+      deepSetValue(consent, 'vendorData.purpose.consents.1', true);
+      bidderRequestWithConsent.gdprConsent = consent;
+      request = spec.buildRequests([bidRequest], bidderRequestWithConsent)[0];
+      expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1000));
     });
   });
 
   const serverResponse = {
     'body': {
-      'id': '687a06c541d8d1',
-      'site_id': 191642,
-      'bid': [
+      'id': '99f9a9e6-5126-425b-822c-8b4edad2a719',
+      'cur': 'EUR',
+      'seatbid': [
         {
-          'isNet': false,
-          'id': '33e9500b21129f',
-          'advid': '5279',
-          'price': 1.45888594164456,
-          'nurl': 'https://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
-          'h': 290,
-          'pid': 1053688,
-          'sync': [
-            'https://link1',
-            'https://link2'
+          'bid': [
+            {
+              'ext': {
+                'improvedigital': {
+                  'line_item_id': 320896,
+                  'bidder_id': 0,
+                  'brand_name': '',
+                  'buying_type': 'classic',
+                  'agency_id': '0'
+                }
+              },
+              'crid': '510265',
+              'price': 1.9200543539802946,
+              'id': '35adfe19-d6e9-46b9-9f7d-20da7026b965',
+              'w': 728,
+              'impid': '33e9500b21129f',
+              'h': 90,
+              'adm': '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+              'cid': '123159'
+            }
           ],
-          'crid': '422031',
-          'w': 600,
-          'cid': '99006',
-          'adm': 'document.writeln(\"<a href=\\\"https:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/https%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"https:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");'
+          'seat': 'improvedigital'
         }
       ],
-      'debug': ''
+      ext: {
+        improvedigital: {
+          sync: [
+            'https://link1',
+            'https://link2',
+            'https://link3',
+          ]
+        }
+      }
     }
   };
 
   const serverResponseTwoBids = {
     'body': {
-      'id': '687a06c541d8d1',
-      'site_id': 191642,
-      'bid': [
-        serverResponse.body.bid[0],
+      'id': '99f9a9e6-5126-425b-822c-8b4edad2a719',
+      'cur': 'EUR',
+      'seatbid': [
         {
-          'isNet': true,
-          'id': '1234',
-          'advid': '5280',
-          'price': 1.23,
-          'nurl': 'https://link/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
-          'h': 400,
-          'pid': 1053688,
-          'sync': [
-            'https://link3'
+          'bid': [
+            {
+              'ext': {
+                'improvedigital': {
+                  'line_item_id': 320896,
+                  'bidder_id': 0,
+                  'brand_name': '',
+                  'buying_type': 'classic',
+                  'agency_id': '0'
+                }
+              },
+              'crid': '510265',
+              'price': 1.9200543539802946,
+              'id': '35adfe19-d6e9-46b9-9f7d-20da7026b965',
+              'w': 728,
+              'impid': '33e9500b21129f',
+              'h': 90,
+              'adm': '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+              'cid': '123159'
+            },
+            {
+              'ext': {
+                'improvedigital': {
+                  'line_item_id': 320896,
+                  'bidder_id': 0,
+                  'brand_name': '',
+                  'buying_type': 'classic',
+                  'agency_id': '0'
+                }
+              },
+              'crid': '479163',
+              'price': 1.9200543539802946,
+              'id': '83c8d524-0955-4d0c-b558-4c9f3600e09b',
+              'w': 300,
+              'impid': '33e9500b21129f',
+              'h': 250,
+              'adm': '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com" target="_blank"><img style="border: 0;" border="0" width=300 height=250 src="https://creative.360yield.com/file/238052/test_ads-300x250.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="479163" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+              'cid': '123159'
+            }
           ],
-          'crid': '422033',
-          'w': 700,
-          'cid': '99006',
-          'adm': 'document.writeln(\"<a href=\\\"https:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/https%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"https:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");'
+          'seat': 'improvedigital_improvedigital'
         }
       ],
-      'debug': ''
+      ext: {
+        improvedigital: {
+          sync: [
+            'https://link1',
+            'https://link2',
+            'https://link4',
+          ]
+        }
+      }
     }
   };
 
   const serverResponseNative = {
     body: {
-      id: '687a06c541d8d1',
-      site_id: 191642,
-      bid: [
+      'id': '8201e669-bbbf-4f61-b9a2-4cb854033c82',
+      'cur': 'EUR',
+      'seatbid': [
         {
-          isNet: false,
-          id: '33e9500b21129f',
-          advid: '5279',
-          price: 1.45888594164456,
-          nurl: 'https://ice.360yield.com/imp_pixel?ic=wVm',
-          h: 290,
-          pid: 1053688,
-          sync: [
-            'https://link1',
-            'https://link2'
+          'bid': [
+            {
+              'ext': {
+                'improvedigital': {
+                  'line_item_id': 411331,
+                  'bidder_id': 0,
+                  'brand_name': '',
+                  'buying_type': 'classic',
+                  'agency_id': '0',
+                  'is_net': true
+                }
+              },
+              'crid': '544456',
+              'id': '52098fad-20c1-476b-a4fa-41e275e5a4a5',
+              'price': 1.8600000000000003,
+              'adm': "{\"ver\":\"1.1\",\"imptrackers\":[\"https://secure.adnxs.com/imptr?id=52311&t=2\",\"https://euw-ice.360yield.com/imp_pixel?ic=hcUBlCANx1FabHBf6FR2gC7UO4xEyXahdZAn0-B5qL-bb3A74BJ1smyWIyW7IWcC0SOjSXzVpevTHXxTqJ.sf.Qhahyy6tSo.0j1QWfXlH8sM4-8vKWjMjw-x.IrJJNlwkQ0s1CdwcwTefcLXm5l2E-W19VhACuV7f3mgrZMNjiSw.SjJAfyPC3SIyAMRjYfj53UmjriQ46T7lhmkqxK8wHmksYCdbZc3PZESk8NWl28sxdjNvnYYCFMcJbeav.LOLabyTXfwy-1cEPbQs.IKMRZIKaqccTDPV3wOtzbNv0jQzatd3Nnv-PGFQcjQ-GW3i27W04Fws4kodpFSn-B6VwZAjzLzoyd5gBncyRnAyCplEbgHU5sZ1IyKHWjgCl3ZtRIK5vqrRD5D-xqgSnOi7-phG.CqZWDZ4bMDSfQg2ZnbvUTyGKcEl0WR59dW5izTMV4Fjizcrvr5T-t.zMbGwz.hGnmLIyhTqh.IcwW.GiDLVExlDlix5S1LXIWVsSyrQ==\"],\"assets\":[{\"id\":1,\"data\":{\"value\":\"ImproveDigital\",\"type\":1}},{\"id\":3,\"data\":{\"value\":\"Test content.\",\"type\":2}},{\"id\":0,\"title\":{\"text\":\"Sample Prebid Test Title\"}}],\"link\":{\"url\":\"https://euw-ice.360yield.com/click/hcUBlHOV7YhVse8RyBa0ajjyPa9Vt17e4g-1m3cRj3E67vq-RYux.SiUeAmBfNBcoOqkUc6A15AWmi4yFu5K-BdkaYjildyyk7fNLyR6hWr411kv4vrFwm5jrIBceuHS6K8oN69f.uCo8zGTdR2TbSlldwcpahQPlufZU.6VaMsu4IC53uEiUT5vb7kAw6TTlxuGBNq6zaGryiWEV2.N3YYJDTyYPh8tv-ZFyeFZFm0Gnjv.xWbC.70JcRUVU9UelQaPsTpTWYTXBhJt84YJUw1-GNtaLNVLSjjZbVoA2fsMti5p6OBmF.7u39on2OPgvseIkSmge7Pqg63pRqdP75hp.DAEk6OkcN1jGnwP2DSbvpaSbin5lVqjfO0B-wnQgfQTCUtM5v4JmkNweLhUf9Q-x.nPKLW5SccEk9ZFXzY2-1wpT3PWm8Tix3NRscLPZub9wHzL..pl6ip8cQ9hp16UjwT4H6RMAxL0R7bl-h2pAicGAzYmuO7ntRESKUoIWA==//http%3A%2F%2Fquantum-advertising.com%2Ffr%2F\"},\"jstracker\":\"<script type=\\\"application/javascript\\\">var js_tracker = ['https://secure.adnxs.com/imptr?id=52312&t=1', 'https://pixel.adsafeprotected.com/rjss/st/291611/36974035/skeleton.js?ias_adpath=[class~=ea_improve_pid_${TAG_ID}]']</script>\"}",
+              'impid': '33e9500b21129f',
+              'cid': '196108'
+            }
           ],
-          crid: '422031',
-          w: 600,
-          cid: '99006',
-          native: {
-            assets: [
-              {
-                title: {
-                  text: 'Native title'
-                }
-              },
-              {
-                data: {
-                  type: 1,
-                  value: 'Improve Digital'
-                }
-              },
-              {
-                data: {
-                  type: 2,
-                  value: 'Native body'
-                }
-              },
-              {
-                data: {
-                  type: 3,
-                  value: '4' // rating
-                }
-              },
-              {
-                data: {
-                  type: 4,
-                  value: '10105' // likes
-                }
-              },
-              {
-                data: {
-                  type: 5,
-                  value: '150000' // downloads
-                }
-              },
-              {
-                data: {
-                  type: 6,
-                  value: '3.99' // price
-                }
-              },
-              {
-                data: {
-                  type: 7,
-                  value: '4.49' // salePrice
-                }
-              },
-              {
-                data: {
-                  type: 8,
-                  value: '(123) 456-7890' // phone
-                }
-              },
-              {
-                data: {
-                  type: 9,
-                  value: '123 Main Street, Anywhere USA' // address
-                }
-              },
-              {
-                data: {
-                  type: 10,
-                  value: 'body2'
-                }
-              },
-              {
-                data: {
-                  type: 11,
-                  value: 'https://myurl.com' // displayUrl
-                }
-              },
-              {
-                data: {
-                  type: 12,
-                  value: 'Do it' // cta
-                }
-              },
-              {
-                img: {
-                  type: 1,
-                  url: 'Should get ignored',
-                  h: 300,
-                  w: 400
-                }
-              },
-              {
-                img: {
-                  type: 2,
-                  url: 'https://blah.com/icon.jpg',
-                  h: 30,
-                  w: 40
-                }
-
-              },
-              {
-                img: {
-                  type: 3,
-                  url: 'https://blah.com/image.jpg',
-                  h: 200,
-                  w: 800
-                }
-              }
-            ],
-            link: {
-              url: 'https://advertiser.com',
-              clicktrackers: [
-                'https://click.tracker.com/click?impid=123'
-              ]
-            },
-            imptrackers: [
-              'https://imptrack1.com',
-              'https://imptrack2.com'
-            ],
-            jstracker: '<script src=\"https://www.foobar.js\"></script>',
-            privacy: 'https://www.myprivacyurl.com'
-          }
+          'seat': 'improvedigital'
         }
-      ],
-      debug: ''
+      ]
     }
   };
 
   const serverResponseVideo = {
     'body': {
-      'id': '687a06c541d8d1',
-      'site_id': 191642,
-      'bid': [
+      'id': '8ed20675-8934-430c-b645-1ccd17b35839',
+      'cur': 'EUR',
+      'seatbid': [
         {
-          'isNet': false,
-          'id': '33e9500b21129f',
-          'advid': '5279',
-          'price': 1.45888594164456,
-          'nurl': 'http://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=',
-          'h': 290,
-          'pid': 1053688,
-          'sync': [
-            'http://link1',
-            'http://link2'
+          'bid': [
+            {
+              'ext': {
+                'improvedigital': {
+                  'line_item_id': 321329,
+                  'bidder_id': 0,
+                  'brand_name': '',
+                  'buying_type': 'classic',
+                  'agency_id': '0'
+                }
+              },
+              'crid': '484367',
+              'price': 9.600271769901472,
+              'id': 'b131fd7b-5759-4b72-800e-60e69291e7d9',
+              'adomain': [
+                'improvedigital.com'
+              ],
+              'impid': '33e9500b21129f',
+              'adm': '<VAST></VAST>',
+              'w': 640,
+              'h': 480,
+              'cid': '123159'
+            }
           ],
-          'crid': '422031',
-          'w': 600,
-          'cid': '99006',
-          'adm': '<VAST></VAST>',
-          'ad_type': 'video'
+          'seat': 'improvedigital'
         }
       ],
-      'debug': ''
     }
   };
 
-  const nativeEventtrackers = [
-    {
-      event: 1,
-      method: 1,
-      url: 'https://www.mytracker.com/imptracker'
-    },
-    {
-      event: 1,
-      method: 2,
-      url: 'https://www.mytracker.com/tracker.js'
+  const serverResponseRazr = {
+    body: {
+      'id': '2adac6a5fe04df',
+      'cur': 'EUR',
+      'ext': {
+        'improvedigital': {
+          'sync': [
+            'https://d5p.de17a.com/getuid/improve_digital?publisher_user_id=ce26f11e-567a-4eb7-bf94-51752e293ca5&publisher_dsp_id=61&publisher_call_type=redirect&gdpr=1&gdpr_consent=CPU22FrPU22FrAcABBENCDCsAP_AAH_AAChQIltf_X__b3_j-_5_f_t0eY1P9_7_v-0zjhfdt-8N3f_X_L8X42M7vF36pq4KuR4Eu3LBIQdlHOHcTUmw6okVrzPsbk2cr7NKJ7PEmnMbO2dYGH9_n93TuZKY7______z_v-v_v____f_7-3_3__5_3---_e_V_99zLv9____39nP___9v-_9_____4IhgEmGpeQBdmWODJtGlUKIEYVhIdAKACigGFoisIHVwU7K4CfUELABCagJwIgQYgowYBAAIJAEhEQEgB4IBEARAIAAQAqwEIACNgEFgBYGAQACgGhYgRQBCBIQZHBUcpgQFSLRQT2ViCUHexphCGWeBFAo_oqEBGs0QLAyEhYOY4AkBLxZIHmKF8gAAAAA.f_gAD_gAAAAA&publisher_redirecturl=https://euw-ice.360yield.com/match'
+          ]
+        }
+      },
+      'seatbid': [
+        {
+          'bid': [
+            {
+              'ext': {
+                'improvedigital': {
+                  'line_item_id': 410573,
+                  'bidder_id': 0,
+                  'brand_name': '',
+                  'buying_type': 'classic',
+                  'agency_id': '0'
+                }
+              },
+              'crid': '544063',
+              'price': 1.9199364935359489,
+              'id': '1fcf4dd8-a783-48ed-b59c-8fc8eeccb024',
+              'adomain': [
+                'improvedigital.com'
+              ],
+              'w': 970,
+              'impid': '33e9500b21129f',
+              'h': 250,
+              'adm': '<html><body style="margin:0%"><!-- Integration Test Camapigns -->\n<!-- Pageskin Plus Desktop -->\n<!-- Desktop -->\n<!-- Size: 970x250 -->\n<!-- DSP: Other -->\n\n<script async src="https://cdn.inskinad.com/isfe/tags/dsp.js"></script>\n<script type="text/javascript">\n      (function() {\n        var ns = window.inskin = window.inskin || {};\n        ns.dsp = ns.dsp || [];\n        ns.dsp.push({\n          uri: "razr://inskin/pageskinplus?eyJwbHJfTWFuaWZlc3RQYXRoIjoicHNfY3JlYXRvcngvZGlzdC82MDQwYjg3NWQ5ZmZkNTAwMWExZjQxNzAvbWFuaWZlc3QuanNvbiIsImkiOiJodHRwczovL2Nkbi5pbnNraW5hZC5jb20vQ3JlYXRpdmVTdG9yZS9wc19jcmVhdG9yeC9maWxlcy82MDQwYWI1NGQ5ZmZkNTAwMWExZjQxNjdfMTYzNjcxNDEzNTU4MS85NzB4MjUwLmpwZyIsImwiOiJodHRwczovL3d3dy5pbnNraW5tZWRpYS5jb20vIiwic2l6ZSI6Ijk3MHgyNTAiLCJkc3AiOiJPdGhlciIsImNyZWF0aXZlX2lkIjoiNTAwMDAwMDA2NSIsIm1hc3MiOnsiZW5kcG9pbnQiOiJodHRwczovL2Nkbi5pbnNraW5hZC5jb20vaXNmZS90YWdzL2lwdC5qcyJ9fQ==&gdpr=1&gdpr_consent=CPU22FrPU22FrAcABBENCDCsAP_AAH_AAChQIltf_X__b3_j-_5_f_t0eY1P9_7_v-0zjhfdt-8N3f_X_L8X42M7vF36pq4KuR4Eu3LBIQdlHOHcTUmw6okVrzPsbk2cr7NKJ7PEmnMbO2dYGH9_n93TuZKY7______z_v-v_v____f_7-3_3__5_3---_e_V_99zLv9____39nP___9v-_9_____4IhgEmGpeQBdmWODJtGlUKIEYVhIdAKACigGFoisIHVwU7K4CfUELABCagJwIgQYgowYBAAIJAEhEQEgB4IBEARAIAAQAqwEIACNgEFgBYGAQACgGhYgRQBCBIQZHBUcpgQFSLRQT2ViCUHexphCGWeBFAo_oqEBGs0QLAyEhYOY4AkBLxZIHmKF8gAAAAA.f_gAD_gAAAAA&c=https%3A%2F%2Feuw-ice.360yield.com%2Fclick%2FicS49rk9QboLEcCd2ow-WFM9F-uuu.xuH-D.JKa4FBO3Vxze.r6Uf644oAHkoUAxfF-CS-TZMM5vuXryUCtFZY.0iu4Uva6MWyjId5sB-BkTdMYZonq6EFX7D--DhmqReLb-AXr9GCFaLePzLe3jG0QYG.-ZsKp9nMiVsUXOoeCZvH.DTvtGo1gvOi3rVoeBw7XaRuwtcfhfr7VPrrWzovbtyMrMZsWzMIbU-WQZ0qYJSXHRn0PECOMxw.kHptceQ8-.TPHiSdW2O-Mk97IgJ5GNdnPwqO3pc8TXzaWvxtuKywsYQ-8Fk5o4FaUSFh1wa2fQEvUnh1A5sOgB.F.D8PaDrLofK3FfWxAa0hLcsi3nO2DYX-oppQZ1r2qYsaUlrSp-yVVSw.PoAQdSFCgrZnY-j7fpezyE.DBSsabWkCdSuMFnmaGUbToYca5PgblpDAxTk.fn13QijCoq3sVMQ.lgbUEdaruATWGbviYrO8tOYThvOTO.U1XqP0lE-kMNQOM6912RGYH9wEavr-xI4QRwG6Qa.ms5EJG-gPq8%2F%2F"\n        });\n      })();\n</script><noscript class="MOAT-improvedigitaldisplay945272226933?moatClientLevel1=5279&amp;moatClientLevel2=187354&amp;moatClientLevel3=410573&amp;moatClientLevel4=544063&amp;moatClientSlicer1=291098&amp;moatClientSlicer2=22655158&amp;zMoatRTBADV=improvedigital.com&amp;zMoatRTBCR=&amp;zMoatReferrer=localhost&amp;zMoatSZ=970x250&amp;zMoatBundle="></noscript>\n<script src="https://z.moatads.com/improvedigitaldisplay945272226933/moatad.js#moatClientLevel1=5279&moatClientLevel2=187354&moatClientLevel3=410573&moatClientLevel4=544063&moatClientSlicer1=291098&moatClientSlicer2=22655158&zMoatRTBADV=improvedigital.com&zMoatRTBCR=&zMoatReferrer=localhost&zMoatSZ=970x250&zMoatBundle=" type="text/javascript"></script><img src="https://euw-ice.360yield.com/imp_pixel?ic=icS49pIfpuQmwz1qwTyow94dtPYFJ1jd5AmVkPxrq5AiMd6kj6SEjlT305kiOHKmTXMmbZXHwoVeXjv3RYo.3Y2aERPh6YXuUAUpd9q4kwk81vxha7.45yIGHQewfVQasIsWALCaw..GbNmjZcezJcWCYCyOVobUgm2IQCRNqm8eTb5YZIPQtYU5SB6P.f3kf7J64jQuqILOmuizstXUQQeJM.S0F12arPFAPswnbIm-mZHGqMEG4ShDG5LqIAwBwWTAp71MHD9ztPR34GkXnVd8Ub-OErWFbH5z6g-150kngZ90er.RUXOiFCQNK-69nU0NrzWNsZYCSg.c5xZ39RsTUOOROb52aTRuHn4nd--2FnI5EMnjBV..-KZVX6b33J0qHaqyO8Xfp7JwtSQ2pmk.yHziRMTAl2K0rm0Afn5O.SXV5GT.b7Aua8soa.YGd.h9R.FC34NwClsGgD9OalhEhyqnWZoHyLFUdeYnw9EljptBDIMkFQ9FXP0mJsqZCMWZXE20zGW24QmsWqNelt0Hqs0r7V-ca.WvrYxJ" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="187354" line_item_id="410573" creative_id="544063" crid="0" placement_id="22655158"></improvedigital_ad_output_information></body></html>',
+              'cid': '187354'
+            }
+          ],
+          'seat': 'improvedigital'
+        }
+      ]
     }
-  ];
+  };
 
   describe('interpretResponse', function () {
     const expectedBid = [
       {
-        'ad': '<img src=\"https://ice.360yield.com/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"https:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/https%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"https:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
-        'creativeId': '422031',
-        'cpm': 1.45888594164456,
-        'currency': 'USD',
-        'height': 290,
-        'mediaType': 'banner',
-        'netRevenue': false,
-        'requestId': '33e9500b21129f',
-        'ttl': 300,
-        'width': 600
+        requestId: '33e9500b21129f',
+        cpm: 1.9200543539802946,
+        currency: 'EUR',
+        width: 728,
+        height: 90,
+        ttl: 300,
+        ad: '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        creativeId: '510265',
+        dealId: 320896,
+        netRevenue: false,
+        mediaType: BANNER,
       }
+    ];
+
+    const multiFormatExpectedBid = [
+      Object.assign({}, expectedBid[0], {
+        ad: '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+      })
     ];
 
     const expectedTwoBids = [
       expectedBid[0],
       {
-        'ad': '<img src=\"https://link/imp_pixel?ic=wVmhKI07hCVyGC1sNdFp.6buOSiGYOw8jPyZLlcMY2RCwD4ek3Fy6.xUI7U002skGBs3objMBoNU-Frpvmb9js3NKIG0YZJgWaNdcpXY9gOXE9hY4-wxybCjVSNzhOQB-zic73hzcnJnKeoGgcfvt8fMy18-yD0aVdYWt4zbqdoITOkKNCPBEgbPFu1rcje-o7a64yZ7H3dKvtnIixXQYc1Ep86xGSBGXY6xW2KfUOMT6vnkemxO72divMkMdhR8cAuqIubbx-ZID8-xf5c9k7p6DseeBW0I8ionrlTHx.rGosgxhiFaMqtr7HiA7PBzKvPdeEYN0hQ8RYo8JzYL82hA91A3V2m9Ij6y0DfIJnnrKN8YORffhxmJ6DzwEl1zjrVFbD01bqB3Vdww8w8PQJSkKQkd313tr-atU8LS26fnBmOngEkVHwAr2WCKxuUvxHmuVBTA-Lgz7wKwMoOJCA3hFxMavVb0ZFB7CK0BUTVU6z0De92Q.FJKNCHLMbjX3vcAQ90=\" width=\"0\" height=\"0\" style=\"display:none\"><script>document.writeln(\"<a href=\\\"https:\\/\\/ice.360yield.com\\/click\\/wVmhKEKFeJufyP3hFfp7fv95ynoKe7vnG9V-j8EyAzklSoKRkownAclw4Zzcw-OcbJMg2KfjNiO8GoO9WP1jbNM8Q5GtmClbG9hZPBS4v6oBBiDi50AjRqHQsDAoBOJrIJtVyCfrnAIxvbysozCpLt20ov6jz2JPi6fe.D55HNeDLDyiLNgxVPa3y9jJZf65JBirCjOoZ-1Mj1BLB.57VdMaEhpGjjl5HnPgw0Pv7Hm1BO7PB9nCXJ9IwOH3IrKo.Wyy1iKDk6zeGwGOkQHSOMuQnCHyD35x6bhDQrpl5H6fTRTR8D2m5.-Zjh3fs8SKlo0i25EjKPw65iF.tvgcnq01U08OIh86EeSciamJgV0hNsk20TcTubfsoPN4are4nQ0y2gB-lz9tf3AjqHpSz5NoJWrpWtnrBHbjm.dS1XUQB1tzcLpIkA34nDe2eNxRZbZkZNSSs.Y8jQemfbjuLpttcemHqidFZo3xp37eSfUImw.HbyFdnK-wxFDYudgsIDxGJWI=\\/\\/https%3A%2F%2Fwww.improvedigital.com\\\" target=\\\"_blank\\\"><img style=\\\"border: 0;\\\" border=\\\"0\\\" width=\\\"600\\\" height=\\\"290\\\" src=\\\"https:\\/\\/creative.360yield.com\\/file\\/221728\\/ImproveDigital600x290.jpg\\\" alt=\\\"\\\"\\/><\\/a>\");document.writeln(\"<improvedigital_ad_output_information tp_id=\\\"\\\" buyer_id=\\\"0\\\" rtb_advertiser=\\\"\\\" campaign_id=\\\"99006\\\" line_item_id=\\\"268515\\\" creative_id=\\\"422031\\\" crid=\\\"0\\\" placement_id=\\\"1053688\\\"><\\/improvedigital_ad_output_information>\");</script>',
-        'creativeId': '422033',
-        'cpm': 1.23,
-        'currency': 'USD',
-        'height': 400,
-        'mediaType': 'banner',
-        'netRevenue': true,
-        'requestId': '1234',
-        'ttl': 300,
-        'width': 700
-      }
-    ];
-
-    const expectedBidNative = [
-      {
-        mediaType: 'native',
-        creativeId: '422031',
-        cpm: 1.45888594164456,
-        currency: 'USD',
-        height: 290,
-        netRevenue: false,
         requestId: '33e9500b21129f',
+        cpm: 1.9200543539802946,
+        currency: 'EUR',
+        width: 300,
+        height: 250,
         ttl: 300,
-        width: 600,
-        native: {
-          title: 'Native title',
-          body: 'Native body',
-          body2: 'body2',
-          cta: 'Do it',
-          sponsoredBy: 'Improve Digital',
-          rating: '4',
-          likes: '10105',
-          downloads: '150000',
-          price: '3.99',
-          salePrice: '4.49',
-          phone: '(123) 456-7890',
-          address: '123 Main Street, Anywhere USA',
-          displayUrl: 'https://myurl.com',
-          icon: {
-            url: 'https://blah.com/icon.jpg',
-            height: 30,
-            width: 40
-          },
-          image: {
-            url: 'https://blah.com/image.jpg',
-            height: 200,
-            width: 800
-          },
-          clickUrl: 'https://advertiser.com',
-          clickTrackers: ['https://click.tracker.com/click?impid=123'],
-          impressionTrackers: [
-            'https://ice.360yield.com/imp_pixel?ic=wVm',
-            'https://imptrack1.com',
-            'https://imptrack2.com'
-          ],
-          javascriptTrackers: '<script src=\"https://www.foobar.js\"></script>',
-          privacyLink: 'https://www.myprivacyurl.com'
-        }
+        ad: '<html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com" target="_blank"><img style="border: 0;" border="0" width=300 height=250 src="https://creative.360yield.com/file/238052/test_ads-300x250.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="479163" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        creativeId: '479163',
+        dealId: 320896,
+        netRevenue: false,
+        mediaType: BANNER,
       }
     ];
 
     const expectedBidInstreamVideo = [
       {
-        'vastXml': '<VAST></VAST>',
-        'creativeId': '422031',
-        'cpm': 1.45888594164456,
-        'currency': 'USD',
-        'height': 290,
-        'mediaType': 'video',
-        'netRevenue': false,
-        'requestId': '33e9500b21129f',
-        'ttl': 300,
-        'width': 600
+        requestId: '33e9500b21129f',
+        cpm: 9.600271769901472,
+        currency: 'EUR',
+        ttl: 300,
+        vastXml: '<VAST></VAST>',
+        creativeId: '484367',
+        dealId: 321329,
+        netRevenue: false,
+        mediaType: VIDEO,
+        meta: {
+          advertiserDomains: ['improvedigital.com'],
+        }
       }
     ];
 
-    const expectedBidOutstreamVideo = utils.deepClone(expectedBidInstreamVideo);
+    const expectedBidOutstreamVideo = deepClone(expectedBidInstreamVideo);
     expectedBidOutstreamVideo[0].adResponse = {
-      content: expectedBidOutstreamVideo[0].vastXml,
-      height: expectedBidOutstreamVideo[0].height,
-      width: expectedBidOutstreamVideo[0].width
+      content: expectedBidOutstreamVideo[0].vastXml
     };
 
+    function makeRequest(bidderRequest) {
+      return {
+        ortbRequest: CONVERTER.toORTB({bidderRequest})
+      }
+    }
+
+    function expectMatch(actual, expected) {
+      sinon.assert.match(actual, expected.map(i => sinon.match(i)));
+    }
+
     it('should return a well-formed display bid', function () {
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest});
-      expect(bids).to.deep.equal(expectedBid);
+      const bids = spec.interpretResponse(serverResponse, makeRequest(bidderRequest));
+      expectMatch(bids, expectedBid);
     });
 
     it('should return a well-formed display bid for multi-format ad unit', function () {
-      const bids = spec.interpretResponse(serverResponse, {bidderRequest: multiFormatBidderRequest});
-      expect(bids).to.deep.equal(expectedBid);
+      const bids = spec.interpretResponse(serverResponse, makeRequest(multiFormatBidderRequest));
+
+      expectMatch(bids, multiFormatExpectedBid);
     });
 
     it('should return two bids', function () {
-      const bids = spec.interpretResponse(serverResponseTwoBids, {bidderRequest});
-      expect(bids).to.deep.equal(expectedTwoBids);
+      const bids = spec.interpretResponse(serverResponseTwoBids, makeRequest(bidderRequest));
+      expectMatch(bids, expectedTwoBids);
     });
 
     it('should set dealId correctly', function () {
-      const response = JSON.parse(JSON.stringify(serverResponse));
+      const request = makeRequest(bidderRequest);
+      const response = deepClone(serverResponse);
       let bids;
 
-      delete response.body.bid[0].lid;
-      response.body.bid[0].buying_type = 'deal_id';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      delete response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id;
+      response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'deal_id';
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.not.exist;
 
-      response.body.bid[0].lid = 268515;
-      delete response.body.bid[0].buying_type;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
+      delete response.body.seatbid[0].bid[0].ext.improvedigital.buying_type;
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.not.exist;
 
-      response.body.bid[0].lid = 268515;
-      response.body.bid[0].buying_type = 'rtb';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
+      response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'rtb';
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.not.exist;
 
-      response.body.bid[0].lid = 268515;
-      response.body.bid[0].buying_type = 'classic';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
+      response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'classic';
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.equal(268515);
 
-      response.body.bid[0].lid = 268515;
-      response.body.bid[0].buying_type = 'deal_id';
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response.body.seatbid[0].bid[0].ext.improvedigital.line_item_id = 268515;
+      response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'deal_id';
+      bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.equal(268515);
+    });
 
-      response.body.bid[0].lid = [ 268515, 12456, 34567 ];
-      response.body.bid[0].buying_type = 'deal_id';
-      bids = spec.interpretResponse(response, {bidderRequest});
-      expect(bids[0].dealId).to.not.exist;
+    it('should set deal type targeting KV for PG', function () {
+      const request = makeRequest(bidderRequest);
+      const response = deepClone(serverResponse);
+      let bids;
 
-      response.body.bid[0].lid = [ 268515, 12456, 34567 ];
-      response.body.bid[0].buying_type = [ 'deal_id', 'classic' ];
-      bids = spec.interpretResponse(response, {bidderRequest});
-      expect(bids[0].dealId).to.not.exist;
-
-      response.body.bid[0].lid = [ 268515, 12456, 34567 ];
-      response.body.bid[0].buying_type = [ 'rtb', 'deal_id', 'deal_id' ];
-      bids = spec.interpretResponse(response, {bidderRequest});
-      expect(bids[0].dealId).to.equal(12456);
+      response.body.seatbid[0].bid[0].ext.improvedigital.pg = 1;
+      bids = spec.interpretResponse(response, request);
+      expect(bids[0].adserverTargeting.hb_deal_type_improve).to.equal('pg');
     });
 
     it('should set currency', function () {
-      const response = JSON.parse(JSON.stringify(serverResponse));
-      response.body.bid[0].currency = 'eur';
-      const bids = spec.interpretResponse(response, {bidderRequest});
+      const response = deepClone(serverResponse);
+      response.body.cur = 'EUR';
+      const bids = spec.interpretResponse(response, makeRequest(bidderRequest));
       expect(bids[0].currency).to.equal('EUR');
     });
 
     it('should return empty array for bad response or no price', function () {
-      let response = JSON.parse(JSON.stringify(serverResponse));
+      const request = makeRequest(bidderRequest);
+      let response = deepClone(serverResponse);
       let bids;
 
       // Price missing or 0
-      response.body.bid[0].price = 0;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response.body.seatbid[0].bid[0].price = 0;
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
-      delete response.body.bid[0].price;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      delete response.body.seatbid[0].bid[0];
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
-      response.body.bid[0].price = null;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response.body.seatbid[0].bid[0] = [];
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
 
       // errorCode present
-      response = JSON.parse(JSON.stringify(serverResponse));
-      response.body.bid[0].errorCode = undefined;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response = deepClone(serverResponse);
+      response.body.seatbid[0].bid[0].errorCode = undefined;
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
 
       // adm and native missing
-      response = JSON.parse(JSON.stringify(serverResponse));
-      delete response.body.bid[0].adm;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response = deepClone(serverResponse);
+      delete response.body.seatbid[0].bid[0].adm;
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
-      response.body.bid[0].adm = null;
-      bids = spec.interpretResponse(response, {bidderRequest});
+      response.body.seatbid[0].bid[0].adm = null;
+      bids = spec.interpretResponse(response, request);
       expect(bids).to.deep.equal([]);
     });
 
     it('should set netRevenue', function () {
-      const response = JSON.parse(JSON.stringify(serverResponse));
-      response.body.bid[0].isNet = true;
-      const bids = spec.interpretResponse(response, {bidderRequest});
+      const response = deepClone(serverResponse);
+      response.body.seatbid[0].bid[0].ext.improvedigital.is_net = true;
+      const bids = spec.interpretResponse(response, makeRequest(bidderRequest));
       expect(bids[0].netRevenue).to.equal(true);
     });
 
-    // Native ads
-    it('should return a well-formed native ad bid', function () {
-      let bids = spec.interpretResponse(serverResponseNative, {bidderRequest});
-      expect(bids[0].ortbNative).to.deep.equal(serverResponseNative.body.bid[0].native);
-      delete bids[0].ortbNative;
-      expect(bids).to.deep.equal(expectedBidNative);
-
-      // eventtrackers
-      const response = JSON.parse(JSON.stringify(serverResponseNative));
-      const expectedBids = JSON.parse(JSON.stringify(expectedBidNative));
-      response.body.bid[0].native.eventtrackers = nativeEventtrackers;
-      expectedBids[0].native.impressionTrackers = [
-        'https://ice.360yield.com/imp_pixel?ic=wVm',
-        'https://www.mytracker.com/imptracker'
-      ];
-      expectedBids[0].native.javascriptTrackers = '<script src=\"https://www.mytracker.com/tracker.js\"></script>';
-      bids = spec.interpretResponse(response, {bidderRequest});
-      delete bids[0].ortbNative;
-      expect(bids).to.deep.equal(expectedBids);
+    it('should set advertiserDomains', function () {
+      const adomain = ['domain.com'];
+      const response = deepClone(serverResponse);
+      response.body.seatbid[0].bid[0].adomain = adomain;
+      const bids = spec.interpretResponse(response, makeRequest(bidderRequest));
+      expect(bids[0].meta.advertiserDomains).to.equal(adomain);
     });
+    //
+    // Native ads
+    if (FEATURES.NATIVE) {
+      it('should return a well-formed native ad bid', function () {
+        const reqBids = updateNativeParams(nativeBidderRequest.bids);
+        const request = makeRequest({
+          ...nativeBidderRequest,
+          reqBids
+        })
+        const bids = spec.interpretResponse(serverResponseNative, request);
+        expect(bids[0].native.ortb).to.eql(JSON.parse(serverResponseNative.body.seatbid[0].bid[0].adm))
+      });
+
+      it('should return a well-formed native bid for multi-format ad unit', function () {
+        const bids = spec.interpretResponse(serverResponseNative, makeRequest(multiFormatBidderRequest));
+        expect(bids[0].mediaType).to.equal(NATIVE);
+      });
+    }
 
     // Video
-    it('should return a well-formed instream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, {bidderRequest: instreamBidderRequest});
-      expect(bids).to.deep.equal(expectedBidInstreamVideo);
-    });
+    if (FEATURES.VIDEO) {
+      it('should return a well-formed instream video bid', function () {
+        const bids = spec.interpretResponse(serverResponseVideo, makeRequest(instreamBidderRequest));
+        expectMatch(bids, expectedBidInstreamVideo);
+      });
 
-    it('should return a well-formed outstream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, {bidderRequest: outstreamBidderRequest});
-      expect(bids[0].renderer).to.exist;
-      delete (bids[0].renderer);
-      expect(bids).to.deep.equal(expectedBidOutstreamVideo);
-    });
+      it('should return a well-formed outstream video bid', function () {
+        const bids = spec.interpretResponse(serverResponseVideo, makeRequest(outstreamBidderRequest));
+        expect(bids[0].renderer).to.exist;
+        expectMatch(bids, expectedBidOutstreamVideo);
+      });
 
-    it('should return a well-formed outstream video bid for multi-format ad unit', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, {bidderRequest: multiFormatBidderRequest});
-      expect(bids[0].renderer).to.exist;
-      delete (bids[0].renderer);
-      expect(bids).to.deep.equal(expectedBidOutstreamVideo);
-    });
+      it('should return a well-formed outstream video bid for multi-format ad unit', function () {
+        const request = makeRequest(multiFormatBidderRequest);
+        const videoResponse = deepClone(serverResponseVideo);
+        let bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].renderer).to.exist;
+        expectMatch(bids, expectedBidOutstreamVideo);
+
+        videoResponse.body.seatbid[0].bid[0].adm = '<vAst';
+        bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+
+        videoResponse.body.seatbid[0].bid[0].adm = '<?xml';
+        bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+      });
+    }
   });
 
   describe('getUserSyncs', function () {
-    const serverResponses = [ serverResponseTwoBids ];
+    const serverResponses = [ serverResponse, serverResponseTwoBids ];
+    const pixelSyncs = [
+      { type: 'image', url: 'https://link1' },
+      { type: 'image', url: 'https://link2' },
+      { type: 'image', url: 'https://link3' },
+      { type: 'image', url: 'https://link4' }
+    ];
 
-    it('should return no syncs when pixel syncing is disabled', function () {
-      const syncs = spec.getUserSyncs({ pixelEnabled: false }, serverResponses);
+    const basicIframeSyncUrl = `${IFRAME_SYNC_URL}?placement_id=1053688`;
+
+    const uspConsent = '1YYY';
+
+    let getConfigStub = null;
+
+    beforeEach(function () {
+      spec.syncStore = { extendMode: false, placementId: null };
+    });
+
+    afterEach(function () {
+      if (getConfigStub) {
+        getConfigStub.restore();
+        getConfigStub = null;
+      }
+    });
+
+    it('should return no syncs when neither iframe nor pixel syncing is enabled', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, serverResponses);
       expect(syncs).to.deep.equal([]);
     });
 
-    it('should return user syncs', function () {
+    it('should return no syncs for COPPA users', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('coppa').returns(true);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should return no syncs for when GDPR consent for purpose 1 not given', function () {
+      const consent = deepClone(gdprConsent);
+      deepSetValue(consent, 'vendorData.purpose.consents.1', false);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, consent);
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should return pixel user syncs for the ad server mode', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
-      const expected = [
-        { type: 'image', url: 'https://link1' },
-        { type: 'image', url: 'https://link2' },
-        { type: 'image', url: 'https://link3' }
-      ];
-      expect(syncs).to.deep.equal(expected);
+      expect(syncs).to.deep.equal(pixelSyncs);
+    });
+
+    it('should return pixel user syncs for extend mode when iframe mode disabled', function () {
+      // Set spec.syncStore vars
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.extend').returns(true);
+      spec.buildRequests([simpleBidRequest], bidderRequest);
+
+      const syncs = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
+      expect(syncs).to.deep.equal(pixelSyncs);
+    });
+
+    it('should return iframe user sync for the ad server mode when pixel mode disabled', function () {
+      spec.buildRequests([simpleBidRequest], bidderRequest);
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: basicIframeSyncUrl }]);
+    });
+
+    it('should attach gdpr consent to iframe sync url', function () {
+      spec.buildRequests([simpleBidRequest], bidderRequest);
+      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses, gdprConsent);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: `${basicIframeSyncUrl}&gdpr=1&gdpr_consent=CONSENT` }]);
+
+      syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses, { gdprApplies: false });
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: `${basicIframeSyncUrl}&gdpr=0` }]);
+    });
+
+    it('should attach usp consent to iframe sync url', function () {
+      spec.buildRequests([simpleBidRequest], bidderRequest);
+      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, serverResponses, null, uspConsent);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: `${basicIframeSyncUrl}&us_privacy=${uspConsent}` }]);
+    });
+
+    it('should return iframe user sync for the adunit extend mode if iframe mode enabled', function () {
+      // buildRequests() sets spec.syncStore vars
+      spec.buildRequests([simpleBidRequest, extendBidRequest], {});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: basicIframeSyncUrl + '&pbs=1' }]);
+    });
+
+    it('should return iframe user sync for the global extend mode if iframe mode enabled', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.extend').returns(true);
+      // buildRequests() sets spec.syncStore vars
+      spec.buildRequests([simpleBidRequest], {});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses);
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: basicIframeSyncUrl + '&pbs=1' }]);
+    });
+
+    it('should add bidders to iframe user sync url', function () {
+      getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.withArgs('improvedigital.extend').returns(true);
+      spec.buildRequests([simpleBidRequest], {});
+      const rawResponse = deepClone(serverResponse)
+      deepSetValue(rawResponse, 'body.ext.responsetimemillis', {a: 1, b: 1, c: 1, d: 1, e: 1})
+      let syncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, [rawResponse]);
+      let url = basicIframeSyncUrl + '&pbs=1' + '&bidders=a,b,c,d,e'
+      expect(syncs).to.deep.equal([{ type: 'iframe', url }]);
     });
   });
 });

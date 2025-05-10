@@ -2,7 +2,7 @@
 
 **Module Name**: Unruly Bid Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**: prodev@unrulymedia.com
+**Maintainer**: prebidsupport@unrulygroup.com
 
 # Description
 
@@ -11,21 +11,78 @@ Module that connects to UnrulyX for bids.
 # Test Parameters
 
 ```js
-   const adUnits = [{
-       code: 'ad-slot',
-       sizes: [[728, 90], [300, 250]],
-       mediaTypes: {
-           video: {
-               context: 'outstream'
-           }
-       },
-       bids: [{
-           bidder: 'unruly',
-           params: {
-               targetingUUID: '6f15e139-5f18-49a1-b52f-87e5e69ee65e',
-               siteId: 1081534
-           }
-       }
-       ]
-   }];
+const adUnits =
+    [
+      {
+        "code": "outstream-ad",
+        "mediaTypes": {
+          "video": {
+            "context": "outstream",
+            "playerSize": [[640, 480]]
+          }
+        },
+        "bids": [
+          {
+            "bidder": "unruly",
+            "params": {
+              "siteId": 1081534
+            }
+          }
+        ]
+      },
+      {
+        "code": "unmissable-ad",
+        "mediaTypes": {
+          "video": {
+            "context": "outstream",
+            "playerSize": [[640, 480]]
+          }
+        },
+        "bids": [
+          {
+            "bidder": "unruly",
+            "params": {
+              "siteId": 1081534,
+              "featureOverrides": {
+                "canRunUnmissable": true
+              }
+            }
+          }
+        ]
+      },
+      {
+        "code": "banner-ad",
+        "mediaTypes": {
+          "banner": {
+            "sizes": [[300, 250]]
+          }
+        },
+        "bids": [
+          {
+            "bidder": "unruly",
+            "params": {
+              "siteId": 1081534
+            }
+          }
+        ]
+      },
+      {
+        "code": "instream-ad",
+        "mediaTypes": {
+          "video": {
+            "context": "instream",
+            "mimes": ["video/mp4"],
+            "playerSize": [[640, 480]]
+          }
+        },
+        "bids": [
+          {
+            "bidder": "unruly",
+            "params": {
+              "siteId": 1081534
+            }
+          }
+        ]
+      }
+    ];
 ```

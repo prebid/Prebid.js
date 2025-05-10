@@ -3,11 +3,11 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 
-aliases: 
+aliases:
   - &environment
       docker:
         # specify the version you desire here
-        - image: circleci/node:12.16.1
+        - image: cimg/node:20.14.0-browsers
       resource_class: xlarge
         # Specify service dependencies here if necessary
         # CircleCI maintains a library of pre-built images
@@ -18,8 +18,6 @@ aliases:
   - &restore_dep_cache
       keys:
         - v1-dependencies-{{ checksum "package.json" }}
-        # fallback to using the latest cache if no exact match is found
-        - v1-dependencies-
 
   - &save_dep_cache
       paths:
@@ -36,26 +34,14 @@ aliases:
 
   - &run_endtoend_test
       name: BrowserStack End to end testing
-      command: echo "127.0.0.1 test.localhost" | sudo tee -a /etc/hosts && gulp e2e-test --host=test.localhost
-
-  # Download and run BrowserStack local
-  - &setup_browserstack
-      name : Download BrowserStack Local binary and start it.
-      command : |
-        # Download the browserstack binary file
-        wget "https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip"
-        # Unzip it
-        unzip BrowserStackLocal-linux-x64.zip
-        # Run the file with user's access key
-        ./BrowserStackLocal ${BROWSERSTACK_ACCESS_KEY} &
+      command: gulp e2e-test
 
   - &unit_test_steps
     - checkout
     - restore_cache: *restore_dep_cache
-    - run: npm install
+    - run: npm ci
     - save_cache: *save_dep_cache
     - run: *install
-    - run: *setup_browserstack
     - run: *run_unit_test
 
   - &endtoend_test_steps
@@ -64,7 +50,6 @@ aliases:
     - run: npm install
     - save_cache: *save_dep_cache
     - run: *install
-    - run: *setup_browserstack
     - run: *run_endtoend_test
 
 version: 2
@@ -72,7 +57,7 @@ jobs:
   build:
     <<: *environment
     steps: *unit_test_steps
-      
+
   e2etest:
     <<: *environment
     steps: *endtoend_test_steps
@@ -82,16 +67,9 @@ workflows:
   commit:
     jobs:
       - build
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - e2etest
+      - e2etest:
+          requires:
+            - build
 
 experimental:
   pipelines: true

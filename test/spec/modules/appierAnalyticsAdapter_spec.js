@@ -4,7 +4,7 @@ import {
 } from 'modules/appierAnalyticsAdapter.js';
 import {expect} from 'chai';
 const events = require('src/events');
-const constants = require('src/constants.json');
+const constants = require('src/constants.js');
 
 const affiliateId = 'WhctHaViHtI';
 const configId = 'd9cc9a9be9b240eda17cf1c9a8a4b29c';

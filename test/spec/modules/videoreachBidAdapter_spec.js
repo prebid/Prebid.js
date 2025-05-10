@@ -21,12 +21,12 @@ describe('videoreachBidAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'TagId': ''
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -91,7 +91,8 @@ describe('videoreachBidAdapter', function () {
             'creativeId': '5cb5dc9375c0e',
             'netRevenue': true,
             'currency': 'EUR',
-            'sync': ['https:\/\/SYNC_URL']
+            'sync': ['https:\/\/SYNC_URL'],
+            'adomain': []
           }]
         }
       };
@@ -107,7 +108,10 @@ describe('videoreachBidAdapter', function () {
           ttl: 360,
           ad: '<!-- AD -->',
           requestId: '242d506d4e4f15',
-          creativeId: '5cb5dc9375c0e'
+          creativeId: '5cb5dc9375c0e',
+          meta: {
+            advertiserDomains: []
+          }
         }
       ];
 

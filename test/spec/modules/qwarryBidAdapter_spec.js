@@ -89,7 +89,7 @@ describe('qwarryBidAdapter', function () {
         consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
       },
       refererInfo: {
-        referer: 'http://test.com/path.html'
+        page: 'http://test.com/path.html',
       }
     })
 

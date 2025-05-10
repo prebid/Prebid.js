@@ -27,7 +27,7 @@ describe('mediaforce bid adapter', function () {
       bidder: 'mediaforce',
       params: {
         property: '10433394',
-        bidfloor: 0.3,
+        bidfloor: 0,
       },
     };
 
@@ -97,7 +97,11 @@ describe('mediaforce bid adapter', function () {
           }
         }
       },
-      transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+      ortb2Imp: {
+        ext: {
+          tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+        }
+      }
     };
 
     const multiBid = [
@@ -127,12 +131,16 @@ describe('mediaforce bid adapter', function () {
             sizes: [[300, 250], [600, 400]]
           }
         },
-        transactionId: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+        ortb2Imp: {
+          ext: {
+            tid: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          }
+        },
       }
     });
 
     const refererInfo = {
-      referer: 'https://www.prebid.org',
+      ref: 'https://www.prebid.org',
       reachedTop: true,
       stack: [
         'https://www.prebid.org/page.html',
@@ -157,7 +165,7 @@ describe('mediaforce bid adapter', function () {
 
     it('should return proper banner imp', function () {
       let bid = utils.deepClone(defaultBid);
-      bid.params.bidfloor = 0.5;
+      bid.params.bidfloor = 0;
 
       let bidRequests = [bid];
       let bidderRequest = {
@@ -181,7 +189,7 @@ describe('mediaforce bid adapter', function () {
         site: {
           id: bid.params.publisher_id,
           publisher: {id: bid.params.publisher_id},
-          ref: encodeURIComponent(refererInfo.referer),
+          ref: encodeURIComponent(refererInfo.ref),
           page: pageUrl,
         },
         device: {
@@ -196,7 +204,7 @@ describe('mediaforce bid adapter', function () {
           bidfloor: bid.params.bidfloor,
           ext: {
             mediaforce: {
-              transactionId: bid.transactionId
+              transactionId: bid.ortb2Imp.ext.tid,
             }
           },
           banner: {w: 300, h: 250},
@@ -219,7 +227,7 @@ describe('mediaforce bid adapter', function () {
       assert.deepEqual(request, {
         method: 'POST',
         url: requestUrl,
-        data: '{"id":"' + data.id + '","site":{"page":"' + pageUrl + '","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"ext":{"mediaforce":{"hb_key":"210a474e-88f0-4646-837f-4253b7cf14fb"}},"tmax":1500,"imp":[{"tagid":"202","secure":' + secure + ',"bidfloor":0.5,"ext":{"mediaforce":{"transactionId":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b"}},"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
+        data: '{"id":"' + data.id + '","site":{"page":"' + pageUrl + '","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"ext":{"mediaforce":{"hb_key":"210a474e-88f0-4646-837f-4253b7cf14fb"}},"tmax":1500,"imp":[{"tagid":"202","secure":' + secure + ',"bidfloor":0,"ext":{"mediaforce":{"transactionId":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b"}},"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
       });
     });
 
@@ -265,7 +273,7 @@ describe('mediaforce bid adapter', function () {
             site: {
               id: 'pub123',
               publisher: {id: 'pub123'},
-              ref: encodeURIComponent(refererInfo.referer),
+              ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
             device: {
@@ -321,7 +329,7 @@ describe('mediaforce bid adapter', function () {
             site: {
               id: 'pub124',
               publisher: {id: 'pub124'},
-              ref: encodeURIComponent(refererInfo.referer),
+              ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
             device: {
@@ -391,6 +399,7 @@ describe('mediaforce bid adapter', function () {
         mediaType: BANNER,
         requestId: bid.impid,
         ttl: 300,
+        meta: { advertiserDomains: [] },
         width: bid.w,
       }]));
     });
@@ -477,6 +486,7 @@ describe('mediaforce bid adapter', function () {
         mediaType: NATIVE,
         requestId: bid.impid,
         ttl: 300,
+        meta: { advertiserDomains: [] },
       }]));
     });
   });
@@ -560,6 +570,7 @@ describe('mediaforce bid adapter', function () {
         mediaType: NATIVE,
         requestId: bid.impid,
         ttl: 300,
+        meta: { advertiserDomains: [] },
       }]));
     });
   });

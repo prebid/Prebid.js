@@ -22,8 +22,9 @@ export const spec = {
           l: navigator.browserLanguage ||
                         navigator.language,
           d: document.domain,
+          // TODO: what are 'tp' and 'pp'?
           tp: bidderRequest.refererInfo.stack[0] || window.location.href,
-          pp: bidderRequest.refererInfo.referer,
+          pp: bidderRequest.refererInfo.topmostLocation,
           gdpr: ((_a = bidderRequest.gdprConsent) === null || _a === void 0 ? void 0 : _a.gdprApplies) ? 1 : 0,
           ...((_b = bidderRequest.gdprConsent) === null || _b === void 0 ? void 0 : _b.consentString) && {
             cd: bidderRequest.gdprConsent.consentString

@@ -5,12 +5,21 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-export const storage = getStorageManager();
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
+const NAME = 'admixerId';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: NAME});
 
 /** @type {Submodule} */
 export const admixerIdSubmodule = {
@@ -18,7 +27,7 @@ export const admixerIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'admixerId',
+  name: NAME,
   /**
    * used to specify vendor id
    * @type {number}
@@ -40,16 +49,16 @@ export const admixerIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId(config, {gdpr: consentData} = {}) {
     const {e, p, pid} = (config && config.params) || {};
     if (!pid || typeof pid !== 'string') {
-      utils.logError('admixerId submodule requires partner id to be defined');
+      logError('admixerId submodule requires partner id to be defined');
       return;
     }
     const gdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const consentString = gdpr ? consentData.consentString : '';
     if (gdpr && !consentString) {
-      utils.logInfo('Consent string is required to call admixer id.');
+      logInfo('Consent string is required to call admixer id.');
       return;
     }
     const url = `https://inv-nets.admixer.net/cntcm.aspx?ssp=${pid}${e ? `&e=${e}` : ''}${p ? `&p=${p}` : ''}${consentString ? `&cs=${consentString}` : ''}`;
@@ -70,6 +79,12 @@ export const admixerIdSubmodule = {
     };
 
     return { callback: resp };
+  },
+  eids: {
+    'admixerId': {
+      source: 'admixer.net',
+      atype: 3
+    },
   }
 };
 function retrieveVisitorId(url, callback) {
@@ -83,7 +98,7 @@ function retrieveVisitorId(url, callback) {
       }
     },
     error: error => {
-      utils.logInfo(`admixerId: fetch encountered an error`, error);
+      logInfo(`admixerId: fetch encountered an error`, error);
       callback();
     }
   }, undefined, { method: 'GET', withCredentials: true });

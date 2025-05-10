@@ -14,11 +14,17 @@ describe('craftAdapter', function () {
 
   describe('isBidRequestValid', function () {
     before(function() {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        craft: {
+          storageAllowed: true
+        }
+      };
       this.windowContext = window.context;
       window.context = null;
     });
 
     after(function() {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       window.context = this.windowContext;
     });
     let bid = {
@@ -34,21 +40,21 @@ describe('craftAdapter', function () {
     });
 
     it('should return false when params.sitekey not found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         placementId: '1234abcd'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when params.placementId not found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         sitekey: 'craft-prebid-example'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when AMP cotext found', function () {
@@ -60,6 +66,16 @@ describe('craftAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        craft: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     let bidRequests = [{
       bidder: 'craft',
       params: {
@@ -75,7 +91,7 @@ describe('craftAdapter', function () {
     }];
     let bidderRequest = {
       refererInfo: {
-        referer: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
+        topmostLocation: 'https://www.gacraft.jp/publish/craft-prebid-example.html'
       }
     };
     it('sends bid request to ENDPOINT via POST', function () {
@@ -142,7 +158,7 @@ describe('craftAdapter', function () {
         height: 250,
         mediaType: 'banner',
         meta: null,
-        netRevenue: false,
+        netRevenue: true,
         requestId: '0396fae4eb5f47',
         ttl: 360,
         width: 300,

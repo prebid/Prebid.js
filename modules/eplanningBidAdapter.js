@@ -1,16 +1,19 @@
-import * as utils from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'eplanning';
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const rnd = Math.random();
-const DEFAULT_SV = 'ads.us.e-planning.net';
+const DEFAULT_SV = 'pbjs.e-planning.net';
 const DEFAULT_ISV = 'i.e-planning.net';
 const PARAMS = ['ci', 'sv', 't', 'ml', 'sn'];
-const DOLLARS = 'USD';
+const DOLLAR_CODE = 'USD';
 const NET_REVENUE = true;
 const TTL = 120;
 const NULL_SIZE = '1x1';
@@ -20,9 +23,15 @@ const STORAGE_VIEW_PREFIX = 'pbvi_';
 const mobileUserAgent = isMobileUserAgent();
 const PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC = ['1x1', '300x50', '320x50', '300x250'];
 const PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC = ['1x1', '970x90', '970x250', '160x600', '300x600', '728x90', '300x250'];
+const VAST_INSTREAM = 1;
+const VAST_OUTSTREAM = 2;
+const VAST_VERSION_DEFAULT = 3;
+const DEFAULT_SIZE_VAST = '640x480';
+const MAX_LEN_URL = 255;
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     return Boolean(bid.params.ci) || Boolean(bid.params.t);
@@ -32,23 +41,22 @@ export const spec = {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
+    const schain = bidRequests[0].schain;
     let url;
     let params;
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
     const spaces = getSpaces(bidRequests, urlConfig.ml);
-    const pageUrl = bidderRequest.refererInfo.referer;
-    const getDomain = (url) => {
-      let anchor = document.createElement('a');
-      anchor.href = url;
-      return anchor.hostname;
-    }
+    // TODO: do the fallbacks make sense here?
+    const pageUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+    const domain = bidderRequest.refererInfo.domain || window.location.host;
     if (urlConfig.t) {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
-      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + getDomain(pageUrl) + '/' + sec;
-      const referrerUrl = bidderRequest.refererInfo.referer.reachedTop ? window.top.document.referrer : bidderRequest.refererInfo.referer;
+      url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + domain + '/' + sec;
+      // TODO: does the fallback make sense here?
+      const referrerUrl = bidderRequest.refererInfo.ref || bidderRequest.refererInfo.topmostLocation;
 
       if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
@@ -57,7 +65,7 @@ export const spec = {
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: pageUrl || FILE,
+        ur: cutUrl(pageUrl || FILE),
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -65,9 +73,11 @@ export const spec = {
       if (pcrs) {
         params.crs = pcrs;
       }
-
+      if (schain && schain.nodes.length <= 2) {
+        params.sch = serializeSupplyChain(schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain']);
+      }
       if (referrerUrl) {
-        params.fr = referrerUrl;
+        params.fr = cutUrl(referrerUrl);
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -89,6 +99,10 @@ export const spec = {
           params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
         }
       }
+      if (spaces.impType) {
+        params.vctx = spaces.impType & VAST_INSTREAM ? VAST_INSTREAM : VAST_OUTSTREAM;
+        params.vv = VAST_VERSION_DEFAULT;
+      }
     }
 
     return {
@@ -102,26 +116,32 @@ export const spec = {
     const response = serverResponse.body;
     let bidResponses = [];
 
-    if (response && !utils.isEmpty(response.sp)) {
+    if (response && !isEmpty(response.sp)) {
       response.sp.forEach(space => {
-        if (!utils.isEmpty(space.a)) {
+        if (!isEmpty(space.a)) {
           space.a.forEach(ad => {
             const bidResponse = {
               requestId: request.adUnitToBidId[space.k],
               cpm: ad.pr,
               width: ad.w,
               height: ad.h,
-              ad: ad.adm,
               ttl: TTL,
               creativeId: ad.crid,
               netRevenue: NET_REVENUE,
-              currency: DOLLARS,
+              currency: DOLLAR_CODE,
             };
             if (ad.adom) {
               bidResponse.meta = {
                 advertiserDomains: ad.adom
               };
             }
+            if (request && request.data && request.data.vv) {
+              bidResponse.vastXml = ad.adm;
+              bidResponse.mediaType = VIDEO;
+            } else {
+              bidResponse.ad = ad.adm;
+            }
+
             bidResponses.push(bidResponse);
           });
         }
@@ -132,9 +152,9 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     const syncs = [];
-    const response = !utils.isEmpty(serverResponses) && serverResponses[0].body;
+    const response = !isEmpty(serverResponses) && serverResponses[0].body;
 
-    if (response && !utils.isEmpty(response.cs)) {
+    if (response && !isEmpty(response.cs)) {
       const responseSyncs = response.cs;
       responseSyncs.forEach(sync => {
         if (typeof sync === 'string' && syncOptions.pixelEnabled) {
@@ -153,13 +173,13 @@ export const spec = {
 
     return syncs;
   },
-}
+};
 
 function getUserAgent() {
   return window.navigator.userAgent;
 }
 function getInnerWidth() {
-  return utils.getWindowSelf().innerWidth;
+  return getWinDimensions().innerWidth;
 }
 function isMobileUserAgent() {
   return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
@@ -216,7 +236,7 @@ function compareSizesByPriority(size1, size2) {
 }
 
 function getSizesSortedByPriority(sizes) {
-  return utils.parseSizesInput(sizes).sort(compareSizesByPriority);
+  return parseSizesInput(sizes).sort(compareSizesByPriority);
 }
 
 function getSize(bid, first) {
@@ -239,17 +259,57 @@ function getSpacesStruct(bids) {
   return e;
 }
 
+function getFirstSizeVast(sizes) {
+  if (sizes == undefined || !Array.isArray(sizes)) {
+    return undefined;
+  }
+
+  let size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
+
+  return (Array.isArray(size) && size.length == 2) ? size : undefined;
+}
+
 function cleanName(name) {
   return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 
+function getFloorStr(bid) {
+  if (typeof bid.getFloor === 'function') {
+    let bidFloor = bid.getFloor({
+      currency: DOLLAR_CODE,
+      mediaType: '*',
+      size: '*'
+    }) || {};
+
+    if (bidFloor.floor) {
+      return '|' + encodeURIComponent(bidFloor.floor);
+    }
+  }
+  return '';
+}
+
 function getSpaces(bidRequests, ml) {
+  let impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
+  // Only one type of auction is supported at a time
+  if (impType) {
+    bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context == 'instream') : (bid.mediaTypes[VIDEO].context == 'outstream')));
+  }
+
   let spacesStruct = getSpacesStruct(bidRequests);
-  let es = {str: '', vs: '', map: {}};
+  let es = {str: '', vs: '', map: {}, impType: impType};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 
     let name;
+
+    if (impType) {
+      let firstSize = getFirstSizeVast(bid.mediaTypes[VIDEO].playerSize);
+      let sizeVast = firstSize ? firstSize.join('x') : DEFAULT_SIZE_VAST;
+      name = 'video_' + sizeVast + '_' + i;
+      es.map[name] = bid.bidId;
+      return name + ':' + sizeVast + ';1' + getFloorStr(bid);
+    }
+
     if (ml) {
       name = cleanName(bid.adUnitCode);
     } else {
@@ -257,7 +317,7 @@ function getSpaces(bidRequests, ml) {
     }
 
     es.map[name] = bid.bidId;
-    return name + ':' + getSize(bid);
+    return name + ':' + getSize(bid) + getFloorStr(bid);
   }).join('+')).join('+');
   return es;
 }
@@ -294,13 +354,25 @@ function getCharset() {
 
 function waitForElementsPresent(elements) {
   const observer = new MutationObserver(function (mutationList, observer) {
+    let index;
+    let adView;
     if (mutationList && Array.isArray(mutationList)) {
       mutationList.forEach(mr => {
         if (mr && mr.addedNodes && Array.isArray(mr.addedNodes)) {
           mr.addedNodes.forEach(ad => {
-            let index = elements.indexOf(ad.id);
+            index = elements.indexOf(ad.id);
+            adView = ad;
+            if (index < 0) {
+              elements.forEach(code => {
+                let div = _getAdSlotHTMLElement(code);
+                if (div && div.contains(ad) && getBoundingClientRect(div).width > 0) {
+                  index = elements.indexOf(div.id);
+                  adView = div;
+                }
+              });
+            }
             if (index >= 0) {
-              registerViewability(ad);
+              registerViewability(adView, elements[index]);
               elements.splice(index, 1);
               if (!elements.length) {
                 observer.disconnect();
@@ -321,19 +393,41 @@ function waitForElementsPresent(elements) {
   });
 }
 
-function registerViewability(div) {
+function registerViewability(div, name) {
   visibilityHandler({
-    name: div.id,
+    name: name,
     div: div
   });
+}
+
+function _mapAdUnitPathToElementId(adUnitCode) {
+  if (isGptPubadsDefined()) {
+    // eslint-disable-next-line no-undef
+    const adSlots = googletag.pubads().getSlots();
+    const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode);
+
+    for (let i = 0; i < adSlots.length; i++) {
+      if (isMatchingAdSlot(adSlots[i])) {
+        const id = adSlots[i].getSlotElementId();
+        return id;
+      }
+    }
+  }
+
+  return null;
+}
+
+function _getAdSlotHTMLElement(adUnitCode) {
+  return document.getElementById(adUnitCode) ||
+    document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
 
 function registerViewabilityAllBids(bids) {
   let elementsNotPresent = [];
   bids.forEach(bid => {
-    let div = document.getElementById(bid.adUnitCode);
+    let div = _getAdSlotHTMLElement(bid.adUnitCode);
     if (div) {
-      registerViewability(div);
+      registerViewability(div, bid.adUnitCode);
     } else {
       elementsNotPresent.push(bid.adUnitCode);
     }
@@ -348,114 +442,65 @@ function getViewabilityTracker() {
   let VIEWABILITY_TIME = 1000;
   let VIEWABILITY_MIN_RATIO = 0.5;
   let publicApi;
-  let context;
+  let observer;
+  let visibilityAds = {};
 
-  function segmentIsOutsideTheVisibleRange(visibleRangeEnd, p1, p2) {
-    return p1 > visibleRangeEnd || p2 < 0;
-  }
-
-  function segmentBeginsBeforeTheVisibleRange(p1) {
-    return p1 < 0;
-  }
-
-  function segmentEndsAfterTheVisibleRange(visibleRangeEnd, p2) {
-    return p2 < visibleRangeEnd;
-  }
-
-  function axialVisibilityRatio(visibleRangeEnd, p1, p2) {
-    let visibilityRatio = 0;
-    if (!segmentIsOutsideTheVisibleRange(visibleRangeEnd, p1, p2)) {
-      if (segmentBeginsBeforeTheVisibleRange(p1)) {
-        visibilityRatio = p2 / (p2 - p1);
+  function intersectionCallback(entries) {
+    entries.forEach(function(entry) {
+      var adBox = entry.target;
+      if (entry.isIntersecting) {
+        if (entry.intersectionRatio >= VIEWABILITY_MIN_RATIO && entry.boundingClientRect && entry.boundingClientRect.height > 0 && entry.boundingClientRect.width > 0) {
+          visibilityAds[adBox.id] = true;
+        }
       } else {
-        visibilityRatio = segmentEndsAfterTheVisibleRange(visibleRangeEnd, p2) ? 1 : (visibleRangeEnd - p1) / (p2 - p1);
+        visibilityAds[adBox.id] = false;
       }
+    });
+  }
+
+  function observedElementIsVisible(element) {
+    return visibilityAds[element.id] && document.visibilityState && document.visibilityState === 'visible';
+  }
+
+  function defineObserver() {
+    if (!observer) {
+      var observerConfig = {
+        root: null,
+        rootMargin: '0px',
+        threshold: [VIEWABILITY_MIN_RATIO]
+      };
+      observer = new IntersectionObserver(intersectionCallback.bind(this), observerConfig);
     }
-    return visibilityRatio;
   }
-
-  function isNotHiddenByNonFriendlyIframe() {
-    try { return (window === window.top) || window.frameElement; } catch (e) {}
-  }
-
-  function defineContext(e) {
-    try {
-      context = e && window.document.body.contains(e) ? window : (window.top.document.body.contains(e) ? top : undefined);
-    } catch (err) {}
-    return context;
-  }
-
-  function getContext(e) {
-    return context;
-  }
-
-  function verticalVisibilityRatio(position) {
-    return axialVisibilityRatio(getContext().innerHeight, position.top, position.bottom);
-  }
-
-  function horizontalVisibilityRatio(position) {
-    return axialVisibilityRatio(getContext().innerWidth, position.left, position.right);
-  }
-
-  function itIsNotHiddenByBannerAreaPosition(e) {
-    let position = e.getBoundingClientRect();
-    return (verticalVisibilityRatio(position) * horizontalVisibilityRatio(position)) > VIEWABILITY_MIN_RATIO;
-  }
-
-  function itIsNotHiddenByDisplayStyleCascade(e) {
-    return e.offsetHeight > 0 && e.offsetWidth > 0;
-  }
-
-  function itIsNotHiddenByOpacityStyleCascade(e) {
-    let s = e.style;
-    let p = e.parentNode;
-    return !(s && parseFloat(s.opacity) === 0) && (!p || itIsNotHiddenByOpacityStyleCascade(p));
-  }
-
-  function itIsNotHiddenByVisibilityStyleCascade(e) {
-    return getContext().getComputedStyle(e).visibility !== 'hidden';
-  }
-
-  function itIsNotHiddenByTabFocus() {
-    try { return getContext().top.document.hasFocus(); } catch (e) {}
-  }
-
-  function isDefined(e) {
-    return (e !== null) && (typeof e !== 'undefined');
-  }
-
-  function itIsNotHiddenByOrphanBranch() {
-    return isDefined(getContext());
-  }
-
-  function isContextInAnIframe() {
-    return isDefined(getContext().frameElement);
-  }
-
   function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
-    let visibleIntervals = isVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
+    let visibleIntervals = observedElementIsVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
     if (visibleIntervals === TIME_PARTITIONS) {
+      stopObserveViewability(element)
       callback();
     } else {
       setTimeout(processIntervalVisibilityStatus.bind(this, visibleIntervals, element, callback), VIEWABILITY_TIME / TIME_PARTITIONS);
     }
   }
 
-  function isVisible(element) {
-    defineContext(element);
-    return isNotHiddenByNonFriendlyIframe() &&
-      itIsNotHiddenByOrphanBranch() &&
-      itIsNotHiddenByTabFocus() &&
-      itIsNotHiddenByDisplayStyleCascade(element) &&
-      itIsNotHiddenByVisibilityStyleCascade(element) &&
-      itIsNotHiddenByOpacityStyleCascade(element) &&
-      itIsNotHiddenByBannerAreaPosition(element) &&
-      (!isContextInAnIframe() || isVisible(getContext().frameElement));
+  function stopObserveViewability(element) {
+    delete visibilityAds[element.id];
+    observer.unobserve(element);
+  }
+
+  function observeAds(element) {
+    observer.observe(element);
+  }
+
+  function initAndVerifyVisibility(element, callback) {
+    if (element) {
+      defineObserver();
+      observeAds(element);
+      processIntervalVisibilityStatus(0, element, callback);
+    }
   }
 
   publicApi = {
-    isVisible: isVisible,
-    onView: processIntervalVisibilityStatus.bind(this, 0)
+    onView: initAndVerifyVisibility.bind(this)
   };
 
   return publicApi;
@@ -466,6 +511,17 @@ function visibilityHandler(obj) {
     registerAuction(STORAGE_RENDER_PREFIX + obj.name);
     getViewabilityTracker().onView(obj.div, registerAuction.bind(undefined, STORAGE_VIEW_PREFIX + obj.name));
   }
+}
+
+function cutUrl (url) {
+  if (url.length > MAX_LEN_URL) {
+    url = url.split('?')[0];
+    if (url.length > MAX_LEN_URL) {
+      url = url.slice(0, MAX_LEN_URL);
+    }
+  }
+
+  return url;
 }
 
 function registerAuction(storageID) {
@@ -480,4 +536,5 @@ function registerAuction(storageID) {
 
   return true;
 }
+
 registerBidder(spec);

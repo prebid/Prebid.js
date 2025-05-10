@@ -34,31 +34,34 @@ Module that connects to an Adxcg.com zone to fetch bids.
                     code: 'native-ad-div',
                     mediaTypes: {
                         native: {
-                            image: {
+                             image: {
                                 sendId: false,
-                                required: true,
-                                sizes: [80, 80]
+                                required: false,
+                                sizes: [127, 83]
                             },
                             icon: {
-                                sendId: true,
-                            },
-                            brand: {
+                                sizes: [80, 80],
+                                required: false,
                                 sendId: true,
                             },
                             title: {
                                 sendId: false,
-                                required: true,
+                                required: false,
                                 len: 75
                             },
                             body: {
                                 sendId: false,
-                                required: true,
+                                required: false,
                                 len: 200
+                            },
+                            cta: {
+                                sendId: false,
+                                required: false,
+                                len: 75
                             },
                             sponsoredBy: {
                                 sendId: false,
-                                required: false,
-                                len: 20
+                                required: false
                             }
                         }
                     },
@@ -73,21 +76,19 @@ Module that connects to an Adxcg.com zone to fetch bids.
                 code: 'video-div',
                 mediaTypes: {
                     video: {
-                        playerSize: [640, 480],
-                        context: 'instream',
-                        mimes: ['video/mp4'],
-                        protocols: [5, 6, 8],
-                        playback_method: ['auto_play_sound_off']
-                    }
+                            playerSize: [640, 480],
+                            context: 'instream',
+                            mimes: ['video/mp4'],
+                            protocols: [2, 3, 5, 6, 8],
+                            playback_method: ['auto_play_sound_off'],
+			                maxduration: 100,
+                            skip: 1
+                        }
                 },
                 bids: [{
                     bidder: 'adxcg',
                     params: {
-                        adzoneid: '20',
-                        video: {
-                            maxduration: 100,
-                            skippable: true
-                        }
+                        adzoneid: '20'                       
                     }
                 }]
             }

@@ -33,9 +33,9 @@ describe('colombiaBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -64,21 +64,26 @@ describe('colombiaBidAdapter', function() {
           [300, 250]
         ],
         'bidId': '382091349b149f"',
-        'bidderRequestId': '"1f9c98192de251"',
+        'bidderRequestId': '"1f9c98192de2511"',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
+    let bidderRequest = {
+      refererInfo: {
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'http://example.com',
+        stack: ['http://example.com']
+      }
+    };
 
     const request = spec.buildRequests(bidRequests);
-
     it('sends bid request to our endpoint via POST', function () {
       expect(request[0].method).to.equal('POST');
-      expect(request[1].method).to.equal('POST');
     });
 
     it('attaches source and version to endpoint URL as query params', function () {
       expect(request[0].url).to.equal(ENDPOINT);
-      expect(request[1].url).to.equal(ENDPOINT);
     });
   });
 
@@ -100,21 +105,19 @@ describe('colombiaBidAdapter', function() {
       }
     ];
 
-    let serverResponse = {
-      body: {
-        'ad': '<div>This is test case for colombia adapter</div> ',
-        'cpm': 3.14,
-        'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
-        'currency': 'USD',
-        'uid': '23beaa6af6cdde',
-        'width': 728,
-        'height': 90,
-        'netRevenue': true,
-        'ttl': 600,
-        'dealid': '',
-        'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836'
-      }
-    };
+    let serverResponse = [{
+      'ad': '<div>This is test case for colombia adapter</div> ',
+      'cpm': 3.14,
+      'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
+      'currency': 'USD',
+      'requestId': '23beaa6af6cdde',
+      'width': 728,
+      'height': 90,
+      'netRevenue': true,
+      'ttl': 600,
+      'dealid': '',
+      'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836'
+    }];
 
     it('should get the correct bid response', function () {
       let expectedResponse = [{

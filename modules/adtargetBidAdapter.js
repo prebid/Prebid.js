@@ -1,8 +1,14 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_map, deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {find} from '../src/polyfill.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+import {
+  createTag, getUserSyncsFn,
+  isBidRequestValid,
+  supportedMediaTypes
+} from '../libraries/adtelligentUtils/adtelligentUtils.js';
 
 const ENDPOINT = 'https://ghb.console.adtarget.com.tr/v2/auction/';
 const BIDDER_CODE = 'adtarget';
@@ -11,58 +17,19 @@ const syncsCache = {};
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO, BANNER],
-  isBidRequestValid: function (bid) {
-    return !!utils.deepAccess(bid, 'params.aid');
-  },
+  gvlid: 779,
+  supportedMediaTypes,
+  isBidRequestValid,
   getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = [];
-
-    function addSyncs(bid) {
-      const uris = bid.cookieURLs;
-      const types = bid.cookieURLSTypes || [];
-
-      if (Array.isArray(uris)) {
-        uris.forEach((uri, i) => {
-          const type = types[i] || 'image';
-
-          if ((!syncOptions.pixelEnabled && type === 'image') ||
-            (!syncOptions.iframeEnabled && type === 'iframe') ||
-            syncsCache[uri]) {
-            return;
-          }
-
-          syncsCache[uri] = true;
-          syncs.push({
-            type: type,
-            url: uri
-          })
-        })
-      }
-    }
-
-    if (syncOptions.pixelEnabled || syncOptions.iframeEnabled) {
-      utils.isArray(serverResponses) && serverResponses.forEach((response) => {
-        if (response.body) {
-          if (utils.isArray(response.body)) {
-            response.body.forEach(b => {
-              addSyncs(b);
-            })
-          } else {
-            addSyncs(response.body)
-          }
-        }
-      })
-    }
-    return syncs;
+    return getUserSyncsFn(syncOptions, serverResponses, syncsCache)
   },
 
   buildRequests: function (bidRequests, adapterRequest) {
     const adapterSettings = config.getConfig(adapterRequest.bidderCode)
-    const chunkSize = utils.deepAccess(adapterSettings, 'chunkSize', 10);
+    const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
-    const bidChunks = utils.chunk(bids, chunkSize);
-    return utils._map(bidChunks, (bids) => {
+    const bidChunks = chunk(bids, chunkSize);
+    return _map(bidChunks, (bids) => {
       return {
         data: Object.assign({}, tag, { BidRequests: bids }),
         adapterRequest,
@@ -75,12 +42,12 @@ export const spec = {
     serverResponse = serverResponse.body;
     let bids = [];
 
-    if (!utils.isArray(serverResponse)) {
+    if (!isArray(serverResponse)) {
       return parseResponse(serverResponse, adapterRequest);
     }
 
     serverResponse.forEach(serverBidResponse => {
-      bids = utils.flatten(bids, parseResponse(serverBidResponse, adapterRequest));
+      bids = flatten(bids, parseResponse(serverBidResponse, adapterRequest));
     });
 
     return bids;
@@ -88,14 +55,14 @@ export const spec = {
 };
 
 function parseResponse(serverResponse, adapterRequest) {
-  const isInvalidValidResp = !serverResponse || !utils.isArray(serverResponse.bids);
+  const isInvalidValidResp = !serverResponse || !isArray(serverResponse.bids);
   const bids = [];
 
   if (isInvalidValidResp) {
     const extMessage = serverResponse && serverResponse.ext && serverResponse.ext.message ? `: ${serverResponse.ext.message}` : '';
     const errorMessage = `in response for ${adapterRequest.bidderCode} adapter ${extMessage}`;
 
-    utils.logError(errorMessage);
+    logError(errorMessage);
 
     return bids;
   }
@@ -116,27 +83,9 @@ function parseResponse(serverResponse, adapterRequest) {
 }
 
 function bidToTag(bidRequests, adapterRequest) {
-  const tag = {
-    Domain: utils.deepAccess(adapterRequest, 'refererInfo.referer')
-  };
-  if (config.getConfig('coppa') === true) {
-    tag.Coppa = 1;
-  }
-  if (utils.deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
-    tag.GDPR = 1;
-    tag.GDPRConsent = utils.deepAccess(adapterRequest, 'gdprConsent.consentString');
-  }
-  if (utils.deepAccess(adapterRequest, 'uspConsent')) {
-    tag.USP = utils.deepAccess(adapterRequest, 'uspConsent');
-  }
-  if (utils.deepAccess(bidRequests[0], 'schain')) {
-    tag.Schain = utils.deepAccess(bidRequests[0], 'schain');
-  }
-  if (utils.deepAccess(bidRequests[0], 'userId')) {
-    tag.UserIds = utils.deepAccess(bidRequests[0], 'userId');
-  }
+  const tag = createTag(bidRequests, adapterRequest);
 
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);
@@ -147,19 +96,19 @@ function bidToTag(bidRequests, adapterRequest) {
 }
 
 function prepareBidRequests(bidReq) {
-  const mediaType = utils.deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
-  const sizes = mediaType === VIDEO ? utils.deepAccess(bidReq, 'mediaTypes.video.playerSize') : utils.deepAccess(bidReq, 'mediaTypes.banner.sizes');
+  const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
+  const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
   const bidReqParams = {
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.aid,
     'AdType': mediaType,
-    'Sizes': utils.parseSizesInput(sizes).join(',')
+    'Sizes': parseSizesInput(sizes).join(',')
   };
   return bidReqParams;
 }
 
 function getMediaType(bidderRequest) {
-  return utils.deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
+  return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
 }
 
 function createBid(bidResponse, bidRequest) {

@@ -1,5 +1,8 @@
 import { expect } from 'chai';
-let { spec } = require('modules/proxistoreBidAdapter');
+import { spec } from 'modules/proxistoreBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from '../../../src/config.js';
+
 const BIDDER_CODE = 'proxistore';
 describe('ProxistoreBidAdapter', function () {
   const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
@@ -52,10 +55,11 @@ describe('ProxistoreBidAdapter', function () {
   });
   describe('buildRequests', function () {
     const url = {
-      cookieBase: 'https://abs.proxistore.com/fr/v3/rtb/prebid/multi',
+      cookieBase: 'https://abs.proxistore.com/v3/rtb/prebid/multi',
       cookieLess:
-        'https://abs.cookieless-proxistore.com/fr/v3/rtb/prebid/multi',
+        'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi',
     };
+
     let request = spec.buildRequests([bid], bidderRequest);
     it('should return a valid object', function () {
       expect(request).to.be.an('object');
@@ -77,7 +81,7 @@ describe('ProxistoreBidAdapter', function () {
     it('should contain a valid url', function () {
       // has gdpr consent
       expect(request.url).equal(url.cookieBase);
-      // doens't have gpdr consent
+      // doens't have gdpr consent
       bidderRequest.gdprConsent.vendorData = null;
 
       request = spec.buildRequests([bid], bidderRequest);
@@ -91,11 +95,11 @@ describe('ProxistoreBidAdapter', function () {
         vendorData: {
           vendor: {
             consents: {
-              '418': true
-            }
+              418: true,
+            },
           },
         },
-        apiVersion: 2
+        apiVersion: 2,
       };
       // has gdpr consent
       request = spec.buildRequests([bid], bidderRequest);
@@ -117,10 +121,7 @@ describe('ProxistoreBidAdapter', function () {
       let data = JSON.parse(request.data);
       expect(data.bids[0].floor).to.be.null;
 
-      // make it respond with a non USD floor should not send it
-      bid.getFloor = function () {
-        return { currency: 'EUR', floor: 1.0 };
-      };
+      bid.params['bidFloor'] = 1;
       let req = spec.buildRequests([bid], bidderRequest);
       data = JSON.parse(req.data);
       expect(data.bids[0].floor).equal(1);

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Topics demo</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="favicon.ico" rel="shortcut icon">
+    <script>
+      async function getTopics() {
+        try {
+          if ('browsingTopics' in document && document.featurePolicy.allowsFeature('browsing-topics')) {
+            const topics = await document.browsingTopics();
+            console.log('Called iframe:', window.location.hostname, topics, '\nNumber of topics: ', topics.length);
+            return Promise.resolve(topics);
+          } else {
+            console.log('document.browsingTopics() not supported');
+          }
+
+        } catch (error) {
+          console.log('Error:', error);
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', async function () {
+        const topics = await getTopics()
+        const url = new URL(window.location.href);
+        const params = new URLSearchParams(url.search);
+        const message = JSON.stringify({
+          segment: {
+            domain: window.location.hostname,
+            topics,
+            bidder: params.get("bidder")
+          },
+          date: Date.now(),
+        });
+        window.parent.postMessage(message, '*');
+      });
+    </script>
+  </head>
+  <body>
+  </body>
+</html>

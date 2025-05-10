@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prebid.js Banner Example</title>
+    <!-- Prebid.js -->
+    <!-- <script async src="prebid.js"></script> -->
+    <!-- <script async src="../../build/dist/prebid.js"></script> -->
+    <script async src="../../build/dev/prebid.js"></script>
+    <!-- Google Publisher Tag -->
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        const customConfigObject = {
+            "buckets": [{
+                "max": 40,
+                "increment": 0.5
+            }]
+        };
+        // Prebid Banner Ad Unit
+        const adUnits = [{
+            code: '/21623266709/prebid-test',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]],
+                }
+            },
+            bids: [{
+                bidder: 'revcontent',
+                params: {
+                    // Your user-id and api-key
+                    apiKey: 'abababababababababababababababababababab',
+                    userId: 111111,
+                    domain: 'www.denverpost.com',
+                    endpoint: 'trends.revcontent.com',
+                    bidfloor: 0.05,
+                }
+            }]
+        },{
+            code: '/21623266709/prebid-test-2',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]],
+                }
+            },
+            bids: [{
+                bidder: 'revcontent',
+                params: {
+                    // Your user-id and api-key
+                    apiKey: 'abababababababababababababababababababab',
+                    userId: 111111,
+                    domain: 'www.denverpost.com',
+                    endpoint: 'trends.revcontent.com',
+                    bidfloor: 0.05,
+                }
+            }]
+        }
+        ];
+    </script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                enableSendAllBids: false,
+                priceGranularity: customConfigObject
+            });
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
+        });
+        function sendAdServerRequest() {
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync('/21623266709/prebid-test');
+                    pbjs.setTargetingForGPTAsync('/21623266709/prebid-test-2');
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+    </script>
+    <script>
+        googletag.cmd.push(function () {
+            googletag
+                .defineSlot('/21623266709/prebid-test', [[300, 250]], 'div-0')
+                .addService(googletag.pubads());
+            googletag
+                .defineSlot('/21623266709/prebid-test-2', [[300, 250]], 'div-1')
+                .addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+<body>
+    <h2>Prebid.js Banner Example</h2>
+    <div id='div-0'>
+        <script>
+            googletag.cmd.push(function () {
+                googletag.display('div-0');
+            });
+        </script>
+    </div>
+    <br>
+    <div id='div-1'>
+        <script>
+            googletag.cmd.push(function () {
+                googletag.display('div-1');
+            });
+        </script>
+    </div>
+    <div id="targeting-keys"></div>
+</body>

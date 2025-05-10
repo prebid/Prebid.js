@@ -1,15 +1,19 @@
-# Permutive Real-time Data Submodule
-This submodule reads segments from Permutive and attaches them as targeting keys to bid requests. Using this module will deliver best targeting results, leveraging Permutive's real-time segmentation and modelling capabilities.
+## Prebid Config for Permutive RTD Module
 
-## Usage
+This module reads cohorts from Permutive and attaches them as targeting keys to bid requests.
+
+### _Permutive Real-time Data Submodule_
+
+#### Usage
 Compile the Permutive RTD module into your Prebid build:
+
 ```
 gulp build --modules=rtdModule,permutiveRtdProvider
 ```
 
 > Note that the global RTD module, `rtdModule`, is a prerequisite of the Permutive RTD module.
 
-You then need to enable the Permutive RTD in your Prebid configuration, using the below format:
+You then need to enable the Permutive RTD in your Prebid configuration. Below is an example of the format:
 
 ```javascript
 pbjs.setConfig({
@@ -28,76 +32,123 @@ pbjs.setConfig({
 })
 ```
 
-## Supported Bidders
-The below bidders are currently support by the Permutive RTD module. Please reach out to your Permutive Account Manager to request support for any additional bidders.
+#### Parameters
 
-| Bidder      | ID         | Custom First-Party Segments | Audience Connector ("acBidders") |
-| ----------- | ---------- | -------------------- | ------------------ |
-| Xandr       | `appnexus` | Yes                  | Yes                |
-| Magnite     | `rubicon`  | Yes                  | No                |
-| Ozone       | `ozone`    | No                   | Yes                |
-| TrustX      | `trustx`   | No                   | Yes                |
-
-* **First-party segments:** When enabling the respective Activation for a segment in Permutive, this module will automatically attach that segment to the bid request. There is no need to enable individual bidders in the module configuration, it will automatically reflect which SSP integrations you have enabled in Permutive. Permutive segments will be sent in the `permutive` key-value.
-
-* **Audience Connector:** You'll need to define which bidder should receive Audience Connector segments. You need to include the `ID` of any bidder in the `acBidders` array. Audience Connector segments will be sent in the `p_standard` key-value. The segments produced by Audience Connector are not supported for PMPs at this time.
-
+The parameters below provide configurability for general behaviours of the RTD submodule,
+as well as enabling settings for specific use cases mentioned above (e.g. acbidders).
 
 ## Parameters
-| Name              | Type                 | Description        | Default        |
-| ----------------- | -------------------- | ------------------ | ------------------ |
-| name              | String               | This should always be `permutive` | - |
-| waitForIt         | Boolean              | Should be `true` if there's an `auctionDelay` defined (optional) | `false` |
-| params            | Object               |                 | - |
-| params.acBidders  | String[]             | An array of bidders which should receive AC segments. Pleasee see `Supported Bidders` for bidder support and possible values. | `[]` |
-| params.maxSegs    | Integer              | Maximum number of segments to be included in either the `permutive` or `p_standard` key-value. | `500` |
-| params.overwrites | Object               | See `Custom Bidder Setup` for details on how to define custom bidder functions.      | `{}` |
 
+{: .table .table-bordered .table-striped }
+| Name                   | Type                 | Description                                                                                   | Default            |
+| ---------------------- | -------------------- | --------------------------------------------------------------------------------------------- | ------------------ |
+| name                   | String               | This should always be `permutive`                                                             | -                  |
+| waitForIt              | Boolean              | Should be `true` if there's an `auctionDelay` defined (optional)                              | `false`            |
+| params                 | Object               |                                                                                               | -                  |
+| params.acBidders       | String[]             | An array of bidder codes to share cohorts with in certain versions of Prebid, see below       | `[]`               |
+| params.maxSegs         | Integer              | Maximum number of cohorts to be included in either the `permutive` or `p_standard` key-value. | `500`              |
 
-## Custom Bidder Setup
-You can overwrite the default bidder function, for example to include a different set of segments or to support additional bidders. The below example modifies what first-party segments Magnite receives (segments from `gam` instead of `rubicon`). As best practise we recommend to first call `defaultFn` and then only overwrite specific key-values. The below example only overwrites `permutive` while `p_standard` are still set by `defaultFn` (if `rubicon` is an enabled `acBidder`).
+#### Context
 
+While Permutive is listed as a TCF vendor (ID: 361), Permutive does not obtain consent directly from the TCF. As we act as a processor on behalf of our publishers consent is given to the Permutive SDK by the publisher, not by the [GDPR Consent Management Module](https://prebid-docs.atre.net/dev-docs/modules/consentManagement.html).
+
+This means that if GDPR enforcement is configured within the Permutive SDK _and_ the user consent isn’t given for Permutive to fire, no cohorts will populate.
+
+If you are also using the [TCF Control Module](https://docs.prebid.org/dev-docs/modules/tcfControl.html), in order to prevent Permutive from being blocked, it needs to be labeled within the Vendor Exceptions.
+
+#### Instructions
+
+1. Publisher enables rules within Prebid.js configuration. 
+2. Label Permutive as an exception, as shown below.
 ```javascript
-pbjs.setConfig({
-  ...,
-  realTimeData: {
-    auctionDelay: 50,
-    dataProviders: [{
-      name: 'permutive',
-      waitForIt: true,
-      params: {
-        acBidders: ['appnexus'],
-        maxSegs: 450,
-        overwrites: {
-          rubicon: function (bid, data, acEnabled, utils, defaultFn) {
-            if (defaultFn){
-              bid = defaultFn(bid, data, acEnabled)
-            }
-            if (data.gam && data.gam.length) {
-              utils.deepSetValue(bid, 'params.visitor.permutive', data.gam)
-            }
-          }
-        }
-      }
-    }]
+[
+  {
+    purpose: 'storage',
+    enforcePurpose: true,
+    enforceVendor: true,
+    vendorExceptions: ["permutive"]
   },
-  ...
-})
+  {
+    purpose: 'basicAds',
+    enforcePurpose: true,
+    enforceVendor: true,
+    vendorExceptions: []
+  }
+]
 ```
-Any custom bidder function will receive the following parameters:
 
-| Name          | Type          | Description                             |
-| ------------- |-------------- | --------------------------------------- |
-| bid           | Object        | The bidder specific bidder object. You will mutate this object to set the appropriate targeting keys.       |
-| data          | Object        | An object containing Permutive segments |
-| data.appnexus | string[]      | Segments exposed by the Xandr SSP integration |
-| data.rubicon  | string[]      | Segments exposed by the Magnite SSP integration  |
-| data.gam      | string[]      | Segments exposed by the Google Ad Manager integration |
-| data.ac       | string[]      | Segments exposed by the Audience Connector |
-| acEnabled     | Boolean       | `true` if the current bidder in included in `params.acBidders` |
-| utils         | {}            | An object containing references to various util functions used by `permutiveRtdProvider.js`. Please make sure not to overwrite any of these. |
-| defaultFn     | Function      | The default function for this bidder. Please note that this can be `undefined` if there is no default function for this bidder (see `Supported Bidders`). The function expect the following parameters: `bid`, `data`, `acEnabled` and will return `bid`. |
+Before making any updates to this configuration, please ensure that this approach aligns with internal policies and current regulations regarding consent.
 
-**Warning**
+## Cohort Activation with Permutive RTD Module
 
-The custom bidder function will mutate the `bid` object. Please be aware that this could break your bid request if you accidentally overwrite any fields other than the `permutive` or `p_standard` key-values or if you change the structure of the `bid` object in any way.
+**Note**: Publishers must be enabled on the above Permutive RTD Submodule to enable Standard Cohorts.
+
+### _Enabling Publisher Cohorts_
+
+#### Standard Cohorts
+
+The Permutive RTD module sets Standard Cohort IDs as bidder-specific ortb2.user.data first-party data, following the Prebid ortb2 convention. Cohorts will be sent in the `p_standard` key-value.
+
+For Prebid versions below 7.29.0, populate the acbidders config in the Permutive RTD with an array of bidder codes with whom you wish to share Standard Cohorts with. You also need to permission the bidders by communicating the bidder list to the Permutive team at strategicpartnershipops@permutive.com.
+
+For Prebid versions 7.29.0 and above, do not populate bidder codes in acbidders for the purpose of sharing Standard Cohorts (Note: there may be other business needs that require you to populate acbidders for Prebid versions 7.29.0+, see Advertiser Cohorts below). To share Standard Cohorts with bidders in Prebid versions 7.29.0 and above, communicate the bidder list to the Permutive team at strategicpartnershipops@permutive.com.
+
+#### _Bidder Specific Requirements for Standard Cohorts_
+For PubMatic or OpenX: Please ensure you are using Prebid.js 7.13 (or later)
+For Xandr: Please ensure you are using Prebid.js 7.29 (or later)
+For Equativ: Please ensure you are using Prebid.js 7.26 (or later)
+
+#### Custom Cohorts
+
+The Permutive RTD module also supports passing any of the **Custom** Cohorts created in the dashboard to some SSP partners for targeting
+e.g. setting up publisher deals. For these activations, cohort IDs are set in bidder-specific locations per ad unit (custom parameters).
+
+Currently, bidders with known support for custom cohort targeting are:
+
+- Xandr
+- Magnite
+
+When enabling the respective Activation for a cohort in Permutive, this module will automatically attach that cohort ID to the bid request.
+There is no need to enable individual bidders in the module configuration, it will automatically reflect which SSP integrations you have enabled in your Permutive dashboard.
+Permutive cohorts will be sent in the permutive key-value.
+
+
+### _Enabling Advertiser Cohorts_
+
+If you are connecting to an Advertiser seat within Permutive to share Advertiser Cohorts,  populate the acbidders config in the Permutive RTD with an array of bidder codes with whom you wish to share Advertiser Cohorts with.
+
+### _Managing acbidders_
+
+If your business needs require you to populate acbidders with bidder codes based on the criteria above, there are **two** ways to manage it.
+
+#### Option 1 - Automated
+
+If you are using Prebid.js v7.13.0+, bidders may be added to or removed from the acbidders config directly within the Permutive Dashboard.
+
+**Permutive can do this on your behalf**. Simply contact your Permutive CSM with strategicpartnershipops@permutive.com on cc,
+indicating which bidders you would like added.
+
+Or, a publisher may do this themselves within the Permutive Dashboard using the below instructions.
+
+##### Create Integration
+
+In order to manage acbidders via the Permutive dashboard, it is necessary to first enable the Prebid integration via the integrations page (settings).
+
+**Note on Revenue Insights:** The prebid integration includes a feature for revenue insights,
+which is not required for the purpose of updating acbidders config.
+Please see [this document](https://support.permutive.com/hc/en-us/articles/360019044079-Revenue-Insights) for more information about revenue insights.
+
+##### Update acbidders
+
+The input for the “Data Provider config” is a multi-input free text. A valid “bidder code” needs to be entered in order to enable Standard or Advertiser Cohorts to be passed to the desired partner. The [prebid Bidders page](https://docs.prebid.org/dev-docs/bidders.html) contains instructions and a link to a list of possible bidder codes.
+
+Bidders can be added or removed from acbidders using this feature, however, this will not impact any bidders that have been applied using the manual method below.
+
+#### Option 2 - Manual
+
+As a secondary option, bidders may be added manually.
+
+To do so, define which bidders should receive Standard or Advertiser Cohorts by
+including the _bidder code_ of any bidder in the `acBidders` array.
+
+**Note:** If you ever need to remove a manually-added bidder, the bidder will also need to be removed manually.

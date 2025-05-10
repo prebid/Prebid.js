@@ -5,10 +5,17 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
+import { logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 /** @type {Submodule} */
 export const fabrickIdSubmodule = {
@@ -44,10 +51,10 @@ export const fabrickIdSubmodule = {
     try {
       const configParams = (config && config.params) || {};
       if (window.fabrickMod1) {
-        window.fabrickMod1(configParams, consentData, cacheIdObj);
+        window.fabrickMod1(configParams, consentData?.gdpr, cacheIdObj);
       }
       if (!configParams || !configParams.apiKey || typeof configParams.apiKey !== 'string') {
-        utils.logError('fabrick submodule requires an apiKey.');
+        logError('fabrick submodule requires an apiKey.');
         return;
       }
       try {
@@ -70,10 +77,10 @@ export const fabrickIdSubmodule = {
           }
         }
         // pull off the trailing &
-        url = url.slice(0, -1)
+        url = url.slice(0, -1);
         const referer = _getRefererInfo(configParams);
         const refs = new Map();
-        _setReferrer(refs, referer.referer);
+        _setReferrer(refs, referer.topmostLocation);
         if (referer.stack && referer.stack[0]) {
           _setReferrer(refs, referer.stack[0]);
         }
@@ -89,14 +96,14 @@ export const fabrickIdSubmodule = {
             success: response => {
               if (window.fabrickMod2) {
                 return window.fabrickMod2(
-                  callback, response, configParams, consentData, cacheIdObj);
+                  callback, response, configParams, consentData?.gdpr, cacheIdObj);
               } else {
                 let responseObj;
                 if (response) {
                   try {
                     responseObj = JSON.parse(response);
                   } catch (error) {
-                    utils.logError(error);
+                    logError(error);
                     responseObj = {};
                   }
                 }
@@ -104,7 +111,7 @@ export const fabrickIdSubmodule = {
               }
             },
             error: error => {
-              utils.logError(`fabrickId fetch encountered an error`, error);
+              logError(`fabrickId fetch encountered an error`, error);
               callback();
             }
           };
@@ -112,11 +119,17 @@ export const fabrickIdSubmodule = {
         };
         return {callback: resp};
       } catch (e) {
-        utils.logError(`fabrickIdSystem encountered an error`, e);
+        logError(`fabrickIdSystem encountered an error`, e);
       }
     } catch (e) {
-      utils.logError(`fabrickIdSystem encountered an error`, e);
+      logError(`fabrickIdSystem encountered an error`, e);
     }
+  },
+  eids: {
+    'fabrickId': {
+      source: 'neustar.biz',
+      atype: 1
+    },
   }
 };
 
@@ -174,7 +187,7 @@ export function appendUrl(url, paramName, s, configParams) {
         s = s.substring(0, thisMaxRefLen - 2);
       }
     }
-    return `${url}${s}`
+    return `${url}${s}`;
   } else {
     return url;
   }

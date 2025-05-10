@@ -1,135 +1,172 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/vrtcalBidAdapter.js';
+import { expect } from 'chai'
+import { spec } from 'modules/vrtcalBidAdapter'
+import { newBidder } from 'src/adapters/bidderFactory'
+import { config } from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
-describe('Vrtcal Adapter', function () {
-  let bid = {
+describe('vrtcalBidAdapter', function () {
+  const adapter = newBidder(spec)
+
+  let bidRequest = {
     bidId: 'bidID0001',
-    bidder: 'vrtcal',
-    bidderRequestId: 'brID0001',
-    auctionId: 'auID0001',
-    sizes: [[300, 250]],
-    transactionId: 'tid0001',
-    adUnitCode: 'vrtcal-test-adunit'
-  };
+    transactionId: 'transID0001',
+    sizes: [[ 300, 250 ]]
+  }
 
   describe('isBidRequestValid', function () {
-    it('Should return true when base params as set', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
-    it('Should return false when bid.bidId is blank', function () {
-      bid.bidId = '';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-    it('Should return false when bid.auctionId is blank', function () {
-      bid.auctionId = '';
-      expect(spec.isBidRequestValid(bid)).to.be.false;
-    });
-  });
+    it('should return true 100% of time as no special additional params are required, thus no additional validation needed', function () {
+      expect(spec.isBidRequestValid(bidRequest)).to.be.true
+    })
+  })
 
   describe('buildRequests', function () {
-    let serverRequests = spec.buildRequests([bid]);
+    let bidRequests = [
+      {
+        'bidder': 'vrtcal',
+        'adUnitCode': 'adunit0001',
+        'sizes': [[300, 250]],
+        'bidId': 'bidID0001',
+        'bidderRequestId': 'br0001',
+        'auctionId': 'auction0001',
+        'userIdAsEids': {},
+        timeout: 435,
 
-    let serverRequest = serverRequests[0];
+        refererInfo: {
+          page: 'page'
+        }
 
-    it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist;
-      expect(serverRequest.method).to.exist;
-      expect(serverRequest.url).to.exist;
-      expect(serverRequest.data).to.exist;
-    });
-    it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST');
-    });
-    it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804');
-    });
-
-    it('Returns valid data if array of bids is valid', function () {
-      let data = JSON.parse(serverRequest.data);
-      expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('prebidJS', 'prebidAdUnitCode', 'id', 'imp', 'site', 'device');
-      expect(data.prebidJS).to.not.equal('');
-      expect(data.prebidAdUnitCode).to.not.equal('');
-    });
-
-    it('Sets width and height based on existence of bid.mediaTypes.banner', function () {
-      let data = JSON.parse(serverRequest.data);
-      if (typeof (bid.mediaTypes) !== 'undefined' && typeof (bid.mediaTypes.banner) !== 'undefined' && typeof (bid.mediaTypes.banner.sizes) !== 'undefined') {
-	   expect(data.imp[0].banner.w).to.equal(bid.mediaTypes.banner.sizes[0][0]);
-	   expect(data.imp[0].banner.h).to.equal(bid.mediaTypes.banner.sizes[0][1]);
-      } else {
-	   expect(data.imp[0].banner.w).to.equal(bid.sizes[0][0]);
-	   expect(data.imp[0].banner.h).to.equal(bid.sizes[0][1]);
       }
+    ];
+
+    let request = spec.buildRequests(bidRequests);
+
+    it('sends bid request to our endpoint via POST', function () {
+      expect(request[0].method).to.equal('POST');
     });
 
-    it('Returns empty data if no valid requests are passed', function () {
-      serverRequests = spec.buildRequests([]);
-      expect(serverRequests).to.be.an('array').that.is.empty;
+    it('adUnitCode should be sent as prebidAdUnitCode parameters on any requests', function () {
+      expect(request[0].data).to.match(/"prebidAdUnitCode":"adunit0001"/);
+    });
+
+    it('if the publisher has NOT set a floor via the floors module, zero should be sent as  bidfloor parameter on any requests', function () {
+      expect(request[0].data).to.match(/"bidfloor":0/);
+    });
+
+    it('if the publisher has set a floor via the floors module, it should be sent as  bidfloor parameter on any requests', function () {
+      let floorInfo;
+      bidRequests[0].getFloor = () => floorInfo;
+      floorInfo = {currency: 'USD', floor: 0.55};
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.match(/"bidfloor":0.55/);
+    });
+
+    it('pass GDPR,CCPA,COPPA, and GPP indicators/consent strings with the request when present', function () {
+      bidRequests[0].gdprConsent = {consentString: 'gdpr-consent-string', gdprApplies: true};
+      bidRequests[0].uspConsent = 'ccpa-consent-string';
+      config.setConfig({ coppa: false });
+
+      bidRequests[0].ortb2 = {
+        regs: {
+          gpp: 'testGpp',
+          gpp_sid: [1, 2, 3]
+        }
+      }
+
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.match(/"user":{"ext":{"consent":"gdpr-consent-string"/);
+      expect(request[0].data).to.match(/"regs":{"coppa":0,"ext":{"gdpr":1,"us_privacy":"ccpa-consent-string","gpp":"testGpp","gpp_sid":\[1,2,3\]}}/);
+    });
+
+    it('pass bidder timeout/tmax with the request', function () {
+      config.setConfig({ bidderTimeout: 435 });
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.match(/"tmax":435/);
+    });
+
+    it('pass 3rd party IDs with the request when present', function () {
+      bidRequests[0].userIdAsEids = [
+        {
+          source: 'adserver.org',
+          uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]
+        }
+      ];
+
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.include(JSON.stringify({ext: {consent: 'gdpr-consent-string', eids: [{source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]}]}}));
     });
   });
 
   describe('interpretResponse', function () {
-    let bid = {
-      bidId: 'bidID0001',
-      bidder: 'vrtcal',
-      bidderRequestId: 'brID0001',
-      auctionId: 'auID0001',
-      sizes: [[300, 250]],
-      transactionId: 'tid0001',
-      adUnitCode: 'vrtcal-test-adunit'
-    };
-
-    let serverRequests = spec.buildRequests([bid]);
-
-    let resObject = {body: {id: 'vrtcal-test-id', width: 300, height: 250, seatbid: [{bid: [{price: 3.0, w: 300, h: 250, crid: 'testcrid', adm: 'testad', nurl: 'https://vrtcal.com/faketracker'}]}], currency: 'USD', netRevenue: true, ttl: 900}};
-
-    let serverResponses = spec.interpretResponse(resObject, serverRequests);
-
-    it('Returns an array of valid server responses if response object is valid', function () {
-      expect(serverResponses).to.be.an('array').that.is.not.empty;
-      for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
-        expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-          'netRevenue', 'currency', 'nurl');
-        expect(dataItem.requestId).to.be.a('string');
-        expect(dataItem.cpm).to.be.a('number');
-        expect(dataItem.width).to.be.a('number');
-        expect(dataItem.height).to.be.a('number');
-        expect(dataItem.ad).to.be.a('string');
-        expect(dataItem.ttl).to.be.a('number');
-        expect(dataItem.creativeId).to.be.a('string');
-        expect(dataItem.netRevenue).to.be.a('boolean');
-        expect(dataItem.currency).to.be.a('string');
-        expect(dataItem.nurl).to.be.a('string');
+    it('should form compliant bid object response', function () {
+      let res = {
+        body: {
+          id: 'bidID0001',
+          seatbid: [{
+            bid: [{
+              id: 'VRTB_240d3c8a3c12b68_1',
+              impid: '1',
+              price: 0.7554,
+              adm: 'TEST AD',
+              nurl: 'https://adplatform.vrtcal.com/wintracker',
+              w: 300,
+              h: 250,
+              crid: 'v2_1064_vrt_vrtcaltestdisplay2_300_250',
+              adomain: ['vrtcal.com'],
+            }],
+            seat: '16'
+          }],
+          cur: 'USD'
+        }
       }
 
-      it('Returns an empty array if invalid response is passed', function () {
-        serverResponses = spec.interpretResponse('invalid_response');
-        expect(serverResponses).to.be.an('array').that.is.empty;
-      });
+      let ir = spec.interpretResponse(res, bidRequest)
+
+      expect(ir.length).to.equal(1)
+
+      let en = ir[0]
+
+      expect(en.requestId != null &&
+            en.cpm != null && typeof en.cpm === 'number' &&
+            en.width != null && typeof en.width === 'number' &&
+            en.height != null && typeof en.height === 'number' &&
+            en.ad != null &&
+            en.creativeId != null
+      ).to.be.true
+    })
+  })
+
+  describe('getUserSyncs', function() {
+    const syncurl_iframe = 'https://usync.vrtcal.com/i?ssp=1804&synctype=iframe';
+    const syncurl_redirect = 'https://usync.vrtcal.com/i?ssp=1804&synctype=redirect';
+
+    it('base iframe sync pper config', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=&gdpr=0&gdpr_consent=&gpp=&gpp_sid=&surl='
+      }]);
     });
-  });
 
-  describe('onBidWon', function () {
-    let bid = {
-      bidId: '2dd581a2b6281d',
-      bidder: 'vrtcal',
-      bidderRequestId: '145e1d6a7837c9',
-      auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
-      sizes: [[300, 250]],
-      transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
-      adUnitCode: 'vrtcal-test-adunit'
-    };
-
-    let serverRequests = spec.buildRequests([bid]);
-    let resObject = {body: {id: 'vrtcal-test-id', width: 300, height: 250, seatbid: [{bid: [{price: 3.0, w: 300, h: 250, crid: 'testcrid', adm: 'testad', nurl: 'https://vrtcal.com/faketracker'}]}], currency: 'USD', netRevenue: true, ttl: 900}};
-    let serverResponses = spec.interpretResponse(resObject, serverRequests);
-    let wonbid = serverResponses[0];
-
-    it('Returns true is nurl is good/not blank', function () {
-      expect(wonbid.nurl).to.not.equal('');
-      expect(spec.onBidWon(wonbid)).to.be.true;
+    it('base redirect sync per config', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: false }, {}, undefined, undefined)).to.deep.equal([{
+        type: 'image', url: syncurl_redirect + '&us_privacy=&gdpr=0&gdpr_consent=&gpp=&gpp_sid=&surl='
+      }]);
     });
-  });
-});
+
+    it('pass with ccpa data', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, 'ccpa_consent_string', undefined)).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=ccpa_consent_string&gdpr=0&gdpr_consent=&gpp=&gpp_sid=&surl='
+      }]);
+    });
+
+    it('pass with gdpr data', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: 1, consentString: 'gdpr_consent_string'}, undefined, undefined)).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=&gdpr=1&gdpr_consent=gdpr_consent_string&gpp=&gpp_sid=&surl='
+      }]);
+    });
+
+    it('pass with gpp data', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined, {gppString: 'gpp_consent_string', applicableSections: [1, 5]})).to.deep.equal([{
+        type: 'iframe', url: syncurl_iframe + '&us_privacy=&gdpr=0&gdpr_consent=&gpp=gpp_consent_string&gpp_sid=1,5&surl='
+      }]);
+    });
+  })
+})

@@ -1,128 +1,114 @@
-import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
+import {
+  deepAccess,
+  deepSetValue,
+  triggerPixel,
+  isFn,
+  logInfo
+} from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import { loadExternalScript } from '../src/adloader.js';
+import { VIDEO } from '../src/mediaTypes.js';
 
-const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
-const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';
-const PROD_PUBLISHER_TAG = 'https://static.showheroes.com/publishertag.js';
-const STAGE_PUBLISHER_TAG = 'https://pubtag.stage.showheroes.com/publishertag.js';
-const PROD_VL = 'https://video-library.showheroes.com';
-const STAGE_VL = 'https://video-library.stage.showheroes.com';
+const ENDPOINT = 'https://ads.viralize.tv/openrtb2/auction/';
 const BIDDER_CODE = 'showheroes-bs';
 const TTL = 300;
 
-function getEnvURLs(isStage) {
-  return {
-    pubTag: isStage ? STAGE_PUBLISHER_TAG : PROD_PUBLISHER_TAG,
-    vlHost: isStage ? STAGE_VL : PROD_VL
-  }
-}
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: TTL,
+    currency: 'EUR',
+    mediaType: VIDEO,
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
+    deepSetValue(imp, 'video.ext.context', videoContext);
+    imp.ext = imp.ext || {};
+    imp.ext.params = bidRequest.params;
+    imp.ext.adUnitCode = bidRequest.adUnitCode;
+
+    if (!imp.displaymanager) {
+      imp.displaymanager = 'Prebid.js';
+      imp.displaymanagerver = '$prebid.version$'; // prebid version
+    }
+
+    if (!isFn(bidRequest.getFloor)) {
+      return imp
+    }
+
+    let floor = bidRequest.getFloor({
+      currency: 'EUR',
+      mediaType: '*',
+      size: '*',
+    });
+    if (!isNaN(floor?.floor) && floor?.currency === 'EUR') {
+      imp.bidfloor = floor.floor;
+      imp.bidfloorcur = 'EUR';
+    }
+    return imp;
+  },
+
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    if (context.imp?.video?.ext?.context === 'outstream') {
+      const renderConfig = {
+        rendererUrl: bid.ext?.rendererConfig?.rendererUrl,
+        renderFunc: bid.ext?.rendererConfig?.renderFunc,
+        renderOptions: bid.ext?.rendererConfig?.renderOptions,
+      };
+      if (renderConfig.renderFunc && renderConfig.rendererUrl) {
+        bidResponse.renderer = createRenderer(bidResponse, renderConfig);
+      }
+    }
+    bidResponse.callbacks = bid.ext?.callbacks;
+    bidResponse.extra = bid.ext?.extra;
+    return bidResponse;
+  },
+})
+
+const GVLID = 111;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['showheroesBs'],
-  supportedMediaTypes: [VIDEO, BANNER],
-  isBidRequestValid: function(bid) {
-    return !!bid.params.playerId;
+  supportedMediaTypes: [VIDEO],
+  isBidRequestValid: (bid) => {
+    return !!bid.params.unitId;
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
-    let adUnits = [];
-    const pageURL = validBidRequests[0].params.contentPageUrl || bidderRequest.refererInfo.referer;
-    const isStage = !!validBidRequests[0].params.stage;
-    const isOutstream = utils.deepAccess(validBidRequests[0], 'mediaTypes.video.context') === 'outstream';
-    const isCustomRender = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.customRender');
-    const isNodeRender = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.slot') || utils.deepAccess(validBidRequests[0], 'params.outstreamOptions.iframe');
-    const isNativeRender = utils.deepAccess(validBidRequests[0], 'renderer');
-    const outstreamOptions = utils.deepAccess(validBidRequests[0], 'params.outstreamOptions');
-    const isBanner = !!validBidRequests[0].mediaTypes.banner || (isOutstream && !(isCustomRender || isNativeRender || isNodeRender));
-    const defaultSchain = validBidRequests[0].schain || {};
+  buildRequests: (bidRequests, bidderRequest) => {
+    const QA = bidRequests[0].params.qa;
 
-    validBidRequests.forEach((bid) => {
-      const videoSizes = getVideoSizes(bid);
-      const bannerSizes = getBannerSizes(bid);
-      const vpaidMode = utils.getBidIdParameter('vpaidMode', bid.params);
-
-      const makeBids = (type, size) => {
-        let context = '';
-        let streamType = 2;
-
-        if (type === BANNER) {
-          streamType = 5;
-        } else {
-          context = utils.deepAccess(bid, 'mediaTypes.video.context');
-          if (vpaidMode && context === 'instream') {
-            streamType = 1;
-          }
-          if (context === 'outstream') {
-            streamType = 5;
-          }
-        }
-
-        return {
-          type: streamType,
-          bidId: bid.bidId,
-          mediaType: type,
-          context: context,
-          playerId: utils.getBidIdParameter('playerId', bid.params),
-          auctionId: bidderRequest.auctionId,
-          bidderCode: BIDDER_CODE,
-          gdprConsent: bidderRequest.gdprConsent,
-          start: +new Date(),
-          timeout: 3000,
-          size: {
-            width: size[0],
-            height: size[1]
-          },
-          params: bid.params,
-          schain: bid.schain || defaultSchain,
-        };
-      };
-
-      videoSizes.forEach((size) => {
-        adUnits.push(makeBids(VIDEO, size));
-      });
-
-      bannerSizes.forEach((size) => {
-        adUnits.push(makeBids(BANNER, size));
-      });
-    });
+    const ortbData = converter.toORTB({ bidRequests, bidderRequest })
 
     return {
-      url: isStage ? STAGE_ENDPOINT : PROD_ENDPOINT,
+      url: QA?.endpoint || ENDPOINT,
       method: 'POST',
-      options: {contentType: 'application/json', accept: 'application/json'},
-      data: {
-        'user': [],
-        'meta': {
-          'adapterVersion': 2,
-          'pageURL': encodeURIComponent(pageURL),
-          'vastCacheEnabled': (!!config.getConfig('cache') && !isBanner && !outstreamOptions) || false,
-          'isDesktop': utils.getWindowTop().document.documentElement.clientWidth > 700,
-          'xmlAndTag': !!(isOutstream && isCustomRender) || false,
-          'stage': isStage || undefined
-        },
-        'requests': adUnits,
-        'debug': validBidRequests[0].params.debug || false,
-      }
+      data: ortbData,
     };
   },
-  interpretResponse: function(response, request) {
-    return createBids(response.body, request.data);
+  interpretResponse: (response, request) => {
+    if (!response.body) {
+      return [];
+    }
+
+    const bids = converter.fromORTB({response: response.body, request: request.data}).bids;
+    return bids;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: (syncOptions, serverResponses) => {
     const syncs = [];
 
-    if (!serverResponses.length || !serverResponses[0].body.userSync) {
+    if (!serverResponses.length || !serverResponses[0].body?.ext?.userSync) {
       return syncs;
     }
 
-    const userSync = serverResponses[0].body.userSync;
+    const userSync = serverResponses[0].body.ext.userSync;
 
-    if (syncOptions.iframeEnabled) {
-      (userSync.iframes || []).forEach(url => {
+    if (syncOptions.iframeEnabled && userSync?.iframes?.length) {
+      userSync.iframes.forEach(url => {
         syncs.push({
           type: 'iframe',
           url
@@ -138,152 +124,47 @@ export const spec = {
         });
       });
     }
+
     return syncs;
+  },
+
+  onBidWon(bid) {
+    if (bid.callbacks) {
+      triggerPixel(bid.callbacks.won);
+    }
+    logInfo(
+      `Showheroes adapter won the auction. Bid id: ${bid.bidId || bid.requestId}`
+    );
   },
 };
 
-function createBids(bidRes, reqData) {
-  if (bidRes && (!Array.isArray(bidRes.bids) || bidRes.bids.length < 1)) {
-    return [];
-  }
-
-  const bids = [];
-  const bidMap = {};
-  (reqData.requests || []).forEach((bid) => {
-    bidMap[bid.bidId] = bid;
-  });
-
-  bidRes.bids.forEach(function (bid) {
-    const reqBid = bidMap[bid.bidId];
-    const currentBidParams = reqBid.params;
-    let bidUnit = {};
-    bidUnit.cpm = bid.cpm;
-    bidUnit.requestId = bid.bidId;
-    bidUnit.currency = bid.currency;
-    bidUnit.mediaType = bid.mediaType || VIDEO;
-    bidUnit.ttl = TTL;
-    bidUnit.creativeId = 'c_' + bid.bidId;
-    bidUnit.netRevenue = true;
-    bidUnit.width = bid.size.width;
-    bidUnit.height = bid.size.height;
-    if (bid.vastXml) {
-      bidUnit.vastXml = bid.vastXml;
-      bidUnit.adResponse = {
-        content: bid.vastXml,
+function outstreamRender(response, renderConfig) {
+  response.renderer.push(() => {
+    const func = deepAccess(window, renderConfig.renderFunc);
+    if (!isFn(func)) {
+      return;
+    }
+    const renderPayload = { ...renderConfig.renderOptions };
+    if (response.vastXml) {
+      renderPayload.adResponse = {
+        content: response.vastXml,
       };
     }
-    if (bid.vastTag) {
-      bidUnit.vastUrl = bid.vastTag;
-    }
-    if (bid.mediaType === BANNER) {
-      bidUnit.ad = getBannerHtml(bid, reqBid, reqData);
-    } else if (bid.context === 'outstream') {
-      const renderer = Renderer.install({
-        id: bid.bidId,
-        url: '//',
-        config: {
-          playerId: reqBid.playerId,
-          width: bid.size.width,
-          height: bid.size.height,
-          vastUrl: bid.vastTag,
-          vastXml: bid.vastXml,
-          debug: reqData.debug,
-          isStage: !!reqData.meta.stage,
-          customRender: utils.getBidIdParameter('customRender', currentBidParams.outstreamOptions),
-          slot: utils.getBidIdParameter('slot', currentBidParams.outstreamOptions),
-          iframe: utils.getBidIdParameter('iframe', currentBidParams.outstreamOptions),
-        }
-      });
-      renderer.setRender(outstreamRender);
-      bidUnit.renderer = renderer;
-    }
-    bids.push(bidUnit);
+    func(renderPayload);
   });
-
-  return bids;
 }
 
-function outstreamRender(bid) {
-  const embedCode = createOutstreamEmbedCode(bid);
-  if (typeof bid.renderer.config.customRender === 'function') {
-    bid.renderer.config.customRender(bid, embedCode);
-  } else {
-    try {
-      const inIframe = utils.getBidIdParameter('iframe', bid.renderer.config);
-      if (inIframe && window.document.getElementById(inIframe).nodeName === 'IFRAME') {
-        const iframe = window.document.getElementById(inIframe);
-        let framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
-        framedoc.body.appendChild(embedCode);
-        return;
-      }
-
-      const slot = utils.getBidIdParameter('slot', bid.renderer.config) || bid.adUnitCode;
-      if (slot && window.document.getElementById(slot)) {
-        window.document.getElementById(slot).appendChild(embedCode);
-      } else if (slot) {
-        utils.logError('[ShowHeroes][renderer] Error: spot not found');
-      }
-    } catch (err) {
-      utils.logError('[ShowHeroes][renderer] Error:' + err.message)
-    }
-  }
-}
-
-function createOutstreamEmbedCode(bid) {
-  const isStage = utils.getBidIdParameter('isStage', bid.renderer.config);
-  const urls = getEnvURLs(isStage);
-
-  const fragment = window.document.createDocumentFragment();
-
-  let script = loadExternalScript(urls.pubTag, 'outstream', function () {
-    window.ShowheroesTag = this;
+function createRenderer(bid, renderConfig) {
+  const renderer = Renderer.install({
+    id: bid.id,
+    url: renderConfig.rendererUrl,
+    loaded: false,
+    adUnitCode: bid.adUnitCode,
   });
-  script.setAttribute('data-player-host', urls.vlHost);
-
-  const spot = window.document.createElement('div');
-  spot.setAttribute('class', 'showheroes-spot');
-  spot.setAttribute('data-player', utils.getBidIdParameter('playerId', bid.renderer.config));
-  spot.setAttribute('data-debug', utils.getBidIdParameter('debug', bid.renderer.config));
-  spot.setAttribute('data-ad-vast-tag', utils.getBidIdParameter('vastUrl', bid.renderer.config));
-  spot.setAttribute('data-stream-type', 'outstream');
-
-  fragment.appendChild(spot);
-  fragment.appendChild(script);
-  return fragment;
-}
-
-function getBannerHtml (bid, reqBid, reqData) {
-  const isStage = !!reqData.meta.stage;
-  const urls = getEnvURLs(isStage);
-  return `<html>
-    <head></head>
-    <body>
-      <script async src="${urls.pubTag}"
-              data-canvas=""
-              data-noad-passback-listener=""
-              onload="window.ShowheroesTag=this"
-              data-player-host="${urls.vlHost}"></script>
-      <div class="showheroes-spot"
-            data-debug="${reqData.debug ? '1' : ''}"
-            data-player="${reqBid.playerId}"
-            data-ad-vast-tag="${bid.vastTag}"></div>
-    </body>
-  </html>`;
-}
-
-function getVideoSizes(bidRequest) {
-  return formatSizes(utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') || []);
-}
-
-function getBannerSizes(bidRequest) {
-  return formatSizes(utils.deepAccess(bidRequest, 'mediaTypes.banner.sizes') || []);
-}
-
-function formatSizes(sizes) {
-  if (!sizes || !sizes.length) {
-    return []
-  }
-  return Array.isArray(sizes[0]) ? sizes : [sizes];
+  renderer.setRender((render) => {
+    return outstreamRender(render, renderConfig);
+  });
+  return renderer;
 }
 
 registerBidder(spec);

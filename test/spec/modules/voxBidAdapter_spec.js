@@ -1,5 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/voxBidAdapter.js'
+import { setConfig as setCurrencyConfig } from '../../../modules/currency'
+import { addFPDToBidderRequest } from '../../helpers/fpd'
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -15,7 +17,7 @@ function getSlotConfigs(mediaTypes, params) {
 describe('VOX Adapter', function() {
   const PLACE_ID = '5af45ad34d506ee7acad0c26';
   const bidderRequest = {
-    refererInfo: { referer: 'referer' }
+    refererInfo: { page: 'referer' }
   }
   const bannerMandatoryParams = {
     placementId: PLACE_ID,
@@ -174,6 +176,101 @@ describe('VOX Adapter', function() {
         expect(bid.placeId).to.equal(PLACE_ID)
         expect(bid.transactionId).to.equal('31a58515-3634-4e90-9c96-f86196db1459')
       })
+    })
+    it('should not set userid if not specified', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.userId).to.be.undefined
+      })
+    })
+
+    it('should set userid if specified', function () {
+      const requests = validBidRequests.map(bid => ({
+        ...bid,
+        userId: {
+          tdid: 'TDID_USER_ID',
+          pubcid: 'PUBID_USER_ID'
+        }
+      }))
+      const request = spec.buildRequests(requests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.userId.tdid).to.equal('TDID_USER_ID')
+        expect(bid.userId.pubcid).to.equal('PUBID_USER_ID')
+      })
+    })
+
+    it('should not set schain if not specified', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.schain).to.be.undefined
+      })
+    })
+
+    it('should set schain if not specified', function () {
+      const requests = validBidRequests.map(bid => ({
+        ...bid,
+        schain: {
+          validation: 'strict',
+          config: {
+            ver: '1.0'
+          }
+        }
+      }))
+      const request = spec.buildRequests(requests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.schain.validation).to.equal('strict')
+        expect(bid.schain.config.ver).to.equal('1.0')
+      })
+    })
+
+    describe('price floors', function () {
+      it('should be empty if floors module not configured', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest)
+        const data = JSON.parse(request.data)
+        data.bidRequests.forEach(bid => {
+          expect(bid.floorInfo).to.be.empty
+        })
+      })
+
+      it('should add correct floor values', function () {
+        const expectedFloors = [ 2, 2.7, 1.4 ]
+        const validBidRequests = expectedFloors.map(getBidWithFloor)
+        const request = spec.buildRequests(validBidRequests, bidderRequest)
+        const data = JSON.parse(request.data)
+        expectedFloors.forEach((floor, index) => {
+          expect(data.bidRequests[index].floorInfo.floor).to.equal(floor)
+          expect(data.bidRequests[index].floorInfo.currency).to.equal('USD')
+        })
+      })
+
+      it('should request floor price in adserver currency', function () {
+        const configCurrency = 'DKK';
+        setCurrencyConfig({ adServerCurrency: configCurrency });
+        return addFPDToBidderRequest(bidderRequest).then(res => {
+          const request = spec.buildRequests([ getBidWithFloor() ], res)
+          const data = JSON.parse(request.data)
+          data.bidRequests.forEach(bid => {
+            expect(bid.floorInfo.currency).to.equal(configCurrency)
+          })
+          setCurrencyConfig({});
+        });
+      });
+
+      function getBidWithFloor(floor) {
+        return {
+          ...validBidRequests[0],
+          getFloor: ({ currency }) => {
+            return {
+              currency: currency,
+              floor
+            }
+          }
+        }
+      }
     })
 
     describe('GDPR params', function() {

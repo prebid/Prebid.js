@@ -1,58 +1,37 @@
+import { getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { buildUserSyncs, interpretResponse, isBidRequestValid, getBidFloor, consentCheck } from '../libraries/precisoUtils/bidUtilsCommon.js';
 
 const BIDDER_CODE = 'logan';
-const AD_URL = 'https://USeast2.logan.ai/?c=o&m=multi';
-const SYNC_URL = 'https://ssp-cookie.logan.ai/html?src=pbjs'
-
-function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
-    return false;
-  }
-  switch (bid.mediaType) {
-    case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
-    case VIDEO:
-      return Boolean(bid.vastUrl);
-    case NATIVE:
-      return Boolean(bid.native && bid.native.impressionTrackers);
-    default:
-      return false;
-  }
-}
+const AD_URL = 'https://USeast2.logan.ai/pbjs';
+const SYNC_URL = 'https://ssp-cookie.logan.ai';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(parseInt(bid.params.placementId)));
-  },
+  isBidRequestValid: isBidRequestValid,
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    const winTop = utils.getWindowTop();
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
+    const winTop = getWindowTop();
     const location = winTop.location;
     const placements = [];
     const request = {
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
-      'secure': 1,
-      'host': location.host,
-      'page': location.pathname,
-      'placements': placements
+      deviceWidth: winTop.screen.width,
+      deviceHeight: winTop.screen.height,
+      language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
+      secure: 1,
+      host: location.host,
+      page: location.pathname,
+      placements: placements
     };
 
-    if (bidderRequest) {
-      if (bidderRequest.uspConsent) {
-        request.ccpa = bidderRequest.uspConsent;
-      }
-      if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
-      }
-    }
+    consentCheck(bidderRequest, request);
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
@@ -61,19 +40,35 @@ export const spec = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
         schain: bid.schain || {},
+        bidfloor: getBidFloor(bid)
       };
-      const mediaType = bid.mediaTypes
+      const mediaType = bid.mediaTypes;
 
       if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
         placement.sizes = mediaType[BANNER].sizes;
-        placement.traffic = BANNER;
+        placement.adFormat = BANNER;
       } else if (mediaType && mediaType[VIDEO] && mediaType[VIDEO].playerSize) {
         placement.wPlayer = mediaType[VIDEO].playerSize[0];
         placement.hPlayer = mediaType[VIDEO].playerSize[1];
-        placement.traffic = VIDEO;
+        placement.minduration = mediaType[VIDEO].minduration;
+        placement.maxduration = mediaType[VIDEO].maxduration;
+        placement.mimes = mediaType[VIDEO].mimes;
+        placement.protocols = mediaType[VIDEO].protocols;
+        placement.startdelay = mediaType[VIDEO].startdelay;
+        placement.placement = mediaType[VIDEO].placement;
+        placement.plcmt = mediaType[VIDEO].plcmt;
+        placement.skip = mediaType[VIDEO].skip;
+        placement.skipafter = mediaType[VIDEO].skipafter;
+        placement.minbitrate = mediaType[VIDEO].minbitrate;
+        placement.maxbitrate = mediaType[VIDEO].maxbitrate;
+        placement.delivery = mediaType[VIDEO].delivery;
+        placement.playbackmethod = mediaType[VIDEO].playbackmethod;
+        placement.api = mediaType[VIDEO].api;
+        placement.linearity = mediaType[VIDEO].linearity;
+        placement.adFormat = VIDEO;
       } else if (mediaType && mediaType[NATIVE]) {
         placement.native = mediaType[NATIVE];
-        placement.traffic = NATIVE;
+        placement.adFormat = NATIVE;
       }
       placements.push(placement);
     }
@@ -85,34 +80,11 @@ export const spec = {
     };
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    for (let i = 0; i < serverResponse.body.length; i++) {
-      let resItem = serverResponse.body[i];
-      if (isBidResponseValid(resItem)) {
-        response.push(resItem);
-      }
-    }
-    return response;
-  },
-
+  interpretResponse: interpretResponse,
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncUrl = SYNC_URL
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-    return [{
-      type: 'iframe',
-      url: syncUrl
-    }];
+    return buildUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, SYNC_URL);
   }
+
 };
 
 registerBidder(spec);

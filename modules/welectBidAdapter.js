@@ -1,5 +1,12 @@
-import * as utils from '../src/utils.js';
+import { deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'welect';
 const DEFAULT_DOMAIN = 'www.welect.de';
@@ -19,7 +26,7 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     return (
-      utils.deepAccess(bid, 'mediaTypes.video.context') === 'instream' &&
+      deepAccess(bid, 'mediaTypes.video.context') === 'instream' &&
       !!bid.params.placementId
     );
   },
@@ -32,7 +39,7 @@ export const spec = {
   buildRequests: function (validBidRequests) {
     return validBidRequests.map((bidRequest) => {
       let rawSizes =
-        utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
+        deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
         bidRequest.sizes;
       let size = rawSizes[0];
 
@@ -84,7 +91,21 @@ export const spec = {
     }
 
     const bidResponses = [];
-    const bidResponse = responseBody.bidResponse;
+    const bidResponse = {
+      requestId: responseBody.bidResponse.requestId,
+      cpm: responseBody.bidResponse.cpm,
+      width: responseBody.bidResponse.width,
+      height: responseBody.bidResponse.height,
+      creativeId: responseBody.bidResponse.creativeId,
+      currency: responseBody.bidResponse.currency,
+      netRevenue: responseBody.bidResponse.netRevenue,
+      ttl: responseBody.bidResponse.ttl,
+      ad: responseBody.bidResponse.ad,
+      vastUrl: responseBody.bidResponse.vastUrl,
+      meta: {
+        advertiserDomains: responseBody.bidResponse.meta.advertiserDomains
+      }
+    };
     bidResponses.push(bidResponse);
     return bidResponses;
   },

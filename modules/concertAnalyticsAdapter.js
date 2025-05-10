@@ -1,8 +1,8 @@
+import { logMessage } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import * as utils from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
@@ -13,12 +13,10 @@ const pageIncludedInSample = sampleAnalytics();
 const url = 'https://bids.concert.io/analytics';
 
 const {
-  EVENTS: {
-    BID_RESPONSE,
-    BID_WON,
-    AUCTION_END
-  }
-} = CONSTANTS;
+  BID_RESPONSE,
+  BID_WON,
+  AUCTION_END
+} = EVENTS;
 
 let queue = [];
 
@@ -90,7 +88,7 @@ function sendEvents() {
   if (!queue.length) return;
 
   if (!pageIncludedInSample) {
-    utils.logMessage('Page not included in sample for Concert Analytics');
+    logMessage('Page not included in sample for Concert Analytics');
     return;
   }
 
@@ -100,7 +98,7 @@ function sendEvents() {
       contentType: 'application/json',
       method: 'POST'
     });
-  } catch (err) { utils.logMessage('Concert Analytics error') }
+  } catch (err) { logMessage('Concert Analytics error') }
 }
 
 // save the base class function

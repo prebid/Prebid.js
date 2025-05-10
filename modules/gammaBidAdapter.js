@@ -1,8 +1,17 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const ENDPOINT = 'https://hb.gammaplatform.com';
-const ENDPOINT_USERSYNC = 'https://cm-supply-web.gammaplatform.com';
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'gamma';
+const ENDPOINTS = {
+  SGP: 'https://hb.gammaplatform.com',
+  JPN: 'https://hb-jp.gammaplatform.com',
+  US_WEST: 'https://hb-us.gammaplatform.com',
+  EU: 'https://hb-eu.gammaplatform.com'
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -27,9 +36,11 @@ export const spec = {
    */
   buildRequests: function(bidRequests, bidderRequest) {
     const serverRequests = [];
-    const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
+    const bidderRequestReferer = bidderRequest?.refererInfo?.page || '';
+    let ENDPOINT;
     for (var i = 0, len = bidRequests.length; i < len; i++) {
       const gaxObjParams = bidRequests[i];
+      ENDPOINT = getAdUrlByRegion(gaxObjParams);
       serverRequests.push({
         method: 'GET',
         url: ENDPOINT + '/adx/request?wid=' + gaxObjParams.params.siteId + '&zid=' + gaxObjParams.params.zoneId + '&hb=pbjs&bidid=' + gaxObjParams.bidId + '&urf=' + encodeURIComponent(bidderRequestReferer)
@@ -55,16 +66,45 @@ export const spec = {
     }
 
     return bids;
-  },
+  }
+}
 
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: ENDPOINT_USERSYNC + '/adx/usersync'
-      }];
+/**
+ * Get endpoint url by region
+ * @param bid
+ * @return aUrl
+ */
+function getAdUrlByRegion(bid) {
+  let ENDPOINT;
+
+  if (bid.params.region && ENDPOINTS[bid.params.region]) {
+    ENDPOINT = ENDPOINTS[bid.params.region];
+  } else {
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const region = timezone.split('/')[0];
+
+      switch (region) {
+        case 'Europe':
+          ENDPOINT = ENDPOINTS['EU'];
+          break;
+        case 'Australia':
+          ENDPOINT = ENDPOINTS['JPN'];
+          break;
+        case 'Asia':
+          ENDPOINT = ENDPOINTS['SGP'];
+          break;
+        case 'America':
+          ENDPOINT = ENDPOINTS['US_WEST'];
+          break;
+        default: ENDPOINT = ENDPOINTS['SGP'];
+      }
+    } catch (err) {
+      ENDPOINT = ENDPOINTS['SGP'];
     }
   }
+
+  return ENDPOINT;
 }
 
 /**
@@ -84,7 +124,10 @@ function newBid(serverBid) {
     mediaType: serverBid.type,
     netRevenue: true,
     requestId: serverBid.id,
-    ttl: serverBid.seatbid[0].bid[0].ttl || 300
+    ttl: serverBid.seatbid[0].bid[0].ttl || 300,
+    meta: {
+      advertiserDomains: serverBid.seatbid[0].bid[0].adomain && serverBid.seatbid[0].bid[0].adomain.length ? serverBid.seatbid[0].bid[0].adomain : []
+    }
   };
 
   if (serverBid.type == 'video') {

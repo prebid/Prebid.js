@@ -10,7 +10,7 @@ Maintainer: github@telaria.com
 
 Connects to Telaria's exchange.
 
-Telaria bid adapter supports insteream Video.
+Telaria bid adapter supports instream Video.
 
 # Test Parameters
 ```

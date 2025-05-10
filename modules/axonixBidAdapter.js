@@ -1,8 +1,8 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import {deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'axonix';
 const BIDDER_VERSION = '1.0.2';
@@ -21,16 +21,15 @@ function getBidFloor(bidRequest) {
     });
   }
 
-  return floorInfo.floor || 0;
+  return floorInfo?.floor || 0;
 }
 
 function getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
-
+  let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+  } else {
+    pageUrl = bidderRequest.refererInfo.page;
   }
 
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
@@ -68,9 +67,9 @@ export const spec = {
     // video bid request validation
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
       if (!bid.mediaTypes[VIDEO].hasOwnProperty('mimes') ||
-        !utils.isArray(bid.mediaTypes[VIDEO].mimes) ||
+        !isArray(bid.mediaTypes[VIDEO].mimes) ||
         bid.mediaTypes[VIDEO].mimes.length === 0) {
-        utils.logError('mimes are mandatory for video bid request. Ad Unit: ', JSON.stringify(bid));
+        logError('mimes are mandatory for video bid request. Ad Unit: ', JSON.stringify(bid));
 
         return false;
       }
@@ -121,7 +120,7 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         screenHeight: screen.height,
         screenWidth: screen.width,
-        tmax: config.getConfig('bidderTimeout'),
+        tmax: bidderRequest.timeout,
         ua: navigator.userAgent,
       };
 
@@ -142,7 +141,7 @@ export const spec = {
   interpretResponse: function(serverResponse) {
     const response = serverResponse ? serverResponse.body : [];
 
-    if (!utils.isArray(response)) {
+    if (!isArray(response)) {
       return [];
     }
 
@@ -151,7 +150,7 @@ export const spec = {
     for (const resp of response) {
       if (resp.requestId) {
         responses.push(Object.assign(resp, {
-          ttl: config.getConfig('_bidderTimeout')
+          ttl: 60
         }));
       }
     }
@@ -160,9 +159,9 @@ export const spec = {
   },
 
   onTimeout: function(timeoutData) {
-    const params = utils.deepAccess(timeoutData, '0.params.0');
+    const params = deepAccess(timeoutData, '0.params.0');
 
-    if (!utils.isEmpty(params)) {
+    if (!isEmpty(params)) {
       ajax(getURL(params, 'prebid/timeout'), null, timeoutData[0], {
         method: 'POST',
         options: {
@@ -177,7 +176,7 @@ export const spec = {
     const { nurl } = bid || {};
 
     if (bid.nurl) {
-      utils.triggerPixel(utils.replaceAuctionPrice(nurl, bid.cpm));
+      triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
     };
   }
 }

@@ -9,15 +9,9 @@ This document describes the governance model for the Prebid project. The Prebid 
 
 ### Roles and Responsibilities:
 - **User:** Any individual who consumes / uses the Prebid.js library.
-- **Contributor:** Any individual who contributes code that is subsequently merged to the project. Contributed code is governed by the Prebid.js [license](https://github.com/prebid/Prebid.js/blob/master/LICENSE). Contributors are required to sign a CLA before any code can be committed (CLA pending).
-- **Core Team Member:** An individual contributor who has been appointed by the Tech Lead on the project to maintain it and further it’s stated goals.
-- **Tech Lead:** The Tech Lead is responsible for overall technical direction of the project. The Tech Lead will work closely with Core Team members to facilitate development and further the project goals.
+- **Contributor:** Any individual who contributes code that is subsequently merged to the project. Contributed code is governed by the Prebid.js [license](https://github.com/prebid/Prebid.js/blob/master/LICENSE).
+- **Core & Review Team Member:** An individual contributor who has been appointed by the Tech Lead on the project to maintain it and further it’s stated goals.
+- **Identity Team Member:** An individual contributor who has been appointed by the Identity PMC to review and maintain the identity modules and further the PMC stated goals.
+- **Tech Lead:** The Tech Lead is responsible for overall technical direction of the project & serves as the PMC chair. The Tech Lead will work closely with Core Team members to facilitate development and further the project goals.
 
-### Current Prebid.js Core Team
-- @mkendall07 (Tech Lead)
-- @jsnellbaker
-- @matthewlane
-- @jaiminpanchal27
-- @snapwich
-- @harpere
-- @mike-chowla
+The Core team is currently visible at https://github.com/orgs/prebid/teams/core/members to project members. 

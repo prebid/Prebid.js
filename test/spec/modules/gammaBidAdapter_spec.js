@@ -8,8 +8,9 @@ describe('gammaBidAdapter', function() {
   let bid = {
     'bidder': 'gamma',
     'params': {
-      siteId: '1465446377',
-      zoneId: '1515999290'
+      siteId: '1398219351',
+      zoneId: '1398219417',
+      region: 'SGP'
     },
     'adUnitCode': 'adunit-code',
     'sizes': [
@@ -27,9 +28,9 @@ describe('gammaBidAdapter', function() {
     });
 
     it('should return false when require params are not passed', () => {
-      let bid = Object.assign({}, bid);
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when params not passed correctly', () => {
@@ -69,7 +70,8 @@ describe('gammaBidAdapter', function() {
               'adid': '1515999070',
               'dealid': 'gax-paj2qarjf2g',
               'h': 250,
-              'w': 300
+              'w': 300,
+              'adomain': ['testdomain.com']
             }]
           }]
         }
@@ -83,11 +85,12 @@ describe('gammaBidAdapter', function() {
         'width': 300,
         'height': 250,
         'creativeId': '1515999070',
-        'dealId': 'gax-paj2qarjf2g',
+        'dealId': 'gax-lvpjgs5b9k4n',
         'currency': 'USD',
         'netRevenue': true,
         'ttl': 300,
-        'ad': '<!-- adtag -->'
+        'ad': '<!-- adtag -->',
+        'meta': {'advertiserDomains': ['testdomain.com']}
       }];
       let result = spec.interpretResponse(serverResponse);
       expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));

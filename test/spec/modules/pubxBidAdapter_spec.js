@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pubxBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import * as utils from 'src/utils.js';
 
 describe('pubxAdapter', function () {
   const adapter = newBidder(spec);
@@ -25,10 +26,10 @@ describe('pubxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -38,14 +39,22 @@ describe('pubxAdapter', function () {
         id: '26c1ee0038ac11',
         params: {
           sid: '12345abc'
+        },
+        ortb2: {
+          site: {
+            page: `${location.href}?test=1`
+          }
         }
       }
     ];
 
     const data = {
       banner: {
-        sid: '12345abc'
-      }
+        sid: '12345abc',
+        pu: encodeURIComponent(
+          utils.deepAccess(bidRequests[0], 'ortb2.site.page').replace(/\?.*$/, '')
+        ),
+      },
     };
 
     it('sends bid request to ENDPOINT via GET', function () {
@@ -134,6 +143,9 @@ describe('pubxAdapter', function () {
         currency: 'JPY',
         height: 250,
         width: 300,
+        adomains: [
+          'test.com'
+        ],
       }
     }
 
@@ -156,7 +168,12 @@ describe('pubxAdapter', function () {
         creativeId: 'TKmB',
         netRevenue: true,
         ttl: 300,
-        ad: '<div>some creative</div>'
+        ad: '<div>some creative</div>',
+        meta: {
+          advertiserDomains: [
+            'test.com'
+          ]
+        },
       }
     ];
     it('should return empty array when required param is empty', function () {
@@ -184,6 +201,7 @@ describe('pubxAdapter', function () {
       expect(result.netRevenue).to.equal(bidResponses[0].netRevenue);
       expect(result.ttl).to.equal(bidResponses[0].ttl);
       expect(result.ad).to.equal(bidResponses[0].ad);
+      expect(result.meta.advertiserDomains).deep.to.equal(bidResponses[0].meta.advertiserDomains);
     });
   });
 });

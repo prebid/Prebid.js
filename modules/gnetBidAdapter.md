@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: Gnet Bidder Adapter
+Module Name: Gnet RTB Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: roberto.wu@grumft.com
+Maintainer: bruno.bonanho@grumft.com
 ```
 
 # Description
 
-Module that connects to Example's demand sources
+Connect to Gnet RTB exchange for bids.
 
 # Test Parameters
 ```
@@ -24,8 +24,7 @@ Module that connects to Example's demand sources
                 {
                     bidder: 'gnet',
                     params: {
-                        websiteId: '4',
-                        externalId: '4d52cccf30309282256012cf30309282'
+                        websiteId: '1', adunitId: '1'
                     }
                 }
             ]

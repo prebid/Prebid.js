@@ -20,7 +20,7 @@ var adUnits = [
       {
         bidder: 'vidazoo',
         params: {
-          cId: '5a1c419d95fce900044c334e',
+          cId: '562524b21b1c1f08117fc7f9',
           pId: '59ac17c192832d0011283fe3',
           bidFloor: 0.0001,
           ext: {

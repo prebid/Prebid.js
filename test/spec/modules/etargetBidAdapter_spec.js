@@ -1,6 +1,7 @@
 import {assert, expect} from 'chai';
 import {spec} from 'modules/etargetBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { deepClone } from 'src/utils.js';
 
 describe('etarget adapter', function () {
   let serverResponse, bidRequest, bidResponses;
@@ -39,6 +40,16 @@ describe('etarget adapter', function () {
     it('should set correct request method', function () {
       let request = spec.buildRequests([bids[0]]);
       assert.equal(request.method, 'POST');
+    });
+
+    it('should attach floor param when either bid param or getFloor function exists', function () {
+      // let getFloorResponse = { currency: 'EUR', floor: 5 };
+      let request = null;
+      let bidRequest = deepClone(bids[0]);
+
+      // floor param has to be NULL
+      request = spec.buildRequests([bidRequest]);
+      assert.equal(typeof request.floors, 'undefined');
     });
 
     it('should correctly form bid items', function () {
@@ -162,7 +173,6 @@ describe('etarget adapter', function () {
       assert.isNotNull(result.reason);
       assert.equal(result.ttl, 360);
       assert.equal(result.ad, '<tag1>');
-      assert.equal(result.transactionId, '5f33781f-9552-4ca1');
     });
 
     it('should set correct netRevenue', function () {
@@ -285,7 +295,11 @@ describe('etarget adapter', function () {
         tid: 45,
         placementCode: placementCode[0],
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
-        transactionId: '5f33781f-9552-4ca1'
+        ortb2Imp: {
+          ext: {
+            tid: '5f33781f-9552-4ca1'
+          }
+        }
       },
       {
         adUnitCode: placementCode[1],
@@ -296,7 +310,11 @@ describe('etarget adapter', function () {
         params: params[1],
         placementCode: placementCode[1],
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
-        transactionId: '5f33781f-9552-4iuy'
+        ortb2Imp: {
+          ext: {
+            tid: '5f33781f-9552-4iuy'
+          }
+        }
       },
       {
         adUnitCode: placementCode[2],
@@ -307,7 +325,11 @@ describe('etarget adapter', function () {
         params: params[2],
         placementCode: placementCode[2],
         sizes: [[300, 250], [250, 300], [300, 600], [600, 300]],
-        transactionId: '5f33781f-9552-7ev3'
+        ortb2Imp: {
+          ext: {
+            tid: '5f33781f-9552-7ev3'
+          }
+        }
       },
       {
         adUnitCode: placementCode[3],
@@ -318,7 +340,11 @@ describe('etarget adapter', function () {
         params: params[2],
         placementCode: placementCode[2],
         sizes: [],
-        transactionId: '5f33781f-9552-7ev3'
+        ortb2Imp: {
+          ext: {
+            tid: '5f33781f-9552-7ev3'
+          }
+        }
       },
       {
         adUnitCode: placementCode[4],
@@ -329,7 +355,11 @@ describe('etarget adapter', function () {
         params: params[2],
         placementCode: placementCode[2],
         sizes: [],
-        transactionId: '5f33781f-9552-7ev3'
+        ortb2Imp: {
+          ext: {
+            tid: '5f33781f-9552-7ev3'
+          }
+        }
       },
       {
         adUnitCode: placementCode[4],
@@ -340,7 +370,11 @@ describe('etarget adapter', function () {
         params: params[3],
         placementCode: placementCode[2],
         sizes: [],
-        transactionId: '5f33781f-9552-7ev3'
+        ortb2Imp: {
+          ext: {
+            tid: '5f33781f-9552-7ev3'
+          }
+        }
       },
       {
         adUnitCode: placementCode[4],
@@ -351,7 +385,11 @@ describe('etarget adapter', function () {
         params: params[4],
         placementCode: placementCode[2],
         sizes: [],
-        transactionId: '5f33781f-9552-7ev3'
+        ortb2Imp: {
+          ext: {
+            tid: '5f33781f-9552-7ev3'
+          }
+        }
       }
     ];
     serverResponse = {

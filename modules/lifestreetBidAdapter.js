@@ -1,6 +1,10 @@
-import * as utils from '../src/utils.js';
+import { isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'lifestreet';
 const ADAPTER_VERSION = '$prebid.version$';
@@ -22,7 +26,7 @@ function template(strings, ...keys) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
     keys.forEach(function(key, i) {
-      let value = utils.isInteger(key) ? values[key] : dict[key];
+      let value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
@@ -76,7 +80,7 @@ function formatBidRequest(bid, bidderRequest = {}) {
 
 function isResponseValid(response) {
   return !/^\s*\{\s*"advertisementAvailable"\s*:\s*false/i.test(response.content) &&
-    response.content.indexOf('<VAST version="2.0"></VAST>') === -1 && (typeof response.cpm !== 'undefined') &&
+    response.content.indexOf('<VAST version="2.0"></VAST>') === -1 && /* (typeof response.cpm !== 'undefined') && */
     response.status === 1;
 }
 
@@ -99,36 +103,40 @@ export const spec = {
   interpretResponse: (serverResponse, bidRequest) => {
     const bidResponses = [];
     let response = serverResponse.body;
-
     if (!isResponseValid(response)) {
       return bidResponses;
     }
 
+    const isVideo = response.content_type.indexOf('vast') > -1;
+    const mediaType = isVideo ? VIDEO : BANNER;
+
     const bidResponse = {
       requestId: bidRequest.bidId,
       cpm: response.cpm,
+      currency: response.currency ? response.currency : 'USD',
       width: response.width,
       height: response.height,
       creativeId: response.creativeId,
-      currency: response.currency ? response.currency : 'USD',
       netRevenue: response.netRevenue ? response.netRevenue : true,
-      ttl: response.ttl ? response.ttl : 86400
+      ttl: response.ttl ? response.ttl : 86400,
+      mediaType,
+      meta: {
+        mediaType,
+        advertiserDomains: response.advertiserDomains
+      }
     };
 
     if (response.hasOwnProperty('dealId')) {
       bidResponse.dealId = response.dealId;
     }
-    if (response.content_type.indexOf('vast') > -1) {
+    if (isVideo) {
       if (typeof response.vastUrl !== 'undefined') {
         bidResponse.vastUrl = response.vastUrl;
       } else {
         bidResponse.vastXml = response.content;
       }
-
-      bidResponse.mediaType = VIDEO;
     } else {
       bidResponse.ad = response.content;
-      bidResponse.mediaType = BANNER;
     }
 
     bidResponses.push(bidResponse);

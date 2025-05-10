@@ -10,11 +10,13 @@
  * @typedef {('adpod')} VideoContext
  */
 
-/** @type MediaType */
+/** @type {MediaType} */
 export const NATIVE = 'native';
-/** @type MediaType */
+/** @type {MediaType} */
 export const VIDEO = 'video';
-/** @type MediaType */
+/** @type {MediaType} */
 export const BANNER = 'banner';
-/** @type VideoContext */
+/** @type {VideoContext} */
 export const ADPOD = 'adpod';
+
+export const ALL_MEDIATYPES = [NATIVE, VIDEO, BANNER];

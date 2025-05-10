@@ -1,0 +1,106 @@
+<!--
+  This page runs an auction for 2 adunits, simply displaying the results
+  rather than sending targeting to an ad server.
+
+  Notes:
+
+  - this approach assumes that the adunit.code is the div name. There
+  are many other ways to match the adunit to the div.
+  - this approach won't work for refreshed adunits. For that scenario
+  you'll need to be more surgical about what's passed into the bidsbackhandler.
+  - there's not a separate failsafe timeout here. Since there's no call to
+  an ad server waiting impatiently, Prebid's the only ad game in town and its
+  timeout is sufficient.
+-->
+
+<html>
+<head>
+<script>
+    var adUnits = [
+           {
+               code: 'test-div',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300,250]]
+                    }
+               },
+               bids: [
+                   {
+                       bidder: 'appnexus',
+                       params: {
+                           placementId: 13144370
+                       }
+                   }
+               ]
+           },
+           {
+               code: 'test-div2',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[728,90]]
+                    }
+               },
+               bids: [
+                   {
+                       bidder: 'appnexus',
+                       params: {
+                           placementId: 13144370
+                       }
+                   }
+               ]
+           }
+       ];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+  </script>
+  <script type="text/javascript" src="//acdn.adnxs.com/prebid/not-for-prod/prebid.js" async></script>
+
+  <script>
+    pbjs.que.push(function() {
+        pbjs.addAdUnits(adUnits);
+    });
+
+    // you could instead pass an array of adUnits
+    // to getHighestCpmBids() if desired
+    function renderAllAdUnits() {
+        var winners=pbjs.getHighestCpmBids();
+	for (var i = 0; i < winners.length; i++) {
+	  renderOne(winners[i]);
+        }
+    }
+
+    function renderOne(winningBid) {
+	if (winningBid && winningBid.adId) {
+	    var div = document.getElementById(winningBid.adUnitCode);
+	    if (div) {
+	      let iframe = document.createElement('iframe');
+	      iframe.frameBorder = '0';
+	      div.appendChild(iframe);
+	      var iframeDoc = iframe.contentWindow.document;
+	      pbjs.renderAd(iframeDoc, winningBid.adId);
+	    }
+	}
+
+    }
+
+  </script>
+
+<script>
+	pbjs.que.push(function() {
+          pbjs.requestBids({
+	    timeout: 2000,
+            bidsBackHandler: renderAllAdUnits
+          });
+	});
+</script>
+</head>
+
+<body>
+<h2>Ad Serverless Test Page</h2>
+
+<div id='test-div'></div>
+<br/>
+<div id='test-div2'></div>
+</body>
+</html>

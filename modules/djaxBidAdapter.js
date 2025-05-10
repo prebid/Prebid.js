@@ -1,5 +1,4 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
@@ -7,52 +6,8 @@ import {Renderer} from '../src/Renderer.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'djax';
-const DOMAIN = 'https://demo.reviveadservermod.com/headerbidding_adminshare/';
+const DOMAIN = 'https://revphpe.djaxbidder.com/header_bidding_vast/';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-
-function isBidRequestValid(bid) {
-  return (typeof bid.params !== 'undefined' && parseInt(utils.getValue(bid.params, 'publisherId')) > 0);
-}
-
-function buildRequests(validBidRequests) {
-  return {
-    method: 'POST',
-    url: DOMAIN + 'www/admin/plugins/Prebid/getAd.php',
-    options: {
-      withCredentials: false,
-      crossOrigin: true
-    },
-    data: validBidRequests,
-  };
-}
-
-function interpretResponse(serverResponse, request) {
-  const response = serverResponse.body;
-  const bidResponses = [];
-  var bidRequestResponses = [];
-
-  utils._each(response, function(bidAd) {
-    bidAd.adResponse = {
-      content: bidAd.vastXml,
-      height: bidAd.height,
-      width: bidAd.width
-    };
-    bidAd.ttl = config.getConfig('_bidderTimeout')
-    bidAd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, {
-      id: bidAd.adUnitCode,
-      url: RENDERER_URL
-    }, bidAd.adUnitCode) : undefined;
-    bidResponses.push(bidAd);
-  });
-
-  bidRequestResponses.push({
-    function: 'saveResponses',
-    request: request,
-    response: bidResponses
-  });
-  sendResponseToServer(bidRequestResponses);
-  return bidResponses;
-}
 
 function outstreamRender(bidAd) {
   bidAd.renderer.push(() => {
@@ -86,18 +41,6 @@ function createRenderer(bidAd, rendererParams, adUnitCode) {
   return renderer;
 }
 
-function onBidWon(bid) {
-  let wonBids = [];
-  wonBids.push(bid);
-  wonBids[0].function = 'onBidWon';
-  sendResponseToServer(wonBids);
-}
-
-function onTimeout(details) {
-  details.unshift({ 'function': 'onTimeout' });
-  sendResponseToServer(details);
-}
-
 function sendResponseToServer(data) {
   ajax(DOMAIN + 'www/admin/plugins/Prebid/tracking/track.php', null, JSON.stringify(data), {
     withCredentials: false,
@@ -106,24 +49,65 @@ function sendResponseToServer(data) {
   });
 }
 
-function getUserSyncs(syncOptions) {
-  if (syncOptions.iframeEnabled) {
-    return [{
-      type: 'iframe',
-      url: DOMAIN + 'www/admin/plugins/Prebid/userSync.php'
-    }];
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
-  isBidRequestValid,
-  buildRequests,
-  interpretResponse,
-  getUserSyncs,
-  onBidWon,
-  onTimeout
+
+  isBidRequestValid: function(bid) {
+    return (typeof bid.params !== 'undefined' && parseInt(utils.getValue(bid.params, 'publisherId')) > 0);
+  },
+
+  buildRequests: function(validBidRequests) {
+    return {
+      method: 'POST',
+      url: DOMAIN + 'www/admin/plugins/Prebid/getAd.php',
+      options: {
+        withCredentials: false,
+        crossOrigin: true
+      },
+      data: validBidRequests,
+    };
+  },
+
+  interpretResponse: function(serverResponse, request) {
+    const response = serverResponse.body;
+    const bidResponses = [];
+    var bidRequestResponses = [];
+
+    utils._each(response, function(bidAd) {
+      bidAd.adResponse = {
+        content: bidAd.vastXml,
+        height: bidAd.height,
+        width: bidAd.width
+      };
+
+      bidAd.renderer = bidAd.context === 'outstream' ? createRenderer(bidAd, {
+        id: bidAd.adUnitCode,
+        url: RENDERER_URL
+      }, bidAd.adUnitCode) : undefined;
+      bidResponses.push(bidAd);
+    });
+
+    bidRequestResponses.push({
+      function: 'saveResponses',
+      request: request,
+      response: bidResponses
+    });
+    sendResponseToServer(bidRequestResponses);
+    return bidResponses;
+  },
+
+  onBidWon: function(bid) {
+    let wonBids = [];
+    wonBids.push(bid);
+    wonBids[0].function = 'onBidWon';
+    sendResponseToServer(wonBids);
+  },
+
+  onTimeout: function(details) {
+    details.unshift({ 'function': 'onTimeout' });
+    sendResponseToServer(details);
+  }
 };
 
 registerBidder(spec);

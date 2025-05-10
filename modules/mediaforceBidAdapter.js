@@ -1,6 +1,13 @@
-import * as utils from '../src/utils.js';
+import { getDNT, deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize, isEmpty } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'mediaforce';
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
@@ -109,21 +116,25 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests.length === 0) {
       return;
     }
 
-    const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.referer) : '';
+    // TODO: is 'ref' the right value here?
+    const referer = bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.ref) : '';
     const auctionId = bidderRequest && bidderRequest.auctionId;
     const timeout = bidderRequest && bidderRequest.timeout;
-    const dnt = utils.getDNT() ? 1 : 0;
+    const dnt = getDNT() ? 1 : 0;
     const requestsMap = {};
     const requests = [];
     let isTest = false;
     validBidRequests.forEach(bid => {
       isTest = isTest || bid.params.is_test;
       let tagid = bid.params.placement_id;
-      let bidfloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : 0;
+      let bidfloor = 0;
       let validImp = false;
       let impObj = {
         id: bid.bidId,
@@ -132,7 +143,7 @@ export const spec = {
         bidfloor: bidfloor,
         ext: {
           mediaforce: {
-            transactionId: bid.transactionId
+            transactionId: bid.ortb2Imp?.ext?.tid,
           }
         }
 
@@ -156,6 +167,7 @@ export const spec = {
         request = {
           id: Math.round(Math.random() * 1e16).toString(16),
           site: {
+            // TODO: this should probably look at refererInfo
             page: window.location.href,
             ref: referer,
             id: bid.params.publisher_id,
@@ -171,6 +183,7 @@ export const spec = {
           },
           ext: {
             mediaforce: {
+              // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
               hb_key: auctionId
             }
           },
@@ -219,6 +232,9 @@ export const spec = {
           currency: cur,
           netRevenue: true,
           ttl: serverBid.ttl || 300,
+          meta: {
+            advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+          },
           burl: serverBid.burl,
         };
         if (serverBid.dealid) {
@@ -257,10 +273,10 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function(bid) {
-    const cpm = utils.deepAccess(bid, 'adserverTargeting.hb_pb') || '';
-    if (utils.isStr(bid.burl) && bid.burl !== '') {
-      bid.burl = utils.replaceAuctionPrice(bid.burl, cpm);
-      utils.triggerPixel(bid.burl);
+    const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
+    if (isStr(bid.burl) && bid.burl !== '') {
+      bid.burl = replaceAuctionPrice(bid.burl, bid.originalCpm || cpm);
+      triggerPixel(bid.burl);
     }
   },
 };
@@ -277,9 +293,9 @@ function createBannerRequest(bid) {
   if (!sizes.length) return;
 
   let format = [];
-  let r = utils.parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  let r = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
   for (let f = 1; f < sizes.length; f++) {
-    format.push(utils.parseGPTSingleSizeArrayToRtbSize(sizes[f]));
+    format.push(parseGPTSingleSizeArrayToRtbSize(sizes[f]));
   }
   if (format.length) {
     r.format = format
@@ -300,15 +316,15 @@ function parseNative(native) {
     const {id, img, data, title} = asset;
     const key = NATIVE_ID_MAP[id];
     if (key) {
-      if (!utils.isEmpty(title)) {
+      if (!isEmpty(title)) {
         result.title = title.text
-      } else if (!utils.isEmpty(img)) {
+      } else if (!isEmpty(img)) {
         result[key] = {
           url: img.url,
           height: img.h,
           width: img.w
         }
-      } else if (!utils.isEmpty(data)) {
+      } else if (!isEmpty(data)) {
         result[key] = data.value;
       }
     }

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+<script>
+      window.googletag = window.googletag || { cmd: [] };
+      googletag.cmd.push(function () {
+        googletag.defineSlot('/46380388/herbeauty_prebid', [[320, 100], [950, 90], [1024, 768], [120, 600], [300, 75], [970, 66], [300, 50], [300, 31], [320, 480], [750, 200], 'fluid', [250, 250], [250, 360], [120, 90], [1, 1], [292, 30], [300, 100], [768, 1024], [88, 31], [200, 200], [300, 600], [300, 1050], [960, 90], [125, 125], [180, 150], [970, 250], [168, 28], [980, 120], [120, 20], [120, 240], [480, 320], [468, 60], [120, 30], [120, 60], [750, 300], [930, 180], [728, 90], [168, 42], [980, 90], [320, 50], [750, 100], [200, 446], [336, 280], [300, 250], [580, 400], [970, 90], [160, 600]], 'div-gpt-ad-1660208650016-0').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+    </script>
+<link rel="icon" type="image/png" href="/favicon.png">
+<script src="../../build/dev/prebid.js" async></script>
+<script>
+      var sizes = [
+        [300, 250]
+      ];
+      var PREBID_TIMEOUT = 1000;
+      var FAILSAFE_TIMEOUT = 3000;
+      var adUnits = [{
+        code: '/46380388/herbeauty_prebid',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 100], [950, 90], [1024, 768], [120, 600], [300, 75], [970, 66], [300, 50], [300, 31], [320, 480], [750, 200], [250, 250], [250, 360], [120, 90], [1, 1], [292, 30], [300, 100], [768, 1024], [88, 31], [200, 200], [300, 600], [300, 1050], [960, 90], [125, 125], [180, 150], [970, 250], [168, 28], [980, 120], [120, 20], [120, 240], [480, 320], [468, 60], [120, 30], [120, 60], [750, 300], [930, 180], [728, 90], [168, 42], [980, 90], [320, 50], [750, 100], [200, 446], [336, 280], [300, 250], [580, 400], [970, 90], [160, 600]]
+          }
+        },
+        bids: [{
+          bidder: 'mgid',
+          params: {
+            accountId: '219'
+          }
+        }]
+      }];
+      // ======== DO NOT EDIT BELOW THIS LINE =========== //
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad();
+      });
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+      pbjs.que.push(function () {
+        pbjs.setConfig({ priceGranularity: 'high' })
+        pbjs.setConfig({
+          debug: true,
+          realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [{
+              name: 'mgid',
+              waitForIt: true,
+              params: {
+                clientSiteId: 1
+              }
+            }]
+          },
+          /*consentManagement: {
+            gdpr: {
+              cmpApi: 'iab',
+              timeout: 8000,
+              defaultGdprScope: true
+            }
+          }*/
+          // static data for consent management is only for test purpose - with this data we didn't get ads at the auction
+          /*consentManagement: {
+            usp: {
+              cmpApi: 'static',
+              consentData: {
+                getUSPData: {
+                  uspString: '1YNY',
+                }
+              }
+            },
+            gdpr: {
+              cmpApi: 'static',
+              consentData: {
+                getTCData: {
+                  tcString: 'COwK6gaOwK6gaFmAAAENAPCAAAAAAAAAAAAAAAAAAAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+                  gdprApplies: true,
+                  purpose: {
+                    consents: {
+                      1: true,
+                      2: true,
+                    },
+                  },
+                  vendor: {
+                    consents: {
+                      358: true,
+                    },
+                  }
+                }
+              }
+            }
+          }*/
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: initAdserver,
+          timeout: PREBID_TIMEOUT,
+          ortb2: {
+            site: {
+              content: {
+                language: 'en',
+              }
+            }
+          }
+        });
+      });
+
+      function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+        pbjs.initAdserverSet = true;
+        googletag.cmd.push(function () {
+          pbjs.setTargetingForGPTAsync && pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      }
+
+      // in case PBJS doesn't load
+      setTimeout(function () {
+        initAdserver();
+      }, FAILSAFE_TIMEOUT);
+
+    </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>JS Bin</title>
+</head>
+<body>
+
+<h2>Basic Prebid.js Example</h2>
+<h5>Div-1</h5>
+
+<div id='div-gpt-ad-1660208650016-0' style='min-width: 88px; min-height: 20px;'>
+<script>
+      googletag.cmd.push(function () {
+        googletag.display('div-gpt-ad-1660208650016-0');
+      });
+    </script>
+</div>
+
+</body>
+</html>

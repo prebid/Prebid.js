@@ -4,55 +4,50 @@
  */
 import { config } from '../../src/config.js';
 import { module, getHook } from '../../src/hook.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
-import { addBidderRequests } from '../../src/auction.js';
+import {logError} from '../../src/utils.js';
+import {PbPromise} from '../../src/utils/promise.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 let submodules = [];
 
-/**
- * enable submodule in User ID
- * @param {RtdSubmodule} submodule
- */
 export function registerSubmodules(submodule) {
   submodules.push(submodule);
 }
 
-export function init() {
-  let modConf = config.getConfig('firstPartyData') || {};
-  let ortb2 = config.getConfig('ortb2') || {};
+export function reset() {
+  submodules.length = 0;
+}
 
+export function processFpd({global = {}, bidder = {}} = {}) {
+  let modConf = config.getConfig('firstPartyData') || {};
+  let result = PbPromise.resolve({global, bidder});
   submodules.sort((a, b) => {
     return ((a.queue || 1) - (b.queue || 1));
   }).forEach(submodule => {
-    ortb2 = submodule.init(modConf, ortb2);
+    result = result.then(
+      ({global, bidder}) => PbPromise.resolve(submodule.processFpd(modConf, {global, bidder}))
+        .catch((err) => {
+          logError(`Error in FPD module ${submodule.name}`, err);
+          return {};
+        })
+        .then((result) => ({global: result.global || global, bidder: result.bidder || bidder}))
+    );
   });
-
-  config.setConfig({ortb2});
+  return result;
 }
 
-/**
- * BidderRequests hook to intiate module and reset modules ortb2 data object
- */
-function addBidderRequestHook(fn, bidderRequests) {
-  init();
-  fn.call(this, bidderRequests);
-  // Removes hook after run
-  addBidderRequests.getHooks({ hook: addBidderRequestHook }).remove();
-}
+export const startAuctionHook = timedAuctionHook('fpd', function startAuctionHook(fn, req) {
+  processFpd(req.ortb2Fragments).then((ortb2Fragments) => {
+    Object.assign(req.ortb2Fragments, ortb2Fragments);
+    fn.call(this, req);
+  })
+});
 
-/**
- * Sets bidderRequests hook
- */
 function setupHook() {
-  getHook('addBidderRequests').before(addBidderRequestHook);
+  getHook('startAuction').before(startAuctionHook, 10);
 }
 
 module('firstPartyData', registerSubmodules);
 
 // Runs setupHook on initial load
 setupHook();
-
-/**
- * Global function to reinitiate module
- */
-(getGlobal()).refreshFpd = setupHook;

@@ -27,10 +27,10 @@ describe('DailyhuntAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {};
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {};
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
   describe('buildRequests', function() {
@@ -283,7 +283,8 @@ describe('DailyhuntAdapter', function () {
           currency: 'USD',
           ad: 'adm',
           mediaType: 'banner',
-          winUrl: 'winUrl'
+          winUrl: 'winUrl',
+          adomain: 'dailyhunt'
         },
         {
           requestId: '2',
@@ -296,6 +297,7 @@ describe('DailyhuntAdapter', function () {
           currency: 'USD',
           mediaType: 'video',
           winUrl: 'winUrl',
+          adomain: 'dailyhunt',
           videoCacheKey: 'cache_key',
           vastUrl: 'vastUrl',
         },
@@ -310,6 +312,7 @@ describe('DailyhuntAdapter', function () {
           currency: 'USD',
           mediaType: 'native',
           winUrl: 'winUrl',
+          adomain: 'dailyhunt',
           native: {
             clickUrl: 'https%3A%2F%2Fmontu1996.github.io%2F',
             clickTrackers: [],
@@ -336,6 +339,7 @@ describe('DailyhuntAdapter', function () {
           currency: 'USD',
           mediaType: 'video',
           winUrl: 'winUrl',
+          adomain: 'dailyhunt',
           vastXml: 'adm',
         },
       ];

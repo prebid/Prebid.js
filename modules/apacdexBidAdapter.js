@@ -1,23 +1,12 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import {parseDomain} from '../src/refererDetection.js';
 const BIDDER_CODE = 'apacdex';
-const CONFIG = {
-  'apacdex': {
-    'ENDPOINT': 'https://useast.quantumdex.io/auction/apacdex',
-    'USERSYNC': 'https://sync.quantumdex.io/usersync/apacdex'
-  },
-  'quantumdex': {
-    'ENDPOINT': 'https://useast.quantumdex.io/auction/quantumdex',
-    'USERSYNC': 'https://sync.quantumdex.io/usersync/quantumdex'
-  },
-  'valueimpression': {
-    'ENDPOINT': 'https://useast.quantumdex.io/auction/adapter',
-    'USERSYNC': 'https://sync.quantumdex.io/usersync/adapter'
-  }
-};
+const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
+const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
 
-var bidderConfig = CONFIG[BIDDER_CODE];
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
@@ -29,19 +18,19 @@ export const spec = {
     if (!bid.params) {
       return false;
     }
-    if (!bid.params.siteId) {
+    if (!bid.params.siteId && !bid.params.placementId) {
       return false;
     }
-    if (!utils.deepAccess(bid, 'mediaTypes.banner') && !utils.deepAccess(bid, 'mediaTypes.video')) {
+    if (!deepAccess(bid, 'mediaTypes.banner') && !deepAccess(bid, 'mediaTypes.video')) {
       return false;
     }
-    if (utils.deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
-      if (!utils.deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    if (deepAccess(bid, 'mediaTypes.banner')) { // Not support multi type bids, favor banner over video
+      if (!deepAccess(bid, 'mediaTypes.banner.sizes')) {
         // sizes at the banner is required.
         return false;
       }
-    } else if (utils.deepAccess(bid, 'mediaTypes.video')) {
-      if (!utils.deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    } else if (deepAccess(bid, 'mediaTypes.video')) {
+      if (!deepAccess(bid, 'mediaTypes.video.playerSize')) {
         // playerSize is required for instream adUnits.
         return false;
       }
@@ -50,20 +39,15 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let siteId;
     let schain;
     let eids;
     let geo;
     let test;
     let bids = [];
 
-    bidderConfig = CONFIG[validBidRequests[0].bidder];
-
     test = config.getConfig('debug');
 
     validBidRequests.forEach(bidReq => {
-      siteId = siteId || bidReq.params.siteId;
-
       if (bidReq.schain) {
         schain = schain || bidReq.schain
       }
@@ -101,7 +85,7 @@ export const spec = {
         bidReq.bidFloor = bidFloor;
       }
 
-      bids.push(JSON.parse(JSON.stringify(bidReq)));
+      bids.push(deepClone(bidReq));
     });
 
     const payload = {};
@@ -112,17 +96,17 @@ export const spec = {
 
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.width;
-    payload.device.width = window.screen.height;
+    payload.device.height = window.screen.height;
+    payload.device.width = window.screen.width;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
-    payload.site.id = siteId;
-    payload.site.page = pageUrl
+    payload.site.page = pageUrl;
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
-    payload.site.hostname = getDomain(pageUrl);
+    // TODO: does it make sense to fall back to window.location for the domain?
+    payload.site.hostname = bidderRequest.refererInfo?.domain || parseDomain(pageUrl);
 
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -140,24 +124,34 @@ export const spec = {
 
     // Apply schain.
     if (schain) {
-      payload.schain = schain
+      payload.schain = schain;
     }
 
     // Apply eids.
     if (eids) {
-      payload.eids = eids
+      payload.eids = eids;
     }
 
     // Apply geo
     if (geo) {
-      payload.geo = geo;
+      logError('apacdex adapter: Precise lat and long must be set on config; not on bidder parameters');
     }
 
-    payload.bids = bids;
+    payload.bids = bids.map(function (bid) {
+      return {
+        params: bid.params,
+        mediaTypes: bid.mediaTypes,
+        transactionId: bid.ortb2Imp?.ext?.tid,
+        sizes: bid.sizes,
+        bidId: bid.bidId,
+        adUnitCode: bid.adUnitCode,
+        bidFloor: bid.bidFloor
+      }
+    });
 
     return {
       method: 'POST',
-      url: bidderConfig.ENDPOINT,
+      url: ENDPOINT,
       data: payload,
       withCredentials: true,
       bidderRequests: bids
@@ -165,12 +159,12 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
-    if (!serverBody || !utils.isPlainObject(serverBody)) {
+    if (!serverBody || !isPlainObject(serverBody)) {
       return [];
     }
 
     const serverBids = serverBody.bids;
-    if (!serverBids || !utils.isArray(serverBids)) {
+    if (!serverBids || !isArray(serverBids)) {
       return [];
     }
 
@@ -192,44 +186,59 @@ export const spec = {
         bidResponse.dealId = dealId;
       }
       if (bid.vastXml) {
-        bidResponse.vastXml = utils.replaceAuctionPrice(bid.vastXml, bid.cpm);
+        bidResponse.vastXml = replaceAuctionPrice(bid.vastXml, bid.cpm);
       } else {
-        bidResponse.ad = utils.replaceAuctionPrice(bid.ad, bid.cpm);
+        bidResponse.ad = replaceAuctionPrice(bid.ad, bid.cpm);
       }
       bidResponse.meta = {};
-      if (bid.meta && bid.meta.advertiserDomains && utils.isArray(bid.meta.advertiserDomains)) {
+      if (bid.meta && bid.meta.advertiserDomains && isArray(bid.meta.advertiserDomains)) {
         bidResponse.meta.advertiserDomains = bid.meta.advertiserDomains;
       }
       bidResponses.push(bidResponse);
     });
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    try {
-      if (syncOptions.iframeEnabled) {
-        syncs.push({
-          type: 'iframe',
-          url: bidderConfig.USERSYNC
-        });
+    if (hasPurpose1Consent(gdprConsent)) {
+      let params = '';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params = `?gdpr_consent=${gdprConsent.consentString}`;
+        }
       }
-      if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
-        serverResponses[0].body.pixel.forEach(px => {
-          if (px.type === 'image' && syncOptions.pixelEnabled) {
-            syncs.push({
-              type: 'image',
-              url: px.url
-            });
-          }
-          if (px.type === 'iframe' && syncOptions.iframeEnabled) {
-            syncs.push({
-              type: 'iframe',
-              url: px.url
-            });
-          }
-        });
+      if (uspConsent) {
+        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
       }
-    } catch (e) { }
+
+      try {
+        if (syncOptions.iframeEnabled) {
+          syncs.push({
+            type: 'iframe',
+            url: USERSYNC + params
+          });
+        }
+        if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
+          serverResponses[0].body.pixel.forEach(px => {
+            if (px.type === 'image' && syncOptions.pixelEnabled) {
+              syncs.push({
+                type: 'image',
+                url: px.url + params
+              });
+            }
+            if (px.type === 'iframe' && syncOptions.iframeEnabled) {
+              syncs.push({
+                type: 'iframe',
+                url: px.url + params
+              });
+            }
+          });
+        }
+      } catch (e) { }
+    }
     return syncs;
   }
 };
@@ -277,18 +286,8 @@ function _getDoNotTrack() {
  * @returns {string}
  */
 function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
-  if (config.getConfig('pageUrl')) {
-    return config.getConfig('pageUrl');
-  }
-  if (utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
-    return bidderRequest.refererInfo.referer;
-  }
-
-  try {
-    return window.top.location.href;
-  } catch (e) {
-    return window.location.href;
-  }
+  // TODO: does it make sense to fall back to window.location?
+  return bidderRequest?.refererInfo?.page || window.location.href;
 }
 
 /**
@@ -298,34 +297,8 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
  * @returns {string}
  */
 function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
-  if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
-    return bidderRequest.refererInfo.referer;
-  }
-
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return window.document.referrer;
-  }
-}
-
-/**
- * Extracts the domain from given page url
- *
- * @param {string} url
- * @returns {string}
- */
-export function getDomain(pageUrl) {
-  if (config.getConfig('publisherDomain')) {
-    var publisherDomain = config.getConfig('publisherDomain');
-    return publisherDomain.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
-  }
-
-  if (!pageUrl) {
-    return pageUrl;
-  }
-
-  return pageUrl.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
+  // TODO: does it make sense to fall back to window.document.referrer?
+  return bidderRequest?.refererInfo?.ref || window.document.referrer;
 }
 
 /**
@@ -335,7 +308,7 @@ export function getDomain(pageUrl) {
  * @returns {boolean}
  */
 export function validateGeoObject(geo) {
-  if (!utils.isPlainObject(geo)) {
+  if (!isPlainObject(geo)) {
     return false;
   }
   if (!geo.lat) {
@@ -354,10 +327,10 @@ export function validateGeoObject(geo) {
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {float||null}
+ * @returns {?number}
  */
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return (bid.params.floorPrice) ? bid.params.floorPrice : null;
   }
 
@@ -366,7 +339,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;

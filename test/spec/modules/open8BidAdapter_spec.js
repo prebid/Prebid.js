@@ -1,5 +1,5 @@
-import { spec } from 'modules/open8BidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/open8BidAdapter';
+import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
 
@@ -53,14 +53,15 @@ describe('Open8Adapter', function() {
     });
   });
   describe('interpretResponse', function() {
+    const adomin = ['example.com']
     const bannerResponse = {
       slotKey: 'slotkey1234',
       userId: 'userid1234',
       impId: 'impid1234',
       media: 'TEST_MEDIA',
-      nurl: 'https://example/win',
+      nurl: '//example/win',
       isAdReturn: true,
-      syncPixels: ['https://example/sync/pixel.gif'],
+      syncPixels: ['//example/sync/pixel.gif'],
       syncIFs: [],
       ad: {
         bidId: 'TEST_BID_ID',
@@ -73,14 +74,15 @@ describe('Open8Adapter', function() {
         fa: 5678,
         pr: 'pr1234',
         mr: 'mr1234',
-        nurl: 'https://example/win',
+        nurl: '//example/win',
         adType: 2,
         banner: {
           w: 300,
           h: 250,
           adm: '<div></div>',
-          imps: ['https://example.com/imp']
-        }
+          imps: ['//example.com/imp']
+        },
+        adomain: adomin
       }
     };
     const videoResponse = {
@@ -89,7 +91,7 @@ describe('Open8Adapter', function() {
       impId: 'impid1234',
       media: 'TEST_MEDIA',
       isAdReturn: true,
-      syncPixels: ['https://example/sync/pixel.gif'],
+      syncPixels: ['//example/sync/pixel.gif'],
       syncIFs: [],
       ad: {
         bidId: 'TEST_BID_ID',
@@ -102,14 +104,15 @@ describe('Open8Adapter', function() {
         fa: 5678,
         pr: 'pr1234',
         mr: 'mr1234',
-        nurl: 'https://example/win',
+        nurl: '//example/win',
         adType: 1,
         video: {
-          purl: 'https://playerexample.js',
+          purl: '//playerexample.js',
           vastXml: '<VAST></VAST>',
           w: 320,
           h: 180
         },
+        adomain: adomin
       }
     };
 
@@ -124,23 +127,25 @@ describe('Open8Adapter', function() {
         'fa': 5678,
         'pr': 'pr1234',
         'mr': 'mr1234',
-        'nurl': 'https://example/win',
+        'nurl': '//example/win',
         'requestId': 'requestid1234',
         'cpm': 1234.56,
         'creativeId': 'creativeid1234',
         'dealId': 'TEST_DEAL_ID',
         'width': 300,
         'height': 250,
-        'ad': "<div></div><img src='https://example/sync/pixel.gif' />",
+        'ad': "<div></div><img src='//example/sync/pixel.gif' />",
         'mediaType': 'banner',
         'currency': 'JPY',
         'ttl': 360,
-        'netRevenue': true
+        'netRevenue': true,
+        'meta': { }
       }];
 
       let bidderRequest;
       let result = spec.interpretResponse({ body: bannerResponse }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
     it('handles video responses', function() {
@@ -154,7 +159,7 @@ describe('Open8Adapter', function() {
         'fa': 5678,
         'pr': 'pr1234',
         'mr': 'mr1234',
-        'nurl': 'https://example/win',
+        'nurl': '//example/win',
         'requestId': 'requestid1234',
         'cpm': 1234.56,
         'creativeId': 'creativeid1234',
@@ -167,12 +172,14 @@ describe('Open8Adapter', function() {
         'adResponse': {},
         'currency': 'JPY',
         'ttl': 360,
-        'netRevenue': true
+        'netRevenue': true,
+        'meta': { }
       }];
 
       let bidderRequest;
       let result = spec.interpretResponse({ body: videoResponse }, { bidderRequest });
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+      expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
     it('handles nobid responses', function() {

@@ -9,7 +9,7 @@ Maintainer: info@adnuntius.com
 # Description
 
 Adnuntius Bidder Adapter for Prebid.js. 
-Only Banner format is supported.
+Banner and Video formats are supported.
 
 # Test Parameters
 ```
@@ -27,6 +27,7 @@ Only Banner format is supported.
                         params: {
                             auId: "8b6bc",
                             network: "adnuntius",
+                            maxDeals: 0
                         }
                     },
                 ]

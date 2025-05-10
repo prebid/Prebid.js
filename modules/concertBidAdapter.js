@@ -1,11 +1,18 @@
-
-import * as utils from '../src/utils.js';
+import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js'
+import { getStorageManager } from '../src/storageManager.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'concert';
 const CONCERT_ENDPOINT = 'https://bids.concert.io';
-const USER_SYNC_URL = 'https://cdn.concert.io/lib/bids/sync.html';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -17,7 +24,7 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     if (!bid.params.partnerId) {
-      utils.logWarn('Missing partnerId bid parameter');
+      logWarn('Missing partnerId bid parameter');
       return false;
     }
 
@@ -32,45 +39,66 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    utils.logMessage(validBidRequests);
-    utils.logMessage(bidderRequest);
+    logMessage(validBidRequests);
+    logMessage(bidderRequest);
+
+    const eids = [];
+
     let payload = {
       meta: {
         prebidVersion: '$prebid.version$',
-        pageUrl: bidderRequest.refererInfo.referer,
+        pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
-        debug: utils.debugTurnedOn(),
-        uid: getUid(bidderRequest),
+        browserLanguage: window.navigator.language,
+        debug: debugTurnedOn(),
+        uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
-        adapterVersion: '1.1.1',
+        adapterVersion: '1.2.0',
         uspConsent: bidderRequest.uspConsent,
-        gdprConsent: bidderRequest.gdprConsent
+        gdprConsent: bidderRequest.gdprConsent,
+        gppConsent: bidderRequest.gppConsent,
+        tdid: getTdid(bidderRequest, validBidRequests),
+      }
+    };
+
+    if (!payload.meta.gppConsent && bidderRequest.ortb2?.regs?.gpp) {
+      payload.meta.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid
       }
     }
 
     payload.slots = validBidRequests.map(bidRequest => {
+      collectEid(eids, bidRequest);
+      const adUnitElement = document.getElementById(bidRequest.adUnitCode)
+      const coordinates = getOffset(adUnitElement)
+
       let slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         sizes: bidRequest.params.sizes || bidRequest.sizes,
         partnerId: bidRequest.params.partnerId,
         slotType: bidRequest.params.slotType,
         adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
         placementId: bidRequest.params.placementId || '',
-        site: bidRequest.params.site || bidderRequest.refererInfo.referer
+        site: bidRequest.params.site || bidderRequest.refererInfo.page,
+        ref: bidderRequest.refererInfo.ref,
+        offsetCoordinates: { x: coordinates?.left, y: coordinates?.top }
       }
 
       return slot;
     });
 
-    utils.logMessage(payload);
+    payload.meta.eids = eids.filter(Boolean);
+
+    logMessage(payload);
 
     return {
       method: 'POST',
       url: `${CONCERT_ENDPOINT}/bids/prebid`,
       data: JSON.stringify(payload)
-    }
+    };
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -79,8 +107,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    utils.logMessage(serverResponse);
-    utils.logMessage(bidRequest);
+    logMessage(serverResponse);
+    logMessage(bidRequest);
 
     const serverBody = serverResponse.body;
 
@@ -101,48 +129,17 @@ export const spec = {
         meta: { advertiserDomains: bid && bid.adomain ? bid.adomain : [] },
         creativeId: bid.creativeId,
         netRevenue: bid.netRevenue,
-        currency: bid.currency
-      }
+        currency: bid.currency,
+        ...(bid.dealid && { dealId: bid.dealid }),
+      };
     });
 
-    if (utils.debugTurnedOn() && serverBody.debug) {
-      utils.logMessage(`CONCERT`, serverBody.debug);
+    if (debugTurnedOn() && serverBody.debug) {
+      logMessage(`CONCERT`, serverBody.debug);
     }
 
-    utils.logMessage(bidResponses);
+    logMessage(bidResponses);
     return bidResponses;
-  },
-
-  /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @param {gdprConsent} object GDPR consent object.
-   * @param {uspConsent} string US Privacy String.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    const syncs = []
-    if (syncOptions.iframeEnabled && !hasOptedOutOfPersonalization()) {
-      let params = [];
-
-      if (gdprConsent && (typeof gdprConsent.gdprApplies === 'boolean')) {
-        params.push(`gdpr_applies=${gdprConsent.gdprApplies ? '1' : '0'}`);
-      }
-      if (gdprConsent && (typeof gdprConsent.consentString === 'string')) {
-        params.push(`gdpr_consent=${gdprConsent.consentString}`);
-      }
-      if (uspConsent && (typeof uspConsent === 'string')) {
-        params.push(`usp_consent=${uspConsent}`);
-      }
-
-      syncs.push({
-        type: 'iframe',
-        url: USER_SYNC_URL + (params.length > 0 ? `?${params.join('&')}` : '')
-      });
-    }
-    return syncs;
   },
 
   /**
@@ -150,8 +147,8 @@ export const spec = {
    * @param {data} Containing timeout specific data
    */
   onTimeout: function(data) {
-    utils.logMessage('concert bidder timed out');
-    utils.logMessage(data);
+    logMessage('concert bidder timed out');
+    logMessage(data);
   },
 
   /**
@@ -159,30 +156,51 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function(bid) {
-    utils.logMessage('concert bidder won bid');
-    utils.logMessage(bid);
+    logMessage('concert bidder won bid');
+    logMessage(bid);
   }
 
 }
 
 registerBidder(spec);
 
-const storage = getStorageManager();
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
  * Check or generate a UID for the current user.
  */
-function getUid(bidderRequest) {
+function getUid(bidderRequest, validBidRequests) {
   if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return false;
   }
 
-  const CONCERT_UID_KEY = 'c_uid';
+  /**
+   * check for shareId or pubCommonId before generating a new one
+   * sharedId: @see https://docs.prebid.org/dev-docs/modules/userId.html
+   * pubCid (no longer supported): @see https://docs.prebid.org/dev-docs/modules/pubCommonId.html#adapter-integration
+   */
+  const sharedId =
+    deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
+    deepAccess(validBidRequests[0], 'userId.pubcid')
+  const pubCid = deepAccess(validBidRequests[0], 'crumbs.pubcid');
 
+  if (sharedId) return sharedId;
+  if (pubCid) return pubCid;
+
+  const LEGACY_CONCERT_UID_KEY = 'c_uid';
+  const CONCERT_UID_KEY = 'vmconcert_uid';
+
+  const legacyUid = storage.getDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
   let uid = storage.getDataFromLocalStorage(CONCERT_UID_KEY);
 
+  if (legacyUid) {
+    uid = legacyUid;
+    storage.setDataInLocalStorage(CONCERT_UID_KEY, uid);
+    storage.removeDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
+  }
+
   if (!uid) {
-    uid = utils.generateUUID();
+    uid = generateUUID();
     storage.setDataInLocalStorage(CONCERT_UID_KEY, uid);
   }
 
@@ -204,9 +222,62 @@ function hasOptedOutOfPersonalization() {
  * @param {BidderRequest} bidderRequest Object which contains any data consent signals
  */
 function consentAllowsPpid(bidderRequest) {
-  /* NOTE: We cannot easily test GDPR consent, without the
-   * `consent-string` npm module; so will have to rely on that
-   * happening on the bid-server. */
-  return !(bidderRequest.uspConsent === 'string' &&
-           bidderRequest.uspConsent.toUpperCase().substring(0, 2) === '1YY')
+  let uspConsentAllows = true;
+
+  // if a us privacy string was provided, but they explicitly opted out
+  if (
+    typeof bidderRequest?.uspConsent === 'string' &&
+    bidderRequest?.uspConsent[0] === '1' &&
+    bidderRequest?.uspConsent[2].toUpperCase() === 'Y' // user has opted-out
+  ) {
+    uspConsentAllows = false;
+  }
+
+  /*
+   * True if the gdprConsent is null-y; or GDPR does not apply; or if purpose 1 consent was given.
+   * Much more nuanced GDPR requirements are tested on the bid server using the @iabtcf/core npm module;
+   */
+  const gdprConsentAllows = hasPurpose1Consent(bidderRequest?.gdprConsent);
+
+  return (uspConsentAllows && gdprConsentAllows);
+}
+
+function collectEid(eids, bid) {
+  if (bid.userId) {
+    const eid = getUserId(bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com', undefined, 3)
+    eids.push(eid)
+  }
+}
+
+function getUserId(id, source, uidExt, atype) {
+  if (id) {
+    const uid = { id, atype };
+
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+
+    return {
+      source,
+      uids: [ uid ]
+    };
+  }
+}
+
+function getOffset(el) {
+  if (el) {
+    const rect = getBoundingClientRect(el);
+    return {
+      left: rect.left + window.scrollX,
+      top: rect.top + window.scrollY
+    };
+  }
+}
+
+function getTdid(bidderRequest, validBidRequests) {
+  if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
+    return null;
+  }
+
+  return deepAccess(validBidRequests[0], 'userId.tdid') || null;
 }

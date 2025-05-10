@@ -2,7 +2,7 @@
  * Analytics Adapter for Datablocks
  */
 
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
 var datablocksAdapter = adapter({

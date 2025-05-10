@@ -1,6 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { buildBidRequestsAndParams, postRequest, buildEndpointUrl } from '../libraries/mediaImpactUtils/index.js';
 
 const BIDDER_CODE = 'adpartner';
 export const ENDPOINT_PROTOCOL = 'https';
@@ -11,62 +10,27 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function (bidRequest) {
-    return !!parseInt(bidRequest.params.unitId);
+    return !!parseInt(bidRequest.params.unitId) || !!parseInt(bidRequest.params.partnerId);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let referer = window.location.href;
-    try {
-      referer = typeof bidderRequest.refererInfo === 'undefined'
-        ? window.top.location.href
-        : bidderRequest.refererInfo.referer;
-    } catch (e) {}
+    const referer = bidderRequest?.refererInfo?.page || window.location.href;
 
-    let bidRequests = [];
-    let beaconParams = {
-      tag: [],
-      sizes: [],
-      referer: ''
-    };
+    // Use the common function to build bidRequests and beaconParams
+    const { bidRequests, beaconParams } = buildBidRequestsAndParams(validBidRequests, referer);
 
-    validBidRequests.forEach(function(validBidRequest) {
-      bidRequests.push({
-        unitId: parseInt(validBidRequest.params.unitId),
-        adUnitCode: validBidRequest.adUnitCode,
-        sizes: validBidRequest.sizes,
-        bidId: validBidRequest.bidId,
-        referer: referer
-      });
-
-      beaconParams.tag.push(validBidRequest.params.unitId);
-      beaconParams.sizes.push(spec.joinSizesToString(validBidRequest.sizes));
-      beaconParams.referer = encodeURIComponent(referer);
-    });
-
-    beaconParams.tag = beaconParams.tag.join(',');
-    beaconParams.sizes = beaconParams.sizes.join(',');
-
-    let adPartnerRequestUrl = utils.buildUrl({
-      protocol: ENDPOINT_PROTOCOL,
-      hostname: ENDPOINT_DOMAIN,
-      pathname: ENDPOINT_PATH,
-      search: beaconParams
-    });
+    const adPartnerRequestUrl = buildEndpointUrl(
+      ENDPOINT_PROTOCOL,
+      ENDPOINT_DOMAIN,
+      ENDPOINT_PATH,
+      beaconParams
+    );
 
     return {
       method: 'POST',
       url: adPartnerRequestUrl,
-      data: JSON.stringify(bidRequests)
+      data: JSON.stringify(bidRequests),
     };
-  },
-
-  joinSizesToString: function(sizes) {
-    let res = [];
-    sizes.forEach(function(size) {
-      res.push(size.join('x'));
-    });
-
-    return res.join('|');
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
@@ -77,16 +41,13 @@ export const spec = {
     }
 
     return validBids
-      .map(bid => ({
-        bid: bid,
-        ad: serverResponse.body[bid.adUnitCode]
-      }))
+      .map(bid => ({ bid: bid, ad: serverResponse.body[bid.adUnitCode] }))
       .filter(item => item.ad)
       .map(item => spec.adResponse(item.bid, item.ad));
   },
 
-  adResponse: function(bid, ad) {
-    return {
+  adResponse: function (bid, ad) {
+    const bidObject = {
       requestId: bid.bidId,
       ad: ad.ad,
       cpm: ad.cpm,
@@ -96,29 +57,93 @@ export const spec = {
       creativeId: ad.creativeId,
       netRevenue: ad.netRevenue,
       currency: ad.currency,
-      winNotification: ad.winNotification
+      winNotification: ad.winNotification,
+      meta: ad.adomain && ad.adomain.length > 0 ? { advertiserDomains: ad.adomain } : {},
     };
+
+    return bidObject;
   },
 
-  onBidWon: function(data) {
-    data.winNotification.forEach(function(unitWon) {
-      let adPartnerBidWonUrl = utils.buildUrl({
-        protocol: ENDPOINT_PROTOCOL,
-        hostname: ENDPOINT_DOMAIN,
-        pathname: unitWon.path
-      });
+  onBidWon: function (data) {
+    data.winNotification.forEach(function (unitWon) {
+      const adPartnerBidWonUrl = buildEndpointUrl(
+        ENDPOINT_PROTOCOL,
+        ENDPOINT_DOMAIN,
+        unitWon.path
+      );
 
       if (unitWon.method === 'POST') {
-        spec.postRequest(adPartnerBidWonUrl, JSON.stringify(unitWon.data));
+        postRequest(adPartnerBidWonUrl, JSON.stringify(unitWon.data));
       }
     });
 
     return true;
   },
 
-  postRequest(endpoint, data) {
-    ajax(endpoint, null, data, {method: 'POST'});
-  }
-}
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = [];
+
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
+      return syncs;
+    }
+
+    let appendGdprParams = function (url, gdprParams) {
+      if (gdprParams === null) {
+        return url;
+      }
+
+      return url + (url.indexOf('?') >= 0 ? '&' : '?') + gdprParams;
+    };
+
+    let gdprParams = null;
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    serverResponses.forEach(resp => {
+      if (resp.body) {
+        Object.keys(resp.body).map(function(key, index) {
+          let respObject = resp.body[key];
+          if (respObject['syncs'] !== undefined &&
+            Array.isArray(respObject.syncs) &&
+            respObject.syncs.length > 0) {
+            if (syncOptions.iframeEnabled) {
+              respObject.syncs.filter(function (syncIframeObject) {
+                if (syncIframeObject['type'] !== undefined &&
+                  syncIframeObject['link'] !== undefined &&
+                  syncIframeObject.type === 'iframe') { return true; }
+                return false;
+              }).forEach(function (syncIframeObject) {
+                syncs.push({
+                  type: 'iframe',
+                  url: appendGdprParams(syncIframeObject.link, gdprParams)
+                });
+              });
+            }
+            if (syncOptions.pixelEnabled) {
+              respObject.syncs.filter(function (syncImageObject) {
+                if (syncImageObject['type'] !== undefined &&
+                  syncImageObject['link'] !== undefined &&
+                  syncImageObject.type === 'image') { return true; }
+                return false;
+              }).forEach(function (syncImageObject) {
+                syncs.push({
+                  type: 'image',
+                  url: appendGdprParams(syncImageObject.link, gdprParams)
+                });
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return syncs;
+  },
+};
 
 registerBidder(spec);

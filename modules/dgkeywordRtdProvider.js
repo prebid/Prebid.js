@@ -6,11 +6,14 @@
  * @module modules/dgkeywordProvider
  * @requires module:modules/realTimeData
  */
-
-import * as utils from '../src/utils.js';
+import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 /**
  * get keywords from api server. and set keywords.
@@ -20,25 +23,32 @@ import { getGlobal } from '../src/prebidGlobal.js';
  * @param {Object} userConsent
  */
 export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, userConsent) {
-  const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1?url=';
   const PROFILE_TIMEOUT_MS = 1000;
   const timeout = (moduleConfig && moduleConfig.params && moduleConfig.params.timeout && Number(moduleConfig.params.timeout) > 0) ? Number(moduleConfig.params.timeout) : PROFILE_TIMEOUT_MS;
-  const url = (moduleConfig && moduleConfig.params && moduleConfig.params.url) ? moduleConfig.params.url : URL + encodeURIComponent(window.location.href);
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  callback = (function(cb) {
+    let done = false;
+    return function () {
+      if (!done) {
+        done = true;
+        return cb.apply(this, arguments);
+      }
+    }
+  })(callback);
   let isFinish = false;
-  utils.logMessage('[dgkeyword sub module]', adUnits, timeout);
+  logMessage('[dgkeyword sub module]', adUnits, timeout);
   let setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
   if (setKeywordTargetBidders.length <= 0) {
-    utils.logMessage('[dgkeyword sub module] no dgkeyword targets.');
+    logMessage('[dgkeyword sub module] no dgkeyword targets.');
     callback();
   } else {
-    utils.logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
-    utils.logMessage('[dgkeyword sub module] get targets from profile api start.');
-    ajax(url, {
+    logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
+    logMessage('[dgkeyword sub module] get targets from profile api start.');
+    ajax(getProfileApiUrl(moduleConfig?.params?.url, moduleConfig?.params?.enableReadFpid), {
       success: function(response) {
         const res = JSON.parse(response);
         if (!isFinish) {
-          utils.logMessage('[dgkeyword sub module] get targets from profile api end.');
+          logMessage('[dgkeyword sub module] get targets from profile api end.');
           if (res) {
             let keywords = {};
             if (res['s'] != null && res['s'].length > 0) {
@@ -48,22 +58,13 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
               keywords['opectx'] = res['t'];
             }
             if (Object.keys(keywords).length > 0) {
-              const targetBidKeys = {}
+              const targetBidKeys = {};
               for (let bid of setKeywordTargetBidders) {
-                // set keywords to params
-                bid.params.keywords = keywords;
+                // set keywords to ortb2Imp
+                deepSetValue(bid, 'ortb2Imp.ext.data.keywords', convertKeywordsToString(keywords));
                 if (!targetBidKeys[bid.bidder]) {
                   targetBidKeys[bid.bidder] = true;
                 }
-              }
-
-              if (!reqBidsConfigObj._ignoreSetOrtb2) {
-                // set keywrods to ortb2
-                let addOrtb2 = {};
-                utils.deepSetValue(addOrtb2, 'site.keywords', keywords);
-                utils.deepSetValue(addOrtb2, 'user.keywords', keywords);
-                const ortb2 = {ortb2: addOrtb2};
-                reqBidsConfigObj.setBidderConfig({ bidders: Object.keys(targetBidKeys), config: ortb2 });
               }
             }
           }
@@ -73,21 +74,42 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
       },
       error: function(errorStatus) {
         // error occur
-        utils.logError('[dgkeyword sub module] profile api access error.', errorStatus);
+        logError('[dgkeyword sub module] profile api access error.', errorStatus);
         callback();
       }
     }, null, {
       withCredentials: true,
-      contentType: 'application/json',
     });
     setTimeout(function () {
       if (!isFinish) {
         // profile api timeout
-        utils.logInfo('[dgkeyword sub module] profile api timeout. [timeout: ' + timeout + 'ms]');
+        logInfo('[dgkeyword sub module] profile api timeout. [timeout: ' + timeout + 'ms]');
         isFinish = true;
       }
       callback();
     }, timeout);
+  }
+}
+
+export function getProfileApiUrl(customeUrl, enableReadFpid) {
+  const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1';
+  const fpid = (enableReadFpid) ? readFpidFromLocalStrage() : '';
+  let url = customeUrl || URL;
+  url = url + '?url=' + encodeURIComponent(window.location.href) + ((fpid) ? `&fpid=${fpid}` : '');
+  return url;
+}
+
+export function readFpidFromLocalStrage() {
+  try {
+    // TODO: use storageManager
+    // eslint-disable-next-line no-restricted-properties
+    const fpid = window.localStorage.getItem('ope_fpid');
+    if (fpid) {
+      return fpid;
+    }
+    return null;
+  } catch (error) {
+    return null;
   }
 }
 
@@ -131,4 +153,37 @@ function init(moduleConfig) {
 function registerSubModule() {
   submodule('realTimeData', dgkeywordSubmodule);
 }
+
+// keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
+export function convertKeywordsToString(keywords) {
+  let result = '';
+  Object.keys(keywords).forEach(key => {
+    // if 'text' or ''
+    if (isStr(keywords[key])) {
+      if (keywords[key] !== '') {
+        result += `${key}=${keywords[key]},`
+      } else {
+        result += `${key},`;
+      }
+    } else if (isArray(keywords[key])) {
+      let isValSet = false
+      keywords[key].forEach(val => {
+        if (isStr(val) && val) {
+          result += `${key}=${val},`
+          isValSet = true
+        }
+      });
+      if (!isValSet) {
+        result += `${key},`
+      }
+    } else {
+      result += `${key},`
+    }
+  });
+
+  // remove last trailing comma
+  result = result.substring(0, result.length - 1);
+  return result;
+}
+
 registerSubModule();

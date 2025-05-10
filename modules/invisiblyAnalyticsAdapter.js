@@ -2,50 +2,44 @@
  * invisiblyAdapterAdapter.js - analytics adapter for Invisibly
  */
 import { ajaxBuilder } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+
+import { deepClone, hasNonSerializableProperty, generateUUID, logInfo } from '../src/utils.js';
+import { EVENTS } from '../src/constants.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
 const analyticsName = 'Invisibly Analytics Adapter:';
-
-const utils = require('../src/utils.js');
-const CONSTANTS = require('../src/constants.json');
 const ajax = ajaxBuilder(0);
 
 // Events needed
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_ADJUSTMENT,
-    BID_TIMEOUT,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    NO_BID,
-    BID_WON,
-    BIDDER_DONE,
-    SET_TARGETING,
-    REQUEST_BIDS,
-    ADD_AD_UNITS,
-    AD_RENDER_FAILED,
-  },
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_ADJUSTMENT,
+  BID_TIMEOUT,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  NO_BID,
+  BID_WON,
+  BIDDER_DONE,
+  SET_TARGETING,
+  REQUEST_BIDS,
+  ADD_AD_UNITS,
+  AD_RENDER_FAILED,
+} = EVENTS;
 
 const _VERSION = 1;
-const _pageViewId = utils.generateUUID();
+const _pageViewId = generateUUID();
 let initOptions = null;
 let _startAuction = 0;
 let _bidRequestTimeout = 0;
 let flushInterval;
 let invisiblyAnalyticsEnabled = false;
 
-const w = window;
-const d = document;
-let e = d.documentElement;
-let g = d.getElementsByTagName('body')[0];
-let x = w.innerWidth || e.clientWidth || g.clientWidth;
-let y = w.innerHeight || e.clientHeight || g.clientHeight;
+const { width: x, height: y } = getViewportSize();
 
 let _pageView = {
   eventType: 'pageView',
@@ -122,7 +116,7 @@ function flush() {
       };
       ajax(
         initOptions.url,
-        () => utils.logInfo(`${analyticsName} sent events batch`),
+        () => logInfo(`${analyticsName} sent events batch`),
         JSON.stringify(payload),
         {
           contentType: 'application/json',
@@ -135,7 +129,12 @@ function flush() {
 }
 
 function handleEvent(eventType, eventArgs) {
-  eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
+  if (eventArgs) {
+    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
+  } else {
+    eventArgs = {}
+  }
+
   let invisiblyEvent = {};
 
   switch (eventType) {
@@ -206,7 +205,7 @@ function handleEvent(eventType, eventArgs) {
 
 function sendEvent(event) {
   _eventQueue.push(event);
-  utils.logInfo(`${analyticsName}Event ${event.eventType}:`, event);
+  logInfo(`${analyticsName}Event ${event.eventType}:`, event);
 
   if (event.eventType === AUCTION_END) {
     flush();

@@ -1,12 +1,12 @@
 import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 function setCookie(name, value, expires) {
   document.cookie = name + '=' + value +
@@ -51,7 +51,7 @@ describe('finteza analytics adapter', function () {
 
   describe('track', () => {
     describe('bid request', () => {
-      it('builds and sends data', function () {
+      it('builds and sends request data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -74,7 +74,7 @@ describe('finteza analytics adapter', function () {
         };
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+        events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
         expect(server.requests.length).to.equal(1);
 
@@ -95,7 +95,7 @@ describe('finteza analytics adapter', function () {
     });
 
     describe('bid response', () => {
-      it('builds and sends data', function () {
+      it('builds and sends response data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -117,12 +117,12 @@ describe('finteza analytics adapter', function () {
         };
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
-
-        expect(server.requests.length).to.equal(2);
+        events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
+
+        expect(server.requests.length).to.equal(2);
 
         let url = parseUrl(server.requests[0].url);
 
@@ -154,7 +154,7 @@ describe('finteza analytics adapter', function () {
     });
 
     describe('bid won', () => {
-      it('builds and sends data', function () {
+      it('builds and sends bid won data', function () {
         const bidderCode = 'Bidder789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -171,12 +171,12 @@ describe('finteza analytics adapter', function () {
         }
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_WON, bidWon);
-
-        expect(server.requests.length).to.equal(1);
+        events.emit(EVENTS.BID_WON, bidWon);
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
+
+        expect(server.requests.length).to.equal(1);
 
         const url = parseUrl(server.requests[0].url);
 
@@ -189,12 +189,13 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(cpm));
         expect(url.search.unit).to.equal('usd');
 
-        sinon.assert.callCount(fntzAnalyticsAdapter.track, 1);
+        // 1 Finteza event + 1 Clean.io event
+        sinon.assert.callCount(fntzAnalyticsAdapter.track, 2);
       });
     });
 
     describe('bid timeout', () => {
-      it('builds and sends data', function () {
+      it('builds and sends timeout data', function () {
         const bidderCode = 'biDDer789';
         const pauctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
 
@@ -210,12 +211,12 @@ describe('finteza analytics adapter', function () {
         ];
 
         // Emit the events with the "real" arguments
-        events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-
-        expect(server.requests.length).to.equal(1);
+        events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
 
         expect(server.requests[0].method).to.equal('GET');
         expect(server.requests[0].withCredentials).to.equal(true);
+
+        expect(server.requests.length).to.equal(1);
 
         const url = parseUrl(server.requests[0].url);
 

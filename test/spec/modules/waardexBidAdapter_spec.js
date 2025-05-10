@@ -210,14 +210,14 @@ describe('waardexBidAdapter', () => {
       const {
         data: payload,
         url,
-        method,
+        method
       } = spec.buildRequests(validBidRequests, bidderRequest);
 
       const ENDPOINT = `https://hb.justbidit.xyz:8843/prebid?pubId=${validBidRequests[0].params.zoneId}`;
 
       expect(payload.bidRequests[0]).deep.equal({
         bidId: validBidRequests[0].bidId,
-        bidfloor: validBidRequests[0].params.bidfloor,
+        bidfloor: 0,
         position: validBidRequests[0].params.position,
         instl: validBidRequests[0].params.instl,
         banner: {
@@ -280,7 +280,6 @@ describe('waardexBidAdapter', () => {
         'bidRequests': [
           {
             'bidId': 'unique-bid-id-1',
-            'bidfloor': 0.1,
             'position': 1,
             'instl': 1,
             'banner': {

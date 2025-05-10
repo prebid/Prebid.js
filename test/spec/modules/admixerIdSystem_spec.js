@@ -1,9 +1,6 @@
 import {admixerIdSubmodule} from 'modules/admixerIdSystem.js';
 import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
-import {getStorageManager} from '../../../src/storageManager.js';
-
-export const storage = getStorageManager();
 
 const pid = '4D393FAC-B6BB-4E19-8396-0A4813607316';
 const getIdParams = {params: {pid: pid}};
@@ -33,7 +30,7 @@ describe('admixerId tests', function () {
   });
 
   it('should NOT call the admixer id endpoint if gdpr applies but consent string is missing', function () {
-    let submoduleCallback = admixerIdSubmodule.getId(getIdParams, { gdprApplies: true });
+    let submoduleCallback = admixerIdSubmodule.getId(getIdParams, {gdpr: { gdprApplies: true }});
     expect(submoduleCallback).to.be.undefined;
   });
 

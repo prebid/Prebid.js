@@ -1,72 +1,126 @@
-import includes from 'core-js-pure/features/array/includes.js';
-import * as utils from './utils.js';
+import { LOAD_EXTERNAL_SCRIPT } from './activities/activities.js';
+import { activityParams } from './activities/activityParams.js';
+import { isActivityAllowed } from './activities/rules.js';
+import { includes } from './polyfill.js';
+import { insertElement, logError, logWarn, setScriptAttributes } from './utils.js';
 
-const _requestCache = {};
+const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
-  'adloox',
-  'criteo',
+  // Prebid maintained modules:
+  'debugging',
   'outstream',
+  // RTD modules:
+  'aaxBlockmeter',
   'adagio',
-  'browsi'
-]
+  'adloox',
+  'akamaidap',
+  'arcspan',
+  'airgrid',
+  'browsi',
+  'brandmetrics',
+  'clean.io',
+  'humansecurity',
+  'confiant',
+  'contxtful',
+  'hadron',
+  'mediafilter',
+  'medianet',
+  'azerionedge',
+  'a1Media',
+  'geoedge',
+  'qortex',
+  'dynamicAdBoost',
+  '51Degrees',
+  'symitridap',
+  'wurfl',
+  'nodalsAi',
+  'anonymised',
+  'optable',
+  // UserId Submodules
+  'justtag',
+  'tncId',
+  'ftrackId',
+  'id5',
+];
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
  * Each unique URL will be loaded at most 1 time.
  * @param {string} url the url to load
+ * @param {string} moduleType moduleType of the module requesting this resource
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
- * @param {function} [callback] callback function to be called after the script is loaded.
+ * @param {function} [callback] callback function to be called after the script is loaded
+ * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
+ * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
-export function loadExternalScript(url, moduleCode, callback) {
+export function loadExternalScript(url, moduleType, moduleCode, callback, doc, attributes) {
+  if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode))) {
+    return;
+  }
+
   if (!moduleCode || !url) {
-    utils.logError('cannot load external script without url and moduleCode');
+    logError('cannot load external script without url and moduleCode');
     return;
   }
   if (!includes(_approvedLoadExternalJSList, moduleCode)) {
-    utils.logError(`${moduleCode} not whitelisted for loading external JavaScript`);
+    logError(`${moduleCode} not whitelisted for loading external JavaScript`);
     return;
   }
+  if (!doc) {
+    doc = document; // provide a "valid" key for the WeakMap
+  }
   // only load each asset once
-  if (_requestCache[url]) {
+  const storedCachedObject = getCacheObject(doc, url);
+  if (storedCachedObject) {
     if (callback && typeof callback === 'function') {
-      if (_requestCache[url].loaded) {
+      if (storedCachedObject.loaded) {
         // invokeCallbacks immediately
         callback();
       } else {
         // queue the callback
-        _requestCache[url].callbacks.push(callback);
+        storedCachedObject.callbacks.push(callback);
       }
     }
-    return _requestCache[url].tag;
+    return storedCachedObject.tag;
   }
-  _requestCache[url] = {
+  const cachedDocObj = _requestCache.get(doc) || {};
+  const cacheObject = {
     loaded: false,
     tag: null,
     callbacks: []
   };
+  cachedDocObj[url] = cacheObject;
+  _requestCache.set(doc, cachedDocObj);
+
   if (callback && typeof callback === 'function') {
-    _requestCache[url].callbacks.push(callback);
+    cacheObject.callbacks.push(callback);
   }
 
-  utils.logWarn(`module ${moduleCode} is loading external JavaScript`);
+  logWarn(`module ${moduleCode} is loading external JavaScript`);
   return requestResource(url, function () {
-    _requestCache[url].loaded = true;
+    cacheObject.loaded = true;
     try {
-      for (let i = 0; i < _requestCache[url].callbacks.length; i++) {
-        _requestCache[url].callbacks[i]();
+      for (let i = 0; i < cacheObject.callbacks.length; i++) {
+        cacheObject.callbacks[i]();
       }
     } catch (e) {
-      utils.logError('Error executing callback', 'adloader.js:loadExternalScript', e);
+      logError('Error executing callback', 'adloader.js:loadExternalScript', e);
     }
-  });
+  }, doc, attributes);
 
-  function requestResource(tagSrc, callback) {
-    var jptScript = document.createElement('script');
+  function requestResource(tagSrc, callback, doc, attributes) {
+    if (!doc) {
+      doc = document;
+    }
+    var jptScript = doc.createElement('script');
     jptScript.type = 'text/javascript';
     jptScript.async = true;
 
-    _requestCache[url].tag = jptScript;
+    const cacheObject = getCacheObject(doc, url);
+    if (cacheObject) {
+      cacheObject.tag = jptScript;
+    }
 
     if (jptScript.readyState) {
       jptScript.onreadystatechange = function () {
@@ -83,9 +137,20 @@ export function loadExternalScript(url, moduleCode, callback) {
 
     jptScript.src = tagSrc;
 
+    if (attributes) {
+      setScriptAttributes(jptScript, attributes);
+    }
+
     // add the new script tag to the page
-    utils.insertElement(jptScript);
+    insertElement(jptScript, doc);
 
     return jptScript;
+  }
+  function getCacheObject(doc, url) {
+    const cachedDocObj = _requestCache.get(doc);
+    if (cachedDocObj && cachedDocObj[url]) {
+      return cachedDocObj[url];
+    }
+    return null; // return new cache object?
   }
 };

@@ -1,8 +1,8 @@
+import { parseSizesInput, uniques, buildUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils.js';
+import { EVENTS } from '../src/constants.js';
 
 /**
  * Analytics adapter from adxcg.com
@@ -21,29 +21,29 @@ var adxcgAnalyticsAdapter = Object.assign(adapter(
   }), {
   track ({eventType, args}) {
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT:
+      case EVENTS.AUCTION_INIT:
         adxcgAnalyticsAdapter.context.events.auctionInit = mapAuctionInit(args);
         adxcgAnalyticsAdapter.context.auctionTimestamp = args.timestamp;
         break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
+      case EVENTS.BID_REQUESTED:
         adxcgAnalyticsAdapter.context.auctionId = args.auctionId;
         adxcgAnalyticsAdapter.context.events.bidRequests.push(mapBidRequested(args));
         break;
-      case CONSTANTS.EVENTS.BID_ADJUSTMENT:
+      case EVENTS.BID_ADJUSTMENT:
         break;
-      case CONSTANTS.EVENTS.BID_TIMEOUT:
-        adxcgAnalyticsAdapter.context.events.bidTimeout = args.map(item => item.bidder).filter(utils.uniques);
+      case EVENTS.BID_TIMEOUT:
+        adxcgAnalyticsAdapter.context.events.bidTimeout = args.map(item => item.bidder).filter(uniques);
         break;
-      case CONSTANTS.EVENTS.BIDDER_DONE:
+      case EVENTS.BIDDER_DONE:
         break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
+      case EVENTS.BID_RESPONSE:
         adxcgAnalyticsAdapter.context.events.bidResponses.push(mapBidResponse(args, eventType));
         break;
-      case CONSTANTS.EVENTS.BID_WON:
+      case EVENTS.BID_WON:
         let outData2 = {bidWons: mapBidWon(args)};
         send(outData2);
         break;
-      case CONSTANTS.EVENTS.AUCTION_END:
+      case EVENTS.AUCTION_END:
         send(adxcgAnalyticsAdapter.context.events);
         break;
     }
@@ -67,7 +67,7 @@ function mapBidRequested (bidRequests) {
         adUnitCode: bid.adUnitCode,
         bidId: bid.bidId,
         start: bid.startTime,
-        sizes: utils.parseSizesInput(bid.sizes).toString(),
+        sizes: parseSizesInput(bid.sizes).toString(),
         params: bid.params
       };
     }),
@@ -86,7 +86,7 @@ function mapBidResponse (bidResponse, eventType) {
     currency: bidResponse.currency,
     netRevenue: bidResponse.netRevenue,
     timeToRespond: bidResponse.timeToRespond,
-    bidId: eventType === CONSTANTS.EVENTS.BID_TIMEOUT ? bidResponse.bidId : bidResponse.requestId,
+    bidId: eventType === EVENTS.BID_TIMEOUT ? bidResponse.bidId : bidResponse.requestId,
     dealId: bidResponse.dealId,
     status: bidResponse.status,
     creativeId: bidResponse.creativeId.toString()
@@ -112,7 +112,7 @@ function mapBidWon (bidResponse) {
 }
 
 function send (data) {
-  let adxcgAnalyticsRequestUrl = utils.buildUrl({
+  let adxcgAnalyticsRequestUrl = buildUrl({
     protocol: 'https',
     hostname: adxcgAnalyticsAdapter.context.host,
     pathname: '/pbrx/v2',
@@ -122,7 +122,7 @@ function send (data) {
       ats: adxcgAnalyticsAdapter.context.auctionTimestamp,
       aav: adxcgAnalyticsVersion,
       iob: intersectionObserverAvailable(window) ? '1' : '0',
-      pbv: $$PREBID_GLOBAL$$.version,
+      pbv: '$prebid.version$',
       sz: window.screen.width + 'x' + window.screen.height
     }
   });
@@ -143,7 +143,7 @@ adxcgAnalyticsAdapter.context = {};
 adxcgAnalyticsAdapter.originEnableAnalytics = adxcgAnalyticsAdapter.enableAnalytics;
 adxcgAnalyticsAdapter.enableAnalytics = function (config) {
   if (!config.options.publisherId) {
-    utils.logError('PublisherId option is not defined. Analytics won\'t work');
+    logError('PublisherId option is not defined. Analytics won\'t work');
     return;
   }
 

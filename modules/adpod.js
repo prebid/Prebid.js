@@ -12,20 +12,33 @@
  * module that designed to support adpod video type ads.  This import process allows this module to effectively act as a sub-module.
  */
 
-import * as utils from '../src/utils.js';
-import { addBidToAuction, doCallbacksIfTimedout, AUCTION_IN_PROGRESS, callPrebidCache, getPriceByGranularity, getPriceGranularity } from '../src/auction.js';
-import { checkAdUnitSetup } from '../src/prebid.js';
-import { checkVideoBidSetup } from '../src/video.js';
-import { setupBeforeHookFnOnce, module } from '../src/hook.js';
-import { store } from '../src/videoCache.js';
-import { config } from '../src/config.js';
-import { ADPOD } from '../src/mediaTypes.js';
-import Set from 'core-js-pure/features/set';
-import find from 'core-js-pure/features/array/find.js';
-import { auctionManager } from '../src/auctionManager.js';
-import CONSTANTS from '../src/constants.json';
-
-const from = require('core-js-pure/features/array/from.js');
+import {
+  deepAccess,
+  generateUUID,
+  groupBy,
+  isArray,
+  isArrayOfNums,
+  isNumber,
+  isPlainObject,
+  logError,
+  logInfo,
+  logWarn
+} from '../src/utils.js';
+import {
+  addBidToAuction,
+  AUCTION_IN_PROGRESS,
+  getPriceByGranularity,
+  getPriceGranularity
+} from '../src/auction.js';
+import {checkAdUnitSetup} from '../src/prebid.js';
+import {checkVideoBidSetup} from '../src/video.js';
+import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
+import {store} from '../src/videoCache.js';
+import {config} from '../src/config.js';
+import {ADPOD} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
+import {auctionManager} from '../src/auctionManager.js';
+import { TARGETING_KEYS } from '../src/constants.js';
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';
@@ -45,7 +58,7 @@ function createBidCacheRegistry() {
     registry[auctionId] = {};
     registry[auctionId].bidStorage = new Set();
     registry[auctionId].queueDispatcher = createDispatcher(queueTimeDelay);
-    registry[auctionId].initialCacheKey = utils.generateUUID();
+    registry[auctionId].initialCacheKey = generateUUID();
   }
 
   return {
@@ -68,7 +81,7 @@ function createBidCacheRegistry() {
     setupInitialCacheKey: function (bid) {
       if (!registry[bid.auctionId]) {
         registry[bid.auctionId] = {};
-        registry[bid.auctionId].initialCacheKey = utils.generateUUID();
+        registry[bid.auctionId].initialCacheKey = generateUUID();
       }
     },
     getInitialCacheKey: function (bid) {
@@ -115,11 +128,11 @@ function createDispatcher(timeoutDuration) {
 function getPricePartForAdpodKey(bid) {
   let pricePart
   let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
-  if (prioritizeDeals && utils.deepAccess(bid, 'video.dealTier')) {
+  if (prioritizeDeals && deepAccess(bid, 'video.dealTier')) {
     const adpodDealPrefix = config.getConfig(`adpod.dealTier.${bid.bidderCode}.prefix`);
-    pricePart = (adpodDealPrefix) ? adpodDealPrefix + utils.deepAccess(bid, 'video.dealTier') : utils.deepAccess(bid, 'video.dealTier');
+    pricePart = (adpodDealPrefix) ? adpodDealPrefix + deepAccess(bid, 'video.dealTier') : deepAccess(bid, 'video.dealTier');
   } else {
-    const granularity = getPriceGranularity(bid.mediaType);
+    const granularity = getPriceGranularity(bid);
     pricePart = getPriceByGranularity(granularity)(bid);
   }
   return pricePart
@@ -132,12 +145,12 @@ function getPricePartForAdpodKey(bid) {
  */
 function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
-  let duration = utils.deepAccess(bid, 'video.durationBucket');
+  let duration = deepAccess(bid, 'video.durationBucket');
   const pricePart = getPricePartForAdpodKey(bid);
   let pcd;
 
   if (brandCategoryExclusion) {
-    let category = utils.deepAccess(bid, 'meta.adServerCatId');
+    let category = deepAccess(bid, 'meta.adServerCatId');
     pcd = `${pricePart}_${category}_${duration}s`;
   } else {
     pcd = `${pricePart}_${duration}s`;
@@ -163,12 +176,12 @@ function updateBidQueue(auctionInstance, bidResponse, afterBidAdded) {
   let bidListIter = bidCacheRegistry.getBids(bidResponse);
 
   if (bidListIter) {
-    let bidListArr = from(bidListIter);
+    let bidListArr = Array.from(bidListIter);
     let callDispatcher = bidCacheRegistry.getQueueDispatcher(bidResponse);
     let killQueue = !!(auctionInstance.getAuctionStatus() !== AUCTION_IN_PROGRESS);
     callDispatcher(auctionInstance, bidListArr, afterBidAdded, killQueue);
   } else {
-    utils.logWarn('Attempted to cache a bid from an unknown auction. Bid:', bidResponse);
+    logWarn('Attempted to cache a bid from an unknown auction. Bid:', bidResponse);
   }
 }
 
@@ -196,17 +209,14 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
 
   store(bidList, function (error, cacheIds) {
     if (error) {
-      utils.logWarn(`Failed to save to the video cache: ${error}. Video bid(s) must be discarded.`);
-      for (let i = 0; i < bidList.length; i++) {
-        doCallbacksIfTimedout(auctionInstance, bidList[i]);
-      }
+      logWarn(`Failed to save to the video cache: ${error}. Video bid(s) must be discarded.`);
     } else {
       for (let i = 0; i < cacheIds.length; i++) {
         // when uuid in response is empty string then the key already existed, so this bid wasn't cached
         if (cacheIds[i].uuid !== '') {
           addBidToAuction(auctionInstance, bidList[i]);
         } else {
-          utils.logInfo(`Detected a bid was not cached because the custom key was already registered.  Attempted to use key: ${bidList[i].customCacheKey}. Bid was: `, bidList[i]);
+          logInfo(`Detected a bid was not cached because the custom key was already registered.  Attempted to use key: ${bidList[i].customCacheKey}. Bid was: `, bidList[i]);
         }
         afterBidAdded();
       }
@@ -220,15 +230,14 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
  * @param {*} auctionInstance running context of the auction
  * @param {Object} bidResponse incoming bid; if adpod, will be processed through hook function.  If not adpod, returns to original function.
  * @param {Function} afterBidAdded callback function used when Prebid Cache responds
- * @param {Object} bidderRequest copy of bid's associated bidderRequest object
+ * @param {Object} videoConfig mediaTypes.video from the bid's adUnit
  */
-export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, bidderRequest) {
-  let videoConfig = utils.deepAccess(bidderRequest, 'mediaTypes.video');
+export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoConfig) {
   if (videoConfig && videoConfig.context === ADPOD) {
     let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
-    let adServerCatId = utils.deepAccess(bidResponse, 'meta.adServerCatId');
+    let adServerCatId = deepAccess(bidResponse, 'meta.adServerCatId');
     if (!adServerCatId && brandCategoryExclusion) {
-      utils.logWarn('Detected a bid without meta.adServerCatId while setConfig({adpod.brandCategoryExclusion}) was enabled.  This bid has been rejected:', bidResponse)
+      logWarn('Detected a bid without meta.adServerCatId while setConfig({adpod.brandCategoryExclusion}) was enabled.  This bid has been rejected:', bidResponse);
       afterBidAdded();
     } else {
       if (config.getConfig('adpod.deferCaching') === false) {
@@ -247,7 +256,7 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
       }
     }
   } else {
-    fn.call(this, auctionInstance, bidResponse, afterBidAdded, bidderRequest);
+    fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoConfig);
   }
 }
 
@@ -260,12 +269,12 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
  */
 export function checkAdUnitSetupHook(fn, adUnits) {
   let goodAdUnits = adUnits.filter(adUnit => {
-    let mediaTypes = utils.deepAccess(adUnit, 'mediaTypes');
-    let videoConfig = utils.deepAccess(mediaTypes, 'video');
+    let mediaTypes = deepAccess(adUnit, 'mediaTypes');
+    let videoConfig = deepAccess(mediaTypes, 'video');
     if (videoConfig && videoConfig.context === ADPOD) {
       // run check to see if other mediaTypes are defined (ie multi-format); reject adUnit if so
       if (Object.keys(mediaTypes).length > 1) {
-        utils.logWarn(`Detected more than one mediaType in adUnitCode: ${adUnit.code} while attempting to define an 'adpod' video adUnit.  'adpod' adUnits cannot be mixed with other mediaTypes.  This adUnit will be removed from the auction.`);
+        logWarn(`Detected more than one mediaType in adUnitCode: ${adUnit.code} while attempting to define an 'adpod' video adUnit.  'adpod' adUnits cannot be mixed with other mediaTypes.  This adUnit will be removed from the auction.`);
         return false;
       }
 
@@ -274,20 +283,20 @@ export function checkAdUnitSetupHook(fn, adUnits) {
       let playerSize = !!(
         (
           videoConfig.playerSize && (
-            utils.isArrayOfNums(videoConfig.playerSize, 2) || (
-              utils.isArray(videoConfig.playerSize) && videoConfig.playerSize.every(sz => utils.isArrayOfNums(sz, 2))
+            isArrayOfNums(videoConfig.playerSize, 2) || (
+              isArray(videoConfig.playerSize) && videoConfig.playerSize.every(sz => isArrayOfNums(sz, 2))
             )
           )
         ) || (videoConfig.sizeConfig)
       );
-      let adPodDurationSec = !!(videoConfig.adPodDurationSec && utils.isNumber(videoConfig.adPodDurationSec) && videoConfig.adPodDurationSec > 0);
-      let durationRangeSec = !!(videoConfig.durationRangeSec && utils.isArrayOfNums(videoConfig.durationRangeSec) && videoConfig.durationRangeSec.every(range => range > 0));
+      let adPodDurationSec = !!(videoConfig.adPodDurationSec && isNumber(videoConfig.adPodDurationSec) && videoConfig.adPodDurationSec > 0);
+      let durationRangeSec = !!(videoConfig.durationRangeSec && isArrayOfNums(videoConfig.durationRangeSec) && videoConfig.durationRangeSec.every(range => range > 0));
 
       if (!playerSize || !adPodDurationSec || !durationRangeSec) {
         errMsg += (!playerSize) ? '\nmediaTypes.video.playerSize' : '';
         errMsg += (!adPodDurationSec) ? '\nmediaTypes.video.adPodDurationSec' : '';
         errMsg += (!durationRangeSec) ? '\nmediaTypes.video.durationRangeSec' : '';
-        utils.logWarn(errMsg);
+        logWarn(errMsg);
         return false;
       }
     }
@@ -307,31 +316,30 @@ export function checkAdUnitSetupHook(fn, adUnits) {
  *      (eg if range was [5, 15, 30] -> 2s is rounded to 5s; 17s is rounded back to 15s; 18s is rounded up to 30s)
  *  - if the bid is above the range of the listed durations (and outside the buffer), reject the bid
  *  - set the rounded duration value in the `bid.video.durationBucket` field for accepted bids
- * @param {Object} bidderRequest copy of the bidderRequest object associated to bidResponse
+ * @param {Object} videoMediaType 'mediaTypes.video' associated to bidResponse
  * @param {Object} bidResponse incoming bidResponse being evaluated by bidderFactory
  * @returns {boolean} return false if bid duration is deemed invalid as per adUnit configuration; return true if fine
-*/
-function checkBidDuration(bidderRequest, bidResponse) {
+ */
+function checkBidDuration(videoMediaType, bidResponse) {
   const buffer = 2;
-  let bidDuration = utils.deepAccess(bidResponse, 'video.durationSeconds');
-  let videoConfig = utils.deepAccess(bidderRequest, 'mediaTypes.video');
-  let adUnitRanges = videoConfig.durationRangeSec;
+  let bidDuration = deepAccess(bidResponse, 'video.durationSeconds');
+  let adUnitRanges = videoMediaType.durationRangeSec;
   adUnitRanges.sort((a, b) => a - b); // ensure the ranges are sorted in numeric order
 
-  if (!videoConfig.requireExactDuration) {
+  if (!videoMediaType.requireExactDuration) {
     let max = Math.max(...adUnitRanges);
     if (bidDuration <= (max + buffer)) {
       let nextHighestRange = find(adUnitRanges, range => (range + buffer) >= bidDuration);
       bidResponse.video.durationBucket = nextHighestRange;
     } else {
-      utils.logWarn(`Detected a bid with a duration value outside the accepted ranges specified in adUnit.mediaTypes.video.durationRangeSec.  Rejecting bid: `, bidResponse);
+      logWarn(`Detected a bid with a duration value outside the accepted ranges specified in adUnit.mediaTypes.video.durationRangeSec.  Rejecting bid: `, bidResponse);
       return false;
     }
   } else {
     if (find(adUnitRanges, range => range === bidDuration)) {
       bidResponse.video.durationBucket = bidDuration;
     } else {
-      utils.logWarn(`Detected a bid with a duration value not part of the list of accepted ranges specified in adUnit.mediaTypes.video.durationRangeSec.  Exact match durations must be used for this adUnit. Rejecting bid: `, bidResponse);
+      logWarn(`Detected a bid with a duration value not part of the list of accepted ranges specified in adUnit.mediaTypes.video.durationRangeSec.  Exact match durations must be used for this adUnit. Rejecting bid: `, bidResponse);
       return false;
     }
   }
@@ -343,34 +351,34 @@ function checkBidDuration(bidderRequest, bidResponse) {
  * If it's found to not be an adpod bid, it will return to original function via hook logic
  * @param {Function} fn reference to original function (used by hook logic)
  * @param {Object} bid incoming bid object
- * @param {Object} bidRequest bidRequest object of associated bid
+ * @param {Object} adUnit adUnit object of associated bid
  * @param {Object} videoMediaType copy of the `bidRequest.mediaTypes.video` object; used in original function
  * @param {String} context value of the `bidRequest.mediaTypes.video.context` field; used in original function
  * @returns {boolean} this return is only used for adpod bids
  */
-export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, context) {
+export function checkVideoBidSetupHook(fn, bid, adUnit, videoMediaType, context) {
   if (context === ADPOD) {
     let result = true;
     let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
-    if (brandCategoryExclusion && !utils.deepAccess(bid, 'meta.primaryCatId')) {
+    if (brandCategoryExclusion && !deepAccess(bid, 'meta.primaryCatId')) {
       result = false;
     }
 
-    if (utils.deepAccess(bid, 'video')) {
-      if (!utils.deepAccess(bid, 'video.context') || bid.video.context !== ADPOD) {
+    if (deepAccess(bid, 'video')) {
+      if (!deepAccess(bid, 'video.context') || bid.video.context !== ADPOD) {
         result = false;
       }
 
-      if (!utils.deepAccess(bid, 'video.durationSeconds') || bid.video.durationSeconds <= 0) {
+      if (!deepAccess(bid, 'video.durationSeconds') || bid.video.durationSeconds <= 0) {
         result = false;
       } else {
-        let isBidGood = checkBidDuration(bidRequest, bid);
+        let isBidGood = checkBidDuration(videoMediaType, bid);
         if (!isBidGood) result = false;
       }
     }
 
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
-      utils.logError(`
+      logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
         Try enabling prebid cache with pbjs.setConfig({ cache: {url: "..."} });
       `);
@@ -379,7 +387,7 @@ export function checkVideoBidSetupHook(fn, bid, bidRequest, videoMediaType, cont
 
     fn.bail(result);
   } else {
-    fn.call(this, bid, bidRequest, videoMediaType, context);
+    fn.call(this, bid, adUnit, videoMediaType, context);
   }
 }
 
@@ -392,7 +400,7 @@ export function adpodSetConfig(config) {
     if (typeof config.bidQueueTimeDelay === 'number' && config.bidQueueTimeDelay > 0) {
       queueTimeDelay = config.bidQueueTimeDelay;
     } else {
-      utils.logWarn(`Detected invalid value for adpod.bidQueueTimeDelay in setConfig; must be a positive number.  Using default: ${queueTimeDelay}`)
+      logWarn(`Detected invalid value for adpod.bidQueueTimeDelay in setConfig; must be a positive number.  Using default: ${queueTimeDelay}`)
     }
   }
 
@@ -400,7 +408,7 @@ export function adpodSetConfig(config) {
     if (typeof config.bidQueueSizeLimit === 'number' && config.bidQueueSizeLimit > 0) {
       queueSizeLimit = config.bidQueueSizeLimit;
     } else {
-      utils.logWarn(`Detected invalid value for adpod.bidQueueSizeLimit in setConfig; must be a positive number.  Using default: ${queueSizeLimit}`)
+      logWarn(`Detected invalid value for adpod.bidQueueSizeLimit in setConfig; must be a positive number.  Using default: ${queueSizeLimit}`)
     }
   }
 }
@@ -410,7 +418,7 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
  */
 function initAdpodHooks() {
-  setupBeforeHookFnOnce(callPrebidCache, callPrebidCacheHook);
+  setupBeforeHookFnOnce(getHook('callPrebidCache'), callPrebidCacheHook);
   setupBeforeHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
   setupBeforeHookFnOnce(checkVideoBidSetup, checkVideoBidSetupHook);
 }
@@ -443,13 +451,12 @@ export function callPrebidCacheAfterAuction(bids, callback) {
 /**
  * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
  * @param {Object} bid
- * @param {Object} bid
  */
 export function sortByPricePerSecond(a, b) {
-  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
+  if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return 1;
   }
-  if (a.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket > b.adserverTargeting[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
+  if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket > b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return -1;
   }
   return 0;
@@ -457,14 +464,14 @@ export function sortByPricePerSecond(a, b) {
 
 /**
  * This function returns targeting keyvalue pairs for long-form adserver modules. Freewheel and GAM are currently supporting Prebid long-form
- * @param {Object} options
- * @param {Array[string]} codes
- * @param {function} callback
- * @returns targeting kvs for adUnitCodes
+ * @param {Object} options - Options for targeting.
+ * @param {Array<string>} options.codes - Array of ad unit codes.
+ * @param {function} options.callback - Callback function to handle the targeting key-value pairs.
+ * @returns {Object} Targeting key-value pairs for ad unit codes.
  */
 export function getTargeting({ codes, callback } = {}) {
   if (!callback) {
-    utils.logError('No callback function was defined in the getTargeting call.  Aborting getTargeting().');
+    logError('No callback function was defined in the getTargeting call.  Aborting getTargeting().');
     return;
   }
   codes = codes || [];
@@ -480,7 +487,7 @@ export function getTargeting({ codes, callback } = {}) {
   let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
   if (prioritizeDeals) {
     let [otherBids, highPriorityDealBids] = bids.reduce((partitions, bid) => {
-      let bidDealTier = utils.deepAccess(bid, 'video.dealTier');
+      let bidDealTier = deepAccess(bid, 'video.dealTier');
       let minDealTier = config.getConfig(`adpod.dealTier.${bid.bidderCode}.minDealTier`);
       if (minDealTier && bidDealTier) {
         if (bidDealTier >= minDealTier) {
@@ -506,7 +513,7 @@ export function getTargeting({ codes, callback } = {}) {
   if (deferCachingEnabled === false) {
     adPodAdUnits.forEach((adUnit) => {
       let adPodTargeting = [];
-      let adPodDurationSeconds = utils.deepAccess(adUnit, 'mediaTypes.video.adPodDurationSec');
+      let adPodDurationSeconds = deepAccess(adUnit, 'mediaTypes.video.adPodDurationSec');
 
       bids
         .filter((bid) => bid.adUnitCode === adUnit.code)
@@ -530,7 +537,7 @@ export function getTargeting({ codes, callback } = {}) {
   } else {
     let bidsToCache = [];
     adPodAdUnits.forEach((adUnit) => {
-      let adPodDurationSeconds = utils.deepAccess(adUnit, 'mediaTypes.video.adPodDurationSec');
+      let adPodDurationSeconds = deepAccess(adUnit, 'mediaTypes.video.adPodDurationSec');
 
       bids
         .filter((bid) => bid.adUnitCode === adUnit.code)
@@ -546,7 +553,7 @@ export function getTargeting({ codes, callback } = {}) {
       if (error) {
         callback(error, null);
       } else {
-        let groupedBids = utils.groupBy(bidsSuccessfullyCached, 'adUnitCode');
+        let groupedBids = groupBy(bidsSuccessfullyCached, 'adUnitCode');
         Object.keys(groupedBids).forEach((adUnitCode) => {
           let adPodTargeting = [];
 
@@ -578,8 +585,25 @@ export function getTargeting({ codes, callback } = {}) {
  */
 function getAdPodAdUnits(codes) {
   return auctionManager.getAdUnits()
-    .filter((adUnit) => utils.deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
+    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
+}
+
+/**
+ * This function will create compare function to sort on object property
+ * @param {string} property
+ * @returns {function} compare function to be used in sorting
+ */
+function compareOn(property) {
+  return function compare(a, b) {
+    if (a[property] < b[property]) {
+      return 1;
+    }
+    if (a[property] > b[property]) {
+      return -1;
+    }
+    return 0;
+  }
 }
 
 /**
@@ -590,10 +614,10 @@ function getAdPodAdUnits(codes) {
 function getExclusiveBids(bidsReceived) {
   let bids = bidsReceived
     .map((bid) => Object.assign({}, bid, { [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR] }));
-  bids = utils.groupBy(bids, TARGETING_KEY_PB_CAT_DUR);
+  bids = groupBy(bids, TARGETING_KEY_PB_CAT_DUR);
   let filteredBids = [];
   Object.keys(bids).forEach((targetingKey) => {
-    bids[targetingKey].sort(utils.compareOn('responseTimestamp'));
+    bids[targetingKey].sort(compareOn('responseTimestamp'));
     filteredBids.push(bids[targetingKey][0]);
   });
   return filteredBids;
@@ -619,8 +643,8 @@ const sharedMethods = {
 Object.freeze(sharedMethods);
 
 module('adpod', function shareAdpodUtilities(...args) {
-  if (!utils.isPlainObject(args[0])) {
-    utils.logError('Adpod module needs plain object to share methods with submodule');
+  if (!isPlainObject(args[0])) {
+    logError('Adpod module needs plain object to share methods with submodule');
     return;
   }
   function addMethods(object, func) {

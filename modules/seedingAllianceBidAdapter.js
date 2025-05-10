@@ -1,225 +1,244 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {generateUUID, deepSetValue, isEmpty, replaceAuctionPrice} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
+const GVL_ID = 371;
 const BIDDER_CODE = 'seedingAlliance';
 const DEFAULT_CUR = 'EUR';
-const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=nativendo';
+const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
+const NATIVENDO_KEY = 'nativendo_id';
 
-const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon'};
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
-const NATIVE_PARAMS = {
-  title: {
-    id: 0,
-    name: 'title'
+const converter = ortbConverter({
+  context: {
+    ttl: 360,
+    netRevenue: true
   },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    // set basic page, this might be updated later by adunit param
+    deepSetValue(request, 'site.page', bidderRequest.refererInfo.page);
+    deepSetValue(request, 'regs.ext.pb_ver', '$prebid.version$');
+    deepSetValue(request, 'cur', [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR]);
 
-  body: {
-    id: 1,
-    name: 'data',
-    type: 2
+    // As this is client side, we get needed info from headers
+    delete request.device;
+
+    return request;
   },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    // add tagid from params
+    imp.tagid = bidRequest.params.adUnitId;
 
-  sponsoredBy: {
-    id: 2,
-    name: 'data',
-    type: 1
-  },
-
-  image: {
-    id: 3,
-    type: 3,
-    name: 'img'
-  },
-
-  cta: {
-    id: 4,
-    type: 12,
-    name: 'data'
-  },
-
-  icon: {
-    id: 5,
-    type: 1,
-    name: 'img'
+    return imp;
   }
-};
+});
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
+  supportedMediaTypes: [NATIVE, BANNER],
 
-  supportedMediaTypes: [NATIVE],
-
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.adUnitId;
   },
 
-  buildRequests: (validBidRequests, bidderRequest) => {
-    const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId;
-    const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
-    let url = bidderRequest.refererInfo.referer;
+  buildRequests: (validBidRequests = [], bidderRequest) => {
+    const oRtbRequest = converter.toORTB({bidRequests: validBidRequests, bidderRequest});
+    let eids = getEids(validBidRequests[0]);
 
-    const imp = validBidRequests.map((bid, id) => {
-      const assets = utils._map(bid.nativeParams, (bidParams, key) => {
-        const props = NATIVE_PARAMS[key];
-
-        const asset = {
-          required: bidParams.required & 1
-        };
-
-        if (props) {
-          asset.id = props.id;
-
-          let w, h;
-
-          if (bidParams.sizes) {
-            w = bidParams.sizes[0];
-            h = bidParams.sizes[1];
-          }
-
-          asset[props.name] = {
-            len: bidParams.len,
-            type: props.type,
-            w,
-            h
-          };
-
-          return asset;
-        }
-      })
-        .filter(Boolean);
-
-      if (bid.params.url) {
-        url = bid.params.url;
+    // check for url in params and set in site object
+    validBidRequests.forEach(bidRequest => {
+      if (bidRequest.params.url) {
+        deepSetValue(oRtbRequest, 'site.page', bidRequest.params.url);
       }
-
-      return {
-        id: String(id + 1),
-        tagid: bid.params.adUnitId,
-        tid: tid,
-        pt: pt,
-        native: {
-          request: {
-            assets
-          }
-        }
-      };
     });
 
-    const request = {
-      id: bidderRequest.auctionId,
-      site: {
-        page: url
-      },
-      device: {
-        ua: navigator.userAgent
-      },
-      cur,
-      imp,
-      user: {},
-      regs: {
-        ext: {
-          gdpr: 0
-        }
-      }
-    };
+    if (bidderRequest.gdprConsent) {
+      oRtbRequest.user = {};
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(request, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
+      deepSetValue(oRtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(oRtbRequest, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
+      deepSetValue(oRtbRequest, 'user.ext.eids', eids);
     }
+
+    let endpoint = config.getConfig('seedingAlliance.endpoint') || ENDPOINT_URL;
 
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
-      data: JSON.stringify(request),
-      options: {
-        contentType: 'application/json'
-      },
-      bids: validBidRequests
+      url: endpoint,
+      data: JSON.stringify(oRtbRequest),
+      bidRequests: validBidRequests
     };
   },
 
-  interpretResponse: function(serverResponse, { bids }) {
-    if (utils.isEmpty(serverResponse.body)) {
+  interpretResponse: function (serverResponse, { bidRequests }) {
+    if (isEmpty(serverResponse.body)) {
       return [];
     }
 
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
-      result[bid.impid - 1] = bid;
+    const bidResponses = (typeof seatbid != 'undefined') ? flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+      result[bid.impid] = bid;
       return result;
-    }, []);
-
-    return bids
-      .map((bid, id) => {
-        const bidResponse = bidResponses[id];
+    }, []) : [];
+    return bidRequests
+      .map((bidRequest) => {
+        const bidId = bidRequest.bidId;
+        const bidResponse = bidResponses[bidId];
+        const type = bidRequest.nativeParams ? NATIVE : BANNER;
 
         if (bidResponse) {
-          return {
-            requestId: bid.bidId,
+          const bidObject = {
+            requestId: bidRequest.bidId, // TODO get this value from response?
             cpm: bidResponse.price,
             creativeId: bidResponse.crid,
-            ttl: 1000,
-            netRevenue: bid.netRevenue === 'net',
+            ttl: 600,
+            netRevenue: true,
             currency: cur,
-            mediaType: NATIVE,
-            bidderCode: BIDDER_CODE,
-            native: parseNative(bidResponse)
+            mediaType: type,
+            meta: {
+              advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []
+            }
           };
+
+          if (type === NATIVE) {
+            bidObject.native = parseNative(bidResponse, bidRequest.nativeParams);
+            bidObject.mediaType = NATIVE;
+          }
+
+          if (type === BANNER) {
+            bidObject.ad = replaceAuctionPrice(bidResponse.adm, bidResponse.price);
+            bidObject.width = bidResponse.w;
+            bidObject.height = bidResponse.h;
+            bidObject.mediaType = BANNER;
+          }
+
+          return bidObject;
         }
       })
       .filter(Boolean);
   }
 };
 
-registerBidder(spec);
+const getNativendoID = () => {
+  let nativendoID = storage.localStorageIsEnabled() &&
+      storage.getDataFromLocalStorage(NATIVENDO_KEY);
 
-function parseNative(bid) {
-  const {assets, link, imptrackers} = bid.adm.native;
-
-  link.clicktrackers.forEach(function (clicktracker, index) {
-    link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
-  });
-
-  imptrackers.forEach(function (imptracker, index) {
-    imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
-  });
-
-  const result = {
-    url: link.url,
-    clickUrl: link.url,
-    clickTrackers: link.clicktrackers || undefined,
-    impressionTrackers: imptrackers || undefined
-  };
-
-  assets.forEach(asset => {
-    const kind = NATIVE_ASSET_IDS[asset.id];
-    const content = kind && asset[NATIVE_PARAMS[kind].name];
-
-    if (content) {
-      result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
-    }
-  });
-
-  return result;
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
-    if (result) {
-      return result;
+  if (!nativendoID) {
+    if (storage.localStorageIsEnabled()) {
+      nativendoID = generateUUID();
+      storage.setDataInLocalStorage(NATIVENDO_KEY, nativendoID);
     }
   }
+
+  return nativendoID;
+}
+
+const getEids = (bidRequest) => {
+  const eids = [];
+  const nativendoID = getNativendoID();
+
+  if (nativendoID) {
+    const nativendoUserEid = {
+      source: 'nativendo.de',
+      uids: [
+        {
+          id: nativendoID,
+          atype: 1
+        }
+      ]
+    };
+
+    eids.push(nativendoUserEid);
+  }
+
+  if (bidRequest.userIdAsEids) {
+    eids.push(bidRequest.userIdAsEids);
+  }
+
+  return eids;
 }
 
 function flatten(arr) {
   return [].concat(...arr);
 }
+
+function parseNative(bid, nativeParams) {
+  let native;
+  if (typeof bid.adm === 'string') {
+    try {
+      native = JSON.parse(bid.adm).native;
+    } catch (e) {
+      return;
+    }
+  } else {
+    native = bid.adm.native;
+  }
+
+  const { assets, link, imptrackers } = native;
+
+  let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+
+  if (link.clicktrackers) {
+    link.clicktrackers.forEach(function (clicktracker, index) {
+      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+    });
+  }
+
+  if (imptrackers) {
+    imptrackers.forEach(function (imptracker, index) {
+      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+    });
+  }
+
+  const result = {
+    url: clickUrl,
+    clickUrl: clickUrl,
+    clickTrackers: link.clicktrackers || undefined,
+    impressionTrackers: imptrackers || undefined
+  };
+
+  let nativeParamKeys = Object.keys(nativeParams);
+  let id = 0;
+
+  nativeParamKeys.forEach(nativeParam => {
+    assets.forEach(asset => {
+      if (asset.id == id) {
+        switch (nativeParam) {
+          case 'title':
+            result.title = asset.title.text;
+            break;
+          case 'body':
+          case 'cta':
+          case 'sponsoredBy':
+            result[nativeParam] = asset.data.value;
+            break;
+          case 'image':
+          case 'icon':
+            result[nativeParam] = {
+              url: asset.img.url,
+              width: asset.img.w,
+              height: asset.img.h
+            };
+            break;
+        }
+      }
+    });
+
+    id++;
+  });
+
+  return result;
+}
+
+registerBidder(spec);

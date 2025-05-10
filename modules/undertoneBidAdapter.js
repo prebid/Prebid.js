@@ -2,8 +2,8 @@
  * Adapter to send bids to Undertone
  */
 
-import { deepAccess, parseUrl } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {deepAccess, parseUrl, extractDomainFromHost, getWinDimensions} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'undertone';
@@ -12,34 +12,18 @@ const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
 const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
 const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
-function getCanonicalUrl() {
-  try {
-    let doc = window.top.document;
-    let element = doc.querySelector("link[rel='canonical']");
-    if (element !== null) {
-      return element.href;
-    }
-  } catch (e) {
+function getBidFloor(bidRequest, mediaType) {
+  if (typeof bidRequest.getFloor !== 'function') {
+    return 0;
   }
-  return null;
-}
 
-function extractDomainFromHost(pageHost) {
-  let domain = null;
-  try {
-    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
-    if (domains != null && domains.length > 0) {
-      domain = domains[0];
-      for (let i = 1; i < domains.length; i++) {
-        if (domains[i].length > domain.length) {
-          domain = domains[i];
-        }
-      }
-    }
-  } catch (e) {
-    domain = null;
-  }
-  return domain;
+  const floor = bidRequest.getFloor({
+    currency: 'USD',
+    mediaType: mediaType,
+    size: '*'
+  });
+
+  return (floor && floor.currency === 'USD' && floor.floor) || 0;
 }
 
 function getGdprQueryParams(gdprConsent) {
@@ -74,6 +58,7 @@ function getBannerCoords(id) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
@@ -82,21 +67,33 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    const windowDimensions = getWinDimensions();
+    const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
+    const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
     const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
+    const commons = {
+      'adapterVersion': '$prebid.version$',
+      'uids': validBidRequests[0].userId,
+      'pageSize': pageSizeArray
+    };
+    if (validBidRequests[0].schain) {
+      commons.schain = validBidRequests[0].schain;
+    }
     const payload = {
       'x-ut-hb-params': [],
-      'commons': {
-        'adapterVersion': '$prebid.version$',
-        'uids': validBidRequests[0].userId,
-        'pageSize': pageSizeArray
-      }
+      'commons': commons
     };
-    const referer = bidderRequest.refererInfo.referer;
+    const referer = bidderRequest.refererInfo.topmostLocation;
+    const canonicalUrl = bidderRequest.refererInfo.canonicalUrl;
+    if (referer) {
+      commons.referrer = referer;
+    }
+    if (canonicalUrl) {
+      commons.canonicalUrl = canonicalUrl;
+    }
     const hostname = parseUrl(referer).hostname;
     let domain = extractDomainFromHost(hostname);
-    const pageUrl = getCanonicalUrl() || referer;
+    const pageUrl = canonicalUrl || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
     let reqUrl = `${URL}?pid=${pubid}&domain=${domain}`;
@@ -110,6 +107,12 @@ export const spec = {
       reqUrl += `&ccpa=${bidderRequest.uspConsent}`;
     }
 
+    if (bidderRequest.gppConsent) {
+      const gppString = bidderRequest.gppConsent.gppString ?? '';
+      const ggpSid = bidderRequest.gppConsent.applicableSections ?? '';
+      reqUrl += `&gpp=${gppString}&gpp_sid=${ggpSid}`;
+    }
+
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
@@ -119,19 +122,24 @@ export const spec = {
         domain: domain,
         placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
         publisherId: bidReq.params.publisherId,
+        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot', '')),
         sizes: bidReq.sizes,
         params: bidReq.params
       };
       const videoMediaType = deepAccess(bidReq, 'mediaTypes.video');
+      const mediaType = videoMediaType ? VIDEO : BANNER;
+      bid.mediaType = mediaType;
+      bid.bidfloor = getBidFloor(bidReq, mediaType);
       if (videoMediaType) {
         bid.video = {
           playerSize: deepAccess(bidReq, 'mediaTypes.video.playerSize') || null,
           streamType: deepAccess(bidReq, 'mediaTypes.video.context') || null,
           playbackMethod: deepAccess(bidReq, 'params.video.playbackMethod') || null,
           maxDuration: deepAccess(bidReq, 'params.video.maxDuration') || null,
-          skippable: deepAccess(bidReq, 'params.video.skippable') || null
+          skippable: deepAccess(bidReq, 'params.video.skippable') || null,
+          placement: deepAccess(bidReq, 'mediaTypes.video.placement') || null,
+          plcmt: deepAccess(bidReq, 'mediaTypes.video.plcmt') || null
         };
-        bid.mediaType = 'video';
       }
       payload['x-ut-hb-params'].push(bid);
     });

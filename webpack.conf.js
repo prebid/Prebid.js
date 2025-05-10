@@ -1,20 +1,34 @@
+const TerserPlugin = require('terser-webpack-plugin');
 var prebid = require('./package.json');
 var path = require('path');
 var webpack = require('webpack');
-var helpers = require('./gulpHelpers');
-var RequireEnsureWithoutJsonp = require('./plugins/RequireEnsureWithoutJsonp.js');
+var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
-var allowedModules = require('./allowedModules');
-
-// list of module names to never include in the common bundle chunk
-var neverBundle = [
-  'AnalyticsAdapter.js'
-];
+const fs = require('fs');
+const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
+const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
 var plugins = [
-  new RequireEnsureWithoutJsonp(),
-  new webpack.EnvironmentPlugin(['LiveConnectMode'])
+  new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
+  new WebpackManifestPlugin({
+    fileName: 'dependencies.json',
+    generate: (seed, files) => {
+      const entries = new Set();
+      const addEntry = entries.add.bind(entries);
+
+      files.forEach(file => file.chunk && file.chunk._groups && file.chunk._groups.forEach(addEntry));
+
+      return Array.from(entries).reduce((acc, entry) => {
+        const name = (entry.options || {}).name || (entry.runtimeChunk || {}).name
+        const files = (entry.chunks || [])
+          .filter(chunk => chunk.name !== name)
+          .flatMap(chunk => [...chunk.files])
+          .filter(Boolean);
+        return name && files.length ? {...acc, [`${name}.js`]: files} : acc
+      }, seed)
+    }
+  })
 ];
 
 if (argv.analyze) {
@@ -23,25 +37,8 @@ if (argv.analyze) {
   )
 }
 
-plugins.push(  // this plugin must be last so it can be easily removed for karma unit tests
-  new webpack.optimize.CommonsChunkPlugin({
-    name: 'prebid',
-    filename: 'prebid-core.js',
-    minChunks: function(module) {
-       return (
-        (
-          module.context && module.context.startsWith(path.resolve('./src')) &&
-          !(module.resource && neverBundle.some(name => module.resource.includes(name)))
-        ) ||
-        module.resource && (allowedModules.src.concat(['core-js'])).some(
-          name => module.resource.includes(path.resolve('./node_modules/' + name))
-        )
-      );
-    }
-  })
-);
-
 module.exports = {
+  mode: 'production',
   devtool: 'source-map',
   resolve: {
     modules: [
@@ -49,8 +46,29 @@ module.exports = {
       'node_modules'
     ],
   },
+  entry: (() => {
+    const entry = {
+      'prebid-core': {
+        import: './src/prebid.js'
+      },
+    };
+    const selectedModules = new Set(helpers.getArgModules());
+
+    Object.entries(helpers.getModules()).forEach(([fn, mod]) => {
+      if (selectedModules.size === 0 || selectedModules.has(mod)) {
+        const moduleEntry = {
+          import: fn,
+          dependOn: 'prebid-core'
+        };
+
+        entry[mod] = moduleEntry;
+      }
+    });
+    return entry;
+  })(),
   output: {
-    jsonpFunction: prebid.globalVarName + "Chunk"
+    chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
+    chunkLoading: 'jsonp',
   },
   module: {
     rules: [
@@ -60,7 +78,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: helpers.getAnalyticsOptions(),
+            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
           }
         ]
       },
@@ -70,10 +88,58 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
+            options: babelConfig
           }
         ],
       }
     ]
+  },
+  optimization: {
+    usedExports: true,
+    sideEffects: true,
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false, // do not generate unhelpful LICENSE comment
+        terserOptions: {
+          module: true, // do not prepend every module with 'use strict'; allow mangling of top-level locals
+        }
+      })
+    ],
+    splitChunks: {
+      chunks: 'initial',
+      minChunks: 1,
+      minSize: 0,
+      cacheGroups: (() => {
+        const libRoot = path.resolve(__dirname, 'libraries');
+        const libraries = Object.fromEntries(
+          fs.readdirSync(libRoot)
+            .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
+            .map(lib => {
+              const dir = path.resolve(libRoot, lib)
+              const def = {
+                name: lib,
+                test: (module) => {
+                  return module.resource && module.resource.startsWith(dir)
+                }
+              }
+              return [lib, def];
+            })
+        );
+        const core = path.resolve('./src');
+
+        return Object.assign(libraries, {
+          core: {
+            name: 'chunk-core',
+            test: (module) => {
+              return module.resource && module.resource.startsWith(core);
+            }
+          },
+        }, {
+          default: false,
+          defaultVendors: false
+        });
+      })()
+    }
   },
   plugins
 };

@@ -1,9 +1,15 @@
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import find from 'core-js-pure/features/array/find.js';
+import {deepAccess, isArray, isEmpty, logError, logInfo} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
+import {parseDomain} from '../src/refererDetection.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
@@ -21,38 +27,37 @@ export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
 export const QUANTCAST_FPA = '__qca';
 
-export const storage = getStorageManager(QUANTCAST_VENDOR_ID, BIDDER_CODE);
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function makeVideoImp(bid) {
-  const video = {};
-  if (bid.params.video) {
-    video['mimes'] = bid.params.video.mimes;
-    video['minduration'] = bid.params.video.minduration;
-    video['maxduration'] = bid.params.video.maxduration;
-    video['protocols'] = bid.params.video.protocols;
-    video['startdelay'] = bid.params.video.startdelay;
-    video['linearity'] = bid.params.video.linearity;
-    video['battr'] = bid.params.video.battr;
-    video['maxbitrate'] = bid.params.video.maxbitrate;
-    video['playbackmethod'] = bid.params.video.playbackmethod;
-    video['delivery'] = bid.params.video.delivery;
-    video['placement'] = bid.params.video.placement;
-    video['api'] = bid.params.video.api;
+  const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};
+  const videoInParams = deepAccess(bid, 'params.video') || {};
+  const video = Object.assign({}, videoInParams, videoInMediaType);
+
+  if (video.playerSize) {
+    video.w = video.playerSize[0];
+    video.h = video.playerSize[1];
   }
-  if (bid.mediaTypes.video.mimes) {
-    video['mimes'] = bid.mediaTypes.video.mimes;
+  const videoCopy = {
+    mimes: video.mimes,
+    minduration: video.minduration,
+    maxduration: video.maxduration,
+    protocols: video.protocols,
+    startdelay: video.startdelay,
+    linearity: video.linearity,
+    battr: video.battr,
+    maxbitrate: video.maxbitrate,
+    playbackmethod: video.playbackmethod,
+    delivery: video.delivery,
+    api: video.api,
+    w: video.w,
+    h: video.h
   }
-  if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-    video['w'] = bid.mediaTypes.video.playerSize[0][0];
-    video['h'] = bid.mediaTypes.video.playerSize[0][1];
-  } else {
-    video['w'] = bid.mediaTypes.video.playerSize[0];
-    video['h'] = bid.mediaTypes.video.playerSize[1];
-  }
+
   return {
-    video: video,
+    video: videoCopy,
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
@@ -70,25 +75,11 @@ function makeBannerImp(bid) {
       })
     },
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
-function getDomain(url) {
-  if (!url) {
-    return url;
-  }
-  return url.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#]/)[0];
-}
-
-function checkTCFv1(vendorData) {
-  let vendorConsent = vendorData.vendorConsents && vendorData.vendorConsents[QUANTCAST_VENDOR_ID];
-  let purposeConsent = vendorData.purposeConsents && vendorData.purposeConsents[PURPOSE_DATA_COLLECT];
-
-  return !!(vendorConsent && purposeConsent);
-}
-
-function checkTCFv2(tcData) {
+function checkTCF(tcData) {
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
@@ -142,22 +133,18 @@ export const spec = {
    */
   buildRequests(bidRequests, bidderRequest) {
     const bids = bidRequests || [];
-    const gdprConsent = utils.deepAccess(bidderRequest, 'gdprConsent') || {};
-    const uspConsent = utils.deepAccess(bidderRequest, 'uspConsent');
-    const referrer = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-    const page = utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || config.getConfig('pageUrl') || utils.deepAccess(window, 'location.href');
-    const domain = getDomain(page);
+    const gdprConsent = deepAccess(bidderRequest, 'gdprConsent') || {};
+    const uspConsent = deepAccess(bidderRequest, 'uspConsent');
+    const referrer = deepAccess(bidderRequest, 'refererInfo.ref');
+    const page = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
+    const domain = parseDomain(page, {noLeadingWww: true});
 
     // Check for GDPR consent for purpose 1, and drop request if consent has not been given
     // Remaining consent checks are performed server-side.
     if (gdprConsent.gdprApplies) {
       if (gdprConsent.vendorData) {
-        if (gdprConsent.apiVersion === 1 && !checkTCFv1(gdprConsent.vendorData)) {
-          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v1`);
-          return;
-        }
-        if (gdprConsent.apiVersion === 2 && !checkTCFv2(gdprConsent.vendorData)) {
-          utils.logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
+        if (!checkTCF(gdprConsent.vendorData)) {
+          logInfo(`${BIDDER_CODE}: No purpose 1 consent for TCF v2`);
           return;
         }
       }
@@ -174,7 +161,7 @@ export const spec = {
           imp = makeBannerImp(bid);
         } else {
           // Unsupported mediaType
-          utils.logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
+          logInfo(`${BIDDER_CODE}: No supported mediaTypes found in ${JSON.stringify(bid.mediaTypes)}`);
           return;
         }
       } else {
@@ -231,18 +218,18 @@ export const spec = {
    */
   interpretResponse(serverResponse) {
     if (serverResponse === undefined) {
-      utils.logError('Server Response is undefined');
+      logError('Server Response is undefined');
       return [];
     }
 
     const response = serverResponse['body'];
 
     if (response === undefined || !response.hasOwnProperty('bids')) {
-      utils.logError('Sub-optimal JSON received from Quantcast server');
+      logError('Sub-optimal JSON received from Quantcast server');
       return [];
     }
 
-    if (utils.isEmpty(response.bids)) {
+    if (isEmpty(response.bids)) {
       // Shortcut response handling if no bids are present
       return [];
     }
@@ -270,9 +257,9 @@ export const spec = {
       if (dealId !== undefined && dealId) {
         result['dealId'] = dealId;
       }
-      result.meta = {};
 
-      if (meta !== undefined && meta.advertiserDomains && utils.isArray(meta.advertiserDomains)) {
+      if (meta !== undefined && meta.advertiserDomains && isArray(meta.advertiserDomains)) {
+        result.meta = {};
         result.meta.advertiserDomains = meta.advertiserDomains;
       }
 
@@ -289,11 +276,11 @@ export const spec = {
     const syncs = []
     if (!hasUserSynced && syncOptions.pixelEnabled) {
       const responseWithUrl = find(serverResponses, serverResponse =>
-        utils.deepAccess(serverResponse.body, 'userSync.url')
+        deepAccess(serverResponse.body, 'userSync.url')
       );
 
       if (responseWithUrl) {
-        const url = utils.deepAccess(responseWithUrl.body, 'userSync.url')
+        const url = deepAccess(responseWithUrl.body, 'userSync.url')
         syncs.push({
           type: 'image',
           url: url

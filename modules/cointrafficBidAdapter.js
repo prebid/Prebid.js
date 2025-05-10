@@ -1,22 +1,31 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ */
 
 const BIDDER_CODE = 'cointraffic';
-const ENDPOINT_URL = 'https://appspb.cointraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 const DEFAULT_CURRENCY = 'EUR';
 const ALLOWED_CURRENCIES = [
   'EUR', 'USD', 'JPY', 'BGN', 'CZK', 'DKK', 'GBP', 'HUF', 'PLN', 'RON', 'SEK', 'CHF', 'ISK', 'NOK', 'HRK', 'RUB', 'TRY',
   'AUD', 'BRL', 'CAD', 'CNY', 'HKD', 'IDR', 'ILS', 'INR', 'KRW', 'MXN', 'MYR', 'NZD', 'PHP', 'SGD', 'THB', 'ZAR',
 ];
 
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -34,14 +43,14 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes);
+      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
       const currency =
         config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
-        config.getConfig('currency.adServerCurrency') ||
+        getCurrencyFromBidderRequest(bidderRequest) ||
         DEFAULT_CURRENCY;
 
       if (ALLOWED_CURRENCIES.indexOf(currency) === -1) {
-        utils.logError('Currency is not supported - ' + currency);
+        logError('Currency is not supported - ' + currency);
         return;
       }
 
@@ -50,7 +59,7 @@ export const spec = {
         currency: currency,
         sizes: sizes,
         bidId: bidRequest.bidId,
-        referer: bidderRequest.refererInfo.referer,
+        referer: bidderRequest.refererInfo.ref,
       };
 
       return {
@@ -72,7 +81,7 @@ export const spec = {
     const bidResponses = [];
     const response = serverResponse.body;
 
-    if (utils.isEmpty(response)) {
+    if (isEmpty(response)) {
       return bidResponses;
     }
 

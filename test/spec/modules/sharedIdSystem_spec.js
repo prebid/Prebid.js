@@ -1,77 +1,128 @@
-import {
-  sharedIdSubmodule,
-} from 'modules/sharedIdSystem.js';
-import { server } from 'test/mocks/xhr.js';
-import {uspDataHandler} from 'src/adapterManager';
+import {sharedIdSystemSubmodule, storage} from 'modules/sharedIdSystem.js';
+import {config} from 'src/config.js';
+
+import sinon from 'sinon';
+import * as utils from 'src/utils.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {attachIdSystem, init} from '../../../modules/userId/index.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 let expect = require('chai').expect;
 
-describe('SharedId System', function() {
-  const SHAREDID_RESPONSE = {sharedId: 'testsharedid'};
-  let uspConsentDataStub;
-  describe('Xhr Requests from getId()', function() {
-    let callbackSpy = sinon.spy();
+describe('SharedId System', function () {
+  const UUID = '15fde1dc-1861-4894-afdf-b757272f3568';
 
-    beforeEach(function() {
+  before(function () {
+    sinon.stub(utils, 'generateUUID').returns(UUID);
+    sinon.stub(utils, 'logInfo');
+  });
+
+  after(function () {
+    utils.generateUUID.restore();
+    utils.logInfo.restore();
+  });
+  describe('SharedId System getId()', function () {
+    const callbackSpy = sinon.spy();
+
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
-      uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
     });
 
     afterEach(function () {
-      uspConsentDataStub.restore();
+      sandbox.restore();
     });
 
-    it('should call shared id endpoint without consent data and handle a valid response', function () {
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, undefined).callback;
-      submoduleCallback(callbackSpy);
-
-      let request = server.requests[0];
-      expect(request.url).to.equal('https://id.sharedid.org/id');
-      expect(request.withCredentials).to.be.true;
-
-      request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
-
-      expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
-    });
-
-    it('should call shared id endpoint with consent data and handle a valid response', function () {
-      let consentData = {
-        gdprApplies: true,
-        consentString: 'abc12345234',
+    it('should call UUID', function () {
+      let config = {
+        storage: {
+          type: 'cookie',
+          name: '_pubcid',
+          expires: 10
+        }
       };
 
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, consentData).callback;
+      let submoduleCallback = sharedIdSystemSubmodule.getId(config, undefined).callback;
       submoduleCallback(callbackSpy);
-
-      let request = server.requests[0];
-      expect(request.url).to.equal('https://id.sharedid.org/id?gdpr=1&gdpr_consent=abc12345234');
-      expect(request.withCredentials).to.be.true;
-
-      request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
-
       expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+      expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
     });
-
-    it('should call shared id endpoint with usp consent data and handle a valid response', function () {
-      uspConsentDataStub.returns('1YYY');
-      let consentData = {
-        gdprApplies: true,
-        consentString: 'abc12345234',
-      };
-
-      let submoduleCallback = sharedIdSubmodule.getId(undefined, consentData).callback;
-      submoduleCallback(callbackSpy);
-
-      let request = server.requests[0];
-      expect(request.url).to.equal('https://id.sharedid.org/id?us_privacy=1YYY&gdpr=1&gdpr_consent=abc12345234');
-      expect(request.withCredentials).to.be.true;
-
-      request.respond(200, {}, JSON.stringify(SHAREDID_RESPONSE));
-
-      expect(callbackSpy.calledOnce).to.be.true;
-      expect(callbackSpy.lastCall.lastArg.id).to.equal(SHAREDID_RESPONSE.sharedId);
+    it('should abort if coppa is set', function () {
+      const result = sharedIdSystemSubmodule.getId({}, {coppa: true});
+      expect(result).to.be.undefined;
     });
   });
+  describe('SharedId System extendId()', function () {
+    const callbackSpy = sinon.spy();
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(utils, 'hasDeviceAccess').returns(true);
+      callbackSpy.resetHistory();
+    });
+    afterEach(function () {
+      sandbox.restore();
+    });
+    it('should call UUID', function () {
+      let config = {
+        params: {
+          extend: true
+        },
+        storage: {
+          type: 'cookie',
+          name: '_pubcid',
+          expires: 10
+        }
+      };
+      let pubcommId = sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').id;
+      expect(pubcommId).to.equal('TestId');
+    });
+    it('should abort if coppa is set', function () {
+      const result = sharedIdSystemSubmodule.extendId({params: {extend: true}}, {coppa: true}, 'TestId');
+      expect(result).to.be.undefined;
+    });
+  });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(sharedIdSystemSubmodule);
+    });
+    afterEach(() => {
+      config.resetConfig();
+    });
+    it('pubCommonId', function() {
+      const userId = {
+        pubcid: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'pubcid.org',
+        uids: [{id: 'some-random-id-value', atype: 1}]
+      });
+    });
+
+    it('should set inserter, if provided in config', async () => {
+      config.setConfig({
+        userSync: {
+          userIds: [{
+            name: 'sharedId',
+            params: {
+              inserter: 'mock-inserter'
+            },
+            value: {pubcid: 'mock-id'}
+          }]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+      const eids = getGlobal().getUserIdsAsEids();
+      sinon.assert.match(eids[0], {
+        source: 'pubcid.org',
+        inserter: 'mock-inserter'
+      })
+    })
+  })
 });

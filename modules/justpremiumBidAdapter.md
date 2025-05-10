@@ -2,7 +2,6 @@
 
 **Module Name**: Justpremium Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**: headerbidding-dev@justpremium.com
 
 # Description
 

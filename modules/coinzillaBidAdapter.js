@@ -1,6 +1,11 @@
-import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
+import { parseSizesInput } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'coinzilla';
 const ENDPOINT_URL = 'https://request.czilladx.com/serve/request.php';
@@ -31,7 +36,7 @@ export const spec = {
       return [];
     }
     return validBidRequests.map(bidRequest => {
-      const sizes = utils.parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
+      const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes)[0];
       const width = sizes.split('x')[0];
       const height = sizes.split('x')[1];
       const payload = {
@@ -39,7 +44,8 @@ export const spec = {
         width: width,
         height: height,
         bidId: bidRequest.bidId,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        referer: bidderRequest.refererInfo.page,
       };
       return {
         method: 'POST',
@@ -77,9 +83,13 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: response.timeout,
         referrer: referrer,
-        ad: response.ad
+        ad: response.ad,
+        mediaType: response.mediaType,
+        meta: {
+          advertiserDomains: response.advertiserDomain || []
+        }
       };
       bidResponses.push(bidResponse);
     }

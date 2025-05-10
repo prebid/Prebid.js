@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 
 const SMARTICO_CONFIG = {
   bidRequestUrl: 'https://trmads.eu/preBidRequest',
@@ -66,9 +66,9 @@ export const spec = {
       method: SMARTICO_CONFIG.method,
       url: SMARTICO_CONFIG.bidRequestUrl,
       bids: validBidRequests,
-      data: {bidParams: bidParams, auctionId: bidderRequest.auctionId, origin: window.location.origin}
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
+      data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
     }
-
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
@@ -78,13 +78,14 @@ export const spec = {
     var url
     var html
     var ad
+    var ads
     var token
     var language
     var scriptId
     var bidResponses = []
-
-    for (i = 0; i < serverResponse.length; i++) {
-      ad = serverResponse[i];
+    ads = serverResponse.body
+    for (i = 0; i < ads.length; i++) {
+      ad = ads[i]
       bid = find(bidRequest.bids, bid => bid.bidId === ad.bidId)
       if (bid) {
         token = bid.params.token || ''
@@ -103,9 +104,14 @@ export const spec = {
           width: parseInt(ad.bannerFormatWidth),
           height: parseInt(ad.bannerFormatHeight),
           creativeId: ad.id,
-          netRevenue: false, // gross
+          netRevenue: !!ad.netRevenue,
+          currency: ad.currency,
           ttl: ad.ttl,
-          ad: html
+          ad: html,
+          meta: {
+            advertiserDomains: ad.domains,
+            advertiserName: ad.title
+          }
         }
         bidResponses.push(bidObject);
       }

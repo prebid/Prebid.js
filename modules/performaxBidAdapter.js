@@ -1,56 +1,77 @@
-import {logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { deepSetValue, deepAccess } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
-const CLIENT = 'hellboy:v0.0.1'
 const BIDDER_CODE = 'performax';
 const BIDDER_SHORT_CODE = 'px';
-const ENDPOINT = 'https://dale.performax.cz/hb';
+const GVLID = 732
+const ENDPOINT = 'https://dale.performax.cz/ortb'
+export const converter = ortbConverter({
+
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'tagid', bidRequest.params.tagid);
+    return imp;
+  },
+
+  bidResponse(buildBidResponse, bid, context) {
+    context.netRevenue = deepAccess(bid, 'netRevenue');
+    context.mediaType = deepAccess(bid, 'mediaType');
+    context.currency = deepAccess(bid, 'currency');
+
+    return buildBidResponse(bid, context)
+  },
+
+  context: {
+    ttl: 360,
+  }
+})
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: [BIDDER_SHORT_CODE],
+  gvlid: GVLID,
+  supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!bid.params.slotId;
+    return !!bid.params.tagid;
   },
 
-  buildUrl: function (validBidRequests, bidderRequest) {
-    const slotIds = validBidRequests.map(request => request.params.slotId);
-    let url = [`${ENDPOINT}?slotId[]=${slotIds.join()}`];
-    url.push('client=' + CLIENT);
-    url.push('auctionId=' + bidderRequest.auctionId);
-    return url.join('&');
-  },
-
-  buildRequests: function (validBidRequests, bidderRequest) {
-    return {
+  buildRequests: function (bidRequests, bidderRequest) {
+    let data = converter.toORTB({bidderRequest, bidRequests})
+    return [{
       method: 'POST',
-      url: this.buildUrl(validBidRequests, bidderRequest),
-      data: {'validBidRequests': validBidRequests, 'bidderRequest': bidderRequest},
-      options: {contentType: 'application/json'},
-    }
+      url: ENDPOINT,
+      options: {'contentType': 'application/json'},
+      data: data
+    }]
   },
 
-  buildHtml: function (ad) {
-    const keys = Object.keys(ad.data || {});
-    return ad.code.replace(
-      new RegExp('\\$(' + keys.join('|') + ')\\$', 'g'),
-      (matched, key) => ad.data[key] || matched
-    );
+  interpretResponse: function (bidderResponse, request) {
+    if (!bidderResponse.body) return [];
+    const response = bidderResponse.body
+    const data = {
+
+      seatbid: response.seatbid.map(seatbid => ({
+        seat: seatbid.seat,
+        bid: seatbid.bid.map(bid => ({
+          impid: bid.imp_id,
+          w: bid.w,
+          h: bid.h,
+          requestId: request.data.id,
+          price: bid.price,
+          currency: response.cur,
+          adm: bid.adm,
+          crid: bid.id,
+          netRevenue: true,
+          mediaType: BANNER,
+        }))
+      }))
+    };
+    return converter.fromORTB({ response: data, request: request.data }).bids
   },
 
-  interpretResponse: function (serverResponse, request) {
-    let bidResponses = [];
-    for (let i = 0; i < serverResponse.body.length; i++) {
-      const ad = serverResponse.body[i].ad;
-      if (ad.type === 'empty') {
-        logWarn(`One of ads is empty (reason=${ad.reason})`);
-        continue;
-      }
-      serverResponse.body[i].ad = this.buildHtml(ad);
-      bidResponses.push(serverResponse.body[i]);
-    }
-    return bidResponses;
-  }
 }
+
 registerBidder(spec);

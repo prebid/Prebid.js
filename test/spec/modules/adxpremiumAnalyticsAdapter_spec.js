@@ -3,9 +3,9 @@ import { testSend } from 'modules/adxpremiumAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('AdxPremium analytics adapter', function () {
   beforeEach(function () {
@@ -122,7 +122,7 @@ describe('AdxPremium analytics adapter', function () {
           'auctionStart': 1589707613899,
           'timeout': 2000,
           'refererInfo': {
-            'referer': 'https://test.com/article/176067',
+            'page': 'https://test.com/article/176067',
             'reachedTop': true,
             'numIframes': 0,
             'stack': [
@@ -222,7 +222,7 @@ describe('AdxPremium analytics adapter', function () {
       'auctionStart': 1589707613899,
       'timeout': 2000,
       'refererInfo': {
-        'referer': 'https://test.com/article/176067',
+        'page': 'https://test.com/article/176067',
         'reachedTop': true,
         'numIframes': 0,
         'stack': [
@@ -378,19 +378,19 @@ describe('AdxPremium analytics adapter', function () {
 
     it('builds and sends auction data', function () {
       // Step 1: Send auction init event
-      events.emit(constants.EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
 
       // Step 2: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
       // Step 3: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
 
       // Step 5: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.AUCTION_END, {});
 
       testSend();
 
@@ -404,7 +404,7 @@ describe('AdxPremium analytics adapter', function () {
       expect(realAfterBid).to.deep.equal(expectedAfterTimeout);
 
       // Step 6: Send auction bid won event
-      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      events.emit(EVENTS.BID_WON, wonRequest);
 
       expect(server.requests.length).to.equal(3);
       let winEventData = JSON.parse(server.requests[1].requestBody);

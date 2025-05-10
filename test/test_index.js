@@ -1,6 +1,5 @@
-require('test/helpers/prebidGlobal.js');
-require('test/mocks/adloaderStub.js');
-require('test/mocks/xhr.js');
+require('./pipeline_setup.js');
+require('./test_deps.js');
 
 var testsContext = require.context('.', true, /_spec$/);
 testsContext.keys().forEach(testsContext);

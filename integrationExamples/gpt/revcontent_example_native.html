@@ -1,0 +1,109 @@
+<html>
+    <head>
+        <title>Prebid.js Native Example</title>
+
+        <script async src="../../build/dev/prebid.js"></script>
+        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+        <script>
+            /*
+            Supported sizes:
+            ----------------
+            300x250 - Medium rectangle
+            728x90 - Leaderboard
+            300x600 - Half page or large skyscraper
+            */
+            var size = {width: 300, height: 250};
+
+            var PREBID_TIMEOUT = 10000;
+            var FAILSAFE_TIMEOUT = 30000;
+
+            var adUnits = [{
+                code: '/19968336/header-bid-tag-1',
+                mediaTypes: {
+                    native: {
+                        image: {
+                            required: false
+                        },
+                        title: {
+                            required: false,
+                            len: 140
+                        },
+                        clickUrl: {
+                            required: false
+                        },
+                        sponsoredBy: {
+                            id: 5,
+                            name: 'data',
+                            type: 1
+                        }
+                    }
+                },
+                bids: [{
+                    bidder: 'revcontent',
+                    params: {
+                        size: size,
+                        // Your user-id and api-key
+                        apiKey: 'abababababababababababababababababababab',
+                        userId: 111111,
+                        domain: 'test.com',
+                        endpoint: 'trends.revcontent.com'
+                    }
+                }]
+            }];
+
+            // ======== DO NOT EDIT BELOW THIS LINE =========== //
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+            googletag.cmd.push(function() {
+                googletag.pubads().disableInitialLoad();
+            });
+
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+
+            pbjs.que.push(function() {
+                pbjs.addAdUnits(adUnits);
+                pbjs.requestBids({
+                    bidsBackHandler: initAdserver,
+                    timeout: PREBID_TIMEOUT
+                });
+            });
+
+            function initAdserver() {
+                if (pbjs.initAdserverSet) return;
+                pbjs.initAdserverSet = true;
+                googletag.cmd.push(function() {
+                    pbjs.setTargetingForGPTAsync && pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            }
+            
+            // in case PBJS doesn't load
+            setTimeout(function() {
+                initAdserver();
+            }, FAILSAFE_TIMEOUT);
+
+            googletag.cmd.push(function() {
+                googletag.defineSlot('/19968336/header-bid-tag-1', [[size.width, size.height]], 'div-1')
+                	.addService(googletag.pubads());
+                googletag.pubads().enableSingleRequest();
+                googletag.enableServices();
+            });
+
+        </script>
+
+    </head>
+
+    <body>
+        <h2>Prebid.js Native Example</h2>
+        <h5>Div-1</h5>
+        <div id='div-1'>
+            <script type='text/javascript'>
+                googletag.cmd.push(function() {
+                    googletag.display('div-1');
+                });
+            </script>
+        </div>
+    </body>
+
+</html>

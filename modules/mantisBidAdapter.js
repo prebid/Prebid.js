@@ -1,7 +1,10 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getWinDimensions } from '../src/utils.js';
 
-const storage = getStorageManager();
+export const storage = getStorageManager({bidderCode: 'mantis'});
 
 function inIframe() {
   try {
@@ -10,12 +13,7 @@ function inIframe() {
     return true;
   }
 }
-function pixel(url, parent) {
-  var img = document.createElement('img');
-  img.src = url;
-  img.style.cssText = 'display:none !important;';
-  (parent || document.body).appendChild(img);
-}
+
 export function onVisible(win, element, doOnVisible, time, pct) {
   var started = null;
   var notified = false;
@@ -77,9 +75,10 @@ export function onVisible(win, element, doOnVisible, time, pct) {
     });
   }
   interval = setInterval(function () {
-    var winHeight = (win.innerHeight || document.documentElement.clientHeight);
-    var winWidth = (win.innerWidth || document.documentElement.clientWidth);
-    doCheck(winWidth, winHeight, element.getBoundingClientRect());
+    const windowDimensions = getWinDimensions();
+    var winHeight = (windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight);
+    var winWidth = (windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth);
+    doCheck(winWidth, winHeight, getBoundingClientRect(element));
   }, 100);
 }
 function storeUuid(uuid) {
@@ -247,6 +246,9 @@ export const spec = {
         width: ad.width,
         height: ad.height,
         ad: ad.html,
+        meta: {
+          advertiserDomains: ad.domains || []
+        },
         ttl: ad.ttl || serverResponse.body.ttl || 86400,
         creativeId: ad.view,
         netRevenue: true,
@@ -272,9 +274,8 @@ export const spec = {
 
 export function sfPostMessage ($sf, width, height, callback) {
   var viewed = false;
-  // eslint-disable-next-line no-undef
+
   $sf.ext.register(width, height, function () {
-    // eslint-disable-next-line no-undef
     if ($sf.ext.inViewPercentage() < 50 || viewed) {
       return;
     }
@@ -298,9 +299,9 @@ export function iframePostMessage (win, name, callback) {
 
 onMessage('iframe', function (data) {
   if (window.$sf) {
-    sfPostMessage(window.$sf, data.width, data.height, () => pixel(data.pixel));
+    sfPostMessage(window.$sf, data.width, data.height, () => ajax(data.pixel));
   } else {
-    iframePostMessage(window, data.frame, () => pixel(data.pixel));
+    iframePostMessage(window, data.frame, () => ajax(data.pixel));
   }
 });
 

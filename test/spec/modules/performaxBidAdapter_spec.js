@@ -1,274 +1,175 @@
-import * as utils from 'src/utils.js';
 import { expect } from 'chai';
-import { spec } from 'modules/performaxBidAdapter';
+import { spec, converter } from 'modules/performaxBidAdapter.js';
 
-describe('PerformaxAdapter', function () {
-  let bidRequests, bidderRequest;
-  let serverResponse, serverRequest;
-
-  const URL =
-    'https://dale.performax.cz/hb?slotId[]=3,2&client=hellboy:v0.0.1&auctionId=144b5079-8cbf-49a5-aca7-a68b3296cd6c';
-
-  bidRequests = [
-    {
-      adUnitCode: 'postbid_iframe',
-      auctionId: '144b5079-8cbf-49a5-aca7-a68b3296cd6c',
-      bidId: '2a4332f6b2bc74',
-      bidRequestsCount: 1,
-      bidder: 'performax',
-      bidderRequestId: '1c7d8bf204f11e',
-      bidderRequestsCount: 1,
-      bidderWinsCount: 0,
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 300]],
-        },
-      },
-      params: {
-        slotId: 3,
-      },
-      sizes: [[300, 300]],
-      src: 'client',
-      transactionId: '14969d09-0068-4d5b-a34e-e35091561dee',
+describe('Performax adapter', function () {
+  let bids = [{
+    bidder: 'performax',
+    params: {
+      tagid: 'sample'
     },
-    {
-      adUnitCode: 'postbid_iframe2',
-      auctionId: '144b5079-8cbf-49a5-aca7-a68b3296cd6c',
-      bidId: '300bb0ac6a156a',
-      bidRequestsCount: 1,
-      bidder: 'performax',
-      bidderRequestId: '1c7d8bf204f11e',
-      bidderRequestsCount: 1,
-      bidderWinsCount: 0,
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 300]],
-        },
-      },
-      params: {
-        slotId: 2,
-      },
-      sizes: [[300, 300]],
-      src: 'client',
-      transactionId: '107cbebd-8c36-4456-b28c-91a19ba80151',
+    ortb2Imp: {
+      ext: {}
     },
-  ];
-
-  bidderRequest = {
-    auctionId: '144b5079-8cbf-49a5-aca7-a68b3296cd6c',
-    auctionStart: 1594281941845,
-    bidderCode: 'performax',
-    bidderRequestId: '1c7d8bf204f11e',
-    bids: bidRequests,
-    refererInfo: {
-      canonicalUrl: '',
-      numIframes: 0,
-      reachedTop: true,
-      referer: '',
-    },
-    stack: [''],
-    start: 1594281941935,
-    timeout: 3600,
-  };
-
-  serverResponse = {
-    body: [
-      {
-        ad: {
-          code: '$SYS_ID$ $VAR_NAME$ rest of the code',
-          data: {
-            SYS_ID: 1,
-            VAR_NAME: 'name',
-          },
-          format_id: 2,
-          id: 11,
-          size: {
-            width: 300,
-            height: 300,
-          },
-          tag_ids: [],
-          type: 'creative',
-        },
-        cpm: 30,
-        creativeId: 'creative:11',
-        currency: 'CZK',
-        height: 300,
-        meta: {
-          agencyId: 1,
-          mediaType: 'banner',
-        },
-        netRevenue: true,
-        requestId: '2a4332f6b2bc74',
-        ttl: 60,
-        width: 300,
-      },
-      {
-        ad: {
-          code: '<!-- px empty -->',
-          reason: 'Slot 2 does not allow HB requests',
-          type: 'empty',
-        },
-        cpm: 0,
-        creativeId: null,
-        currency: 'CZK',
-        height: null,
-        meta: {
-          agencyId: null,
-          mediaType: 'banner',
-        },
-        netRevenue: true,
-        requestId: '1c7d8bf204f11e',
-        ttl: 60,
-        width: 300,
-      },
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 300],
+        ]}},
+    adUnitCode: 'postbid_iframe',
+    transactionId: '84deda92-e9ba-4b0d-a797-43be5e522430',
+    adUnitId: '4ee4643b-931f-4a17-a571-ccba57886dc8',
+    sizes: [
+      [300, 300],
     ],
-  };
-
-  serverRequest = {
-    data: {
-      bidderRequest: bidderRequest,
-      validBidRequests: bidRequests,
+    bidId: '2bc545c347dbbe',
+    bidderRequestId: '1534dec005b9a',
+    auctionId: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
+    src: 'client',
+    bidRequestsCount: 1,
+    bidderRequestsCount: 1,
+    bidderWinsCount: 0,
+    ortb2: {
+      source: {},
+      site: {},
+      device: {}
     },
-    method: 'POST',
-    options: {
-      contentType: 'application/json',
+  },
+
+  {
+    bidder: 'performax',
+    params: {
+      tagid: '1545'
     },
-    url: URL,
-  };
+    ortb2Imp: {
+      ext: {}
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 600],
+        ]}},
+    adUnitCode: 'postbid_halfpage_iframe',
+    transactionId: '84deda92-e9ba-4b0d-a797-43be5e522430',
+    adUnitId: '4ee4643b-931f-4a17-a571-ccba57886dc8',
+    sizes: [
+      [300, 600],
+    ],
+    bidId: '3dd53d30c691fe',
+    bidderRequestId: '1534dec005b9a',
+    auctionId: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
+    src: 'client',
+    bidRequestsCount: 1,
+    bidderRequestsCount: 1,
+    bidderWinsCount: 0,
+    ortb2: {
+      source: {},
+      site: {},
+      device: {}
+    }}];
 
-  describe('Bid validations', function () {
-    it('Valid bid', function () {
-      let validBid = {
-          bidder: 'performax',
-          params: {
-            slotId: 2,
-          },
-        },
-        isValid = spec.isBidRequestValid(validBid);
-      expect(isValid).to.equal(true);
+  let bidderRequest = {
+    bidderCode: 'performax2',
+    auctionId: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
+    id: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
+    bidderRequestId: '1534dec005b9a',
+    bids: bids,
+    ortb2: {
+      regs: {
+        ext: {
+          gdpr: 1
+        }},
+      user: {
+        ext: {
+          consent: 'consent-string'
+        }
+      },
+      site: {},
+      device: {}
+    }};
+
+  let serverResponse = {
+    body: {
+      cur: 'CZK',
+      seatbid: [
+        {
+          seat: 'performax',
+          bid: [
+            {
+              id: 'sample',
+              price: 20,
+              w: 300,
+              h: 300,
+              adm: 'My ad'
+            }
+          ]}]},
+  }
+
+  describe('isBidRequestValid', function () {
+    let bid = {};
+    it('should return false when missing "tagid" param', function() {
+      bid.params = {slotId: 'param'};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      bid.params = {};
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('Invalid bid: required param is missing', function () {
-      let invalidBid = {
-          bidder: 'performax',
-          params: {
-            invalidParam: 2,
-          },
-        },
-        isValid = spec.isBidRequestValid(invalidBid);
-      expect(isValid).to.equal(false);
+    it('should return true when tagid is correct', function() {
+      bid.params = {tagid: 'sample'};
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-  });
+  })
 
-  describe('Build Url', function () {
-    it('Should return url', function () {
-      let url = spec.buildUrl(bidRequests, bidderRequest);
-      expect(url).to.equal(URL);
-    });
-  });
-
-  describe('Build Request', function () {
-    it('Should not modify bidRequests and bidder Requests', function () {
-      let originalBidRequests = utils.deepClone(bidRequests);
-      let originalBidderRequest = utils.deepClone(bidderRequest);
-      let request = spec.buildRequests(bidRequests, bidderRequest);
-
-      expect(bidRequests).to.deep.equal(originalBidRequests);
-      expect(bidderRequest).to.deep.equal(originalBidderRequest);
-    });
-
-    it('Endpoint checking', function () {
-      let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.url).to.equal(URL);
+  describe('buildRequests', function () {
+    it('should set correct request method and url', function () {
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
+      expect(requests).to.be.an('array').that.has.lengthOf(1);
+      let request = requests[0];
       expect(request.method).to.equal('POST');
-      expect(request.options).to.deep.equal({
-        contentType: 'application/json',
-      });
+      expect(request.url).to.equal('https://dale.performax.cz/ortb');
+      expect(request.data).to.be.an('object');
     });
 
-    it('Request params checking', function () {
-      let request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.validBidRequests).to.deep.equal(bidRequests);
-      expect(request.data.bidderRequest).to.deep.equal(bidderRequest);
-    });
-  });
-
-  describe('Build Html', function () {
-    it('Ad with data: should return build html', function () {
-      let validAd = {
-        code: '$SYS_ID$ $VAR_NAME$ rest of the code',
-        data: {
-          SYS_ID: 1,
-          VAR_NAME: 'name',
-        },
-        format_id: 2,
-        id: 11,
-        size: {
-          width: 300,
-          height: 300,
-        },
-        tag_ids: [],
-        type: 'creative',
-      };
-      let html = spec.buildHtml(validAd);
-      expect(html).to.equal('1 name rest of the code');
+    it('should pass correct imp', function () {
+      let requests = spec.buildRequests([bids[0]], bidderRequest);
+      let {data} = requests[0];
+      let {imp} = data;
+      expect(imp).to.be.an('array').that.has.lengthOf(1);
+      expect(imp[0]).to.be.an('object');
+      let bid = imp[0];
+      expect(bid.id).to.equal('2bc545c347dbbe');
+      expect(bid.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
     });
 
-    it('Ad with partial data: should return html without data change', function () {
-      let adWithPartialData = {
-        code: '$SYS_ID$ $VAR_NAME$ rest of the code',
-        data: {
-          VAR_NAME: 'name',
-        },
-        format_id: 2,
-        id: 11,
-        size: {
-          width: 300,
-          height: 300,
-        },
-        tag_ids: [],
-        type: 'creative',
-      };
-      let html = spec.buildHtml(adWithPartialData);
-      expect(html).to.equal('$SYS_ID$ name rest of the code');
-    });
-
-    it('Ad without data: should return html without data change', function () {
-      let adWithoutData = {
-        code: '$SYS_ID$ $VAR_NAME$ rest of the code',
-        format_id: 2,
-        id: 11,
-        size: {
-          width: 300,
-          height: 300,
-        },
-        tag_ids: [],
-        type: 'creative',
-      };
-      let html = spec.buildHtml(adWithoutData);
-      expect(html).to.equal('$SYS_ID$ $VAR_NAME$ rest of the code');
+    it('should process multiple bids', function () {
+      let requests = spec.buildRequests(bids, bidderRequest);
+      expect(requests).to.be.an('array').that.has.lengthOf(1);
+      let {data} = requests[0];
+      let {imp} = data;
+      expect(imp).to.be.an('array').that.has.lengthOf(bids.length);
+      let bid1 = imp[0];
+      expect(bid1.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 300}]});
+      let bid2 = imp[1];
+      expect(bid2.banner).to.deep.equal({topframe: 0, format: [{w: 300, h: 600}]});
     });
   });
 
-  describe('Interpret Response', function () {
-    it('Ad without data: should return html without data change', function () {
-      let ads = spec.interpretResponse(serverResponse, serverRequest);
-      expect(ads).to.have.length(1);
-      expect(ads[0]).to.deep.equal({
-        ad: '1 name rest of the code',
-        cpm: 30,
-        creativeId: 'creative:11',
-        currency: 'CZK',
-        height: 300,
-        meta: {
-          agencyId: 1,
-          mediaType: 'banner',
-        },
-        netRevenue: true,
-        requestId: '2a4332f6b2bc74',
-        ttl: 60,
-        width: 300,
-      });
+  describe('interpretResponse', function () {
+    it('should map params correctly', function () {
+      let ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
+      serverResponse.body.id = ortbRequest.data.id;
+      serverResponse.body.seatbid[0].bid[0].imp_id = ortbRequest.data.imp[0].id;
+
+      let result = spec.interpretResponse(serverResponse, ortbRequest);
+      expect(result).to.be.an('array').that.has.lengthOf(1);
+      let bid = result[0];
+
+      expect(bid.cpm).to.equal(20);
+      expect(bid.ad).to.equal('My ad');
+      expect(bid.currency).to.equal('CZK');
+      expect(bid.mediaType).to.equal('banner');
+      expect(bid.netRevenue).to.equal(true);
+      expect(bid.ttl).to.equal(360);
+      expect(bid.creativeId).to.equal('sample');
     });
   });
 });

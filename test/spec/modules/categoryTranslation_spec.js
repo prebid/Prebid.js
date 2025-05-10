@@ -2,18 +2,16 @@ import { getAdserverCategoryHook, initTranslation, storage } from 'modules/categ
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { expect } from 'chai';
+import {server} from '../../mocks/xhr.js';
 
 describe('category translation', function () {
-  let fakeTranslationServer;
   let getLocalStorageStub;
 
   beforeEach(function () {
-    fakeTranslationServer = sinon.fakeServer.create();
     getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
   });
 
   afterEach(function() {
-    fakeTranslationServer.reset();
     getLocalStorageStub.restore();
     config.resetConfig();
   });
@@ -73,7 +71,7 @@ describe('category translation', function () {
       }
     }));
     initTranslation();
-    expect(fakeTranslationServer.requests.length).to.equal(0);
+    expect(server.requests.length).to.equal(0);
     clock.restore();
   });
 
@@ -86,15 +84,15 @@ describe('category translation', function () {
       }
     }));
     initTranslation();
-    expect(fakeTranslationServer.requests.length).to.equal(1);
+    expect(server.requests.length).to.equal(1);
     clock.restore();
   });
 
   it('should use default mapping file if publisher has not defined in config', function () {
     getLocalStorageStub.returns(null);
     initTranslation('http://sample.com', 'somekey');
-    expect(fakeTranslationServer.requests.length).to.equal(1);
-    expect(fakeTranslationServer.requests[0].url).to.equal('http://sample.com');
+    expect(server.requests.length).to.equal(1);
+    expect(server.requests[0].url).to.equal('http://sample.com/');
   });
 
   it('should use publisher defined mapping file', function () {
@@ -105,7 +103,7 @@ describe('category translation', function () {
     });
     getLocalStorageStub.returns(null);
     initTranslation('http://sample.com', 'somekey');
-    expect(fakeTranslationServer.requests.length).to.equal(2);
-    expect(fakeTranslationServer.requests[0].url).to.equal('http://sample.com');
+    expect(server.requests.length).to.equal(2);
+    expect(server.requests[0].url).to.equal('http://sample.com/');
   });
 });

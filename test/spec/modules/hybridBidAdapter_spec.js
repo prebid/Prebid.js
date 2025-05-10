@@ -8,14 +8,18 @@ function getSlotConfigs(mediaTypes, params) {
     bidId: '2df8c0733f284e',
     bidder: 'hybrid',
     mediaTypes: mediaTypes,
-    transactionId: '31a58515-3634-4e90-9c96-f86196db1459'
+    ortb2Imp: {
+      ext: {
+        tid: '31a58515-3634-4e90-9c96-f86196db1459'
+      }
+    }
   }
 }
 
 describe('Hybrid.ai Adapter', function() {
   const PLACE_ID = '5af45ad34d506ee7acad0c26';
   const bidderRequest = {
-    refererInfo: { referer: 'referer' }
+    refererInfo: { page: 'referer' }
   }
   const bannerMandatoryParams = {
     placeId: PLACE_ID,

@@ -1,9 +1,10 @@
 import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
+import {expectEvents} from '../../helpers/analytics.js';
+import {EVENTS} from 'src/constants.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('adWMG Analytics', function () {
   let timestamp = new Date() - 256;
@@ -140,31 +141,32 @@ describe('adWMG Analytics', function () {
         }
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
-      events.emit(constants.EVENTS.NO_BID, {});
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_WON, wonRequest);
-      sinon.assert.callCount(adWMGAnalyticsAdapter.track, 7);
+      expectEvents([
+        [EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits}],
+        [EVENTS.BID_REQUESTED, {}],
+        [EVENTS.BID_RESPONSE, bidResponse],
+        [EVENTS.NO_BID, {}],
+        [EVENTS.BID_TIMEOUT, bidTimeoutArgs],
+        [EVENTS.AUCTION_END, {}],
+        [EVENTS.BID_WON, wonRequest],
+      ]).to.beTrackedBy(adWMGAnalyticsAdapter.track);
     });
 
     it('should be two xhr requests', function () {
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      events.emit(EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.BID_WON, wonRequest);
       expect(server.requests.length).to.equal(2);
     });
 
     it('second request should be bidWon', function () {
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      events.emit(EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.BID_WON, wonRequest);
       expect(JSON.parse(server.requests[1].requestBody).events[0].status).to.equal(expectedBidWonData.events[0].status);
     });
 
     it('check bidWon data', function () {
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      events.emit(EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.BID_WON, wonRequest);
       let realBidWonData = JSON.parse(server.requests[1].requestBody);
       expect(realBidWonData.publisher_id).to.equal(expectedBidWonData.publisher_id);
       expect(realBidWonData.site).to.equal(expectedBidWonData.site);

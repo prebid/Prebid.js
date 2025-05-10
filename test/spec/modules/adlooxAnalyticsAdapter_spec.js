@@ -2,8 +2,8 @@ import adapterManager from 'src/adapterManager.js';
 import analyticsAdapter, { command as analyticsCommand, COMMAND } from 'modules/adlooxAnalyticsAdapter.js';
 import { AUCTION_COMPLETED } from 'src/auction.js';
 import { expect } from 'chai';
-import events from 'src/events.js';
-import { EVENTS } from 'src/constants.json';
+import * as events from 'src/events.js';
+import { EVENTS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
@@ -35,7 +35,7 @@ describe('Adloox Analytics Adapter', function () {
     tagid: 0,
     params: {
       dummy1: '%%client%%',
-      dummy2: '%%pbAdSlot%%',
+      dummy2: '%%pbadslot%%',
       dummy3: function(bid) { throw new Error(esplode) }
     }
   };
@@ -45,6 +45,11 @@ describe('Adloox Analytics Adapter', function () {
     adapter: analyticsAdapter
   });
   describe('enableAnalytics', function () {
+    afterEach(function () {
+      analyticsAdapter.disableAnalytics();
+      expect(analyticsAdapter.context).is.null;
+    });
+
     describe('invalid options', function () {
       it('should require options', function (done) {
         adapterManager.enableAnalytics({
@@ -58,6 +63,32 @@ describe('Adloox Analytics Adapter', function () {
       it('should reject non-string options.js', function (done) {
         const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
         analyticsOptionsLocal.js = function () { };
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.null;
+
+        done();
+      });
+
+      it('should accept subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://test.adlooxtracking.com/test.js';
+
+        adapterManager.enableAnalytics({
+          provider: analyticsAdapterName,
+          options: analyticsOptionsLocal
+        });
+        expect(analyticsAdapter.context).is.not.null;
+
+        done();
+      });
+
+      it('should reject non-subdomains of adlooxtracking.com for options.js', function (done) {
+        const analyticsOptionsLocal = utils.deepClone(analyticsOptions);
+        analyticsOptionsLocal.js = 'https://example.com/test.js';
 
         adapterManager.enableAnalytics({
           provider: analyticsAdapterName,
@@ -169,12 +200,36 @@ describe('Adloox Analytics Adapter', function () {
 
         events.emit(EVENTS.BID_WON, bid);
 
-        const [urlInserted, moduleCode] = loadExternalScriptStub.getCall(0).args;
+        const [urlInserted, _, moduleCode] = loadExternalScriptStub.getCall(0).args;
 
         expect(urlInserted.substr(0, url.length)).to.equal(url);
         expect(moduleCode).to.equal(analyticsAdapterName);
         expect(/[#&]creatype=2(&|$)/.test(urlInserted)).is.true; // prebid 'display' -> adloox '2'
         expect(new RegExp('[#&]dummy3=' + encodeURIComponent('ERROR: ' + esplode) + '(&|$)').test(urlInserted)).is.true;
+
+        done();
+      });
+
+      it('should not inject verification JS on BID_WON when handled via Ad Server module', function (done) {
+        const bidIgnore = utils.deepClone(bid);
+        utils.deepSetValue(bidIgnore, 'ext.adloox.video.adserver', true);
+
+        const parent = document.createElement('div');
+
+        const slot = document.createElement('div');
+        slot.id = bidIgnore.adUnitCode;
+        parent.appendChild(slot);
+
+        const script = document.createElement('script');
+        const createElementStub = sandbox.stub(document, 'createElement');
+        createElementStub.withArgs('script').returns(script);
+
+        const querySelectorStub = sandbox.stub(document, 'querySelector');
+        querySelectorStub.withArgs(`#${bid.adUnitCode}`).returns(slot);
+
+        events.emit(EVENTS.BID_WON, bidIgnore);
+
+        expect(parent.querySelector('script')).is.null;
 
         done();
       });

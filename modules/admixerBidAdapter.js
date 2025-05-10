@@ -1,41 +1,72 @@
-import * as utils from '../src/utils.js';
+import {isStr, logError, isFn, deepAccess} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
+import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net', 'adblender'];
-const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.1.aspx';
+const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
+const ALIASES = [
+  {code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx'},
+  'adblender',
+  {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
+  {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
+  {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
+  'rtbstack'
+];
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ALIASES,
-  supportedMediaTypes: ['banner', 'video'],
+  aliases: ALIASES.map(val => isStr(val) ? val : val.code),
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    */
   isBidRequestValid: function (bid) {
-    return !!bid.params.zone;
+    return bid.bidder === 'rtbstack'
+      ? !!bid.params.tagId
+      : !!bid.params.zone;
   },
   /**
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validRequest = convertOrtbRequestToProprietaryNative(validRequest);
+
+    let w;
+    let docRef;
+    do {
+      w = w ? w.parent : window;
+      try {
+        docRef = w.document.referrer;
+      } catch (e) {
+        break;
+      }
+    } while (w !== window.top);
     const payload = {
       imps: [],
-      fpd: config.getLegacyFpd(config.getConfig('ortb2'))
+      ortb2: bidderRequest.ortb2,
+      docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {
-      const {bidderCode} = bidderRequest;
-      endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      // checks if there is specified any endpointUrl in bidder config
+      endpointUrl = config.getConfig('bidderURL');
+      if (!endpointUrl && bidderRequest.bidderCode === 'rtbstack') {
+        logError('The bidderUrl config is required for RTB Stack bids. Please set it with setBidderConfig() for "rtbstack".');
+        return;
+      }
+      // TODO: is 'page' the right value here?
+      if (bidderRequest.refererInfo?.page) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
       }
       if (bidderRequest.gdprConsent) {
         payload.gdprConsent = {
           consentString: bidderRequest.gdprConsent.consentString,
           // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
           gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-        }
+        };
       }
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;
@@ -43,16 +74,20 @@ export const spec = {
     }
     validRequest.forEach((bid) => {
       let imp = {};
-      Object.keys(bid).forEach(key => {
-        (key === 'ortb2Imp') ? imp.fpd = config.getLegacyImpFpd(bid[key]) : imp[key] = bid[key];
-      });
+      Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      imp.ortb2 && delete imp.ortb2;
+      let bidFloor = getBidFloor(bid);
+      if (bidFloor) {
+        imp.bidFloor = bidFloor;
+      }
       payload.imps.push(imp);
     });
-    const payloadString = JSON.stringify(payload);
+
+    let urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
     return {
-      method: 'GET',
-      url: endpointUrl || ENDPOINT_URL,
-      data: `data=${payloadString}`,
+      method: 'POST',
+      url: urlForRequest,
+      data: payload,
     };
   },
   /**
@@ -62,28 +97,9 @@ export const spec = {
     const bidResponses = [];
     try {
       const {body: {ads = []} = {}} = serverResponse;
-      ads.forEach((bidResponse) => {
-        const bidResp = {
-          requestId: bidResponse.bidId,
-          cpm: bidResponse.cpm,
-          width: bidResponse.width,
-          height: bidResponse.height,
-          ad: bidResponse.ad,
-          ttl: bidResponse.ttl,
-          creativeId: bidResponse.creativeId,
-          netRevenue: bidResponse.netRevenue,
-          currency: bidResponse.currency,
-          vastUrl: bidResponse.vastUrl,
-          dealId: bidResponse.dealId,
-          /**
-          * currently includes meta.advertiserDomains ; networkId ; advertiserId
-          */
-          meta: bidResponse.meta,
-        };
-        bidResponses.push(bidResp);
-      });
+      ads.forEach((ad) => bidResponses.push(ad));
     } catch (e) {
-      utils.logError(e);
+      logError(e);
     }
     return bidResponses;
   },
@@ -101,4 +117,26 @@ export const spec = {
     return pixels;
   }
 };
+
+function getEndpointUrl(code) {
+  return find(ALIASES, (val) => val.code === code)?.endpoint || ENDPOINT_URL;
+}
+
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidFloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor?.floor;
+  } catch (_) {
+    return 0;
+  }
+}
+
 registerBidder(spec);

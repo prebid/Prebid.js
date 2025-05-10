@@ -1,14 +1,15 @@
+import { generateUUID, deepAccess, createTrackPixelHtml, getDNT } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',
   BIDDER_CODE: 'apstream',
   GVLID: 394
 };
-const storage = getStorageManager(CONSTANTS.GVLID, CONSTANTS.BIDDER_CODE);
+const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 var dsuModule = (function() {
   'use strict';
@@ -221,7 +222,7 @@ var dsuModule = (function() {
   }
 
   function generateDsu() {
-    var dsuId = utils.generateUUID();
+    var dsuId = generateUUID();
     var loc = location();
 
     var dsuIdSuffix = hashWithKey(dsuId + loc.toString());
@@ -266,7 +267,7 @@ var dsuModule = (function() {
 
   return {
     readOrCreateDsu: readOrCreateDsu
-  }
+  };
 })();
 
 function serializeSizes(sizes) {
@@ -291,7 +292,6 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
     return null;
   }
 
-  let isIab = config.getConfig('consentManagement.cmpApi') != 'static';
   let vendorConsents = (
     gdprConsentConfig.vendorData.vendorConsents ||
     (gdprConsentConfig.vendorData.vendor || {}).consents ||
@@ -299,11 +299,11 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
   );
   let isConsentGiven = !!vendorConsents[CONSTANTS.GVLID.toString(10)];
 
-  return isIab && isConsentGiven ? consentString : null;
+  return isConsentGiven ? consentString : null;
 }
 
 function getIabConsentString(bidderRequest) {
-  if (utils.deepAccess(bidderRequest, 'gdprConsent')) {
+  if (deepAccess(bidderRequest, 'gdprConsent')) {
     return getConsentStringFromPrebid(bidderRequest.gdprConsent);
   }
 
@@ -318,7 +318,7 @@ function injectPixels(ad, pixels, scripts) {
   let trackedAd = ad;
   if (pixels) {
     pixels.forEach(pixel => {
-      const tracker = utils.createTrackPixelHtml(pixel);
+      const tracker = createTrackPixelHtml(pixel);
       trackedAd += tracker;
     });
   }
@@ -342,7 +342,7 @@ function getBids(bids) {
     const bidId = bid.bidId;
 
     let mediaType = '';
-    const mediaTypes = Object.keys(bid.mediaTypes)
+    const mediaTypes = Object.keys(bid.mediaTypes);
     switch (mediaTypes[0]) {
       case 'video':
         mediaType = 'v';
@@ -416,11 +416,14 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequests(bidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
   const data = {
     med: encodeURIComponent(window.location.href),
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auid: bidderRequest.auctionId,
     ref: document.referrer,
-    dnt: utils.getDNT() ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     sr: getScreenParams()
   };
 

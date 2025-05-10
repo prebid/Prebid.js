@@ -1,6 +1,7 @@
 /**
  * This module adds Real time data support to prebid.js
  * @module modules/realTimeData
+ * @typedef {import('../../modules/rtdModule/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
 /**
@@ -30,22 +31,23 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary return real time data
  * @name RtdSubmodule#getTargetingData
  * @param {string[]} adUnitsCodes
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
+ * @param {auction} auction
  */
 
 /**
- * @function?
+ * @function
  * @summary modify bid request data
  * @name RtdSubmodule#getBidRequestData
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
  */
 
 /**
@@ -72,7 +74,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on auction init event
  * @name RtdSubmodule#onAuctionInitEvent
  * @param {Object} data
@@ -81,7 +83,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on auction end event
  * @name RtdSubmodule#onAuctionEndEvent
  * @param {Object} data
@@ -90,12 +92,28 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on bid response event
  * @name RtdSubmodule#onBidResponseEvent
  * @param {Object} data
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
+ */
+
+/**
+ * @function
+ * @summary on bid requested event
+ * @name RtdSubmodule#onBidRequestEvent
+ * @param {Object} data
+ * @param {SubmoduleConfig} config
+ * @param {UserConsentData} userConsent
+ */
+
+/**
+ * @function
+ * @summary on data deletion request
+ * @name RtdSubmodule#onDataDeletionRequest
+ * @param {SubmoduleConfig} config
  */
 
 /**
@@ -142,13 +160,19 @@
  */
 
 import {config} from '../../src/config.js';
-import {module} from '../../src/hook.js';
-import * as utils from '../../src/utils.js';
-import events from '../../src/events.js';
-import CONSTANTS from '../../src/constants.json';
-import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import {getHook, module} from '../../src/hook.js';
+import {logError, logInfo, logWarn} from '../../src/utils.js';
+import * as events from '../../src/events.js';
+import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
+import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
+import {find} from '../../src/polyfill.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
+import {guardOrtb2Fragments} from '../../libraries/objectGuard/ortbGuard.js';
+import {activityParamsBuilder} from '../../src/activities/params.js';
+
+const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -164,24 +188,67 @@ let _dataProviders = [];
 let _userConsent;
 
 /**
- * enable submodule in User ID
- * @param {RtdSubmodule} submodule
+ * Register a Real-Time Data (RTD) submodule.
+ *
+ * @param {Object} submodule The RTD submodule to register.
+ * @param {string} submodule.name The name of the RTD submodule.
+ * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
+ * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
+  return function detach() {
+    const idx = registeredSubModules.indexOf(submodule)
+    if (idx >= 0) {
+      registeredSubModules.splice(idx, 1);
+      initSubModules();
+    }
+  }
 }
+
+/**
+ * call each sub module event function by config order
+ */
+const setEventsListeners = (function () {
+  let registered = false;
+  return function setEventsListeners() {
+    if (!registered) {
+      Object.entries({
+        [EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
+        [EVENTS.AUCTION_END]: ['onAuctionEndEvent', getAdUnitTargeting],
+        [EVENTS.BID_RESPONSE]: ['onBidResponseEvent'],
+        [EVENTS.BID_REQUESTED]: ['onBidRequestEvent'],
+        [EVENTS.BID_ACCEPTED]: ['onBidAcceptedEvent']
+      }).forEach(([ev, [handler, preprocess]]) => {
+        events.on(ev, (args) => {
+          preprocess && preprocess(args);
+          subModules.forEach(sm => {
+            try {
+              sm[handler] && sm[handler](args, sm.config, _userConsent)
+            } catch (e) {
+              logError(`RTD provider '${sm.name}': error in '${handler}':`, e);
+            }
+          });
+        })
+      });
+      registered = true;
+    }
+  }
+})();
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
     if (!realTimeData.dataProviders) {
-      utils.logError('missing parameters for real time module');
+      logError('missing parameters for real time module');
       return;
     }
     confListener(); // unsubscribe config listener
     _moduleConfig = realTimeData;
     _dataProviders = realTimeData.dataProviders;
     setEventsListeners();
-    getGlobal().requestBids.before(setBidRequestsData, 40);
+    getHook('startAuction').before(setBidRequestsData, 20); // RTD should run before FPD
+    adapterManager.callDataDeletionRequest.before(onDataDeletionRequest);
     initSubModules();
   });
 }
@@ -190,6 +257,7 @@ function getConsentData() {
   return {
     gdpr: gdprDataHandler.getConsentData(),
     usp: uspDataHandler.getConsentData(),
+    gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
   }
 }
@@ -209,22 +277,7 @@ function initSubModules() {
     }
   });
   subModules = subModulesByOrder;
-}
-
-/**
- * call each sub module event function by config order
- */
-function setEventsListeners() {
-  events.on(CONSTANTS.EVENTS.AUCTION_INIT, (args) => {
-    subModules.forEach(sm => { sm.onAuctionInitEvent && sm.onAuctionInitEvent(args, sm.config, _userConsent) })
-  });
-  events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => {
-    getAdUnitTargeting(args);
-    subModules.forEach(sm => { sm.onAuctionEndEvent && sm.onAuctionEndEvent(args, sm.config, _userConsent) })
-  });
-  events.on(CONSTANTS.EVENTS.BID_RESPONSE, (args) => {
-    subModules.forEach(sm => { sm.onBidResponseEvent && sm.onBidResponseEvent(args, sm.config, _userConsent) })
-  });
+  logInfo(`Real time data module enabled, using submodules: ${subModules.map((m) => m.name).join(', ')}`);
 }
 
 /**
@@ -234,7 +287,7 @@ function setEventsListeners() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function setBidRequestsData(fn, reqBidsConfigObj) {
+export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj) {
   _userConsent = getConsentData();
 
   const relevantSubModules = [];
@@ -254,22 +307,21 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
+  const verifiers = [];
 
   if (!relevantSubModules.length) {
     return exitHook();
   }
 
-  if (shouldDelayAuction) {
-    waitTimeout = setTimeout(exitHook, _moduleConfig.auctionDelay);
-  }
+  const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0;
+  waitTimeout = setTimeout(exitHook, timeout);
 
   relevantSubModules.forEach(sm => {
-    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
+    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
+    verifiers.push(fpdGuard.verify);
+    reqBidsConfigObj.ortb2Fragments = fpdGuard.obj;
+    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
-
-  if (!shouldDelayAuction) {
-    return exitHook();
-  }
 
   function onGetBidRequestDataCallback() {
     if (isDone) {
@@ -278,17 +330,21 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     if (this.config && this.config.waitForIt) {
       callbacksExpected--;
     }
-    if (callbacksExpected <= 0) {
-      return exitHook();
+    if (callbacksExpected === 0) {
+      setTimeout(exitHook, 0);
     }
   }
 
   function exitHook() {
+    if (isDone) {
+      return;
+    }
     isDone = true;
     clearTimeout(waitTimeout);
+    verifiers.forEach(fn => fn());
     fn.call(this, reqBidsConfigObj);
   }
-}
+});
 
 /**
  * loop through configured data providers If the data provider has registered getTargetingData,
@@ -310,11 +366,11 @@ export function getAdUnitTargeting(auction) {
   }
   let targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
-    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent);
+    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
     } else {
-      utils.logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
+      logWarn('invalid getTargetingData response for sub module', relevantSubModules[i].name);
     }
   }
   // place data on auction adUnits
@@ -324,14 +380,15 @@ export function getAdUnitTargeting(auction) {
     if (!kv) {
       return
     }
-    adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
+    logInfo('RTD set ad unit targeting of', kv, 'for', adUnit);
+    adUnit[JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
   });
   return auction.adUnits;
 }
 
 /**
  * deep merge array of objects
- * @param {array} arr - objects array
+ * @param {Array} arr - objects array
  * @return {Object} merged object
  */
 export function deepMerge(arr) {
@@ -353,6 +410,19 @@ export function deepMerge(arr) {
     }
     return merged;
   }, {});
+}
+
+export function onDataDeletionRequest(next, ...args) {
+  subModules.forEach((sm) => {
+    if (typeof sm.onDataDeletionRequest === 'function') {
+      try {
+        sm.onDataDeletionRequest(sm.config);
+      } catch (e) {
+        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e)
+      }
+    }
+  });
+  next.apply(this, args);
 }
 
 module('realTimeData', attachRealTimeDataProvider);

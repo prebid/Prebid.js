@@ -5,43 +5,90 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
+import { logInfo, logError, logWarn } from '../src/utils.js';
+import * as ajaxLib from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'merkleId';
+const ID_URL = 'https://prebid.sv.rkdms.com/identity/';
+const DEFAULT_REFRESH = 7 * 3600;
 const SESSION_COOKIE_NAME = '_svsid';
-const ID_URL = 'https://id2.sv.rkdms.com/identity/';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function getSession(configParams) {
   let session = null;
-  if (typeof configParams.sv_session !== 'string') {
+  if (typeof configParams.sv_session === 'string') {
     session = configParams.sv_session;
   } else {
-    session = readCookie() || readFromLocalStorage();
+    session = storage.getCookie(SESSION_COOKIE_NAME);
   }
   return session;
 }
 
-function readCookie() {
-  return storage.cookiesAreEnabled() ? storage.getCookie(SESSION_COOKIE_NAME) : null;
+function setCookie(name, value, expires) {
+  let expTime = new Date();
+  expTime.setTime(expTime.getTime() + expires * 1000 * 60);
+  storage.setCookie(name, value, expTime.toUTCString(), 'Lax');
 }
 
-function readFromLocalStorage() {
-  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(SESSION_COOKIE_NAME) : null;
+function setSession(storage, response) {
+  logInfo('Merkle setting ' + `${SESSION_COOKIE_NAME}`);
+  if (response && response[SESSION_COOKIE_NAME] && typeof response[SESSION_COOKIE_NAME] === 'string') {
+    setCookie(SESSION_COOKIE_NAME, response[SESSION_COOKIE_NAME], storage.expires);
+  }
 }
 
 function constructUrl(configParams) {
   const session = getSession(configParams);
-  let url = ID_URL + `?vendor=${configParams.vendor}&sv_cid=${configParams.sv_cid}&sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}`;
+  let url = configParams.endpoint + `?sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}&ssp_ids=${configParams.ssp_ids.join()}`;
   if (session) {
-    url.append(`&sv_session=${session}`);
+    url = `${url}&sv_session=${session}`;
   }
-  utils.logInfo('Merkle url :' + url);
+  logInfo('Merkle url :' + url);
   return url;
+}
+
+function generateId(configParams, configStorage) {
+  const url = constructUrl(configParams);
+
+  const resp = function (callback) {
+    ajaxLib.ajaxBuilder()(
+      url,
+      response => {
+        let responseObj;
+        if (response) {
+          try {
+            responseObj = JSON.parse(response);
+            setSession(configStorage, responseObj)
+            logInfo('Merkle responseObj ' + JSON.stringify(responseObj));
+          } catch (error) {
+            logError(error);
+          }
+        }
+
+        const date = new Date().toUTCString();
+        responseObj.date = date;
+        logInfo('Merkle responseObj with date ' + JSON.stringify(responseObj));
+        callback(responseObj);
+      },
+      error => {
+        logError(`${MODULE_NAME}: merkleId fetch encountered an error`, error);
+        callback();
+      },
+      {method: 'GET', withCredentials: true}
+    );
+  };
+  return resp;
 }
 
 /** @type {Submodule} */
@@ -51,17 +98,29 @@ export const merkleIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+
   /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{merkleId:string}}
+   * @returns {{eids:arrayofields}}
    */
   decode(value) {
+    // Legacy support for a single id
     const id = (value && value.pam_id && typeof value.pam_id.id === 'string') ? value.pam_id : undefined;
-    utils.logInfo('Merkle id ' + JSON.stringify(id));
-    return id ? { 'merkleId': id } : undefined;
+    logInfo('Merkle id ' + JSON.stringify(id));
+
+    if (id) {
+      return {'merkleId': id}
+    }
+
+    // Supports multiple IDs for different SSPs
+    const merkleIds = (value && value?.merkleId && Array.isArray(value.merkleId)) ? value.merkleId : undefined;
+    logInfo('merkleIds: ' + JSON.stringify(merkleIds));
+
+    return merkleIds ? {'merkleId': merkleIds} : undefined;
   },
+
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
@@ -70,56 +129,106 @@ export const merkleIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
-    const configParams = (config && config.params) || {};
-    if (!configParams || typeof configParams.vendor !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid vendor to be defined');
-      return;
-    }
+    logInfo('User ID - merkleId generating id');
 
-    if (typeof configParams.sv_cid !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid sv_cid string to be defined');
-      return;
-    }
+    const configParams = (config && config.params) || {};
 
     if (typeof configParams.sv_pubid !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
+      logError('User ID - merkleId submodule requires a valid sv_pubid string to be defined');
+      return;
+    }
+
+    if (!Array.isArray(configParams.ssp_ids)) {
+      logError('User ID - merkleId submodule requires a valid ssp_ids array to be defined');
+      return;
+    }
+
+    if (consentData?.gdpr?.gdprApplies === true) {
+      logError('User ID - merkleId submodule does not currently handle consent strings');
+      return;
+    }
+
+    if (typeof configParams.endpoint !== 'string') {
+      logWarn('User ID - merkleId submodule endpoint string is not defined');
+      configParams.endpoint = ID_URL
+    }
+
+    if (typeof configParams.sv_domain !== 'string') {
+      configParams.sv_domain = merkleIdSubmodule.findRootDomain();
+    }
+
+    const configStorage = (config && config.storage) || {};
+    const resp = generateId(configParams, configStorage)
+    return {callback: resp};
+  },
+  extendId: function (config = {}, consentData, storedId) {
+    logInfo('User ID - stored id ' + storedId);
+    const configParams = (config && config.params) || {};
+
+    if (typeof configParams.endpoint !== 'string') {
+      logWarn('User ID - merkleId submodule endpoint string is not defined');
+      configParams.endpoint = ID_URL;
+    }
+
+    if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+      logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
     }
 
     if (typeof configParams.sv_domain !== 'string') {
-      utils.logError('User ID - merkleId submodule requires a valid sv_domain string to be defined');
-      return;
+      configParams.sv_domain = merkleIdSubmodule.findRootDomain();
     }
 
-    if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
-      utils.logError('User ID - merkleId submodule does not currently handle consent strings');
-      return;
+    const configStorage = (config && config.storage) || {};
+    if (configStorage && configStorage.refreshInSeconds && typeof configParams.refreshInSeconds === 'number') {
+      return {id: storedId};
     }
-    const url = constructUrl(configParams);
 
-    const resp = function (callback) {
-      const callbacks = {
-        success: response => {
-          let responseObj;
-          if (response) {
-            try {
-              responseObj = JSON.parse(response);
-              utils.logInfo('Merkle responseObj ' + JSON.stringify(responseObj));
-            } catch (error) {
-              utils.logError(error);
-            }
-          }
-          callback(responseObj);
-        },
-        error: error => {
-          utils.logError(`${MODULE_NAME}: merkleId fetch encountered an error`, error);
-          callback();
+    let refreshInSeconds = DEFAULT_REFRESH;
+    if (configParams && configParams.refreshInSeconds && typeof configParams.refreshInSeconds === 'number') {
+      refreshInSeconds = configParams.refreshInSeconds;
+      logInfo('User ID - merkleId param refreshInSeconds' + refreshInSeconds);
+    }
+
+    const storedDate = new Date(storedId.date);
+    let refreshNeeded = false;
+    if (storedDate) {
+      refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000);
+      if (refreshNeeded) {
+        logInfo('User ID - merkleId needs refreshing id');
+        const resp = generateId(configParams, configStorage);
+        return {callback: resp};
+      }
+    }
+
+    logInfo('User ID - merkleId not refreshed');
+    return {id: storedId};
+  },
+  eids: {
+    'merkleId': {
+      atype: 3,
+      getSource: function(data) {
+        if (data?.ext?.ssp) {
+          return `${data.ext.ssp}.merkleinc.com`
         }
-      };
-      ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
-    };
-    return {callback: resp};
+        return 'merkleinc.com'
+      },
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.keyID) {
+          return {
+            keyID: data.keyID
+          }
+        }
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
   }
+
 };
 
 submodule('userId', merkleIdSubmodule);

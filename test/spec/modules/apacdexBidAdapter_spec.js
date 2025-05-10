@@ -37,12 +37,13 @@ describe('ApacdexBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return false if there is no siteId param', () => {
+    it('should return false if there is no siteId or placementId param', () => {
       const bid = {
         'bidder': 'apacdex',
         'adUnitCode': 'adunit-code',
         params: {
           site_id: '1a2b3c4d5e6f1a2b3c4d',
+          placement_id: 'plcm12345678',
         },
         'mediaTypes': {
           banner: {
@@ -200,8 +201,7 @@ describe('ApacdexBidAdapter', function () {
       },
       'bidder': 'apacdex',
       'params': {
-        'siteId': '1a2b3c4d5e6f1a2b3c4d',
-        'geo': { 'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60 }
+        'siteId': '1a2b3c4d5e6f1a2b3c4d'
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
@@ -218,15 +218,6 @@ describe('ApacdexBidAdapter', function () {
         'uids': [{
           'id': '2ae366c2-2576-45e5-bd21-72ed10598f17',
           'atype': 1
-        }]
-      }, {
-        'source': 'sharedid.org',
-        'uids': [{
-          'id': '01EZXQDVAPER4KE1VBS29XKV4Z',
-          'atype': 1,
-          'ext': {
-            'third': '01EZXQDVAPER4KE1VBS29XKV4Z'
-          }
         }]
       }],
     },
@@ -260,14 +251,14 @@ describe('ApacdexBidAdapter', function () {
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
     })
 
     it('should return a properly formatted request with GDPR applies set to true', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
@@ -276,7 +267,7 @@ describe('ApacdexBidAdapter', function () {
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
@@ -296,7 +287,7 @@ describe('ApacdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
@@ -316,7 +307,7 @@ describe('ApacdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
@@ -328,10 +319,6 @@ describe('ApacdexBidAdapter', function () {
     it('should return a properly formatted request with eids defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids)
-    });
-    it('should return a properly formatted request with geo defined', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.geo).to.deep.equal(bidRequest[0].params.geo)
     });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -392,7 +379,7 @@ describe('ApacdexBidAdapter', function () {
   describe('.interpretResponse', function () {
     const bidRequests = {
       'method': 'POST',
-      'url': 'https://useast.quantumdex.io/auction/apacdex',
+      'url': 'https://useast.quantumdex.io/auction/pbjs',
       'withCredentials': true,
       'data': {
         'device': {
@@ -736,24 +723,6 @@ describe('ApacdexBidAdapter', function () {
         lon: 23.6712341
       };
       expect(validateGeoObject(geoObject)).to.equal(false);
-    });
-  });
-
-  describe('getDomain', function () {
-    it('should return valid domain from publisherDomain config', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: pageUrl });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return valid domain from pageUrl argument', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return undefined if pageUrl and publisherDomain not config', () => {
-      let pageUrl;
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal(pageUrl);
     });
   });
 });

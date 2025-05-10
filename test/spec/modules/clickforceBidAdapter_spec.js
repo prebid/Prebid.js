@@ -31,12 +31,12 @@ describe('ClickforceAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'someIncorrectParam': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -75,7 +75,10 @@ describe('ClickforceAdapter', function () {
       'currency': 'USD',
       'ttl': 60,
       'netRevenue': true,
-      'zone': '6682'
+      'zone': '6682',
+      'adomain': [
+        'www.example.com'
+      ]
     }];
 
     let response1 = [{
@@ -116,6 +119,11 @@ describe('ClickforceAdapter', function () {
       'ttl': 60,
       'ad': '<!-- test creative -->',
       'mediaType': 'banner',
+      'meta': {
+        'advertiserDomains': [
+          'www.example.com'
+        ]
+      }
     }];
 
     let expectedResponse1 = [{
@@ -144,6 +152,9 @@ describe('ClickforceAdapter', function () {
         },
         'clickUrl': 'cu',
         'impressionTrackers': ['iu']
+      },
+      'meta': {
+        'advertiserDomains': []
       }
     }];
 

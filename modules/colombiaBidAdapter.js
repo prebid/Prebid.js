@@ -14,7 +14,12 @@ export const spec = {
     return !!(bid.params.placementId);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    return validBidRequests.map(bidRequest => {
+    if (validBidRequests.length === 0) {
+      return [];
+    }
+    let payloadArr = []
+    let ctr = 1;
+    validBidRequests = validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
       const sizes = utils.parseSizesInput(bidRequest.sizes)[0];
       const width = sizes.split('x')[0];
@@ -22,10 +27,12 @@ export const spec = {
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
       const bidId = bidRequest.bidId;
-      const referrer = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
-      const payload = {
+      const referrer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : '';
+      let mediaTypes = {}
+      let payload = {
         v: 'hb1',
         p: placementId,
+        pos: '~' + ctr,
         w: width,
         h: height,
         cb: cb,
@@ -33,48 +40,66 @@ export const spec = {
         uid: bidId,
         t: 'i',
         d: HOST_NAME,
+        fpc: params.fpc,
+        _u: window.location.href,
+        mediaTypes: Object.assign({}, mediaTypes, bidRequest.mediaTypes)
       };
-      return {
-        method: 'POST',
-        url: ENDPOINT_URL,
-        data: payload,
+      if (params.keywords) payload.keywords = params.keywords;
+      if (params.category) payload.cat = params.category;
+      if (params.pageType) payload.pgt = params.pageType;
+      if (params.incognito) payload.ic = params.incognito;
+      if (params.dsmi) payload.smi = params.dsmi;
+      if (params.optout) payload.out = params.optout;
+      if (bidRequest && bidRequest.hasOwnProperty('ortb2Imp') && bidRequest.ortb2Imp.hasOwnProperty('ext')) {
+        payload.ext = bidRequest.ortb2Imp.ext;
+        if (bidRequest.ortb2Imp.ext.hasOwnProperty('gpid')) payload.pubAdCode = bidRequest.ortb2Imp.ext.gpid.split('#')[0];
       }
+      payloadArr.push(payload);
+      ctr++;
     });
+    return [{
+      method: 'POST',
+      url: ENDPOINT_URL,
+      data: payloadArr,
+    }]
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-    const response = serverResponse.body;
-    const crid = response.creativeId || 0;
-    const width = response.width || 0;
-    const height = response.height || 0;
-    let cpm = response.cpm || 0;
-    if (width == 300 && height == 250) {
-      cpm = cpm * 0.2;
-    }
-    if (width == 320 && height == 50) {
-      cpm = cpm * 0.55;
-    }
-    if (cpm <= 0) {
+    const res = serverResponse.body || serverResponse;
+    if (!res || res.length === 0) {
       return bidResponses;
     }
-    if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
-      const dealId = response.dealid || '';
-      const currency = response.currency || 'USD';
-      const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
-      const bidResponse = {
-        requestId: bidRequest.data.uid,
-        cpm: cpm,
-        width: response.width,
-        height: response.height,
-        creativeId: crid,
-        dealId: dealId,
-        currency: currency,
-        netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
-        referrer: bidRequest.data.r,
-        ad: response.ad
-      };
-      bidResponses.push(bidResponse);
+    try {
+      res.forEach(response => {
+        const crid = response.creativeId || 0;
+        const width = response.width || 0;
+        const height = response.height || 0;
+        let cpm = response.cpm || 0;
+        if (cpm <= 0) {
+          return bidResponses;
+        }
+        if (width !== 0 && height !== 0 && cpm !== 0 && crid !== 0) {
+          const dealId = response.dealid || '';
+          const currency = response.currency || 'USD';
+          const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
+          const bidResponse = {
+            requestId: response.requestId,
+            cpm: cpm.toFixed(2),
+            width: response.width,
+            height: response.height,
+            creativeId: crid,
+            dealId: dealId,
+            currency: currency,
+            netRevenue: netRevenue,
+            ttl: config.getConfig('_bidderTimeout') || 300,
+            referrer: bidRequest.data.r,
+            ad: response.ad
+          };
+          bidResponses.push(bidResponse);
+        }
+      });
+    } catch (error) {
+      utils.logError(error);
     }
     return bidResponses;
   }

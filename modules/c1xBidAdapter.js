@@ -1,10 +1,14 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
-import { userSync } from '../src/userSync.js';
+import { logInfo, logError } from '../src/utils.js';
+import { BANNER } from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'c1x';
-const URL = 'https://ht.c1exchange.com/ht';
-const PIXEL_ENDPOINT = 'https://px.c1exchange.com/pubpixel/';
+const URL = 'https://hb-stg.c1exchange.com/ht';
+// const PIXEL_ENDPOINT = '//px.c1exchange.com/pubpixel/';
 const LOG_MSG = {
   invalidBid: 'C1X: [ERROR] bidder returns an invalid bid',
   noSite: 'C1X: [ERROR] no site id supplied',
@@ -19,35 +23,49 @@ const LOG_MSG = {
 
 export const c1xAdapter = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
 
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   // check the bids sent to c1x bidder
-  isBidRequestValid: function(bid) {
-    const siteId = bid.params.siteId || '';
-    if (!siteId) {
-      utils.logError(LOG_MSG.noSite);
+  isBidRequestValid: function (bid) {
+    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+      return false;
     }
-    return !!(bid.adUnitCode && siteId);
+    if (typeof bid.params.placementId === 'undefined') {
+      return false;
+    }
+    return true;
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function (validBidRequests, bidderRequest) {
     let payload = {};
     let tagObj = {};
-    let pixelUrl = '';
-    const adunits = bidRequests.length;
+    let bidRequest = [];
+    const adunits = validBidRequests.length;
     const rnd = new Date().getTime();
-    const c1xTags = bidRequests.map(bidToTag);
-    const bidIdTags = bidRequests.map(bidToShortTag); // include only adUnitCode and bidId from request obj
+    const c1xTags = validBidRequests.map(bidToTag);
+    const bidIdTags = validBidRequests.map(bidToShortTag); // include only adUnitCode and bidId from request obj
 
     // flattened tags in a tag object
     tagObj = c1xTags.reduce((current, next) => Object.assign(current, next));
-    const pixelId = tagObj.pixelId;
 
     payload = {
       adunits: adunits.toString(),
       rnd: rnd.toString(),
       response: 'json',
       compress: 'gzip'
-    }
+    };
 
     // for GDPR support
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -56,28 +74,19 @@ export const c1xAdapter = {
       ;
     }
 
-    if (pixelId) {
-      pixelUrl = PIXEL_ENDPOINT + pixelId;
-      if (payload.consent_required) {
-        pixelUrl += '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-        pixelUrl += '&consent=' + encodeURIComponent(bidderRequest.gdprConsent.consentString || '');
-      }
-      userSync.registerSync('image', BIDDER_CODE, pixelUrl);
-    }
-
     Object.assign(payload, tagObj);
-
     let payloadString = stringifyPayload(payload);
     // ServerRequest object
-    return {
+    bidRequest.push({
       method: 'GET',
       url: URL,
       data: payloadString,
       bids: bidIdTags
-    };
+    });
+    return bidRequest;
   },
 
-  interpretResponse: function(serverResponse, requests) {
+  interpretResponse: function (serverResponse, requests) {
     serverResponse = serverResponse.body;
     requests = requests.bids || [];
     const currency = 'USD';
@@ -86,15 +95,17 @@ export const c1xAdapter = {
 
     if (!serverResponse || serverResponse.error) {
       let errorMessage = serverResponse.error;
-      utils.logError(LOG_MSG.invalidBid + errorMessage);
+      logError(LOG_MSG.invalidBid + errorMessage);
       return bidResponses;
     } else {
       serverResponse.forEach(bid => {
+        logInfo(bid)
         if (bid.bid) {
           if (bid.bidType === 'NET_BID') {
             netRevenue = !netRevenue;
           }
           const curBid = {
+            requestId: bid.bidId,
             width: bid.width,
             height: bid.height,
             cpm: bid.cpm,
@@ -105,22 +116,27 @@ export const c1xAdapter = {
             netRevenue: netRevenue
           };
 
+          if (bid.dealId) {
+            curBid['dealId'] = bid.dealId
+          }
+
           for (let i = 0; i < requests.length; i++) {
             if (bid.adId === requests[i].adUnitCode) {
               curBid.requestId = requests[i].bidId;
             }
           }
-          utils.logInfo(LOG_MSG.bidWin + bid.adId + ' size: ' + curBid.width + 'x' + curBid.height);
+          logInfo(LOG_MSG.bidWin + bid.adId + ' size: ' + curBid.width + 'x' + curBid.height);
           bidResponses.push(curBid);
         } else {
           // no bid
-          utils.logInfo(LOG_MSG.noBid + bid.adId);
+          logInfo(LOG_MSG.noBid + bid.adId);
         }
       });
     }
 
     return bidResponses;
   }
+
 }
 
 function bidToTag(bid, index) {
@@ -128,20 +144,20 @@ function bidToTag(bid, index) {
   const adIndex = 'a' + (index + 1).toString(); // ad unit id for c1x
   const sizeKey = adIndex + 's';
   const priceKey = adIndex + 'p';
+  const dealKey = adIndex + 'd';
   // TODO: Multiple Floor Prices
 
   const sizesArr = bid.sizes;
-  const floorPriceMap = bid.params.floorPriceMap || '';
-  tag['site'] = bid.params.siteId || '';
+  const floorPriceMap = getBidFloor(bid);
 
-  // prevent pixelId becoming undefined when publishers don't fill this param in ad units they have on the same page
-  if (bid.params.pixelId) {
-    tag['pixelId'] = bid.params.pixelId
+  const dealId = bid.params.dealId || '';
+
+  if (dealId) {
+    tag[dealKey] = dealId;
   }
 
   tag[adIndex] = bid.adUnitCode;
   tag[sizeKey] = sizesArr.reduce((prev, current) => prev + (prev === '' ? '' : ',') + current.join('x'), '');
-
   const newSizeArr = tag[sizeKey].split(',');
   if (floorPriceMap) {
     newSizeArr.forEach(size => {
@@ -157,22 +173,41 @@ function bidToTag(bid, index) {
   return tag;
 }
 
+function getBidFloor(bidRequest) {
+  let floorInfo = {};
+
+  if (typeof bidRequest.getFloor === 'function') {
+    floorInfo = bidRequest.getFloor({
+      currency: 'USD',
+      mediaType: 'banner',
+      size: '*',
+    });
+  }
+
+  let floor =
+    floorInfo?.floor ||
+    bidRequest.params.bidfloor ||
+    bidRequest.params.floorPriceMap ||
+    0;
+
+  return floor;
+}
+
 function bidToShortTag(bid) {
   const tag = {};
   tag.adUnitCode = bid.adUnitCode;
   tag.bidId = bid.bidId;
-
   return tag;
 }
 
 function stringifyPayload(payload) {
-  let payloadString = '';
-  payloadString = JSON.stringify(payload).replace(/":"|","|{"|"}/g, (foundChar) => {
-    if (foundChar == '":"') return '=';
-    else if (foundChar == '","') return '&';
-    else return '';
-  });
-  return payloadString;
+  let payloadString = [];
+  for (var key in payload) {
+    if (payload.hasOwnProperty(key)) {
+      payloadString.push(key + '=' + payload[key]);
+    }
+  }
+  return payloadString.join('&');
 }
 
 registerBidder(c1xAdapter);

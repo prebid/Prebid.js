@@ -1,5 +1,7 @@
-import * as utils from '../src/utils.js';
+import { inIframe, logError, logMessage, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';
@@ -15,7 +17,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    const isiframe = utils.inIframe();
+    const isiframe = inIframe();
     const screenSize = getClientDimensions();
     const docSize = getDocumentDimensions();
 
@@ -24,7 +26,7 @@ export const spec = {
       const requestUrl = bidderParams.endpointdom || DEFAULT_URL;
       let pubsubid = bidderParams.pubsubid || '';
       if (pubsubid && pubsubid.length > 32) {
-        utils.logError('Bidder param \'pubsubid\' should be not more than 32 chars.');
+        logError('Bidder param \'pubsubid\' should be not more than 32 chars.');
         pubsubid = '';
       }
       const pubcontainerid = bidderParams.pubcontainerid;
@@ -35,13 +37,13 @@ export const spec = {
         x: framePos[0],
         y: framePos[1],
       } : {
-        x: adUnitElement && adUnitElement.getBoundingClientRect().x,
-        y: adUnitElement && adUnitElement.getBoundingClientRect().y,
+        x: adUnitElement && getBoundingClientRect(adUnitElement).x,
+        y: adUnitElement && getBoundingClientRect(adUnitElement).y,
       };
 
       const bidrequest = {
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         adunitId: bidRequest.adUnitCode,
         pubid: bidderParams.pubid,
         placementid: bidderParams.placementid || '',
@@ -57,7 +59,7 @@ export const spec = {
       try {
         windowTop = window.top;
       } catch (e) {
-        utils.logMessage(e);
+        logMessage(e);
         windowTop = window;
       }
 
@@ -66,12 +68,13 @@ export const spec = {
         url: requestUrl,
         options: {withCredentials: true},
         data: {
-          gdpr: !!utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
-          gdpr_cs: utils.deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
-          usp: !!utils.deepAccess(bidderRequest, 'uspConsent', false),
-          usp_cs: utils.deepAccess(bidderRequest, 'uspConsent', ''),
-          topLevelUrl: utils.deepAccess(bidderRequest, 'refererInfo.referer', ''),
-          refererUrl: windowTop.document.referrer,
+          gdpr: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
+          gdpr_cs: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
+          usp: !!deepAccess(bidderRequest, 'uspConsent', false),
+          usp_cs: deepAccess(bidderRequest, 'uspConsent', ''),
+          topLevelUrl: deepAccess(bidderRequest, 'refererInfo.page', ''),
+          // TODO: does the fallback make sense here?
+          refererUrl: deepAccess(bidderRequest, 'refererInfo.ref', window.document.referrer),
           isiframe,
           version: '$prebid.version$',
           ExtUserIDs: bidRequest.userId,
@@ -122,14 +125,14 @@ export const spec = {
       }
       return bidResponses;
     } catch (err) {
-      utils.logError(err);
+      logError(err);
     }
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
-    const uspApplies = !!utils.deepAccess(usPrivacy, 'uspConsent', false);
-    const uspString = utils.deepAccess(usPrivacy, 'uspConsent', '');
+    const uspApplies = !!deepAccess(usPrivacy, 'uspConsent', false);
+    const uspString = deepAccess(usPrivacy, 'uspConsent', '');
     gdprConsent = gdprConsent || {
       gdprApplies: false, consentString: '',
     };
@@ -197,7 +200,7 @@ function getIsHidden(elem) {
     } catch (o) {
       return false;
     }
-  } while ((m < 250) && (lastElem != null) && (elemHidden === false))
+  } while ((m < 250) && (lastElem != null) && (elemHidden === false));
   return elemHidden;
 }
 
@@ -207,8 +210,7 @@ function isVisible(element) {
 
 function getClientDimensions() {
   try {
-    const t = window.top.innerWidth || window.top.document.documentElement.clientWidth || window.top.document.body.clientWidth;
-    const e = window.top.innerHeight || window.top.document.documentElement.clientHeight || window.top.document.body.clientHeight;
+    const { width: t, height: e } = getViewportSize();
     return [Math.round(t), Math.round(e)];
   } catch (i) {
     return [0, 0];
@@ -241,8 +243,8 @@ function getFramePos() {
       if (m > 1) {
         t = t.parent
       }
-      frmLeft = frmLeft + t.frameElement.getBoundingClientRect().left;
-      frmTop = frmTop + t.frameElement.getBoundingClientRect().top;
+      frmLeft = frmLeft + getBoundingClientRect(t.frameElement).left;
+      frmTop = frmTop + getBoundingClientRect(t.frameElement).top;
     } catch (o) { /* keep looping */
     }
   } while ((m < 100) && (t.parent !== t.self))

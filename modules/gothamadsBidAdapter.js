@@ -1,7 +1,13 @@
+import { deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
@@ -68,20 +74,15 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
-
     let winTop = window;
     let location;
-    try {
-      location = new URL(bidderRequest.refererInfo.referer)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      utils.logMessage(e);
-    };
-
+    location = bidderRequest?.refererInfo ?? null;
     let bids = [];
     for (let bidRequest of validBidRequests) {
       let impObject = prepareImpObject(bidRequest);
@@ -95,11 +96,11 @@ export const spec = {
           language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
-          page: location.pathname,
-          host: location.host
+          page: location?.page,
+          host: location?.domain
         },
         source: {
-          tid: bidRequest.transactionId
+          tid: bidderRequest?.ortb2?.source?.tid,
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -110,12 +111,12 @@ export const spec = {
       };
 
       if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
-        utils.deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
-        utils.deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
+        deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
+        deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
       }
 
       if (bidRequest.uspConsent !== undefined) {
-        utils.deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
+        deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
       }
 
       bids.push(data)
@@ -134,7 +135,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
-    if (!serverResponse || !serverResponse.body) return []
+    if (!serverResponse || !serverResponse.body) return [];
     let GothamAdsResponse = serverResponse.body;
 
     let bids = [];
@@ -186,7 +187,7 @@ export const spec = {
  * @returns {boolean}
  */
 const checkRequestType = (bidRequest, type) => {
-  return (typeof utils.deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
+  return (typeof deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
 }
 
 const parseNative = admObject => {
@@ -219,7 +220,7 @@ const parseNative = admObject => {
 
 const prepareImpObject = (bidRequest) => {
   let impObject = {
-    id: bidRequest.transactionId,
+    id: bidRequest.bidId,
     secure: 1,
     ext: {
       placementId: bidRequest.params.placementId
@@ -242,11 +243,12 @@ const prepareImpObject = (bidRequest) => {
 
 const addNativeParameters = bidRequest => {
   let impObject = {
-    id: bidRequest.transactionId,
+    // TODO: this is not an "impObject", and `id` is not part of the ORTB native spec
+    id: bidRequest.bidId,
     ver: NATIVE_VERSION,
   };
 
-  const assets = utils._map(bidRequest.mediaTypes.native, (bidParams, key) => {
+  const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -268,7 +270,7 @@ const addNativeParameters = bidRequest => {
         hmin = sizes[1];
       }
 
-      asset[props.name] = {}
+      asset[props.name] = {};
 
       if (bidParams.len) asset[props.name]['len'] = bidParams.len;
       if (props.type) asset[props.name]['type'] = props.type;
@@ -300,7 +302,7 @@ const parseSizes = (bid, mediaType) => {
         mediaTypes.video.w,
         mediaTypes.video.h
       ];
-    } else if (Array.isArray(utils.deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
+    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
       size = bid.mediaTypes.video.playerSize[0];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
@@ -313,7 +315,7 @@ const parseSizes = (bid, mediaType) => {
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
     sizes = bid.sizes
   } else {
-    utils.logWarn('no sizes are setup or found');
+    logWarn('no sizes are setup or found');
   }
 
   return sizes
@@ -321,7 +323,7 @@ const parseSizes = (bid, mediaType) => {
 
 const addVideoParameters = (bidRequest) => {
   let videoObj = {};
-  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
+  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
 
   for (let param of supportParamsList) {
     if (bidRequest.mediaTypes.video[param] !== undefined) {

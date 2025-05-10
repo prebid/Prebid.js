@@ -1,9 +1,11 @@
 import concertAnalytics from 'modules/concertAnalyticsAdapter.js';
 import { expect } from 'chai';
+import {expectEvents} from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
+
 const sinon = require('sinon');
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('ConcertAnalyticsAdapter', function() {
   let sandbox;
@@ -46,9 +48,7 @@ describe('ConcertAnalyticsAdapter', function() {
 
     it('should catch all events', function() {
       sandbox.spy(concertAnalytics, 'track');
-
-      fireBidEvents(events);
-      sandbox.assert.callCount(concertAnalytics.track, 5);
+      expectEvents().to.beTrackedBy(concertAnalytics.track);
     });
 
     it('should report data for BID_RESPONSE, BID_WON events', function() {
@@ -148,10 +148,10 @@ describe('ConcertAnalyticsAdapter', function() {
   }
 
   function fireBidEvents(events) {
-    events.emit(constants.EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits});
-    events.emit(constants.EVENTS.BID_REQUESTED, {bidder: 'concert'});
-    events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
-    events.emit(constants.EVENTS.AUCTION_END, {});
-    events.emit(constants.EVENTS.BID_WON, bidWon);
+    events.emit(EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits });
+    events.emit(EVENTS.BID_REQUESTED, { bidder: 'concert' });
+    events.emit(EVENTS.BID_RESPONSE, bidResponse);
+    events.emit(EVENTS.AUCTION_END, {});
+    events.emit(EVENTS.BID_WON, bidWon);
   }
 });

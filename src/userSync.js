@@ -1,7 +1,19 @@
-import * as utils from './utils.js';
+import {
+  deepClone, isPlainObject, logError, shuffle, logMessage, triggerPixel, insertUserSyncIframe, isArray,
+  logWarn, isStr, isSafariBrowser
+} from './utils.js';
 import { config } from './config.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {includes} from './polyfill.js';
 import { getCoreStorageManager } from './storageManager.js';
+import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
+import {ACTIVITY_SYNC_USER} from './activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_SYNC_TYPE, ACTIVITY_PARAM_SYNC_URL
+} from './activities/params.js';
+import {MODULE_TYPE_BIDDER} from './activities/modules.js';
+import {activityParams} from './activities/activityParams.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
   syncEnabled: true,
@@ -13,12 +25,12 @@ export const USERSYNC_DEFAULT_CONFIG = {
   },
   syncsPerBidder: 5,
   syncDelay: 3000,
-  auctionDelay: 0
+  auctionDelay: 500
 };
 
 // Set userSync default values
 config.setDefaults({
-  'userSync': utils.deepClone(USERSYNC_DEFAULT_CONFIG)
+  'userSync': deepClone(USERSYNC_DEFAULT_CONFIG)
 });
 
 const storage = getCoreStorageManager('usersync');
@@ -26,10 +38,10 @@ const storage = getCoreStorageManager('usersync');
 /**
  * Factory function which creates a new UserSyncPool.
  *
- * @param {UserSyncDependencies} userSyncDependencies Configuration options and dependencies which the
+ * @param {} deps Configuration options and dependencies which the
  *   UserSync object needs in order to behave properly.
  */
-export function newUserSync(userSyncDependencies) {
+export function newUserSync(deps) {
   let publicApi = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
@@ -47,14 +59,14 @@ export function newUserSync(userSyncDependencies) {
   };
 
   // Use what is in config by default
-  let usConfig = userSyncDependencies.config;
+  let usConfig = deps.config;
   // Update if it's (re)set
   config.getConfig('userSync', (conf) => {
     // Added this logic for https://github.com/prebid/Prebid.js/issues/4864
     // if userSync.filterSettings does not contain image/all configs, merge in default image config to ensure image pixels are fired
     if (conf.userSync) {
       let fs = conf.userSync.filterSettings;
-      if (utils.isPlainObject(fs)) {
+      if (isPlainObject(fs)) {
         if (!fs.image && !fs.all) {
           conf.userSync.filterSettings.image = {
             bidders: '*',
@@ -65,6 +77,19 @@ export function newUserSync(userSyncDependencies) {
     }
 
     usConfig = Object.assign(usConfig, conf.userSync);
+  });
+
+  deps.regRule(ACTIVITY_SYNC_USER, 'userSync config', (params) => {
+    if (!usConfig.syncEnabled) {
+      return {allow: false, reason: 'syncs are disabled'}
+    }
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_BIDDER) {
+      const syncType = params[ACTIVITY_PARAM_SYNC_TYPE];
+      const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME];
+      if (!publicApi.canBidderRegisterSync(syncType, bidder)) {
+        return {allow: false, reason: `${syncType} syncs are not enabled for ${bidder}`}
+      }
+    }
   });
 
   /**
@@ -86,17 +111,17 @@ export function newUserSync(userSyncDependencies) {
    * @private
    */
   function fireSyncs() {
-    if (!usConfig.syncEnabled || !userSyncDependencies.browserSupportsCookies) {
+    if (!usConfig.syncEnabled || !deps.browserSupportsCookies) {
       return;
     }
 
     try {
-      // Image pixels
-      fireImagePixels();
       // Iframe syncs
       loadIframes();
+      // Image pixels
+      fireImagePixels();
     } catch (e) {
-      return utils.logError('Error firing user syncs', e);
+      return logError('Error firing user syncs', e);
     }
     // Reset the user sync queue
     queue = getDefaultQueue();
@@ -106,10 +131,7 @@ export function newUserSync(userSyncDependencies) {
     // Randomize the order of the pixels before firing
     // This is to avoid giving any bidder who has registered multiple syncs
     // any preferential treatment and balancing them out
-    utils.shuffle(queue).forEach((sync) => {
-      fn(sync);
-      hasFiredBidder.add(sync[0]);
-    });
+    shuffle(queue).forEach(fn);
   }
 
   /**
@@ -123,9 +145,9 @@ export function newUserSync(userSyncDependencies) {
     }
     forEachFire(queue.image, (sync) => {
       let [bidderName, trackingPixelUrl] = sync;
-      utils.logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
+      logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
       // Create image object and add the src url
-      utils.triggerPixel(trackingPixelUrl);
+      triggerPixel(trackingPixelUrl);
     });
   }
 
@@ -138,11 +160,21 @@ export function newUserSync(userSyncDependencies) {
     if (!(permittedPixels.iframe)) {
       return;
     }
+
     forEachFire(queue.iframe, (sync) => {
       let [bidderName, iframeUrl] = sync;
-      utils.logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
+      logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
       // Insert iframe into DOM
-      utils.insertUserSyncIframe(iframeUrl);
+      insertUserSyncIframe(iframeUrl);
+      // for a bidder, if iframe sync is present then remove image pixel
+      removeImagePixelsForBidder(queue, bidderName);
+    });
+  }
+
+  function removeImagePixelsForBidder(queue, iframeSyncBidderName) {
+    queue.image = queue.image.filter(imageSync => {
+      let imageSyncBidderName = imageSync[0];
+      return imageSyncBidderName !== iframeSyncBidderName
     });
   }
 
@@ -150,8 +182,8 @@ export function newUserSync(userSyncDependencies) {
    * @function incrementAdapterBids
    * @summary Increment the count of user syncs queue for the adapter
    * @private
-   * @params {object} numAdapterBids The object contain counts for all adapters
-   * @params {string} bidder The name of the bidder adding a sync
+   * @param {object} numAdapterBids The object contain counts for all adapters
+   * @param {string} bidder The name of the bidder adding a sync
    * @returns {object} The updated version of numAdapterBids
    */
   function incrementAdapterBids(numAdapterBids, bidder) {
@@ -167,37 +199,42 @@ export function newUserSync(userSyncDependencies) {
    * @function registerSync
    * @summary Add sync for this bidder to a queue to be fired later
    * @public
-   * @params {string} type The type of the sync including image, iframe
-   * @params {string} bidder The name of the adapter. e.g. "rubicon"
-   * @params {string} url Either the pixel url or iframe url depending on the type
-
+   * @param {string} type The type of the sync including image, iframe
+   * @param {string} bidder The name of the adapter. e.g. "rubicon"
+   * @param {string} url Either the pixel url or iframe url depending on the type
    * @example <caption>Using Image Sync</caption>
    * // registerSync(type, adapter, pixelUrl)
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
    */
   publicApi.registerSync = (type, bidder, url) => {
     if (hasFiredBidder.has(bidder)) {
-      return utils.logMessage(`already fired syncs for "${bidder}", ignoring registerSync call`);
+      return logMessage(`already fired syncs for "${bidder}", ignoring registerSync call`);
     }
-    if (!usConfig.syncEnabled || !utils.isArray(queue[type])) {
-      return utils.logWarn(`User sync type "${type}" not supported`);
+    if (!usConfig.syncEnabled || !isArray(queue[type])) {
+      return logWarn(`User sync type "${type}" not supported`);
     }
     if (!bidder) {
-      return utils.logWarn(`Bidder is required for registering sync`);
+      return logWarn(`Bidder is required for registering sync`);
     }
     if (usConfig.syncsPerBidder !== 0 && Number(numAdapterBids[bidder]) >= usConfig.syncsPerBidder) {
-      return utils.logWarn(`Number of user syncs exceeded for "${bidder}"`);
+      return logWarn(`Number of user syncs exceeded for "${bidder}"`);
     }
 
-    const canBidderRegisterSync = publicApi.canBidderRegisterSync(type, bidder);
-    if (!canBidderRegisterSync) {
-      return utils.logWarn(`Bidder "${bidder}" not permitted to register their "${type}" userSync pixels.`);
+    if (deps.isAllowed(ACTIVITY_SYNC_USER, activityParams(MODULE_TYPE_BIDDER, bidder, {
+      [ACTIVITY_PARAM_SYNC_TYPE]: type,
+      [ACTIVITY_PARAM_SYNC_URL]: url
+    }))) {
+      // the bidder's pixel has passed all checks and is allowed to register
+      queue[type].push([bidder, url]);
+      numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
     }
-
-    // the bidder's pixel has passed all checks and is allowed to register
-    queue[type].push([bidder, url]);
-    numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
   };
+
+  /**
+   * Mark a bidder as done with its user syncs - no more will be accepted from them in this session.
+   * @param {string} bidderCode
+   */
+  publicApi.bidderDone = hasFiredBidder.add.bind(hasFiredBidder);
 
   /**
    * @function shouldBidderBeBlocked
@@ -206,7 +243,7 @@ export function newUserSync(userSyncDependencies) {
    * @param {string} type The type of the sync; either image or iframe
    * @param {string} bidder The name of the adapter. e.g. "rubicon"
    * @returns {boolean} true => bidder is not allowed to register; false => bidder can register
-    */
+   */
   function shouldBidderBeBlocked(type, bidder) {
     let filterConfig = usConfig.filterSettings;
 
@@ -238,7 +275,7 @@ export function newUserSync(userSyncDependencies) {
    */
   function isFilterConfigValid(filterConfig, type) {
     if (filterConfig.all && filterConfig[type]) {
-      utils.logWarn(`Detected presence of the "filterSettings.all" and "filterSettings.${type}" in userSync config.  You cannot mix "all" with "iframe/image" configs; they are mutually exclusive.`);
+      logWarn(`Detected presence of the "filterSettings.all" and "filterSettings.${type}" in userSync config.  You cannot mix "all" with "iframe/image" configs; they are mutually exclusive.`);
       return false;
     }
 
@@ -255,12 +292,12 @@ export function newUserSync(userSyncDependencies) {
     let biddersField = activeConfig.bidders;
 
     if (filterField && filterField !== 'include' && filterField !== 'exclude') {
-      utils.logWarn(`UserSync "filterSettings.${activeConfigName}.filter" setting '${filterField}' is not a valid option; use either 'include' or 'exclude'.`);
+      logWarn(`UserSync "filterSettings.${activeConfigName}.filter" setting '${filterField}' is not a valid option; use either 'include' or 'exclude'.`);
       return false;
     }
 
-    if (biddersField !== '*' && !(Array.isArray(biddersField) && biddersField.length > 0 && biddersField.every(bidderInList => utils.isStr(bidderInList) && bidderInList !== '*'))) {
-      utils.logWarn(`Detected an invalid setup in userSync "filterSettings.${activeConfigName}.bidders"; use either '*' (to represent all bidders) or an array of bidders.`);
+    if (biddersField !== '*' && !(Array.isArray(biddersField) && biddersField.length > 0 && biddersField.every(bidderInList => isStr(bidderInList) && bidderInList !== '*'))) {
+      logWarn(`Detected an invalid setup in userSync "filterSettings.${activeConfigName}.bidders"; use either '*' (to represent all bidders) or an array of bidders.`);
       return false;
     }
 
@@ -271,7 +308,7 @@ export function newUserSync(userSyncDependencies) {
    * @function syncUsers
    * @summary Trigger all the user syncs based on publisher-defined timeout
    * @public
-   * @params {int} timeout The delay in ms before syncing data - default 0
+   * @param {number} timeout The delay in ms before syncing data - default 0
    */
   publicApi.syncUsers = (timeout = 0) => {
     if (timeout) {
@@ -298,30 +335,29 @@ export function newUserSync(userSyncDependencies) {
       }
     }
     return true;
-  }
+  };
   return publicApi;
 }
 
-const browserSupportsCookies = !utils.isSafariBrowser() && storage.cookiesAreEnabled();
-
-export const userSync = newUserSync({
+export const userSync = newUserSync(Object.defineProperties({
   config: config.getConfig('userSync'),
-  browserSupportsCookies: browserSupportsCookies
-});
-
-/**
- * @typedef {Object} UserSyncDependencies
- *
- * @property {UserSyncConfig} config
- * @property {boolean} browserSupportsCookies True if the current browser supports cookies, and false otherwise.
- */
+  isAllowed: isActivityAllowed,
+  regRule: registerActivityControl,
+}, {
+  browserSupportsCookies: {
+    get: function() {
+      // call storage lazily to give time for consent data to be available
+      return !isSafariBrowser() && storage.cookiesAreEnabled();
+    }
+  }
+}));
 
 /**
  * @typedef {Object} UserSyncConfig
  *
  * @property {boolean} enableOverride
  * @property {boolean} syncEnabled
- * @property {int} syncsPerBidder
+ * @property {number} syncsPerBidder
  * @property {string[]} enabledBidders
  * @property {Object} filterSettings
  */

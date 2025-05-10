@@ -1,54 +1,48 @@
 # Overview
 
-```
-Module Name: AdMatic Bidder Adapter
-Module Type: Bidder Adapter
-Maintainer: prebid@admatic.com.tr
-```
+**Module Name**: Admatic Bidder Adapter  
+**Module Type**: Bidder Adapter  
+**Maintainer**: prebid@admatic.com.tr
 
 # Description
 
-Module that connects to AdMatic demand sources
+Use `admatic` as bidder.
 
-# Test Parameters
+`networkId` is required and must be integer.
+
+## AdUnits configuration example
 ```
-    var adUnits = [
-        {
-            code: 'test-div',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250]],  // a display size
-                }
-            },
-            bids: [
-               {
-                   bidder: "admatic",
-                   params: {
-                        pid: 193937152158, // publisher id without "adm-pub-" prefix 
-                        wid: 104276324971, // website id
-                        priceType: 'gross', // default is net
-                        url: window.location.href || window.top.location.href //page url from js
-                    }
-               }
-           ]
-        },{
-            code: 'test-div',
-            mediaTypes: {
-                banner: {
-                    sizes: [[320, 50]],   // a mobile size
-                }
-            },
-            bids: [
-               {
-                   bidder: "admatic",
-                   params: {
-                        pid: 193937152158, // publisher id without "adm-pub-" prefix 
-                        wid: 104276324971, // website id
-                        priceType: 'gross', // default is net
-                        url: window.location.href || window.top.location.href //page url from js
-                    }
-               }
-           ]
-        }
-    ];
+    var adUnits = [{
+      code: 'your-slot_1-div', //use exactly the same code as your slot div id.
+      sizes: [[300, 250]],
+      bids: [{
+          bidder: 'admatic',
+          params: { 
+              networkId: 12345,
+              host: 'layer.serve.admatic.com.tr'
+          }
+      }]
+    },{
+      code: 'your-slot_2-div', //use exactly the same code as your slot div id.
+      sizes: [[600, 800]],
+      bids: [{
+          bidder: 'admatic',
+          params: { 
+              networkId: 12345,
+              host: 'layer.serve.admatic.com.tr'
+          }
+      }]
+    }];
+```
+
+## UserSync example
+
+```
+pbjs.setConfig({
+  userSync: {
+    iframeEnabled: true,
+    syncEnabled: true,
+    syncDelay: 1
+  }
+});
 ```

@@ -1,140 +1,113 @@
-'use strict';
-
 import * as utils from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adbutler';
+
+function getTrackingPixelsMarkup(pixelURLs) {
+  return pixelURLs
+    .map(pixelURL => `<img height="0" width="0" border="0" style="display:none;" src="${pixelURL}"/>`)
+    .join();
+}
 
 export const spec = {
   code: BIDDER_CODE,
   pageID: Math.floor(Math.random() * 10e6),
   aliases: ['divreach', 'doceree'],
+  supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: function (bid) {
+  isBidRequestValid(bid) {
     return !!(bid.params.accountID && bid.params.zoneID);
   },
 
-  buildRequests: function (validBidRequests) {
-    let i;
-    let zoneID;
-    let bidRequest;
-    let accountID;
-    let keyword;
-    let domain;
-    let requestURI;
-    let serverRequests = [];
-    let zoneCounters = {};
-    let extraParams = {};
+  buildRequests(validBidRequests) {
+    const zoneCounters = {};
 
-    for (i = 0; i < validBidRequests.length; i++) {
-      bidRequest = validBidRequests[i];
-      zoneID = utils.getBidIdParameter('zoneID', bidRequest.params);
-      accountID = utils.getBidIdParameter('accountID', bidRequest.params);
-      keyword = utils.getBidIdParameter('keyword', bidRequest.params);
-      domain = utils.getBidIdParameter('domain', bidRequest.params);
-      extraParams = utils.getBidIdParameter('extra', bidRequest.params);
+    return utils._map(validBidRequests, function (bidRequest) {
+      const zoneID = bidRequest.params?.zoneID;
 
-      if (!(zoneID in zoneCounters)) {
-        zoneCounters[zoneID] = 0;
-      }
+      zoneCounters[zoneID] ??= 0;
 
-      if (typeof domain === 'undefined' || domain.length === 0) {
-        domain = 'servedbyadbutler.com';
-      }
+      const domain = bidRequest.params?.domain ?? 'servedbyadbutler.com';
+      const adserveBase = `https://${domain}/adserve`;
+      const params = {
+        ...(bidRequest.params?.extra ?? {}),
+        ID: bidRequest.params?.accountID,
+        type: 'hbr',
+        setID: zoneID,
+        pid: spec.pageID,
+        place: zoneCounters[zoneID],
+        kw: bidRequest.params?.keyword,
+      };
 
-      requestURI = 'https://' + domain + '/adserve/;type=hbr;';
-      requestURI += 'ID=' + encodeURIComponent(accountID) + ';';
-      requestURI += 'setID=' + encodeURIComponent(zoneID) + ';';
-      requestURI += 'pid=' + encodeURIComponent(spec.pageID) + ';';
-      requestURI += 'place=' + encodeURIComponent(zoneCounters[zoneID]) + ';';
-
-      // append the keyword for targeting if one was passed in
-      if (keyword !== '') {
-        requestURI += 'kw=' + encodeURIComponent(keyword) + ';';
-      }
-
-      for (let key in extraParams) {
-        if (extraParams.hasOwnProperty(key)) {
-          let val = encodeURIComponent(extraParams[key]);
-          requestURI += `${key}=${val};`;
-        }
-      }
+      const paramsString = Object.entries(params).map(([key, value]) => `${key}=${value}`).join(';');
+      const requestURI = `${adserveBase}/;${paramsString};`;
 
       zoneCounters[zoneID]++;
-      serverRequests.push({
+
+      return {
         method: 'GET',
         url: requestURI,
         data: {},
-        bidRequest: bidRequest
-      });
-    }
-    return serverRequests;
-  },
-
-  interpretResponse: function (serverResponse, bidRequest) {
-    const bidObj = bidRequest.bidRequest;
-    let bidResponses = [];
-    let bidResponse = {};
-    let isCorrectSize = false;
-    let isCorrectCPM = true;
-    let CPM;
-    let minCPM;
-    let maxCPM;
-    let width;
-    let height;
-
-    serverResponse = serverResponse.body;
-    if (serverResponse && serverResponse.status === 'SUCCESS' && bidObj) {
-      CPM = serverResponse.cpm;
-      minCPM = utils.getBidIdParameter('minCPM', bidObj.params);
-      maxCPM = utils.getBidIdParameter('maxCPM', bidObj.params);
-      width = parseInt(serverResponse.width);
-      height = parseInt(serverResponse.height);
-
-      // Ensure response CPM is within the given bounds
-      if (minCPM !== '' && CPM < parseFloat(minCPM)) {
-        isCorrectCPM = false;
-      }
-      if (maxCPM !== '' && CPM > parseFloat(maxCPM)) {
-        isCorrectCPM = false;
-      }
-
-      // Ensure that response ad matches one of the placement sizes.
-      utils._each(utils.deepAccess(bidObj, 'mediaTypes.banner.sizes', []), function (size) {
-        if (width === size[0] && height === size[1]) {
-          isCorrectSize = true;
-        }
-      });
-      if (isCorrectCPM && isCorrectSize) {
-        bidResponse.requestId = bidObj.bidId;
-        bidResponse.bidderCode = bidObj.bidder;
-        bidResponse.creativeId = serverResponse.placement_id;
-        bidResponse.cpm = CPM;
-        bidResponse.width = width;
-        bidResponse.height = height;
-        bidResponse.ad = serverResponse.ad_code;
-        bidResponse.ad += spec.addTrackingPixels(serverResponse.tracking_pixels);
-        bidResponse.currency = 'USD';
-        bidResponse.netRevenue = true;
-        bidResponse.ttl = config.getConfig('_bidderTimeout');
-        bidResponse.referrer = utils.deepAccess(bidObj, 'refererInfo.referer');
-        bidResponses.push(bidResponse);
-      }
-    }
-    return bidResponses;
-  },
-
-  addTrackingPixels: function (trackingPixels) {
-    let trackingPixelMarkup = '';
-    utils._each(trackingPixels, function (pixelURL) {
-      let trackingPixel = '<img height="0" width="0" border="0" style="display:none;" src="';
-      trackingPixel += pixelURL;
-      trackingPixel += '">';
-
-      trackingPixelMarkup += trackingPixel;
+        bidRequest,
+      };
     });
-    return trackingPixelMarkup;
-  }
+  },
+
+  interpretResponse(serverResponse, serverRequest) {
+    const bidObj = serverRequest.bidRequest;
+    const response = serverResponse.body ?? {};
+
+    if (!bidObj || response.status !== 'SUCCESS') {
+      return [];
+    }
+
+    const width = parseInt(response.width);
+    const height = parseInt(response.height);
+
+    const sizeValid = (bidObj.mediaTypes?.banner?.sizes ?? []).some(([w, h]) => w === width && h === height);
+
+    if (!sizeValid) {
+      return [];
+    }
+
+    const cpm = response.cpm;
+    const minCPM = bidObj.params?.minCPM ?? null;
+    const maxCPM = bidObj.params?.maxCPM ?? null;
+
+    if (minCPM !== null && cpm < minCPM) {
+      return [];
+    }
+
+    if (maxCPM !== null && cpm > maxCPM) {
+      return [];
+    }
+
+    let advertiserDomains = [];
+
+    if (response.advertiser?.domain) {
+      advertiserDomains.push(response.advertiser.domain);
+    }
+
+    const bidResponse = {
+      requestId: bidObj.bidId,
+      cpm,
+      currency: 'USD',
+      width,
+      height,
+      ad: response.ad_code + getTrackingPixelsMarkup(response.tracking_pixels),
+      ttl: 360,
+      creativeId: response.placement_id,
+      netRevenue: true,
+      meta: {
+        advertiserId: response.advertiser?.id,
+        advertiserName: response.advertiser?.name,
+        advertiserDomains,
+      },
+    };
+
+    return [bidResponse];
+  },
 };
+
 registerBidder(spec);

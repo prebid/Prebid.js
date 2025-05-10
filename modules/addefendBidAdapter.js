@@ -16,17 +16,20 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let bid = {
-      v: $$PREBID_GLOBAL$$.version,
+      v: 'v' + '$prebid.version$',
       auctionId: false,
       pageId: false,
+      gdpr_applies: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true',
       gdpr_consent: bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString ? bidderRequest.gdprConsent.consentString : '',
-      referer: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the correct item here?
+      referer: bidderRequest.refererInfo.page,
       bids: [],
     };
 
     for (var i = 0; i < validBidRequests.length; i++) {
       let vb = validBidRequests[i];
       let o = vb.params;
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       bid.auctionId = vb.auctionId;
       o.bidId = vb.bidId;
       o.transactionId = vb.transactionId;

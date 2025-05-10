@@ -51,9 +51,15 @@ export function enable() {
   window.googletag = {
     _slots: [],
     _callbackMap: {},
+    _ppid: undefined,
+    cmd: [],
     pubads: function () {
       var self = this;
       return {
+        setPublisherProvidedId: function (ppid) {
+          self._ppid = ppid;
+        },
+
         getSlots: function () {
           return self._slots;
         },
@@ -89,6 +95,11 @@ export function enable() {
 
 export function disable() {
   window.googletag = undefined;
+}
+
+export function reset() {
+  disable();
+  enable();
 }
 
 enable();

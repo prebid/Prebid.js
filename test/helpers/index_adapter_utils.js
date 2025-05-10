@@ -1,3 +1,5 @@
+import { deepClone } from '../../src/utils';
+
 var AllowedAdUnits = [[728, 90], [120, 600], [300, 250], [160, 600], [336, 280], [234, 60], [300, 600], [300, 50], [320, 50], [970, 250], [300, 1050], [970, 90], [180, 150]];
 var UnsupportedAdUnits = [[700, 100], [100, 600], [300, 200], [100, 600], [300, 200], [200, 60], [900, 200], [300, 1000], [900, 90], [100, 100]];
 
@@ -117,7 +119,7 @@ exports.getExpectedIndexSlots = function(bids) {
 }
 
 function clone(x) {
-  return JSON.parse(JSON.stringify(x));
+  return deepClone(x);
 }
 
 // returns the difference(lhs, rhs), difference(rhs,lhs), and intersection(lhs, rhs) based on the object keys

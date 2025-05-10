@@ -1,21 +1,54 @@
 'use strict';
 
-import * as utils from '../src/utils.js';
+import { logWarn, deepAccess, isFn, isPlainObject, getDNT, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { Renderer } from '../src/Renderer.js';
+import { parseDomain } from '../src/refererDetection.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'tappx';
+const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.10526';
+const TAPPX_BIDDER_VERSION = '0.1.3';
 const TYPE_CNN = 'prebidjs';
-const VIDEO_SUPPORT = ['instream'];
+const LOG_PREFIX = '[TAPPX]: ';
+const VIDEO_SUPPORT = ['instream', 'outstream'];
+
+const DATA_TYPES = {
+  'NUMBER': 'number',
+  'STRING': 'string',
+  'BOOLEAN': 'boolean',
+  'ARRAY': 'array',
+  'OBJECT': 'object'
+};
+const VIDEO_CUSTOM_PARAMS = {
+  'minduration': DATA_TYPES.NUMBER,
+  'maxduration': DATA_TYPES.NUMBER,
+  'startdelay': DATA_TYPES.NUMBER,
+  'playbackmethod': DATA_TYPES.ARRAY,
+  'api': DATA_TYPES.ARRAY,
+  'protocols': DATA_TYPES.ARRAY,
+  'w': DATA_TYPES.NUMBER,
+  'h': DATA_TYPES.NUMBER,
+  'battr': DATA_TYPES.ARRAY,
+  'linearity': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
+  'minbitrate': DATA_TYPES.NUMBER,
+  'maxbitrate': DATA_TYPES.NUMBER,
+  'skip': DATA_TYPES.NUMBER
+}
 
 var hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -23,9 +56,16 @@ export const spec = {
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   */
   isBidRequestValid: function(bid) {
-    return validBasic(bid) && validMediaType(bid)
+    // bid.params.host
+    if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
+      if ((new RegExp(`^(zz.*)\\.*$`, 'i')).test(bid.params.host)) return validBasic(bid)
+      else return validBasic(bid) && validMediaType(bid)
+    } else { // This is backward compatible feature. It will be remove in the future
+      if ((new RegExp(`^(ZZ.*)\\.*$`, 'i')).test(bid.params.endpoint)) return validBasic(bid)
+      else return validBasic(bid) && validMediaType(bid)
+    }
   },
 
   /**
@@ -53,7 +93,7 @@ export const spec = {
   interpretResponse: function(serverResponse, originalRequest) {
     const responseBody = serverResponse.body;
     if (!serverResponse.body) {
-      utils.logWarn('[TAPPX]: Empty response body HTTP 204, no bids');
+      logWarn(LOG_PREFIX, 'Empty response body HTTP 204, no bids');
       return [];
     }
 
@@ -105,27 +145,27 @@ export const spec = {
 
 function validBasic(bid) {
   if (bid.params == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters.`);
+    logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters.');
     return false;
   }
 
-  if (bid.params.tappxkey == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory Tappxkey parameter.`);
+  if (!bid.params.tappxkey) {
+    logWarn(LOG_PREFIX, 'Please review the mandatory Tappxkey parameter.');
     return false;
   }
 
-  if (bid.params.host == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory Host parameter.`);
+  if (!bid.params.host) {
+    logWarn(LOG_PREFIX, 'Please review the mandatory Host parameter.');
     return false;
   }
 
-  let classicEndpoint = true
+  let classicEndpoint = true;
   if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) {
-    classicEndpoint = false
+    classicEndpoint = false;
   }
 
-  if (classicEndpoint && bid.params.endpoint == null) {
-    utils.logWarn(`[TAPPX]: Please review the mandatory endpoint Tappx parameters.`);
+  if (classicEndpoint && !bid.params.endpoint) {
+    logWarn(LOG_PREFIX, 'Please review the mandatory endpoint Tappx parameters.');
     return false;
   }
 
@@ -133,12 +173,12 @@ function validBasic(bid) {
 }
 
 function validMediaType(bid) {
-  const video = utils.deepAccess(bid, 'mediaTypes.video');
+  const video = deepAccess(bid, 'mediaTypes.video');
 
   // Video validations
-  if (typeof video != 'undefined') {
+  if (typeof video !== 'undefined') {
     if (VIDEO_SUPPORT.indexOf(video.context) === -1) {
-      utils.logWarn(`[TAPPX]: Please review the mandatory Tappx parameters for Video. Only "instream" is suported.`);
+      logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters for Video. Video context not supported.');
       return false;
     }
   }
@@ -154,7 +194,7 @@ function validMediaType(bid) {
  */
 function interpretBid(serverBid, request) {
   let bidReturned = {
-    requestId: request.bids.bidId,
+    requestId: request.bids?.bidId,
     cpm: serverBid.price,
     currency: serverBid.cur ? serverBid.cur : CUR,
     width: serverBid.w,
@@ -164,43 +204,57 @@ function interpretBid(serverBid, request) {
     netRevenue: true,
   }
 
-  if (typeof serverBid.dealId != 'undefined') { bidReturned.dealId = serverBid.dealId }
+  if (typeof serverBid.dealId !== 'undefined') { bidReturned.dealId = serverBid.dealId }
+  if (typeof serverBid.lurl != 'undefined') { bidReturned.lurl = serverBid.lurl }
+  if (typeof serverBid.nurl != 'undefined') { bidReturned.nurl = serverBid.nurl }
+  if (typeof serverBid.burl != 'undefined') { bidReturned.burl = serverBid.burl }
 
-  if (typeof request.bids.mediaTypes != 'undefined' && typeof request.bids.mediaTypes.video != 'undefined') {
+  if (typeof request.bids?.mediaTypes !== 'undefined' && typeof request.bids?.mediaTypes.video !== 'undefined') {
     bidReturned.vastXml = serverBid.adm;
     bidReturned.vastUrl = serverBid.lurl;
     bidReturned.ad = serverBid.adm;
     bidReturned.mediaType = VIDEO;
+    bidReturned.width = serverBid.w;
+    bidReturned.height = serverBid.h;
+
+    if (request.bids?.mediaTypes.video.context === 'outstream') {
+      if (!serverBid.ext.purl) {
+        logWarn(LOG_PREFIX, 'Error getting player outstream from tappx');
+        return false;
+      }
+      bidReturned.renderer = createRenderer(bidReturned, request, serverBid.ext.purl);
+    }
   } else {
     bidReturned.ad = serverBid.adm;
     bidReturned.mediaType = BANNER;
   }
 
-  if (typeof bidReturned.adomain != 'undefined' || bidReturned.adomain != null) {
-    bidReturned.meta = { advertiserDomains: request.bids.adomain };
+  if (typeof bidReturned.adomain !== 'undefined' || bidReturned.adomain !== null) {
+    bidReturned.meta = { advertiserDomains: request.bids?.adomain };
   }
 
   return bidReturned;
 }
 
 /**
-* Build and makes the request
-*
-* @param {*} validBidRequests
-* @param {*} bidderRequest
-* @return response ad
-*/
+ * Build and makes the request
+ *
+ * @param {*} validBidRequests
+ * @param {*} bidderRequest
+ * @return response ad
+ */
 function buildOneRequest(validBidRequests, bidderRequest) {
-  let hostInfo = getHostInfo(validBidRequests);
+  let hostInfo = _getHostInfo(validBidRequests);
   const ENDPOINT = hostInfo.endpoint;
   hostDomain = hostInfo.domain;
 
-  const TAPPXKEY = utils.deepAccess(validBidRequests, 'params.tappxkey');
-  const BIDFLOOR = utils.deepAccess(validBidRequests, 'params.bidfloor');
-  const BIDEXTRA = utils.deepAccess(validBidRequests, 'params.ext');
-  const bannerMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.banner');
-  const videoMediaType = utils.deepAccess(validBidRequests, 'mediaTypes.video');
-  const { refererInfo } = bidderRequest;
+  const TAPPXKEY = deepAccess(validBidRequests, 'params.tappxkey');
+  const MKTAG = deepAccess(validBidRequests, 'params.mktag');
+  const BIDFLOOR = deepAccess(validBidRequests, 'params.bidfloor');
+  const BIDEXTRA = deepAccess(validBidRequests, 'params.ext');
+  const bannerMediaType = deepAccess(validBidRequests, 'mediaTypes.banner');
+  const videoMediaType = deepAccess(validBidRequests, 'mediaTypes.video');
+  const ORTB2 = deepAccess(validBidRequests, 'ortb2');
 
   // let requests = [];
   let payload = {};
@@ -209,24 +263,44 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let api = {};
 
   // > App/Site object
-  if (utils.deepAccess(validBidRequests, 'params.app')) {
+  if (deepAccess(validBidRequests, 'params.app')) {
     let app = {};
-    app.name = utils.deepAccess(validBidRequests, 'params.app.name');
-    app.bundle = utils.deepAccess(validBidRequests, 'params.app.bundle');
-    app.domain = utils.deepAccess(validBidRequests, 'params.app.domain');
-    publisher.name = utils.deepAccess(validBidRequests, 'params.app.publisher.name');
-    publisher.domain = utils.deepAccess(validBidRequests, 'params.app.publisher.domain');
+    app.name = deepAccess(validBidRequests, 'params.app.name');
+    app.bundle = deepAccess(validBidRequests, 'params.app.bundle');
+    app.domain = deepAccess(validBidRequests, 'params.app.domain');
+    publisher.name = deepAccess(validBidRequests, 'params.app.publisher.name');
+    publisher.domain = deepAccess(validBidRequests, 'params.app.publisher.domain');
     tagid = `${app.name}_typeAdBanVid_${getOs()}`;
     payload.app = app;
-    api[0] = utils.deepAccess(validBidRequests, 'params.api') ? utils.deepAccess(validBidRequests, 'params.api') : [3, 5];
+    api[0] = deepAccess(validBidRequests, 'params.api') ? deepAccess(validBidRequests, 'params.api') : [3, 5];
   } else {
-    let site = {};
-    site.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    site.bundle = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    site.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    publisher.name = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
-    publisher.domain = (bidderRequest && refererInfo) ? utils.parseUrl(refererInfo.referer).hostname : window.location.hostname;
+    let bundle = _extractPageUrl(validBidRequests, bidderRequest);
+    let site = deepAccess(validBidRequests, 'params.site') || {};
+    site.name = bundle;
+    site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
+    site.domain = bundle;
+    try {
+      site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+    } catch (e) {
+      site.ref = bidderRequest?.refererInfo?.ref || window.document.referrer || '';
+    }
+    site.ext = {};
+    site.ext.is_amp = bidderRequest?.refererInfo?.isAmp || 0;
+    site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || '-';
+    site.ext.page_rip = bidderRequest?.refererInfo?.page || '-';
+    site.ext.page_rit = bidderRequest?.refererInfo?.topmostLocation || '-';
+    site.ext.page_wlh = window.location.href || '-';
+    publisher.name = bundle;
+    publisher.domain = bundle;
+    let sitename = document.getElementsByTagName('meta')['title'];
+    if (sitename && sitename.content) {
+      site.name = sitename.content;
+    }
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
+    let keywords = document.getElementsByTagName('meta')['keywords'];
+    if (keywords && keywords.content) {
+      site.keywords = keywords.content;
+    }
     payload.site = site;
   }
   // < App/Site object
@@ -237,6 +311,8 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let h;
 
   if (bannerMediaType) {
+    if (!Array.isArray(bannerMediaType.sizes)) { logWarn(LOG_PREFIX, 'Banner sizes array not found.'); }
+
     let banner = {};
     w = bannerMediaType.sizes[0][0];
     h = bannerMediaType.sizes[0][1];
@@ -245,59 +321,76 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     if (
       ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) ||
       ((bannerMediaType.sizes[0].indexOf(768) >= 0) && (bannerMediaType.sizes[0].indexOf(1024) >= 0))) {
-      banner.pos = 7
+      banner.pos = 0;
     } else {
-      banner.pos = 4
+      banner.pos = 0;
     }
 
     banner.api = api;
 
-    let format = {};
-    format[0] = {};
-    format[0].w = w;
-    format[0].h = h;
-    banner.format = format;
+    const formatArr = bannerMediaType.sizes.map(size => ({w: size[0], h: size[1]}))
+    banner.format = Object.assign({}, formatArr);
 
     imp.banner = banner;
   }
 
-  if (videoMediaType) {
+  if (typeof videoMediaType !== 'undefined') {
     let video = {};
-    w = videoMediaType.playerSize[0][0];
-    h = videoMediaType.playerSize[0][1];
-    video.w = w;
-    video.h = h;
+
+    let videoParams = deepAccess(validBidRequests, 'params.video');
+    if (typeof videoParams !== 'undefined') {
+      for (var key in VIDEO_CUSTOM_PARAMS) {
+        if (videoParams.hasOwnProperty(key)) {
+          video[key] = _checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
+        }
+      }
+    }
+
+    if ((video.w === undefined || video.w == null || video.w <= 0) ||
+      (video.h === undefined || video.h == null || video.h <= 0)) {
+      if (!Array.isArray(videoMediaType.playerSize)) { logWarn(LOG_PREFIX, 'Video playerSize array not found.'); }
+
+      w = videoMediaType.playerSize[0][0];
+      h = videoMediaType.playerSize[0][1];
+      video.w = w;
+      video.h = h;
+    }
 
     video.mimes = videoMediaType.mimes;
+
+    let videoExt = {};
+    if ((typeof videoMediaType.rewarded !== 'undefined') && videoMediaType.rewarded == 1) {
+      videoExt.rewarded = videoMediaType.rewarded;
+    }
+    video.ext = videoExt;
 
     imp.video = video;
   }
 
   imp.id = validBidRequests.bidId;
   imp.tagid = tagid;
-  imp.secure = 1;
+  imp.secure = validBidRequests.ortb2Imp?.secure ?? 1;
 
-  imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor');
-  if (utils.isFn(validBidRequests.getFloor)) {
+  imp.bidfloor = deepAccess(validBidRequests, 'params.bidfloor');
+  if (isFn(validBidRequests.getFloor)) {
     try {
       let floor = validBidRequests.getFloor({
         currency: CUR,
         mediaType: '*',
         size: '*'
       });
-      if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+      if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
         imp.bidfloor = floor.floor;
       } else {
-        utils.logWarn('[TAPPX]: ', 'Currency not valid. Use only USD with Tappx.');
+        logWarn(LOG_PREFIX, 'Currency not valid. Use only USD with Tappx.');
       }
     } catch (e) {
-      utils.logWarn('[TAPPX]: ', e);
-      imp.bidfloor = utils.deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
+      logWarn(LOG_PREFIX, e);
+      imp.bidfloor = deepAccess(validBidRequests, 'params.bidfloor'); // Be sure that we have an imp.bidfloor
     }
   }
 
   let bidder = {};
-  bidder.tappxkey = TAPPXKEY;
   bidder.endpoint = ENDPOINT;
   bidder.host = hostInfo.url;
   bidder.bidfloor = BIDFLOOR;
@@ -318,26 +411,44 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // Optional
   device.h = screen.height;
   device.w = screen.width;
-  device.dnt = utils.getDNT() ? 1 : 0;
+  device.dnt = getDNT() ? 1 : 0;
   device.language = getLanguage();
-  device.make = navigator.vendor ? navigator.vendor : '';
+  device.make = getVendor();
 
   let geo = {};
-  geo.country = utils.deepAccess(validBidRequests, 'params.geo.country');
+  geo.country = deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
+  let configGeo = {};
+  configGeo.country = ORTB2?.device?.geo;
 
-  // > Params
-  let params = {};
-  params.host = 'tappx.com';
-  params.bidfloor = BIDFLOOR;
-  // < Params
+  if (typeof configGeo.country !== 'undefined') {
+    device.geo = configGeo;
+  } else if (typeof geo.country !== 'undefined') {
+    device.geo = geo;
+  };
 
   // > GDPR
+  let user = {};
+  user.ext = {};
+
+  // Universal ID
+  let eidsArr = deepAccess(validBidRequests, 'userIdAsEids');
+  if (typeof eidsArr !== 'undefined') {
+    eidsArr = eidsArr.filter(
+      uuid =>
+        (typeof uuid !== 'undefined' && uuid !== null) &&
+        (typeof uuid.source == 'string' && uuid.source !== null) &&
+        (typeof uuid.uids[0].id == 'string' && uuid.uids[0].id !== null)
+    );
+
+    user.ext.eids = eidsArr;
+  };
+
   let regs = {};
   regs.gdpr = 0;
   if (!(bidderRequest.gdprConsent == null)) {
     if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') { regs.gdpr = bidderRequest.gdprConsent.gdprApplies; }
-    if (regs.gdpr) { regs.consent = bidderRequest.gdprConsent.consentString; }
+    if (regs.gdpr) { user.ext.consent = bidderRequest.gdprConsent.consentString; }
   }
 
   // CCPA
@@ -350,32 +461,40 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
   }
-
-  // Universal ID
-  const eidsArr = utils.deepAccess(validBidRequests, 'userIdAsEids');
-  payload.user = {
-    ext: {
-      eids: eidsArr
-    }
-  };
   // < GDPR
 
+  // > Payload Ext
+  let payloadExt = {};
+  payloadExt.bidder = {};
+  payloadExt.bidder.tappxkey = TAPPXKEY;
+  payloadExt.bidder.mktag = MKTAG;
+  payloadExt.bidder.bcid = deepAccess(validBidRequests, 'params.bcid');
+  payloadExt.bidder.bcrid = deepAccess(validBidRequests, 'params.bcrid');
+  payloadExt.bidder.ext = (typeof BIDEXTRA == 'object') ? BIDEXTRA : {};
+  if (typeof videoMediaType !== 'undefined') {
+    payloadExt.bidder.ext.pbvidtype = videoMediaType.context;
+  }
+  // < Payload Ext
+
   // > Payload
-  payload.id = validBidRequests.auctionId;
-  payload.test = utils.deepAccess(validBidRequests, 'params.test') ? 1 : 0;
+  payload.id = bidderRequest.bidderRequestId;
+  payload.test = deepAccess(validBidRequests, 'params.test') ? 1 : 0;
   payload.at = 1;
   payload.tmax = bidderRequest.timeout ? bidderRequest.timeout : 600;
   payload.bidder = BIDDER_CODE;
   payload.imp = [imp];
+  payload.user = user;
+  payload.ext = payloadExt;
 
   payload.device = device;
-  payload.params = params;
   payload.regs = regs;
   // < Payload
 
+  let pbjsv = 'v' + '$prebid.version$';
+
   return {
     method: 'POST',
-    url: `${hostInfo.url}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}`,
+    url: `${hostInfo.url}?type_cnn=${TYPE_CNN}&v=${TAPPX_BIDDER_VERSION}&pbjsv=${pbjsv}`,
     data: JSON.stringify(payload),
     bids: validBidRequests
   };
@@ -388,18 +507,32 @@ function getLanguage() {
 
 function getOs() {
   let ua = navigator.userAgent;
-  if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
+  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
 }
 
-function getHostInfo(validBidRequests) {
+function getVendor() {
+  let ua = navigator.userAgent;
+  if (ua.indexOf('Chrome') != -1) { return 'Google'; } else if (ua.indexOf('Firefox') != -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') != -1) { return 'Apple'; } else if (ua.indexOf('Edge') != -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') != -1 || ua.indexOf('Trident') != -1) { return 'Microsoft'; } else { return ''; }
+}
+
+export function _getHostInfo(validBidRequests) {
   let domainInfo = {};
-  let endpoint = utils.deepAccess(validBidRequests, 'params.endpoint');
-  let hostParam = utils.deepAccess(validBidRequests, 'params.host');
+  let endpoint = deepAccess(validBidRequests, 'params.endpoint');
+  let hostParam = deepAccess(validBidRequests, 'params.host');
 
   domainInfo.domain = hostParam.split('/', 1)[0];
 
+  let regexHostParamHttps = new RegExp(`^https:\/\/`);
+  let regexHostParamHttp = new RegExp(`^http:\/\/`);
+
   let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+
+  if (regexHostParamHttps.test(hostParam)) {
+    hostParam = hostParam.replace('https://', '');
+  } else if (regexHostParamHttp.test(hostParam)) {
+    hostParam = hostParam.replace('http://', '');
+  }
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
     domainInfo.newEndpoint = true;
@@ -412,6 +545,66 @@ function getHostInfo(validBidRequests) {
   }
 
   return domainInfo;
+}
+
+function outstreamRender(bid, request) {
+  let rendererOptions = {};
+  rendererOptions = (typeof bid.params[0].video != 'undefined') ? bid.params[0].video : {};
+  rendererOptions.content = bid.vastXml;
+
+  bid.renderer.push(() => {
+    window.tappxOutstream.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+      rendererOptions: rendererOptions
+    });
+  });
+}
+
+function createRenderer(bid, request, url) {
+  const rendererInst = Renderer.install({
+    id: request.id,
+    url: url,
+    loaded: false
+  });
+
+  try {
+    rendererInst.setRender(outstreamRender);
+  } catch (err) {
+    logWarn(LOG_PREFIX, 'Prebid Error calling setRender on renderer');
+  }
+
+  return rendererInst;
+}
+
+export function _checkParamDataType(key, value, datatype) {
+  var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
+  var functionToExecute;
+  switch (datatype) {
+    case DATA_TYPES.BOOLEAN:
+      functionToExecute = isBoolean;
+      break;
+    case DATA_TYPES.NUMBER:
+      functionToExecute = isNumber;
+      break;
+    case DATA_TYPES.STRING:
+      functionToExecute = isStr;
+      break;
+    case DATA_TYPES.ARRAY:
+      functionToExecute = isArray;
+      break;
+  }
+  if (functionToExecute(value)) {
+    return value;
+  }
+  logWarn(LOG_PREFIX, errMsg);
+  return undefined;
+}
+
+export function _extractPageUrl(validBidRequests, bidderRequest) {
+  let url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
+  return parseDomain(url, {noLeadingWww: true});
 }
 
 registerBidder(spec);
