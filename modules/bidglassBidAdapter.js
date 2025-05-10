@@ -21,7 +21,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.adUnitId && !isNaN(parseFloat(bid.params.adUnitId)) && isFinite(bid.params.adUnitId));
+    return !!bid.params.adUnitId; // only adUnitId is required
   },
   /**
    * Make a server request from the list of BidRequests.
