@@ -4,6 +4,7 @@ import {TARGETING_KEYS} from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
+import { getWinDimensions, internal } from '../../src/utils.js';
 
 var assert = require('assert');
 
@@ -1104,7 +1105,6 @@ describe('Utils', function () {
     });
     it('should work when adding properties to the prototype of Array', () => {
       after(function () {
-        // eslint-disable-next-line no-extend-native
         delete Array.prototype.unitTestTempProp;
       });
       // eslint-disable-next-line no-extend-native
@@ -1326,3 +1326,30 @@ describe('memoize', () => {
     })
   });
 })
+
+describe('getWinDimensions', () => {
+  let clock;
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers({ now: new Date() });
+  });
+
+  afterEach(() => {
+    clock.restore();
+  });
+
+  it('should invoke resetWinDimensions once per 20ms', () => {
+    const resetWinDimensionsSpy = sinon.spy(internal, 'resetWinDimensions');
+    getWinDimensions();
+    clock.tick(1);
+    getWinDimensions();
+    clock.tick(1);
+    getWinDimensions();
+    clock.tick(1);
+    getWinDimensions();
+    sinon.assert.calledOnce(resetWinDimensionsSpy);
+    clock.tick(18);
+    getWinDimensions();
+    sinon.assert.calledTwice(resetWinDimensionsSpy);
+  });
+});

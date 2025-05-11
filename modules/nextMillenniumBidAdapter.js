@@ -4,6 +4,7 @@ import {
   deepSetValue,
   getBidIdParameter,
   getDefinedParams,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isStr,
@@ -20,6 +21,7 @@ import {config} from '../src/config.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const NM_VERSION = '4.3.0';
 const PBJS_VERSION = 'v$prebid.version$';
@@ -271,7 +273,7 @@ function getExtNextMilImp(bid) {
       nm_version: NM_VERSION,
       pbjs_version: PBJS_VERSION,
       refresh_count: window?.nmmRefreshCounts[bid.adUnitCode] || 0,
-      scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+      scrollTop: window.pageYOffset || getWinDimensions().document.documentElement.scrollTop,
     },
   };
 
@@ -498,9 +500,10 @@ function getSiteObj() {
 }
 
 function getDeviceObj() {
+  const { width, height } = getViewportSize();
   return {
-    w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
-    h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
+    w: width,
+    h: height,
     ua: window.navigator.userAgent || undefined,
     sua: getSua(),
   };

@@ -14,7 +14,7 @@ import { getConnectionType } from '../libraries/connectionInfo/connectionUtils.j
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2024.07.27';
+const BIDADAPTERVERSION = 'TTD-PREBID-2025.04.25';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -172,7 +172,8 @@ function getImpression(bidRequest) {
   const secure = utils.deepAccess(bidRequest, 'ortb2Imp.secure');
   impression.secure = isNumber(secure) ? secure : 1
 
-  utils.mergeDeep(impression, bidRequest.ortb2Imp)
+  const {video: _, ...ortb2ImpWithoutVideo} = bidRequest.ortb2Imp; // if enabled, video is already assigned above
+  utils.mergeDeep(impression, ortb2ImpWithoutVideo)
 
   return impression;
 }
@@ -404,6 +405,7 @@ export const spec = {
       device: getDevice(firstPartyData),
       user: getUser(bidderRequest, firstPartyData),
       at: 1,
+      tmax: Math.max(bidderRequest.timeout || 400, 400),
       cur: ['USD'],
       regs: getRegs(bidderRequest),
       source: getSource(validBidRequests, bidderRequest),
@@ -441,9 +443,6 @@ export const spec = {
       data: topLevel,
       options: {
         withCredentials: true,
-        customHeaders: {
-          'x-integration-type': 1,
-        },
       }
     };
 

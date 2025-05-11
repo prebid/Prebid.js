@@ -1,4 +1,4 @@
-import {deepAccess, deepClone, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, getWinDimensions, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -144,8 +144,8 @@ function setPrebidRequestEnvironment(payload) {
   deepSetValue(payload, 'environment.inp.jp', window.JSON.parse.name === 'parse' && typeof window.JSON.parse.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.ofe', window.Object.fromEntries.name === 'fromEntries' && typeof window.Object.fromEntries.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.oa', window.Object.assign.name === 'assign' && typeof window.Object.assign.prototype === 'undefined');
-  deepSetValue(payload, 'environment.wpar.innerWidth', window.innerWidth);
-  deepSetValue(payload, 'environment.wpar.innerHeight', window.innerHeight);
+  deepSetValue(payload, 'environment.wpar.innerWidth', getWinDimensions().innerWidth);
+  deepSetValue(payload, 'environment.wpar.innerHeight', getWinDimensions().innerHeight);
 }
 
 function hasValidMediaType(bidRequest) {

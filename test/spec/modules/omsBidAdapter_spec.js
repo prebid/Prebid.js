@@ -3,6 +3,7 @@ import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from '../../../src/config';
+import { internal, resetWinDimensions } from '../../../src/utils';
 
 const URL = 'https://rt.marphezis.com/hb';
 
@@ -36,7 +37,9 @@ describe('omsBidAdapter', function () {
       document: {
         visibilityState: 'visible'
       },
-
+      location: {
+        href: "http:/location"
+      },
       innerWidth: 800,
       innerHeight: 600
     };
@@ -328,6 +331,8 @@ describe('omsBidAdapter', function () {
 
     context('when element is partially in view', function () {
       it('returns percentage', function () {
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 800, height: 800});
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -337,6 +342,8 @@ describe('omsBidAdapter', function () {
 
     context('when width or height of the element is zero', function () {
       it('try to use alternative values', function () {
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
+        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 0, height: 0});
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
