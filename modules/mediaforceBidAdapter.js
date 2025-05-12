@@ -1,12 +1,25 @@
 import { getDNT, deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize, isEmpty } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
+ * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
+ */
+
+/**
+ * @typedef {Object} AdditionalBidRequestFields
+ * @property {GetFloor} [getFloor] - Function for retrieving dynamic bid floor based on mediaType and size
+ * @property {MediaTypes} [mediaTypes] - Media types defined for the ad unit (e.g., banner, video, native)
+ */
+
+/**
+ * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
  */
 
 const BIDDER_CODE = 'mediaforce';
@@ -94,6 +107,9 @@ Object.keys(NATIVE_PARAMS).forEach((key) => {
   NATIVE_ID_MAP[NATIVE_PARAMS[key].id] = key;
 });
 
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
+const DEFAULT_CURRENCY = 'USD'
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
@@ -134,7 +150,7 @@ export const spec = {
     validBidRequests.forEach(bid => {
       isTest = isTest || bid.params.is_test;
       let tagid = bid.params.placement_id;
-      let bidfloor = 0;
+      let bidfloor = resolveFloor(bid);
       let validImp = false;
       let impObj = {
         id: bid.bidId,
@@ -270,7 +286,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function(bid) {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
@@ -371,4 +387,64 @@ function createNativeRequest(bid) {
       ver: '1.2'
     }
   }
+}
+
+/**
+ * Returns the highest applicable bid floor for a given bid request.
+ *
+ * Considers:
+ *  - 0
+ *  - floors from resolveFloor() API (if available)
+ *  - static bid.params.bidfloor (if provided)
+ *
+ * @param {ExtendedBidRequest} bid - The bid object
+ * @returns {number} - Highest bid floor found
+ */
+export function resolveFloor(bid) {
+  const floors = [0];
+
+  if (typeof bid.getFloor === 'function') {
+    for (const mediaType of SUPPORTED_MEDIA_TYPES) {
+      const mediaTypeDef = bid.mediaTypes?.[mediaType]
+      if (mediaTypeDef) {
+        const sizes = getMediaTypeSizes(mediaType, mediaTypeDef) || ['*'];
+        for (const size of sizes) {
+          const floorInfo = bid.getFloor({ currency: DEFAULT_CURRENCY, mediaType, size });
+          if (typeof floorInfo?.floor === 'number') {
+            floors.push(floorInfo.floor);
+          }
+        }
+      }
+    }
+  }
+
+  if (typeof bid.params?.bidfloor === 'number') {
+    floors.push(bid.params.bidfloor);
+  }
+
+  return Math.max(...floors);
+}
+
+/**
+ * Extracts and normalizes sizes for a given media type.
+ *
+ * @param {MediaType} mediaType - The type of media (banner, video, native)
+ * @param {Object} mediaTypeDef - Definition object for the media type
+ * @returns {(number[]|string)[]} An array of sizes or undefined
+ */
+function getMediaTypeSizes(mediaType, mediaTypeDef) {
+  let sizes;
+  switch (mediaType) {
+    case BANNER:
+      sizes = mediaTypeDef.sizes;
+      break;
+    case VIDEO:
+      sizes = mediaTypeDef.playerSize;
+      break;
+    case NATIVE:
+      break; // native usually doesn't define sizes
+  }
+
+  if (!sizes) return undefined;
+  return Array.isArray(sizes[0]) ? sizes : [sizes];
 }

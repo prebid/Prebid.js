@@ -1,7 +1,7 @@
 import {assert} from 'chai';
-import {spec} from 'modules/mediaforceBidAdapter.js';
+import {spec, resolveFloor} from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('mediaforce bid adapter', function () {
   let sandbox;
@@ -605,6 +605,65 @@ describe('mediaforce bid adapter', function () {
       }
       spec.onBidWon(bid);
       assert.equal(bid.burl, 'burl&s=0.20');
+    });
+  });
+
+  describe('resolveFloor()', function () {
+    it('should return 0 if no bidfloor and no resolveFloor API', function () {
+      const bid = {};
+      assert.equal(resolveFloor(bid), 0);
+    });
+
+    it('should return static bidfloor if no resolveFloor API', function () {
+      const bid = { params: { bidfloor: 2.5 } };
+      assert.equal(resolveFloor(bid), 2.5);
+    });
+
+    it('should return the highest floor among all sources', function () {
+      const makeBid = (mediaType, floor) => ({
+        getFloor: ({ mediaType: mt }) => ({ floor: mt === mediaType ? floor : 0.5 }),
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { playerSize: [640, 480] },
+          native: {}
+        },
+        params: { bidfloor: mediaType === 'static' ? floor : 0.5 }
+      });
+
+      assert.equal(resolveFloor(makeBid(BANNER, 3.5)), 3.5, 'banner floor should be selected');
+      assert.equal(resolveFloor(makeBid(VIDEO, 4.0)), 4.0, 'video floor should be selected');
+      assert.equal(resolveFloor(makeBid(NATIVE, 5.0)), 5.0, 'native floor should be selected');
+      assert.equal(resolveFloor(makeBid('static', 6.0)), 6.0, 'params.bidfloor should be selected');
+    });
+
+    it('should handle invalid floor values from resolveFloor API gracefully', function () {
+      const bid = {
+        getFloor: () => ({}),
+        mediaTypes: { banner: { sizes: [[300, 250]] } }
+      };
+      assert.equal(resolveFloor(bid), 0);
+    });
+
+    it('should extract sizes and apply correct floor per media type', function () {
+      const makeBid = (mediaType, expectedSize) => ({
+        getFloor: ({ mediaType: mt, size }) => {
+          if (mt === mediaType && (Array.isArray(size) ? size[0] : size) === expectedSize) {
+            return { floor: 1 };
+          }
+          return { floor: 0 };
+        },
+        mediaTypes: {
+          banner: { sizes: [[300, 250], [728, 90]] },
+          video: { playerSize: [640, 480] },
+          native: {}
+        },
+        params: {}
+      });
+
+      assert.equal(resolveFloor(makeBid(BANNER, 300)), 1, 'banner size [300, 250]');
+      assert.equal(resolveFloor(makeBid(BANNER, 728)), 1, 'banner size [728, 90]');
+      assert.equal(resolveFloor(makeBid(VIDEO, 640)), 1, 'video playerSize [640, 480]');
+      assert.equal(resolveFloor(makeBid(NATIVE, '*')), 1, 'native default size "*"');
     });
   });
 });
