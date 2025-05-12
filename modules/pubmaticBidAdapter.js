@@ -355,7 +355,6 @@ const updateVideoImp = (videoParams, adUnitCode, imp) => {
   if (!videoParams || (!videoImp.w && !videoImp.h)) {
     delete imp.video;
     logWarn(`${LOG_WARN_PREFIX}Error: Missing ${!videoParams ? 'video config params' : 'video size params (playersize or w&h)'} for adunit: ${adUnitCode} with mediaType set as video. Ignoring video impression in the adunit.`);
-    return;
   }
 }
 
