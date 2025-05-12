@@ -55,7 +55,8 @@ const PARAMS_NAMES = {
   prebidVersion: 'pbjsver',
   partnerId: 'partnerId',
   firstPartyId: 'pcid',
-  placementId: 'placementId'
+  placementId: 'placementId',
+  adType: 'adType'
 };
 
 let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({defaultUrl: REPORT_ENDPOINT, analyticsType}), {
@@ -129,7 +130,7 @@ function initReadLsIds() {
       iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause = pData.terminationCause
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
-      iiqAnalyticsAnalyticsAdapter.initOptions.ct = pData.ct || null;
+      iiqAnalyticsAnalyticsAdapter.initOptions.clientType = pData.clientType || null;
       iiqAnalyticsAnalyticsAdapter.initOptions.siteId = pData.siteId || null;
       iiqAnalyticsAnalyticsAdapter.initOptions.wsrvcll = pData.wsrvcll || false;
       iiqAnalyticsAnalyticsAdapter.initOptions.rrtt = pData.rrtt || null;
@@ -188,7 +189,7 @@ export function preparePayload(data) {
   result[PARAMS_NAMES.referrer] = getReferrer();
   result[PARAMS_NAMES.terminationCause] = iiqAnalyticsAnalyticsAdapter.initOptions.terminationCause;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
-  result[PARAMS_NAMES.clientType] = iiqAnalyticsAnalyticsAdapter.initOptions.ct;
+  result[PARAMS_NAMES.clientType] = iiqAnalyticsAnalyticsAdapter.initOptions.clientType;
   result[PARAMS_NAMES.siteId] = iiqAnalyticsAnalyticsAdapter.initOptions.siteId;
   result[PARAMS_NAMES.wasServerCalled] = iiqAnalyticsAnalyticsAdapter.initOptions.wsrvcll;
   result[PARAMS_NAMES.requestRtt] = iiqAnalyticsAnalyticsAdapter.initOptions.rrtt;
@@ -214,6 +215,8 @@ function fillEidsData(result) {
 }
 
 function prepareData (data, result) {
+  const adTypeValue = data.adType || data.mediaType;
+
   if (data.bidderCode) {
     result.bidderCode = data.bidderCode;
   }
@@ -235,28 +238,50 @@ function prepareData (data, result) {
   if (data.auctionId) {
     result.prebidAuctionId = data.auctionId;
   }
-  if (data.placementId) {
-    result.placementId = data.placementId;
-  } else {
-    // Simplified placementId determination
-    let placeIdFound = false;
-    if (data.params && Array.isArray(data.params)) {
-      for (let i = 0; i < data.params.length; i++) {
-        const param = data.params[i];
-        if (param.placementId) {
-          result.placementId = param.placementId;
-          placeIdFound = true;
-          break;
-        }
-      }
-    }
-    if (!placeIdFound && data.adUnitCode) {
-      result.placementId = data.adUnitCode;
-    }
+  if (adTypeValue) {
+    result[PARAMS_NAMES.adType] = adTypeValue;
+  }
+  const iiqConfig = getIntentIqConfig();
+  const adUnitConfig = iiqConfig.params?.adUnitConfig;
+
+  switch (adUnitConfig) {
+    case 1:
+      // adUnitCode or placementId
+      result.placementId = data.adUnitCode || extractPlacementId(data) || '';
+      break;
+    case 2:
+      // placementId or adUnitCode
+      result.placementId = extractPlacementId(data) || data.adUnitCode || '';
+      break;
+    case 3:
+      // Only adUnitCode
+      result.placementId = data.adUnitCode || '';
+      break;
+    case 4:
+      // Only placementId
+      result.placementId = extractPlacementId(data) || '';
+      break;
+    default:
+      // Default (like in case #1)
+      result.placementId = data.adUnitCode || extractPlacementId(data) || '';
   }
 
   result.biddingPlatformId = 1;
   result.partnerAuctionId = 'BW';
+}
+
+function extractPlacementId(data) {
+  if (data.placementId) {
+    return data.placementId;
+  }
+  if (data.params && Array.isArray(data.params)) {
+    for (let i = 0; i < data.params.length; i++) {
+      if (data.params[i].placementId) {
+        return data.params[i].placementId;
+      }
+    }
+  }
+  return null;
 }
 
 function getDefaultDataObject() {

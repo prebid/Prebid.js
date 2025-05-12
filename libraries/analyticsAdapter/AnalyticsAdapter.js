@@ -11,11 +11,24 @@ const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 const LABELS_KEY = 'analyticsLabels';
 
-let labels = {};
+const labels = {
+  internal: {},
+  publisher: {},
+};
+
+let allLabels = {};
 
 config.getConfig(LABELS_KEY, (cfg) => {
-  labels = cfg[LABELS_KEY]
+  labels.publisher = cfg[LABELS_KEY];
+  allLabels = combineLabels(); ;
 });
+
+export function setLabels(internalLabels) {
+  labels.internal = internalLabels;
+  allLabels = combineLabels();
+};
+
+const combineLabels = () => Object.values(labels).reduce((acc, curr) => ({...acc, ...curr}), {});
 
 export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
   .filter(ev => ev !== EVENTS.AUCTION_DEBUG);
@@ -98,18 +111,18 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   }
 
   function _callEndpoint({ eventType, args, callback }) {
-    _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels }));
+    _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels: allLabels }));
   }
 
   function _enqueue({eventType, args}) {
     queue.push(() => {
-      if (Object.keys(labels || []).length > 0) {
+      if (Object.keys(allLabels || []).length > 0) {
         args = {
-          [LABELS_KEY]: labels,
+          [LABELS_KEY]: allLabels,
           ...args,
         }
       }
-      this.track({eventType, labels, args});
+      this.track({eventType, labels: allLabels, args});
     });
     emptyQueue();
   }
