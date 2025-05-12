@@ -21,7 +21,7 @@ import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
 import {adapterMetrics, guardTids} from '../src/adapters/bidderFactory.js';
-import {defer} from '../src/utils/promise.js';
+import {defer, PbPromise} from '../src/utils/promise.js';
 import {auctionManager} from '../src/auctionManager.js';
 
 const MODULE = 'PAAPI';
@@ -83,7 +83,10 @@ function attachHandlers() {
   getHook('addPaapiConfig').before(addPaapiConfigHook);
   getHook('makeBidRequests').before(addPaapiData);
   getHook('makeBidRequests').after(markForFledge);
-  getHook('processBidderRequests').before(parallelPaapiProcessing);
+  getHook('processBidderRequests').before(parallelPaapiProcessing, 9);
+  // resolve params before parallel processing
+  getHook('processBidderRequests').before(buildPAAPIParams, 10);
+  getHook('processBidderRequests').before(adAuctionHeadersHook);
   events.on(EVENTS.AUCTION_INIT, onAuctionInit);
   events.on(EVENTS.AUCTION_END, onAuctionEnd);
 }
@@ -93,8 +96,23 @@ function detachHandlers() {
   getHook('makeBidRequests').getHooks({hook: addPaapiData}).remove();
   getHook('makeBidRequests').getHooks({hook: markForFledge}).remove();
   getHook('processBidderRequests').getHooks({hook: parallelPaapiProcessing}).remove();
+  getHook('processBidderRequests').getHooks({hook: buildPAAPIParams}).remove();
+  getHook('processBidderRequests').getHooks({hook: adAuctionHeadersHook}).remove();
   events.off(EVENTS.AUCTION_INIT, onAuctionInit);
   events.off(EVENTS.AUCTION_END, onAuctionEnd);
+}
+
+export function adAuctionHeadersHook(next, spec, bids, bidderRequest, ajax, ...args) {
+  if (bidderRequest.paapi?.enabled) {
+    ajax = ((orig) => {
+      return function (url, callback, data, options) {
+        options = options ?? {};
+        options.adAuctionHeaders = options.adAuctionHeaders ?? true;
+        return orig.call(this, url, callback, data, options);
+      }
+    })(ajax);
+  }
+  return next.call(this, spec, bids, bidderRequest, ajax, ...args);
 }
 
 function getStaticSignals(adUnit = {}) {
@@ -256,7 +274,7 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
     const {adUnitCode, auctionId, bidder} = request;
 
-    // eslint-disable-next-line no-inner-declarations
+
     function storePendingData(store, data) {
       const target = store(auctionId);
       if (target != null) {
@@ -479,6 +497,8 @@ export function addPaapiData(next, adUnits, ...args) {
   next(adUnits, ...args);
 }
 
+export const NAVIGATOR_APIS = ['createAuctionNonce', 'getInterestGroupAdAuctionData'];
+
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((bidderReq) => {
@@ -489,12 +509,26 @@ export function markForFledge(next, bidderRequests) {
           componentSeller: !!moduleConfig.componentSeller?.auctionConfig
         }
       });
+      if (enabled) {
+        NAVIGATOR_APIS.forEach(method => {
+          bidderReq.paapi[method] = (...args) => new AsyncPAAPIParam(() => navigator[method](...args))
+        })
+      }
     });
   }
   next(bidderRequests);
 }
 
-export const ASYNC_SIGNALS = ['auctionSignals', 'sellerSignals', 'perBuyerSignals', 'perBuyerTimeouts', 'directFromSellerSignals'];
+export const ASYNC_SIGNALS = [
+  'auctionSignals',
+  'sellerSignals',
+  'perBuyerSignals',
+  'perBuyerTimeouts',
+  'directFromSellerSignals',
+  'perBuyerCurrencies',
+  'perBuyerCumulativeTimeouts',
+  'serverResponse'
+];
 
 const validatePartialConfig = (() => {
   const REQUIRED_SYNC_SIGNALS = [
@@ -521,6 +555,20 @@ const validatePartialConfig = (() => {
     return true;
   }
 })()
+
+function callAdapterApi(spec, method, bids, bidderRequest) {
+  const metrics = adapterMetrics(bidderRequest);
+  const tidGuard = guardTids(bidderRequest);
+  let result;
+  metrics.measureTime(method, () => {
+    try {
+      result = spec[method](bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))
+    } catch (e) {
+      logError(`Error invoking "${method}":`, e);
+    }
+  });
+  return result;
+}
 
 /**
  * Adapters can provide a `spec.buildPAAPIConfigs(validBidRequests, bidderRequest)` to be included in PAAPI auctions
@@ -564,16 +612,7 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
   });
 
   if (enabled && spec.buildPAAPIConfigs) {
-    const metrics = adapterMetrics(bidderRequest);
-    const tidGuard = guardTids(bidderRequest);
-    let partialConfigs;
-    metrics.measureTime('buildPAAPIConfigs', () => {
-      try {
-        partialConfigs = spec.buildPAAPIConfigs(bids.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest))
-      } catch (e) {
-        logError(`Error invoking "buildPAAPIConfigs":`, e);
-      }
-    });
+    const partialConfigs = callAdapterApi(spec, 'buildPAAPIConfigs', bids, bidderRequest)
     const requestsById = Object.fromEntries(bids.map(bid => [bid.bidId, bid]));
     (partialConfigs ?? []).forEach(({bidId, config, igb}) => {
       const bidRequest = requestsById.hasOwnProperty(bidId) && requestsById[bidId];
@@ -654,6 +693,32 @@ export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args
     })
   }
   return next.call(this, spec, bids, bidderRequest, ...args);
+}
+
+export class AsyncPAAPIParam {
+  constructor(resolve) {
+    this.resolve = resolve;
+  }
+}
+
+export function buildPAAPIParams(next, spec, bids, bidderRequest, ...args) {
+  if (bidderRequest.paapi?.enabled && spec.paapiParameters) {
+    const params = callAdapterApi(spec, 'paapiParameters', bids, bidderRequest);
+    return PbPromise.all(
+      Object.entries(params ?? {}).map(([key, value]) =>
+        value instanceof AsyncPAAPIParam
+          ? value.resolve().then(result => [key, result])
+          : Promise.resolve([key, value]))
+    ).then(resolved => {
+      bidderRequest.paapi.params = Object.fromEntries(resolved);
+    }).catch(err => {
+      logError(`Could not resolve PAAPI parameters`, err);
+    }).then(() => {
+      next.call(this, spec, bids, bidderRequest, ...args);
+    })
+  } else {
+    next.call(this, spec, bids, bidderRequest, ...args);
+  }
 }
 
 export function onAuctionInit({auctionId}) {

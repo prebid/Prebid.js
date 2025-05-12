@@ -1,4 +1,5 @@
 import { NATIVE_ASSETS, NATIVE_ASSETS_IDS } from './nativeAssets.js';
+import { isPlainObject, isArray, isArrayOfNums, parseUrl, isFn } from '../../src/utils.js';
 
 /**
  * Builds a native request object based on the bid request
@@ -40,8 +41,23 @@ export function createNativeRequest(br) {
  * @returns {object} The banner request object
  */
 export function createBannerRequest(br) {
-  let size = br.mediaTypes.banner.sizes?.[0] || [300, 250];
-  return { id: br.transactionId, w: size[0], h: size[1] };
+  let [w, h] = [300, 250];
+  let format = [];
+
+  if (isArrayOfNums(br.mediaTypes.banner.sizes)) {
+    [w, h] = br.mediaTypes.banner.sizes;
+    format.push({ w, h });
+  } else if (isArray(br.mediaTypes.banner.sizes)) {
+    [w, h] = br.mediaTypes.banner.sizes[0];
+    if (br.mediaTypes.banner.sizes.length > 1) { format = br.mediaTypes.banner.sizes.map((size) => ({ w: size[0], h: size[1] })); }
+  }
+
+  return {
+    w,
+    h,
+    format,
+    id: br.transactionId
+  }
 }
 
 /**
@@ -50,19 +66,12 @@ export function createBannerRequest(br) {
  * @returns {object} The video request object
  */
 export function createVideoRequest(br) {
-  let videoObj = { id: br.transactionId };
-  const supportedParams = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'minbitrate', 'maxbitrate', 'api', 'linearity'];
+  let videoObj = {...br.mediaTypes.video, id: br.transactionId};
 
-  supportedParams.forEach((param) => {
-    if (br.mediaTypes.video[param] !== undefined) {
-      videoObj[param] = br.mediaTypes.video[param];
-    }
-  });
-
-  const playerSize = br.mediaTypes.video.playerSize;
-  if (playerSize) {
-    videoObj.w = Array.isArray(playerSize[0]) ? playerSize[0][0] : playerSize[0];
-    videoObj.h = Array.isArray(playerSize[0]) ? playerSize[0][1] : playerSize[1];
+  if (videoObj.playerSize) {
+    const size = Array.isArray(videoObj.playerSize[0]) ? videoObj.playerSize[0] : videoObj.playerSize;
+    videoObj.w = size[0];
+    videoObj.h = size[1];
   } else {
     videoObj.w = 640;
     videoObj.h = 480;
@@ -70,7 +79,6 @@ export function createVideoRequest(br) {
 
   return videoObj;
 }
-
 /**
  * Parses the native ad response
  * @param {object} adm - The native ad response
@@ -92,4 +100,87 @@ export function parseNative(adm) {
   });
 
   return bid;
+}
+
+/**
+ * Prepare Bid Floor for request
+ * @param {object} br - The bid request
+ * @param {string} mediaType - tyoe of media in request
+ * @param {string} defaultCur - currency which support bidder
+ * @returns {number} Parsed float bid floor price
+ */
+export function getFloor(br, mediaType, defaultCur) {
+  let floor = 0.05;
+
+  if (!isFn(br.getFloor)) {
+    return floor;
+  }
+
+  let floorObj = br.getFloor({
+    currency: defaultCur,
+    mediaType,
+    size: '*'
+  });
+
+  if (isPlainObject(floorObj) && !isNaN(parseFloat(floorObj.floor))) {
+    floor = parseFloat(floorObj.floor) || floor;
+  }
+
+  return floor;
+}
+
+/**
+ * Builds site object
+ * @param {object} br - The bid request, request - bidderRequest data
+ * @param {object} request - bidderRequest data
+ * @returns {object} The site request object
+ */
+export function prepareSite(br, request) {
+  let siteObj = {};
+
+  siteObj.publisher = {
+    id: br.params.placementId.toString()
+  };
+
+  siteObj.domain = parseUrl(request.refererInfo.page || request.refererInfo.topmostLocation).hostname;
+  siteObj.page = request.refererInfo.page || request.refererInfo.topmostLocation;
+
+  if (request.refererInfo.ref) {
+    siteObj.site.ref = request.refererInfo.ref;
+  }
+
+  return siteObj;
+}
+
+/**
+ * Adds privacy data to request object
+ * @param {object} data - The request object to bidder
+ * @param {object} request - bidderRequest data
+ * @returns {boolean} Response with true once finish
+ */
+export function prepareConsents(data, request) {
+  if (request.gdprConsent !== undefined) {
+    data.regs.ext.gdpr = request.gdprConsent.gdprApplies ? 1 : 0;
+    data.user.ext.consent = request.gdprConsent.consentString ? request.gdprConsent.consentString : '';
+  }
+
+  if (request.uspConsent !== undefined) {
+    data.regs.ext.us_privacy = request.uspConsent;
+  }
+
+  return true;
+}
+
+/**
+ * Adds Eids object to request object
+ * @param {object} data - The request object to bidder
+ * @param {object} br - The bid request
+ * @returns {boolean} Response with true once finish
+ */
+export function prepareEids(data, br) {
+  if (br.userIdAsEids !== undefined) {
+    data.user.ext.eids = br.userIdAsEids;
+  }
+
+  return true;
 }

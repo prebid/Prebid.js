@@ -1,4 +1,4 @@
-/* eslint-disable camelcase */
+
 import * as utils from '../src/utils.js';
 import { isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -124,11 +124,24 @@ function hasParamsNotBlankString(params, key) {
   );
 }
 
+export const buildExtuidQuery = ({id5, imuId}) => {
+  const params = [
+    ...(id5 ? [`id5:${id5}`] : []),
+    ...(imuId ? [`im:${imuId}`] : []),
+  ];
+
+  const queryString = params.join('\t');
+  if (!queryString) return null;
+  return queryString;
+}
+
 /**
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
+  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid') || utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+
   const data = {
     zoneid: bid.params.zoneId,
     cb: Math.floor(Math.random() * 99999999999),
@@ -145,6 +158,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     tpaf: 1,
     cks: 1,
     ib: 0,
+    ...(gpid ? { gpid } : {}),
   };
 
   try {
@@ -212,9 +226,11 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     }
   }
 
-  // imuid
-  const imuidQuery = getImuidAsQueryParameter(bid);
-  if (imuidQuery) data.extuid = imuidQuery;
+  // imuid, id5
+  const id5 = utils.deepAccess(bid, 'userId.id5id.uid');
+  const imuId = utils.deepAccess(bid, 'userId.imuid');
+  const extuidQuery = buildExtuidQuery({id5, imuId});
+  if (extuidQuery) data.extuid = extuidQuery;
 
   // makeUAQuery
   // To avoid double encoding, not using encodeURIComponent here
@@ -306,14 +322,6 @@ function makeChangeHeightEventMarkup(request) {
  */
 function makeBidResponseAd(innerHTML) {
   return '<body marginwidth="0" marginheight="0">' + innerHTML + '</body>';
-}
-
-/**
- * return imuid strings as query parameters
- */
-function getImuidAsQueryParameter(bid) {
-  const imuid = utils.deepAccess(bid, 'userId.imuid');
-  return imuid ? 'im:' + imuid : ''; // To avoid double encoding, not using encodeURIComponent here
 }
 
 function getUserAgent() {

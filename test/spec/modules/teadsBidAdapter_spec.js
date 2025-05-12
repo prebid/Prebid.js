@@ -300,6 +300,36 @@ describe('teadsBidAdapter', () => {
       }
     });
 
+    it('should add networkQuality info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      const networkQuality = window.navigator && window.navigator.connection && window.navigator.connection.effectiveType;
+
+      expect(payload.networkQuality).to.exist;
+
+      if (networkQuality) {
+        expect(payload.networkQuality).to.deep.equal(networkQuality.toString());
+      } else {
+        expect(payload.networkQuality).to.deep.equal('');
+      }
+    })
+
+    it('should add domComplexity info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      const domComplexity = document?.querySelectorAll('*')?.length;
+
+      expect(payload.domComplexity).to.exist;
+
+      if (domComplexity) {
+        expect(payload.domComplexity).to.deep.equal(domComplexity);
+      } else {
+        expect(payload.domComplexity).to.deep.equal(-1);
+      }
+    })
+
     it('should add pageReferrer info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -1016,6 +1046,30 @@ describe('teadsBidAdapter', () => {
           const payload = JSON.parse(request.data);
 
           expect(payload.firstPartyCookieTeadsId).to.equal('teadsId-fake-id');
+        });
+      });
+
+      describe('Outbrain Id', function () {
+        it('should pass null to outbrain id if it\'s not available from local storage', function () {
+          const bidRequest = baseBidRequest;
+
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
+
+          const payload = JSON.parse(request.data);
+
+          expect(payload.outbrainId).to.be.null;
+        });
+
+        it('should add outbrain id if it\'s available from local storage', function () {
+          sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('OB-USER-TOKEN').returns('outbrain-id');
+
+          const bidRequest = baseBidRequest;
+
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
+
+          const payload = JSON.parse(request.data);
+
+          expect(payload.outbrainId).to.equal('outbrain-id');
         });
       });
     });

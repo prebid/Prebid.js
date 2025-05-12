@@ -27,6 +27,12 @@ import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activit
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../../../../src/activities/activities.js';
 import {reset as resetAdUnitCounters} from '../../../../src/adUnits.js';
 import {deepClone} from 'src/utils.js';
+import {
+  EVENT_TYPE_IMPRESSION,
+  EVENT_TYPE_WIN,
+  TRACKER_METHOD_IMG,
+  TRACKER_METHOD_JS
+} from '../../../../src/eventTrackers.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -117,7 +123,8 @@ describe('adapterManager tests', function () {
 
     beforeEach(function () {
       sinon.stub(utils, 'logError');
-      appnexusAdapterMock.callBids.reset();
+      appnexusAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetBehavior()
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
@@ -409,11 +416,26 @@ describe('adapterManager tests', function () {
         criteoSpec.onBidBillable = sinon.spy();
         sandbox.stub(utils.internal, 'triggerPixel');
       });
+      it('should fire impression pixels from eventtrackers', () => {
+        bids[0].eventtrackers = [
+          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'tracker'},
+        ]
+        adapterManager.triggerBilling(bids[0]);
+        sinon.assert.calledWith(utils.internal.triggerPixel, 'tracker');
+      });
+
+      it('should NOT fire non-impression or non-pixel trackers', () => {
+        bids[0].eventtrackers = [
+          {event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'ignored'},
+          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'ignored'},
+        ]
+        adapterManager.triggerBilling(bids[0]);
+        sinon.assert.notCalled(utils.internal.triggerPixel);
+      })
       describe('on client bids', () => {
-        it('should call bidder\'s onBidBillable, and ignore burl', () => {
+        it('should call bidder\'s onBidBillable', () => {
           adapterManager.triggerBilling(bids[0]);
           sinon.assert.called(criteoSpec.onBidBillable);
-          sinon.assert.notCalled(utils.internal.triggerPixel)
         });
         it('should not call again on second trigger', () => {
           adapterManager.triggerBilling(bids[0]);
@@ -425,21 +447,10 @@ describe('adapterManager tests', function () {
         beforeEach(() => {
           bids[0].source = S2S.SRC;
         });
-        it('should call burl and not onBidBillable', () => {
+        it('should not call onBidBillable', () => {
           bids[0].burl = 'burl';
           adapterManager.triggerBilling(bids[0]);
           sinon.assert.notCalled(criteoSpec.onBidBillable);
-          sinon.assert.calledWith(utils.internal.triggerPixel, 'burl');
-        });
-        it('should not call burl if not present', () => {
-          adapterManager.triggerBilling(bids[0]);
-          sinon.assert.notCalled(utils.internal.triggerPixel);
-        });
-        it('should not call burl again on second triggerBilling', () => {
-          bids[0].burl = 'burl';
-          adapterManager.triggerBilling(bids[0]);
-          adapterManager.triggerBilling(bids[0]);
-          sinon.assert.calledOnce(utils.internal.triggerPixel)
         });
       });
     })
@@ -521,7 +532,8 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-      prebidServerAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
     });
 
     const bidRequests = [{
@@ -705,7 +717,8 @@ describe('adapterManager tests', function () {
       let cnt, count = () => cnt++;
 
       beforeEach(function () {
-        prebidServerAdapterMock.callBids.reset();
+        prebidServerAdapterMock.callBids.resetHistory();
+        prebidServerAdapterMock.callBids.resetBehavior();
         cnt = 0;
         events.on(EVENTS.BID_REQUESTED, count);
       });
@@ -746,7 +759,8 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: [CONFIG, CONFIG2]});
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-      prebidServerAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
     });
 
     const bidRequests = [{
@@ -1093,7 +1107,8 @@ describe('adapterManager tests', function () {
       let cnt, count = () => cnt++;
 
       beforeEach(function () {
-        prebidServerAdapterMock.callBids.reset();
+        prebidServerAdapterMock.callBids.resetHistory();
+        prebidServerAdapterMock.callBids.resetBehavior();
         cnt = 0;
         events.on(EVENTS.BID_REQUESTED, count);
       });
@@ -1195,10 +1210,14 @@ describe('adapterManager tests', function () {
 
       stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
 
-      prebidServerAdapterMock.callBids.reset();
-      adequantAdapterMock.callBids.reset();
-      appnexusAdapterMock.callBids.reset();
-      rubiconAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
+      adequantAdapterMock.callBids.resetHistory();
+      adequantAdapterMock.callBids.resetBehavior()
+      appnexusAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetBehavior()
+      rubiconAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetBehavior();
     });
 
     afterEach(function () {
@@ -1382,11 +1401,16 @@ describe('adapterManager tests', function () {
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['pubmatic'] = pubmaticAdapterMock;
 
-      prebidServerAdapterMock.callBids.reset();
-      adequantAdapterMock.callBids.reset();
-      appnexusAdapterMock.callBids.reset();
-      rubiconAdapterMock.callBids.reset();
-      pubmaticAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      adequantAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetHistory();
+      pubmaticAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
+      adequantAdapterMock.callBids.resetBehavior();
+      appnexusAdapterMock.callBids.resetBehavior();
+      rubiconAdapterMock.callBids.resetBehavior();
+      pubmaticAdapterMock.callBids.resetBehavior();
     });
 
     it('calls server adapter if no sources defined for config where testing is true, ' +

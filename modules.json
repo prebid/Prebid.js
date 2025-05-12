@@ -26,6 +26,7 @@
   "smilewantedBidAdapter",
   "sparteoBidAdapter",
   "tripleliftBidAdapter",
+  "ttdBidAdapter",
   "viouslyBidAdapter",
   "yahooAdsBidAdapter",
 
@@ -33,6 +34,7 @@
   "greenbidsRtdProvider",
   "iasRtdProvider",
   "intersectionRtdProvider",
+  "nodalsAiRtdProvider",
   "sirdataRtdProvider",
   "weboramaRtdProvider",
 

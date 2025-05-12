@@ -16,7 +16,6 @@ var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
@@ -28,6 +27,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+const run = require('gulp-run-command').default;
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -48,7 +48,7 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['build'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
@@ -79,23 +79,18 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const isFixed = function (file) {
-    return file.eslint != null && file.eslint.fixed;
+  const args = ['eslint'];
+  if (!argv.nolintfix) {
+    args.push('--fix');
   }
-  return gulp.src([
-    'src/**/*.js',
-    'modules/**/*.js',
-    'libraries/**/*.js',
-    'creative/**/*.js',
-    'test/**/*.js',
-    'plugins/**/*.js',
-    '!plugins/**/node_modules/**',
-    './*.js'
-  ], { base: './' })
-    .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
-    .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError())
-    .pipe(gulpif(isFixed, gulp.dest('./')));
+  if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
+    args.push('--quiet')
+  }
+  return run(args.join(' '))().then(() => {
+    done();
+  }, (err) => {
+    done(err);
+  });
 };
 
 // View the code coverage report in the browser.
@@ -334,6 +329,16 @@ function bundle(dev, moduleArr) {
     .pipe(gulpif(sm, sourcemaps.write('.')));
 }
 
+function setupDist() {
+  return gulp.src(['build/dist/**/*'])
+    .pipe(rename(function (path) {
+      if (path.dirname === '.' && path.basename === 'prebid') {
+        path.dirname = 'not-for-prod';
+      }
+    }))
+    .pipe(gulp.dest('dist'))
+}
+
 // Run the unit tests.
 //
 // By default, this runs in headless chrome.
@@ -528,7 +533,7 @@ gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(s
 gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
-gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
@@ -540,7 +545,9 @@ gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+// npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
+gulp.task('setup-npmignore', run("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample, setupDist, 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
