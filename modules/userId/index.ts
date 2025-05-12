@@ -120,32 +120,33 @@
 import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
-import {getGlobal} from '../../src/prebidGlobal.js';
+import {addApiMethod} from '../../src/prebidGlobal.js';
 import adapterManager from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {EID_CONFIG, getEids} from './eids.js';
 import {
-  getCoreStorageManager,
-  getStorageManager,
-  STORAGE_TYPE_COOKIES,
-  STORAGE_TYPE_LOCALSTORAGE
+    getCoreStorageManager,
+    getStorageManager,
+    STORAGE_TYPE_COOKIES,
+    STORAGE_TYPE_LOCALSTORAGE,
+    type StorageType
 } from '../../src/storageManager.js';
 import {
-  deepSetValue,
-  delayExecution,
-  isArray,
-  isEmpty,
-  isFn,
-  isGptPubadsDefined,
-  isNumber,
-  isPlainObject,
-  logError,
-  logInfo,
-  logWarn
+    deepSetValue,
+    delayExecution,
+    isArray,
+    isEmpty,
+    isFn,
+    isGptPubadsDefined,
+    isNumber,
+    isPlainObject,
+    logError,
+    logInfo,
+    logWarn
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
-import {defer, PbPromise, delay} from '../../src/utils/promise.js';
+import {defer, delay, PbPromise} from '../../src/utils/promise.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
 import {allConsent, GDPR_GVLIDS} from '../../src/consentHandler.js';
@@ -153,8 +154,11 @@ import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
-import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
-import {startAuction} from '../../src/prebid.js';
+import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.js';
+import {startAuction, type StartAuctionOptions} from '../../src/prebid.js';
+import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
+import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
+import type {BidderCode} from "../../src/types/common.d.ts";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -163,6 +167,107 @@ export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
   isAllowed: isActivityAllowed
+}
+
+type UserIdProvider = string;
+
+export interface UserId {
+    [idName: string]: unknown;
+}
+
+type ProviderParams<M extends UserIdProvider> = {
+    provides: M;
+    params: unknown;
+}
+
+type DefaultProviderParams = {[M in UserIdProvider]: ProviderParams<M>};
+
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface UserIdProviders extends DefaultProviderParams {
+}
+
+
+
+interface UserIdConfig<M extends UserIdProvider> {
+    /**
+     * User ID provider name.
+     */
+    name: M;
+    /**
+     * Module specific configuration parameters.
+     */
+    params?: UserIdProviders[M]['params'];
+    /**
+     * An array of bidder codes to which this user ID may be sent.
+     */
+    bidders?: BidderCode[];
+    /**
+     * Where the user ID will be stored.
+     */
+    storage?: {
+        /**
+         * Storage method.
+         */
+        type: StorageType | `${StorageType}&${StorageType}`;
+        /**
+         * The name of the cookie or html5 local storage where the user ID will be stored.
+         */
+        name: string;
+        /**
+         * How long (in days) the user ID information will be stored. If this parameter isn’t specified,
+         * session cookies are used in cookie-mode, and local storage mode will create new IDs on every page.
+         */
+        expires?: number;
+        /**
+         * The amount of time (in seconds) the user ID should be cached in storage before calling the provider again
+         * to retrieve a potentially updated value for their user ID.
+         * If set, this value should equate to a time period less than the number of days defined in storage.expires.
+         * By default the ID will not be refreshed until it expires.
+         */
+        refreshInSeconds?: number;
+        /**
+         * Used only if the page has a separate mechanism for storing a User ID.
+         * The value is an object containing the values to be sent to the adapters.
+         */
+        value?: UserId[UserIdProviders[M]['provides']];
+    }
+}
+
+
+declare module '../../src/userSync' {
+    interface UserSyncConfig {
+        /**
+         * EID source to use as PPID for GAM.
+         *
+         * Publishers using Google AdManager may want to sync one of the identifiers as their Google PPID for frequency capping or reporting.
+         * The PPID in GAM (which is unrelated to the PPID UserId Submodule) has strict rules; refer to Google AdManager documentation for them.
+         * Please note, Prebid uses a GPT command to sync identifiers for publisher convenience.
+         * It doesn’t currently work for instream video requests, as Prebid typically interacts with the player,
+         * which in turn may interact with IMA. IMA does has a similar method as GPT, but IMA does not gather this ID from GPT.
+         */
+        ppid?: string;
+        /**
+         * Map from userID name (the key in the object returned by `getUserIds`) to names of modules that should be preferred
+         * as sources for that ID, in order of decreasing priority.
+         */
+        idPriority?: {
+            [idName: keyof UserId]: UserIdProvider[]
+        }
+        userIds?: UserIdConfig<any>[];
+        // TODO documentation for these is either missing or inscrutable
+        encryptedSignalSources?: {
+            sources: {
+                source: string[]
+                encrypt: boolean;
+                customFunc: AnyFunction
+            }[]
+            /**
+             * The amount of time (in milliseconds) after which registering of signals will happen. Default value 0 is considered if ‘registerDelay’ is not provided.
+             */
+            registerDelay?: number;
+        }
+    }
 }
 
 /** @type {SubmoduleContainer[]} */
@@ -214,7 +319,7 @@ export function setSubmoduleRegistry(submodules) {
   updateEIDConfig(submodules);
 }
 
-function cookieSetter(submodule, storageMgr) {
+function cookieSetter(submodule, storageMgr?) {
   storageMgr = storageMgr || submodule.storageMgr;
   const domainOverride = (typeof submodule.submodule.domainOverride === 'function') ? submodule.submodule.domainOverride() : null;
   const name = submodule.config.storage.name;
@@ -404,12 +509,11 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
 
 /**
  * @param {SubmodulePriorityMap} priorityMap
- * @returns {{}}
  */
-function getIds(priorityMap) {
+function getIds(priorityMap): Partial<UserId> {
   return Object.fromEntries(
     Object.entries(priorityMap)
-      .map(([key, getActiveModule]) => [key, getActiveModule()?.idObj?.[key]])
+      .map(([key, getActiveModule]: [string, any]) => [key, getActiveModule()?.idObj?.[key]])
       .filter(([_, value]) => value != null)
   )
 }
@@ -445,7 +549,7 @@ function orderByPriority(items, getKeys, getIdMod) {
       keyItems.splice(pos === -1 ? keyItems.length : pos, 0, [keyPriority, item])
     })
   })
-  return Object.fromEntries(Object.entries(tally).map(([key, items]) => [key, items.map(([_, item]) => item)]))
+  return Object.fromEntries(Object.entries(tally).map(([key, items]: [string, any]) => [key, items.map(([_, item]) => item)]))
 }
 
 /**
@@ -482,8 +586,8 @@ function mkPriorityMaps() {
       (submod) => Object.keys(submod.idObj ?? {}),
       (submod) => submod.submodule,
     )
-    const global = {};
-    const bidder = {};
+    const global: any = {};
+    const bidder: any = {};
 
     function activeModuleGetter(key, useGlobals, modules) {
       return function () {
@@ -521,7 +625,7 @@ function mkPriorityMaps() {
     Object.entries(modulesById)
       .forEach(([key, modules]) => {
         let allNonGlobal = true;
-        const bidderFilters = new Set();
+        const bidderFilters = new Set<any>();
         modules = modules.map(module => {
           let bidders = null;
           if (Array.isArray(module.config.bidders) && module.config.bidders.length > 0) {
@@ -596,8 +700,8 @@ export function addIdData({adUnits, ortb2Fragments}) {
 const INIT_CANCELED = {};
 
 function idSystemInitializer({mkDelay = delay} = {}) {
-  const startInit = defer();
-  const startCallbacks = defer();
+  const startInit = defer<void>();
+  const startCallbacks = defer<void>();
   let cancel;
   let initialized = false;
   let initMetrics;
@@ -712,7 +816,7 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.ts
  */
-export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
+export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj: StartAuctionOptions, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
   PbPromise.race([
     getIds().catch(() => null),
     mkDelay(auctionDelay)
@@ -729,7 +833,7 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
  * @param {function} fn required; The next function in the chain, used by hook.ts
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  */
-export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
+export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj: StartAuctionOptions) {
   addIdData(reqBidsConfigObj);
   // calling fn allows prebid to continue processing
   fn.call(this, reqBidsConfigObj);
@@ -755,7 +859,7 @@ function getUserIds() {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIdsAsEids() {
+function getUserIdsAsEids(): ORTBRequest['user']['eids'] {
   return getEids(initializedSubmodules.combined)
 }
 
@@ -764,7 +868,7 @@ function getUserIdsAsEids() {
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
 
-function getUserIdsAsEidBySource(sourceName) {
+function getUserIdsAsEidBySource(sourceName: string): ORTBRequest['user']['eids'][0] | undefined {
   return getUserIdsAsEids().filter(eid => eid.source === sourceName)[0];
 }
 
@@ -832,7 +936,7 @@ function registerSignalSources() {
   }
 }
 
-function retryOnCancel(initParams) {
+function retryOnCancel(initParams?) {
   return initIdSystem(initParams).then(
     () => getUserIds(),
     (e) => {
@@ -856,10 +960,12 @@ function retryOnCancel(initParams) {
  * return a promise that resolves to the same value as `getUserIds()` when the refresh is complete.
  * If a refresh is already in progress, it will be canceled (rejecting promises returned by previous calls to `refreshUserIds`).
  *
- * @param submoduleNames? submodules to refresh. If omitted, refresh all submodules.
- * @param callback? called when the refresh is complete
+ * @param submoduleNames submodules to refresh. If omitted, refresh all submodules.
+ * @param callback called when the refresh is complete
  */
-function refreshUserIds({submoduleNames} = {}, callback) {
+function refreshUserIds({submoduleNames}: {
+    submoduleNames?: string[]
+} = {}, callback?: () => void): Promise<Partial<UserId>> {
   return retryOnCancel({refresh: true, submoduleNames})
     .then((userIds) => {
       if (callback && isFn(callback)) {
@@ -880,7 +986,7 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  * ```
  */
 
-function getUserIdsAsync() {
+function getUserIdsAsync(): Promise<Partial<UserId>> {
   return retryOnCancel();
 }
 
@@ -963,8 +1069,8 @@ function updatePPID(priorityMaps) {
       if (isGptPubadsDefined()) {
         window.googletag.pubads().setPublisherProvidedId(ppid);
       } else {
-        window.googletag = window.googletag || {};
-        window.googletag.cmd = window.googletag.cmd || [];
+        (window as any).googletag = window.googletag || {};
+        (window.googletag as any).cmd = window.googletag.cmd || [];
         window.googletag.cmd.push(function() {
           window.googletag.pubads().setPublisherProvidedId(ppid);
         });
@@ -1220,12 +1326,24 @@ export function attachIdSystem(submodule) {
   }
 }
 
-function normalizePromise(fn) {
+function normalizePromise<T extends AnyFunction>(fn: T): Wraps<T> {
   // for public methods that return promises, make sure we return a "normal" one - to avoid
   // exposing confusing stack traces
-  return function() {
-    return Promise.resolve(fn.apply(this, arguments));
-  }
+  return function(...args) {
+    return Promise.resolve(fn.apply(this, args));
+  } as any;
+}
+
+declare module '../../src/prebidGlobal' {
+    interface PrebidJS {
+        getUserIds: typeof getUserIds;
+        getUserIdsAsync: typeof getUserIdsAsync;
+        getUserIdsAsEids: typeof getUserIdsAsEids;
+        getEncryptedEidsForSource: typeof getEncryptedEidsForSource;
+        registerSignalSources: typeof registerSignalSources;
+        refreshUserIds: typeof refreshUserIds;
+        getUserIdsAsEidBySource: typeof getUserIdsAsEidBySource;
+    }
 }
 
 /**
@@ -1247,7 +1365,7 @@ export function init(config, {mkDelay = delay} = {}) {
   // listen for config userSyncs to be set
   configListener = config.getConfig('userSync', conf => {
     // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
-    const userSync = conf.userSync;
+    const userSync: UserSyncConfig = conf.userSync;
     if (userSync) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
@@ -1262,13 +1380,13 @@ export function init(config, {mkDelay = delay} = {}) {
   });
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
-  (getGlobal()).getUserIds = getUserIds;
-  (getGlobal()).getUserIdsAsEids = getUserIdsAsEids;
-  (getGlobal()).getEncryptedEidsForSource = normalizePromise(getEncryptedEidsForSource);
-  (getGlobal()).registerSignalSources = registerSignalSources;
-  (getGlobal()).refreshUserIds = normalizePromise(refreshUserIds);
-  (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
-  (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
+  addApiMethod('getUserIds', getUserIds);
+  addApiMethod('getUserIdsAsEids', getUserIdsAsEids);
+  addApiMethod('getEncryptedEidsForSource', normalizePromise(getEncryptedEidsForSource));
+  addApiMethod('registerSignalSources', registerSignalSources);
+  addApiMethod('refreshUserIds', normalizePromise(refreshUserIds));
+  addApiMethod('getUserIdsAsync', normalizePromise(getUserIdsAsync));
+  addApiMethod('getUserIdsAsEidBySource', getUserIdsAsEidBySource);
   if (!addedStartAuctionHook()) {
     // Add ortb2.user.ext.eids even if 0 submodules are added
     startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd

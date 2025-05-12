@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {getGlobal, PrebidJS} from './prebidGlobal.js';
+import {addApiMethod, getGlobal, PrebidJS} from './prebidGlobal.js';
 import {
     deepAccess,
     deepClone,
@@ -361,17 +361,6 @@ function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
   if (FEATURES.VIDEO) {
     adUnits.forEach(au => fillVideoDefaults(au))
   }
-}
-
-function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
-    return function (...args) {
-        logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
-        return fn.apply(this, args);
-    }
-}
-
-function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS[N], log = true) {
-    pbjsInstance[name] = log ? logInvocation(name, method) as PrebidJS[N] : method;
 }
 
 /// ///////////////////////////////
@@ -956,34 +945,24 @@ function getEvents() {
 }
 addApiMethod('getEvents', getEvents);
 
-/*
- * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
- * @param  {Function} bidderAdaptor [description]
- * @param  {string} bidderCode [description]
- * @param  {object} spec [description]
- * @alias module:pbjs.registerBidAdapter
- */
-pbjsInstance.registerBidAdapter = logInvocation('registerBidAdapter', function (bidderAdaptor, bidderCode, spec) {
-  try {
-    const bidder = spec ? newBidder(spec) : bidderAdaptor();
-    adapterManager.registerBidAdapter(bidder, bidderCode);
-  } catch (e) {
-    logError('Error registering bidder adapter : ' + e.message);
-  }
-});
+function registerBidAdapter(bidderAdaptor, bidderCode, spec) {
+    try {
+        const bidder = spec ? newBidder(spec) : bidderAdaptor();
+        adapterManager.registerBidAdapter(bidder, bidderCode);
+    } catch (e) {
+        logError('Error registering bidder adapter : ' + e.message);
+    }
+}
+addApiMethod('registerBidAdapter', registerBidAdapter);
 
-/**
- * Wrapper to register analyticsAdapter externally (adapterManager.registerAnalyticsAdapter())
- * @param  {Object} options [description]
- * @alias module:pbjs.registerAnalyticsAdapter
- */
-pbjsInstance.registerAnalyticsAdapter = logInvocation('registerAnalyticsAdapter', function (options) {
-  try {
-    adapterManager.registerAnalyticsAdapter(options);
-  } catch (e) {
-    logError('Error registering analytics adapter : ' + e.message);
-  }
-});
+function registerAnalyticsAdapter(options) {
+    try {
+        adapterManager.registerAnalyticsAdapter(options);
+    } catch (e) {
+        logError('Error registering analytics adapter : ' + e.message);
+    }
+}
+addApiMethod('registerAnalyticsAdapter', registerAnalyticsAdapter);
 
 /**
  * Enable sending analytics data to the analytics provider of your

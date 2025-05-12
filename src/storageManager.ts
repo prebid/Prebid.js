@@ -18,6 +18,8 @@ import type {BidderCode} from "./types/common.d.ts";
 export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 export const STORAGE_TYPE_COOKIES = 'cookie';
 
+export type StorageType = typeof STORAGE_TYPE_LOCALSTORAGE | typeof STORAGE_TYPE_COOKIES;
+
 export let storageCallbacks = [];
 
 /* eslint-disable no-restricted-properties */
