@@ -19,8 +19,9 @@ import {
 } from './utils.js';
 import {DEBUG_MODE} from './constants.js';
 import type {UserSyncConfig} from "./userSync.ts";
-import type {DeepProperty, DeepPropertyName, TypeOfDeepProperty} from "./types/objects.d.ts";
+import type {DeepPartial, DeepProperty, DeepPropertyName, TypeOfDeepProperty} from "./types/objects.d.ts";
 import type {BidderCode} from "./types/common.d.ts";
+import type {ORTBRequest} from "./types/ortb/request.d.ts";
 
 const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
@@ -244,6 +245,11 @@ export interface Config {
      * If set to `private`, remove public access to Prebid's alias registry
      */
     aliasRegistry?: 'private'
+    /**
+     * ORTB-formatted first party data.
+     * https://docs.prebid.org/features/firstPartyData.html
+     */
+    ortb2?: DeepPartial<ORTBRequest>;
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };

@@ -414,12 +414,12 @@ declare module './prebidGlobal' {
         getHighestCpmBids: typeof getHighestCpmBids;
         clearAllAuctions: typeof clearAllAuctions;
         markWinningBidAsUsed: typeof markWinningBidAsUsed;
-        getConfig;
-        readConfig;
-        mergeConfig;
-        mergeBidderConfig;
-        setConfig;
-        setBidderConfig;
+        getConfig: typeof config.getConfig;
+        readConfig: typeof config.readConfig;
+        mergeConfig: typeof config.mergeConfig;
+        mergeBidderConfig: typeof config.mergeBidderConfig;
+        setConfig: typeof config.setConfig;
+        setBidderConfig: typeof config.setBidderConfig;
         processQueue: typeof processQueue;
         triggerBilling: typeof triggerBilling;
     }
@@ -1120,24 +1120,12 @@ if (FEATURES.VIDEO) {
     addApiMethod('markWinningBidAsUsed', markWinningBidAsUsed);
 }
 
-/**
- * Get Prebid config options
- * @param {Object} options
- * @alias module:pbjs.getConfig
- */
-pbjsInstance.getConfig = config.getAnyConfig;
-pbjsInstance.readConfig = config.readAnyConfig;
-pbjsInstance.mergeConfig = config.mergeConfig;
-pbjsInstance.mergeBidderConfig = config.mergeBidderConfig;
-
-/**
- * Set Prebid config options.
- * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
- *
- * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
- */
-pbjsInstance.setConfig = config.setConfig;
-pbjsInstance.setBidderConfig = config.setBidderConfig;
+addApiMethod('getConfig', config.getAnyConfig);
+addApiMethod('readConfig', config.readAnyConfig);
+addApiMethod('mergeConfig', config.mergeConfig);
+addApiMethod('mergeBidderConfig', config.mergeBidderConfig);
+addApiMethod('setConfig', config.setConfig);
+addApiMethod('setBidderConfig', config.setBidderConfig);
 
 pbjsInstance.que.push(() => listenMessagesFromCreative());
 
