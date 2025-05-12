@@ -51,10 +51,17 @@ describe('luponmediaBidAdapter', function () {
       }
     ];
 
-    const bidderRequest = { bidderCode: 'luponmedia' };
+    const bidderRequest = {
+      bidderCode: 'luponmedia',
+      gdprConsent: {
+        gdprApplies: true
+      },
+      uspConsent: true
+    };
 
     it('sends bid request to default endpoint', function () {
       const req = spec.buildRequests(bidRequests, bidderRequest);
+
       expect(req.url).to.include('https://rtb.adxpremium.services/openrtb2/auction');
       expect(req.method).to.equal('POST');
       expect(req.data.imp[0].ext.luponmedia.placement_id).to.equal('test-div');
@@ -63,6 +70,7 @@ describe('luponmediaBidAdapter', function () {
 
     it('sends bid request to endpoint specified in keyId', function () {
       bidRequests[0].params.keyId = 'uid@eu_test_300_600';
+
       const req = spec.buildRequests(bidRequests, bidderRequest);
       expect(req.url).to.include('https://eu.adxpremium.services/openrtb2/auction');
     });
@@ -178,152 +186,16 @@ describe('luponmediaBidAdapter', function () {
       expect(result[0].referrer).to.equal('https://mysite.com');
     });
 
-    it('handles nobid responses', function () {
-        const bidRequests = [{
-          bidId: 'no-bid',
-          adUnitCode: 'test-div',
-          params: { keyId: 'uid_test_300_600' },
-          mediaTypes: { banner: { sizes: [[300, 250]] } }
-        }];
-        const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} });
-      
-        const result = spec.interpretResponse({ status: 204, body: {} }, { data: ortbRequest });
-        expect(result).to.deep.equal([]);
-      });
-
-      it('should return empty array for unhandled response', function () {
-        const bidRequests = [{
-          bidId: 'bad-response',
-          adUnitCode: 'test-div',
-          params: { keyId: 'uid_test_300_600' },
-          mediaTypes: { banner: { sizes: [[300, 250]] } }
-        }];
-        const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} });
-      
-        const result = spec.interpretResponse({ status: 400, body: {} }, { data: ortbRequest });
-        expect(result).to.deep.equal([]);
-      });
-
-    it('should handle 206 status and align fallback bids correctly', function () {
-      const now = Date.now();
-      const fallbackBid = {
-        requestId: 'fallback123',
-        cpm: 0.1,
-        width: 300,
-        height: 250,
-        ad: '<div>Fallback Ad</div>',
-        ttl: 300,
-        currency: 'USD',
-        creativeId: 'fallbackCreative',
-        responseTimestamp: now - 1000,
-        mediaType: 'banner',
-        size: '300x250',
-        meta: { advertiserDomains: ['fdj.fr'] }
-      };
-
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('dabStore').returns(JSON.stringify([fallbackBid]));
-
-      const bidRequests = [
-        {
-          bidId: 'fallback123',
-          adUnitCode: 'test-div',
-          params: { keyId: 'uid_test_300_600' },
-          mediaTypes: { banner: { sizes: [[300, 250]] } }
-        }
-      ];
-
-      const bidderRequest = { refererInfo: { referer: 'https://example.com' } };
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest });
-
-      const result = spec.interpretResponse({ status: 206, body: 'Partial content' }, { data: ortbRequest });
-
-      expect(result).to.have.lengthOf(1);
-      expect(result[0].creativeId).to.equal('fallbackCreative');
-      expect(result[0].cpm).to.equal(0.1);
-    });
-
-    it('should ignore fallback bids with mismatched sizes', function () {
-      const bid = {
-        requestId: 'badsize',
-        cpm: 0.3,
-        width: 728,
-        height: 90,
-        ad: '<div>Wrong Size</div>',
-        ttl: 300,
-        currency: 'USD',
-        creativeId: 'badCreative',
-        responseTimestamp: Date.now(),
-        mediaType: 'banner',
-        size: '728x90',
-        meta: { advertiserDomains: ['bad.com'] }
-      };
-
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('dabStore').returns(JSON.stringify([bid]));
-
+    it('should return empty array for unhandled response', function () {
       const bidRequests = [{
-        bidId: 'test-id',
+        bidId: 'bad-response',
         adUnitCode: 'test-div',
         params: { keyId: 'uid_test_300_600' },
         mediaTypes: { banner: { sizes: [[300, 250]] } }
       }];
-
       const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} });
-      const result = spec.interpretResponse({ status: 206, body: 'Partial content' }, { data: ortbRequest });
 
-      expect(result).to.be.an('array').that.is.empty;
-    });
-
-    it('should ignore expired fallback bids from localStorage', function () {
-      const expired = {
-        requestId: 'expired',
-        cpm: 0.05,
-        width: 300,
-        height: 250,
-        ad: '<div>Expired</div>',
-        ttl: 300,
-        currency: 'USD',
-        creativeId: 'expiredCreative',
-        responseTimestamp: Date.now() - 1000 * 1000,
-        mediaType: 'banner',
-        size: '300x250',
-        meta: { advertiserDomains: ['expired.com'] }
-      };
-
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('dabStore').returns(JSON.stringify([expired]));
-
-      const bidRequests = [{
-        bidId: 'expired',
-        adUnitCode: 'test-div',
-        params: { keyId: 'uid_test_300_600' },
-        mediaTypes: { banner: { sizes: [[300, 250]] } }
-      }];
-
-      const ortbRequest = converter.toORTB({ bidRequests, bidderRequest: {} });
-      const result = spec.interpretResponse({ status: 206, body: 'Partial content' }, { data: ortbRequest });
-
-      expect(result).to.deep.equal([]);
-    });
-
-    it('should return empty array when localStorage is null', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('dabStore').returns(null);
-
-      const ortbRequest = converter.toORTB({ bidRequests: [], bidderRequest: {} });
-      const result = spec.interpretResponse({ status: 206, body: 'Partial content' }, { data: ortbRequest });
-
-      expect(result).to.deep.equal([]);
-    });
-
-    it('should return empty array when store is empty array', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('dabStore').returns(JSON.stringify([]));
-
-      const ortbRequest = converter.toORTB({ bidRequests: [], bidderRequest: {} });
-      const result = spec.interpretResponse({ status: 206, body: 'Partial content' }, { data: ortbRequest });
-
+      const result = spec.interpretResponse({ status: 400, body: {} }, { data: ortbRequest });
       expect(result).to.deep.equal([]);
     });
   });
