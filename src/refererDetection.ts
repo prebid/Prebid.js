@@ -74,6 +74,20 @@ function getCanonicalUrl(doc) {
   return null;
 }
 
+declare module './config' {
+    interface Config {
+        /**
+         * Prebid.js will loop upward through nested iframes to find the top-most referrer. T
+         * his setting limits how many iterations it will attempt before giving up and not setting referrer.
+         */
+        maxNestedIframes?: number;
+        /**
+         * Override the Prebid.js page referrer.
+         */
+        pageUrl?: string;
+    }
+}
+
 /**
  * @param {Window} win Window
  * @returns {Function}

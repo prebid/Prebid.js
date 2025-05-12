@@ -225,17 +225,25 @@ export interface Config {
      */
     disableAjaxTimeout?: boolean;
     /**
-     * Prebid.js will loop upward through nested iframes to find the top-most referrer. T
-     * his setting limits how many iterations it will attempt before giving up and not setting referrer.
-     */
-    maxNestedIframes?: number;
-    /**
      * Prebid ensures that the bid response price doesn’t exceed the maximum bid.
      * If the CPM (after currency conversion) is higher than the maxBid, the bid is rejected.
      * The default maxBid value is 5000.
      */
     maxBid?: number;
     userSync?: UserSyncConfig;
+    /**
+     * Set the order in which bidders are called.
+     */
+    bidderSequence?: typeof RANDOM | typeof FIXED;
+    /**
+     * When a page is prerendered, by default Prebid will delay auctions until it is activated.
+     * Set this to `true` to allow auctions to run during prerendering.
+     */
+    allowPrerendering?: boolean;
+    /**
+     * If set to `private`, remove public access to Prebid's alias registry
+     */
+    aliasRegistry?: 'private'
 }
 
 type PartialConfig = Partial<Config> & { [setting: string]: unknown };

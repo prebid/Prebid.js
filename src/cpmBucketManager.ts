@@ -51,7 +51,7 @@ const _autoPriceConfig = {
 };
 
 function getPriceBucketString(cpm, customConfig, granularityMultiplier = 1) {
-  let cpmFloat = parseFloat(cpm);
+  let cpmFloat: any = parseFloat(cpm);
   if (isNaN(cpmFloat)) {
     cpmFloat = '';
   }
@@ -113,6 +113,16 @@ function isValidPriceConfig(config) {
     }
   });
   return isValid;
+}
+
+declare module './config' {
+    interface Config {
+        /**
+         * CPM rounding function. Default is Math.floor.
+         * @param cpm
+         */
+        cpmRoundingFunction?: (cpm: number) => number;
+    }
 }
 
 function getCpmTarget(cpm, bucket, granularityMultiplier) {

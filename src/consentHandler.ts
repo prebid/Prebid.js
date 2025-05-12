@@ -204,6 +204,16 @@ export function gvlidRegistry() {
 export const gdprDataHandler = new GdprConsentHandler();
 export const uspDataHandler = new UspConsentHandler();
 export const gppDataHandler = new GppConsentHandler();
+
+declare module './config' {
+    interface Config {
+        /**
+         * Child Online Privacy Protection Act (COPPA) flag.
+         */
+        coppa?: boolean;
+    }
+}
+
 export const coppaDataHandler = (() => {
   function getCoppa() {
     return !!(config.getConfig('coppa'))
