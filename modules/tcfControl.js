@@ -2,7 +2,7 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import {deepAccess, logError, logWarn} from '../src/utils.js';
+import {deepAccess, hasDeviceAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
@@ -23,6 +23,7 @@ import {
 import {registerActivityControl} from '../src/activities/rules.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
+  ACTIVITY_ACCESS_REQUEST_CREDENTIALS,
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
   ACTIVITY_FETCH_BIDS,
@@ -32,6 +33,7 @@ import {
   ACTIVITY_TRANSMIT_PRECISE_GEO,
   ACTIVITY_TRANSMIT_UFPD
 } from '../src/activities/activities.js';
+import {processRequestOptions} from '../src/ajax.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -269,6 +271,13 @@ export const accessDeviceRule = ((rule) => {
   };
 })(singlePurposeGdprRule(1, storageBlocked));
 
+export const accessRequestCredentialsRule = ((rule) => {
+  return function (params) {
+    if (!hasDeviceAccess()) return {allow: false};
+    return rule(params);
+  };
+})(singlePurposeGdprRule(1, storageBlocked));
+
 export const syncUserRule = singlePurposeGdprRule(1, storageBlocked);
 export const enrichEidsRule = singlePurposeGdprRule(1, storageBlocked);
 export const fetchBidsRule = exceptPrebidModules(singlePurposeGdprRule(2, biddersBlocked));
@@ -347,6 +356,8 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, RULE_NAME, accessRequestCredentialsRule));
+      processRequestOptions.before(checkIfCredentialsAllowed);
     }
     if (ACTIVE_RULES.purpose[2] != null) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
@@ -367,8 +378,19 @@ export function setEnforcementConfig(config) {
   }
 }
 
+function checkIfCredentialsAllowed(next, options = {}) {
+  if (!options.withCredentials) {
+    next(options);
+    return;
+  }
+  const consentData = gdprDataHandler.getConsentData();
+  options.withCredentials = hasDeviceAccess() && validateRules(ACTIVE_RULES.purpose[1], consentData);
+  next(options);
+}
+
 export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
+  processRequestOptions.getHooks({hooks: checkIfCredentialsAllowed}).remove();
   hooksAdded = false;
 }
 
