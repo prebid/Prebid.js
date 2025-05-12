@@ -1,6 +1,6 @@
 import {checkCookieSupport, hasDeviceAccess, logError} from './utils.js';
 import {bidderSettings} from './bidderSettings.js';
-import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, type ModuleType} from './activities/modules.js';
 import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
 import {
   ACTIVITY_PARAM_ADAPTER_CODE,
@@ -12,6 +12,8 @@ import {ACTIVITY_ACCESS_DEVICE} from './activities/activities.js';
 import {config} from './config.js';
 import adapterManager from './adapterManager.js';
 import {activityParams} from './activities/activityParams.js';
+import type {AnyFunction} from "./types/functions.d.ts";
+import type {BidderCode} from "./types/common.d.ts";
 
 export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 export const STORAGE_TYPE_COOKIES = 'cookie';
@@ -20,10 +22,41 @@ export let storageCallbacks = [];
 
 /* eslint-disable no-restricted-properties */
 
+interface AcceptsCallback<FN extends AnyFunction> {
+    (...args: Parameters<FN>): ReturnType<FN>;
+    (...args: [...Parameters<FN>, (result: ReturnType<FN>) => void]): void;
+}
+
+type BrowserStorage = 'localStorage' | 'sessionStorage';
+
+export type StorageManager = {
+    [M in BrowserStorage as `has${Capitalize<M>}`]: AcceptsCallback<() => boolean>;
+} & {
+    [M in BrowserStorage as `${M}IsEnabled`]: AcceptsCallback<() => boolean>;
+} & {
+    // eslint-disable-next-line no-restricted-globals
+    [M in BrowserStorage as `setDataIn${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.setItem>;
+} & {
+    // eslint-disable-next-line no-restricted-globals
+    [M in BrowserStorage as `getDataFrom${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.getItem>;
+} & {
+    // eslint-disable-next-line no-restricted-globals
+    [M in BrowserStorage as `removeDataFrom${Capitalize<M>}`]: AcceptsCallback<typeof localStorage.removeItem>
+} & {
+    setCookie: AcceptsCallback<(name: string, value: string, expires?: string, sameSite?: string, domain?: string) => void>;
+    getCookie: AcceptsCallback<(name: string) => string>;
+    cookiesAreEnabled: AcceptsCallback<() => boolean>;
+    findSimilarCookies: AcceptsCallback<(contains: string) => string[]>
+}
+
+
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
-export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = isActivityAllowed} = {}) {
+export function newStorageManager({moduleName, moduleType}: {
+    moduleName: string;
+    moduleType: ModuleType;
+} = {} as any, {isAllowed = isActivityAllowed} = {}) {
   function isValid(cb, storageType) {
     let mod = moduleName;
     const curBidder = config.getCurrentBidder();
@@ -105,9 +138,9 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
 
   function storageMethods(name) {
     const capName = name.charAt(0).toUpperCase() + name.substring(1);
-    const backend = () => window[name];
+    const backend = () => window[name] as any;
 
-    const hasStorage = function (done) {
+    const hasStorage: AcceptsCallback<() => boolean> = function (done) {
       let cb = function (result) {
         if (result && result.valid) {
           try {
@@ -119,7 +152,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
         return false;
       }
       return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
-    }
+    } as any;
 
     return {
       [`has${capName}`]: hasStorage,
@@ -205,7 +238,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
     ...storageMethods('localStorage'),
     ...storageMethods('sessionStorage'),
     findSimilarCookies
-  }
+  } as StorageManager;
 }
 
 /**
@@ -215,7 +248,11 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
  *  for `{moduleType: 'bidder', moduleName: bidderCode}`.
  *
  */
-export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
+export function getStorageManager({moduleType, moduleName, bidderCode}: {
+    moduleType?: ModuleType;
+    moduleName?: string;
+    bidderCode?: BidderCode;
+} = {}) {
   function err() {
     throw new Error(`Invalid invocation for getStorageManager: must set either bidderCode, or moduleType + moduleName`)
   }
