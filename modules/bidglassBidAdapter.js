@@ -147,9 +147,10 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {BidRequest} bidRequest The original bid request for this bid
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
 
     _each(serverResponse.body.bidResponses, function(serverBid) {
@@ -164,7 +165,19 @@ export const spec = {
         mediaType: serverBid.mediaType || 'banner',
         netRevenue: true,
         ttl: serverBid.ttl || 10,
-        ad: serverBid.ad,
+        // Replace the &replaceme placeholder in the returned <script> URL with
+        // URL-encoded GDPR/GPP params from the bid request. If no relevant values
+        // are present, &replaceme is removed entirely.
+        ad: serverBid.ad.replace(
+          '&replaceme',
+          () => {
+            const urlEncodedExtras = ['gdprApplies','gdprConsent','gppString','gppSid']
+              .filter(key => bidRequest[key] != null)
+              .map(key => `${key}=${encodeURIComponent(bidRequest[key])}`)
+              .join('&');
+            return urlEncodedExtras ? ('&' + urlEncodedExtras) : '';
+          }
+        ),
         meta: {}
       };
 
