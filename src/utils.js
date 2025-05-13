@@ -2,7 +2,6 @@ import {config} from './config.js';
 import {includes} from './polyfill.js';
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
-import {getGlobal} from './prebidGlobal.js';
 import { default as deepAccess } from 'dlv/index.js';
 import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
 
@@ -18,8 +17,6 @@ let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
 let windowDimensions;
-
-const pbjsInstance = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -605,7 +602,7 @@ export function getValue(obj, key) {
   return obj[key];
 }
 
-export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
+export function getBidderCodes(adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);

@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {addApiMethod, getGlobal} from './prebidGlobal.js';
+import {getGlobal, type PrebidJS} from './prebidGlobal.js';
 import {
     deepAccess,
     deepClone,
@@ -63,6 +63,7 @@ import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
 import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
+import type {AnyFunction, Wraps} from "./types/functions";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -361,6 +362,18 @@ function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
     adUnits.forEach(au => fillVideoDefaults(au))
   }
 }
+
+function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
+    return function (...args) {
+        logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
+        return fn.apply(this, args);
+    }
+}
+
+export function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS[N], log = true) {
+    getGlobal()[name] = log ? logInvocation(name, method) as PrebidJS[N] : method;
+}
+
 
 /// ///////////////////////////////
 //                              //

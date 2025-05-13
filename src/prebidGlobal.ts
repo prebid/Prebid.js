@@ -1,6 +1,3 @@
-import type {AnyFunction, Wraps} from "./types/functions.d.ts";
-import {logInfo} from "./utils.js";
-
 interface Command {
     (): any;
 }
@@ -43,16 +40,6 @@ export function getGlobal() {
 }
 
 
-function logInvocation<T extends AnyFunction>(name: string, fn: T): Wraps<T> {
-    return function (...args) {
-        logInfo(`Invoking $$PREBID_GLOBAL$$.${name}`, args);
-        return fn.apply(this, args);
-    }
-}
-
-export function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS[N], log = true) {
-    global[name] = log ? logInvocation(name, method) as PrebidJS[N] : method;
-}
 
 export function registerModule(name: string) {
   global.installedModules.push(name);
