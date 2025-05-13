@@ -5,10 +5,6 @@ export function includes(target, elem, start) {
   return (target && target.includes(elem, start)) || false;
 }
 
-export function arrayFrom() {
-  return Array.from.apply(Array, arguments);
-}
-
 export function find(arr, pred, thisArg) {
   return arr && arr.find(pred, thisArg);
 }

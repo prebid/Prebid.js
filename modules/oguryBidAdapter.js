@@ -13,9 +13,9 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.0';
+const ADAPTER_VERSION = '2.0.3';
 
-export const converter = ortbConverter({
+export const ortbConverterProps = {
   context: {
     netRevenue: true,
     ttl: 60,
@@ -61,11 +61,18 @@ export const converter = ortbConverter({
   },
 
   bidResponse(buildBidResponse, bid, context) {
+    const nurl = bid.nurl;
+    delete bid.nurl;
+
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.currency = 'USD';
+    bidResponse.nurl = nurl;
+
     return bidResponse;
   }
-});
+}
+
+export const converter = ortbConverter(ortbConverterProps);
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
