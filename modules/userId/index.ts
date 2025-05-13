@@ -133,17 +133,18 @@ import {
     type StorageType
 } from '../../src/storageManager.js';
 import {
-    deepSetValue,
-    delayExecution,
-    isArray,
-    isEmpty,
-    isFn,
-    isGptPubadsDefined,
-    isNumber,
-    isPlainObject,
-    logError,
-    logInfo,
-    logWarn
+  deepSetValue,
+  delayExecution,
+  isArray,
+  isEmpty,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  isPlainObject,
+  logError,
+  logInfo,
+  logWarn,
+  deepEqual,
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, delay, PbPromise} from '../../src/utils/promise.js';
@@ -266,6 +267,14 @@ declare module '../../src/userSync' {
              */
             registerDelay?: number;
         }
+        /**
+         * If true (the default), updating userSync.userIds will not remove previously configured IDs.
+         */
+        retainConfig?: boolean;
+        /**
+         * If true, updating userSync.userIds will automatically refresh IDs that have not yet been fetched.
+         */
+        autoRefresh?: boolean;
     }
 }
 
@@ -1232,35 +1241,53 @@ function updateEIDConfig(submodules) {
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
+export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
+  const {autoRefresh, retainConfig} = options;
+  return registry
+    .reduce((acc, submodule) => {
+      const {name, aliasName} = submodule;
+      const matchesName = (query) => [name, aliasName].some(value => value?.toLowerCase() === query.toLowerCase());
+      const submoduleConfig = configs.find((configItem) => matchesName(configItem.name));
+
+      if (!submoduleConfig) {
+        if (!retainConfig) return acc;
+        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
+        return previousSubmodule ? [...acc, previousSubmodule] : acc;
+      }
+
+      const newSubmoduleContainer = {
+        submodule,
+        config: {
+          ...submoduleConfig,
+          name: submodule.name
+        },
+        callback: undefined,
+        idObj: undefined,
+        storageMgr: getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: submoduleConfig.name})
+      } as any;
+
+      if (autoRefresh) {
+        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
+        newSubmoduleContainer.refreshIds = !previousSubmodule || !deepEqual(newSubmoduleContainer.config, previousSubmodule.config);
+      }
+
+      return [...acc, newSubmoduleContainer];
+    }, []);
+}
+
 /**
  * update submodules by validating against existing configs and storage types
  */
-function updateSubmodules() {
+function updateSubmodules(options = {}) {
   updateEIDConfig(submoduleRegistry);
   const configs = getValidSubmoduleConfigs(configRegistry);
   if (!configs.length) {
     return;
   }
-  // do this to avoid reprocessing submodules
-  // TODO: the logic does not match the comment - addedSubmodules is always a copy of submoduleRegistry
-  // (if it did it would not be correct - it's not enough to find new modules, as others may have been removed or changed)
-  const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
 
+  const updatedContainers = generateSubmoduleContainers(options, configs);
   submodules.splice(0, submodules.length);
-  // find submodule and the matching configuration, if found create and append a SubmoduleContainer
-  addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
-      (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
-    if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
-    return submoduleConfig ? {
-      submodule: i,
-      config: submoduleConfig,
-      callback: undefined,
-      idObj: undefined,
-      storageMgr: getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: submoduleConfig.name}),
-    } : null;
-  }).filter(submodule => submodule !== null)
-    .forEach((sm) => submodules.push(sm));
+  submodules.push(...updatedContainers);
 
   if (submodules.length) {
     if (!addedStartAuctionHook()) {
@@ -1368,12 +1395,17 @@ export function init(config, {mkDelay = delay} = {}) {
     if (userSync) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
+        const {autoRefresh = false, retainConfig = true} = userSync;
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
-        updateSubmodules();
+        updateSubmodules({retainConfig, autoRefresh});
         updateIdPriority(userSync.idPriority, submoduleRegistry);
         initIdSystem({ready: true});
+        const submodulesToRefresh = submodules.filter(item => item.refreshIds);
+        if (submodulesToRefresh.length) {
+          refreshUserIds({submoduleNames: submodulesToRefresh.map(item => item.name)});
+        }
       }
     }
   });

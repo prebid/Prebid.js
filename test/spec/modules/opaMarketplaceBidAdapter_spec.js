@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
-  storage
-} from 'modules/illuminBidAdapter.js';
+  storage,
+} from 'modules/opaMarketplaceBidAdapter';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
@@ -20,7 +20,7 @@ import {
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 
-export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -38,8 +38,10 @@ const BID = {
     }
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
+  'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
+  'auctionId': 'auction_id',
   'bidRequestsCount': 4,
   'bidderRequestsCount': 3,
   'bidderWinsCount': 1,
@@ -48,8 +50,7 @@ const BID = {
   'mediaTypes': [BANNER],
   'ortb2Imp': {
     'ext': {
-      'gpid': '0123456789',
-      'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
+      'gpid': '0123456789'
     }
   }
 };
@@ -58,6 +59,8 @@ const VIDEO_BID = {
   'bidId': '2d52001cabd527',
   'adUnitCode': '63550ad1ff6642d368cba59dh5884270560',
   'bidderRequestId': '12a8ae9ada9c13',
+  'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  'auctionId': 'auction_id',
   'bidRequestsCount': 4,
   'bidderRequestsCount': 3,
   'bidderWinsCount': 1,
@@ -84,12 +87,6 @@ const VIDEO_BID = {
       'linearity': 1,
       'api': [2],
       'placement': 1
-    }
-  },
-  'ortb2Imp': {
-    'ext': {
-      'gpid': '0123456789',
-      'tid': '56e184c6-bde9-497b-b9b9-cf47a61381ee'
     }
   }
 }
@@ -178,7 +175,7 @@ const VIDEO_SERVER_RESPONSE = {
     'cid': '635509f7ff6642d368cb9837',
     'results': [{
       'ad': '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
-      'advertiserDomains': ['illumin.com'],
+      'advertiserDomains': ['opamarketplace.com'],
       'exp': 60,
       'width': 545,
       'height': 307,
@@ -207,11 +204,11 @@ function getTopWindowQueryParams() {
   }
 }
 
-describe('IlluminBidAdapter', function () {
+describe('OpaMarketplaceBidAdapter', function () {
   before(() => config.resetConfig());
   after(() => config.resetConfig());
 
-  describe('validtae spec', function () {
+  describe('validate spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -272,7 +269,7 @@ describe('IlluminBidAdapter', function () {
     let sandbox;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        illumin: {
+        opamarketplace: {
           storageAllowed: true
         }
       };
@@ -283,8 +280,7 @@ describe('IlluminBidAdapter', function () {
     it('should build video request', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       config.setConfig({
-        bidderTimeout: 3000,
-        enableTIDs: true
+        bidderTimeout: 3000
       });
       const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
@@ -303,8 +299,9 @@ describe('IlluminBidAdapter', function () {
           usPrivacy: 'consent_string',
           gppString: 'gpp_string',
           gppSid: [7],
-          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
           prebidVersion: version,
+          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+          auctionId: 'auction_id',
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
           bidderWinsCount: 1,
@@ -351,10 +348,10 @@ describe('IlluminBidAdapter', function () {
               startdelay: 0
             }
           },
-          gpid: '0123456789',
+          gpid: '',
           cat: [],
-          contentData: [],
           contentLang: 'en',
+          contentData: [],
           isStorageAllowed: true,
           pagecat: [],
           userData: [],
@@ -366,8 +363,7 @@ describe('IlluminBidAdapter', function () {
     it('should build banner request for each size', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       config.setConfig({
-        bidderTimeout: 3000,
-        enableTIDs: true
+        bidderTimeout: 3000
       });
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
@@ -380,12 +376,13 @@ describe('IlluminBidAdapter', function () {
           gppString: 'gpp_string',
           gppSid: [7],
           usPrivacy: 'consent_string',
+          transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+          auctionId: 'auction_id',
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
           bidderWinsCount: 1,
           bidderTimeout: 3000,
           bidderRequestId: '1fdb5ff1b6eaa7',
-          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
           sizes: ['300x250', '300x600'],
           sua: {
             'source': 2,
@@ -422,8 +419,8 @@ describe('IlluminBidAdapter', function () {
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
           cat: [],
-          contentData: [],
           contentLang: 'en',
+          contentData: [],
           isStorageAllowed: true,
           pagecat: [],
           userData: [],
@@ -440,39 +437,68 @@ describe('IlluminBidAdapter', function () {
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
-
-      expect(result).to.deep.equal([{
-        type: 'iframe',
-        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
-      }]);
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('iframe')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('0');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
     });
 
     it('should have valid user sync with cid on response', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
-      expect(result).to.deep.equal([{
-        type: 'iframe',
-        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
-      }]);
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('iframe')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('0');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
     });
 
     it('should have valid user sync with pixelEnabled', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
-
-      expect(result).to.deep.equal([{
-        'url': 'https://sync.illumin.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
-        'type': 'image'
-      }]);
-    })
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('image')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('0');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
+    });
 
     it('should have valid user sync with coppa on response', function () {
       config.setConfig({
         coppa: 1
       });
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('iframe')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('1');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
+    });
+
+    it('should generate url with consent data', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent_string'
+      };
+      const uspConsent = 'usp_string';
+      const gppConsent = {
+        gppString: 'gpp_string',
+        applicableSections: [7]
+      }
+
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+      const url = new URL(result[0].url);
       expect(result).to.deep.equal([{
-        type: 'iframe',
-        url: 'https://sync.illumin.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
+        'url': 'https://sync.opamarketplace.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
+        'type': 'image'
       }]);
+      expect(url.searchParams.get('gdpr_consent')).to.equal('consent_string');
+      expect(url.searchParams.get('us_privacy')).to.equal('usp_string');
+      expect(url.searchParams.get('gpp')).to.equal('gpp_string');
+      expect(url.searchParams.get('gpp_sid')).to.equal('7');
     });
   });
 
@@ -514,12 +540,12 @@ describe('IlluminBidAdapter', function () {
     it('should get meta from response metaData', function () {
       const serverResponse = utils.deepClone(SERVER_RESPONSE);
       serverResponse.body.results[0].metaData = {
-        advertiserDomains: ['illumin.com'],
+        advertiserDomains: ['opamarketplace.com'],
         agencyName: 'Agency Name',
       };
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses[0].meta).to.deep.equal({
-        advertiserDomains: ['illumin.com'],
+        advertiserDomains: ['opamarketplace.com'],
         agencyName: 'Agency Name'
       });
     });
@@ -539,7 +565,7 @@ describe('IlluminBidAdapter', function () {
         ttl: 60,
         vastXml: '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
         meta: {
-          advertiserDomains: ['illumin.com']
+          advertiserDomains: ['opamarketplace.com']
         }
       });
     });
@@ -591,9 +617,9 @@ describe('IlluminBidAdapter', function () {
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cId': '1'});
-      const pid = extractPID({'pId': '2'});
-      const subDomain = extractSubDomain({'subDomain': 'prebid'});
+      const cid = extractCID({'cID': '1'});
+      const pid = extractPID({'Pid': '2'});
+      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -603,7 +629,7 @@ describe('IlluminBidAdapter', function () {
   describe('unique deal id', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        illumin: {
+        opamarketplace: {
           storageAllowed: true
         }
       };
@@ -638,7 +664,7 @@ describe('IlluminBidAdapter', function () {
   describe('storage utils', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        illumin: {
+        opamarketplace: {
           storageAllowed: true
         }
       };
