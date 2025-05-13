@@ -47,7 +47,7 @@ import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo 
  */
 
 const BIDDER_CODE = 'yandex';
-const BIDDER_URL = 'https://bs.yandex.ru/prebid';
+const BIDDER_URL = 'https://yandex.ru/ads/prebid';
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
 /**
@@ -55,7 +55,7 @@ const DEFAULT_CURRENCY = 'EUR';
  */
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.0.0';
+const ADAPTER_VERSION = '2.2.0';
 
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
