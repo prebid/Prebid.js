@@ -132,8 +132,7 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     }
     if (bid.mediaTypes?.native) {
       imp.native = {
-        // TODO: request: JSON.stringify(bid.mediaTypes.native) is too large
-        request: JSON.stringify({}),
+        request: '{}',
         ver: '1.2',
       };
     }
@@ -178,6 +177,7 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
       ext: {
         npa: getNpaFromPubConsent(customParams.pubconsent),
         localcapping: customParams.local_capping,
+        localadpproduts: customParams.adp_products,
         ...request.user.ext,
       },
     };
@@ -246,7 +246,7 @@ function interpretResponse(serverResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
