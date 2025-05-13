@@ -111,7 +111,7 @@ describe('Bid Glass Adapter', function () {
           'bidResponses': []
         }
       };
-      let result = spec.interpretResponse(response);
+      let result = spec.interpretResponse(response, serverRequest);
       expect(result.length).to.equal(0);
     });
   });
