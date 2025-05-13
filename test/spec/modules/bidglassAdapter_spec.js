@@ -55,14 +55,16 @@ describe('Bid Glass Adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidRequest, serverResponse;
+    let serverRequest, serverResponse;
     beforeEach(function () {
-      bidRequest = {
-        'reqId': '30b31c1838de1e',
-        'gdprApplies': '1',
-        'gdprConsent': 'BOJObISOJObISAABAAENAA4AAAAAo',
-        'gppString': 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
-        'gppSid': '7,8',
+      serverRequest = {
+        data: JSON.stringify({
+          'reqId': '30b31c1838de1e',
+          'gdprApplies': '1',
+          'gdprConsent': 'BOJObISOJObISAABAAENAA4AAAAAo',
+          'gppString': 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+          'gppSid': '7,8',
+        })
       };
       serverResponse = {
         body: {
@@ -99,7 +101,7 @@ describe('Bid Glass Adapter', function () {
         }
       }];
 
-      let result = spec.interpretResponse(serverResponse, bidRequest);
+      let result = spec.interpretResponse(serverResponse, serverRequest);
       expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 

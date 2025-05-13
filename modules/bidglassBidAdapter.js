@@ -147,11 +147,12 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param {BidRequest} bidRequest The original bid request for this bid
+   * @param {ServerRequest} serverRequest The original server request for this bid
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse, serverRequest) {
     const bidResponses = [];
+    const bidReq = JSON.parse(serverRequest.data);
 
     _each(serverResponse.body.bidResponses, function(serverBid) {
       const bidResponse = {
@@ -172,8 +173,8 @@ export const spec = {
           '&replaceme',
           () => {
             const urlEncodedExtras = ['gdprApplies','gdprConsent','gppString','gppSid']
-              .filter(key => bidRequest[key] != null)
-              .map(key => `${key}=${encodeURIComponent(bidRequest[key])}`)
+              .filter(key => bidReq[key] != null)
+              .map(key => `${key}=${encodeURIComponent(bidReq[key])}`)
               .join('&');
             return urlEncodedExtras ? ('&' + urlEncodedExtras) : '';
           }
