@@ -11,6 +11,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
+import type {UserIdConfig} from "./userId/index.ts";
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -25,6 +26,39 @@ const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
 const PUB_COMMON_ID = 'PublisherCommonId';
+
+type SharedIdParams = {
+    /**
+     * If true, then an id is created automatically if it’s missing.
+     * Default is true. If your server has a component that generates the id instead, then this should be set to false
+     */
+    create?: boolean;
+    /**
+     * If true, the the expiration time is automatically extended whenever the script is executed even if the id exists already.
+     * Default is true. If false, then the id expires from the time it was initially created.
+     */
+    extend?: boolean;
+    /**
+     * For publisher server support only. Where to call out to for a server cookie.
+     */
+    pixelUrl?: string;
+}
+
+declare module './userId/index' {
+    interface UserId {
+        pubcid: string;
+    }
+    interface ProvidersToId {
+        sharedId: 'pubcid';
+        pubCommonId: 'pubcid';
+    }
+
+    interface ProviderParams {
+        sharedId: SharedIdParams;
+        pubCommonId: SharedIdParams;
+    }
+
+}
 
 /**
  * Read a value either from cookie or local storage
@@ -59,7 +93,7 @@ function getIdCallback(pubcid, pixelUrl) {
   }
 }
 
-function queuePixelCallback(pixelUrl, id = '', callback) {
+function queuePixelCallback(pixelUrl, id = '', callback?) {
   if (!pixelUrl) {
     return;
   }
@@ -112,7 +146,7 @@ export const sharedIdSystemSubmodule = {
    * @param {string} storedId Existing pubcommon id
    * @returns {IdResponse}
    */
-  getId: function (config = {}, consentData, storedId) {
+  getId: function (config: UserIdConfig<'sharedId'> = {} as any, consentData, storedId) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return;
@@ -156,7 +190,7 @@ export const sharedIdSystemSubmodule = {
    * @param {Object} storedId existing id
    * @returns {IdResponse|undefined}
    */
-  extendId: function(config = {}, consentData, storedId) {
+  extendId: function(config: UserIdConfig<'sharedId'> = {} as any, consentData, storedId) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return {id: undefined};
@@ -180,7 +214,7 @@ export const sharedIdSystemSubmodule = {
   domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
   eids: {
     'pubcid'(values, config) {
-      const eid = {
+      const eid: any = {
         source: 'pubcid.org',
         uids: values.map(id => ({id, atype: 1}))
       }

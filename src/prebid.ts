@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {addApiMethod, getGlobal, PrebidJS} from './prebidGlobal.js';
+import {addApiMethod, getGlobal} from './prebidGlobal.js';
 import {
     deepAccess,
     deepClone,
@@ -58,7 +58,6 @@ import {ORTB_BANNER_PARAMS} from './banner.js';
 import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import {newBidder} from './adapters/bidderFactory.js';
-import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
 import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";

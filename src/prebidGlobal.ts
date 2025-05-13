@@ -1,4 +1,4 @@
-import type {AnyFunction, Wraps} from "./types/functions";
+import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import {logInfo} from "./utils.js";
 
 interface Command {

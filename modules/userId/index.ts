@@ -175,21 +175,21 @@ export interface UserId {
     [idName: string]: unknown;
 }
 
-type ProviderParams<M extends UserIdProvider> = {
-    provides: M;
-    params: unknown;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ProvidersToId {
+    /**
+     * Map from ID provider name to the key they provide in .userId.
+     */
 }
-
-type DefaultProviderParams = {[M in UserIdProvider]: ProviderParams<M>};
-
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface UserIdProviders extends DefaultProviderParams {
+export interface ProviderParams {
+    /**
+     * Map from ID provider name to the type of their configuration params.
+     */
 }
 
-
-
-interface UserIdConfig<M extends UserIdProvider> {
+export interface UserIdConfig<M extends UserIdProvider> {
     /**
      * User ID provider name.
      */
@@ -197,7 +197,7 @@ interface UserIdConfig<M extends UserIdProvider> {
     /**
      * Module specific configuration parameters.
      */
-    params?: UserIdProviders[M]['params'];
+    params?: M extends keyof ProviderParams ? ProviderParams[M] : Record<string, unknown>;
     /**
      * An array of bidder codes to which this user ID may be sent.
      */
@@ -209,7 +209,7 @@ interface UserIdConfig<M extends UserIdProvider> {
         /**
          * Storage method.
          */
-        type: StorageType | `${StorageType}&${StorageType}`;
+        type: StorageType | `${typeof STORAGE_TYPE_COOKIES}&${typeof STORAGE_TYPE_LOCALSTORAGE}` | `${typeof STORAGE_TYPE_LOCALSTORAGE}&${typeof STORAGE_TYPE_COOKIES}`;
         /**
          * The name of the cookie or html5 local storage where the user ID will be stored.
          */
@@ -230,10 +230,9 @@ interface UserIdConfig<M extends UserIdProvider> {
          * Used only if the page has a separate mechanism for storing a User ID.
          * The value is an object containing the values to be sent to the adapters.
          */
-        value?: UserId[UserIdProviders[M]['provides']];
+        value?: M extends keyof ProvidersToId ? UserId[ProvidersToId[M]] : unknown;
     }
 }
-
 
 declare module '../../src/userSync' {
     interface UserSyncConfig {
@@ -254,7 +253,7 @@ declare module '../../src/userSync' {
         idPriority?: {
             [idName: keyof UserId]: UserIdProvider[]
         }
-        userIds?: UserIdConfig<any>[];
+        userIds?: (UserIdConfig<keyof ProviderParams> | UserIdConfig<UserIdProvider>)[];
         // TODO documentation for these is either missing or inscrutable
         encryptedSignalSources?: {
             sources: {
