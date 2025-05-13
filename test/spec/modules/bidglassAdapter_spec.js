@@ -55,12 +55,19 @@ describe('Bid Glass Adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let response;
+    let bidRequest, serverResponse;
     beforeEach(function () {
-      response = {
+      bidRequest = {
+        'reqId': '30b31c1838de1e',
+        'gdprApplies': '1',
+        'gdprConsent': 'BOJObISOJObISAABAAENAA4AAAAAo',
+        'gppString': 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA',
+        'gppSid': '7,8',
+      };
+      serverResponse = {
         body: {
           'bidResponses': [{
-            'ad': '<!-- Creative -->',
+            'ad': '<script src="https://bid.glass/hb-unit/999999.js?t=tokenstring&replaceme" async></script>',
             'cpm': '0.01',
             'creativeId': '-1',
             'width': '300',
@@ -86,14 +93,14 @@ describe('Bid Glass Adapter', function () {
         'mediaType': 'banner',
         'netRevenue': true,
         'ttl': 10,
-        'ad': '<!-- Creative -->',
+        'ad': '<script src="https://bid.glass/hb-unit/999999.js?t=tokenstring&gdprApplies=1&gdprConsent=BOJObISOJObISAABAAENAA4AAAAAo&gppString=DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA&gppSid=7%2C8" async></script>',
         'meta': {
           'advertiserDomains': ['https://example.com']
         }
       }];
 
-      let result = spec.interpretResponse(response);
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      let result = spec.interpretResponse(serverResponse, bidRequest);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
     });
 
     it('handles empty bid response', function () {
