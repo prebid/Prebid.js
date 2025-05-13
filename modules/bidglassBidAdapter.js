@@ -124,9 +124,9 @@ export const spec = {
       // IAB GPP consent string
       gppString: (gppConsentObj && gppConsentObj.gppString) || ortb2Gpp || '',
       // GPP Applicable Section IDs
-      gppSid: (isArray(gppApplicableSections) && gppApplicableSections.length) ?
-        gppApplicableSections.join(',') :
-        ((ortb2Gpp && ortb2Regs.gpp_sid) || '')
+      gppSid: (isArray(gppApplicableSections) && gppApplicableSections.length)
+        ? gppApplicableSections.join(',')
+        : ((ortb2Gpp && ortb2Regs.gpp_sid) || '')
     };
 
     let url = 'https://bid.glass/ad/hb.php?' +
@@ -172,7 +172,7 @@ export const spec = {
         ad: serverBid.ad.replace(
           '&replaceme',
           () => {
-            const urlEncodedExtras = ['gdprApplies','gdprConsent','gppString','gppSid']
+            const urlEncodedExtras = ['gdprApplies', 'gdprConsent', 'gppString', 'gppSid']
               .filter(key => bidReq[key] != null)
               .map(key => `${key}=${encodeURIComponent(bidReq[key])}`)
               .join('&');
