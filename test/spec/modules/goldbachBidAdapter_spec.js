@@ -445,13 +445,13 @@ describe('GoldbachBidAdapter', function () {
             consents: 1
           }
         }};
-      let synOptions = {pixelEnabled: true, iframeEnabled: true};
-      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+      let syncOptions = {pixelEnabled: true, iframeEnabled: true};
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
       expect(userSyncs[0].url).to.contain('xandrId=$UID');
-    })
+    });
 
     it('user-syncs with enabled iframe option', function () {
       let gdprConsent = {
@@ -460,12 +460,30 @@ describe('GoldbachBidAdapter', function () {
             consents: 1
           }
         }};
-      let synOptions = {iframeEnabled: true};
-      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+      let syncOptions = {iframeEnabled: true};
+      const userSyncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('iframe');
       expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
       expect(userSyncs[0].url).to.contain('xandrId=$UID');
+    });
+
+    it('user-syncs use gdpr signal', function () {
+      let gdprConsent = {
+        gdprApplies: true,
+        consentString: 'CPwk-qEPwk-qEH6AAAENCZCMAP_AAH_AAAAAI7Nd_X__bX9n-_7_6ft0eY1f9_r37uQzDhfNs-8F3L_W_LwX32E7NF36tq4KmR4ku1bBIQNtHMnUDUmxaolVrzHsak2cpyNKJ_JkknsZe2dYGF9Pn9lD-YKZ7_5_9_f52T_9_9_-39z3_9f___dv_-__-vjf_599n_v9fV_78_Kf9______-____________8Edmu_r__tr-z_f9_9P26PMav-_1793IZhwvm2feC7l_rfl4L77Cdmi79W1cFTI8SXatgkIG2jmTqBqTYtUSq15j2NSbOU5GlE_kyST2MvbOsDC-nz-yh_MFM9_8_-_v87J_-_-__b-57_-v___u3__f__Xxv_8--z_3-vq_9-flP-_______f___________-AA.II7Nd_X__bX9n-_7_6ft0eY1f9_r37uQzDhfNs-8F3L_W_LwX32E7NF36tq4KmR4ku1bBIQNtHMnUDUmxaolVrzHsak2cpyNKJ_JkknsZe2dYGF9Pn9lD-YKZ7_5_9_f52T_9_9_-39z3_9f___dv_-__-vjf_599n_v9fV_78_Kf9______-____________8A',
+        vendorData: {
+          purpose: {
+            consents: { '1': true }
+          }
+        }
+      };
+      let synOptions = {pixelEnabled: true, iframeEnabled: true};
+      const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
+      expect(userSyncs[0].url).to.contain(`https://ib.adnxs.com/getuid?${ENDPOINT_COOKIESYNC}`);
+      expect(userSyncs[0].url).to.contain('xandrId=$UID');
+      expect(userSyncs[0].url).to.contain(`gdpr_consent=${gdprConsent.consentString}`);
+      expect(userSyncs[0].url).to.contain(`gdpr=1`);
     })
   });
 

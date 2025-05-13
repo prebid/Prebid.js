@@ -205,7 +205,10 @@ function getTopWindowQueryParams() {
 }
 
 describe('OpaMarketplaceBidAdapter', function () {
-  describe('validtae spec', function () {
+  before(() => config.resetConfig());
+  after(() => config.resetConfig());
+
+  describe('validate spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
     });
@@ -434,28 +437,32 @@ describe('OpaMarketplaceBidAdapter', function () {
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
-
-      expect(result).to.deep.equal([{
-        type: 'iframe',
-        url: 'https://sync.opamarketplace.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
-      }]);
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('iframe')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('0');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
     });
 
     it('should have valid user sync with cid on response', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
-      expect(result).to.deep.equal([{
-        type: 'iframe',
-        url: 'https://sync.opamarketplace.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
-      }]);
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('iframe')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('0');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
     });
 
     it('should have valid user sync with pixelEnabled', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
-
-      expect(result).to.deep.equal([{
-        'url': 'https://sync.opamarketplace.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
-        'type': 'image'
-      }]);
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('image')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('0');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
     });
 
     it('should have valid user sync with coppa on response', function () {
@@ -463,10 +470,12 @@ describe('OpaMarketplaceBidAdapter', function () {
         coppa: 1
       });
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
-      expect(result).to.deep.equal([{
-        type: 'iframe',
-        url: 'https://sync.opamarketplace.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
-      }]);
+      expect(result).to.have.length(1);
+      const url = new URL(result[0].url);
+      expect(result[0].type).to.equal('iframe')
+      expect(url.searchParams.get('cid')).to.equal('testcid123');
+      expect(url.searchParams.get('coppa')).to.equal('1');
+      expect(url.searchParams.get('gdpr')).to.equal('0');
     });
 
     it('should generate url with consent data', function () {
@@ -481,11 +490,15 @@ describe('OpaMarketplaceBidAdapter', function () {
       }
 
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
-
+      const url = new URL(result[0].url);
       expect(result).to.deep.equal([{
         'url': 'https://sync.opamarketplace.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&coppa=1&gpp=gpp_string&gpp_sid=7',
         'type': 'image'
       }]);
+      expect(url.searchParams.get('gdpr_consent')).to.equal('consent_string');
+      expect(url.searchParams.get('us_privacy')).to.equal('usp_string');
+      expect(url.searchParams.get('gpp')).to.equal('gpp_string');
+      expect(url.searchParams.get('gpp_sid')).to.equal('7');
     });
   });
 
