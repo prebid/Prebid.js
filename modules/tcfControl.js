@@ -369,7 +369,7 @@ export function setEnforcementConfig(config) {
   }
 }
 
-function checkIfCredentialsAllowed(next, options = {}) {
+export function checkIfCredentialsAllowed(next, options = {}) {
   if (!options.withCredentials) {
     next(options);
     return;

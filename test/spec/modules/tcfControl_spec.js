@@ -29,6 +29,7 @@ import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
 import {activityParams} from '../../../src/activities/activityParams.js';
+import { checkIfCredentialsAllowed } from '../../../modules/tcfControl.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -1088,5 +1089,23 @@ describe('gdpr enforcement', function () {
         expect(getGvlidFromAnalyticsAdapter('analytics')).to.not.be.ok;
       });
     });
+  })
+  describe('checkIfCredentialsAllowed', () => {
+    it('should not allow access credentials for lack of purpose consent 1', () => {
+      const rules = [{
+        purpose: 'storage',
+        enforcePurpose: true,
+        enforceVendor: false
+      }]
+      setEnforcementConfig({gdpr: {rules}});
+      const consent = setupConsentData({gdprApplies: false});
+      consent.vendorData.purpose.consents['1'] = false;
+      const nextSpy = sinon.spy();
+      const options = {
+        withCredentials: true
+      }
+      checkIfCredentialsAllowed(nextSpy, options);
+      sinon.assert.calledWith(nextSpy, {withCredentials: false});
+    })
   })
 });
