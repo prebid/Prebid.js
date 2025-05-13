@@ -169,6 +169,11 @@ export const spec = {
         deepSetValue(sovrnBidReq, 'regs.coppa', 1);
       }
 
+      const bcat = deepAccess(bidderRequest, 'ortb2.bcat');
+      if (bcat) {
+        deepSetValue(sovrnBidReq, 'bcat', bcat);
+      }
+
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)

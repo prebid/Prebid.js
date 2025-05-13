@@ -158,8 +158,8 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('bs.yandex.ru');
-      expect(parsedRequestUrl.pathname).to.equal('/prebid/123');
+      expect(parsedRequestUrl.hostname).to.equal('yandex.ru');
+      expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
 
       expect(query['imp-id']).to.equal('1');
       expect(query['target-ref']).to.equal('ya.ru');
