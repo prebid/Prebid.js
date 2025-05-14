@@ -79,6 +79,49 @@ describe('RiseMediaTech adapter', () => {
       };
       expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
     });
+
+    // Add to: describe('isBidRequestValid', ...)
+    it('should return false for video bid request with missing mimes', () => {
+      const invalidVideoRequest = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            w: 640,
+            h: 480
+            // mimes missing
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
+    });
+
+    it('should return false for video bid request with invalid width', () => {
+      const invalidVideoRequest = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4'],
+            w: 0,
+            h: 480
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
+    });
+
+    it('should return false for video bid request with invalid height', () => {
+      const invalidVideoRequest = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4'],
+            w: 640,
+            h: 0
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
+    });
   });
 
   describe('buildRequests', () => {
@@ -105,6 +148,71 @@ describe('RiseMediaTech adapter', () => {
       expect(imp[0]).to.have.property('banner');
       expect(imp[0].banner).to.have.property('format').with.lengthOf(2);
     });
+
+    it('should set request.test to 0 if bidderRequest.test is not provided', () => {
+      const request = spec.buildRequests([validBidRequest], { ...bidderRequest });
+      expect(request.data.test).to.equal(0);
+    });
+
+    it('should set request.test to bidderRequest.test if provided', () => {
+      const testBidderRequest = { ...bidderRequest, test: 1 };
+      const request = spec.buildRequests([validBidRequest], testBidderRequest);
+      expect(request.data.test).to.equal(1);
+    });
+
+    it('should build a video impression if only video mediaType is present', () => {
+      const videoBidRequest = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4'],
+            w: 640,
+            h: 480
+          }
+        },
+        params: {
+          ...validBidRequest.params,
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          startdelay: 0,
+          maxseq: 1,
+          poddur: 60,
+          protocols: [2, 3]
+        }
+      };
+      const request = spec.buildRequests([videoBidRequest], bidderRequest);
+      const { imp } = request.data;
+      expect(imp[0]).to.have.property('video');
+      expect(imp[0]).to.not.have.property('banner');
+      expect(imp[0].video).to.include({ w: 640, h: 480 });
+      expect(imp[0].video.mimes).to.include('video/mp4');
+    });
+
+    it('should set gdpr to 0 if gdprApplies is false', () => {
+      const noGdprBidderRequest = {
+        ...bidderRequest,
+        gdprConsent: {
+          gdprApplies: false,
+          consentString: 'consent123'
+        }
+      };
+      const request = spec.buildRequests([validBidRequest], noGdprBidderRequest);
+      expect(request.data.regs.ext).to.have.property('gdpr', 0);
+      expect(request.data.user.ext).to.have.property('consent', 'consent123');
+    });
+
+    it('should set regs and regs.ext to {} if not already set when only USP consent is present', () => {
+      const onlyUspBidderRequest = {
+        ...bidderRequest,
+        gdprConsent: undefined,
+        uspConsent: '1YNN'
+      };
+      const request = spec.buildRequests([validBidRequest], onlyUspBidderRequest);
+      expect(request.data.regs).to.be.an('object');
+      expect(request.data.regs.ext).to.be.an('object');
+      expect(request.data.regs.ext).to.have.property('us_privacy', '1YNN');
+    });
   });
 
   describe('interpretResponse', () => {
@@ -128,6 +236,52 @@ describe('RiseMediaTech adapter', () => {
       const request = spec.buildRequests([validBidRequest], bidderRequest);
       const bids = spec.interpretResponse(emptyResponse, request);
       expect(bids).to.be.an('array').with.lengthOf(0);
+    });
+
+
+    it('should set meta.advertiserDomains to an empty array if adomain is missing', () => {
+      const responseWithoutAdomain = {
+        body: {
+          id: '2def',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1abc',
+                  impid: '1abc',
+                  price: 1.5,
+                  adm: '<div>Ad</div>',
+                  w: 300,
+                  h: 250,
+                  crid: 'creative123'
+                  // adomain is missing
+                }
+              ]
+            }
+          ]
+        }
+      };
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(responseWithoutAdomain, request);
+      expect(bids[0].meta.advertiserDomains).to.be.an('array').that.is.empty;
+    });
+
+    it('should return an empty array and warn if server response is undefined', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(undefined, request);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    it('should return an empty array and warn if server response body is missing', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse({}, request);
+      expect(bids).to.be.an('array').that.is.empty;
+    });
+
+    it('should return bids from converter if present', () => {
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(serverResponse, request);
+      expect(bids).to.be.an('array').with.lengthOf(1);
     });
   });
 

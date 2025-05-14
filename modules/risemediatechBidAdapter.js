@@ -78,12 +78,19 @@ const converter = ortbConverter({
  */
 const isBidRequestValid = (bid) => {
   logInfo('Validating bid request:', bid);
+
+  // Validate params
+  if (!bid.params || !bid.params.publisherId || !bid.params.adSlot) {
+    logWarn('Invalid bid request: Missing required params (publisherId or adSlot).');
+    return false;
+  }
+
   const { mediaTypes } = bid;
 
+  // Validate video-specific fields if mediaTypes includes VIDEO
   if (mediaTypes?.[VIDEO]) {
     const video = mediaTypes[VIDEO];
 
-    // Validate required fields for Video
     if (!video.mimes || !Array.isArray(video.mimes) || video.mimes.length === 0) {
       logWarn('Invalid video bid request: Missing or invalid mimes.');
       return false;
@@ -133,12 +140,34 @@ const interpretResponse = (serverResponse, request) => {
 
   const { bids } = converter.fromORTB({ response: serverResponse.body, request: request.data });
 
-  if (!bids || !Array.isArray(bids)) {
-    logWarn('No valid bids found in server response.');
-    return [];
+  if (bids && Array.isArray(bids) && bids.length > 0) {
+    return bids;
   }
 
-  return bids;
+  // Fallback: manually parse OpenRTB response
+  const resp = serverResponse.body;
+  if (!resp.seatbid || !Array.isArray(resp.seatbid)) return [];
+
+  const result = [];
+  resp.seatbid.forEach(seat => {
+    if (seat.bid && Array.isArray(seat.bid)) {
+      seat.bid.forEach(bid => {
+        result.push({
+          requestId: bid.impid,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.crid || bid.id,
+          currency: DEFAULT_CURRENCY,
+          netRevenue: true,
+          ttl: DEFAULT_TTL,
+          ad: bid.adm,
+          meta: { advertiserDomains: bid.adomain || [] }
+        });
+      });
+    }
+  });
+  return result;
 };
 
 /**
