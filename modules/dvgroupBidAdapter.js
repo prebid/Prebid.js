@@ -29,7 +29,7 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    let valid = bid.params.sspid;
+    let valid = bid.params.sspId;
 
     return !!valid;
   },
@@ -40,7 +40,7 @@ export const spec = {
       let bidMediaType = deepAccess(bid, 'mediaTypes.video');
       return {
         method: 'POST',
-        url: `https://${endpoint}/bid?sspuid=${bid.params.sspid}`,
+        url: `https://${endpoint}/bid?sspuid=${bid.params.sspId}`,
         data: converter.toORTB({
           bidRequests: [bid],
           bidderRequest: deepClone(bidderRequest),
