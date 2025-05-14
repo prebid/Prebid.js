@@ -24,6 +24,17 @@ export interface ConsentData {
 
 type ConsentDataFor<T extends ConsentType> = T extends keyof ConsentData ? ConsentData[T] : null;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ConsentManagementConfig {
+    // consentManagement config - extended in consent management modules
+}
+
+declare module './config' {
+    interface Config {
+        consentManagement?: ConsentManagementConfig;
+    }
+}
+
 export class ConsentHandler<T> {
   #enabled;
   #data;

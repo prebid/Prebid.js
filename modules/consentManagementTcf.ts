@@ -12,6 +12,7 @@ import {enrichFPD} from '../src/fpd/enrichment.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
 import {configParser} from '../libraries/consentManagement/cmUtils.js';
 import {CONSENT_GDPR} from "../src/consentHandler.ts";
+import type {CMConfig} from "../libraries/consentManagement/cmUtils.ts";
 
 export let consentConfig: any = {};
 export let gdprScope;
@@ -43,9 +44,27 @@ export type TCFConsentData = {
     addtlConsent?: string;
 }
 
+export interface TCFConfig {
+    /**
+     *  Defines what the gdprApplies flag should be when the CMP doesn’t respond in time or the static data doesn’t supply.
+     *  Defaults to false.
+     */
+    defaultGdprScope?: boolean;
+    /**
+     * If true, indicates that the publisher is to be considered an “Online Platform” for the purposes of the Digital Services Act
+     */
+    dsaPlatform?: boolean;
+}
+
+
+type TCFCMConfig = TCFConfig & CMConfig<TCFConsentData>;
+
 declare module '../src/consentHandler' {
     interface ConsentData {
         [CONSENT_GDPR]: TCFConsentData;
+    }
+    interface ConsentManagementConfig {
+        [CONSENT_GDPR]?: TCFCMConfig;
     }
 }
 
@@ -146,18 +165,18 @@ const parseConfig = configParser({
 } as any)
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
+ * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} tcfConfig required; consentManagement module config settings; cmp (string), timeout (int))
  */
 export function setConsentConfig(config) {
   // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
   // else for backward compatability, just use `config`
-  config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
-  if (config?.consentData?.getTCData != null) {
-    config.consentData = config.consentData.getTCData;
+  const tcfConfig: TCFCMConfig = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
+  if ((tcfConfig?.consentData as any)?.getTCData != null) {
+    tcfConfig.consentData = (tcfConfig.consentData as any).getTCData;
   }
-  gdprScope = config?.defaultGdprScope === true;
-  dsaPlatform = !!config?.dsaPlatform;
-  consentConfig = parseConfig({gdpr: config});
+  gdprScope = tcfConfig?.defaultGdprScope === true;
+  dsaPlatform = !!tcfConfig?.dsaPlatform;
+  consentConfig = parseConfig({gdpr: tcfConfig});
   return consentConfig.loadConsentData?.()?.catch?.(() => null);
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));

@@ -11,6 +11,8 @@ import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
+import type {IABCMConfig, StaticCMConfig} from "../libraries/consentManagement/cmUtils.ts";
+import type {CONSENT_USP} from "../src/consentHandler.ts";
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -19,6 +21,31 @@ const USPAPI_VERSION = 1;
 export let consentAPI = DEFAULT_CONSENT_API;
 export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
+
+type USPConsentData = string;
+type BaseUSPConfig = {
+    /**
+     * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
+     * Default is 50.
+     */
+    timeout?: number;
+}
+
+type StaticUSPData = {
+    getUSPData: {
+        uspString: USPConsentData;
+    }
+}
+type USPCMConfig = BaseUSPConfig & (IABCMConfig | StaticCMConfig<StaticUSPData>);
+
+declare module '../src/consentHandler' {
+    interface ConsentData {
+        [CONSENT_USP]: USPConsentData;
+    }
+    interface ConsentManagementConfig {
+        [CONSENT_USP]?: USPCMConfig;
+    }
+}
 
 let consentData;
 let enabled = false;
@@ -43,7 +70,7 @@ function lookupStaticConsentData({onSuccess, onError}) {
  */
 function lookupUspConsent({onSuccess, onError}) {
   function handleUspApiResponseCallbacks() {
-    const uspResponse = {};
+    const uspResponse = {} as any;
 
     function afterEach() {
       if (uspResponse.usPrivacy) {
@@ -69,7 +96,7 @@ function lookupUspConsent({onSuccess, onError}) {
     apiName: '__uspapi',
     apiVersion: USPAPI_VERSION,
     apiArgs: ['command', 'version', 'callback'],
-  });
+  }) as any;
 
   if (!cmp) {
     return onError('USP CMP not found.');
@@ -102,7 +129,7 @@ function lookupUspConsent({onSuccess, onError}) {
  * @param cb a callback that takes an error message and extra error arguments; all args will be undefined if consent
  * data was retrieved successfully.
  */
-function loadConsentData(cb) {
+function loadConsentData(cb?) {
   let timer = null;
   let isDone = false;
 

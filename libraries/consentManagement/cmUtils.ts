@@ -100,6 +100,34 @@ export function lookupConsentData(
   });
 }
 
+export interface BaseCMConfig {
+    /**
+     * Length of time (in milliseconds) to delay auctions while waiting for consent data from the CMP.
+     * Default is 10,000.
+     */
+    timeout?: number;
+    /**
+     * Length of time (in milliseconds) to delay auctions while waiting for the user to interact with the CMP.
+     * When set, auctions will wait up to `timeout` for the CMP to load, and once loaded up to `actionTimeout`
+     * for the user to interact with the CMP.
+     */
+    actionTimeout: number;
+}
+
+export interface IABCMConfig {
+    cmpApi?: 'iab';
+    consentData?: undefined;
+}
+export interface StaticCMConfig<T> {
+    cmpApi: 'static';
+    /**
+     * Consent data as would be returned by a CMP.
+     */
+    consentData: T;
+}
+
+export type CMConfig<T> = BaseCMConfig & (IABCMConfig | StaticCMConfig<T>);
+
 export function configParser(
   {
     namespace,
@@ -110,7 +138,7 @@ export function configParser(
     cmpHandlers,
     DEFAULT_CMP = 'iab',
     DEFAULT_CONSENT_TIMEOUT = 10000
-  } = {}
+  } = {} as any
 ) {
   function msg(message) {
     return `consentManagement.${namespace} ${message}`;
@@ -143,32 +171,32 @@ export function configParser(
   }
 
 
-  return function getConsentConfig(config) {
-    config = config?.[namespace];
-    if (!config || typeof config !== 'object') {
+  return function getConsentConfig(config: { [key: string]: CMConfig<any> }) {
+    const cmConfig = config?.[namespace];
+    if (!cmConfig || typeof cmConfig !== 'object') {
       logWarn(msg(`config not defined, exiting consent manager module`));
       reset();
       return {};
     }
     let cmpHandler;
-    if (isStr(config.cmpApi)) {
-      cmpHandler = config.cmpApi;
+    if (isStr(cmConfig.cmpApi)) {
+      cmpHandler = cmConfig.cmpApi;
     } else {
       cmpHandler = DEFAULT_CMP;
       logInfo(msg(`config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`));
     }
     let cmpTimeout;
-    if (isNumber(config.timeout)) {
-      cmpTimeout = config.timeout;
+    if (isNumber(cmConfig.timeout)) {
+      cmpTimeout = cmConfig.timeout;
     } else {
       cmpTimeout = DEFAULT_CONSENT_TIMEOUT;
       logInfo(msg(`config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`));
     }
-    const actionTimeout = isNumber(config.actionTimeout) ? config.actionTimeout : null;
+    const actionTimeout = isNumber(cmConfig.actionTimeout) ? cmConfig.actionTimeout : null;
     let setupCmp;
     if (cmpHandler === 'static') {
-      if (isPlainObject(config.consentData)) {
-        staticConsentData = config.consentData;
+      if (isPlainObject(cmConfig.consentData)) {
+        staticConsentData = cmConfig.consentData;
         cmpTimeout = null;
         setupCmp = () => new PbPromise(resolve => resolve(consentDataHandler.setConsentData(parseConsentData(staticConsentData))))
       } else {
