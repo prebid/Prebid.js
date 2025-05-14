@@ -111,7 +111,7 @@ export interface BaseCMConfig {
      * When set, auctions will wait up to `timeout` for the CMP to load, and once loaded up to `actionTimeout`
      * for the user to interact with the CMP.
      */
-    actionTimeout: number;
+    actionTimeout?: number;
 }
 
 export interface IABCMConfig {

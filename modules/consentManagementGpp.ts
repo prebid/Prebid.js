@@ -10,12 +10,38 @@ import {gppDataHandler} from '../src/adapterManager.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {cmpClient, MODE_CALLBACK} from '../libraries/cmp/cmpClient.js';
 import {PbPromise, defer} from '../src/utils/promise.js';
-import {configParser} from '../libraries/consentManagement/cmUtils.js';
+import {type CMConfig, configParser} from '../libraries/consentManagement/cmUtils.js';
+import {CONSENT_GPP} from "../src/consentHandler.ts";
 
-export let consentConfig = {};
+export let consentConfig = {} as any;
+
+type RelevantCMPData = {
+    applicableSections: number[]
+    gppString: string;
+    parsedSections: Record<string, unknown>
+}
+
+type CMPData = RelevantCMPData & { [key: string]: unknown };
+
+export type GPPConsentData = RelevantCMPData & {
+    gppData: CMPData;
+}
+
+export type GPPCMConfig = CMConfig<RelevantCMPData>;
+
+declare module '../src/consentHandler' {
+    interface ConsentData {
+        [CONSENT_GPP]: GPPConsentData;
+    }
+    interface ConsentManagementConfig {
+        [CONSENT_GPP]?: GPPCMConfig;
+    }
+}
 
 class GPPError {
-  constructor(message, arg) {
+  message;
+  args;
+  constructor(message, arg?) {
     this.message = message;
     this.args = arg == null ? [] : [arg];
   }
@@ -23,6 +49,7 @@ class GPPError {
 
 export class GPPClient {
   apiVersion = '1.1';
+  cmp;
   static INST;
 
   static get(mkCmp = cmpClient) {
@@ -168,7 +195,7 @@ function parseConsentData(cmpData) {
   return toConsentData(cmpData);
 }
 
-export function toConsentData(gppData = {}) {
+export function toConsentData(gppData = {} as any): GPPConsentData {
   return {
     gppString: gppData?.gppString,
     applicableSections: gppData?.applicableSections || [],
