@@ -11,6 +11,7 @@ import {on as onEvent, off as offEvent} from '../src/events.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
 import type {Currency, BidderCode} from "../src/types/common.d.ts";
+import {addApiMethod} from "../src/prebid.ts";
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -188,19 +189,23 @@ function loadRates() {
 
 declare module '../src/prebidGlobal' {
     interface PrebidJS {
-        /**
-         * Convert `amount` in currency `fromCurrency` to `toCurrency`.
-         */
-        convertCurrency(cpm: number, fromCurrency: Currency, toCurrency: Currency): number;
+        convertCurrency: typeof convertCurrency
     }
+}
+
+/**
+ * Convert `amount` in currency `fromCurrency` to `toCurrency`.
+ */
+function convertCurrency(cpm, fromCurrency, toCurrency) {
+    return parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency)
 }
 
 function initCurrency() {
   conversionCache = {};
   if (!currencySupportEnabled) {
     currencySupportEnabled = true;
+    addApiMethod('convertCurrency', convertCurrency, false);
     // Adding conversion function to prebid global for external module and on page use
-    getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
     getHook('addBidResponse').before(addBidResponseHook, 100);
     getHook('responsesReady').before(responsesReadyHook);
     enrichFPD.before(enrichFPDHook);
