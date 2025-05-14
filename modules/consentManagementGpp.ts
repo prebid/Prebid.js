@@ -27,7 +27,12 @@ export type GPPConsentData = RelevantCMPData & {
     gppData: CMPData;
 }
 
-export type GPPCMConfig = CMConfig<RelevantCMPData>;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface GPPConfig {
+    // this is here to be extended by the control modules
+}
+
+export type GPPCMConfig = GPPConfig & CMConfig<RelevantCMPData>;
 
 declare module '../src/consentHandler' {
     interface ConsentData {

@@ -42,7 +42,7 @@ export function normalizer({nullify = [], move = {}, fn}, fields = FIELDS) {
   move = Object.fromEntries(Object.entries(move).map(([k, map]) => [k,
     Object.fromEntries(Object.entries(map)
       .map(([k, v]) => [k, Array.isArray(v) ? v : [v]])
-      .map(([k, v]) => [--k, v.map(el => --el)])
+      .map(([k, v]: [any, any]) => [--k, v.map(el => --el)])
     )])
   );
   return function (cd) {
@@ -163,6 +163,36 @@ export const getSections = (() => {
 })();
 
 const handles = [];
+
+declare module './consentManagementGpp' {
+    interface GPPConfig {
+        mspa?: {
+            /**
+             * GPP SIDs that should be covered by activity restrictions. Defaults to all US state SIDs.
+             */
+            sids?: number[];
+            /**
+             * Map from section ID to per-section configuration options
+             */
+            sections?: {
+              [sid: number]: {
+                  /**
+                   * GPP API name to use for the section. Defaults to the names listed in the GPP spec:
+                   * https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Sections/Section%20Information.md#section-ids
+                   * This option would only be used if your CMP has named their sections in a non-standard way.y
+                   */
+                  name?: string;
+                  /**
+                   * Normalize the flags for this section as if it were the number provided.
+                   * Cfr https://docs.prebid.org/features/mspa-usnat.html#interpreting-usnat-strings
+                   * Each section defaults to its own ID.
+                   */
+                  normalizeAs?: number;
+              }
+            }
+        }
+    }
+}
 
 config.getConfig('consentManagement', (cfg) => {
   const gppConf = cfg.consentManagement?.gpp;
