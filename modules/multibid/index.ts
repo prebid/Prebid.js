@@ -26,13 +26,13 @@ type MultiBidConfig = ({
      * A bidder code.
      */
     bidder: BidderCode;
-    bidders: undefined
+    bidders?: undefined
 } | {
     /**
      * Multiple bidder codes.
      */
     bidders: BidderCode[];
-    bidder: undefined;
+    bidder?: undefined;
 }) & {
     /**
      * The number of bids the named bidder(s) can supply. Max of 9.
