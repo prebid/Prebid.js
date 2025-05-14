@@ -23,7 +23,7 @@ Module supportвs banner and video mediaType.
         bids: [{
             bidder: 'dvgroup',
             params: {
-                sspid: 'prebidssp',               
+                sspId: 'prebidssp',               
             }
         }]
     }];
