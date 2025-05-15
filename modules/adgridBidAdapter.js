@@ -102,7 +102,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     data: bidsParams,
     currency: currency,
     options: {
-      withCredentials: false,
+      withCredentials: true,
       contentType: 'application/json'
     }
   });
