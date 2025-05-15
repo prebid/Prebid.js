@@ -1,5 +1,5 @@
-import { ajax } from '../src/ajax.js';
-import { cyrb53Hash } from '../src/utils.js';
+import { ajax } from '../../src/ajax.js'
+import { cyrb53Hash } from '../../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
 

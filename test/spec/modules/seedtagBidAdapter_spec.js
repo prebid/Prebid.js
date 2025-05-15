@@ -363,7 +363,7 @@ describe('Seedtag Adapter', function () {
         expect(videoBid.requestCount).to.equal(1);
       });
 
-      it('should have geom parameters if slot is available', function() {
+      it('should have geom parameters if slot is available', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         const bidRequests = data.bidRequests;
@@ -392,7 +392,7 @@ describe('Seedtag Adapter', function () {
         }
       })
 
-      it('should have bidfloor parameter if available', function() {
+      it('should have bidfloor parameter if available', function () {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
         const bidRequests = data.bidRequests;
@@ -771,6 +771,60 @@ describe('Seedtag Adapter', function () {
           expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].vastXml).to.equal('content');
           expect(bids[0].meta.advertiserDomains).to.deep.equal([]);
+        });
+      });
+      describe('the bid is a banner but the content is a video or display (video)', function () {
+        it('should return a banner bid with right meta.mediaType', function () {
+          const request = { data: JSON.stringify({}) };
+          const serverResponse = {
+            body: {
+              bids: [
+                {
+                  bidId: '2159a54dc2566f',
+                  price: 0.5,
+                  currency: 'USD',
+                  content: 'content',
+                  width: 728,
+                  height: 90,
+                  mediaType: 'display',
+                  ttl: 360,
+                  nurl: 'testurl.com/nurl',
+                  adomain: ['advertiserdomain.com'],
+                  realMediaType: 'video'
+                },
+              ],
+              cookieSync: { url: '' },
+            },
+          };
+          const bids = spec.interpretResponse(serverResponse, request);
+          expect(bids.length).to.equal(1);
+          expect(bids[0].meta.mediaType).to.deep.equal('video');
+        });
+        it('should return a banner bid with right meta.mediaType (display)', function () {
+          const request = { data: JSON.stringify({}) };
+          const serverResponse = {
+            body: {
+              bids: [
+                {
+                  bidId: '2159a54dc2566f',
+                  price: 0.5,
+                  currency: 'USD',
+                  content: 'content',
+                  width: 728,
+                  height: 90,
+                  mediaType: 'display',
+                  ttl: 360,
+                  nurl: 'testurl.com/nurl',
+                  adomain: ['advertiserdomain.com'],
+                  realMediaType: 'banner'
+                },
+              ],
+              cookieSync: { url: '' },
+            },
+          };
+          const bids = spec.interpretResponse(serverResponse, request);
+          expect(bids.length).to.equal(1);
+          expect(bids[0].meta.mediaType).to.deep.equal('banner');
         });
       });
     });
