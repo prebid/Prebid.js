@@ -1,7 +1,8 @@
-import { buildUrl, deepAccess, deepSetValue, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -163,8 +164,8 @@ const elementInView = (elementId) => {
   };
 
   const visibleInWindow = (el, win) => {
-    const rect = el.getBoundingClientRect();
-    const inView = (rect.top + rect.height >= 0) && (rect.top <= win.innerHeight);
+    const rect = getBoundingClientRect(el);
+    const inView = (rect.top + rect.height >= 0) && (rect.top <= getWinDimensions().innerHeight);
 
     if (win !== win.parent) {
       return inView && visibleInWindow(win.frameElement, win.parent);

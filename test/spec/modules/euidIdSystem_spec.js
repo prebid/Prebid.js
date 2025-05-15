@@ -3,7 +3,6 @@ import {config} from 'src/config.js';
 import {euidIdSubmodule} from 'modules/euidIdSystem.js';
 import 'modules/consentManagementTcf.js';
 import 'src/prebid.js';
-import * as utils from 'src/utils.js';
 import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
@@ -123,10 +122,11 @@ describe('EUID module', function() {
     expectToken(bid, initialToken);
   })
 
-  it('When an expired token is provided in config, it calls the API.', function() {
+  it('When an expired token is provided in config, it calls the API.', async function () {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
     config.setConfig(makePrebidConfig({euidToken}));
+    await runAuction();
     expect(server.requests[0]?.url).to.have.string('https://prod.euid.eu/');
   });
 

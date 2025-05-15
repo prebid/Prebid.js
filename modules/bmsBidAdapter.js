@@ -1,6 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { sendBeacon } from '../src/ajax.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
@@ -9,6 +8,7 @@ import {
   isPlainObject,
   deepSetValue,
   isEmpty,
+  triggerPixel,
 } from '../src/utils.js';
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
@@ -102,7 +102,7 @@ export const spec = {
         data: JSON.stringify(ortbRequest),
         options: {
           contentType: 'text/plain',
-          withCredentials: false,
+          withCredentials: true,
         },
       },
     ];
@@ -132,6 +132,8 @@ export const spec = {
           requestId: bid.impid,
           seatBidId: bid.id,
           ttl: typeof bid.exp === 'number' ? bid.exp : DEFAULT_BID_TTL,
+          nurl: bid.nurl || null,
+          burl: bid.burl || null,
           meta: {
             advertiserDomains: bid.adomain || [],
             networkId: bid.ext?.networkId || 1105,
@@ -146,11 +148,11 @@ export const spec = {
   onBidWon: function (bid) {
     const { burl, nurl } = bid || {};
     if (nurl) {
-      sendBeacon(nurl);
+      triggerPixel(nurl);
     }
 
     if (burl) {
-      sendBeacon(burl);
+      triggerPixel(burl);
     }
   },
 };

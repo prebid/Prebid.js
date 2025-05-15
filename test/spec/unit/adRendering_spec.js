@@ -63,6 +63,12 @@ describe('adRendering', () => {
       bidResponse = {};
     });
 
+    it('should carry over instl', () => {
+      bidResponse.instl = true;
+      const result = getRenderingData(bidResponse);
+      expect(result.instl).to.be.true;
+    });
+
     ['ad', 'adUrl'].forEach((prop) => {
       describe(`on ${prop}`, () => {
         it('replaces AUCTION_PRICE macro', () => {
