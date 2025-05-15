@@ -1,4 +1,3 @@
-// @ts-nocheck
 import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
 import { log } from 'modules/33acrossAnalyticsAdapter.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
