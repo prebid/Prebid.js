@@ -553,7 +553,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should add schain', function () {
       const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.schain = schain;
+      bidRequest.ortb2 = {source: {schain: schain}};
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.source.ext.schain).to.equal(schain);
