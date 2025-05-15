@@ -32,7 +32,8 @@ import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
 import {ALL_MEDIATYPES, BANNER, type MediaType} from '../src/mediaTypes.js';
-import type {Currency, Size} from "../src/types/common.d.ts";
+import type {Currency, Size, BidderCode} from "../src/types/common.d.ts";
+import type {BidRequest} from '../src/adapterManager.ts';
 import type {Bid} from "../src/bidfactory.ts";
 
 export const FLOOR_SKIPPED_REASON = {
@@ -56,7 +57,7 @@ const SYN_FIELD = Symbol();
 /**
  * @summary Allowed fields for rules to have
  */
-export let allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain', 'mediaType'];
+export const allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain', 'mediaType'] as const;
 
 /**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
@@ -116,14 +117,14 @@ function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
 /**
  * @summary floor field types with their matching functions to resolve the actual matched value
  */
-export let fieldMatchingFunctions = {
+export const fieldMatchingFunctions = {
   [SYN_FIELD]: () => '*',
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
   'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).adUnitId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
   'domain': getHostname,
   'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
-}
+} as const;
 
 /**
  * @summary Based on the fields array in floors data, it enumerates all possible matches based on exact match coupled with
@@ -242,6 +243,12 @@ type GetFloorParams = {
     currency?: Currency | '*';
     mediaType?: MediaType | '*';
     size?: Size | '*';
+}
+
+declare module '../src/adapterManager' {
+    interface BaseBidRequest {
+        getFloor: typeof getFloor;
+    }
 }
 
 /**
@@ -665,13 +672,140 @@ export function generateAndHandleFetch(floorEndpoint) {
  * @summary Updates our allowedFields and fieldMatchingFunctions with the publisher defined new ones
  */
 function addFieldOverrides(overrides) {
-  Object.keys(overrides).forEach(override => {
-    // we only add it if it is not already in the allowed fields and if the passed in value is a function
-    if (allowedFields.indexOf(override) === -1 && typeof overrides[override] === 'function') {
-      allowedFields.push(override);
-      fieldMatchingFunctions[override] = overrides[override];
+    Object.keys(overrides).forEach((override: any) => {
+        // we only add it if it is not already in the allowed fields and if the passed in value is a function
+        if (allowedFields.indexOf(override) === -1 && typeof overrides[override] === 'function') {
+            (allowedFields as any).push(override);
+            fieldMatchingFunctions[override] = overrides[override];
+        }
+    });
+}
+
+type FloorsDef = {
+    /**
+     * Optional atribute used to signal to the Floor Provider’s Analytics adapter their floors are being applied.
+     * They can opt to log only floors that are applied when they are the provider. If floorProvider is supplied in
+     * both the top level of the floors object and within the data object, the data object’s configuration shall prevail.
+     */
+    floorProvider?: string;
+    /**
+     * Currency of floor data. Floor Module will convert currency where necessary.
+     */
+    currency?: Currency;
+    /**
+     * Used by floor providers to train on model version performance.
+     * The expectation is a floor provider’s analytics adapter will pass the model verson back for algorithm training.
+     */
+    modelVersion?: string;
+    schema: {
+        /**
+         * Character separating the floor keys. Default is "|".
+         */
+        delimiter?: string;
+        fields: (keyof typeof allowedFields | string)[]
+    };
+    /**
+     * Floor used if no matching rules are found.
+     */
+    default?: number;
+    /**
+     * Map from delimited field of attribute values to a floor value.
+     */
+    values: {
+        [rule: string]: number;
     }
-  });
+}
+
+type BaseFloorData = {
+    /**
+     * Epoch timestamp associated with modelVersion.
+     * Can be used to track model creation of floor file for post auction analysis.
+     */
+    modelTimestamp?: string;
+    /**
+     * skipRate is a number between 0 and 100 to determine when to skip all floor logic, where 0 is always use floor data and 100 is always skip floor data.
+     */
+    skipRate?: number;
+}
+
+export type Schema1FloorData = FloorsDef & BaseFloorData & {
+    floorsSchemaVersion?: 1;
+}
+
+export type Schema2FloorData = BaseFloorData & {
+    floorsSchemaVersion: 2;
+    modelGrups: (FloorsDef & {
+        /**
+         * Used by the module to determine when to apply the specific model.
+         */
+        modelWeight: number;
+        /**
+         * This is an array of bidders for which to avoid sending floors.
+         * This is useful for bidders where the publisher has established different floor rules in their systems.
+         */
+        noFloorSignalBidders?: BidderCode[];
+    })[]
+}
+
+declare module '../src/adUnits' {
+    interface AdUnitDefinition {
+        floors?: Partial<Schema1FloorData>;
+    }
+}
+
+
+export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> & {
+    enabled?: boolean;
+    /**
+     * The mimimum CPM floor used by the Price Floors Module.
+     * The Price Floors Module will take the greater of floorMin and the matched rule CPM when evaluating getFloor() and enforcing floors.
+     */
+    floorMin?: number;
+    enforcement?: Pick<Schema2FloorData['modelGrups'][0], 'noFloorSignalBidders'> & {
+        /**
+         * If set to true (the default), the Price Floors Module will provide floors to bid adapters for bid request
+         * matched rules and suppress any bids not exceeding a matching floor.
+         * If set to false, the Price Floors Module will still provide floors for bid adapters, there will be no floor enforcement.
+         */
+        enforceJS?: boolean;
+        /**
+         * If set to true (the default), the Price Floors Module will signal to Prebid Server to pass floors to it’s bid
+         * adapters and enforce floors.
+         * If set to false, the pbjs should still pass matched bid request floor data to PBS, however no enforcement will take place.
+         */
+        enforcePBS?: boolean;
+        /**
+         * Enforce floors for deal bid requests. Default is false.
+         */
+        floorDeals?: boolean;
+        /**
+         * If true (the default), the Price Floors Module will use the bidAdjustment function to adjust the floor
+         * per bidder.
+         * If false (or no bidAdjustment function is provided), floors will not be adjusted.
+         * Note: Setting this parameter to false may have unexpected results, such as signaling a gross floor when
+         * expecting net or vice versa.
+         */
+        bidAdjustment?: boolean;
+    }
+    /**
+     * Map from custom field name to a function generating that field's value for either a bid or a bid request.
+     */
+    additionalSchemaFields?: {
+        [field: string]: (bidRequest?: BidRequest<BidderCode>, bid?: Bid) => string
+    }
+    endpoint?: {
+        /**
+         * URL of endpoint to retrieve dynamic floor data.
+         */
+        url: string;
+    };
+    data?: Schema1FloorData | Schema2FloorData;
+}
+
+declare module '../src/config' {
+    interface Config {
+        floors?: FloorsConfig;
+    }
 }
 
 /**
@@ -729,8 +863,13 @@ export function handleSetFloorsConfig(config) {
 }
 
 export type BidFloorData = {
-    // TODO type this
-    [key: string]: unknown
+    floorValue: number;
+    floorRule: string;
+    floorRuleValue: number;
+    floorCurrency: Currency;
+    cpmAfterAdjustments: number;
+    enforcements: FloorsConfig['enforcement'];
+    matchedFields: { [fieldName: string ]: string }
 }
 
 declare module '../src/bidfactory' {
