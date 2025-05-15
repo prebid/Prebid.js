@@ -43,7 +43,7 @@
     "base": "BrowserStack",
     "os_version": "Monterey",
     "browser": "safari",
-    "browser_version": "15.8",
+    "browser_version": "15.6",
     "device": null,
     "os": "OS X"
   }
