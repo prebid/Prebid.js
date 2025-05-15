@@ -596,7 +596,7 @@ describe('auctionmanager.js', function () {
 
     it('Standard bidCpmAdjustment changes the bid of any bidder', function () {
       const bid = Object.assign({},
-        createBid(2),
+        createBid(),
         fixtures.getBidResponses()[5]
       );
 
@@ -741,7 +741,7 @@ describe('auctionmanager.js', function () {
   describe('adjustBids', function () {
     it('should adjust bids if greater than zero and pass copy of bid object', function () {
       const bid = Object.assign({},
-        createBid(2),
+        createBid(),
         fixtures.getBidResponses()[5]
       );
 

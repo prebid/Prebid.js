@@ -549,7 +549,7 @@ describe('Consumable BidAdapter', function () {
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
       let bidRequest = spec.buildRequests(BIDDER_REQUEST_2.bidRequest, BIDDER_REQUEST_2);
-      let bid = createBid(1, bidRequest.bidRequest[0]);
+      let bid = createBid(bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('consumable');
     });

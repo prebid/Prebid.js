@@ -8,7 +8,6 @@ import {
   EVENTS,
   JSON_MAPPING,
   NATIVE_KEYS,
-  STATUS,
   TARGETING_KEYS
 } from './constants.js';
 import * as events from './events.js';
@@ -55,7 +54,7 @@ const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_STATUS.RENDER
 
 export let filters = {
   isActualBid(bid) {
-    return bid.getStatusCode() === STATUS.GOOD
+    return true;
   },
   isBidNotExpired,
   isUnusedBid
