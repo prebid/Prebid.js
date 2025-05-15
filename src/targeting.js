@@ -497,6 +497,10 @@ export function newTargeting(auctionManager) {
     let resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
 
     Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet), customSlotMatching)).forEach(([targetId, slots]) => {
+       if (slots.length > 1) {
+        // This can lead to duplicate impressions. This is existing behavior and changing to only target one slot could be a breaking change for existing integrations.
+        logWarn(`Multiple slots found matching: ${targetId}. Targeting will be set on all matching slots, which can lead to duplicate impressions if more than one are requested from GAM. To resolve this, ensure the arguments to setTargetingForGPTAsync resolve to a single slot by explicitly matching the desired slotElementID.`);
+      }
       slots.forEach(slot => {
       // now set new targeting keys
         Object.keys(targetingSet[targetId]).forEach(key => {
