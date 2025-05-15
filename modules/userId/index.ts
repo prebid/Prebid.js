@@ -681,6 +681,13 @@ export function enrichEids(ortb2Fragments) {
   return ortb2Fragments;
 }
 
+declare module '../../src/adapterManager' {
+    interface BaseBidRequest {
+        userId: UserId;
+        userIdAsEids: ORTBRequest['user']['eids'];
+    }
+}
+
 export function addIdData({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
