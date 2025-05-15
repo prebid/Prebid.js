@@ -15,7 +15,7 @@ import {
   uniques
 } from '../src/utils.js';
 import type {SlotMatchingFn} from "../src/targeting.ts";
-import type {AdUnitCode} from "../src/types/common";
+import type {AdUnitCode} from "../src/types/common.d.ts";
 import type {AdUnit} from "../src/adUnits.ts";
 
 const MODULE_NAME = 'GPT Pre-Auction';
