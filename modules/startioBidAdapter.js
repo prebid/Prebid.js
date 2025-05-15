@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, logError, triggerNurlWithCpm } from '../src/utils.js';
+import { deepAccess, deepSetValue, logError } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 
 const BIDDER_CODE = 'startio';
 const METHOD = 'POST';
@@ -12,9 +13,9 @@ const converter = ortbConverter({
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
-    if (imp['banner']) {
-      deepSetValue(imp, 'banner.w', deepAccess(imp, 'banner.format.0.w'));
-      deepSetValue(imp, 'banner.h', deepAccess(imp, 'banner.format.0.h'));
+    if (imp?.banner?.format?.[0]) {
+      imp.banner.w ??= deepAccess(imp, 'banner.format.0.w');
+      imp.banner.h ??= deepAccess(imp, 'banner.format.0.h');
     }
 
     return imp;
@@ -22,11 +23,12 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const publisherId = deepAccess(bidderRequest, 'bids.0.params.publisherId');
-
-    if (request['site']) {
-      deepSetValue(request, 'site.publisher.id', publisherId);
-    } else {
-      deepSetValue(request, 'app.publisher.id', publisherId);
+    if (request?.site) {
+      request.site.publisher = request.site.publisher || {};
+      request.site.publisher.id = publisherId;
+    } else if (request?.app) {
+      request.app.publisher = request.app.publisher || {};
+      request.app.publisher.id = publisherId;
     }
     deepSetValue(request, 'ext.prebid', {});
 
@@ -49,7 +51,8 @@ const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 30
-  }
+  },
+  translator: ortb25Translator()
 });
 
 export const spec = {
@@ -67,7 +70,7 @@ export const spec = {
         method: METHOD,
         url: ENDPOINT_URL,
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: false,
           crossOrigin: true
         },
@@ -90,7 +93,12 @@ export const spec = {
 
   onBidWon: (bid) => {
     if (bid.nurl) {
-      triggerNurlWithCpm(bid, bid.cpm)
+      const url = new URL(bid.nurl);
+      url.searchParams.set('cpm', bid.cpm);
+
+      fetch(url.toString(), { method: 'GET', keepalive: true }).catch(err =>
+        logError('Error triggering win notification', err)
+      );
     }
   },
 

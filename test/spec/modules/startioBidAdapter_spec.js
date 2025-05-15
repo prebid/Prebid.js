@@ -248,6 +248,18 @@ describe('Prebid Adapter: Startio', function () {
       })
     });
 
+    it('should set meta.adomain from the bid response adomain field', () => {
+      const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[BANNER], VALID_BIDDER_REQUEST);
+      const { data } = requests[0];
+      const bids = spec.interpretResponse({ body: SERVER_RESPONSE_BANNER }, { data }).bids;
+
+      expect(bids).to.have.lengthOf(1);
+      const bid = bids[0];
+
+      expect(bid.meta).to.be.an('object');
+      expect(bid.meta.adomain).to.be.an('array').that.includes('start.io');
+    });
+
     if (FEATURES.VIDEO) {
       it('should return a valid bid array with a video bid', () => {
         const requests = spec.buildRequests(VALID_MEDIA_TYPES_REQUESTS[VIDEO], VALID_BIDDER_REQUEST);
@@ -276,6 +288,4 @@ describe('Prebid Adapter: Startio', function () {
       });
     }
   });
-
-
 });
