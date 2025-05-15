@@ -112,7 +112,7 @@ const DEFAULT_CURRENCY = 'USD'
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -164,8 +164,9 @@ export const spec = {
         }
 
       };
-      for (let mediaTypes in bid.mediaTypes) {
-        switch (mediaTypes) {
+
+      Object.keys(bid.mediaTypes).forEach(mediaType => {
+        switch (mediaType) {
           case BANNER:
             impObj.banner = createBannerRequest(bid);
             validImp = true;
@@ -174,9 +175,12 @@ export const spec = {
             impObj.native = createNativeRequest(bid);
             validImp = true;
             break;
-          default: return;
+          case VIDEO:
+            impObj.video = createVideoRequest(bid);
+            validImp = true;
+            break;
         }
-      }
+      })
 
       let request = requestsMap[bid.params.publisher_id];
       if (!request) {
@@ -213,7 +217,7 @@ export const spec = {
           data: request
         });
       }
-      validImp && request.imp.push(impObj);
+      if (validImp && impObj) request.imp.push(impObj);
     });
     requests.forEach((req) => {
       if (isTest) {
@@ -267,17 +271,21 @@ export const spec = {
           ext.native = jsonAdm.native;
           adm = null;
         }
-        if (adm) {
-          bid.width = serverBid.w;
-          bid.height = serverBid.h;
-          bid.ad = adm;
-          bid.mediaType = BANNER;
-        } else if (ext && ext.native) {
+        if (ext?.native) {
           bid.native = parseNative(ext.native);
           bid.mediaType = NATIVE;
+        } else if (adm?.trim().startsWith('<?xml') || adm?.includes('<VAST')) {
+          bid.vastXml = adm;
+          bid.mediaType = VIDEO;
+        } else if (adm) {
+          bid.ad = adm;
+          bid.width = serverBid.w;
+          bid.height = serverBid.h;
+          bid.mediaType = BANNER;
         }
-
-        bidResponses.push(bid);
+        if (bid.mediaType) {
+          bidResponses.push(bid);
+        }
       })
     });
 
@@ -387,6 +395,37 @@ function createNativeRequest(bid) {
       ver: '1.2'
     }
   }
+}
+
+function createVideoRequest(bid) {
+  const video = bid.mediaTypes.video;
+  if (!video || !video.playerSize) return;
+
+  const playerSize = Array.isArray(video.playerSize[0])
+    ? video.playerSize[0] // [[640, 480], [300, 250]] -> use first size
+    : video.playerSize;   // [640, 480]
+
+  const videoRequest = {
+    mimes: video.mimes || ['video/mp4'],
+    minduration: video.minduration || 1,
+    maxduration: video.maxduration || 60,
+    protocols: video.protocols || [2, 3, 5, 6],
+    w: playerSize[0],
+    h: playerSize[1],
+    startdelay: video.startdelay || 0,
+    linearity: video.linearity || 1,
+    skip: video.skip != null ? video.skip : 0,
+    skipmin: video.skipmin || 5,
+    skipafter: video.skipafter || 10,
+    playbackmethod: video.playbackmethod || [1],
+    api: video.api || [1, 2],
+  };
+
+  if (video.placement) {
+    videoRequest.placement = video.placement;
+  }
+
+  return videoRequest;
 }
 
 /**
