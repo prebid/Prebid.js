@@ -204,4 +204,14 @@ export function setOrtbSourceExtSchain(ortbRequest, bidderRequest, context) {
   }
 }
 
+export function setOrtbSourceSchain(ortbRequest, bidderRequest, context) {
+  if (!deepAccess(ortbRequest, 'source.schain')) {
+    const schain = deepAccess(context, 'bidRequests.0.schain');
+    if (schain) {
+      deepSetValue(ortbRequest, 'source.schain', schain);
+    }
+  }
+}
+
 registerOrtbProcessor({type: REQUEST, name: 'sourceExtSchain', fn: setOrtbSourceExtSchain});
+registerOrtbProcessor({type: REQUEST, name: 'sourceSchain', fn: setOrtbSourceSchain});
