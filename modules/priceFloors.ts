@@ -58,6 +58,7 @@ const SYN_FIELD = Symbol();
  * @summary Allowed fields for rules to have
  */
 export const allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain', 'mediaType'] as const;
+type DefaultField = { [K in (typeof allowedFields)[number]]: K extends string ? K : never}[(typeof allowedFields)[number]];
 
 /**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
@@ -702,7 +703,7 @@ type FloorsDef = {
          * Character separating the floor keys. Default is "|".
          */
         delimiter?: string;
-        fields: (keyof typeof allowedFields | string)[]
+        fields: (DefaultField | string)[]
     };
     /**
      * Floor used if no matching rules are found.
