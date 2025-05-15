@@ -794,6 +794,10 @@ export type FloorsConfig = Pick<Schema1FloorData, 'skipRate' | 'floorProvider'> 
     additionalSchemaFields?: {
         [field: string]: (bidRequest?: BidRequest<BidderCode>, bid?: Bid) => string
     }
+    /**
+     * How long (in milliseconds) auctions should be delayed to wait for dynamic floor data.
+     */
+    auctionDelay?: number;
     endpoint?: {
         /**
          * URL of endpoint to retrieve dynamic floor data.
