@@ -14,6 +14,7 @@ import {
   logWarn
 } from '../src/utils.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import type {ORTBRequest} from "../src/types/ortb/request";
 
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 
@@ -26,7 +27,7 @@ const MODE = {
   STRICT: 'strict',
   RELAXED: 'relaxed',
   OFF: 'off'
-};
+} as const;
 const MODES = []; // an array of modes
 _each(MODE, mode => MODES.push(mode));
 
@@ -144,7 +145,7 @@ export function isValidSchainConfig(schainObject) {
 }
 
 function resolveSchainConfig(schainObject, bidder) {
-  let mode = MODE.STRICT;
+  let mode: string = MODE.STRICT;
 
   if (isValidSchainConfig(schainObject)) {
     if (isStr(schainObject.validation) && MODES.indexOf(schainObject.validation) != -1) {
@@ -165,8 +166,31 @@ function resolveSchainConfig(schainObject, bidder) {
   return null;
 }
 
+type SchainConfig = {
+    /**
+     * 'strict':  schain object will not be passed to adapters if it is invalid. Errors are thrown for invalid schain object.
+     * 'relaxed': Errors are thrown for an invalid schain object but the invalid schain object is still passed to adapters.
+     * 'off':  No validations are performed and schain object is passed as-is to adapters.
+     * Default is 'strict'.
+     */
+    validation?: (typeof MODE)[keyof typeof MODE];
+    config: ORTBRequest['source']['schain'];
+}
+
+declare module '../src/config' {
+    interface Config {
+        schain?: SchainConfig;
+    }
+}
+
+declare module '../src/adapterManager' {
+    interface BaseBidRequest {
+        schain?: ORTBRequest['source']['schain'];
+    }
+}
+
 export function makeBidRequestsHook(fn, bidderRequests) {
-  function getSchainForBidder(bidder) {
+  function getSchainForBidder(bidder): SchainConfig {
     let bidderSchain = bidderConfigs[bidder] && bidderConfigs[bidder].schain;
     return bidderSchain || globalSchainConfig;
   }
