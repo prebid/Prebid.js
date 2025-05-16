@@ -240,7 +240,7 @@ describe('a1MediaBidAdapter', function() {
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
 
         const expectedResPrice = 9;
-        const expectedAd = replaceAuctionPrice(macroAdm, expectedResPrice) + replaceAuctionPrice(interpretedNurl, expectedResPrice);
+        const expectedAd = replaceAuctionPrice(interpretedNurl, expectedResPrice) + replaceAuctionPrice(macroAdm, expectedResPrice);
 
         expect(interpretedRes[0].ad).equal(expectedAd);
       });

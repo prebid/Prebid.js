@@ -199,7 +199,7 @@ export function validateConfig(options) {
  */
 function setS2sConfig(options) {
   options = validateConfig(options);
-  if (options?.length) {
+  if (options.length) {
     _s2sConfigs = options;
   }
 }
@@ -403,10 +403,9 @@ export function PrebidServer() {
     let { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
-      const s2sConfig = s2sBidRequest.s2sConfig;
-      if (s2sConfig?.syncEndpoint && getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent)) {
-        const s2sAliases = (s2sConfig.extPrebid?.aliases) ?? {};
-        let syncBidders = (s2sConfig.syncBidders ?? s2sConfig.bidders)
+      if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
+        const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
+        let syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
