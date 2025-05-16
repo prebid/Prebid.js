@@ -1092,6 +1092,7 @@ describe('gdpr enforcement', function () {
   })
   describe('checkIfCredentialsAllowed', () => {
     it('should not allow access credentials for lack of purpose consent 1', () => {
+      const logWarn = sinon.spy(utils, 'logWarn');
       const rules = [{
         purpose: 'storage',
         enforcePurpose: true,
@@ -1104,8 +1105,12 @@ describe('gdpr enforcement', function () {
       const options = {
         withCredentials: true
       }
+      
       checkIfCredentialsAllowed(nextSpy, options);
+
       sinon.assert.calledWith(nextSpy, {withCredentials: false});
+      expect(logWarn.calledOnce).to.equal(true);
+      logWarn.restore();
     })
   })
 });

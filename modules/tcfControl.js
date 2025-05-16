@@ -2,7 +2,7 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import {deepAccess, hasDeviceAccess, logError, logWarn} from '../src/utils.js';
+import {deepAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
@@ -348,7 +348,7 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
-      processRequestOptions.before(checkIfCredentialsAllowed);
+      processRequestOptions.after(checkIfCredentialsAllowed);
     }
     if (ACTIVE_RULES.purpose[2] != null) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
@@ -369,13 +369,19 @@ export function setEnforcementConfig(config) {
   }
 }
 
-export function checkIfCredentialsAllowed(next, options = {}) {
-  if (!options.withCredentials) {
+export function checkIfCredentialsAllowed(next, options = {}, moduleType, moduleName) {
+  if (!options.withCredentials || (moduleType && moduleName)) {
     next(options);
     return;
   }
   const consentData = gdprDataHandler.getConsentData();
-  options.withCredentials = hasDeviceAccess() && validateRules(ACTIVE_RULES.purpose[1], consentData);
+  const rule = ACTIVE_RULES.purpose[1];
+  const ruleOptions = CONFIGURABLE_RULES[rule.purpose];
+  const {purpose} = getConsent(consentData, ruleOptions.type, ruleOptions.id, null);
+  if (!purpose) {
+    options.withCredentials = false;
+    logWarn('withCredentials option overwritten with false accordingly to tcf consent data');
+  }
   next(options);
 }
 

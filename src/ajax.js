@@ -3,7 +3,7 @@ import { activityParams } from './activities/activityParams.js';
 import { isActivityAllowed } from './activities/rules.js';
 import {config} from './config.js';
 import { hook } from './hook.js';
-import {buildUrl, logError, parseUrl} from './utils.js';
+import {buildUrl, hasDeviceAccess, logError, parseUrl} from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -28,7 +28,10 @@ const GET = 'GET';
 const POST = 'POST';
 const CTYPE = 'Content-Type';
 
-export const processRequestOptions = hook('async', function(options) {
+export const processRequestOptions = hook('async', function(options = {}, moduleType, moduleName) {
+  if (options.withCredentials) {
+    options.withCredentials = (moduleType && moduleName) ? isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)) : hasDeviceAccess();
+  }
   return options;
 }, 'processRequestOptions');
 
@@ -86,11 +89,7 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}, moduleType,
       options = Object.assign({signal: to.signal}, options);
     }
 
-    if (moduleType && moduleName) {
-      options.withCredentials = options.withCredentials ? isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)) : false;
-    } else {
-      processRequestOptions(options);
-    }
+    processRequestOptions(options, moduleType, moduleName);
 
     let pm = dep.fetch(resource, options);
     if (to?.done != null) pm = pm.finally(to.done);
