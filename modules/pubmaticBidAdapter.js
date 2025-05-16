@@ -3,10 +3,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { isViewabilityMeasurable, getViewability } from '../libraries/percentInView/percentInView.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } from '../src/constants.js';
-import { percentInView } from '../libraries/percentInView/percentInView.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -645,35 +645,7 @@ const _handleCustomParams = (params, conf) => {
   return conf;
 };
 
-function _isIframe() {
-  try {
-    return window.self !== window.top;
-  } catch (e) {
-    return true;
-  }
-}
 
-/**
- * Checks if viewability can be measured for an element
- * @param {HTMLElement} element - DOM element to check
- * @returns {boolean} True if viewability is measurable
- */
-export function _isViewabilityMeasurable(element) {
-  return !_isIframe() && element !== null;
-}
-
-/**
- * Gets the viewability percentage of an element
- * @param {HTMLElement} element - DOM element to measure
- * @param {Window} topWin - Top window object
- * @param {Object} size - Size object with width and height
- * @returns {number|string} Viewability percentage or 0 if not visible
- */
-export function _getViewability(element, topWin, { w, h } = {}) {
-  return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, { w, h })
-    : 0;
-}
 
 /**
  * Gets the minimum size from an array of sizes
@@ -702,8 +674,8 @@ export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   const element = document.getElementById(adUnitCode);
   if (!element) return;
 
-  const viewabilityAmount = _isViewabilityMeasurable(element)
-    ? _getViewability(element, getWindowTop(), elementSize)
+  const viewabilityAmount = isViewabilityMeasurable(element)
+    ? getViewability(element, getWindowTop(), elementSize)
     : 'na';
 
   if (!imp.ext) {

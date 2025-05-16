@@ -1,6 +1,5 @@
-import * as pubmaticBidAdapter from 'modules/pubmaticBidAdapter.js';
 import { expect } from 'chai';
-import { spec, cpmAdjustment, _getViewability, addViewabilityToImp, _isViewabilityMeasurable } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 
@@ -1063,67 +1062,6 @@ describe('PubMatic adapter', () => {
   })
 })
 
-describe('_getViewability', () => {
-  let element;
-  let getBoundingClientRectStub;
-  let topWinMock;
-
-  beforeEach(() => {
-    element = document.createElement('div');
-    getBoundingClientRectStub = sinon.stub(element, 'getBoundingClientRect');
-    topWinMock = {
-      innerWidth: 1000,
-      innerHeight: 800,
-      document: { visibilityState: 'visible' }
-    };
-  });
-
-  afterEach(() => {
-    getBoundingClientRectStub.restore();
-  });
-
-  it('should return 100 when element is fully in viewport', () => {
-    getBoundingClientRectStub.returns({ top: 0, left: 0, width: 300, height: 250, right: 300, bottom: 250 });
-    const result = _getViewability(element, topWinMock, { w: 300, h: 250 });
-    expect(result).to.equal(100);
-  });
-
-  it('should return 0 if document is not visible', () => {
-    topWinMock.document.visibilityState = 'hidden';
-    getBoundingClientRectStub.returns({ top: 0, left: 0, width: 300, height: 250, right: 300, bottom: 250 });
-    const result = _getViewability(element, topWinMock, { w: 300, h: 250 });
-    expect(result).to.equal(0);
-  });
-
-  it('should return 0 if element is not in viewport at all', () => {
-    getBoundingClientRectStub.returns({ top: 2000, left: 2000, width: 300, height: 250, right: 2300, bottom: 2250 });
-    const result = _getViewability(element, topWinMock, { w: 300, h: 250 });
-    expect(result).to.equal(0);
-  });
-
-  it('should handle missing size object gracefully', () => {
-    getBoundingClientRectStub.returns({ top: 0, left: 0, width: 300, height: 250, right: 300, bottom: 250 });
-    const result = _getViewability(element, topWinMock);
-    expect(result).to.be.a('number');
-  });
-
-  it('should return the correct percentage if the element is partially in view', () => {
-    // Only 100x100 of the 200x200 element is visible in the viewport
-    const boundingBox = { left: 700, top: 500, right: 900, bottom: 700, width: 200, height: 200 };
-    getBoundingClientRectStub.returns(boundingBox);
-
-    // Stub getWinDimensions to simulate a viewport that only covers 800x600 (so only a quarter of the element is visible)
-    const getWinDimensionsStub = sinon.stub(utils, 'getWinDimensions');
-    getWinDimensionsStub.returns({ innerWidth: 800, innerHeight: 600 });
-
-    // Call with the real window or a mock, as your percentInView implementation expects
-    const result = _getViewability(element, window, { w: 200, h: 200 });
-
-    expect(result).to.equal(25); // 100x100 / 200x200 = 0.25 -> 25%
-    getWinDimensionsStub.restore();
-  });
-});
-
 describe('addViewabilityToImp', () => {
   let imp;
   let element;
@@ -1144,7 +1082,7 @@ describe('addViewabilityToImp', () => {
       value: 'visible',
       configurable: true
     });
-    sandbox.stub(require('src/utils.js'), 'getWindowTop').returns(window);
+    sandbox.stub(utils, 'getWindowTop').returns(window);
   });
 
   afterEach(() => {
@@ -1163,8 +1101,8 @@ describe('addViewabilityToImp', () => {
   });
 
   it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
-    sandbox.stub(pubmaticBidAdapter, '_isViewabilityMeasurable').returns(false);
-    pubmaticBidAdapter.addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
     expect(imp.ext).to.have.property('viewability');
     expect(imp.ext.viewability.amount).to.equal('na');
   });
