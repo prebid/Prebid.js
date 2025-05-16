@@ -1331,15 +1331,13 @@ describe('Utils', function () {
       expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
     });
   
-    it('should throw an error if invalid JSON is passed', async () => {
-      const invalidData = 'Test data';
+    it('should handle non-string input by stringifying it', async () => {
+      const nonStringData = { test: 'data' };
+      const compressedData = await utils.compressDataWithGZip(nonStringData);
   
-      try {
-        await utils.compressDataWithGZip(invalidData);
-        throw new Error('Expected compressDataWithGZip to throw');
-      } catch (err) {
-        expect(err.message).to.equal('Data cannot be stringified to valid JSON.');
-      }
+      expect(compressedData).to.be.instanceOf(Uint8Array);
+      expect(compressedData.length).to.be.greaterThan(0);
+      expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
     });
   });
 });
@@ -1424,7 +1422,7 @@ describe('memoize', () => {
         });
       });
     })
-  });
+  })
 })
 
 describe('getWinDimensions', () => {

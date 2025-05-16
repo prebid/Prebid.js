@@ -1418,14 +1418,8 @@ export const isGzipCompressionSupported = (function () {
 
 // Make sure to use isGzipCompressionSupported before calling this function
 export async function compressDataWithGZip(data) {
-  if (typeof data !== 'string') {
+  if (typeof data !== 'string') { // TextEncoder (below) expects a string
     data = JSON.stringify(data);
-  }
-
-  try {
-    JSON.parse(data);
-  } catch (e) {
-    throw new Error('Data cannot be stringified to valid JSON.');
   }
 
   const encoder = new TextEncoder();
