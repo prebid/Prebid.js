@@ -64,6 +64,7 @@ import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions";
+import type {AnalyticsConfig, AnalyticsProvider} from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -406,8 +407,8 @@ declare module './prebidGlobal' {
         offEvent: typeof offEvent;
         getEvents: typeof getEvents;
         registerBidAdapter;
-        registerAnalyticsAdapter;
-        enableAnalytics;
+        registerAnalyticsAdapter: typeof adapterManager.registerAnalyticsAdapter;
+        enableAnalytics: typeof adapterManager.enableAnalytics;
         aliasBidder: typeof aliasBidder;
         aliasRegistry: typeof adapterManager.aliasRegistry;
         getAllWinningBids: typeof getAllWinningBids;
@@ -428,7 +429,6 @@ declare module './prebidGlobal' {
 
 // Allow publishers who enable user sync override to trigger their sync
 addApiMethod('triggerUserSyncs', triggerUserSyncs);
-
 
 /**
  * Return a query string with all available targeting parameters for the given ad unit.
@@ -976,36 +976,20 @@ function registerAnalyticsAdapter(options) {
 }
 addApiMethod('registerAnalyticsAdapter', registerAnalyticsAdapter);
 
-/**
- * Enable sending analytics data to the analytics provider of your
- * choice.
- *
- * For usage, see [Integrate with the Prebid Analytics
- * API](http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html).
- *
- * For a list of analytics adapters, see [Analytics for
- * Prebid](http://prebid.org/overview/analytics.html).
- * @param  {Object} config
- * @param {string} config.provider The name of the provider, e.g., `"ga"` for Google Analytics.
- * @param {Object} config.options The options for this particular analytics adapter.  This will likely vary between adapters.
- * @alias module:pbjs.enableAnalytics
- */
-
-// Stores 'enableAnalytics' callbacks for later execution.
 const enableAnalyticsCallbacks = [];
 
 const enableAnalyticsCb = hook('async', function (config) {
   if (config && !isEmpty(config)) {
-    logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics for: ', config);
     adapterManager.enableAnalytics(config);
   } else {
     logError('$$PREBID_GLOBAL$$.enableAnalytics should be called with option {}');
   }
 }, 'enableAnalyticsCb');
 
-pbjsInstance.enableAnalytics = function (config) {
-  enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
-};
+function enableAnalytics(config) {
+    enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
+}
+addApiMethod('enableAnalytics', enableAnalytics);
 
 /**
  * Define an alias for a bid adapter.

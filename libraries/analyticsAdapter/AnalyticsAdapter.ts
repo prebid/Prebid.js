@@ -11,6 +11,8 @@ const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 const LABELS_KEY = 'analyticsLabels';
 
+type AnalyticsType = typeof ENDPOINT | typeof BUNDLE;
+
 const labels = {
   internal: {},
   publisher: {},
@@ -41,22 +43,48 @@ export function setDebounceDelay(delay) {
 
 export type AnalyticsProvider = string;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface AnalyticsProviderConfig {
-    [provider: AnalyticsProvider]: {
-        [key: string]: unknown;
-    }
+    /**
+     * Adapter-specific config types - to be extended in the adapters
+     */
 }
 
-export type AnalyticsOptions<P extends AnalyticsProvider> = AnalyticsProviderConfig[P] & {
-    provider: P;
-    options?: {
-        sampling?: number;
-    }
-    includeEvents?: (keyof events.Events)[];
-    excludeEvents?: (keyof events.Events)[];
-};
+export type DefaultOptions = {
+    /**
+     * Sampling rate, expressed as a number between 0 and 1. Data is collected only on this ratio of browser sessions.
+     * Defaults to 1
+     */
+    sampling?: number;
+}
 
-export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }) {
+export type AnalyticsConfig<P extends AnalyticsProvider> = (
+    P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : { [key: string]: unknown }
+    ) & {
+    /**
+     * Analytics adapter code
+     */
+    provider: P;
+    /**
+     * Event whitelist; if provided, only these events will be forwarded to the adapter
+     */
+    includeEvents?: (keyof events.Events)[];
+    /**
+     * Event blacklist; if provided, these events will not be forwarded to the adapter
+     */
+    excludeEvents?: (keyof events.Events)[];
+    /**
+     * Adapter specific options
+     */
+    options?: P extends keyof AnalyticsProviderConfig ? AnalyticsProviderConfig[P] : Record<string, unknown>
+}
+
+export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ url, analyticsType, global, handler }: {
+    analyticsType?: AnalyticsType;
+    url?: string;
+    global?: string;
+    handler?: any;
+}) {
   const queue = [];
   let handlers;
   let enabled = false;
@@ -145,11 +173,11 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
     emptyQueue();
   }
 
-  function _enable(config: AnalyticsOptions<PROVIDER>) {
+  function _enable(config: AnalyticsConfig<PROVIDER>) {
     provider = config?.provider;
 
     if (typeof config === 'object' && typeof config.options === 'object') {
-      sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);
+      sampled = typeof (config.options as any).sampling === 'undefined' || Math.random() < parseFloat((config.options as any).sampling);
     } else {
       sampled = true;
     }

@@ -118,8 +118,8 @@ const _public = (function () {
     });
   }
 
-  function _checkAvailableEvent(event: keyof Events) {
-    return allEvents.includes(event)
+  function _checkAvailableEvent(event: string): event is keyof Events {
+    return allEvents.includes(event as any);
   }
 
   return {

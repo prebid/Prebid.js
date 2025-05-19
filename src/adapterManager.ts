@@ -64,6 +64,10 @@ import type {
 } from "./types/common.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
+import type {
+    AnalyticsConfig,
+    AnalyticsProvider, AnalyticsProviderConfig,
+} from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -80,7 +84,7 @@ export const dep = {
 
 const _bidderRegistry = {};
 const _aliasRegistry: { [aliasCode: BidderCode]: BidderCode } = {};
-const _analyticsRegistry = {};
+const _analyticsRegistry: { [P in AnalyticsProvider]?: { adapter: AnalyticsAdapter<P>, gvlid?: number }} = {};
 
 let _s2sConfigs = [];
 config.getConfig('s2sConfig', config => {
@@ -234,6 +238,14 @@ export type AliasBidderOptions = {
      */
     skipPbsAliasing?: boolean
 }
+
+
+export type AnalyticsAdapter<P extends AnalyticsProvider> = {
+    code?: P;
+    enableAnalytics(config: AnalyticsConfig<P>): void;
+    gvlid?: number | ((config: AnalyticsConfig<P>) => number);
+}
+
 
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
@@ -769,7 +781,11 @@ const adapterManager = {
         }
         return code;
     },
-    registerAnalyticsAdapter({adapter, code, gvlid}) {
+    registerAnalyticsAdapter<P extends AnalyticsProvider>({adapter, code, gvlid}: {
+        adapter: AnalyticsAdapter<P>,
+        code: P,
+        gvlid?: number
+    }) {
         if (adapter && code) {
             if (typeof adapter.enableAnalytics === 'function') {
                 adapter.code = code;
@@ -783,7 +799,11 @@ const adapterManager = {
             logError('Prebid Error: analyticsAdapter or analyticsCode not specified');
         }
     },
-    enableAnalytics(config) {
+    enableAnalytics(
+        config: AnalyticsConfig<keyof AnalyticsProviderConfig>
+            | AnalyticsConfig<AnalyticsProvider>
+            | AnalyticsConfig<AnalyticsProvider>[]
+    ) {
         if (!isArray(config)) {
             config = [config];
         }

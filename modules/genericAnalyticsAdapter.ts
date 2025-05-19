@@ -1,8 +1,82 @@
-import AnalyticsAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import AnalyticsAdapter, {type DefaultOptions} from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {prefixLog, isPlainObject} from '../src/utils.js';
-import {has as hasEvent} from '../src/events.js';
+import {type EventIDs, has as hasEvent} from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
+import {Events} from '../src/events.ts';
+import type {AnyFunction} from "../src/types/functions";
+
+type EventMapping = {[E in keyof Events]?: (payload: Events[E][0]) => any};
+
+type BaseOptions = {
+    /**
+     * Number of events to collect into a single call to `handler` or `url`.
+     * Defaults to 1
+     */
+    batchSize?: number;
+    /**
+     * Time (in milliseconds) to wait before calling handler or url with an incomplete batch
+     * (when fewer than batchSize events have been collected).
+     * Defaults to 100
+     */
+    batchDelay?: number;
+    /**
+     * Global vendor list ID to use for the purpose of GDPR purpose 7 enforcement
+     */
+    gvlid?: number;
+    /**
+     * Map from event name to a custom format function. When provided, only events in this map will be collected,
+     * using the data returned by their corresponding function.
+     */
+    events?: EventMapping;
+}
+
+type Payloads<M extends EventMapping> = {
+    [H in keyof M]: M[H] extends AnyFunction ? ReturnType<M[H]> : never
+}[keyof M];
+
+
+type CustomHandlersOptions<M extends EventMapping> = BaseOptions & {
+    /**
+     * Custom handler function.
+     * @param data an array of length `batchSize` containing event data as returned by the functions in `events`.
+     */
+    handler: (data: Payloads<M>[]) => void;
+    events: M;
+    url?: undefined;
+    method?: undefined;
+}
+
+type BasicHandlerOptions = BaseOptions & {
+    /**
+     * Custom handler function.
+     * @param data an array of length `batchSize` containing the event payloads.
+     */
+    handler: (data: (Events[keyof Events][0])[]) => void;
+    events?: undefined;
+    url?: undefined;
+    method?: undefined;
+}
+
+type UrlOptions = BaseOptions & {
+    /**
+     * Data collection URL
+     */
+    url: string;
+    /**
+     * HTTP method used to call `url`. Defaults to 'POST'
+     */
+    method?: string;
+    handler?: undefined;
+}
+
+declare module '../libraries/analyticsAdapter/AnalyticsAdapter' {
+    interface AnalyticsProviderConfig {
+        generic: {
+            options: DefaultOptions & (UrlOptions | BasicHandlerOptions | CustomHandlersOptions<EventMapping>)
+        }
+    }
+}
 
 const DEFAULTS = {
   batchSize: 1,
@@ -20,7 +94,7 @@ const TYPES = {
 const MAX_CALL_DEPTH = 20;
 
 export function GenericAnalytics() {
-  const parent = AnalyticsAdapter({analyticsType: 'endpoint'});
+  const parent = AnalyticsAdapter<'generic'>({analyticsType: 'endpoint'});
   const {logError, logWarn} = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;
