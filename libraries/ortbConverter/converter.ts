@@ -3,8 +3,98 @@ import {logError, memoize} from '../../src/utils.js';
 import {DEFAULT_PROCESSORS} from './processors/default.js';
 import {BID_RESPONSE, DEFAULT, getProcessors, IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
 import {mergeProcessors} from './lib/mergeProcessors.js';
+import type {MediaType} from "../../src/mediaTypes.ts";
+import type {NativeRequest} from '../../src/types/ortb/native.d.ts';
+import type {ORTBImp, ORTBRequest} from "../../src/types/ortb/request.d.ts";
+import type {Currency, BidderCode} from "../../src/types/common.d.ts";
+import type {BidderRequest, BidRequest} from "../../src/adapterManager.ts";
+import type {BidResponse} from "../../src/bidfactory.ts";
+import type {AdapterResponse} from "../../src/adapters/bidderFactory.ts";
+import type {ORTBResponse} from "../../src/types/ortb/response";
 
-export function ortbConverter({
+type Context = {
+    [key: string]: unknown;
+    /**
+     * A currency string (e.g. `'EUR'`). If specified, overrides the currency to use for computing price floors and `request.cur`.
+     * If omitted, both default to `getConfig('currency.adServerCurrency')`.
+     */
+    currency?: Currency;
+    /**
+     * A bid mediaType (`'banner'`, `'video'`, or `'native'`). If specified:
+     *  - disables `imp` generation for other media types (i.e., if `context.mediaType === 'banner'`, only `imp.banner` will be populated; `imp.video` and `imp.native` will not, even if the bid request specifies them);
+     *  - is passed as the `mediaType` option to `bidRequest.getFloor` when computing price floors;
+     *  - sets `bidResponse.mediaType`.
+     */
+    mediaType?: MediaType;
+    /**
+     * A plain object that serves as the base value for `imp.native.request` (and is relevant only for native bid requests).
+     * If not specified, the only property that is guaranteed to be populated is `assets`, since Prebid does not
+     * require anything else to define a native adUnit. You can use `context.nativeRequest` to provide other properties;
+     * for example, you may want to signal support for native impression trackers by setting it to `{eventtrackers: [{event: 1, methods: [1, 2]}]}` (see also the [ORTB Native spec](https://www.iab.com/wp-content/uploads/2018/03/OpenRTB-Native-Ads-Specification-Final-1.2.pdf)).
+     */
+    nativeRequest?: Partial<NativeRequest>;
+    /**
+     * The value to set as `bidResponse.netRevenue`. This is a required property of bid responses that does not have a clear ORTB counterpart.
+     */
+    netRevenue?: boolean;
+    /**
+     * the default value to use for `bidResponse.ttl` (if the ORTB response does not provide one in `seatbid[].bid[].exp`).
+     */
+    ttl?: number;
+}
+
+type Params<B extends BidderCode> = {
+    [IMP]: (
+        bidRequest: BidRequest<B>,
+        context: Context & {
+            bidderRequest: BidderRequest<B>
+        }
+    ) => ORTBImp;
+    [REQUEST]: (
+        imps: ORTBImp[],
+        bidderRequest: BidderRequest<B>,
+        context: Context & {
+            bidRequests: BidRequest<B>[]
+        }
+    ) => ORTBRequest;
+    [BID_RESPONSE]: (
+        bid: ORTBResponse['seatbid'][number]['bid'][number],
+        context: Context & {
+            seatbid: ORTBResponse['seatbid'][number];
+            imp: ORTBImp;
+            bidRequest: BidRequest<B>;
+            ortbRequest: ORTBRequest;
+            ortbResponse: ORTBResponse;
+        }
+    ) => BidResponse;
+    [RESPONSE]: (
+        bidResponses: BidResponse[],
+        ortbResponse: ORTBResponse,
+        context: Context & {
+            ortbRequest: ORTBRequest;
+            bidderRequest: BidderRequest<B>;
+            bidRequests: BidRequest<B>[];
+        }
+    ) => AdapterResponse
+}
+
+type Processors<B extends BidderCode> = {
+    [M in keyof Params<B>]?: {
+        [name: string]: (...args: [Partial<ReturnType<Params<B>[M]>>, ...Parameters<Params<B>[M]>]) => void;
+    }
+}
+
+type Customizers<B extends BidderCode> = {
+    [M in keyof Params<B>]?: (buildObject: Params<B>[M], ...args: Parameters<Params<B>[M]>) => ReturnType<Params<B>[M]>;
+}
+
+type ConverterConfig<B extends BidderCode> = Customizers<B> & {
+    context?: Context;
+    processors?: () => Processors<B>;
+    overrides?: Processors<B>;
+}
+
+export function ortbConverter<B extends BidderCode>({
   context: defaultContext = {},
   processors = defaultProcessors,
   overrides = {},
@@ -12,28 +102,28 @@ export function ortbConverter({
   request,
   bidResponse,
   response,
-} = {}) {
+}: ConverterConfig<B> = {}) {
   const REQ_CTX = new WeakMap();
 
   function builder(slot, wrapperFn, builderFn, errorHandler) {
     let build;
-    return function () {
+    return function (...args) {
       if (build == null) {
         build = (function () {
           let delegate = builderFn.bind(this, compose(processors()[slot] || {}, overrides[slot] || {}));
           if (wrapperFn) {
             delegate = wrapperFn.bind(this, delegate);
           }
-          return function () {
+          return function (...args) {
             try {
-              return delegate.apply(this, arguments);
+              return delegate.apply(this, args);
             } catch (e) {
-              errorHandler.call(this, e, ...arguments);
+              errorHandler.call(this, e, ...args);
             }
           }
         })();
       }
-      return build.apply(this, arguments);
+      return build.apply(this, args);
     }
   }
 
@@ -84,7 +174,11 @@ export function ortbConverter({
   );
 
   return {
-    toORTB({bidderRequest, bidRequests, context = {}}) {
+    toORTB({bidderRequest, bidRequests, context = {}}: {
+        bidderRequest: BidderRequest<B>,
+        bidRequests: BidRequest<B>[],
+        context?: Context
+    }): ORTBRequest {
       bidRequests = bidRequests || bidderRequest.bids;
       const ctx = {
         req: Object.assign({bidRequests}, defaultContext, context),
@@ -111,7 +205,10 @@ export function ortbConverter({
       }
       return request;
     },
-    fromORTB({request, response}) {
+    fromORTB({request, response}: {
+        request: ORTBRequest;
+        response: ORTBResponse;
+    }): AdapterResponse {
       const ctx = REQ_CTX.get(request);
       if (ctx == null) {
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`')

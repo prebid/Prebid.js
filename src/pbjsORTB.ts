@@ -1,4 +1,4 @@
-export const PROCESSOR_TYPES = ['request', 'imp', 'bidResponse', 'response'];
+export const PROCESSOR_TYPES = ['request', 'imp', 'bidResponse', 'response'] as const;
 export const PROCESSOR_DIALECTS = ['default', 'pbs'];
 export const [REQUEST, IMP, BID_RESPONSE, RESPONSE] = PROCESSOR_TYPES;
 export const [DEFAULT, PBS] = PROCESSOR_DIALECTS;

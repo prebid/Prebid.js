@@ -6,7 +6,7 @@ import adapterManager, {
 } from '../adapterManager.js';
 import {config} from '../config.js';
 import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
-import {userSync} from '../userSync.js';
+import {type SyncType, userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
 import {EVENTS, REJECTION_REASON, STATUS} from '../constants.js';
@@ -36,6 +36,8 @@ import type {AnyFunction, Wraps} from "../types/functions.d.ts";
 import type {BidderCode} from "../types/common.d.ts";
 import type {Ajax, AjaxOptions, XHR} from "../ajax.ts";
 import type {AddBidResponse} from "../auction.ts";
+import type {MediaType} from "../mediaTypes.ts";
+import {CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData} from "../consentHandler.ts";
 
 
 /**
@@ -61,48 +63,6 @@ import type {AddBidResponse} from "../auction.ts";
  *
  */
 
-/**
- * @typedef {object} BidderSpec An object containing the adapter-specific functions needed to
- * make a Bidder.
- *
- * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
- *   one as is used in the call to registerBidAdapter
- * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
- * @property {MediaType[]} [supportedMediaTypes] A list of Media Types which the adapter supports.
- * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
- *   needed to make a valid request.
- * @property {function(BidRequest[], bidderRequest): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
- *   which requests Bids for the given array of Requests. Each BidRequest in the argument array is guaranteed to have
- *   passed the isBidRequestValid() test.
- * @property {function(ServerResponse, BidRequest): Bid[]} interpretResponse Given a successful response from the Server,
- *   interpret it and return the Bid objects. This function will be run inside a try/catch.
- *   If it throws any errors, your bids will be discarded.
- * @property {function(SyncOptions, ServerResponse[]): UserSync[]} [getUserSyncs] Given an array of all the responses
- *   from the server, determine which user syncs should occur. The argument array will contain every element
- *   which has been sent through to interpretResponse. The order of syncs in this array matters. The most
- *   important ones should come first, since publishers may limit how many are dropped on their page.
- * @property {function(object): object} transformBidParams Updates bid params before creating bid request
- }}
- */
-
-/**
- * @typedef {object} BidderAuctionResponse An object encapsulating an adapter response for current Auction
- *
- * @property {Array<Bid>} bids? Contextual bids returned by this adapter, if any
- * @property {Array<{bidId: String, config: {}}>} paapiAuctionConfigs? Array of paapi auction configs, each scoped to a particular bidId
- */
-
-/**
- * @typedef {object} ServerRequest
- *
- * @property {('GET'|'POST')} method The type of request which this is.
- * @property {string} url The endpoint for the request. For example, "//bids.example.com".
- * @property {string|object} data Data to be sent in the request.
- * @property {object} options Content-Type set in the header of the bid request, overrides default 'text/plain'.
- *   If this is a GET request, they'll become query params. If it's a POST request, they'll be added to the body.
- *   Strings will be added as-is. Objects will be unpacked into query params based on key/value mappings, or
- *   JSON-serialized into the Request body.
- */
 
 /**
  * @typedef {object} ServerResponse
@@ -162,6 +122,8 @@ export type BidderError<B extends BidderCode> = {
 
 export interface BidderSpec<BIDDER extends BidderCode> {
     code: BIDDER;
+    supportedMediaTypes?: readonly MediaType[];
+    aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];
     isBidRequestValid(request: BidRequest<BIDDER>): boolean;
     buildRequests(validBidRequests: BidRequest<BIDDER>[], bidderRequest: ClientBidderRequest<BIDDER>): AdapterRequest | AdapterRequest[];
     interpretResponse(response: ServerResponse, request: AdapterRequest): AdapterResponse;
@@ -173,6 +135,16 @@ export interface BidderSpec<BIDDER extends BidderCode> {
     onAdRenderSucceeded?: (bid: Bid) => void;
     onDataDeletionRequest?: (bidderRequests: BidderRequest<BIDDER>[], cmpRegisterDeletionResponse: any) => void;
     onTimeout?: (bidRequests: (BidRequest<BIDDER> & { timeout: number })[]) => void;
+    getUserSyncs?: (
+        syncOptions: {
+            iframeEnabled: boolean;
+            pixelEnabled: boolean;
+        },
+        responses: ServerResponse[],
+        gdprConsent: null | ConsentData[typeof CONSENT_GDPR],
+        uspConsent: null | ConsentData[typeof CONSENT_USP],
+        gppConsent: null | ConsentData[typeof CONSENT_GPP]
+    ) => ({ type: SyncType, url: string })[];
 }
 
 
@@ -183,7 +155,7 @@ export interface BidderSpec<BIDDER extends BidderCode> {
  *
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
-export function registerBidder(spec) {
+export function registerBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   const mediaTypes = Array.isArray(spec.supportedMediaTypes)
     ? { supportedMediaTypes: spec.supportedMediaTypes }
     : undefined;
@@ -195,11 +167,11 @@ export function registerBidder(spec) {
   putBidder(spec);
   if (Array.isArray(spec.aliases)) {
     spec.aliases.forEach(alias => {
-      let aliasCode = alias;
+      let aliasCode: string = alias as any;
       let gvlid;
       let skipPbsAliasing;
       if (isPlainObject(alias)) {
-        aliasCode = alias.code;
+        aliasCode = alias.code as string;
         gvlid = alias.gvlid;
         skipPbsAliasing = alias.skipPbsAliasing
       }
@@ -587,7 +559,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
   })
 }, 'processBidderRequests')
 
-export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent, gppConsent) {
+export const registerSyncInner = hook('async', function(spec: BidderSpec<any>, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
     let syncs = spec.getUserSyncs({

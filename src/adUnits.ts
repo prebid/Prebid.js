@@ -21,8 +21,11 @@ export interface RendererConfig {
     backupOnly?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface BidderParams {
-    [bidder: BidderCode]: { [param: string]: unknown };
+    /**
+     * Adapter-specific paramters - to be extended in the adapters
+     */
 }
 
 export interface BaseAdUnitBidDefinition {
@@ -53,7 +56,7 @@ export interface AdUnitBidderBid<BIDDER extends BidderCode> extends BaseAdUnitBi
     /**
      * Bid request parameters for a given bidder.
      */
-    params: BidderParams[BIDDER];
+    params: BIDDER extends keyof BidderParams ? BidderParams[BIDDER] : Record<string, unknown>;
     /**
      * One or more s2sConfig.name. If provided, this bid will be requested only from the given S2S instance(s).
      */

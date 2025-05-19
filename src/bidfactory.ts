@@ -103,6 +103,11 @@ export interface BaseBidResponse {
      * Event trackers for this bid.
      */
     eventtrackers?: EventTrackerResponse[];
+    renderer?: Renderer;
+    /**
+     * Billing tracker URL.
+     */
+    burl?: string;
 }
 
 // <format>BidResponesProperties - adapter interpretResponse properties specific to the format.
@@ -133,7 +138,6 @@ export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidRespon
      */
     requestId: Identifier | null;
     metrics: Metrics;
-    renderer?: Renderer;
     source: BidSource;
     width: number;
     height: number;

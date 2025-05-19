@@ -1,5 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {type BidderSpec, registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {
@@ -20,9 +20,22 @@ const ENV = {
   DEFAULT_CURRENCY: 'USD',
   OUTSTREAM_RENDERER_URL:
     'https://cdn.jsdelivr.net/npm/in-renderer-js@1/dist/in-video-renderer.umd.min.js',
-};
+} as const;
 
-export const spec = {
+type MichaoBidParams = {
+    site: number;
+    placement: string;
+    partner?: number;
+    test?: boolean;
+}
+
+declare module '../src/adUnits' {
+    interface BidderParams {
+        [ENV.BIDDER_CODE]: MichaoBidParams;
+    }
+}
+
+export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
   code: ENV.BIDDER_CODE,
   supportedMediaTypes: ENV.SUPPORTED_MEDIA_TYPES,
 
@@ -99,7 +112,7 @@ export const spec = {
     return converter.fromORTB({
       response: serverResponse.body,
       request: request.data,
-    }).bids;
+    });
   },
 
   getUserSyncs: function (
@@ -205,7 +218,7 @@ function generateBillableUrls(bid) {
   return billingUrls;
 }
 
-const converter = ortbConverter({
+const converter = ortbConverter<typeof ENV.BIDDER_CODE>({
   request(buildRequest, imps, bidderRequest, context) {
     const bidRequest = context.bidRequests[0];
     const openRTBBidRequest = buildRequest(imps, bidderRequest, context);
@@ -262,7 +275,7 @@ const converter = ortbConverter({
       });
       renderer.setRender((bid) => {
         bid.renderer.push(() => {
-          const inRenderer = new window.InVideoRenderer();
+          const inRenderer = new (window as any).InVideoRenderer();
           inRenderer.render(bid.adUnitCode, bid);
         });
       });

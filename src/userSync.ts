@@ -16,12 +16,12 @@ import {MODULE_TYPE_BIDDER} from './activities/modules.js';
 import {activityParams} from './activities/activityParams.js';
 import type {BidderCode} from "./types/common.d.ts";
 
-type SyncType = 'image' | 'iframe' | 'all';
+export type SyncType = 'image' | 'iframe';
 type SyncConfig = {
     bidders: '*' | BidderCode[];
     filter: 'include' | 'exclude'
 }
-type FilterSettings = {[K in SyncType]?: SyncConfig};
+type FilterSettings = {[K in SyncType | 'all']?: SyncConfig};
 
 export interface UserSyncConfig {
     /**
