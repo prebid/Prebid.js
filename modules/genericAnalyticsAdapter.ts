@@ -1,9 +1,8 @@
 import AnalyticsAdapter, {type DefaultOptions} from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {prefixLog, isPlainObject} from '../src/utils.js';
-import {type EventIDs, has as hasEvent} from '../src/events.js';
+import {type Events, has as hasEvent} from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {Events} from '../src/events.ts';
 import type {AnyFunction} from "../src/types/functions";
 
 type EventMapping = {[E in keyof Events]?: (payload: Events[E][0]) => any};

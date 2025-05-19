@@ -63,8 +63,7 @@ import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
 import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
-import type {AnyFunction, Wraps} from "./types/functions";
-import type {AnalyticsConfig, AnalyticsProvider} from "../libraries/analyticsAdapter/AnalyticsAdapter.ts";
+import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
