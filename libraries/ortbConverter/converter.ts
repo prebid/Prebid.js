@@ -88,10 +88,17 @@ type Customizers<B extends BidderCode> = {
     [M in keyof Params<B>]?: (buildObject: Params<B>[M], ...args: Parameters<Params<B>[M]>) => ReturnType<Params<B>[M]>;
 }
 
+type Overrides<B extends BidderCode> = {
+    [M in keyof Params<B>]?: {
+        [name: string]: (orig: Processors<B>[M][string], ...args: Parameters<Processors<B>[M][string]>) => void;
+    }
+}
+
+
 type ConverterConfig<B extends BidderCode> = Customizers<B> & {
     context?: Context;
     processors?: () => Processors<B>;
-    overrides?: Processors<B>;
+    overrides?: Overrides<B>;
 }
 
 export function ortbConverter<B extends BidderCode>({
