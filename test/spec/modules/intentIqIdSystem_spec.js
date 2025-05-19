@@ -12,16 +12,17 @@ import {storage, readData} from '../../../libraries/intentIqUtils/storageUtils.j
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
-import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, NOT_YET_DEFINED, WITH_IIQ, WITHOUT_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, NOT_YET_DEFINED, PREBID, WITH_IIQ, WITHOUT_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 
 const partner = 10;
 const pai = '11';
-const pcid = '12';
+const partnerClientId = '12';
+const partnerClientIdType = 0;
 const sourceMetaData = '1.1.1.1';
-const defaultConfigParams = { params: { partner: partner } };
-const paiConfigParams = { params: { partner: partner, pai: pai } };
-const pcidConfigParams = { params: { partner: partner, pcid: pcid } };
-const allConfigParams = { params: { partner, pai, pcid, sourceMetaData } };
+const defaultConfigParams = { params: { partner } };
+const paiConfigParams = { params: { partner, pai } };
+const pcidConfigParams = { params: { partner, partnerClientIdType, partnerClientId } };
+const allConfigParams = { params: { partner, pai, partnerClientIdType, partnerClientId, sourceMetaData } };
 const responseHeader = { 'Content-Type': 'application/json' }
 
 export const testClientHints = {
@@ -151,7 +152,7 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId({ ...allConfigParams, enabledStorageTypes: ['cookie'] }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
     request.respond(
       200,
       responseHeader,
@@ -226,7 +227,8 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId(pcidConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1');
+    expect(request.url).to.contain('&pcid=12');
     request.respond(
       200,
       responseHeader,
@@ -240,7 +242,8 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('&pcid=12');
     request.respond(
       200,
       responseHeader,
@@ -343,7 +346,7 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
     request.respond(
       200,
       responseHeader,
@@ -358,7 +361,7 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
     request.respond(
       200,
       responseHeader,
@@ -375,7 +378,7 @@ describe('IntentIQ tests', function () {
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
 
-    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
     expect(request.url).to.contain('cttl=' + testLSValue.cttl);
     expect(request.url).to.contain('rrtt=' + testLSValue.rrtt);
     request.respond(
@@ -708,8 +711,9 @@ describe('IntentIQ tests', function () {
     it('should make request to correct address with iiqPixelServerAddress parameter', function() {
       let wasCallbackCalled = false
       const callbackConfigParams = { params: { partner: partner,
-        pai: pai,
-        pcid: pcid,
+        pai,
+        partnerClientIdType,
+        partnerClientId,
         browserBlackList: 'Chrome',
         iiqPixelServerAddress: syncTestAPILink,
         callback: () => {
@@ -819,8 +823,9 @@ describe('IntentIQ tests', function () {
   it('should run callback from params', async () => {
     let wasCallbackCalled = false
     const callbackConfigParams = { params: { partner: partner,
-      pai: pai,
-      pcid: pcid,
+      pai,
+      partnerClientIdType,
+      partnerClientId,
       browserBlackList: 'Chrome',
       callback: () => {
         wasCallbackCalled = true
