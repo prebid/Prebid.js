@@ -52,7 +52,7 @@ module.exports = function(api, options) {
 
   function getModuleName(filename) {
     const modPath = path.parse(path.relative(PREBID_ROOT, filename));
-    if (modPath.ext.toLowerCase() !== '.js') {
+    if (!['.ts', '.js'].includes(modPath.ext.toLowerCase())) {
       return null;
     }
     if (modPath.dir === 'modules') {
