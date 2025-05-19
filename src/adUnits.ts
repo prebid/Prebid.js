@@ -60,7 +60,7 @@ export interface AdUnitBidderBid<BIDDER extends BidderCode> extends BaseAdUnitBi
     /**
      * One or more s2sConfig.name. If provided, this bid will be requested only from the given S2S instance(s).
      */
-    s2sConfigName: string | string[]
+    s2sConfigName?: string | string[]
 }
 
 export type AdUnitModuleBidder = 'pbsBidAdapter';
