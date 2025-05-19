@@ -57,7 +57,7 @@ import {fillVideoDefaults, ORTB_VIDEO_PARAMS, validateOrtbVideoFields} from './v
 import {ORTB_BANNER_PARAMS} from './banner.js';
 import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
-import {newBidder} from './adapters/bidderFactory.js';
+import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
 import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
@@ -405,7 +405,7 @@ declare module './prebidGlobal' {
         onEvent: typeof onEvent;
         offEvent: typeof offEvent;
         getEvents: typeof getEvents;
-        registerBidAdapter;
+        registerBidAdapter: typeof registerBidAdapter;
         registerAnalyticsAdapter: typeof adapterManager.registerAnalyticsAdapter;
         enableAnalytics: typeof adapterManager.enableAnalytics;
         aliasBidder: typeof aliasBidder;
@@ -956,7 +956,9 @@ function getEvents() {
 }
 addApiMethod('getEvents', getEvents);
 
-function registerBidAdapter(bidderAdaptor, bidderCode, spec) {
+function registerBidAdapter(adapter: BidAdapter, bidderCode: BidderCode): void;
+function registerBidAdapter<B extends BidderCode>(adapter: void, bidderCode: B, spec: BidderSpec<B>): void;
+function registerBidAdapter(bidderAdaptor, bidderCode, spec?) {
     try {
         const bidder = spec ? newBidder(spec) : bidderAdaptor();
         adapterManager.registerBidAdapter(bidder, bidderCode);

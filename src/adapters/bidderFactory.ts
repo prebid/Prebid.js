@@ -147,6 +147,9 @@ export interface BidderSpec<BIDDER extends BidderCode> {
     ) => ({ type: SyncType, url: string })[];
 }
 
+export type BidAdapter = {
+    callBids: ReturnType<typeof newBidder>['callBids']
+}
 
 /**
  * Register a bidder with prebid, using the given spec.
