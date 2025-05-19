@@ -1,0 +1,212 @@
+<!--
+  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
+  Prebid with the Google Publisher Tag.
+  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
+  bids array inside the adUnits, and it will use your adapter to load an ad.
+  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
+  set an alias in your /etc/hosts file so that you can load this page from a different domain.
+-->
+
+<!-- 
+	- Prebid core should pass details about registered aliases for the original bidder
+	- bidderRequest should have details about registered aliases, maxBids per alias
+	- if adUnit has mentioned the alias in bids, then when bidder is called for alias then the bidder can choose to do nothing
+ -->
+
+ <html>
+    <head>
+        <script async src="../build/dev/prebid.js"></script>
+        <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+        <script>
+            var FAILSAFE_TIMEOUT = 3300;
+            var PREBID_TIMEOUT = 3000;
+    
+            var adUnits = [{
+                code: 'div-gpt-ad-1460505748561-0',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[728,90]],
+                    }
+                },            
+                // Replace this object to test a new Adapter!
+                bids: [{
+                        bidder: 'pubmatic',
+                        params: {
+                            publisherId: '103207',
+                            adUnit: 'dcomHomeTop-728x90'
+                        },
+                    },
+                    {bidder: "appnexus",
+                    params: {placementId: '8801674'}
+                      }
+    
+                ]
+            }];
+    
+            var pbjs = pbjs || {};
+            pbjs.que = pbjs.que || [];
+    
+        </script>
+    
+        <script>
+            var googletag = googletag || {};
+            googletag.cmd = googletag.cmd || [];
+            googletag.cmd.push(function() {
+                googletag.pubads().disableInitialLoad();
+            });
+    
+            pbjs.que.push(function() {
+    
+                pbjs.setBidderConfig({
+                    bidders:['pubmatic'],
+                    config:{
+                        'ortb2':{
+                            "source":{
+                                "schain": {
+                                "ver":'3.0',
+                                "complete": 1,
+                                "nodes": [
+                                    {
+                                    "asi":"indirectseller-3.com",
+                                    "sid":"00001",
+                                    "hp":1
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            })
+                pbjs.setConfig({
+                    enableTIDs: true,
+                    owCustomizedAds:{
+                        stickyAds: {
+                            enabled: true,
+                            divs: ["div-gpt-ad-1460505748561-0"]
+                        }
+                    },
+                    firstPartyData: {
+                        skipValidations: false    // defaults to false
+                    },
+                    s2sConfig: {
+                        enabled: false,
+                        accountId : '12345',
+                        bidders : ['appnexus','pubmatic'],
+                        endpoint: "https://ow.pubmatic.com/pbs/openrtb2/auction",
+                        syncEndpoint: "https://ow.pubmatic.com/cookie_sync/?sec=1",
+                        timeout: 300    
+                    }
+                });
+                pbjs.addAdUnits(adUnits);
+                pbjs.enableAnalytics({
+                    provider: 'pubmatic',
+                    options: {
+                        "publisherId": 103207 // please contact PubMatic to get a publisherId for yourself
+                    }
+                });
+                pbjs.requestBids({
+                    bidsBackHandler: sendAdserverRequest,
+                    timeout: PREBID_TIMEOUT
+                });
+
+            });
+    
+            function sendAdserverRequest() {
+                if (pbjs.adserverRequestSent) return;
+                pbjs.adserverRequestSent = true;
+                googletag.cmd.push(function() {
+                    pbjs.que.push(function() {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                });
+            }
+    
+            setTimeout(function() {
+                sendAdserverRequest();
+            }, FAILSAFE_TIMEOUT);
+    
+        </script>
+    
+        <script>
+            googletag.cmd.push(function () {
+                googletag.defineSlot('/19968336/header-bid-tag-0', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+                googletag.pubads().enableSingleRequest();
+                googletag.enableServices();
+            });
+        </script>
+    </head>
+    
+    <body>
+    <h2>Prebid.js Test</h2>
+    <h5>Div-1</h5>
+    <div id='div-gpt-ad-1460505748561-0' style="width:100%; height:300px; background-color: #faf2f3;">
+        <script type='text/javascript'>
+            googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+        </script>
+    </div>
+    <div class="news-section">
+        <h3>Latest News Headlines</h3>
+        
+        <article class="news-item">
+            <h4>Global Tech Summit Announces Breakthrough in AI Development</h4>
+            <p>The annual Global Tech Summit concluded yesterday with a major announcement from leading researchers who have developed a new neural network architecture that promises to reduce computational requirements by up to 40% while maintaining accuracy. Industry leaders are already planning implementations that could revolutionize mobile AI applications.</p>
+            <p>"This represents a significant leap forward in making advanced AI accessible on everyday devices," said Dr. Sarah Chen, lead researcher at the Institute for Advanced Computing. "We expect to see this technology in consumer products within the next 18 months."</p>
+            <p class="news-meta">Published: April 15, 2025 | Category: Technology</p>
+        </article>
+        
+        <article class="news-item">
+            <h4>Climate Agreement Reaches Milestone as 150 Nations Commit to New Emissions Targets</h4>
+            <p>In a historic development for environmental policy, 150 nations have signed onto the expanded Global Climate Accord, committing to more aggressive emissions reduction targets by 2035. The agreement includes significant financial commitments to support developing nations in their transition to renewable energy sources.</p>
+            <p>Environmental experts have praised the move but caution that implementation will be the true test. "The targets are ambitious and necessary," noted climate scientist Dr. James Rivera. "But the real challenge lies in the policy changes required to meet these goals."</p>
+            <p class="news-meta">Published: April 14, 2025 | Category: Environment</p>
+        </article>
+    </div>
+
+    <style>
+        .news-section {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .news-section h3 {
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .news-item {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .news-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .news-item h4 {
+            color: #006D77;
+            margin-bottom: 10px;
+        }
+        
+        .news-item p {
+            line-height: 1.6;
+            color: #444;
+        }
+        
+        .news-meta {
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+    </body>
+    </html>
