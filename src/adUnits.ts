@@ -79,7 +79,7 @@ export interface AdUnitModuleBid extends BaseAdUnitBidDefinition {
     }
 }
 
-export type AdUnitBidDefinition = AdUnitModuleBid | AdUnitBidderBid<BidderCode>;
+export type AdUnitBidDefinition = AdUnitModuleBid | AdUnitBidderBid<keyof BidderParams> | AdUnitBidderBid<BidderCode>;
 
 export interface AdUnitDefinition {
     /**

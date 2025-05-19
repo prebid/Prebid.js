@@ -31,7 +31,7 @@ import {find, includes} from './polyfill.js';
 import {
     type AdUnit,
     type AdUnitBid,
-    type AdUnitBidderBid,
+    type AdUnitBidderBid, type AdUnitModuleBid,
     getAuctionsCounter,
     getBidderRequestsCounter,
     getBidderWinsCounter,
@@ -337,7 +337,7 @@ function getAdUnitCopyForPrebidServer(adUnits: AdUnit[], s2sConfig) {
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
     const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && (
-      b.params?.configName === getConfigName(s2sConfig)
+        (b as AdUnitModuleBid).params?.configName === getConfigName(s2sConfig)
     ));
     if (s2sBids.length === 1) {
       adUnit.s2sBid = s2sBids[0];
