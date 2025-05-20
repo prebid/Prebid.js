@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, isStr, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
+import { logError, logInfo, isStr, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getLowEntropySUA } from '../src/fpd/sua.js';
@@ -266,6 +266,36 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
     });
 }
 
+/**
+ * Returns targeting data for ad units
+ * @param {string[]} adUnitCodes - Ad unit codes
+ * @param {Object} config - Module configuration
+ * @param {Object} userConsent - User consent data
+ * @param {Object} auction - Auction object
+ * @return {Object} - Targeting data for ad units
+ */
+const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
+
+  const isRtdFloorApplied = bid => 
+    bid.floorData?.modelVersion?.includes("RTD model") && !bid.floorData.skipped;
+
+  const hasRtdFloorAppliedBid = auction?.adUnits?.some(adUnit => 
+    adUnit.bids?.some(isRtdFloorApplied)
+  ) || auction?.bidsReceived?.some(isRtdFloorApplied);
+
+  if (hasRtdFloorAppliedBid) {
+    const targeting = adUnitCodes.reduce((acc, code) => {
+      acc[code] = { 'pm_ym': 1 };
+      return acc;
+    }, {});
+
+    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData');
+    return targeting;
+  }
+
+  return {};
+};
+
 /** @type {RtdSubmodule} */
 export const pubmaticSubmodule = {
   /**
@@ -275,6 +305,7 @@ export const pubmaticSubmodule = {
   name: CONSTANTS.SUBMODULE_NAME,
   init,
   getBidRequestData,
+  getTargetingData
 };
 
 export const registerSubModule = () => {
