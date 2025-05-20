@@ -85,6 +85,12 @@ describe('Yandex adapter', function () {
       expect(requests[0].data.site?.content?.language).to.be.undefined;
     });
 
+    it('should return displaymanager', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(requests[0].data.imp[0].displaymanagerver).to.not.be.undefined;
+    });
+
     /** @type {import('../../../src/auction').BidderRequest} */
     const bidderRequest = {
       ortb2: {
@@ -152,8 +158,8 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('bs.yandex.ru');
-      expect(parsedRequestUrl.pathname).to.equal('/prebid/123');
+      expect(parsedRequestUrl.hostname).to.equal('yandex.ru');
+      expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
 
       expect(query['imp-id']).to.equal('1');
       expect(query['target-ref']).to.equal('ya.ru');

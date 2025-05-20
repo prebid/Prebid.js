@@ -224,7 +224,7 @@ export function generateBidParameters(bid, bidderRequest) {
     sizes: getSizesArray(bid),
     floorPrice: Math.max(getFloor(bid), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
-    loop: bid.bidderRequestsCount || 0,
+    loop: bid.auctionsCount || 0,
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
     coppa: 0,

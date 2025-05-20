@@ -104,6 +104,10 @@ function newBidRequest(bidRequest, bidderRequest) {
     data.userData = userData;
   }
 
+  if (bidRequest.schain) {
+    data.schain = bidRequest.schain;
+  }
+
   return data;
 }
 
