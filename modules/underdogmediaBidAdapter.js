@@ -13,6 +13,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -23,6 +24,7 @@ const PRODUCT = {
   standard: 1,
   sticky: 2
 }
+const pbjsInstance = getGlobal()
 
 let USER_SYNCED = false;
 
@@ -69,6 +71,20 @@ export const spec = {
     var sizes = [];
     var siteId = 0;
 
+    const userIds = pbjsInstance.getUserIdsAsEids()
+    let thirtyThreeAcrossId = undefined
+    let unifiedId = undefined
+    let pubcid = undefined
+    userIds.forEach(idObj => {
+      if (idObj.source === '33across.com') {
+        thirtyThreeAcrossId = idObj.uids[0].id
+      } else if (idObj.source === 'adserver.org') {
+        unifiedId = idObj.uids[0].id
+      } else if (idObj.source === 'pubcid.org') {
+        pubcid = idObj.uids[0].id
+      }
+    })
+
     let data = {
       dt: 10,
       gdpr: {},
@@ -78,9 +94,9 @@ export const spec = {
       ref: deepAccess(bidderRequest, 'refererInfo.page') ? bidderRequest.refererInfo.page : undefined,
       usp: {},
       userIds: {
-        '33acrossId': deepAccess(validBidRequests[0], 'userId.33acrossId.envelope') ? validBidRequests[0].userId['33acrossId'].envelope : undefined,
-        pubcid: deepAccess(validBidRequests[0], 'crumbs.pubcid') ? validBidRequests[0].crumbs.pubcid : undefined,
-        unifiedId: deepAccess(validBidRequests[0], 'userId.tdid') ? validBidRequests[0].userId.tdid : undefined
+        '33acrossId': thirtyThreeAcrossId,
+        pubcid,
+        unifiedId
       },
       version: UDM_ADAPTER_VERSION
     }
