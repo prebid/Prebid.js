@@ -101,17 +101,40 @@ function generatePublicModules(ext) {
   }
 }
 
-
-function precompile(options) {
-  return gulp.series(['ts', gulp.parallel([copyVerbatim, babelPrecomp(options)]), 'generate-public-modules'])
+function generateTypeSummary(folder, dest) {
+  const template = _.template(`<% _.forEach(files, (file) => { %>import '<%= file %>';
+<% }) %>`);
+  const destDir = path.parse(dest).dir;
+  return function (done) {
+    glob([`${folder}/**/*.d.ts`, `!${dest}`]).then(files => {
+      files = files.map(file => path.relative(destDir, file))
+      if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, {recursive: true});
+      }
+      fs.writeFile(dest, template({files}), done);
+    })
+  }
 }
 
+const generateCoreSummary = generateTypeSummary(helpers.getPrecompiledPath('src'), helpers.getPrecompiledPath('src/types/summary/core.d.ts'));
+const publicModules = gulp.parallel(['js', 'd.ts'].map(generatePublicModules));
+
+
+function precompile(options) {
+  return gulp.series([
+    'ts',
+    gulp.parallel([copyVerbatim, babelPrecomp(options)]),
+    gulp.parallel([publicModules, generateCoreSummary])
+  ]);
+}
+
+
 gulp.task('ts', run('tsc'));
-gulp.task('generate-public-modules', gulp.parallel(['js', 'd.ts'].map(generatePublicModules)));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());
 gulp.task('verbatim', copyVerbatim)
+
 
 module.exports = {
   precompile
