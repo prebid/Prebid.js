@@ -954,7 +954,7 @@ describe('targeting tests', function () {
         expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner,loser');
       });
 
-      it('should only use custom targeting from winning bid when allBidsCustomTargeting=false', function () {
+      it('should use custom targeting from winning bid when allBidsCustomTargeting=false', function () {
         // Set allBidsCustomTargeting to false
         config.setConfig({
           targetingControls: {
@@ -962,6 +962,15 @@ describe('targeting tests', function () {
           }
         });
 
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Only the winning bid's custom key value should be used
+        expect(targeting['/123456/header-bid-tag-0']).to.have.property('foobar');
+        expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner');
+      });
+
+      it('should use custom targeting from winning bid when allBidsCustomTargeting is not set', function () {
+        // allBidsCustomTargeting defaults to false
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // Only the winning bid's custom key value should be used
