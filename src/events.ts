@@ -25,13 +25,14 @@ export interface Events extends AllEvents {
 }
 
 export type EventIDs = {
-    [K in keyof Events]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
+    [K in Event]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
 };
 
-export type EventPayload<E extends keyof Events> = Events[E][0];
-export type EventHandler<E extends keyof Events> = (...args: Events[E]) => void;
+export type Event = keyof Events;
+export type EventPayload<E extends Event> = Events[E][0];
+export type EventHandler<E extends Event> = (...args: Events[E]) => void;
 
-export type EventRecord<E extends keyof Events> = {
+export type EventRecord<E extends Event> = {
     eventType: E;
     args: EventPayload<E>;
     id: EventIDs[E];
@@ -53,7 +54,7 @@ const TTL_CONFIG = 'eventHistoryTTL';
 let eventTTL = null;
 
 // keep a record of all events fired
-const eventsFired = ttlCollection<EventRecord<keyof Events>>({
+const eventsFired = ttlCollection<EventRecord<Event>>({
   monotonic: true,
   ttl: () => eventTTL,
 })
@@ -68,7 +69,7 @@ config.getConfig(TTL_CONFIG, (cfg) => {
 });
 
 // define entire events
-let allEvents: (keyof Events)[] = Object.values(EVENTS);
+let allEvents: (Event)[] = Object.values(EVENTS);
 
 const idPaths = EVENT_ID_PATHS;
 
@@ -119,13 +120,13 @@ const _public = (function () {
     });
   }
 
-  function _checkAvailableEvent(event: string): event is keyof Events {
+  function _checkAvailableEvent(event: string): event is Event {
     return allEvents.includes(event as any);
   }
 
   return {
       has: _checkAvailableEvent,
-      on: function <E extends keyof Events>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+      on: function <E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
           // check whether available event or not
           if (_checkAvailableEvent(eventName)) {
               let event = _handlers[eventName] || { que: [] };
@@ -142,10 +143,10 @@ const _public = (function () {
               utils.logError('Wrong event name : ' + eventName + ' Valid event names :' + allEvents);
           }
       },
-      emit: function <E extends keyof Events>(eventName: E, ...args: Events[E]) {
+      emit: function <E extends Event>(eventName: E, ...args: Events[E]) {
           _dispatch(eventName, args);
       },
-      off: function<E extends keyof Events>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+      off: function<E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
           let event = _handlers[eventName];
 
           if (utils.isEmpty(event) || (utils.isEmpty(event.que) && utils.isEmpty(event[id]))) {
@@ -177,13 +178,13 @@ const _public = (function () {
       get: function () {
           return _handlers;
       },
-      addEvents: function (events: (keyof Events)[]) {
+      addEvents: function (events: (Event)[]) {
           allEvents = allEvents.concat(events);
       },
       /**
        * Return a copy of all events fired
        */
-      getEvents: function (): EventRecord<keyof Events>[] {
+      getEvents: function (): EventRecord<Event>[] {
           return eventsFired.toArray().map(val => Object.assign({}, val))
       }
   }

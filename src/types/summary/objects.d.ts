@@ -7,4 +7,4 @@ export type {AdUnit, AdUnitDefinition} from '../../adUnits.ts'
 export type {ORTBRequest, ORTBImp} from '../ortb/request.d.ts';
 export type {ORTBResponse} from '../ortb/response.d.ts';
 export type {NativeRequest as ORTBNativeRequest} from '../ortb/native.d.ts';
-export type {EventRecord, EventPayload, EventHandler} from '../../events.ts';
+export type {Event, EventRecord, EventPayload, EventHandler} from '../../events.ts';

@@ -39,7 +39,7 @@ import {
     getS2SBidderSet
 } from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
-import type {EventHandler, EventIDs, Events} from "./events.js";
+import type {EventHandler, EventIDs, Event} from "./events.js";
 import * as events from './events.js';
 import {type Metrics, newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {type Defer, defer, PbPromise} from './utils/promise.js';
@@ -920,7 +920,7 @@ function validateEventId(event, id) {
  *
  * Currently `bidWon` is the only event that accepts an `id` parameter.
  */
-function onEvent<E extends keyof Events>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+function onEvent<E extends Event>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
     if (!isFn(handler)) {
         logError('The event handler provided is not a function and was not set on event "' + event + '".');
         return;
@@ -940,7 +940,7 @@ addApiMethod('onEvent', onEvent);
  * @param handler a callback to remove from the event
  * @param id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
  */
-function offEvent<E extends keyof Events>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
+function offEvent<E extends Event>(event: E, handler: EventHandler<E>, id?: EventIDs[E]) {
     if (id && !validateEventId(event, id)) {
         return;
     }
