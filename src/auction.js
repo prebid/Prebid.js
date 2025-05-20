@@ -79,11 +79,11 @@ import {
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
-import {batchAndStore} from './videoCache.js';
+import {batchAndStore, storeLocally} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
-import {hook} from './hook.js';
+import {hook, ignoreCallbackArg} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
 import {VIDEO} from './mediaTypes.js';
@@ -92,7 +92,7 @@ import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
 import adapterManager from './adapterManager.js';
 import {EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS} from './constants.js';
-import {defer, GreedyPromise} from './utils/promise.js';
+import {defer, PbPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -428,13 +428,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
  * @param bid
  * @param {function(String): void} reject a function that, when called, rejects `bid` with the given reason.
  */
-export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
+export const addBidResponse = ignoreCallbackArg(hook('async', function(adUnitCode, bid, reject) {
   if (!isValidPrice(bid)) {
     reject(REJECTION_REASON.PRICE_TOO_HIGH)
   } else {
     this.dispatch.call(null, adUnitCode, bid);
   }
-}, 'addBidResponse');
+}, 'addBidResponse'));
 
 /**
  * Delay hook for adapter responses.
@@ -547,7 +547,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       return addBid;
     })(),
     adapterDone: function () {
-      responsesReady(GreedyPromise.resolve()).finally(() => adapterDone.call(this));
+      responsesReady(PbPromise.resolve()).finally(() => adapterDone.call(this));
     }
   }
 }
@@ -571,9 +571,17 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   })?.video;
   const context = videoMediaType && videoMediaType?.context;
   const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
+  const {
+    useLocal,
+    url: cacheUrl,
+    ignoreBidderCacheKey
+  } = config.getConfig('cache') || {};
 
-  if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
-    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
+  if (useLocal) {
+    // stores video bid vast as local blob in the browser
+    storeLocally(bidResponse);
+  } else if (cacheUrl && (useCacheKey || context !== OUTSTREAM)) {
+    if (!bidResponse.videoCacheKey || ignoreBidderCacheKey) {
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
     } else if (!bidResponse.vastUrl) {
@@ -581,6 +589,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
       addBid = false;
     }
   }
+
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();
@@ -627,8 +636,11 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   // but others to not be set yet (like priceStrings). See #1372 and #1389.
   events.emit(EVENTS.BID_ADJUSTMENT, bid);
 
+  const adUnit = index.getAdUnit(bid);
+  bid.instl = adUnit?.ortb2Imp?.instl === 1;
+
   // a publisher-defined renderer can be used to render bids
-  const bidRenderer = index.getBidRequest(bid)?.renderer || index.getAdUnit(bid).renderer;
+  const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;

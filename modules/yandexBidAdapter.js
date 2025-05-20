@@ -47,7 +47,7 @@ import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo 
  */
 
 const BIDDER_CODE = 'yandex';
-const BIDDER_URL = 'https://bs.yandex.ru/prebid';
+const BIDDER_URL = 'https://yandex.ru/ads/prebid';
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
 /**
@@ -55,6 +55,7 @@ const DEFAULT_CURRENCY = 'EUR';
  */
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
+const ADAPTER_VERSION = '2.2.0';
 
 const IMAGE_ASSET_TYPES = {
   ICON: 1,
@@ -139,6 +140,7 @@ export const spec = {
       const queryParams = {
         'imp-id': impId,
         'target-ref': targetRef || ortb2?.site?.domain,
+        'adapter-version': ADAPTER_VERSION,
         'ssp-id': SSP_ID,
       };
 
@@ -153,6 +155,8 @@ export const spec = {
         id: impId,
         banner: mapBanner(bidRequest),
         native: mapNative(bidRequest),
+        displaymanager: 'Prebid.js',
+        displaymanagerver: '$prebid.version$',
       };
 
       const bidfloor = getBidfloor(bidRequest);
@@ -174,6 +178,13 @@ export const spec = {
         user: ortb2?.user,
         device: ortb2?.device,
       };
+
+      if (!data?.site?.content?.language) {
+        const documentLang = deepAccess(ortb2, 'site.ext.data.documentLang');
+        if (documentLang) {
+          deepSetValue(data, 'site.content.language', documentLang);
+        }
+      }
 
       const eids = deepAccess(bidRequest, 'userIdAsEids');
       if (eids && eids.length) {

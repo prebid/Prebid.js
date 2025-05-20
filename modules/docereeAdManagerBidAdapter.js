@@ -3,11 +3,13 @@ import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'docereeadmanager';
 const END_POINT = 'https://dai.doceree.com/drs/quest';
+const GVLID = 1063;
 
 export const spec = {
   code: BIDDER_CODE,
   url: '',
   supportedMediaTypes: [BANNER],
+  gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
     const { placementId } = bid.params;

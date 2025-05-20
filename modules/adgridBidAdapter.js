@@ -252,6 +252,21 @@ function createRenderer(bid, url) {
   return renderer;
 }
 
+/**
+ * Register the user sync pixels/iframe which should be dropped after the auction.
+ */
+function getUserSyncs(syncOptions, response, gdprConsent, uspConsent) {
+  if (typeof response !== 'object' || response === null || response.length === 0) {
+    return [];
+  }
+
+  if (response[0]?.body?.ext?.cookies && typeof response[0].body.ext.cookies === 'object') {
+    return response[0].body.ext.cookies.slice(0, 5);
+  } else {
+    return [];
+  }
+};
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,

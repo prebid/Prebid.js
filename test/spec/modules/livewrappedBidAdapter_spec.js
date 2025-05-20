@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 import { NATIVE, VIDEO } from 'src/mediaTypes.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { getWinDimensions } from '../../../src/utils';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,
@@ -999,8 +1000,8 @@ describe('Livewrapped adapter tests', function () {
         url: 'https://www.domain.com',
         seats: {'dsp': ['seat 1']},
         version: '1.4',
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: getWinDimensions().innerWidth,
+        height: getWinDimensions().innerHeight,
         cookieSupport: true,
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',

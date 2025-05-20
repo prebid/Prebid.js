@@ -417,8 +417,10 @@ describe('LotameId', function() {
 
     beforeEach(function () {
       let submoduleCallback = lotamePanoramaIdSubmodule.getId({}, {
-        gdprApplies: true,
-        consentString: 'consentGiven'
+        gdpr: {
+          gdprApplies: true,
+          consentString: 'consentGiven'
+        }
       }).callback;
       submoduleCallback(callBackSpy);
 
@@ -451,8 +453,10 @@ describe('LotameId', function() {
     let request;
     let callBackSpy = sinon.spy();
     let consentData = {
-      gdprApplies: true,
-      consentString: undefined
+      gdpr: {
+        gdprApplies: true,
+        consentString: undefined
+      }
     };
 
     beforeEach(function () {
@@ -773,7 +777,9 @@ describe('LotameId', function() {
             },
           },
           {
-            gdprApplies: false,
+            gdpr: {
+              gdprApplies: false,
+            }
           }
         ).callback;
         submoduleCallback(callBackSpy);

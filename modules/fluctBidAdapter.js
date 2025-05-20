@@ -41,7 +41,7 @@ export const spec = {
 
     _each(validBidRequests, (request) => {
       const impExt = request.ortb2Imp?.ext;
-      const data = Object();
+      const data = {};
 
       data.page = page;
       data.adUnitCode = request.adUnitCode;
@@ -72,7 +72,17 @@ export const spec = {
       if (config.getConfig('coppa') === true) {
         deepSetValue(data, 'regs.coppa', 1);
       }
-
+      if (bidderRequest.gppConsent) {
+        deepSetValue(data, 'regs.gpp', {
+          string: bidderRequest.gppConsent.gppString,
+          sid: bidderRequest.gppConsent.applicableSections
+        });
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        deepSetValue(data, 'regs.gpp', {
+          string: bidderRequest.ortb2.regs.gpp,
+          sid: bidderRequest.ortb2.regs.gpp_sid
+        });
+      }
       data.sizes = [];
       _each(request.sizes, (size) => {
         data.sizes.push({

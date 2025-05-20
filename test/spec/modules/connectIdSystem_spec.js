@@ -2,7 +2,6 @@ import {expect} from 'chai';
 import {connectIdSubmodule, storage} from 'modules/connectIdSystem.js';
 import {server} from '../../mocks/xhr';
 import {parseQS, parseUrl} from 'src/utils.js';
-import {uspDataHandler, gppDataHandler} from 'src/adapterManager.js';
 import * as refererDetection from '../../../src/refererDetection';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
@@ -38,8 +37,6 @@ describe('Yahoo ConnectID Submodule', () => {
     let cookiesEnabledStub;
     let localStorageEnabledStub;
     let removeLocalStorageDataStub;
-    let uspConsentDataStub;
-    let gppConsentDataStub;
 
     let consentData;
     beforeEach(() => {
@@ -53,17 +50,19 @@ describe('Yahoo ConnectID Submodule', () => {
       setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
       localStorageEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       removeLocalStorageDataStub = sinon.stub(storage, 'removeDataFromLocalStorage');
-      uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
-      gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
 
       cookiesEnabledStub.returns(true);
       localStorageEnabledStub.returns(true);
-      uspConsentDataStub.returns(USP_DATA);
-      gppConsentDataStub.returns(GPP_DATA);
 
       consentData = {
-        gdprApplies: 1,
-        consentString: 'GDPR_CONSENT_STRING'
+        gdpr: {
+          gdprApplies: 1,
+          consentString: 'GDPR_CONSENT_STRING'
+        },
+        gpp: {
+          ...GPP_DATA
+        },
+        usp: USP_DATA
       };
     });
 
@@ -76,8 +75,6 @@ describe('Yahoo ConnectID Submodule', () => {
       cookiesEnabledStub.restore();
       localStorageEnabledStub.restore();
       removeLocalStorageDataStub.restore();
-      uspConsentDataStub.restore();
-      gppConsentDataStub.restore();
     });
 
     function invokeGetIdAPI(configParams, consentData) {
@@ -383,7 +380,7 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
@@ -418,7 +415,7 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
@@ -453,7 +450,7 @@ describe('Yahoo ConnectID Submodule', () => {
             he: HASHED_EMAIL,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
@@ -584,7 +581,7 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
@@ -610,7 +607,7 @@ describe('Yahoo ConnectID Submodule', () => {
             gdpr: '1',
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID,
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
             gpp: GPP_DATA.gppString,
@@ -636,7 +633,7 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
@@ -660,7 +657,7 @@ describe('Yahoo ConnectID Submodule', () => {
             he: HASHED_EMAIL,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
@@ -675,7 +672,7 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('Makes an ajax GET request to the specified override API endpoint without GPP', () => {
-          gppConsentDataStub.returns(undefined);
+          consentData.gpp = undefined;
           invokeGetIdAPI({
             he: HASHED_EMAIL,
             endpoint: OVERRIDE_ENDPOINT
@@ -685,7 +682,7 @@ describe('Yahoo ConnectID Submodule', () => {
             he: HASHED_EMAIL,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.consentString,
+            gdpr_consent: consentData.gdpr.consentString,
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA
@@ -714,11 +711,11 @@ describe('Yahoo ConnectID Submodule', () => {
 
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
           expect(requestQueryParams.gdpr).to.equal('1');
-          expect(requestQueryParams.gdpr_consent).to.equal(consentData.consentString);
+          expect(requestQueryParams.gdpr_consent).to.equal(consentData.gdpr.consentString);
         });
 
         it('sets GDPR consent data flag correctly when call is NOT under GDPR jurisdiction.', () => {
-          consentData.gdprApplies = false;
+          consentData.gdpr.gdprApplies = false;
 
           invokeGetIdAPI({
             he: HASHED_EMAIL,

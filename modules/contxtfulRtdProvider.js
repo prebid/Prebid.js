@@ -16,17 +16,29 @@ import {
   buildUrl,
   isArray,
   generateUUID,
+  getWinDimensions,
+  canAccessWindowTop,
+  deepAccess,
+  getSafeframeGeometry,
+  getWindowSelf,
+  getWindowTop,
+  inIframe,
+  isSafeFrameWindow,
 } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
+// Constants
 const MODULE_NAME = 'contxtful';
 const MODULE = `${MODULE_NAME}RtdProvider`;
 
 const CONTXTFUL_HOSTNAME_DEFAULT = 'api.receptivity.io';
 const CONTXTFUL_DEFER_DEFAULT = 0;
 
+// Functions
 let _sm;
 function sm() {
   return _sm ??= generateUUID();
@@ -225,6 +237,161 @@ function getTargetingData(adUnits, config, _userConsent) {
   }
 }
 
+function getVisibilityStateElement(domElement, windowTop) {
+  if ('checkVisibility' in domElement) {
+    return domElement.checkVisibility();
+  }
+
+  const elementCss = windowTop.getComputedStyle(domElement, null);
+  return elementCss.display !== 'none';
+}
+
+function getElementFromTopWindowRecurs(element, currentWindow) {
+  try {
+    if (getWindowTop() === currentWindow) {
+      return element;
+    } else {
+      const frame = currentWindow.frameElement;
+      const frameClientRect = getBoundingClientRect(frame);
+      const elementClientRect = getBoundingClientRect(element);
+      if (frameClientRect.width !== elementClientRect.width || frameClientRect.height !== elementClientRect.height) {
+        return undefined;
+      }
+      return getElementFromTopWindowRecurs(frame, currentWindow.parent);
+    }
+  } catch (err) {
+    logError(MODULE, err);
+    return undefined;
+  }
+}
+
+function getDivIdPosition(divId) {
+  if (!isSafeFrameWindow() && !canAccessWindowTop()) {
+    return {};
+  }
+
+  const position = {};
+
+  if (isSafeFrameWindow()) {
+    const { self } = getSafeframeGeometry() ?? {};
+
+    if (!self) {
+      return {};
+    }
+
+    position.x = Math.round(self.t);
+    position.y = Math.round(self.l);
+  } else {
+    try {
+      // window.top based computing
+      const wt = getWindowTop();
+      const d = wt.document;
+
+      let domElement;
+
+      if (inIframe() === true) {
+        const ws = getWindowSelf();
+        const currentElement = ws.document.getElementById(divId);
+        domElement = getElementFromTopWindowRecurs(currentElement, ws);
+      } else {
+        domElement = wt.document.getElementById(divId);
+      }
+
+      if (!domElement) {
+        return {};
+      }
+
+      let box = getBoundingClientRect(domElement);
+      const docEl = d.documentElement;
+      const body = d.body;
+      const clientTop = (d.clientTop ?? body.clientTop) ?? 0;
+      const clientLeft = (d.clientLeft ?? body.clientLeft) ?? 0;
+      const scrollTop = (wt.scrollY ?? docEl.scrollTop) ?? body.scrollTop;
+      const scrollLeft = (wt.scrollX ?? docEl.scrollLeft) ?? body.scrollLeft;
+
+      position.visibility = getVisibilityStateElement(domElement, wt);
+      position.x = Math.round(box.left + scrollLeft - clientLeft);
+      position.y = Math.round(box.top + scrollTop - clientTop);
+    } catch (err) {
+      logError(MODULE, err);
+      return {};
+    }
+  }
+
+  return position;
+}
+
+function tryGetDivIdPosition(divIdMethod) {
+  let divId = divIdMethod();
+  if (divId) {
+    const divIdPosition = getDivIdPosition(divId);
+    if (divIdPosition.x !== undefined && divIdPosition.y !== undefined) {
+      return divIdPosition;
+    }
+  }
+  return undefined;
+}
+
+function tryMultipleDivIdPositions(adUnit) {
+  let divMethods = [
+    // ortb2\
+    () => {
+      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+      const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+      return deepAccess(ortb2Imp, 'ext.data.divId');
+    },
+    // gpt
+    () => getGptSlotInfoForAdUnitCode(adUnit.code).divId,
+    // adunit code
+    () => adUnit.code
+  ];
+
+  for (const divMethod of divMethods) {
+    let divPosition = tryGetDivIdPosition(divMethod);
+    if (divPosition) {
+      return divPosition;
+    }
+  }
+}
+
+function tryGetAdUnitPosition(adUnit) {
+  let adUnitPosition = {};
+  adUnit.ortb2Imp = adUnit.ortb2Imp || {};
+
+  // try to get position with the divId
+  const divIdPosition = tryMultipleDivIdPositions(adUnit);
+  if (divIdPosition) {
+    adUnitPosition.p = { x: divIdPosition.x, y: divIdPosition.y };
+    adUnitPosition.v = divIdPosition.visibility;
+    adUnitPosition.t = 'div';
+    return adUnitPosition;
+  }
+
+  // try to get IAB position
+  const iabPos = adUnit?.mediaTypes?.banner?.pos;
+  if (iabPos !== undefined) {
+    adUnitPosition.p = iabPos;
+    adUnitPosition.t = 'iab';
+    return adUnitPosition;
+  }
+
+  return undefined;
+}
+
+function getAdUnitPositions(bidReqConfig) {
+  const adUnits = bidReqConfig.adUnits || [];
+  let adUnitPositions = {};
+
+  for (const adUnit of adUnits) {
+    let adUnitPosition = tryGetAdUnitPosition(adUnit);
+    if (adUnitPosition) {
+      adUnitPositions[adUnit.code] = adUnitPosition;
+    }
+  }
+
+  return adUnitPositions;
+}
+
 /**
  * @param {Object} reqBidsConfigObj Bid request configuration object
  * @param {Function} onDone Called on completion
@@ -235,7 +402,6 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   function onReturn() {
     onDone();
   }
-
   logInfo(MODULE, 'getBidRequestData');
   const bidders = config?.params?.bidders || [];
   if (isEmpty(bidders) || !isArray(bidders)) {
@@ -243,40 +409,49 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
     return;
   }
 
-  let fromApi = rxApi?.receptivityBatched?.(bidders) || {};
-  let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
+  let ortb2Fragment;
+  let getContxtfulOrtb2Fragment = rxApi?.getOrtb2Fragment;
+  if (typeof (getContxtfulOrtb2Fragment) == 'function') {
+    ortb2Fragment = getContxtfulOrtb2Fragment(bidders, reqBidsConfigObj);
+  } else {
+    const adUnitsPositions = getAdUnitPositions(reqBidsConfigObj);
 
-  let sources = [fromStorage, fromApi];
+    let fromApi = rxApi?.receptivityBatched?.(bidders) || {};
+    let fromStorage = prepareBatch(bidders, (bidder) => loadSessionReceptivity(`${config?.params?.customer}_${bidder}`));
 
-  let rxBatch = Object.assign(...sources);
+    let sources = [fromStorage, fromApi];
 
-  let singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
+    let rxBatch = Object.assign(...sources);
 
-  bidders
-    .forEach(bidderCode => {
-      const ortb2 = {
-        user: {
-          data: [
-            {
-              name: MODULE_NAME,
-              ext: {
-                rx: rxBatch[bidderCode],
-                events: singlePointEvents,
-                sm: sm(),
-                params: {
-                  ev: config.params?.version,
-                  ci: config.params?.customer,
+    let singlePointEvents = btoa(JSON.stringify({ ui: getUiEvents() }));
+    ortb2Fragment = {};
+    ortb2Fragment.bidder = Object.fromEntries(
+      bidders
+        .map(bidderCode => {
+          return [bidderCode, {
+            user: {
+              data: [
+                {
+                  name: MODULE_NAME,
+                  ext: {
+                    rx: rxBatch[bidderCode],
+                    events: singlePointEvents,
+                    pos: btoa(JSON.stringify(adUnitsPositions)),
+                    sm: sm(),
+                    params: {
+                      ev: config.params?.version,
+                      ci: config.params?.customer,
+                    },
+                  },
                 },
-              },
+              ],
             },
-          ],
-        },
-      };
+          }
+          ]
+        }));
+  }
 
-      mergeDeep(reqBidsConfigObj.ortb2Fragments?.bidder, {
-        [bidderCode]: ortb2,
-      });
-    });
+  mergeDeep(reqBidsConfigObj.ortb2Fragments, ortb2Fragment);
 
   onReturn();
 }
@@ -290,8 +465,10 @@ function getUiEvents() {
 
 function getScreen() {
   function getInnerSize() {
-    let w = window?.innerWidth;
-    let h = window?.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+
+    let w = innerWidth;
+    let h = innerHeight;
 
     if (w && h) {
       return [w, h];
@@ -299,9 +476,10 @@ function getScreen() {
   }
 
   function getDocumentSize() {
-    let body = window?.document?.body;
-    let w = body.clientWidth;
-    let h = body.clientHeight;
+    const windowDimensions = getWinDimensions();
+
+    let w = windowDimensions.document.body.clientWidth;
+    let h = windowDimensions.document.body.clientHeight;
 
     if (w && h) {
       return [w, h];
