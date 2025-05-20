@@ -71,10 +71,13 @@ export const spec = {
     var sizes = [];
     var siteId = 0;
 
-    const userIds = pbjsInstance.getUserIdsAsEids()
+    let userIds = []
     let thirtyThreeAcrossId = undefined
     let unifiedId = undefined
     let pubcid = undefined
+    if (pbjsInstance.getUserIdsAsEids) {
+      userIds = pbjsInstance.getUserIdsAsEids()
+    }
     userIds.forEach(idObj => {
       if (idObj.source === '33across.com') {
         thirtyThreeAcrossId = idObj.uids[0].id
