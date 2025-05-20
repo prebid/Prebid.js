@@ -39,6 +39,9 @@ module.exports = {
   getSourceFolders() {
     return SOURCE_FOLDERS
   },
+  getSourcePatterns() {
+    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.ts`])
+  },
   getIgnoreSources() {
     return IGNORE_SOURCES
   },

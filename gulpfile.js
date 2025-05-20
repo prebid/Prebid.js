@@ -28,7 +28,6 @@ const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
 const run = require('gulp-run-command').default;
-const babel = require('gulp-babel');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -37,7 +36,7 @@ const INTEG_SERVER_PORT = 4444;
 const { spawn, fork } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
-const SOURCE_PAT = helpers.getSourceFolders().flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.ts`]);
+const {precompile} = require('./gulp.precompilation.js');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -154,49 +153,6 @@ function prebidSource(webpackCfg) {
   return gulp.src([].concat(moduleSources, analyticsSources, helpers.getPrecompiledPath('src/prebid.js')))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(webpackCfg, webpack));
-}
-
-// do not generate more than one task for a given build config - so that `gulp.lastRun` can work properly
-const PRECOMP_TASKS = new Map();
-function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
-  if (dev && distUrlBase == null) {
-    distUrlBase = argv.distUrlBase || '/build/dev/'
-  }
-  const key = `${distUrlBase}::${disableFeatures}`;
-  if (!PRECOMP_TASKS.has(key)) {
-    const babelConfig = require('./babelConfig.js')({
-      disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
-      prebidDistUrlBase: distUrlBase ?? argv.distUrlBase
-    });
-    const precompile = function() {
-      // `since: gulp.lastRun(task)` selects files that have been modified since the last time this gulp process ran `task`
-      return gulp.src(SOURCE_PAT, {base: '.', since: gulp.lastRun(precompile)})
-        .pipe(sourcemaps.init())
-        .pipe(babel(babelConfig))
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest(helpers.getPrecompiledPath()));
-    }
-    PRECOMP_TASKS.set(key, precompile)
-  }
-  return PRECOMP_TASKS.get(key);
-}
-
-/**
- * .json and .d.ts files are used at runtime, so make them part of the precompilation output
- */
-function copyVerbatim() {
-  return gulp.src(helpers.getSourceFolders().flatMap(name => [
-    `${name}/**/*.json`,
-    `${name}/**/*.d.ts`,
-  ]).concat([
-    './package.json',
-    '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
-  ]), {base: '.'})
-    .pipe(gulp.dest(helpers.getPrecompiledPath()))
-}
-
-function precompile(options) {
-  return gulp.series(['ts', gulp.parallel([copyVerbatim, babelPrecomp(options)])])
 }
 
 function makeDevpackPkg(config = webpackConfig) {
@@ -536,7 +492,7 @@ function watchTaskMaker(options = {}) {
   options.alsoWatch = options.alsoWatch || [];
 
   return function watch(done) {
-    gulp.watch(SOURCE_PAT.concat(
+    gulp.watch(helpers.getSourcePatterns().concat(
       helpers.getIgnoreSources().map(src => `!${src}`)
     ), babelPrecomp(options));
     gulp.watch([
@@ -558,14 +514,9 @@ const watchFast = watchTaskMaker({dev: true, livereload: false, task: () => gulp
 gulp.task(lint);
 gulp.task(watch);
 
-gulp.task('verbatim', copyVerbatim)
 gulp.task(clean);
-gulp.task('ts', run('tsc'));
 
 gulp.task(escapePostbidConfig);
-gulp.task('transpile', babelPrecomp());
-gulp.task('precompile-dev', precompile({dev: true}));
-gulp.task('precompile', precompile());
 
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));

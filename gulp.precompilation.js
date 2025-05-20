@@ -1,0 +1,63 @@
+const gulp = require('gulp');
+const helpers = require('./gulpHelpers.js');
+const {argv} = require('yargs');
+const {default: run} = require('gulp-run-command');
+const sourcemaps = require('gulp-sourcemaps');
+const babel = require('gulp-babel');
+
+
+// do not generate more than one task for a given build config - so that `gulp.lastRun` can work properly
+const PRECOMP_TASKS = new Map();
+function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
+  if (dev && distUrlBase == null) {
+    distUrlBase = argv.distUrlBase || '/build/dev/'
+  }
+  const key = `${distUrlBase}::${disableFeatures}`;
+  if (!PRECOMP_TASKS.has(key)) {
+    const babelConfig = require('./babelConfig.js')({
+      disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
+      prebidDistUrlBase: distUrlBase ?? argv.distUrlBase
+    });
+    const precompile = function() {
+      // `since: gulp.lastRun(task)` selects files that have been modified since the last time this gulp process ran `task`
+      return gulp.src(helpers.getSourcePatterns(), {base: '.', since: gulp.lastRun(precompile)})
+        .pipe(sourcemaps.init())
+        .pipe(babel(babelConfig))
+        .pipe(sourcemaps.write('.'))
+        .pipe(gulp.dest(helpers.getPrecompiledPath()));
+    }
+    PRECOMP_TASKS.set(key, precompile)
+  }
+  return PRECOMP_TASKS.get(key);
+}
+
+
+/**
+ * .json and .d.ts files are used at runtime, so make them part of the precompilation output
+ */
+function copyVerbatim() {
+  return gulp.src(helpers.getSourceFolders().flatMap(name => [
+    `${name}/**/*.json`,
+    `${name}/**/*.d.ts`,
+  ]).concat([
+    './package.json',
+    '!./src/types/local/**/*' // exclude "local", type definitions that should not be visible to consumers
+  ]), {base: '.'})
+    .pipe(gulp.dest(helpers.getPrecompiledPath()))
+}
+
+
+
+function precompile(options) {
+  return gulp.series(['ts', gulp.parallel([copyVerbatim, babelPrecomp(options)])])
+}
+
+gulp.task('ts', run('tsc'));
+gulp.task('transpile', babelPrecomp());
+gulp.task('precompile-dev', precompile({dev: true}));
+gulp.task('precompile', precompile());
+gulp.task('verbatim', copyVerbatim)
+
+module.exports = {
+  precompile
+}
