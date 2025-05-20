@@ -944,7 +944,7 @@ describe('targeting tests', function () {
         config.resetConfig();
       });
 
-      it('should merge custom targeting from all bids by default', function () {
+      it('should merge custom targeting from all bids when allBidsCustomTargeting: true', function () {
         // Default behavior - no specific configuration
         config.setConfig({targetingControls: {allBidsCustomTargeting: true}});
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
