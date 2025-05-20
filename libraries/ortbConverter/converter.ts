@@ -43,6 +43,13 @@ type Context = {
     ttl?: number;
 }
 
+type RequestContext = Context & {
+    /**
+     * Map from imp id to the context object used to generate that imp.
+     */
+    impContext: { [impId: string]: Context };
+}
+
 type Params<B extends BidderCode> = {
     [IMP]: (
         bidRequest: BidRequest<B>,
@@ -53,7 +60,7 @@ type Params<B extends BidderCode> = {
     [REQUEST]: (
         imps: ORTBImp[],
         bidderRequest: BidderRequest<B>,
-        context: Context & {
+        context: RequestContext & {
             bidRequests: BidRequest<B>[]
         }
     ) => ORTBRequest;
@@ -70,7 +77,7 @@ type Params<B extends BidderCode> = {
     [RESPONSE]: (
         bidResponses: BidResponse[],
         ortbResponse: ORTBResponse,
-        context: Context & {
+        context: RequestContext & {
             ortbRequest: ORTBRequest;
             bidderRequest: BidderRequest<B>;
             bidRequests: BidRequest<B>[];
