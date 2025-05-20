@@ -117,6 +117,7 @@ function generateTypeSummary(folder, dest) {
 }
 
 const generateCoreSummary = generateTypeSummary(helpers.getPrecompiledPath('src'), helpers.getPrecompiledPath('src/types/summary/core.d.ts'));
+const generateModuleSummary = generateTypeSummary(helpers.getPrecompiledPath('modules'), helpers.getPrecompiledPath('src/types/summary/modules.d.ts'))
 const publicModules = gulp.parallel(['js', 'd.ts'].map(generatePublicModules));
 
 
@@ -124,7 +125,7 @@ function precompile(options) {
   return gulp.series([
     'ts',
     gulp.parallel([copyVerbatim, babelPrecomp(options)]),
-    gulp.parallel([publicModules, generateCoreSummary])
+    gulp.parallel([publicModules, generateCoreSummary, generateModuleSummary])
   ]);
 }
 
