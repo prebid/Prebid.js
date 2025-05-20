@@ -8,7 +8,7 @@ import {
   firstPartyData as moduleFPD,
   isCMPStringTheSame, createPixelUrl, translateMetadata
 } from '../../../modules/intentIqIdSystem';
-import {storage, readData} from '../../../libraries/intentIqUtils/storageUtils.js';
+import { storage, readData, storeData } from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
 import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
@@ -560,6 +560,46 @@ describe('IntentIQ tests', function () {
       const result = detectBrowserFromUserAgentData(userAgentData);
       expect(result).to.equal('unknown');
     });
+
+    it("Should call the server for new partner if FPD has been updated by other partner, and 24 hours have not yet passed.", () => {
+      const allowedStorage = ['html5']
+      const newPartnerId = 12345
+      const FPD = {
+        pcid: 'c869aa1f-fe40-47cb-810f-4381fec28fc9',
+        pcidDate: 1747720820757,
+        group: 'A',
+        sCal: Date.now(),
+        gdprString: null,
+        gppString: null,
+        uspString: null
+      };     
+
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage)
+      const callBackSpy = sinon.spy()
+      const submoduleCallback = intentIqIdSubmodule.getId({...allConfigParams, params: {...allConfigParams.params, partner: newPartnerId}}).callback;
+      submoduleCallback(callBackSpy);
+      const request = server.requests[0];
+      expect(request.url).contain("ProfilesEngineServlet?at=39") // server was called
+    })
+    it("Should NOT call the server if FPD has been updated user Opted Out, and 24 hours have not yet passed.", () => {
+      const allowedStorage = ['html5']
+      const newPartnerId = 12345
+      const FPD = {
+        pcid: 'c869aa1f-fe40-47cb-810f-4381fec28fc9',
+        pcidDate: 1747720820757,
+        group: 'A',
+        isOptedOut: true,
+        sCal: Date.now(),
+        gdprString: null,
+        gppString: null,
+        uspString: null
+      };     
+
+      storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage)
+      const returnedObject = intentIqIdSubmodule.getId({...allConfigParams, params: {...allConfigParams.params, partner: newPartnerId}});
+      expect(returnedObject.callback).to.be.undefined
+      expect(server.requests.length).to.equal(0) // no server requests
+    })
   });
 
   describe('IntentIQ consent management within getId', function () {

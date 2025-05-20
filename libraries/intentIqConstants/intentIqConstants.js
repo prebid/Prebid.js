@@ -11,6 +11,7 @@ export const EMPTY = 'EMPTY';
 export const GVLID = '1323';
 export const VERSION = 0.29;
 export const PREBID = 'pbjs';
+export const HOURS_24 = 86400000;
 
 export const INVALID_ID = 'INVALID_ID';
 
