@@ -101,12 +101,12 @@ function generatePublicModules(ext) {
   }
 }
 
-function generateTypeSummary(folder, dest) {
+function generateTypeSummary(folder, dest, ignore = dest) {
   const template = _.template(`<% _.forEach(files, (file) => { %>import '<%= file %>';
 <% }) %>`);
   const destDir = path.parse(dest).dir;
   return function (done) {
-    glob([`${folder}/**/*.d.ts`, `!${dest}`]).then(files => {
+    glob([`${folder}/**/*.d.ts`], {ignore}).then(files => {
       files = files.map(file => path.relative(destDir, file))
       if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, {recursive: true});
@@ -116,7 +116,11 @@ function generateTypeSummary(folder, dest) {
   }
 }
 
-const generateCoreSummary = generateTypeSummary(helpers.getPrecompiledPath('src'), helpers.getPrecompiledPath('src/types/summary/core.d.ts'));
+const generateCoreSummary = generateTypeSummary(
+  helpers.getPrecompiledPath('src'),
+  helpers.getPrecompiledPath('src/types/summary/core.d.ts'),
+  helpers.getPrecompiledPath('src/types/summary/**/*')
+);
 const generateModuleSummary = generateTypeSummary(helpers.getPrecompiledPath('modules'), helpers.getPrecompiledPath('src/types/summary/modules.d.ts'))
 const publicModules = gulp.parallel(['js', 'd.ts'].map(generatePublicModules));
 
