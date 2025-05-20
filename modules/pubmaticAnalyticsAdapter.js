@@ -445,7 +445,7 @@ function getListOfIdentityPartners() {
   const publisherProvidedEidList = publisherProvidedEids.map(eid =>
     identityModuleNameMap[eid.source] || eid.source
   );
-  
+
   const identityPartners = Array.from(new Set([...userIdPartners, ...publisherProvidedEidList]));
   return identityPartners.length > 0 ? identityPartners : undefined;
 }
