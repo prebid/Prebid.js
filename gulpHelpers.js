@@ -18,7 +18,8 @@ const SOURCE_FOLDERS = [
   'creative',
   'libraries',
   'modules',
-  'test'
+  'test',
+  'public'
 ]
 const IGNORE_SOURCES = [
   'libraries/creative-renderer-*/**/*'

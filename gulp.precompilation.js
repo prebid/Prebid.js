@@ -4,10 +4,17 @@ const {argv} = require('yargs');
 const {default: run} = require('gulp-run-command');
 const sourcemaps = require('gulp-sourcemaps');
 const babel = require('gulp-babel');
+const {glob} = require('glob');
+const path = require('path');
+const tap = require('gulp-tap');
+const _ = require('lodash');
+const fs = require('fs');
+const filter = import('gulp-filter');
 
 
 // do not generate more than one task for a given build config - so that `gulp.lastRun` can work properly
 const PRECOMP_TASKS = new Map();
+
 function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} = {}) {
   if (dev && distUrlBase == null) {
     distUrlBase = argv.distUrlBase || '/build/dev/'
@@ -18,7 +25,7 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
       disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
       prebidDistUrlBase: distUrlBase ?? argv.distUrlBase
     });
-    const precompile = function() {
+    const precompile = function () {
       // `since: gulp.lastRun(task)` selects files that have been modified since the last time this gulp process ran `task`
       return gulp.src(helpers.getSourcePatterns(), {base: '.', since: gulp.lastRun(precompile)})
         .pipe(sourcemaps.init())
@@ -46,13 +53,61 @@ function copyVerbatim() {
     .pipe(gulp.dest(helpers.getPrecompiledPath()))
 }
 
+/**
+ * Generate "public" versions of module files (used in  package.json "exports") that
+ * just import the "real" module
+ *
+ * This achieves two things:
+ *
+ *   - removes the need for awkward "index" imports, e.g. userId/index
+ *   - hides their exports from NPM consumers
+ */
+function generatePublicModules(ext) {
+  const template = _.template(`import '<%= modulePath %>';`);
+  const publicDir = helpers.getPrecompiledPath('public');
+
+  function getNames(file) {
+    const filePath = path.parse(file.path);
+    const fileName = filePath.name.replace(/\.d$/gi, '');
+    const moduleName = fileName === 'index' ? path.basename(filePath.dir) : fileName;
+    const publicName = `${moduleName}.${ext}`;
+    const modulePath = path.relative(publicDir, file.path);
+    const publicPath = path.join(publicDir, publicName);
+    return {modulePath, publicPath}
+  }
+
+  function publicVersionDoesNotExist(file) {
+    // allow manual definition of a module's public version by leaving it
+    // alone if it exists under `public`
+    return !fs.existsSync(getNames(file).publicPath)
+  }
+
+  return function (done) {
+    filter.then(({default: filter}) => {
+      gulp.src([
+        helpers.getPrecompiledPath(`modules/*.${ext}`),
+        helpers.getPrecompiledPath(`modules/**/index.${ext}`),
+        `!${publicDir}/**/*`
+      ])
+        .pipe(filter(publicVersionDoesNotExist))
+        .pipe(tap((file) => {
+          const {modulePath, publicPath} = getNames(file);
+          file.contents = Buffer.from(template({modulePath}));
+          file.path = publicPath;
+        }))
+        .pipe(gulp.dest(publicDir))
+        .on('end', done);
+    })
+  }
+}
 
 
 function precompile(options) {
-  return gulp.series(['ts', gulp.parallel([copyVerbatim, babelPrecomp(options)])])
+  return gulp.series(['ts', gulp.parallel([copyVerbatim, babelPrecomp(options)]), 'generate-public-modules'])
 }
 
 gulp.task('ts', run('tsc'));
+gulp.task('generate-public-modules', gulp.parallel(['js', 'd.ts'].map(generatePublicModules)));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());

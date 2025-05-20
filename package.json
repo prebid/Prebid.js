@@ -9,8 +9,8 @@
     "./prebid": "./dist/src/src/prebid.public.js",
     "./.babelrc.js": "./.babelrc.js",
     "./babelConfig.js": "./babelConfig.js",
-    "./modules/*.js": "./dist/src/modules/*.js",
-    "./modules/*": "./dist/src/modules/*.js"
+    "./modules/*.js": "./dist/src/public/*.js",
+    "./modules/*": "./dist/src/public/*.js"
   },
   "scripts": {
     "serve": "gulp serve",
@@ -76,6 +76,7 @@
     "gulp-clean": "^0.4.0",
     "gulp-concat": "^2.6.0",
     "gulp-connect": "^5.7.0",
+    "gulp-filter": "^9.0.1",
     "gulp-if": "^3.0.0",
     "gulp-js-escape": "^1.0.1",
     "gulp-rename": "^2.0.0",
@@ -83,6 +84,7 @@
     "gulp-run-command": "^0.0.10",
     "gulp-shell": "^0.8.0",
     "gulp-sourcemaps": "^3.0.0",
+    "gulp-tap": "^2.0.0",
     "gulp-terser": "^2.0.1",
     "gulp-util": "^3.0.0",
     "is-docker": "^2.2.1",
