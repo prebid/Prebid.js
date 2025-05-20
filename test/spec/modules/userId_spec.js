@@ -38,6 +38,8 @@ import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { addIdData } from '../../../modules/userId/index.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -3147,6 +3149,75 @@ describe('User ID', function () {
         expect(bidder.bidderB.user.ext.eids).to.eql(eidsFrom({
           mockId1: 'mockId1Module'
         }));
+      });
+    })
+
+    it('adUnits and ortbFragments should not contain ids from a submodule that was disabled by activityControls', () => {
+      const UNALLOWED_MODULE = 'mockId3';
+      const ALLOWED_MODULE = 'mockId1';
+      const UNALLOWED_MODULE_FULLNAME = UNALLOWED_MODULE + 'Module';
+      const ALLOWED_MODULE_FULLNAME = ALLOWED_MODULE + 'Module';
+      const bidders = ['bidderA', 'bidderB'];
+
+      idValues = {
+        [ALLOWED_MODULE]: [ALLOWED_MODULE],
+        [UNALLOWED_MODULE]: [UNALLOWED_MODULE],
+      };
+      init(config);
+
+      setSubmoduleRegistry([
+        mockIdSubmodule(ALLOWED_MODULE),
+        mockIdSubmodule(UNALLOWED_MODULE),
+      ]);
+
+      const unregisterRule = registerActivityControl(ACTIVITY_ENRICH_EIDS, 'ruleName', ({componentName, init}) => {
+        if (componentName === 'mockId3Module' && init === false) { return ({ allow: false, reason: "disabled" }); }
+      });
+
+      config.setConfig({
+        userSync: {
+          userIds: [
+            { name: ALLOWED_MODULE_FULLNAME, bidders },
+            { name: UNALLOWED_MODULE_FULLNAME, bidders },
+          ]
+        }
+      });
+
+      return getGlobal().getUserIdsAsync().then(() => {
+        const adUnits = [{
+          bids: [
+            { bidder: 'bidderA' },
+            { bidder: 'bidderB' },
+          ]
+        }];
+        const ortb2Fragments = {
+          global: {
+            user: {}
+          },
+          bidder: {
+            bidderA: {
+              user: {}
+            },
+            bidderB: {
+              user: {}
+            }
+          }
+        };
+        addIdData({ adUnits, ortb2Fragments });
+        
+        adUnits[0].bids.forEach(({userId}) => {
+          const userIdModules = Object.keys(userId);
+          expect(userIdModules).to.include(ALLOWED_MODULE);
+          expect(userIdModules).to.not.include(UNALLOWED_MODULE);
+        });
+
+        bidders.forEach((bidderName) => {
+          const userIdModules = ortb2Fragments.bidder[bidderName].user.ext.eids.map(eid => eid.source);
+          expect(userIdModules).to.include(ALLOWED_MODULE + '.com');
+          expect(userIdModules).to.not.include(UNALLOWED_MODULE + '.com');
+        });
+
+        unregisterRule();
       });
     })
   });

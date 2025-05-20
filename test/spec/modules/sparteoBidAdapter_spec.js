@@ -365,7 +365,7 @@ describe('SparteoAdapter', function () {
             ttl: TTL,
             mediaType: 'banner',
             meta: {},
-            ad: 'script<div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.bidder.sparteo.com/img\"></div>'
+            ad: '<div style=\"position:absolute;left:0px;top:0px;visibility:hidden;\"><img src=\"https://t.bidder.sparteo.com/img\"></div>script'
           }
         ];
 

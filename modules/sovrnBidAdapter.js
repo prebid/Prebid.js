@@ -13,7 +13,6 @@ import {
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
-  ADPOD,
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
@@ -32,7 +31,6 @@ const ORTB_VIDEO_PARAMS = {
 }
 
 const REQUIRED_VIDEO_PARAMS = {
-  context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols
@@ -169,6 +167,11 @@ export const spec = {
       const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
       if (coppa) {
         deepSetValue(sovrnBidReq, 'regs.coppa', 1);
+      }
+
+      const bcat = deepAccess(bidderRequest, 'ortb2.bcat');
+      if (bcat) {
+        deepSetValue(sovrnBidReq, 'bcat', bcat);
       }
 
       if (bidderRequest.gdprConsent) {

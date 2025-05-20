@@ -176,6 +176,7 @@ function buildBidResponse(seedtagBid) {
         seedtagBid && seedtagBid.adomain && seedtagBid.adomain.length > 0
           ? seedtagBid.adomain
           : [],
+      mediaType: seedtagBid.realMediaType,
     },
   };
 
