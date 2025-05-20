@@ -1,6 +1,6 @@
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo } from '../src/utils.js';
 
@@ -53,9 +53,9 @@ const DEFAULT_CURRENCY = 'EUR';
 /**
  * @type {MediaType[]}
  */
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const SSP_ID = 10500;
-const ADAPTER_VERSION = '2.3.0';
+const ADAPTER_VERSION = '2.4.0';
 
 const TRACKER_METHODS = {
   img: 1,
@@ -167,6 +167,7 @@ export const spec = {
         id: impId,
         banner: mapBanner(bidRequest),
         native: mapNative(bidRequest),
+        video: mapVideo(bidRequest),
         displaymanager: 'Prebid.js',
         displaymanagerver: '$prebid.version$',
       };
@@ -317,6 +318,30 @@ function mapBanner(bidRequest) {
 }
 
 /**
+ * Maps video parameters from bid request to OpenRTB video object.
+ * @param {ExtendedBidRequest} bidRequest
+ */
+function mapVideo(bidRequest) {
+  const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoParams) {
+      const { sizes, playerSize } = videoParams;
+
+      const format = (playerSize || sizes)?.map((size) => ({ w: size[0], h: size[1] }));
+
+      const [firstSize] = format || [];
+
+      delete videoParams.sizes;
+
+      return {
+          ...videoParams,
+          w: firstSize?.w,
+          h: firstSize?.h,
+          format,
+      };
+  }
+}
+
+/**
  * @param {ExtendedBidRequest} bidRequest
  */
 function mapNative(bidRequest) {
@@ -436,6 +461,9 @@ function interpretResponse(serverResponse, { bidRequest }) {
     if (bidReceived.adm.indexOf('{') === 0) {
       prBid.mediaType = NATIVE;
       prBid.native = interpretNativeAd(bidReceived, price, currency);
+    } else if (bidReceived.adm.indexOf('<VAST') > -1) {
+      prBid.mediaType = VIDEO;
+      prBid.vastXml = bidReceived.adm;
     } else {
       prBid.mediaType = BANNER;
       prBid.ad = bidReceived.adm;

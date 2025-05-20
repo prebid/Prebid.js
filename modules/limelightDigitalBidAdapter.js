@@ -114,8 +114,8 @@ export const spec = {
     const imageSyncs = [];
     for (let i = 0; i < serverResponses.length; i++) {
       const serverResponseHeaders = serverResponses[i].headers;
-      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
-      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
+      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('x-pll-usersync-image') : null
+      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('x-pll-usersync-iframe') : null
       if (iframeSync != null) {
         iframeSyncs.push(iframeSync)
       } else if (imgSync != null) {
