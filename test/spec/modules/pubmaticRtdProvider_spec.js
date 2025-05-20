@@ -7,7 +7,7 @@ import * as hook from '../../../src/hook.js';
 import {
     registerSubModule, pubmaticSubmodule, getFloorsConfig, fetchData,
     getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, _country,
-    _profileConfigs, _floorsData, defaultValueTemplate, withTimeout, configMerged
+    _profileConfigs, _floorsData, defaultValueTemplate, withTimeout, configMerged, getTargetingData
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
 
@@ -607,6 +607,135 @@ describe('Pubmatic RTD Provider', () => {
             
             clearTimeoutSpy.restore();
             clock.restore();
+        });
+    });
+
+    describe('getTargetingData', () => {
+        let logInfoStub;
+        
+        beforeEach(() => {
+            logInfoStub = sandbox.stub(utils, 'logInfo');
+        });
+
+        it('should return targeting data when RTD floor is applied to bids in adUnits', () => {
+            const adUnitCodes = ['ad-unit-1', 'ad-unit-2'];
+            const config = {};
+            const userConsent = {};
+            const auction = {
+                adUnits: [{
+                    bids: [{
+                        floorData: {
+                            modelVersion: 'RTD model v1',
+                            skipped: false
+                        }
+                    }]
+                }]
+            };
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({
+                'ad-unit-1': { 'pm_ym': 1 },
+                'ad-unit-2': { 'pm_ym': 1 }
+            });
+            expect(logInfoStub.calledWith(sinon.match.any, 'Setting targeting via getTargetingData')).to.be.true;
+        });
+
+        it('should return targeting data when RTD floor is applied to bids in bidsReceived', () => {
+            const adUnitCodes = ['ad-unit-1'];
+            const config = {};
+            const userConsent = {};
+            const auction = {
+                adUnits: [],
+                bidsReceived: [{
+                    floorData: {
+                        modelVersion: 'RTD model v2',
+                        skipped: false
+                    }
+                }]
+            };
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({
+                'ad-unit-1': { 'pm_ym': 1 }
+            });
+            expect(logInfoStub.calledWith(sinon.match.any, 'Setting targeting via getTargetingData')).to.be.true;
+        });
+
+        it('should return empty object when no RTD floor is applied', () => {
+            const adUnitCodes = ['ad-unit-1'];
+            const config = {};
+            const userConsent = {};
+            const auction = {
+                adUnits: [{
+                    bids: [{
+                        floorData: {
+                            modelVersion: 'Standard model',
+                            skipped: false
+                        }
+                    }]
+                }],
+                bidsReceived: [{
+                    floorData: {
+                        modelVersion: 'RTD model',
+                        skipped: true // skipped is true, so RTD floor is not applied
+                    }
+                }]
+            };
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({});
+            expect(logInfoStub.called).to.be.false;
+        });
+
+        it('should handle empty adUnitCodes array', () => {
+            const adUnitCodes = [];
+            const config = {};
+            const userConsent = {};
+            const auction = {
+                adUnits: [{
+                    bids: [{
+                        floorData: {
+                            modelVersion: 'RTD model',
+                            skipped: false
+                        }
+                    }]
+                }]
+            };
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({});
+            expect(logInfoStub.calledWith(sinon.match.any, 'Setting targeting via getTargetingData')).to.be.true;
+        });
+
+        it('should handle undefined auction parameter', () => {
+            const adUnitCodes = ['ad-unit-1'];
+            const config = {};
+            const userConsent = {};
+            const auction = undefined;
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({});
+            expect(logInfoStub.called).to.be.false;
+        });
+
+        it('should handle null values in auction object', () => {
+            const adUnitCodes = ['ad-unit-1'];
+            const config = {};
+            const userConsent = {};
+            const auction = {
+                adUnits: null,
+                bidsReceived: null
+            };
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({});
+            expect(logInfoStub.called).to.be.false;
         });
     });
 });

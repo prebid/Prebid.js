@@ -274,12 +274,11 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
  * @param {Object} auction - Auction object
  * @return {Object} - Targeting data for ad units
  */
-const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
-
-  const isRtdFloorApplied = bid => 
+export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
+  const isRtdFloorApplied = bid =>
     bid.floorData?.modelVersion?.includes("RTD model") && !bid.floorData.skipped;
 
-  const hasRtdFloorAppliedBid = auction?.adUnits?.some(adUnit => 
+  const hasRtdFloorAppliedBid = auction?.adUnits?.some(adUnit =>
     adUnit.bids?.some(isRtdFloorApplied)
   ) || auction?.bidsReceived?.some(isRtdFloorApplied);
 
