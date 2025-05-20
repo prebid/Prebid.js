@@ -4,5 +4,4 @@
 import './types/summary/core.d.ts';
 
 export {default} from './prebid.ts';
-export type {PrebidJS} from './prebidGlobal.ts';
-export type {Bid, VideoBid, BannerBid, NativeBid} from './bidfactory.ts';
+export type * from './types/summary/objects.d.ts';

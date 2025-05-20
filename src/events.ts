@@ -28,11 +28,12 @@ export type EventIDs = {
     [K in keyof Events]: K extends keyof typeof EVENT_ID_PATHS ? Events[K][0][(typeof EVENT_ID_PATHS)[K]] : undefined;
 };
 
+export type EventPayload<E extends keyof Events> = Events[E][0];
 export type EventHandler<E extends keyof Events> = (...args: Events[E]) => void;
 
 export type EventRecord<E extends keyof Events> = {
     eventType: E;
-    args: Events[E][0];
+    args: EventPayload<E>;
     id: EventIDs[E];
     elapsedTime: number;
 }
