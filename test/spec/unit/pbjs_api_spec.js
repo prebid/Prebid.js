@@ -319,7 +319,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
-      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
+      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true, targetingControls: { allBidsCustomTargeting: true } });
       var expectedResults = [`foobar=300x250%2C300x600%2C0x0`, `${TARGETING_KEYS.SIZE}=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}=10.00`, `${TARGETING_KEYS.AD_ID}=233bcbee889d46d`, `${TARGETING_KEYS.BIDDER}=appnexus`, `${TARGETING_KEYS.SIZE}_triplelift=0x0`, `${TARGETING_KEYS.PRICE_BUCKET}_triplelift=10.00`, `${TARGETING_KEYS.AD_ID}_triplelift=222bb26f9e8bd`, `${TARGETING_KEYS.BIDDER}_triplelift=triplelift`, `${TARGETING_KEYS.SIZE}_appnexus=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_appnexus=10.00`, `${TARGETING_KEYS.AD_ID}_appnexus=233bcbee889d46d`, `${TARGETING_KEYS.BIDDER}_appnexus=appnexus`, `${TARGETING_KEYS.SIZE}_pagescience=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_pagescience=10.00`, `${TARGETING_KEYS.AD_ID}_pagescience=25bedd4813632d7`, `${TARGETING_KEYS.BIDDER}_pagescienc=pagescience`, `${TARGETING_KEYS.SIZE}_brightcom=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_brightcom=10.00`, `${TARGETING_KEYS.AD_ID}_brightcom=26e0795ab963896`, `${TARGETING_KEYS.BIDDER}_brightcom=brightcom`, `${TARGETING_KEYS.SIZE}_brealtime=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_brealtime=10.00`, `${TARGETING_KEYS.AD_ID}_brealtime=275bd666f5a5a5d`, `${TARGETING_KEYS.BIDDER}_brealtime=brealtime`, `${TARGETING_KEYS.SIZE}_pubmatic=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_pubmatic=10.00`, `${TARGETING_KEYS.AD_ID}_pubmatic=28f4039c636b6a7`, `${TARGETING_KEYS.BIDDER}_pubmatic=pubmatic`, `${TARGETING_KEYS.SIZE}_rubicon=300x600`, `${TARGETING_KEYS.PRICE_BUCKET}_rubicon=10.00`, `${TARGETING_KEYS.AD_ID}_rubicon=29019e2ab586a5a`, `${TARGETING_KEYS.BIDDER}_rubicon=rubicon`];
       var result = $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr(adUnitCode);
 
@@ -386,7 +386,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return correct targeting with bid landscape targeting on', function () {
-      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
+      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true, targetingControls: { allBidsCustomTargeting: true } });
       var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       var expected = getAdServerTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       assert.deepEqual(targeting, expected);
@@ -1023,6 +1023,7 @@ describe('Unit: Prebid Module', function () {
 
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
+      $$PREBID_GLOBAL$$.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
 
       // we need to transform the spySetTargeting into something that looks like
       // googletag's targeting structure
@@ -1096,7 +1097,7 @@ describe('Unit: Prebid Module', function () {
       slots[0].spySetTargeting.resetHistory();
       slots[1].spySetTargeting.resetHistory();
       window.googletag.pubads().setSlots(slots);
-
+      $$PREBID_GLOBAL$$.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]], (slot) => {
         return (adUnitCode) => {
           return slots[0].getSlotElementId() === slot.getSlotElementId();
@@ -1130,7 +1131,7 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       slots[0].spySetTargeting.resetHistory();
       window.googletag.pubads().setSlots(slots);
-
+      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true, targetingControls: { allBidsCustomTargeting: true } });
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var expected = getTargetingKeys();
@@ -3014,7 +3015,7 @@ describe('Unit: Prebid Module', function () {
         };
 
         assert.equal(auctionManager.getBidsReceived().length, 8, '_bidsReceived contains 8 bids');
-
+        $$PREBID_GLOBAL$$.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
         $$PREBID_GLOBAL$$.requestBids(requestObj1);
         $$PREBID_GLOBAL$$.requestBids(requestObj2);
         await auctionsStarted;

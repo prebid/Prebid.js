@@ -468,7 +468,7 @@ export function newTargeting(auctionManager) {
   }
 
   function getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes) {
-    const useAllBidsCustomTargeting = config.getConfig('targetingControls.allBidsCustomTargeting') !== false;
+    const useAllBidsCustomTargeting = config.getConfig('targetingControls.allBidsCustomTargeting') === true;
 
     const targeting = getWinningBidTargeting(bidsSorted, adUnitCodes)
       .concat(getBidderTargeting(bidsSorted))
