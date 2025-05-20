@@ -1,9 +1,9 @@
 import { deepAccess, deepSetValue, generateUUID, logInfo } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import {Renderer} from '../src/Renderer.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO } from '../src/mediaTypes.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
@@ -145,7 +145,7 @@ function isBidRequestValid(bid) {
  */
 
 function buildRequests(bidRequests, bidderRequest) {
-  const data = converter.toORTB({ bidRequests, bidderRequest })
+  const data = converter.toORTB({bidRequests, bidderRequest})
   return {
     method: 'POST',
     url: REQUEST_URL,
@@ -210,12 +210,12 @@ function interpretResponse(serverResponse) {
  */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (typeof serverResponses === 'object' &&
-    serverResponses != null &&
-    serverResponses.length > 0 &&
-    serverResponses[0].hasOwnProperty('body') &&
-    serverResponses[0].body.hasOwnProperty('ext') &&
-    serverResponses[0].body.ext.hasOwnProperty('cookies') &&
-    typeof serverResponses[0].body.ext.cookies === 'object') {
+  serverResponses != null &&
+  serverResponses.length > 0 &&
+  serverResponses[0].hasOwnProperty('body') &&
+  serverResponses[0].body.hasOwnProperty('ext') &&
+  serverResponses[0].body.ext.hasOwnProperty('cookies') &&
+  typeof serverResponses[0].body.ext.cookies === 'object') {
     return serverResponses[0].body.ext.cookies.slice(0, 5);
   } else {
     return [];
