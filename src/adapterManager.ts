@@ -427,7 +427,7 @@ declare module './events' {
         /**
          * Fired once for each bidder in each auction (or twice for bidders that are configured for both client and s2s).
          */
-        [EVENTS.BID_REQUESTED]: [BidderRequest<any>];
+        [EVENTS.BID_REQUESTED]: [BidderRequest<BidderCode>];
     }
 }
 
@@ -451,7 +451,7 @@ const adapterManager = {
         labels: string[],
         ortb2Fragments: ORTBFragments = {},
         auctionMetrics: Metrics
-    ): BidderRequest<any>[] {
+    ): BidderRequest<BidderCode>[] {
         auctionMetrics = useMetrics(auctionMetrics);
         /**
          * emit and pass adunits for external modification

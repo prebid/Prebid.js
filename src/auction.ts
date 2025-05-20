@@ -97,7 +97,7 @@ declare module './events' {
         /**
          * Fired when an auction times out.
          */
-        [EVENTS.BID_TIMEOUT]: [BidRequest<any>[]];
+        [EVENTS.BID_TIMEOUT]: [BidRequest<BidderCode>[]];
         /**
          * Fired when a bid is received.
          */
@@ -110,7 +110,7 @@ declare module './events' {
          * Fired once for each bid request (unique combination of auction, ad unit and bidder)
          * that produced no bid.
          */
-        [EVENTS.NO_BID]: [BidRequest<any>];
+        [EVENTS.NO_BID]: [BidRequest<BidderCode>];
         /**
          * Fired when a bid is received.
          */
@@ -174,12 +174,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   const requestsDone = defer<void>();
   let _bidsRejected: Partial<Bid>[] = [];
   let _callback = callback;
-  let _bidderRequests: BidderRequest<any>[] = [];
+  let _bidderRequests: BidderRequest<BidderCode>[] = [];
   let _bidsReceived = ttlCollection<Bid>({
     startTime: (bid) => bid.responseTimestamp,
     ttl: (bid) => getMinBidCacheTTL() == null ? null : Math.max(getMinBidCacheTTL(), bid.ttl) * 1000
   });
-  let _noBids: BidRequest<any>[] = [];
+  let _noBids: BidRequest<BidderCode>[] = [];
   let _winningBids: Bid[] = [];
   let _auctionStart: number;
   let _auctionEnd: number;
@@ -941,7 +941,7 @@ export interface DefaultTargeting {
     [TARGETING_KEYS.CACHE_HOST]: string;
 }
 
-type KeyValFn<K extends keyof DefaultTargeting> = (bidResponse: Bid, bidRequest: BidRequest<any>) => DefaultTargeting[K];
+type KeyValFn<K extends keyof DefaultTargeting> = (bidResponse: Bid, bidRequest: BidRequest<BidderCode>) => DefaultTargeting[K];
 type KeyValProp<K extends keyof DefaultTargeting> = {
     [P in keyof Bid]: Bid[P] extends DefaultTargeting[K] ? P : never
 }[keyof Bid];

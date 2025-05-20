@@ -4,6 +4,7 @@ import {logError, logMessage} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import {config} from '../../src/config.js';
 
+
 export const _internal = {
   ajax
 };
@@ -183,7 +184,7 @@ export default function AnalyticsAdapter<PROVIDER extends AnalyticsProvider>({ u
     }
 
     if (sampled) {
-      const trackedEvents = (() => {
+      const trackedEvents: Set<keyof events.Events> = (() => {
         const {includeEvents = DEFAULT_INCLUDE_EVENTS, excludeEvents = []} = (config || {});
         return new Set(
           Object.values(EVENTS)

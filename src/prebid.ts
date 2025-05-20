@@ -513,14 +513,14 @@ function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
  * @returns the bids requests involved in an auction but not bid on
  */
 function getNoBids() {
-    return getBids<BidRequest<any>>('getNoBids');
+    return getBids<BidRequest<BidderCode>>('getNoBids');
 }
 addApiMethod('getNoBids', getNoBids);
 
 /**
  * @returns the bids requests involved in an auction but not bid on or the specified adUnitCode
  */
-function getNoBidsForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<BidRequest<any>> {
+function getNoBidsForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<BidRequest<BidderCode>> {
     const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
     return { bids };
 }

@@ -52,7 +52,7 @@ const TTL_CONFIG = 'eventHistoryTTL';
 let eventTTL = null;
 
 // keep a record of all events fired
-const eventsFired = ttlCollection<EventRecord<any>>({
+const eventsFired = ttlCollection<EventRecord<keyof Events>>({
   monotonic: true,
   ttl: () => eventTTL,
 })
@@ -182,7 +182,7 @@ const _public = (function () {
       /**
        * Return a copy of all events fired
        */
-      getEvents: function (): EventRecord<any>[] {
+      getEvents: function (): EventRecord<keyof Events>[] {
           return eventsFired.toArray().map(val => Object.assign({}, val))
       }
   }
