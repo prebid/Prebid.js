@@ -129,8 +129,9 @@ const publicModules = gulp.parallel(['js', 'd.ts'].map(generatePublicModules));
 const globalTemplate = _.template(`<% if (defineGlobal) {%>
 import type {PrebidJS} from "../../prebidGlobal.ts";
 declare global {
+  let <%= pbGlobal %>: PrebidJS;
   interface Window {
-     <%= pbGlobal %>: PrebidJS;
+    <%= pbGlobal %>: PrebidJS;
   }
 }<% } %>`);
 

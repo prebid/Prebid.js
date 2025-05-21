@@ -42,7 +42,7 @@ You can import just type definitions for the Prebid global from `prebid.js/globa
 
 ```typescript
 import 'prebid.js/global.d.ts'
-window.pbjs.que.push(/* ... */)
+pbjs.que.push(/* ... */)
 ```
 
 Or, if your Prebid bundle uses a different global variable name, just the naked types from 'prebid.js/types.d.ts':
