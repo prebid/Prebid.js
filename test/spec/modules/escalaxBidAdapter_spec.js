@@ -12,7 +12,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 
 const SIMPLE_BID_REQUEST = {
   bidder: 'escalax',

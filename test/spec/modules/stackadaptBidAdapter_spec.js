@@ -915,9 +915,18 @@ describe('stackadaptBidAdapter', function () {
       };
 
       clonedBidRequests[0].ortb2 = {
-        source: {schain: schain}
+        source: {
+          ext: {schain: schain}
+        }
       };
       clonedBidderRequest.bids = clonedBidRequests;
+      
+      // Add schain to bidderRequest as well
+      clonedBidderRequest.ortb2 = {
+        source: {
+          ext: {schain: schain}
+        }
+      };
 
       const ortbRequest = spec.buildRequests(clonedBidRequests, clonedBidderRequest).data;
       expect(ortbRequest.source.ext.schain).to.deep.equal(schain);

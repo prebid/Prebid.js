@@ -10,7 +10,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 
 const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
 const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p'
