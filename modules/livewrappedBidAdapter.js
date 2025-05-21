@@ -1,4 +1,4 @@
-import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject} from '../src/utils.js';
+import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
@@ -143,6 +143,14 @@ export const spec = {
         currency: serverResponse.body.currency,
         meta: ad.meta
       };
+
+      if (ad.meta?.dealId) {
+        bidResponse.dealId = ad.meta?.dealId;
+      }
+
+      if (ad.fwb) {
+        bidResponse.bidderCode = ad.meta?.bidder;
+      }
 
       if (ad.native) {
         bidResponse.native = ad.native;
@@ -325,12 +333,12 @@ function getDeviceIfa() {
 
 function getDeviceWidth() {
   const device = config.getConfig('device') || {};
-  return device.w || window.innerWidth;
+  return device.w || getWinDimensions().innerWidth;
 }
 
 function getDeviceHeight() {
   const device = config.getConfig('device') || {};
-  return device.h || window.innerHeight;
+  return device.h || getWinDimensions().innerHeight;
 }
 
 function getCoppa() {

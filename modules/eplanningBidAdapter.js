@@ -1,10 +1,11 @@
-import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined} from '../src/utils.js';
+import {isEmpty, parseSizesInput, isGptPubadsDefined, getWinDimensions} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -178,7 +179,7 @@ function getUserAgent() {
   return window.navigator.userAgent;
 }
 function getInnerWidth() {
-  return getWindowSelf().innerWidth;
+  return getWinDimensions().innerWidth;
 }
 function isMobileUserAgent() {
   return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
@@ -364,7 +365,7 @@ function waitForElementsPresent(elements) {
             if (index < 0) {
               elements.forEach(code => {
                 let div = _getAdSlotHTMLElement(code);
-                if (div && div.contains(ad) && div.getBoundingClientRect().width > 0) {
+                if (div && div.contains(ad) && getBoundingClientRect(div).width > 0) {
                   index = elements.indexOf(div.id);
                   adView = div;
                 }

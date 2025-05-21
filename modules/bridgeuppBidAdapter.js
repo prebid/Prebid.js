@@ -16,6 +16,9 @@ export const ADAPTER_VERSION = 1.0;
 export const BIDDER_CODE = 'sonarads';
 export const GVLID = 1300;
 export const DEFAULT_CUR = 'USD';
+// export const SERVER_PATH_US1_BID = 'http://localhost:8000/analyze_request/bids';
+// export const SERVER_PATH_US1_EVENTS = 'http://localhost:8000/analyze_request/events';
+// export const SERVER_PATH_US1_SYNC = 'http://localhost:8000/analyze_request/sync';
 export const SERVER_PATH_US1_BID = 'https://prebidjs-bids-us1.sonar-ads.com/analyze_request/bids';
 export const SERVER_PATH_US1_EVENTS = 'https://prebidjs-events-us1.sonar-ads.com/events';
 export const SERVER_PATH_US1_SYNC = 'https://prebidjs-sync-us1.sonar-ads.com/sync';
@@ -114,6 +117,7 @@ function request(buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
   const siteId = context.bidRequests[0]?.params?.siteId;
 
+  deepSetValue(request, 'auctionStart', bidderRequest.auctionStart);
   deepSetValue(request, 'ext.prebid.channel', {
     name: 'pbjs_bridgeupp',
     pbjsversion: '$prebid.version$',

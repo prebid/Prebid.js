@@ -5,35 +5,32 @@
  * @requires module:modules/userId
  */
 
-import {logError, logInfo} from '../src/utils.js';
+import {logError, isPlainObject, getWinDimensions} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {uspDataHandler} from '../src/consentHandler.js';
 import AES from 'crypto-js/aes.js';
 import Utf8 from 'crypto-js/enc-utf8.js';
 import {detectBrowser} from '../libraries/intentIqUtils/detectBrowserUtils.js';
 import {appendVrrefAndFui} from '../libraries/intentIqUtils/getRefferer.js';
-import {getGppValue} from '../libraries/intentIqUtils/getGppValue.js';
+import { getCmpData } from '../libraries/intentIqUtils/getCmpData.js';
+import {readData, storeData, defineStorageType, removeDataByKey} from '../libraries/intentIqUtils/storageUtils.js';
 import {
   FIRST_PARTY_KEY,
   WITH_IIQ, WITHOUT_IIQ,
   NOT_YET_DEFINED,
-  OPT_OUT,
   BLACK_LIST,
   CLIENT_HINTS_KEY,
   EMPTY,
-  VERSION
+  GVLID,
+  VERSION, INVALID_ID, GDPR_ENDPOINT, VR_ENDPOINT, SYNC_ENDPOINT, SCREEN_PARAMS, GDPR_SYNC_ENDPOINT, SYNC_REFRESH_MILL
 } from '../libraries/intentIqConstants/intentIqConstants.js';
+import {SYNC_KEY} from '../libraries/intentIqUtils/getSyncKey.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
  */
-
-const PCID_EXPIRY = 365;
 
 const MODULE_NAME = 'intentIqId';
 
@@ -48,10 +45,8 @@ const encoderCH = {
   wow64: 7,
   fullVersionList: 8
 };
-const INVALID_ID = 'INVALID_ID';
-const SUPPORTED_TYPES = ['html5', 'cookie']
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export let firstPartyData;
 
 /**
  * Generate standard UUID string
@@ -86,63 +81,86 @@ export function decryptData(encryptedText) {
   return bytes.toString(Utf8);
 }
 
-/**
- * Read Intent IQ data from local storage or cookie
- * @param key
- * @return {string}
- */
-export function readData(key, allowedStorage) {
-  try {
-    if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-      return storage.getDataFromLocalStorage(key);
-    }
-    if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-      return storage.getCookie(key);
-    }
-  } catch (error) {
-    logError(error);
+function collectDeviceInfo() {
+  return {
+    windowInnerHeight: getWinDimensions().innerHeight,
+    windowInnerWidth: getWinDimensions().innerWidth,
+    devicePixelRatio: window.devicePixelRatio,
+    windowScreenHeight: window.screen.height,
+    windowScreenWidth: window.screen.width,
+    language: navigator.language
   }
 }
 
-/**
- * Store Intent IQ data in cookie, local storage or both of them
- * expiration date: 365 days
- * @param key
- * @param {string} value IntentIQ ID value to sintentIqIdSystem_spec.jstore
- */
-export function storeData(key, value, allowedStorage) {
-  try {
-    logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
-    if (value) {
-      if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-        storage.setDataInLocalStorage(key, value);
-      }
-      if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-        const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
-        storage.setCookie(key, value, expiresStr, 'LAX');
-      }
-    }
-  } catch (error) {
-    logError(error);
-  }
+function addUniquenessToUrl(url) {
+  url += '&tsrnd=' + Math.floor(Math.random() * 1000) + '_' + new Date().getTime();
+  return url;
 }
 
-/**
- * Remove Intent IQ data from cookie or local storage
- * @param key
- */
+function appendDeviceInfoToUrl(url, deviceInfo) {
+  const screenParamsString = Object.entries(SCREEN_PARAMS)
+    .map(([index, param]) => {
+      const value = (deviceInfo)[param];
+      return `${index}:${value}`;
+    })
+    .join(',');
 
-export function removeDataByKey(key, allowedStorage) {
-  try {
-    if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
-      storage.removeDataFromLocalStorage(key);
+  url += `&cz=${encodeURIComponent(screenParamsString)}`;
+  url += `&dw=${deviceInfo.windowScreenWidth}&dh=${deviceInfo.windowScreenHeight}&dpr=${deviceInfo.devicePixelRatio}&lan=${deviceInfo.language}`;
+  return url;
+}
+
+function appendFirstPartyData (url, firstPartyData, partnerData) {
+  url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
+  url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
+  url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
+  return url
+}
+
+function appendCMPData (url, cmpData) {
+  url += cmpData.uspString ? '&us_privacy=' + encodeURIComponent(cmpData.uspString) : '';
+  url += cmpData.gppString ? '&gpp=' + encodeURIComponent(cmpData.gppString) : '';
+  url += cmpData.gdprApplies
+    ? '&gdpr_consent=' + encodeURIComponent(cmpData.gdprString) + '&gdpr=1'
+    : '&gdpr=0';
+  return url
+}
+
+export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
+  const deviceInfo = collectDeviceInfo()
+
+  let url = cmpData.gdprString ? GDPR_SYNC_ENDPOINT : SYNC_ENDPOINT;
+  url += '/profiles_engine/ProfilesEngineServlet?at=20&mi=10&secure=1'
+  url += '&dpi=' + configParams.partner;
+  url = appendFirstPartyData(url, firstPartyData, partnerData);
+  url = addUniquenessToUrl(url);
+  url += partnerData?.clientType ? '&idtype=' + partnerData.clientType : '';
+  if (deviceInfo) url = appendDeviceInfoToUrl(url, deviceInfo)
+  url += VERSION ? '&jsver=' + VERSION : '';
+  if (clientHints) url += '&uh=' + encodeURIComponent(clientHints);
+  url = appendVrrefAndFui(url, configParams.domainName);
+  url = appendCMPData(url, cmpData)
+  return url;
+}
+
+function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) {
+  const lastSyncDate = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
+  const lastSyncElapsedTime = Date.now() - lastSyncDate
+
+  if (firstPartyData.isOptedOut) {
+    const needToDoSync = (Date.now() - (firstPartyData?.date || firstPartyData?.sCal || Date.now())) > SYNC_REFRESH_MILL
+    if (newUser || needToDoSync) {
+      ajax(url, () => {
+      }, undefined, {method: 'GET', withCredentials: true});
+      if (firstPartyData?.date) {
+        firstPartyData.date = Date.now()
+        storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      }
     }
-    if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-      const expiredDate = new Date(0).toUTCString();
-      storage.setCookie(key, '', expiredDate, 'LAX');
-    }
-  } catch (error) {
-    logError(error);
+  } else if (!lastSyncDate || lastSyncElapsedTime > SYNC_REFRESH_MILL) {
+    storeData(SYNC_KEY(partner), Date.now() + '', allowedStorage);
+    ajax(url, () => {
+    }, undefined, {method: 'GET', withCredentials: true});
   }
 }
 
@@ -156,6 +174,23 @@ function tryParse(data) {
   } catch (err) {
     logError(err);
     return null;
+  }
+}
+
+/**
+ * Configures and updates A/B testing group in Google Ad Manager (GAM).
+ *
+ * @param {object} gamObjectReference - Reference to the GAM object, expected to have a `cmd` queue and `pubads()` API.
+ * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
+ * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
+ */
+export function setGamReporting(gamObjectReference, gamParameterName, userGroup) {
+  if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
+    gamObjectReference.cmd.push(() => {
+      gamObjectReference
+        .pubads()
+        .setTargeting(gamParameterName, userGroup || NOT_YET_DEFINED);
+    });
   }
 }
 
@@ -185,10 +220,10 @@ export function handleClientHints(clientHints) {
   return Object.keys(chParams).length ? JSON.stringify(chParams) : '';
 }
 
-function defineStorageType(params) {
-  if (!params || !Array.isArray(params)) return ['html5']; // use locale storage be default
-  const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
-  return filteredArr.length ? filteredArr : ['html5'];
+export function isCMPStringTheSame(fpData, cmpData) {
+  const firstPartyDataCPString = `${fpData.gdprString}${fpData.gppString}${fpData.uspString}`;
+  const cmpDataString = `${cmpData.gdprString}${cmpData.gppString}${cmpData.uspString}`;
+  return firstPartyDataCPString === cmpDataString;
 }
 
 /** @type {Submodule} */
@@ -198,6 +233,7 @@ export const intentIqIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: GVLID,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -207,6 +243,7 @@ export const intentIqIdSubmodule = {
   decode(value) {
     return value && value != '' && INVALID_ID != value ? {'intentIqId': value} : undefined;
   },
+
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
@@ -219,10 +256,20 @@ export const intentIqIdSubmodule = {
     let callbackFired = false;
     let runtimeEids = { eids: [] };
 
+    let gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
+    let gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
+
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
 
-    let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
+    let rrttStrtTime = 0;
+    let partnerData = {};
+    let shouldCallServer = false;
+    const FIRST_PARTY_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
+    const cmpData = getCmpData();
+    const gdprDetected = cmpData.gdprString;
+    firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
     const isGroupB = firstPartyData?.group === WITHOUT_IIQ;
+    setGamReporting(gamObjectReference, gamParameterName, firstPartyData?.group)
 
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
@@ -244,39 +291,38 @@ export const intentIqIdSubmodule = {
       return;
     }
 
-    const FIRST_PARTY_DATA_KEY = `_iiq_fdata_${configParams.partner}`;
-
-    let rrttStrtTime = 0;
-    let partnerData = {};
-    let shouldCallServer = false
-
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
+    let newUser = false;
 
-    // Check if current browser is in blacklist
-    if (browserBlackList?.includes(currentBrowserLowerCase)) {
-      logError('User ID - intentIqId submodule: browser is in blacklist!');
-      if (configParams.callback) configParams.callback('', BLACK_LIST);
-      return;
+    if (!firstPartyData?.pcid) {
+      const firstPartyId = generateGUID();
+      firstPartyData = {
+        pcid: firstPartyId,
+        pcidDate: Date.now(),
+        group: NOT_YET_DEFINED,
+        cttl: 0,
+        uspString: EMPTY,
+        gppString: EMPTY,
+        gdprString: EMPTY,
+        date: Date.now()
+      };
+      newUser = true;
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+    } else if (!firstPartyData.pcidDate) {
+      firstPartyData.pcidDate = Date.now();
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
     }
 
-    // Get consent information
-    const cmpData = {};
-    const uspData = uspDataHandler.getConsentData();
-    const gppData = getGppValue();
-
-    if (uspData) {
-      cmpData.us_privacy = uspData;
+    if (gdprDetected && !('isOptedOut' in firstPartyData)) {
+      firstPartyData.isOptedOut = true;
     }
-
-    cmpData.gpp = gppData.gppString;
-    cmpData.gpi = gppData.gpi;
 
     // Read client hints from storage
     let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
 
     // Get client hints and save to storage
-    if (navigator.userAgentData) {
+    if (navigator?.userAgentData?.getHighEntropyValues) {
       navigator.userAgentData
         .getHighEntropyValues([
           'brands',
@@ -291,25 +337,8 @@ export const intentIqIdSubmodule = {
         ])
         .then(ch => {
           clientHints = handleClientHints(ch);
-          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage)
+          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage, firstPartyData)
         });
-    }
-
-    if (!firstPartyData?.pcid) {
-      const firstPartyId = generateGUID();
-      firstPartyData = {
-        pcid: firstPartyId,
-        pcidDate: Date.now(),
-        group: NOT_YET_DEFINED,
-        cttl: 0,
-        uspapi_value: EMPTY,
-        gpp_value: EMPTY,
-        date: Date.now()
-      };
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-    } else if (!firstPartyData.pcidDate) {
-      firstPartyData.pcidDate = Date.now();
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
     }
 
     const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY, allowedStorage))
@@ -318,7 +347,7 @@ export const intentIqIdSubmodule = {
 
       if (partnerData.wsrvcll) {
         partnerData.wsrvcll = false;
-        storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+        storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       }
     }
 
@@ -329,22 +358,29 @@ export const intentIqIdSubmodule = {
       }
     }
 
-    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_string_value !== cmpData.gpp) {
-      firstPartyData.uspapi_value = cmpData.us_privacy;
-      firstPartyData.gpp_string_value = cmpData.gpp;
-      firstPartyData.isOptedOut = false
-      firstPartyData.cttl = 0
+    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || !isCMPStringTheSame(firstPartyData, cmpData)) {
+      firstPartyData.uspString = cmpData.uspString;
+      firstPartyData.gppString = cmpData.gppString;
+      firstPartyData.gdprString = cmpData.gdprString;
       shouldCallServer = true;
-      partnerData.data = {}
-      partnerData.eidl = -1
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
     } else if (firstPartyData.isOptedOut) {
+      partnerData.data = runtimeEids = { eids: [] };
       firePartnerCallback()
     }
 
     if (firstPartyData.group === WITHOUT_IIQ || (firstPartyData.group !== WITHOUT_IIQ && runtimeEids?.eids?.length)) {
       firePartnerCallback()
+    }
+
+    // Check if current browser is in blacklist
+    if (browserBlackList?.includes(currentBrowserLowerCase)) {
+      logError('User ID - intentIqId submodule: browser is in blacklist! Data will be not provided.');
+      if (configParams.callback) configParams.callback('', BLACK_LIST);
+      const url = createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData)
+      sendSyncRequest(allowedStorage, url, configParams.partner, firstPartyData, newUser)
+      return
     }
 
     if (!shouldCallServer) {
@@ -354,17 +390,13 @@ export const intentIqIdSubmodule = {
     }
 
     // use protocol relative urls for http or https
-    let url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
+    let url = `${gdprDetected ? GDPR_ENDPOINT : VR_ENDPOINT}/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=${configParams.partner}&pt=17&dpn=1`;
     url += configParams.pcid ? '&pcid=' + encodeURIComponent(configParams.pcid) : '';
     url += configParams.pai ? '&pai=' + encodeURIComponent(configParams.pai) : '';
-    url += firstPartyData.pcid ? '&iiqidtype=2&iiqpcid=' + encodeURIComponent(firstPartyData.pcid) : '';
-    url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
+    url = appendFirstPartyData(url, firstPartyData, partnerData);
     url += (partnerData.cttl) ? '&cttl=' + encodeURIComponent(partnerData.cttl) : '';
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
-    url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
-    url += cmpData.us_privacy ? '&pa=' + encodeURIComponent(cmpData.us_privacy) : '';
-    url += cmpData.gpp ? '&gpp=' + encodeURIComponent(cmpData.gpp) : '';
-    url += cmpData.gpi ? '&gpi=' + cmpData.gpi : '';
+    url = appendCMPData(url, cmpData)
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
     url += VERSION ? '&jsver=' + VERSION : '';
     url += firstPartyData?.group ? '&testGroup=' + encodeURIComponent(firstPartyData.group) : '';
@@ -374,8 +406,8 @@ export const intentIqIdSubmodule = {
 
     const storeFirstPartyData = () => {
       partnerData.eidl = runtimeEids?.eids?.length || -1
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
     }
 
     const resp = function (callback) {
@@ -401,11 +433,13 @@ export const intentIqIdSubmodule = {
               partnerData.terminationCause = respJson.tc;
               if (respJson.tc == 41) {
                 firstPartyData.group = WITHOUT_IIQ;
-                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
                 defineEmptyDataAndFireCallback();
+                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
                 return
               } else {
                 firstPartyData.group = WITH_IIQ;
+                if (gamObjectReference) setGamReporting(gamObjectReference, gamParameterName, firstPartyData.group);
               }
             }
             if ('isOptedOut' in respJson) {
@@ -413,9 +447,18 @@ export const intentIqIdSubmodule = {
                 firstPartyData.isOptedOut = respJson.isOptedOut;
               }
               if (respJson.isOptedOut === true) {
-                firstPartyData.group = OPT_OUT;
-                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-                defineEmptyDataAndFireCallback()
+                respJson.data = partnerData.data = runtimeEids = { eids: [] };
+
+                const keysToRemove = [
+                  FIRST_PARTY_DATA_KEY,
+                  CLIENT_HINTS_KEY
+                ];
+
+                keysToRemove.forEach(key => removeDataByKey(key, allowedStorage));
+
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage, firstPartyData);
+                firePartnerCallback();
+                callback(runtimeEids);
                 return
               }
             }
@@ -440,7 +483,7 @@ export const intentIqIdSubmodule = {
             }
 
             if ('ct' in respJson) {
-              partnerData.ct = respJson.ct;
+              partnerData.clientType = respJson.ct;
             }
 
             if ('sid' in respJson) {
@@ -475,7 +518,7 @@ export const intentIqIdSubmodule = {
       rrttStrtTime = Date.now();
 
       partnerData.wsrvcll = true;
-      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage, firstPartyData);
       ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
     const respObj = {callback: resp};

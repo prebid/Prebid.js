@@ -17,7 +17,7 @@ export function makePbsInterceptor({createBid}) {
     function addBid(bid, bidRequest) {
       onBid({
         adUnit: bidRequest.adUnitCode,
-        bid: Object.assign(createBid(STATUS.GOOD, bidRequest), bid)
+        bid: Object.assign(createBid(STATUS.GOOD, bidRequest), {requestBidder: bidRequest.bidder}, bid)
       })
     }
     bidRequests = bidRequests

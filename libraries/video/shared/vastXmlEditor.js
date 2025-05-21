@@ -1,6 +1,6 @@
-import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
-export const XML_MIME_TYPE = 'application/xml';
+import XMLUtil from '../../xmlUtils/xmlUtils.js';
+import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
 export function VastXmlEditor(xmlUtil_) {
   const xmlUtil = xmlUtil_;
@@ -74,40 +74,6 @@ export function VastXmlEditor(xmlUtil_) {
     const doc = copy ? child.cloneNode(true) : child;
     node.appendChild(doc.documentElement);
   }
-}
-
-function XMLUtil() {
-  let parser;
-  let serializer;
-
-  function getParser() {
-    if (!parser) {
-      // DOMParser instantiation is costly; instantiate only once throughout Prebid lifecycle.
-      parser = new DOMParser();
-    }
-    return parser;
-  }
-
-  function getSerializer() {
-    if (!serializer) {
-      // XMLSerializer instantiation is costly; instantiate only once throughout Prebid lifecycle.
-      serializer = new XMLSerializer();
-    }
-    return serializer;
-  }
-
-  function parse(xmlString) {
-    return getParser().parseFromString(xmlString, XML_MIME_TYPE);
-  }
-
-  function serialize(xmlDoc) {
-    return getSerializer().serializeToString(xmlDoc);
-  }
-
-  return {
-    parse,
-    serialize
-  };
 }
 
 export function vastXmlEditorFactory() {
