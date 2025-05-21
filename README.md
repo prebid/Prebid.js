@@ -38,14 +38,15 @@ pbjs.requestBids({
 })
 ```
 
-You can import just type definitions for the Prebid global from `prebid.js/global.d.ts`:
+You can import just type definitions for every module from `types.d.ts`, and for the `pbjs` global from `global.d.ts`:
 
 ```typescript
-import 'prebid.js/global.d.ts'
+import 'prebid.js/types.d.ts';
+import 'prebid.js/global.d.ts';
 pbjs.que.push(/* ... */)
 ```
 
-Or, if your Prebid bundle uses a different global variable name, just the naked types from 'prebid.js/types.d.ts':
+Or, if your Prebid bundle uses a different global variable name:
 
 ```typescript
 import type {PrebidJS} from 'prebid.js/types.d.ts';
@@ -55,7 +56,6 @@ declare global {
     }
 }
 ```
-
 
 <a name="Install"></a>
 
