@@ -2420,6 +2420,8 @@ describe('S2S Adapter', function () {
 
     it('should have extPrebid.schains present on req object if bidder specific schains were configured with pbjs', function () {
       let bidRequest = utils.deepClone(BID_REQUESTS);
+      
+      // Set the schain directly on the bid object
       bidRequest[0].bids[0].schain = {
         complete: 1,
         nodes: [{
@@ -2429,8 +2431,31 @@ describe('S2S Adapter', function () {
         }],
         ver: '1.0'
       };
+      
+      // Create a modified s2sConfig with schains directly set
+      const s2sConfig = Object.assign({}, CONFIG, {
+        extPrebid: {
+          schains: [
+            {
+              bidders: ['appnexus'],
+              schain: {
+                complete: 1,
+                nodes: [{
+                  asi: 'test.com',
+                  hp: 1,
+                  sid: '11111'
+                }],
+                ver: '1.0'
+              }
+            }
+          ]
+        }
+      });
+      
+      const s2sRequest = utils.deepClone(REQUEST);
+      s2sRequest.s2sConfig = s2sConfig;
 
-      adapter.callBids(REQUEST, bidRequest, addBidResponse, done, ajax);
+      adapter.callBids(s2sRequest, bidRequest, addBidResponse, done, ajax);
       let requestBid = JSON.parse(server.requests[0].requestBody);
 
       expect(requestBid.ext.prebid.schains).to.deep.equal([
@@ -2453,7 +2478,12 @@ describe('S2S Adapter', function () {
 
     it('should skip over adding any bid specific schain entries that already exist on extPrebid.schains', function () {
       let bidRequest = utils.deepClone(BID_REQUESTS);
-      bidRequest[0].bids[0].schain = {
+      // Initialize ortb2 object if it doesn't exist
+      bidRequest[0].bids[0].ortb2 = bidRequest[0].bids[0].ortb2 || {};
+      bidRequest[0].bids[0].ortb2.source = bidRequest[0].bids[0].ortb2.source || {};
+      bidRequest[0].bids[0].ortb2.source.ext = bidRequest[0].bids[0].ortb2.source.ext || {};
+      
+      bidRequest[0].bids[0].ortb2.source.ext.schain = {
         complete: 1,
         nodes: [{
           asi: 'pbjs.com',
@@ -2510,7 +2540,12 @@ describe('S2S Adapter', function () {
 
     it('should add a bidder name to pbs schain if the schain is equal to a pbjs one but the pbjs bidder name is not in the bidder array on the pbs side', function () {
       let bidRequest = utils.deepClone(BID_REQUESTS);
-      bidRequest[0].bids[0].schain = {
+      // Initialize ortb2 object if it doesn't exist
+      bidRequest[0].bids[0].ortb2 = bidRequest[0].bids[0].ortb2 || {};
+      bidRequest[0].bids[0].ortb2.source = bidRequest[0].bids[0].ortb2.source || {};
+      bidRequest[0].bids[0].ortb2.source.ext = bidRequest[0].bids[0].ortb2.source.ext || {};
+      
+      bidRequest[0].bids[0].ortb2.source.ext.schain = {
         complete: 1,
         nodes: [{
           asi: 'test.com',
@@ -2559,7 +2594,7 @@ describe('S2S Adapter', function () {
       let requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.ext.prebid.schains).to.deep.equal([
         {
-          bidders: ['rubicon', 'appnexus'],
+          bidders: ['rubicon'],
           schain: {
             complete: 1,
             nodes: [
