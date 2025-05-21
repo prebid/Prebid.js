@@ -10,7 +10,7 @@ import 'modules/userId/index.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
-import 'modules/schain.js';
+
 import {hook} from '../../../src/hook';
 
 describe('The Criteo bidding adapter', function () {
@@ -1219,14 +1219,18 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.regs.ext.dsa).to.deep.equal(dsa);
     });
 
-    it('should properly build a request with schain object', async function () {
+    it('should properly build a request with schain object', function () {
       const expectedSchain = {
         someProperty: 'someValue'
       };
       const bidRequests = [
         {
           bidder: 'criteo',
-          ortb2: {source: {schain: expectedSchain}},
+          ortb2: {
+            source: {
+              ext: {schain: expectedSchain}
+            }
+          },
           adUnitCode: 'bid-123',
           mediaTypes: {
             banner: {
@@ -1238,9 +1242,19 @@ describe('The Criteo bidding adapter', function () {
           },
         },
       ];
+      
+      // Create a modified bidderRequest with schain
+      const modifiedBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          source: {
+            ext: {schain: expectedSchain}
+          }
+        }
+      };
 
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
-      expect(ortbRequest.source.ext.schain).to.equal(expectedSchain);
+      const ortbRequest = spec.buildRequests(bidRequests, modifiedBidderRequest).data;
+      expect(ortbRequest.source.ext.schain).to.deep.equal(expectedSchain);
     });
 
     it('should properly build a request with bcat field', async function () {
