@@ -12,7 +12,6 @@ import {
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
-import 'modules/schain.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
@@ -4673,7 +4672,7 @@ describe('the rubicon adapter', function () {
     it('should copy the schain JSON to to bid.source.ext.schain', () => {
       const bidderRequest = createVideoBidderRequest();
       const schain = getSupplyChainConfig();
-      bidderRequest.bids[0].ortb2.source.schain = schain;
+      bidderRequest.bids[0].ortb2.source.ext = { schain: schain };
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(request[0].data.source.ext.schain).to.deep.equal(schain);
     });
