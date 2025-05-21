@@ -7,7 +7,7 @@
     ".": "./dist/src/src/prebid.public.js",
     "./prebid.js": "./dist/src/src/prebid.public.js",
     "./prebid": "./dist/src/src/prebid.public.js",
-    "./prebid.d.ts": "./dist/src/src/types/summary/all.d.ts",
+    "./types.d.ts": "./dist/src/src/types/summary/types.d.ts",
     "./.babelrc.js": "./.babelrc.js",
     "./babelConfig.js": "./babelConfig.js",
     "./modules/*.js": "./dist/src/public/*.js",

@@ -4,4 +4,4 @@
 import './types/summary/core.d.ts';
 
 export {default} from './prebid.ts';
-export type * from './types/summary/objects.d.ts';
+export type * from './types/summary/exports.d.ts';
