@@ -124,7 +124,6 @@ function interpretResponse(serverResponse) {
   return responses;
 }
 
-
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
