@@ -1967,21 +1967,55 @@ describe('adapterManager tests', function () {
               {
                 enabled: true,
                 adapter: 'mockS2SDefault',
-                bidders: ['mockBidder1']
+                bidders: ['mockBidder1', 'mockBidder2', 'mockBidder3']
               },
               {
                 enabled: true,
                 adapter: 'mockS2S1',
-                configName: 'mock1',
+                name: 'mock1',
+                bidders: ['mockBidder1', 'mockBidder2']
               },
               {
                 enabled: true,
                 adapter: 'mockS2S2',
+                // for backwards compatibility, allow "configName" instead of the more sensible "name"
                 configName: 'mock2',
+                bidders: ['mockBidder1']
               }
             ]
           });
         });
+
+        it('should allow routing to specific s2s instances using s2sConfigName', () => {
+          adUnits = [
+            {
+              code: 'one', bids: [
+                {bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2']},
+                {bidder: 'mockBidder2', s2sConfigName: 'mock1'},
+                {bidder: 'mockBidder3'}
+              ]
+            },
+          ];
+          dep.isAllowed.returns(true);
+          const requests = makeBidRequests();
+          const pbsAdUnits = requests.reduce((acc, request) => {
+            if (acc[request.uniquePbsTid] == null) {
+              acc[request.uniquePbsTid] = request.adUnitsS2SCopy;
+            } else {
+              expect(acc[request.uniquePbsTid]).to.eql(request.adUnitsS2SCopy);
+            }
+            return acc;
+          }, {});
+          expect(
+            Object.values(pbsAdUnits)
+              .map(adUnits => adUnits.flatMap(au => au.bids).map(bid => bid.bidder))
+          ).to.deep.include.members([
+            ['mockBidder3'], // default (unnamed) config - picks up only bidder3 as the rest routes differently
+            ['mockBidder1', 'mockBidder2'], // mock1 config
+            ['mockBidder1'], // mock2 config
+          ])
+        });
+
         it('should keep stored impressions, even if everything else is denied', () => {
           adUnits = [
             {code: 'one', bids: [{bidder: null}]},
@@ -2903,6 +2937,35 @@ describe('adapterManager tests', function () {
         const s2sConfig = {};
         expect(filterBids(['A', 'C', 'D'].map((code) => ({bidder: code})), s2sConfig)).to.eql([{bidder: 'A'}]);
         sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
+      })
+
+      describe('when bids specify s2sConfigName', () => {
+        let bids;
+        beforeEach(() => {
+          getS2SBidders.returns(new Set(['A', 'B', 'C']));
+          bids = [
+            {
+              bidder: 'A',
+              s2sConfigName: 'server1'
+            },
+            {
+              bidder: 'B',
+              s2sConfigName: ['server1', 'server2']
+            },
+            {
+              bidder: 'C'
+            }
+          ]
+        })
+        Object.entries({
+          server1: ['A', 'B', 'C'],
+          server2: ['B', 'C'],
+          server3: ['C']
+        }).forEach(([configName, expectedBidders]) => {
+          it(`should remove bidders that specify a different s2sConfig name (${configName} => ${expectedBidders.join(',')})`, () => {
+            expect(filterBids(bids, {name: configName}).map(bid => bid.bidder)).to.eql(expectedBidders);
+          });
+        })
       })
     });
   });

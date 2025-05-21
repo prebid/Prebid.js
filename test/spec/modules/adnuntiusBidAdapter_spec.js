@@ -1,8 +1,8 @@
 // import or require modules necessary for the test, e.g.:
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
-import { misc, spec } from 'modules/adnuntiusBidAdapter.js';
+import { spec } from 'modules/adnuntiusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import {config, newConfig} from 'src/config.js';
+import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
@@ -52,12 +52,13 @@ describe('adnuntiusBidAdapter', function () {
   const winDimensions = getWinDimensions();
   const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
   const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&screen=${screen}&viewport=${viewport}`;
+  const prebidVersion = window.$$PREBID_GLOBAL$$.version;
+  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
-  const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+  const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
   const adapter = newBidder(spec);
 
   const bidderRequests = [
@@ -1252,18 +1253,36 @@ describe('adnuntiusBidAdapter', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
       });
+
       const req = [
         {
           bidId: 'adn-000000000008b6bc',
           bidder: 'adnuntius',
           params: {
             auId: '000000000008b6bc',
-            network: 'adnuntius',
-            userId: 'different_user_id'
+            network: 'adnuntius'
           }
         }
-      ]
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
+      ];
+      let request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=${usi}`);
+
+      const ortb2 = {user: {ext: {eids: [{source: 'a', uids: [{id: '123', atype: 1}]}, {source: 'b', uids: [{id: '456', atype: 3, ext: {some: '1'}}]}]}}};
+      request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req, ortb2: ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=${usi}&eids=%5B%7B%22source%22%3A%22a%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22123%22%2C%22atype%22%3A1%7D%5D%7D%2C%7B%22source%22%3A%22b%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22456%22%2C%22atype%22%3A3%2C%22ext%22%3A%7B%22some%22%3A%221%22%7D%7D%5D%7D%5D`);
+
+      ortb2.user.id = "ortb2userid"
+      request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req, ortb2: ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=ortb2userid`);
+
+      req[0].params.userId = 'different_user_id';
+      request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=different_user_id`);
