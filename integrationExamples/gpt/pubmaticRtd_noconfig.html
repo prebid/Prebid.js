@@ -1,0 +1,278 @@
+
+<!--
+
+  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
+  Prebid with the Google Publisher Tag.
+
+  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
+  bids array inside the adUnits, and it will use your adapter to load an ad.
+
+  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
+  set an alias in your /etc/hosts file so that you can load this page from a different domain.
+
+-->
+
+<html>
+
+<head>
+  <script>
+    var PREBID_TIMEOUT = 3000;
+
+    var adUnits = [
+      {
+        code: 'div2',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90]]
+          }
+        },
+        bids: [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '  164392  ',
+              adSlot: ' /43743431/DMDemo@728x90:0',
+              pmzoneid: 'zone1',
+              yob: '  1982  ',
+              kadpageurl: 'www.yahoo.com?secure=1&pubmatic_bannerbid=15',
+              gender: '   M   ',
+              //kadfloor:'  1.75   '		
+            }
+          },
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            }
+          }
+        ]
+      },
+      {
+        code: 'div3',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90]]
+          }
+        },
+        bids: [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '  164392  ',
+              adSlot: ' /43743431/DMDemo1@728x90:0',
+              pmzoneid: 'zone1',
+              yob: '  1982  ',
+              kadpageurl: 'www.yahoo.com?secure=1&pubmatic_bannerbid=15',
+              gender: '   M   ',
+              //kadfloor:'  1.75   '		
+            }
+          },
+          {
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            }
+          }
+        ]
+      }
+    ];
+
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+  </script>
+
+<script async src="../../build/dev/prebid.js"></script>
+<script>
+    var profId = '';
+        (function () {
+            var purl = window.location.href;
+            var url = '//ads.pubmatic.com/AdServer/js/pwt/164392';
+            var profileVersionId = '';
+            if (purl.indexOf('profileid=') > 0) {
+                var regexp = /profileid=(.*?)(&|$)/g;
+                var matches = regexp.exec(purl);
+                if (matches.length >= 2 && matches[1].length > 0) {
+                    profId = matches[1];
+                }
+            }
+        })();
+        console.log(' profId: ' + profId);
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function () {
+      pbjs.enableAnalytics({
+        provider: 'pubmatic',
+        options: {
+          publisherId: 164392,
+          profileId: 3596,
+          profileVersionId: 1
+        }
+      });
+
+      // pbjs.bidderSettings = {
+      //   standard: {
+      //     bidCpmAdjustment: function (bidCpm, bid) {
+      //       // adjust the bid in real time before the auction takes place
+      //       console.log('Bidder is: ' + bid.bidderCode);
+      //       return bidCpm * .90;
+      //     }
+      //   }
+      // };
+
+      pbjs.setConfig({
+        device: {
+          ip: "10.172.141.12"
+        },
+        firstPartyData: {
+          uaHints: ['architecture', 'bitness', 'browsers', 'mobile', 'model', 'source']
+        },
+
+        debug: true,
+        ortb2: {
+          device: {
+            ip: "10.172.141.12",
+            geo: {
+              lat: 40.712775,
+              lon: -74.005973,
+            }
+          }
+        },
+        userSync: {
+          topics: {
+            maxTopicCaller: 4,
+            bidders: [{
+              bidder: 'pubmatic',
+              iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+            }]
+          },
+          filterSettings: { iframe: { bidders: '*', filter: 'include' } },
+          enabledBidders: ['pubmatic'],
+          syncDelay: 3000,
+        },
+        realTimeData: {
+          auctionDelay: 2700,
+          dataProviders: [
+            {
+              name: 'pubmatic',
+              waitForIt: true,
+              params: {
+                publisherId: '164392',
+                profileId: profId,
+              }
+            }
+          ]
+        },
+        floors: {
+                    enforcement: {
+                        floorDeals: true, //default to false
+                        bidAdjustment: true,
+                        enforceJS: true
+                    },
+                    data: {     // default if endpoint doesn't return in time
+                        currency: 'USD',
+                        skipRate: 0,
+                        modelVersion: 'some setconfig model version',
+                        schema: {
+                            fields: ['mediaType', 'size']
+                        },
+                        values: {
+                            'banner|*': 35,
+                            'video|640x480': 35
+                        }
+                    }
+                },
+
+      });
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest
+      });
+
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+    }, PREBID_TIMEOUT);
+
+
+
+
+  </script>
+
+  <script>
+    (function () {
+      var gads = document.createElement('script');
+      gads.async = true;
+      gads.type = 'text/javascript';
+      var useSSL = 'https:' == document.location.protocol;
+      gads.src = (useSSL ? 'https:' : 'http:') +
+        '//www.googletagservices.com/tag/js/gpt.js';
+      var node = document.getElementsByTagName('script')[0];
+      node.parentNode.insertBefore(gads, node);
+    })();
+
+
+
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/43743431/DMDemo', [[728, 90]], 'div2').addService(googletag.pubads());
+      googletag.defineSlot('/43743431/DMDemo1', [[728, 90]], 'div3').addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+
+
+
+  </script>
+</head>
+
+<body>
+  <h2>Prebid.js Test</h2>
+  <h5>Div-2</h5>
+  <div id='div2'>
+    <script type='text/javascript'>
+      googletag.cmd.push(function () {
+        googletag.display('div2');
+      });
+
+
+
+    </script>
+  </div>
+
+  <h5>Div-3</h5>
+  <div id='div3'>
+    <script type='text/javascript'>
+      googletag.cmd.push(function () {
+        googletag.display('div3');
+      });
+
+
+
+    </script>
+  </div>
+
+
+
+</body>
+
+</html>

@@ -1,0 +1,387 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link href="/favicon.png" rel="icon" type="image/png">
+    <script defer src="//www.googletagservices.com/tag/js/gpt.js"></script>
+    <!-- use recent version of videojs to ensure proper functioning with the iOS devices -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/6.4.0/video-js.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/6.4.0/video.js" type="text/javascript"></script>
+    <!-- videojs-vast-vpaid -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs.vast.vpaid.min.css"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="utf-8">
+    <style>
+        body {
+            color: #555;
+            font-family: sans-serif;
+        }
+    </style>
+
+    <script>
+        var profId = '';
+        (function () {
+            var purl = window.location.href;
+            var url = '//ads.pubmatic.com/AdServer/js/pwt/164392';
+            var profileVersionId = '';
+            if (purl.indexOf('profileid=') > 0) {
+                var regexp = /profileid=(.*?)(&|$)/g;
+                var matches = regexp.exec(purl);
+                if (matches.length >= 2 && matches[1].length > 0) {
+                    profId = matches[1];
+                }
+            }
+        })();
+        console.log(' profId: ' + profId);
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        var PREBID_TIMEOUT = 3000;
+
+        var date = new Date().getTime();
+        var adUnits = [{
+            code: 'div-banner',
+            mediaTypes: {
+                banner: {
+                    sizes: [
+                        [728, 90]
+                    ]
+                }
+            },
+            bids: [{
+                bidder: 'pubmatic',
+                params: {
+                    publisherId: '  164392  ',
+                    adSlot: '/43743431/DMDemo@728x90:0',
+                    pmzoneid: 'zone1',
+
+                    yob: '  1982  ',
+                    kadpageurl: 'http://www.microsoft.com/key1=1&key2=2&secure=1',
+                    gender: '   M   ',
+                    //kadfloor: '  1.75   '
+                }
+            },{
+                        bidder: 'appnexus',
+                        params: {
+                            publisherId: '  164392  ',
+                            adSlot: '       /43743431/DMDemo@728x90:0',
+                            pmzoneid: 'zone1',
+                            yob: '  1982  ',
+                            kadpageurl: 'www.yahoo.com?secure=1',
+                            gender: '   M   ',
+                            kadfloor: '  1.75   ',
+                            placementId: 13144370
+                        }
+                    }
+            ]
+        },
+        {
+            code: 'div-instream',
+            mediaTypes: {
+                video: {
+                    context: 'instream',
+                    playerSize: [640, 480],
+                    mimes: ['video/mp4', 'video/x-flv'],
+                    skippable: true,
+                    minduration: 5,
+                    maxduration: 30,
+                    startdelay: 15,
+                    playbackmethod: [1, 3],
+                    api: [1, 2],
+                    protocols: [2, 3],
+                    w: 640,
+                    h: 480,
+                    battr: [13, 14],
+                    linearity: 1,
+                    placement: 2,
+                    plcmt: 2,
+                    minbitrate: 100,
+                    maxbitrate: 4096
+                },
+            },
+            bids: [{
+                bidder: 'pubmatic',
+                params: {
+                    publisherId: '164392',
+                    adSlot: 'Div1@640x480', //ad_id or tagid
+                    //kadfloor: '  3.75   ',
+                    video: {
+                        mimes: ['video/mp4', 'video/x-flv'],
+                        skippable: true,
+                        minduration: 5,
+                        maxduration: 30,
+                        startdelay: 15,
+                        playbackmethod: [1, 3],
+                        api: [1, 2],
+                        protocols: [2, 3],
+                        w: 640,
+                        h: 480,
+                        battr: [13, 14],
+                        linearity: 1,
+                        placement: 2,
+                        plcmt: 2,
+                        minbitrate: 100,
+                        maxbitrate: 4096
+                    }
+                }
+            },{
+                        bidder: 'appnexus',
+                        params: {
+                            publisherId: '  164392  ',
+                            adSlot: '       /43743431/DMDemo@728x90:0',
+                            pmzoneid: 'zone1',
+                            yob: '  1982  ',
+                            kadpageurl: 'www.yahoo.com?secure=1',
+                            gender: '   M   ',
+                            kadfloor: '  1.75   ',
+                            placementId: 13144370
+                        }
+                    }
+            ]
+        }
+        ];
+
+        function initAdserver(bids) {
+            if (pbjs.initAdserverSet) return;
+
+            //for video ads:
+            var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
+                adUnit: adUnits[1],
+                params: {
+                    //iu: '/15671365/PrebidVideoAdUnit_1705',
+                    iu: '/43743431/QAVideo',
+                    cust_params: {
+                        section: 'blog',
+                        anotherKey: 'anotherValue'
+                    },
+                    output: 'vast'
+                }
+            });
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+
+            invokeVideoPlayer(videoUrl);
+
+            pbjs.initAdserverSet = true;
+        }
+
+        setTimeout(initAdserver, PREBID_TIMEOUT);
+
+        pbjs.que.push(function () {
+
+            //pbjs.addAdUnits(adUnits[1]);
+            pbjs.enableAnalytics({
+                provider: 'pubmatic',
+                options: {
+                    publisherId: 164392,
+                    profileId: 3596,
+                    profileVersionId: 1
+                }
+            });
+            // pbjs.bidderSettings = {
+            //     standard: {
+            //         bidCpmAdjustment: function (bidCpm, bid) {
+            //             // adjust the bid in real time before the auction takes place
+            //             console.log('Bidder is: ' + bid.bidderCode);
+            //             return bidCpm * .90;
+            //         }
+            //     }
+            // };
+            pbjs.setConfig({
+                device: {
+                    ip: "10.172.141.12"
+                },
+                firstPartyData: {
+                    uaHints: ['architecture', 'bitness', 'browsers', 'mobile', 'model', 'source']
+                },
+
+                debug: true,
+                ortb2: {
+                    device: {
+                        ip: "10.172.141.12",
+                        geo: {
+                            lat: 40.712775,
+                            lon: -74.005973,
+                        }
+                    }
+                },
+                userSync: {
+                    topics: {
+                        maxTopicCaller: 4,
+                        bidders: [{
+                            bidder: 'pubmatic',
+                            iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+                        }]
+                    },
+                    filterSettings: { iframe: { bidders: '*', filter: 'include' } },
+                    enabledBidders: ['pubmatic'],
+                    syncDelay: 3000,
+                },
+                realTimeData: {
+                    auctionDelay: 2700,
+                    dataProviders: [
+                        {
+                            name: 'pubmatic',
+                            waitForIt: true,
+                            params: {
+                                publisherId: '164392',
+                                profileId: profId,
+                            }
+                        }
+                    ]
+                },
+                floors: {
+                    enforcement: {
+                        floorDeals: false, //default to false
+                        bidAdjustment: true,
+                        enforceJS: true
+                    },
+                    data: {     // default if endpoint doesn't return in time
+                        currency: 'USD',
+                        skipRate: 0,
+                        modelVersion: 'some setconfig model version',
+                        schema: {
+                            fields: ['mediaType', 'size']
+                        },
+                        values: {
+                            'banner|*': 1.5,
+                            'video|640x480': 2.01
+                        }
+                    }
+                },
+                cache: {
+                    url: 'https://ow.pubmatic.com/cache'
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: function (bidResponses) {
+                    initAdserver(bidResponses);
+                }
+            });
+        });
+
+
+
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag
+                .defineSlot(
+                    '/43743431/DMDemo', [
+                    [728, 90]
+                ],
+                    'div-banner'
+                )
+                .addService(googletag.pubads());
+
+            googletag.pubads().disableInitialLoad();
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+
+
+
+    </script>
+</head>
+
+<body>
+    <h2>Prebid Multi-Format Testing</h2>
+
+    <h3>div-banner</h3>
+    <div id='div-banner'>
+        <p>No response</p>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-banner');
+            });
+
+
+
+        </script>
+    </div>
+
+    <h3>div-instream</h3>
+    <video class="video-js vjs-default-skin vjs-big-play-centered" controls data-setup='{}' height='480' id="vid1"
+        width='640'>
+        <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4' />
+        <source src="http://vjs.zencdn.net/v/oceans.webm" type='video/webm' />
+        <source src="http://vjs.zencdn.net/v/oceans.ogv" type='video/ogg' />
+    </video>
+    <div></div>
+
+    <script>
+        var page_load_time;
+
+        page_load_time = new Date().getTime() - performance.timing.navigationStart;
+        console.log(page_load_time + "ms -- Player loading!");
+
+        var vid1 = videojs('vid1');
+
+        page_load_time = new Date().getTime() - performance.timing.navigationStart;
+        console.log(page_load_time + "ms -- Player loaded!");
+
+        function invokeVideoPlayer(url) {
+
+            page_load_time = new Date().getTime() - performance.timing.navigationStart;
+            console.log(page_load_time + "ms -- Prebid VAST url = " + url);
+
+            /* Access the player instance by calling `videojs()` and passing
+               in the player's ID. Add a `ready` listener to make sure the
+               player is ready before interacting with it. */
+
+            videojs("vid1").ready(function () {
+
+                page_load_time = new Date().getTime() - performance.timing.navigationStart;
+                console.log(page_load_time + "ms -- Player is ready!");
+
+                /* PASS SETTINGS TO VAST PLUGIN
+
+                   Pass in a JSON object to the player's `vastClient` (defined
+                   by the VAST/VPAID plugin we're using). The requires an
+                   `adTagUrl`, which will be the URL returned by Prebid. You
+                   can view all the options available for the `vastClient`
+                   here:
+
+                   https://github.com/MailOnline/videojs-vast-vpaid#options */
+
+                var player = this;
+                var vastAd = player.vastClient({
+                    adTagUrl: url,
+                    playAdAlways: true,
+                    verbosity: 4, adCancelTimeout: 10000,
+                    vpaidFlashLoaderPath: "https://github.com/MailOnline/videojs-vast-vpaid/blob/RELEASE/bin/VPAIDFlash.swf?raw=true",
+                    autoplay: true
+                });
+
+                page_load_time = new Date().getTime() - performance.timing.navigationStart;
+                console.log(page_load_time + "ms -- Prebid VAST tag inserted!");
+
+                player.muted(true);
+                player.play();
+
+                page_load_time = new Date().getTime() - performance.timing.navigationStart;
+                console.log(page_load_time + "ms -- invokeVideoPlayer complete!");
+
+            });
+        }
+
+
+
+
+    </script>
+    <div></div>
+</body>
+
+</html>

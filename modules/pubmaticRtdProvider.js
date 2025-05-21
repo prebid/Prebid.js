@@ -3,6 +3,7 @@ import { logError, logInfo, isStr, isPlainObject, isEmpty, isFn, mergeDeep } fro
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getLowEntropySUA } from '../src/fpd/sua.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -33,6 +34,16 @@ const CONSTANTS = Object.freeze({
     BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
     FLOORS: 'floors.json',
     CONFIGS: 'config.json'
+  },
+  BID_STATUS: {
+    NOBID: 0,
+    WON: 1,
+    FLOORED: 2
+  },
+  MULTIPLIERS: {
+    WINBID: 1.0,
+    FLOORBID: 0.8,
+    NOBIDS: 1.6
   }
 });
 
@@ -65,6 +76,8 @@ export let configMerged;
 // configMerged is a reference to the function that can resolve configMergedPromise whenever we want
 let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
 export let _country;
+// Store multipliers from floors.json, will use default values from CONSTANTS if not available
+export let _multipliers = null;
 
 // Waits for a given promise to resolve within a timeout
 export function withTimeout(promise, ms) {
@@ -179,7 +192,19 @@ export const fetchData = async (publisherId, profileId, type) => {
         _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
       }
 
-      return await response.json();
+      const data = await response.json();
+      
+      // Extract multipliers from floors.json if available
+      if (type === "FLOORS" && data && data.multiplier) {
+        _multipliers = {
+          WINBID: data.multiplier.WINBID || CONSTANTS.MULTIPLIERS.WINBID,
+          FLOORBID: data.multiplier.FLOORBID || CONSTANTS.MULTIPLIERS.FLOORBID,
+          NOBIDS: data.multiplier.NOBIDS || CONSTANTS.MULTIPLIERS.NOBIDS
+        };
+        logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
+      }
+      
+      return data;
     } catch (error) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}:`, error);
     }
@@ -282,13 +307,139 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
     adUnit.bids?.some(isRtdFloorApplied)
   ) || auction?.bidsReceived?.some(isRtdFloorApplied);
 
-  if (hasRtdFloorAppliedBid) {
-    const targeting = adUnitCodes.reduce((acc, code) => {
+  const targeting = adUnitCodes.reduce((acc, code) => {
+    // Initialize with pm_ym if RTD floor was applied
+    if (hasRtdFloorAppliedBid) {
       acc[code] = { 'pm_ym': 1 };
-      return acc;
-    }, {});
+    } else {
+      acc[code] = {};
+    }
+    
+    // Find all bids for this ad unit by filtering bidsReceived
+    const bidsForAdUnit = auction?.bidsReceived?.filter(bid => bid.adUnitCode === code) || [];
+    
+    // Check for rejected bids due to price floor
+    // First look in auction.bidsRejected if available
+    const rejectedBidsForAdUnit = [];
+    if (auction?.bidsRejected) {
+      // Different versions of Prebid might structure bidsRejected differently
+      // Try to handle multiple possible structures
+      if (Array.isArray(auction.bidsRejected)) {
+        // If bidsRejected is an array, filter by adUnitCode
+        rejectedBidsForAdUnit.push(...auction.bidsRejected.filter(bid => bid.adUnitCode === code));
+      } else if (typeof auction.bidsRejected === 'object') {
+        // If bidsRejected is an object with bidder keys
+        Object.keys(auction.bidsRejected).forEach(bidder => {
+          const bidderRejectedBids = auction.bidsRejected[bidder];
+          if (Array.isArray(bidderRejectedBids)) {
+            rejectedBidsForAdUnit.push(...bidderRejectedBids.filter(bid => bid.adUnitCode === code));
+          }
+        });
+      }
+    }
+    
+    // Look for rejected floor bids
+    const rejectedFloorBid = rejectedBidsForAdUnit.find(bid => {
+      // Check if bid was rejected due to price floor
+      const errorMessage = bid.statusMessage || bid.status || '';
+      return errorMessage.includes('price floor') || 
+             (bid.floorData && bid.floorData.floorValue && bid.cpm < bid.floorData.floorValue);
+    });
+    
+    // Find the winning or highest bid for this ad unit
+    let winningBid;
+    
+    // First check if we can find a bid with 'targetingSet' status in the current auction
+    // This is the most reliable indicator of a winning bid in the current auction context
+    const targetingSetBid = bidsForAdUnit.find(bid => bid.status === 'targetingSet');
+    
+    if (targetingSetBid) {
+      winningBid = targetingSetBid;
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Found winning bid with status 'targetingSet' for ad unit: ${code}`);
+    } else {
+      // If no targetingSet bid is found, try to get the highest bid from the current auction
+      // Sort bids by cpm in descending order and take the highest one
+      const highestBid = bidsForAdUnit.length > 0 ? 
+        [...bidsForAdUnit].sort((a, b) => b.cpm - a.cpm)[0] : null;
+      
+      if (highestBid) {
+        winningBid = highestBid;
+        logInfo(CONSTANTS.LOG_PRE_FIX, `Using highest bid (cpm: ${highestBid.cpm}) for ad unit: ${code}`);
+      } else {
+        // As a last resort, try getAllWinningBids() but be aware it might be empty
+        try {
+          const pbjs = getGlobal();
+          if (pbjs && typeof pbjs.getAllWinningBids === 'function') {
+            const globalWinningBid = pbjs.getAllWinningBids().find(bid => bid.adUnitCode === code);
+            if (globalWinningBid) {
+              winningBid = globalWinningBid;
+              logInfo(CONSTANTS.LOG_PRE_FIX, `Found winning bid using pbjs.getAllWinningBids() for ad unit: ${code}`);
+            } else {
+              logInfo(CONSTANTS.LOG_PRE_FIX, `No winning bids found for ad unit: ${code} in getAllWinningBids()`);
+            }
+          }
+        } catch (error) {
+          logError(CONSTANTS.LOG_PRE_FIX, `Error using pbjs.getAllWinningBids(): ${error}`);
+        }
+      }
+    }
+    
+    let bidStatus;
+    let baseValue;
+    let multiplier;
+    
+    // Determine bid status and apply appropriate multiplier
+    if (winningBid) {
+      // Winning bid case
+      bidStatus = CONSTANTS.BID_STATUS.WON;
+      baseValue = winningBid.cpm;
+      // Use multiplier from floors.json if available, otherwise use default
+      multiplier = _multipliers ? _multipliers.WINBID : CONSTANTS.MULTIPLIERS.WINBID;
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Bid won for ad unit: ${code}, CPM: ${baseValue}, Multiplier: ${multiplier}`);
+    } else if (rejectedFloorBid) {
+      // Bid rejected due to price floor case
+      bidStatus = CONSTANTS.BID_STATUS.FLOORED;
+      // Use the floor value from the rejected bid
+      baseValue = rejectedFloorBid.floorData?.floorValue || 0;
+      // Use multiplier from floors.json if available, otherwise use default
+      multiplier = _multipliers ? _multipliers.FLOORBID : CONSTANTS.MULTIPLIERS.FLOORBID;
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Bid rejected due to price floor for ad unit: ${code}, Floor value: ${baseValue}, Bid CPM: ${rejectedFloorBid.cpm}, Multiplier: ${multiplier}`);
+    } else {
+      // Find any bid with floor data for this ad unit
+      const bidWithFloor = bidsForAdUnit.find(bid => bid.floorData?.floorValue);
+      
+      if (bidWithFloor?.floorData?.floorValue) {
+        // Floor bid case
+        bidStatus = CONSTANTS.BID_STATUS.FLOORED;
+        baseValue = bidWithFloor.floorData.floorValue ||;
+        // Use multiplier from floors.json if available, otherwise use default
+        multiplier = _multipliers ? _multipliers.FLOORBID : CONSTANTS.MULTIPLIERS.FLOORBID;
+        logInfo(CONSTANTS.LOG_PRE_FIX, `Floored bid for ad unit: ${code}, Floor value: ${baseValue}, Multiplier: ${multiplier}`);
+      } else {
+        // No bid case
+        bidStatus = CONSTANTS.BID_STATUS.NOBID;
+        // Use a default value of 0 for no bids, or could be configured differently
+        baseValue = 0;
+        // Use multiplier from floors.json if available, otherwise use default
+        multiplier = _multipliers ? _multipliers.NOBIDS : CONSTANTS.MULTIPLIERS.NOBIDS;
+        logInfo(CONSTANTS.LOG_PRE_FIX, `No bids for ad unit: ${code}, Multiplier: ${multiplier}`);
+      }
+    }
+    
+    // Calculate the floor value with multiplier
+    const floorValue = baseValue * multiplier;
+    
+    // Set the targeting keys
+    acc[code]['pm_floor'] = floorValue;
+    acc[code]['pm_floor_s'] = bidStatus;
+    
+    logInfo(CONSTANTS.LOG_PRE_FIX, `Setting targeting for ad unit: ${code}, Status: ${bidStatus}, Base value: ${baseValue}, Multiplier: ${multiplier}, Final floor: ${floorValue}`);
+    
+    return acc;
+  }, {});
 
-    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData');
+  if (Object.keys(targeting).length > 0) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData', targeting);
     return targeting;
   }
 
