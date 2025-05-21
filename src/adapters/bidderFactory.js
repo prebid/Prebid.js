@@ -5,7 +5,7 @@ import {createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
-import {EVENTS, REJECTION_REASON, STATUS} from '../constants.js';
+import {EVENTS, REJECTION_REASON, STATUS, DEBUG_MODE} from '../constants.js';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import {
@@ -18,7 +18,11 @@ import {
   parseQueryStringParameters,
   parseSizesInput,
   pick,
-  uniques
+  uniques,
+  isGzipCompressionSupported,
+  compressDataWithGZip,
+  getParameterByName,
+  debugTurnedOn
 } from '../utils.js';
 import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
@@ -477,6 +481,7 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
           : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
       })
     }
+
     switch (request.method) {
       case 'GET':
         ajax(
@@ -493,19 +498,39 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
         );
         break;
       case 'POST':
-        ajax(
-          request.url,
-          {
-            success: onSuccess,
-            error: onFailure
-          },
-          typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-          getOptions({
-            method: 'POST',
-            contentType: 'text/plain',
-            withCredentials: true
-          })
-        );
+        const enableGZipCompression = request.options?.endpointCompression;
+        const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
+        const callAjax = ({ url, payload }) => {
+          ajax(
+            url,
+            {
+              success: onSuccess,
+              error: onFailure
+            },
+            payload,
+            getOptions({
+              method: 'POST',
+              contentType: 'text/plain',
+              withCredentials: true
+            })
+          );
+        };
+
+        if (enableGZipCompression && debugMode) {
+          logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
+        }
+
+        if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
+          compressDataWithGZip(request.data).then(compressedPayload => {
+            const url = new URL(request.url, window.location.origin);
+            if (!url.searchParams.has('gzip')) {
+              url.searchParams.set('gzip', '1');
+            }
+            callAjax({ url: url.href, payload: compressedPayload });
+          });
+        } else {
+          callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
+        }
         break;
       default:
         logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.type} must be GET or POST`);
