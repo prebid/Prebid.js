@@ -4,7 +4,6 @@ import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import { VIDEO } from 'src/mediaTypes.js'
 
 const bidderRequest = {
