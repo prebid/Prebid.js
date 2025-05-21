@@ -1141,7 +1141,7 @@ export function safeJSONEncode(data) {
  * @param fn
  * @param key cache key generator, invoked with the same arguments passed to `fn`.
  *        By default, the first argument is used as key.
- * @return {function(): any}
+ * @return {*}
  */
 export function memoize(fn, key = function (arg) { return arg; }) {
   const cache = new Map();

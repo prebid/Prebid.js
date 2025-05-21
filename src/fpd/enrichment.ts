@@ -24,6 +24,21 @@ export const dep = {
 
 const oneClient = clientSectionChecker('FPD')
 
+export interface FirstPartyDataConfig {
+    /**
+     * High entropy UA client hints to request.
+     * https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData#returning_high_entropy_values
+     */
+    uaHints?: string[]
+}
+
+declare module '../config' {
+    interface Config {
+        firstPartyData?: FirstPartyDataConfig;
+    }
+}
+
+
 /**
  * Enrich an ortb2 object with first-party data.
  * @param {Promise<Object>} fpd - A promise that resolves to an ortb2 object.
@@ -90,7 +105,7 @@ function removeUndef(obj) {
 }
 
 function tryToGetCdepLabel() {
-  return PbPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && navigator.cookieDeprecationLabel.getValue());
+  return PbPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && (navigator.cookieDeprecationLabel as any).getValue());
 }
 
 const ENRICHMENTS = {
@@ -133,7 +148,7 @@ const ENRICHMENTS = {
     })
   },
   regs() {
-    const regs = {};
+    const regs = {} as any;
     if (winFallback((win) => win.navigator.globalPrivacyControl)) {
       deepSetValue(regs, 'ext.gpc', '1');
     }

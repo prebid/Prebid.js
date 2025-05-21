@@ -200,6 +200,12 @@ function runValidations(data) {
   }
 }
 
+declare module '../../src/fpd/enrichment' {
+    interface FirstPartyDataConfig {
+        skipValidations?: boolean;
+    }
+}
+
 /**
  * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
  * @param {Object} fpdConf configuration object
