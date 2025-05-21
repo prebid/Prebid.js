@@ -14,7 +14,6 @@ import { createResponse, enrichImp, enrichRequest, getAmxId, getUserSyncs } from
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-
 const BIDDER_CODE = 'adgrid';
 const REQUEST_URL = 'https://fast.nexx360.io/adgrid';
 const PAGE_VIEW_ID = generateUUID();
@@ -29,10 +28,8 @@ export const STORAGE = getStorageManager({
 
 /**
  * Get the agdridId from local storage
- * @param
  * @return {object | false } false if localstorageNotEnabled
  */
-
 export function getLocalStorage() {
   if (!STORAGE.localStorageIsEnabled()) {
     logInfo(`localstorage not enabled for Adgrid`);
@@ -89,7 +86,6 @@ function isBidRequestValid(bid) {
  *
  * @return ServerRequest Info describing the request to the server.
  */
-
 function buildRequests(bidRequests, bidderRequest) {
   const data = converter.toORTB({ bidRequests, bidderRequest })
   return {
@@ -105,7 +101,6 @@ function buildRequests(bidRequests, bidderRequest) {
  * @param {ServerResponse} serverResponse A successful response from the server.
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
-
 function interpretResponse(serverResponse) {
   const respBody = serverResponse.body;
   if (!respBody || !Array.isArray(respBody.seatbid)) {
