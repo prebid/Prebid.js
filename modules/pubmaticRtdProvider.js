@@ -411,7 +411,7 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
       if (bidWithFloor?.floorData?.floorValue) {
         // Floor bid case
         bidStatus = CONSTANTS.BID_STATUS.FLOORED;
-        baseValue = bidWithFloor.floorData.floorValue ||;
+        baseValue = bidWithFloor.floorData.floorValue || 0;
         // Use multiplier from floors.json if available, otherwise use default
         multiplier = _multipliers ? _multipliers.FLOORBID : CONSTANTS.MULTIPLIERS.FLOORBID;
         logInfo(CONSTANTS.LOG_PRE_FIX, `Floored bid for ad unit: ${code}, Floor value: ${baseValue}, Multiplier: ${multiplier}`);
