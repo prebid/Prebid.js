@@ -7,6 +7,7 @@ describe('tadvertisingBidAdapter', () => {
       'bidder': 'tadvertising',
       'params': {
         'publisherId': '22222222',
+        'placementId': '33333333',
       },
       'mediaTypes': {
         'banner': {
@@ -32,6 +33,7 @@ describe('tadvertisingBidAdapter', () => {
           "bidder": "tadvertising",
           "params": {
             "publisherId": "22222222",
+            'placementId': '33333333',
           },
           "mediaTypes": {
             "banner": {
@@ -57,6 +59,12 @@ describe('tadvertisingBidAdapter', () => {
     it('should return false when publisherId not passed', function () {
       let bid = getBid();
       delete bid.params.publisherId;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when placementId not passed', function () {
+      let bid = getBid();
+      delete bid.params.placementId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 

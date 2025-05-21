@@ -39,6 +39,10 @@ export const spec = {
       logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
       return false;
     }
+    if (!bid.params.placementId) {
+      logWarn(BIDDER_CODE + ': Missing required parameter params.placementId');
+      return false;
+    }
     return true;
   },
 
@@ -46,6 +50,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     let data = converter.toORTB({validBidRequests, bidderRequest})
     deepSetValue(data, 'site.publisher.id', bidderRequest.bids[0].params.publisherId)
+    deepSetValue(data, 'imp.0.ext.gpid', bidderRequest.bids[0].params.placementId)
 
     if (isStr(deepAccess(bidderRequest, 'bids.0.userId.tdid'))) {
       data.user = data.user || {};

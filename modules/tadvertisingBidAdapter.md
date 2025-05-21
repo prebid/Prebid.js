@@ -23,7 +23,8 @@ Banner and Video ad formats are supported.
         bids: [{
             bidder: 'tadvertising',
             params: {
-                publisherId: 'your-publisher-id'
+                publisherId: 'your-publisher-id',
+                placementId: 'your-placement-id'
             }
         }]
     };
