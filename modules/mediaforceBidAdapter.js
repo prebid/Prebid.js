@@ -1,12 +1,25 @@
 import { getDNT, deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize, isEmpty } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
+ * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
+ */
+
+/**
+ * @typedef {Object} AdditionalBidRequestFields
+ * @property {GetFloor} [getFloor] - Function for retrieving dynamic bid floor based on mediaType and size
+ * @property {MediaTypes} [mediaTypes] - Media types defined for the ad unit (e.g., banner, video, native)
+ */
+
+/**
+ * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
  */
 
 const BIDDER_CODE = 'mediaforce';
@@ -94,9 +107,12 @@ Object.keys(NATIVE_PARAMS).forEach((key) => {
   NATIVE_ID_MAP[NATIVE_PARAMS[key].id] = key;
 });
 
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
+const DEFAULT_CURRENCY = 'USD'
+
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -134,7 +150,7 @@ export const spec = {
     validBidRequests.forEach(bid => {
       isTest = isTest || bid.params.is_test;
       let tagid = bid.params.placement_id;
-      let bidfloor = 0;
+      let bidfloor = resolveFloor(bid);
       let validImp = false;
       let impObj = {
         id: bid.bidId,
@@ -148,8 +164,9 @@ export const spec = {
         }
 
       };
-      for (let mediaTypes in bid.mediaTypes) {
-        switch (mediaTypes) {
+
+      Object.keys(bid.mediaTypes).forEach(mediaType => {
+        switch (mediaType) {
           case BANNER:
             impObj.banner = createBannerRequest(bid);
             validImp = true;
@@ -158,9 +175,12 @@ export const spec = {
             impObj.native = createNativeRequest(bid);
             validImp = true;
             break;
-          default: return;
+          case VIDEO:
+            impObj.video = createVideoRequest(bid);
+            validImp = true;
+            break;
         }
-      }
+      })
 
       let request = requestsMap[bid.params.publisher_id];
       if (!request) {
@@ -197,7 +217,7 @@ export const spec = {
           data: request
         });
       }
-      validImp && request.imp.push(impObj);
+      if (validImp && impObj) request.imp.push(impObj);
     });
     requests.forEach((req) => {
       if (isTest) {
@@ -251,17 +271,21 @@ export const spec = {
           ext.native = jsonAdm.native;
           adm = null;
         }
-        if (adm) {
-          bid.width = serverBid.w;
-          bid.height = serverBid.h;
-          bid.ad = adm;
-          bid.mediaType = BANNER;
-        } else if (ext && ext.native) {
+        if (ext?.native) {
           bid.native = parseNative(ext.native);
           bid.mediaType = NATIVE;
+        } else if (adm?.trim().startsWith('<?xml') || adm?.includes('<VAST')) {
+          bid.vastXml = adm;
+          bid.mediaType = VIDEO;
+        } else if (adm) {
+          bid.ad = adm;
+          bid.width = serverBid.w;
+          bid.height = serverBid.h;
+          bid.mediaType = BANNER;
         }
-
-        bidResponses.push(bid);
+        if (bid.mediaType) {
+          bidResponses.push(bid);
+        }
       })
     });
 
@@ -270,7 +294,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid - The bid that won the auction
    */
   onBidWon: function(bid) {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
@@ -371,4 +395,95 @@ function createNativeRequest(bid) {
       ver: '1.2'
     }
   }
+}
+
+function createVideoRequest(bid) {
+  const video = bid.mediaTypes.video;
+  if (!video || !video.playerSize) return;
+
+  const playerSize = Array.isArray(video.playerSize[0])
+    ? video.playerSize[0] // [[640, 480], [300, 250]] -> use first size
+    : video.playerSize;   // [640, 480]
+
+  const videoRequest = {
+    mimes: video.mimes || ['video/mp4'],
+    minduration: video.minduration || 1,
+    maxduration: video.maxduration || 60,
+    protocols: video.protocols || [2, 3, 5, 6],
+    w: playerSize[0],
+    h: playerSize[1],
+    startdelay: video.startdelay || 0,
+    linearity: video.linearity || 1,
+    skip: video.skip != null ? video.skip : 0,
+    skipmin: video.skipmin || 5,
+    skipafter: video.skipafter || 10,
+    playbackmethod: video.playbackmethod || [1],
+    api: video.api || [1, 2],
+  };
+
+  if (video.placement) {
+    videoRequest.placement = video.placement;
+  }
+
+  return videoRequest;
+}
+
+/**
+ * Returns the highest applicable bid floor for a given bid request.
+ *
+ * Considers:
+ *  - 0
+ *  - floors from resolveFloor() API (if available)
+ *  - static bid.params.bidfloor (if provided)
+ *
+ * @param {ExtendedBidRequest} bid - The bid object
+ * @returns {number} - Highest bid floor found
+ */
+export function resolveFloor(bid) {
+  const floors = [0];
+
+  if (typeof bid.getFloor === 'function') {
+    for (const mediaType of SUPPORTED_MEDIA_TYPES) {
+      const mediaTypeDef = bid.mediaTypes?.[mediaType]
+      if (mediaTypeDef) {
+        const sizes = getMediaTypeSizes(mediaType, mediaTypeDef) || ['*'];
+        for (const size of sizes) {
+          const floorInfo = bid.getFloor({ currency: DEFAULT_CURRENCY, mediaType, size });
+          if (typeof floorInfo?.floor === 'number') {
+            floors.push(floorInfo.floor);
+          }
+        }
+      }
+    }
+  }
+
+  if (typeof bid.params?.bidfloor === 'number') {
+    floors.push(bid.params.bidfloor);
+  }
+
+  return Math.max(...floors);
+}
+
+/**
+ * Extracts and normalizes sizes for a given media type.
+ *
+ * @param {MediaType} mediaType - The type of media (banner, video, native)
+ * @param {Object} mediaTypeDef - Definition object for the media type
+ * @returns {(number[]|string)[]} An array of sizes or undefined
+ */
+function getMediaTypeSizes(mediaType, mediaTypeDef) {
+  let sizes;
+  switch (mediaType) {
+    case BANNER:
+      sizes = mediaTypeDef.sizes;
+      break;
+    case VIDEO:
+      sizes = mediaTypeDef.playerSize;
+      break;
+    case NATIVE:
+      break; // native usually doesn't define sizes
+  }
+
+  if (!sizes) return undefined;
+  return Array.isArray(sizes[0]) ? sizes : [sizes];
 }
