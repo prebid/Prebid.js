@@ -115,7 +115,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
-      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interesrs vendor id', function() {
+      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
