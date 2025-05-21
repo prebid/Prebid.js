@@ -142,5 +142,6 @@ gulp.task('verbatim', copyVerbatim)
 
 
 module.exports = {
-  precompile
+  precompile,
+  babelPrecomp
 }

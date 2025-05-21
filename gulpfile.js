@@ -36,7 +36,7 @@ const INTEG_SERVER_PORT = 4444;
 const { spawn, fork } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
 
-const {precompile} = require('./gulp.precompilation.js');
+const {precompile, babelPrecomp} = require('./gulp.precompilation.js');
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
