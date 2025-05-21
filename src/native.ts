@@ -294,8 +294,7 @@ export const hasNonNativeBidder = adUnit =>
 /**
  * Validate that the native assets on this bid contain all assets that were
  * marked as required in the adUnit configuration.
- * @param {Bid} bid Native bid to validate
- * @param index All bid requests for an auction
+ * bid Native bid to validate
  * @return {Boolean} If object is valid
  */
 export function nativeBidIsValid(bid, {index = auctionManager.index} = {}) {
@@ -743,7 +742,7 @@ export function fromOrtbNativeRequest(openRTBRequest: NativeRequest) {
  * conversion is needed. If a conversion is needed (meaning, at least one
  * bidRequest contains a native.ortb definition), it will return a copy.
  *
- * @param {BidRequest[]} bidRequests an array of valid bid requests
+ * @param bidRequests an array of valid bid requests
  * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
  */
 export function convertOrtbRequestToProprietaryNative(bidRequests) {

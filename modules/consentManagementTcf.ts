@@ -165,7 +165,6 @@ const parseConfig = configParser({
 } as any)
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} tcfConfig required; consentManagement module config settings; cmp (string), timeout (int))
  */
 export function setConsentConfig(config) {
   // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.

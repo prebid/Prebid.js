@@ -28,17 +28,24 @@ const FIELDS = {
  * Scalar fields are copied over if they exist in the input (state) data, or set to null otherwise.
  * List fields are also copied, but forced to the "correct" length (by truncating or padding with nulls);
  * additionally, elements within them can be moved around using the `move` argument.
- *
- * @param {Array[String]} nullify? list of fields to force to null
- * @param {{}} move? Map from list field name to an index remapping for elements within that field (using 1 as the first index).
- *       For example, {SensitiveDataProcessing: {1: 2, 2: [1, 3]}} means "rearrange SensitiveDataProcessing by moving
- *       the first element to the second position, and the second element to both the first and third position."
- * @param {({}, {}) => void} fn? an optional function to run once all the processing described above is complete;
- *       it's passed two arguments, the original (state) data, and its normalized (usnat) version.
- * @param fields
- * @returns {function({}): {}}
  */
-export function normalizer({nullify = [], move = {}, fn}, fields = FIELDS) {
+export function normalizer({nullify = [], move = {}, fn}: {
+    /**
+     * list of fields to force to null
+     */
+    nullify?: string[];
+    /**
+     * Map from list field name to an index remapping for elements within that field (using 1 as the first index).
+     * For example, {SensitiveDataProcessing: {1: 2, 2: [1, 3]}} means "rearrange SensitiveDataProcessing by moving
+     * the first element to the second position, and the second element to both the first and third position."
+     */
+    move?: { [name: string]: { [position: number]: number | number[] } };
+    /**
+     * an optional function to run once all the processing described above is complete;
+     * it's passed two arguments, the original (state) data, and its normalized (usnat) version.
+     */
+    fn?: (original, normalized) => any;
+}, fields = FIELDS) {
   move = Object.fromEntries(Object.entries(move).map(([k, map]) => [k,
     Object.fromEntries(Object.entries(map)
       .map(([k, v]) => [k, Array.isArray(v) ? v : [v]])
@@ -52,7 +59,7 @@ export function normalizer({nullify = [], move = {}, fn}, fields = FIELDS) {
         if (len > 0) {
           val = Array(len).fill(null);
           if (Array.isArray(cd[field])) {
-            const remap = move[field] || {};
+            const remap = (move[field] || {}) as Record<number, number[]>;
             const done = [];
             cd[field].forEach((el, i) => {
               const [dest, moved] = remap.hasOwnProperty(i) ? [remap[i], true] : [[i], false];
