@@ -20,7 +20,8 @@ import {
   mergeDeep,
   transformAdServerTargetingObj,
   uniques,
-  unsupportedBidderMessage
+  unsupportedBidderMessage,
+  deepEqual
 } from './utils.js';
 import {listenMessagesFromCreative} from './secureCreatives.js';
 import {userSync} from './userSync.js';
@@ -36,7 +37,7 @@ import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
-import {defer, GreedyPromise} from './utils/promise.js';
+import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
@@ -50,6 +51,8 @@ import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
 import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
+import {delayIfPrerendering} from './utils/prerendering.js';
+import { newBidder } from './adapters/bidderFactory.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -147,11 +150,39 @@ export function syncOrtb2(adUnit, mediaType) {
 function validateBannerMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
-  const bannerSizes = validateSizes(banner.sizes);
-  if (bannerSizes.length > 0) {
-    banner.sizes = bannerSizes;
+  const bannerSizes = banner.sizes == null ? null : validateSizes(banner.sizes);
+  const format = adUnit.ortb2Imp?.banner?.format ?? banner?.format;
+  let formatSizes;
+  if (format != null) {
+    deepSetValue(validatedAdUnit, 'ortb2Imp.banner.format', format);
+    banner.format = format;
+    try {
+      formatSizes = format
+        .filter(({w, h, wratio, hratio}) => {
+          if ((w ?? h) != null && (wratio ?? hratio) != null) {
+            logWarn(`Ad unit banner.format specifies both w/h and wratio/hratio`, adUnit);
+            return false;
+          }
+          return (w != null && h != null) || (wratio != null && hratio != null);
+        })
+        .map(({w, h, wratio, hratio}) => [w ?? wratio, h ?? hratio]);
+    } catch (e) {
+      logError(`Invalid format definition on ad unit ${adUnit.code}`, format);
+    }
+    if (formatSizes != null && bannerSizes != null && !deepEqual(bannerSizes, formatSizes)) {
+      logWarn(`Ad unit ${adUnit.code} has conflicting sizes and format definitions`, adUnit);
+    }
+  }
+  const sizes = formatSizes ?? bannerSizes ?? [];
+  const expdir = adUnit.ortb2Imp?.banner?.expdir ?? banner.expdir;
+  if (expdir != null) {
+    banner.expdir = expdir;
+    deepSetValue(validatedAdUnit, 'ortb2Imp.banner.expdir', expdir);
+  }
+  if (sizes.length > 0) {
+    banner.sizes = sizes;
     // Deprecation Warning: This property will be deprecated in next release in favor of adUnit.mediaTypes.banner.sizes
-    validatedAdUnit.sizes = bannerSizes;
+    validatedAdUnit.sizes = sizes;
   } else {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
@@ -563,19 +594,20 @@ pbjsInstance.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return enrichFPD(GreedyPromise.resolve(ortb2Fragments.global)).then(global => {
+    return enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
       return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, function requestBids(req = {}) {
+  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(req = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
+
     let adUnits = req.adUnits || pbjsInstance.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
@@ -584,7 +616,7 @@ pbjsInstance.requestBids = (function() {
     req.defer = defer({promiseFactory: (r) => new Promise(r)})
     delegate.call(this, req);
     return req.defer.promise;
-  });
+  }));
 })();
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
@@ -769,12 +801,14 @@ pbjsInstance.getEvents = function () {
  * Wrapper to register bidderAdapter externally (adapterManager.registerBidAdapter())
  * @param  {Function} bidderAdaptor [description]
  * @param  {string} bidderCode [description]
+ * @param  {object} spec [description]
  * @alias module:pbjs.registerBidAdapter
  */
-pbjsInstance.registerBidAdapter = function (bidderAdaptor, bidderCode) {
+pbjsInstance.registerBidAdapter = function (bidderAdaptor, bidderCode, spec) {
   logInfo('Invoking $$PREBID_GLOBAL$$.registerBidAdapter', arguments);
   try {
-    adapterManager.registerBidAdapter(bidderAdaptor(), bidderCode);
+    const bidder = spec ? newBidder(spec) : bidderAdaptor();
+    adapterManager.registerBidAdapter(bidder, bidderCode);
   } catch (e) {
     logError('Error registering bidder adapter : ' + e.message);
   }
@@ -929,10 +963,12 @@ if (FEATURES.VIDEO) {
    * @typedef {Object} MarkBidRequest
    * @property {string} adUnitCode The ad unit code
    * @property {string} adId The id representing the ad we want to mark
+   * @property {boolean} events If true, fires tracking pixels and BID_WON handlers
+   * @property {boolean} analytics alias of `events` (for backwards compat)
    *
    * @alias module:pbjs.markWinningBidAsUsed
    */
-  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false}) {
+  pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false, events = false}) {
     let bids;
     if (adUnitCode && adId == null) {
       bids = targeting.getWinningBids(adUnitCode);
@@ -942,7 +978,7 @@ if (FEATURES.VIDEO) {
       logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
     }
     if (bids.length > 0) {
-      if (analytics) {
+      if (analytics || events) {
         markWinningBid(bids[0]);
       } else {
         auctionManager.addWinningBid(bids[0]);
@@ -1021,13 +1057,13 @@ function processQueue(queue) {
 /**
  * @alias module:pbjs.processQueue
  */
-pbjsInstance.processQueue = function () {
+pbjsInstance.processQueue = delayIfPrerendering(() => getGlobal().delayPrerendering, function () {
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
   processQueue(pbjsInstance.que);
   processQueue(pbjsInstance.cmd);
-};
+});
 
 /**
  * @alias module:pbjs.triggerBilling

@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo } from '../src/utils.js';
+import { getValue, logError, deepAccess, parseSizesInput, getBidIdParameter, logInfo, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
@@ -69,8 +69,8 @@ export const spec = {
       devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: getHLen(),
-      viewportHeight: topWindow.visualViewport?.height,
-      viewportWidth: topWindow.visualViewport?.width,
+      viewportHeight: getWinDimensions().visualViewport.height,
+      viewportWidth: getWinDimensions().visualViewport.width,
       prebid_version: '$prebid.version$',
     };
 

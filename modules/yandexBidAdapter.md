@@ -40,8 +40,30 @@ var adUnits = [
       }
     ],
   },
-  { // native
+  { // video
     code: 'banner-2',
+    mediaTypes: {
+      video: {
+        sizes: [[640, 480]],
+        context: 'instream',
+        playerSize: [[640, 480]],
+        mimes: ['video/mp4'],
+        protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+        playbackmethod: [2],
+        skip: 1
+      },
+    },
+    bids: [
+      {
+        bidder: 'yandex',
+        params: {
+          placementId: '346580-1'
+        },
+      }
+    ],
+  },
+  { // native
+    code: 'banner-3',,
     mediaTypes: {
       native: {
         title: {

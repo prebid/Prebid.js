@@ -1,4 +1,5 @@
 import { liveIntentExternalIdSubmodule, resetSubmodule } from 'libraries/liveIntentId/externalIdSystem.js';
+import { DEFAULT_TREATMENT_RATE } from 'libraries/liveIntentId/shared.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler } from '../../../src/adapterManager.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 const DEFAULT_AJAX_TIMEOUT = 5000
@@ -11,6 +12,7 @@ describe('LiveIntentExternalId', function() {
   let gppConsentDataStub;
   let coppaConsentDataStub;
   let refererInfoStub;
+  let randomStub;
 
   beforeEach(function() {
     uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
@@ -18,6 +20,7 @@ describe('LiveIntentExternalId', function() {
     gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
     coppaConsentDataStub = sinon.stub(coppaDataHandler, 'getCoppa');
     refererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
+    randomStub = sinon.stub(Math, 'random').returns(0.6);
   });
 
   afterEach(function() {
@@ -26,7 +29,10 @@ describe('LiveIntentExternalId', function() {
     gppConsentDataStub.restore();
     coppaConsentDataStub.restore();
     refererInfoStub.restore();
+    randomStub.restore();
     window.liQHub = []; // reset
+    window.liModuleEnabled = undefined; // reset
+    window.liTreatmentRate = undefined; // reset
     resetSubmodule();
   });
 
@@ -312,7 +318,7 @@ describe('LiveIntentExternalId', function() {
   });
 
   it('should decode values with the segments but no nonId', function() {
-    const result = liveIntentExternalIdSubmodule.decode({segments: ['tak']}, { params: defaultConfigParams });
+    const result = liveIntentExternalIdSubmodule.decode({segments: ['tak']}, defaultConfigParams);
     expect(result).to.eql({'lipb': {'segments': ['tak']}});
   });
 
@@ -461,13 +467,196 @@ describe('LiveIntentExternalId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'triplelift': 'bar'}, 'triplelift': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
+  it('should decode a zetassp id to a separate object when present', function() {
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', zetassp: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'zetassp': 'bar'}, 'zetassp': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
   it('should decode a vidazoo id to a separate object when present', function() {
     const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode the segments as part of lipb', function() {
-    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', 'segments': ['bar'] }, { params: defaultConfigParams });
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', 'segments': ['bar'] }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'segments': ['bar']}});
+  });
+
+  it('getId does not set the global variables when liModuleEnabled, liTreatmentRate and activatePartialTreatment are undefined', function() {
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = undefined;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: undefined } };
+
+    liveIntentExternalIdSubmodule.getId(configWithPartialTreatment).callback(() => {});
+    expect(window.liModuleEnabled).to.be.undefined
+    expect(window.liTreatmentRate).to.be.undefined
+  });
+
+  it('getId does not set the global variables when liModuleEnabled is undefined, liTreatmentRate is 0.7 and activatePartialTreatment is undefined', function() {
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: undefined } };
+
+    liveIntentExternalIdSubmodule.getId(configWithPartialTreatment).callback(() => {});
+    expect(window.liModuleEnabled).to.be.undefined
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('getId does not set the global variables when liModuleEnabled is undefined, liTreatmentRate is 0.7 and activatePartialTreatment is false', function() {
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: false } };
+
+    liveIntentExternalIdSubmodule.getId(configWithPartialTreatment).callback(() => {});
+    expect(window.liModuleEnabled).to.be.undefined
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('getId does not change the global variables when liModuleEnabled is true, liTreatmentRate is 0.7 and activatePartialTreatment is true', function() {
+    randomStub.returns(1.0) // 1.0 < 0.7 = false, but should be ignored by the module
+    window.liModuleEnabled = true;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    liveIntentExternalIdSubmodule.getId(configWithPartialTreatment).callback(() => {});
+    expect(window.liModuleEnabled).to.eq(true)
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('getId does not change the global variables when liModuleEnabled is false, liTreatmentRate is 0.7 and activatePartialTreatment is true', function() {
+    randomStub.returns(0.5) // 0.5 < 0.7 = true, but should be ignored by the module
+    window.liModuleEnabled = false;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    liveIntentExternalIdSubmodule.getId(configWithPartialTreatment).callback(() => {});
+    expect(window.liModuleEnabled).to.eq(false)
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('getId sets the global variables correctly when liModuleEnabled is undefined, liTreatmentRate is 0.7 and activatePartialTreatment is true, and experiment returns false', function() {
+    randomStub.returns(1) // 1 < 0.7 = false
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    liveIntentExternalIdSubmodule.getId(configWithPartialTreatment).callback(() => {});
+    expect(window.liModuleEnabled).to.eq(false)
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('getId sets the global variables correctly when liModuleEnabled is undefined, liTreatmentRate is undefined and activatePartialTreatment is true, and experiment returns true', function() {
+    randomStub.returns(0.0) // 0.0 < DEFAULT_TREATMENT_RATE (0.97) = true
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = undefined;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    liveIntentExternalIdSubmodule.getId(configWithPartialTreatment).callback(() => {});
+    expect(window.liModuleEnabled).to.eq(true)
+    expect(window.liTreatmentRate).to.eq(DEFAULT_TREATMENT_RATE)
+  });
+
+  it('should decode IDs when liModuleEnabled, liTreatmentRate and activatePartialTreatment are undefined', function() {
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = undefined;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: undefined } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar', 'segments': ['tak']}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(window.liModuleEnabled).to.be.undefined
+    expect(window.liTreatmentRate).to.be.undefined
+  });
+
+  it('should decode IDs when liModuleEnabled is undefined, liTreatmentRate is 0.7 and activatePartialTreatment is undefined', function() {
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: undefined } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar', 'segments': ['tak']}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(window.liModuleEnabled).to.be.undefined
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('should decode IDs when liModuleEnabled is undefined, liTreatmentRate is 0.7 and activatePartialTreatment is false', function() {
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: false } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar', 'segments': ['tak']}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(window.liModuleEnabled).to.be.undefined
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('should decode IDs when liModuleEnabled is true, liTreatmentRate is 0.7 and activatePartialTreatment is true', function() {
+    randomStub.returns(1.0) // 1 < 0.7 = false, but should be ignored by the module as liModuleEnabled is already defined
+    window.liModuleEnabled = true;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar', 'segments': ['tak']}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(window.liModuleEnabled).to.eq(true)
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('should not decode IDs when liModuleEnabled is false, liTreatmentRate is 0.7 and activatePartialTreatment is true', function() {
+    randomStub.returns(0.5) // 0.5 < 0.7 = true, but should be ignored by the module as liModuleEnabled is already defined
+    window.liModuleEnabled = false;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({});
+    expect(window.liModuleEnabled).to.eq(false)
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('should not decode IDs when liModuleEnabled is false, liTreatmentRate is 0.7 and activatePartialTreatment is true', function() {
+    window.liModuleEnabled = false;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({});
+    expect(window.liModuleEnabled).to.eq(false)
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('should not decode IDs when liModuleEnabled is undefined, liTreatmentRate is 0.7 and activatePartialTreatment is true, and experiment returns false', function() {
+    randomStub.returns(1.0) // 1.0 < 0.7 = false
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = 0.7;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({});
+    expect(window.liModuleEnabled).to.eq(false)
+    expect(window.liTreatmentRate).to.eq(0.7)
+  });
+
+  it('should not decode IDs when liModuleEnabled is undefined, liTreatmentRate is undefined and activatePartialTreatment is true, and experiment returns false', function() {
+    randomStub.returns(1.0) // 1.0 < DEFAULT_TREATMENT_RATE (0.97) = false
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = undefined;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({});
+    expect(window.liModuleEnabled).to.eq(false)
+    expect(window.liTreatmentRate).to.eq(DEFAULT_TREATMENT_RATE)
+  });
+
+  it('should decode IDs when liModuleEnabled is undefined, liTreatmentRate is undefined and activatePartialTreatment is true, and experiment returns true', function() {
+    randomStub.returns(0.0) // 0.0 < DEFAULT_TREATMENT_RATE (0.97) = true
+    window.liModuleEnabled = undefined;
+    window.liTreatmentRate = undefined;
+    const configWithPartialTreatment = { params: { ...defaultConfigParams.params, activatePartialTreatment: true } };
+
+    const result = liveIntentExternalIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar', segments: ['tak'] }, configWithPartialTreatment);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar', 'segments': ['tak']}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(window.liModuleEnabled).to.eq(true)
+    expect(window.liTreatmentRate).to.eq(DEFAULT_TREATMENT_RATE)
   });
 });
