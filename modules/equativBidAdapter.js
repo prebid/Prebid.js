@@ -1,4 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { cleanObject, getFloor, makeId } from '../libraries/equativUtils/equativUtils.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -22,46 +23,6 @@ let nwid = 0;
 let impIdMap = {};
 
 /**
- * Assigns values to new properties, removes temporary ones from an object
- * and remove temporary default bidfloor of -1
- * @param {*} obj An object
- * @param {string} key A name of the new property
- * @param {string} tempKey A name of the temporary property to be removed
- * @returns {*} An updated object
- */
-function cleanObject(obj, key, tempKey) {
-  const newObj = {};
-
-  for (const prop in obj) {
-    if (prop === key) {
-      if (Object.prototype.hasOwnProperty.call(obj, tempKey)) {
-        newObj[key] = obj[tempKey];
-      }
-    } else if (prop !== tempKey) {
-      newObj[prop] = obj[prop];
-    }
-  }
-
-  newObj.bidfloor === -1 && delete newObj.bidfloor;
-
-  return newObj;
-}
-
-/**
- * Returns a floor price provided by the Price Floors module or the floor price set in the publisher parameters
- * @param {*} bid
- * @param {string} mediaType A media type
- * @param {number} width A width of the ad
- * @param {number} height A height of the ad
- * @param {string} currency A floor price currency
- * @returns {number} Floor price
- */
-function getFloor(bid, mediaType, width, height, currency) {
-  return bid.getFloor?.({ currency, mediaType, size: [width, height] })
-    .floor || bid.params.bidfloor || -1;
-}
-
-/**
  * Gets value of the local variable impIdMap
  * @returns {*} Value of impIdMap
  */
@@ -78,23 +39,6 @@ export function getImpIdMap() {
  */
 function isValid(bidReq) {
   return !(bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}') && !(bidReq.mediaTypes.native && JSON.stringify(bidReq.mediaTypes.native) === '{}');
-}
-
-/**
- * Generates a 14-char string id
- * @returns {string}
- */
-function makeId() {
-  const length = 14;
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let counter = 0;
-  let str = '';
-
-  while (counter++ < length) {
-    str += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-
-  return str;
 }
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -122,8 +66,15 @@ export const spec = {
       requests.push({
         data,
         method: 'POST',
-        // url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-        url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
+        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
+        // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
+        // options: {
+        //   customHeaders: {
+        //     'X-Eqtv-Debug': '6708e3aeca04848e919e9c8c'  // banner
+        //     // 'X-Eqtv-Debug': '682c50e92634fafa0d974114'  // native
+        //     // 'X-Eqtv-Debug': '67c8545f9d44a9f4fd5de345'  // video
+        //   }
+        // }
       })
     });
 
@@ -193,7 +144,7 @@ export const spec = {
       });
 
       let url = tryAppendQueryString(COOKIE_SYNC_URL + '?', 'nwid', nwid);
-      url = tryAppendQueryString(url, 'gdpr', (gdprConsent.gdprApplies ? '1' : '0'));
+      url = tryAppendQueryString(url, 'gdpr', (gdprConsent?.gdprApplies ? '1' : '0'));
 
       return [{ type: 'iframe', url }];
     }

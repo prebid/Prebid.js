@@ -1,28 +1,46 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { cleanObject, getFloor, makeId } from '../libraries/equativUtils/equativUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
-const COOKIE_SYNC_ORIGIN = 'https://demo.smartadserver.com';
-const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/shared/diff/templates/asset/csync.html`;
-// const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
-const STR_ENDPOINT = 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169';
-// const STR_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=169';
+// const EQT_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=169';
+const EQT_ENDPOINT = 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169';
+const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 const IDENTIFIER_PREFIX = 'Sharethrough:';
+
+let impIdMap = {};
+let isEqtTest = null;
+
+// this allows stubbing of utility function that is used internally by the sharethrough adapter
+export const sharethroughInternal = {
+  getProtocol,
+};
+
+export const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 360
+  }
+});
 
 export const sharethroughAdapterSpec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [VIDEO, BANNER],
+  supportedMediaTypes: [VIDEO, BANNER, NATIVE],
   gvlid: 80,
   isBidRequestValid: (bid) => !!bid.params.pkey,
 
   buildRequests: (bidRequests, bidderRequest) => {
     const timeout = bidderRequest.timeout;
     const firstPartyData = bidderRequest.ortb2 || {};
+
+    const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
+    const secure = nonHttp || sharethroughInternal.getProtocol().indexOf('https') > -1;
 
     const req = {
       id: generateUUID(),
@@ -61,10 +79,13 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
-    req.site.publisher = {
-      id: bidRequests[0].params.pkey,
-      ...req.site.publisher
-    };
+    if (bidRequests[0].params.publisherId) {
+      isEqtTest = true;
+      req.site.publisher = {
+        id: bidRequests[0].params.publisherId,
+        ...req.site.publisher
+      };
+    }
 
     if (bidderRequest.ortb2?.device?.ext?.cdep) {
       req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
@@ -78,7 +99,6 @@ export const sharethroughAdapterSpec = {
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
     req.user.ext.eids = bidRequests[0].userIdAsEids || [];
-    // req.user.buyeruid = '3717065797593749908';
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
@@ -115,6 +135,7 @@ export const sharethroughAdapterSpec = {
         const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid') || deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
         if (gpid) impression.ext.gpid = gpid;
 
+        const nativeRequest = deepAccess(bidReq, 'mediaTypes.native');
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
         if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
@@ -160,13 +181,26 @@ export const sharethroughAdapterSpec = {
             h,
           };
 
-          const propertiesToConsider = [
-            'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
-          ]
+          let propertiesToConsider = [
+            'api', 'battr', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
+          ];
+
+          if (!isEqtTest) {
+            propertiesToConsider.push('companionad');
+          }
 
           propertiesToConsider.forEach(propertyToConsider => {
             applyVideoProperty(propertyToConsider, videoRequest, impression);
           });
+        } else if (isEqtTest && nativeRequest) {
+          const nativeImp = converter.toORTB({
+            bidRequests: [bidReq],
+            bidderRequest
+          });
+
+          impression.native = {
+            ...nativeImp.imp[0].native
+          };
         } else {
           impression.banner = {
             pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
@@ -174,32 +208,94 @@ export const sharethroughAdapterSpec = {
             format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
           };
           const battr = deepAccess(bidReq, 'mediaTypes.banner.battr', null) || deepAccess(bidReq, 'ortb2Imp.banner.battr')
-          if (battr) impression.banner.battr = battr
+          if (battr) impression.banner.battr = battr;
         }
+
+        const tagid = isEqtTest ? bidReq.adUnitCode : String(bidReq.params.pkey);
 
         return {
           id: bidReq.bidId,
-          tagid: String(bidReq.params.pkey),
-          secure: 1,
+          tagid,
+          secure: secure ? 1 : 0,
           bidfloor: getBidRequestFloor(bidReq),
           ...impression,
         };
       })
       .filter((imp) => !!imp);
 
+    const splitImps = [];
+    if (isEqtTest) {
+      const bid = bidRequests[0];
+      const currency = config.getConfig('currency.adServerCurrency') || 'USD';
+
+      imps.forEach(item => {
+        const floorMap = {};
+
+        const updateFloorMap = (type, name, width = 0, height = 0) => {
+          const floor = getFloor(bid, type, width, height, currency);
+
+          if (!floorMap[floor]) {
+            floorMap[floor] = {
+              ...item,
+              bidfloor: floor
+            };
+          }
+
+          if (!floorMap[floor][name]) {
+            floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type];
+          }
+
+          if (type === 'banner') {
+            floorMap[floor][name].format.push({ w: width, h: height });
+          }
+        };
+
+        if (item.banner?.format?.length) {
+          item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
+        }
+
+        updateFloorMap('native', 'nativeTemp');
+        updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
+
+        Object.values(floorMap).forEach(obj => {
+          [
+            ['banner', 'bannerTemp'],
+            ['native', 'nativeTemp'],
+            ['video', 'videoTemp']
+          ].forEach(([name, tempName]) => obj = cleanObject(obj, name, tempName));
+
+          if (obj.banner || obj.video || obj.native) {
+            const id = makeId();
+            impIdMap[id] = obj.id;
+            obj.id = id;
+
+            if (obj.banner) {
+              obj.banner.pos = item.banner.pos;
+              obj.banner.topframe = item.banner.topframe;
+            }
+
+            splitImps.push(obj);
+          }
+        });
+      });
+    }
+
+    const hash =
+      '6708e3aeca04848e919e9c8c'; // banner
+      // '67ff7ea9b4590cf0ca852f94'; // banner + ttl
+      // '682c50e92634fafa0d974114'; // native
+      // '67c8545f9d44a9f4fd5de345'; // video
+    const options = isEqtTest ? { options: { customHeaders: { 'X-Eqtv-Debug': hash } } } : undefined;
+
     return imps.map((impression) => {
       return {
         method: 'POST',
-        url: STR_ENDPOINT,
+        url: isEqtTest ? EQT_ENDPOINT : STR_ENDPOINT,
         data: {
           ...req,
-          imp: [impression],
+          imp: isEqtTest ? splitImps : [impression],
         },
-        options: {
-          customHeaders: {
-            'X-Eqtv-Debug': '6708e3aeca04848e919e9c8c'
-          }
-        }
+        ...options
       };
     });
   },
@@ -217,19 +313,21 @@ export const sharethroughAdapterSpec = {
 
     const fledgeAuctionEnabled = body.ext?.auctionConfigs;
 
+    const imp = req.data.imp[0];
+
     const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
       // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
       const response = {
-        requestId: bid.impid,
+        requestId: isEqtTest ? impIdMap[bid.impid] : bid.impid,
         width: +bid.w,
         height: +bid.h,
         cpm: +bid.price,
         creativeId: bid.crid,
         dealId: bid.dealid || null,
-        mediaType: req.data.imp[0].video ? VIDEO : BANNER,
+        mediaType: imp.video ? VIDEO : imp.native ? NATIVE : BANNER,
         currency: body.cur || 'USD',
         netRevenue: true,
-        ttl: 360,
+        ttl: typeof bid.exp === 'number' && bid.exp > 0 ? bid.exp : 360,
         ad: bid.adm,
         nurl: bid.nurl,
         meta: {
@@ -253,12 +351,16 @@ export const sharethroughAdapterSpec = {
       if (response.mediaType === VIDEO) {
         response.ttl = 3600;
         response.vastXml = bid.adm;
+      } else if (response.mediaType === NATIVE) {
+        response.native = {
+          ortb: JSON.parse(bid.adm)
+        };
       }
 
       return response;
     });
 
-    if (fledgeAuctionEnabled) {
+    if (fledgeAuctionEnabled && !isEqtTest) {
       return {
         bids: bidsFromExchange,
         paapi: body.ext?.auctionConfigs || {},
@@ -268,32 +370,11 @@ export const sharethroughAdapterSpec = {
     }
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
+  getUserSyncs: (syncOptions, serverResponses) => {
     let sync = [];
 
-    if (syncOptions.iframeEnabled) {
-      if (gdprConsent?.gdprApplies) {
-        window.addEventListener('message', function handler(event) {
-          if (event.origin === COOKIE_SYNC_ORIGIN && event.data.action === 'getConsent') {
-            event.source.postMessage({
-              action: 'consentResponse',
-              id: event.data.id,
-              consents: gdprConsent.vendorData.vendor.consents
-            }, event.origin);
-
-            this.removeEventListener('message', handler);
-          }
-        });
-      }
-
-      sync.push({
-        type: 'iframe',
-        url: COOKIE_SYNC_URL + '?dc=us&gdpr=' + (gdprConsent?.gdprApplies ? 1 : 0)
-      });
-    }
-
     if (syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls')) {
-      serverResponses[0].body.cookieSyncUrls.map((url) => 
+      serverResponses[0].body.cookieSyncUrls.map((url) =>
         sync.push({
           type: 'image',
           url
@@ -327,6 +408,10 @@ function getBidRequestFloor(bid) {
     }
   }
   return floor !== null ? floor : 0;
+}
+
+function getProtocol() {
+  return window.location.protocol;
 }
 
 // stub for ?? operator
