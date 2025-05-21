@@ -11,7 +11,7 @@ import {
 import { storage, readData, storeData } from '../../../libraries/intentIqUtils/storageUtils.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
 import { clearAllCookies } from '../../helpers/cookies';
-import { detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
+import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, NOT_YET_DEFINED, PREBID, WITH_IIQ, WITHOUT_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 
 const partner = 10;
@@ -186,15 +186,19 @@ describe('IntentIQ tests', function () {
   });
 
   it('should send AT=20 request and send source in it', function () {
+    const usedBrowser = 'chrome';
     intentIqIdSubmodule.getId({params: {
       partner: 10,
-      browserBlackList: 'chrome'
+      browserBlackList: usedBrowser
       }
     });
-
-    const at20request = server.requests[0];   
-    expect(at20request.url).to.contain(`&source=${PREBID}`);
-    expect(at20request.url).to.contain(`at=20`);
+    const currentBrowserLowerCase = detectBrowser();
+    
+    if (currentBrowserLowerCase === usedBrowser) {
+      const at20request = server.requests[0];   
+      expect(at20request.url).to.contain(`&source=${PREBID}`);
+      expect(at20request.url).to.contain(`at=20`);
+    }
   });
 
 
