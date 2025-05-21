@@ -10,6 +10,7 @@ const tap = require('gulp-tap');
 const _ = require('lodash');
 const fs = require('fs');
 const filter = import('gulp-filter');
+const {buildOptions} = require('./plugins/buildOptions.js');
 
 
 // do not generate more than one task for a given build config - so that `gulp.lastRun` can work properly
@@ -125,11 +126,25 @@ const generateModuleSummary = generateTypeSummary(helpers.getPrecompiledPath('mo
 const publicModules = gulp.parallel(['js', 'd.ts'].map(generatePublicModules));
 
 
-function precompile(options) {
+const globalTemplate = _.template(`<% if (defineGlobal) {%>
+import type {PrebidJS} from "../../prebidGlobal.ts";
+declare global {
+  interface Window {
+     <%= pbGlobal %>: PrebidJS;
+  }
+}<% } %>`);
+
+function generateGlobalDef(options) {
+  return function (done) {
+    fs.writeFile(helpers.getPrecompiledPath('src/types/summary/global.d.ts'), globalTemplate(buildOptions(options)), done);
+  }
+}
+
+function precompile(options = {}) {
   return gulp.series([
     'ts',
     gulp.parallel([copyVerbatim, babelPrecomp(options)]),
-    gulp.parallel([publicModules, generateCoreSummary, generateModuleSummary])
+    gulp.parallel([publicModules, generateCoreSummary, generateModuleSummary, generateGlobalDef(options)])
   ]);
 }
 
