@@ -62,11 +62,13 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
     return {};
   }
 
-  // Get the Optable targeting data from the cache
-  const targetingData = window?.optable?.[instanceName]?.targetingKeyValuesFromCache() || {};
+  const targetingData = {};
 
-  // Return empty object if no targeting data is found
-  if (!Object.keys(targetingData).length) {
+  // Get the Optable targeting data from the cache
+  const optableTargetingData = window?.optable?.[instanceName]?.targetingKeyValuesFromCache() || {};
+
+  // If no Optable targeting data is found, return an empty object
+  if (!Object.keys(optableTargetingData).length) {
     logWarn('No Optable targeting data found');
     return targetingData;
   }
@@ -74,7 +76,7 @@ export const getTargetingData = (adUnits, moduleConfig, userConsent, auction) =>
   // Merge the Optable targeting data into the ad units
   adUnits.forEach(adUnit => {
     targetingData[adUnit] = targetingData[adUnit] || {};
-    mergeDeep(targetingData[adUnit], targetingData);
+    mergeDeep(targetingData[adUnit], optableTargetingData);
   });
 
   // If the key contains no data, remove it
