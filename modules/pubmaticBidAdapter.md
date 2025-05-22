@@ -189,7 +189,12 @@ PubMatic recommends the UserSync configuration below.  Without it, the PubMatic 
 pbjs.setConfig({
    userSync: {
     iframeEnabled: true,
-    enabledBidders: ['pubmatic'],
+    filterSettings: {
+      iframe: {
+        bidders: '*',    // '*' represents all bidders
+        filter: 'include'
+      }
+    },
     syncDelay: 6000
  }});
 

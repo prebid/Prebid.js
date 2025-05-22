@@ -295,7 +295,7 @@ export var spec = {
       [BANNER, VIDEO].forEach(mediaType => {
         if (impObj.hasOwnProperty(mediaType)) {
           let floorInfo = bid.getFloor({ currency: impObj.bidfloorcur, mediaType: mediaType, size: '*' });
-          if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
+          if (utils.isPlainObject(floorInfo) && floorInfo.currency === impObj.bidfloorcur && !isNaN(parseInt(floorInfo.floor))) {
             let mediaTypeFloor = parseFloat(floorInfo.floor);
             bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor));
           }
@@ -450,8 +450,8 @@ export var spec = {
         dnt: utils.getDNT() ? 1 : 0,
         ua: navigator.userAgent,
         language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-        w: (window.screen.width || window.innerWidth),
-        h: (window.screen.height || window.innerHeigh),
+        w: (utils.getWinDimensions().screen.width || utils.getWinDimensions().innerWidth),
+        h: (utils.getWinDimensions().screen.height || utils.getWinDimensions().innerHeight),
         geo: {
           country: params.country,
           lat: params.latitude,

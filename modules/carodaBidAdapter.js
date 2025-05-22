@@ -1,16 +1,19 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict'
 
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   logError,
   mergeDeep,
-  parseSizesInput
+  sizeTupleToRtbSize,
+  sizesToSizeTuples
 } from '../src/utils.js';
-import { config } from '../src/config.js';
 
 const { getConfig } = config;
 
@@ -44,7 +47,7 @@ export const spec = {
       getFirstWithKey(validBidRequests, 'params.priceType') ||
       'net';
     const test = getFirstWithKey(validBidRequests, 'params.test');
-    const currency = getConfig('currency.adServerCurrency');
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
     const schain = getFirstWithKey(validBidRequests, 'schain');
     const request = {
@@ -167,8 +170,10 @@ function getORTBCommon (bidderRequest) {
     }
   }
   const device = getConfig('device') || {};
-  device.w = device.w || window.innerWidth;
-  device.h = device.h || window.innerHeight;
+  const { innerWidth, innerHeight } = getWinDimensions();
+
+  device.w = device.w || innerWidth;
+  device.h = device.h || innerHeight;
   device.ua = device.ua || navigator.userAgent;
   return {
     app,
@@ -183,8 +188,8 @@ function getImps (validBidRequests, common) {
     const floorInfo = bid.getFloor
       ? bid.getFloor({ currency: common.currency || 'EUR' })
       : {};
-    const bidfloor = floorInfo.floor;
-    const bidfloorcur = floorInfo.currency;
+    const bidfloor = floorInfo?.floor;
+    const bidfloorcur = floorInfo?.currency;
     const { ctok, placementId } = bid.params;
     const imp = {
       bid_id: bid.bidId,
@@ -195,13 +200,7 @@ function getImps (validBidRequests, common) {
     };
     const bannerParams = deepAccess(bid, 'mediaTypes.banner');
     if (bannerParams && bannerParams.sizes) {
-      const sizes = parseSizesInput(bannerParams.sizes);
-      const format = sizes.map(size => {
-        const [width, height] = size.split('x');
-        const w = parseInt(width, 10);
-        const h = parseInt(height, 10);
-        return { w, h };
-      });
+      const format = sizesToSizeTuples(bannerParams.sizes).map(sizeTupleToRtbSize);
       imp.banner = {
         format
       };

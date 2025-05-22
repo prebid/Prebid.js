@@ -185,28 +185,30 @@ describe('toFetchRequest', () => {
     });
   });
 
-  describe('browsingTopics', () => {
-    Object.entries({
-      'browsingTopics = true': [{browsingTopics: true}, true],
-      'browsingTopics = false': [{browsingTopics: false}, false],
-      'browsingTopics is undef': [{}, false]
-    }).forEach(([t, [opts, shouldBeSet]]) => {
-      describe(`when options has ${t}`, () => {
-        const sandbox = sinon.createSandbox();
-        afterEach(() => {
-          sandbox.restore();
-        });
+  describe('chrome options', () => {
+    ['browsingTopics', 'adAuctionHeaders'].forEach(option => {
+      Object.entries({
+        [`${option} = true`]: [{[option]: true}, true],
+        [`${option} = false`]: [{[option]: false}, false],
+        [`${option} undef`]: [{}, false]
+      }).forEach(([t, [opts, shouldBeSet]]) => {
+        describe(`when options has ${t}`, () => {
+          const sandbox = sinon.createSandbox();
+          afterEach(() => {
+            sandbox.restore();
+          });
 
-        it(`should ${!shouldBeSet ? 'not ' : ''}be set when in a secure context`, () => {
-          sandbox.stub(window, 'isSecureContext').get(() => true);
-          toFetchRequest(EXAMPLE_URL, null, opts);
-          sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: shouldBeSet ? true : undefined});
-        });
-        it(`should not be set when not in a secure context`, () => {
-          sandbox.stub(window, 'isSecureContext').get(() => false);
-          toFetchRequest(EXAMPLE_URL, null, opts);
-          sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: undefined});
-        });
+          it(`should ${!shouldBeSet ? 'not ' : ''}be set when in a secure context`, () => {
+            sandbox.stub(window, 'isSecureContext').get(() => true);
+            toFetchRequest(EXAMPLE_URL, null, opts);
+            sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {[option]: shouldBeSet ? true : undefined});
+          });
+          it(`should not be set when not in a secure context`, () => {
+            sandbox.stub(window, 'isSecureContext').get(() => false);
+            toFetchRequest(EXAMPLE_URL, null, opts);
+            sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {[option]: undefined});
+          });
+        })
       })
     })
   })

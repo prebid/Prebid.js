@@ -12,6 +12,9 @@ import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 
+const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
+const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p'
+
 const ADTYPE_IMG = 'Img';
 const ADTYPE_VIDEO = 'Video';
 const ADTYPE_NATIVE = 'Native';
@@ -172,6 +175,7 @@ describe('smaatoBidAdapterTest', () => {
             id: 'bidId',
             banner: BANNER_OPENRTB_IMP,
             tagid: 'adspaceId',
+            secure: 1
           }
         ]);
       });
@@ -1667,8 +1671,101 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('getUserSyncs', () => {
-    it('returns no pixels', () => {
+    afterEach(() => {
+      config.resetConfig();
+    })
+
+    it('when pixelEnabled and iframeEnabled false then returns no syncs', () => {
       expect(spec.getUserSyncs()).to.be.empty
+    })
+
+    it('when pixelEnabled true then returns image sync', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, null, null)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: IMAGE_SYNC_URL
+          }
+        ]
+      )
+    })
+
+    it('when iframeEnabled true then returns iframe sync', () => {
+      expect(spec.getUserSyncs({iframeEnabled: true}, null, null, null)).to.deep.equal(
+          [
+            {
+              type: 'iframe',
+              url: IFRAME_SYNC_URL
+            }
+          ]
+      )
+    })
+
+    it('when iframeEnabled true and syncsPerBidder then returns iframe sync', () => {
+      config.setConfig({userSync: {syncsPerBidder: 5}});
+      expect(spec.getUserSyncs({iframeEnabled: true}, null, null, null)).to.deep.equal(
+          [
+            {
+              type: 'iframe',
+              url: `${IFRAME_SYNC_URL}&maxUrls=5`
+            }
+          ]
+      )
+    })
+
+    it('when iframeEnabled and pixelEnabled true then returns iframe sync', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, null, null, null)).to.deep.equal(
+          [
+            {
+              type: 'iframe',
+              url: IFRAME_SYNC_URL
+            }
+          ]
+      )
+    })
+
+    it('when pixelEnabled true and gdprConsent then returns image sync with gdpr params', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, {gdprApplies: true, consentString: CONSENT_STRING}, null)).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
+      )
+    })
+
+    it('when iframeEnabled true and gdprConsent then returns iframe with gdpr params', () => {
+      expect(spec.getUserSyncs({iframeEnabled: true}, null, {gdprApplies: true, consentString: CONSENT_STRING}, null)).to.deep.equal(
+          [
+            {
+              type: 'iframe',
+              url: `${IFRAME_SYNC_URL}&gdpr=1&gdpr_consent=${CONSENT_STRING}`
+            }
+          ]
+      )
+    })
+
+    it('when pixelEnabled true and gdprConsent without gdpr then returns pixel sync with gdpr_consent', () => {
+      expect(spec.getUserSyncs({pixelEnabled: true}, null, {consentString: CONSENT_STRING}, null), null).to.deep.equal(
+        [
+          {
+            type: 'image',
+            url: `${IMAGE_SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
+          }
+        ]
+      )
+    })
+
+    it('when iframeEnabled true and gdprConsent without gdpr then returns iframe sync with gdpr_consent', () => {
+      expect(spec.getUserSyncs({iframeEnabled: true}, null, {consentString: CONSENT_STRING}, null), null).to.deep.equal(
+          [
+            {
+              type: 'iframe',
+              url: `${IFRAME_SYNC_URL}&gdpr_consent=${CONSENT_STRING}`
+            }
+          ]
+      )
     })
   })
 });

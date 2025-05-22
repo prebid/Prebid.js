@@ -7,12 +7,17 @@ import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
 import {
+  adAuctionHeadersHook,
   addPaapiConfigHook,
+  addPaapiData,
+  ASYNC_SIGNALS, AsyncPAAPIParam, buildPAAPIParams,
   buyersToAuctionConfigs,
   getPAAPIConfig,
   getPAAPISize,
   IGB_TO_CONFIG,
-  mergeBuyers,
+  mergeBuyers, NAVIGATOR_APIS,
+  onAuctionInit,
+  parallelPaapiProcessing,
   parseExtIgi,
   parseExtPrebidFledge,
   partitionBuyers,
@@ -28,6 +33,7 @@ import {getGlobal} from '../../../src/prebidGlobal.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
+import {buildActivityParams} from '../../../src/activities/params.js';
 
 describe('paapi module', () => {
   let sandbox;
@@ -58,6 +64,44 @@ describe('paapi module', () => {
     beforeEach(() => {
       getPAAPISizeStub = sinon.stub();
     });
+
+    describe('adAuctionHeadersHook', () => {
+      let bidderRequest, ajax;
+      beforeEach(() => {
+        ajax = sinon.stub();
+        bidderRequest = {paapi: {}}
+      })
+      function getWrappedAjax() {
+        let wrappedAjax;
+        let next = sinon.stub().callsFake((spec, bids, br, ajax) => {
+          wrappedAjax = ajax;
+        });
+        adAuctionHeadersHook(next, {}, [], bidderRequest, ajax);
+        return wrappedAjax;
+      }
+      describe('when PAAPI is enabled', () => {
+        beforeEach(() => {
+          bidderRequest.paapi.enabled = true;
+        });
+        [
+          undefined,
+          {},
+          {adAuctionHeaders: true}
+        ].forEach(options =>
+          it(`should set adAuctionHeaders = true (when options are ${JSON.stringify(options)})`, () => {
+            getWrappedAjax()('url', {}, 'data', options);
+            sinon.assert.calledWith(ajax, 'url', {}, 'data', sinon.match({adAuctionHeaders: true}));
+          }));
+
+        it('should respect adAuctionHeaders: false', () => {
+          getWrappedAjax()('url', {}, 'data', {adAuctionHeaders: false});
+          sinon.assert.calledWith(ajax, 'url', {}, 'data', sinon.match({adAuctionHeaders: false}));
+        })
+      });
+      it('should not alter ajax when paapi is not enabled', () => {
+        expect(getWrappedAjax()).to.equal(ajax);
+      })
+    })
 
     describe('getPAAPIConfig', function () {
       let nextFnSpy, auctionConfig, paapiConfig;
@@ -91,10 +135,10 @@ describe('paapi module', () => {
           let igb1, igb2, buyerAuctionConfig;
           beforeEach(() => {
             igb1 = {
-              origin: 'buyer1'
+              origin: 'buyer.1'
             };
             igb2 = {
-              origin: 'buyer2'
+              origin: 'buyer.2'
             };
             buyerAuctionConfig = {
               seller: 'seller',
@@ -225,7 +269,6 @@ describe('paapi module', () => {
         it('should drop auction configs after end of auction', () => {
           events.emit(EVENTS.AUCTION_END, {auctionId});
           addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, paapiConfig);
-          events.emit(EVENTS.AUCTION_END, {auctionId});
           expect(getPAAPIConfig({auctionId})).to.eql({});
         });
 
@@ -263,11 +306,11 @@ describe('paapi module', () => {
           });
 
           it('should be added to perBuyerSignals', () => {
-            auctionConfig.interestGroupBuyers = ['buyer1', 'buyer2'];
+            auctionConfig.interestGroupBuyers = ['buyer.1', 'buyer.2'];
             const pbs = getComponentAuctionConfig().perBuyerSignals;
             sinon.assert.match(pbs, {
-              buyer1: {prebid: {ortb2, ortb2Imp}},
-              buyer2: {prebid: {ortb2, ortb2Imp}}
+              'buyer.1': {prebid: {ortb2, ortb2Imp}},
+              'buyer.2': {prebid: {ortb2, ortb2Imp}}
             });
           });
 
@@ -314,19 +357,6 @@ describe('paapi module', () => {
                   au3: null
                 });
               });
-            });
-            it('removes configs from getPAAPIConfig if the module calls markAsUsed', () => {
-              submods[0].onAuctionConfig.callsFake((auctionId, configs, markAsUsed) => {
-                markAsUsed('au1');
-              });
-              addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, paapiConfig);
-              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
-              expect(getPAAPIConfig()).to.eql({});
-            });
-            it('keeps them available if they do not', () => {
-              addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, paapiConfig);
-              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
-              expect(getPAAPIConfig()).to.not.be.empty;
             });
           });
         });
@@ -652,110 +682,202 @@ describe('paapi module', () => {
         config.resetConfig();
       });
 
-      function mark() {
-        return Object.fromEntries(
-          adapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {
-            },
-            []
-          ).map(b => [b.bidderCode, b])
-        );
-      }
-
-      function expectFledgeFlags(...enableFlags) {
-        const bidRequests = mark();
-        expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
-        bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
-
-        expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
-        bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
-
-        Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
-          if (bid.ortb2Imp?.ext?.ae) {
-            sinon.assert.match(bid.ortb2Imp.ext.igs, {
-              ae: bid.ortb2Imp.ext.ae,
-              biddable: 1
-            });
-          }
+      describe('makeBidRequests', () => {
+        before(() => {
+          NAVIGATOR_APIS.forEach(method => {
+            if (navigator[method] == null) {
+              navigator[method] = () => null;
+              after(() => {
+                delete navigator[method];
+              })
+            }
+          })
         });
-      }
+        beforeEach(() => {
+          NAVIGATOR_APIS.forEach(method => {
+            sandbox.stub(navigator, method)
+          })
+        });
 
-      describe('with setConfig()', () => {
-        it('should set paapi.enabled correctly per bidder', function () {
-          config.setConfig({
-            bidderSequence: 'fixed',
-            paapi: {
-              enabled: true,
-              bidders: ['appnexus'],
-              defaultForSlots: 1,
+        function mark() {
+          return Object.fromEntries(
+            adapterManager.makeBidRequests(
+              adUnits,
+              Date.now(),
+              utils.getUniqueIdentifierStr(),
+              function callback() {
+              },
+              []
+            ).map(b => [b.bidderCode, b])
+          );
+        }
+
+        async function testAsyncParams(bidderRequest) {
+          for (const method of NAVIGATOR_APIS) {
+            navigator[method].returns('result');
+            expect(await bidderRequest.paapi[method]('arg').resolve()).to.eql('result');
+            sinon.assert.calledWith(navigator[method], 'arg');
+          }
+        }
+
+        async function expectFledgeFlags(...enableFlags) {
+          const bidRequests = mark();
+          expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
+          if (bidRequests.appnexus.paapi?.enabled) {
+            await testAsyncParams(bidRequests.appnexus)
+          }
+          bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
+
+          expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
+          if (bidRequests.rubicon.paapi?.enabled) {
+            testAsyncParams(bidRequests.rubicon);
+          }
+
+          bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
+
+          Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
+            if (bid.ortb2Imp?.ext?.ae) {
+              sinon.assert.match(bid.ortb2Imp.ext.igs, {
+                ae: bid.ortb2Imp.ext.ae,
+                biddable: 1
+              });
             }
           });
-          expectFledgeFlags({enabled: true, ae: 1}, {enabled: false, ae: undefined});
-        });
+        }
 
-        it('should set paapi.enabled correctly for all bidders', function () {
-          config.setConfig({
-            bidderSequence: 'fixed',
-            paapi: {
-              enabled: true,
-              defaultForSlots: 1,
-            }
-          });
-          expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
-        });
-
-        Object.entries({
-          'not set': {
-            cfg: {},
-            componentSeller: false
-          },
-          'set': {
-            cfg: {
-              componentSeller: {
-                auctionConfig: {
-                  decisionLogicURL: 'publisher.example'
-                }
-              }
-            },
-            componentSeller: true
-          }
-        }).forEach(([t, {cfg, componentSeller}]) => {
-          it(`should set request paapi.componentSeller = ${componentSeller} when config componentSeller is ${t}`, () => {
+        describe('with setConfig()', () => {
+          it('should set paapi.enabled correctly per bidder', async function () {
             config.setConfig({
+              bidderSequence: 'fixed',
+              paapi: {
+                enabled: true,
+                bidders: ['appnexus'],
+                defaultForSlots: 1,
+              }
+            });
+            await expectFledgeFlags({enabled: true, ae: 1}, {enabled: false, ae: 0});
+          });
+
+          it('should set paapi.enabled correctly for all bidders', async function () {
+            config.setConfig({
+              bidderSequence: 'fixed',
               paapi: {
                 enabled: true,
                 defaultForSlots: 1,
-                ...cfg
               }
             });
-            Object.values(mark()).forEach(br => expect(br.paapi?.componentSeller).to.eql(componentSeller));
+            await expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
+          });
+
+          Object.entries({
+            'not set': {
+              cfg: {},
+              componentSeller: false
+            },
+            'set': {
+              cfg: {
+                componentSeller: {
+                  auctionConfig: {
+                    decisionLogicURL: 'publisher.example'
+                  }
+                }
+              },
+              componentSeller: true
+            }
+          }).forEach(([t, {cfg, componentSeller}]) => {
+            it(`should set request paapi.componentSeller = ${componentSeller} when config componentSeller is ${t}`, () => {
+              config.setConfig({
+                paapi: {
+                  enabled: true,
+                  defaultForSlots: 1,
+                  ...cfg
+                }
+              });
+              Object.values(mark()).forEach(br => expect(br.paapi?.componentSeller).to.eql(componentSeller));
+            });
           });
         });
+      });
+      describe('addPaapiData', () => {
+        function getEnrichedAdUnits() {
+          const next = sinon.stub();
+          addPaapiData(next, adUnits);
+          sinon.assert.calledWith(next, adUnits);
+          return adUnits;
+        }
+
+        function getImpExt() {
+          const next = sinon.stub();
+          addPaapiData(next, adUnits);
+          sinon.assert.calledWith(next, adUnits);
+          return {
+            global: adUnits[0].ortb2Imp?.ext,
+            ...Object.fromEntries(adUnits[0].bids.map(bid => [bid.bidder, bid.ortb2Imp?.ext]))
+          }
+        }
 
         it('should not override pub-defined ext.ae', () => {
           config.setConfig({
-            bidderSequence: 'fixed',
             paapi: {
               enabled: true,
               defaultForSlots: 1,
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 0}}});
-          expectFledgeFlags({enabled: true, ae: 0}, {enabled: true, ae: 0});
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 0,
+            },
+            rubicon: undefined,
+            appnexus: undefined
+          });
         });
+
+        it('should override per-bidder when excluded via paapi.bidders', () => {
+          config.setConfig({
+            paapi: {
+              enabled: true,
+              defaultForSlots: 1,
+              bidders: ['rubicon']
+            }
+          })
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 1,
+              igs: {
+                ae: 1,
+                biddable: 1
+              }
+            },
+            rubicon: undefined,
+            appnexus: {
+              ae: 0,
+              igs: {
+                ae: 0,
+                biddable: 0
+              }
+            }
+          })
+        })
 
         it('should populate ext.igs when request has ext.ae', () => {
           config.setConfig({
-            bidderSequence: 'fixed',
             paapi: {
               enabled: true
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 3}}});
-          expectFledgeFlags({enabled: true, ae: 3}, {enabled: true, ae: 3});
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 3,
+              igs: {
+                ae: 3,
+                biddable: 1
+              }
+            },
+            rubicon: undefined,
+            appnexus: undefined,
+          });
         });
 
         it('should not override pub-defined ext.igs', () => {
@@ -765,16 +887,17 @@ describe('paapi module', () => {
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 1, igs: {biddable: 0}}}});
-          const bidReqs = mark();
-          Object.values(bidReqs).flatMap(req => req.bids).forEach(bid => {
-            sinon.assert.match(bid.ortb2Imp.ext, {
+          sinon.assert.match(getImpExt(), {
+            global: {
               ae: 1,
               igs: {
                 ae: 1,
                 biddable: 0
               }
-            });
-          });
+            },
+            rubicon: undefined,
+            appnexus: undefined
+          })
         });
 
         it('should fill ext.ae from ext.igs, if defined', () => {
@@ -784,60 +907,64 @@ describe('paapi module', () => {
             }
           });
           Object.assign(adUnits[0], {ortb2Imp: {ext: {igs: {}}}});
-          expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
+          sinon.assert.match(getImpExt(), {
+            global: {
+              ae: 1,
+              igs: {
+                ae: 1,
+                biddable: 1
+              }
+            },
+            appnexus: undefined,
+            rubicon: undefined
+          })
         });
-      });
 
-      describe('ortb2Imp.ext.paapi.requestedSize', () => {
-        beforeEach(() => {
-          config.setConfig({
-            paapi: {
-              enabled: true,
-              defaultForSlots: 1,
-            }
+        describe('ortb2Imp.ext.paapi.requestedSize', () => {
+          beforeEach(() => {
+            config.setConfig({
+              paapi: {
+                enabled: true,
+                defaultForSlots: 1,
+              }
+            });
           });
-        });
 
-        it('should default to value returned by getPAAPISize', () => {
-          getPAAPISizeStub.returns([123, 321]);
-          Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
-            sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
+          it('should default to value returned by getPAAPISize', () => {
+            getPAAPISizeStub.returns([123, 321]);
+            expect(getImpExt().global.paapi).to.eql({
               requestedSize: {
                 width: 123,
                 height: 321
               }
             });
           });
-        });
 
-        it('should not be overridden, if provided by the pub', () => {
-          adUnits[0].ortb2Imp = {
-            ext: {
-              paapi: {
-                requestedSize: {
-                  width: '123px',
-                  height: '321px'
+          it('should not be overridden, if provided by the pub', () => {
+            adUnits[0].ortb2Imp = {
+              ext: {
+                paapi: {
+                  requestedSize: {
+                    width: '123px',
+                    height: '321px'
+                  }
                 }
               }
-            }
-          };
-          Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
-            sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
+            };
+            expect(getImpExt().global.paapi).to.eql({
               requestedSize: {
                 width: '123px',
                 height: '321px'
               }
-            });
+            })
+            sinon.assert.notCalled(getPAAPISizeStub);
           });
-          sinon.assert.notCalled(getPAAPISizeStub);
-        });
 
-        it('should not be set if adUnit has no banner sizes', () => {
-          adUnits[0].mediaTypes = {
-            video: {}
-          };
-          Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
-            expect(bidRequest.ortb2Imp?.ext?.paapi?.requestedSize).to.not.exist;
+          it('should not be set if adUnit has no banner sizes', () => {
+            adUnits[0].mediaTypes = {
+              video: {}
+            };
+            expect(getImpExt().global?.paapi?.requestedSize).to.not.exist;
           });
         });
       });
@@ -996,11 +1123,11 @@ describe('paapi module', () => {
         it('uses compact partitions by default, and returns an auction config for each one', () => {
           partitioners.compact.returns([[{}, 1], [{}, 2]]);
           const [cf1, cf2] = toAuctionConfig();
-          sinon.assert.match(cf1, {
+          sinon.assert.match(cf1[1], {
             ...config.auctionConfig,
             config: 0
           });
-          sinon.assert.match(cf2, {
+          sinon.assert.match(cf2[1], {
             ...config.auctionConfig,
             config: 1
           });
@@ -1028,8 +1155,8 @@ describe('paapi module', () => {
           };
           partitioners.compact.returns([[{}], [fpd]]);
           const [cf1, cf2] = toAuctionConfig();
-          expect(cf1.auctionSignals?.prebid).to.not.exist;
-          expect(cf2.auctionSignals.prebid).to.eql(fpd);
+          expect(cf1[1].auctionSignals?.prebid).to.not.exist;
+          expect(cf2[1].auctionSignals.prebid).to.eql(fpd);
         });
       });
     });
@@ -1056,11 +1183,613 @@ describe('paapi module', () => {
       'can handle no input': {
         in: undefined,
         out: undefined
+      },
+      'can handle placeholder sizes': {
+        in: [[1, 1]],
+        out: undefined
       }
     }).forEach(([t, {in: input, out}]) => {
       it(t, () => {
         expect(getPAAPISize(input)).to.eql(out);
       });
+    });
+  });
+
+  describe('buildPaapiParameters', () => {
+    let next, bidderRequest, spec, bids;
+    beforeEach(() => {
+      next = sinon.stub();
+      spec = {};
+      bidderRequest = {paapi: {enabled: true}};
+      bids = [];
+    });
+
+    function runParamHook() {
+      return Promise.resolve(buildPAAPIParams(next, spec, bids, bidderRequest));
+    }
+
+    Object.entries({
+      'has no paapiParameters': () => null,
+      'returns empty parameter map'() {
+        spec.paapiParameters = () => ({})
+      },
+      'returns null parameter map'() {
+        spec.paapiParameters = () => null
+      },
+      'returns params, but PAAPI is disabled'() {
+        bidderRequest.paapi.enabled = false;
+        spec.paapiParameters = () => ({param: new AsyncPAAPIParam()})
+      }
+    }).forEach(([t, setup]) => {
+      it(`should do nothing if spec ${t}`, async () => {
+        setup();
+        await runParamHook();
+        sinon.assert.calledWith(next, spec, bids, bidderRequest);
+      })
+    })
+
+    describe('when paapiParameters returns a map', () => {
+      let params;
+      beforeEach(() => {
+        spec.paapiParameters = sinon.stub().callsFake(() => params);
+      });
+      it('should be invoked with bids & bidderRequest', async () => {
+        await runParamHook();
+        sinon.assert.calledWith(spec.paapiParameters, bids, bidderRequest);
+      });
+      it('should leave most things (including promises) untouched', async () => {
+        params = {
+          'p1': 'scalar',
+          'p2': Promise.resolve()
+        }
+        await runParamHook();
+        expect(bidderRequest.paapi.params).to.eql(params);
+      });
+      it('should resolve async PAAPI parameeters', async () => {
+        params = {
+          'resolved': new AsyncPAAPIParam(() => Promise.resolve('value')),
+        }
+        await runParamHook();
+        expect(bidderRequest.paapi.params).to.eql({
+          'resolved': 'value'
+        })
+      })
+
+      it('should still call next if the resolution fails', async () => {
+        params = {
+          error: new AsyncPAAPIParam(() => Promise.reject(new Error()))
+        }
+        await runParamHook();
+        sinon.assert.called(next);
+        expect(bidderRequest.paapi.params).to.not.exist;
+      })
+    })
+  })
+
+  describe('parallel PAAPI auctions', () => {
+    describe('parallellPaapiProcessing', () => {
+      let next, spec, bids, bidderRequest, restOfTheArgs, mockConfig, mockAuction, bidsReceived, bidderRequests, adUnitCodes, adUnits;
+
+      beforeEach(() => {
+        next = sinon.stub();
+        spec = {
+          code: 'mockBidder',
+        };
+        bids = [{
+          bidder: 'mockBidder',
+          bidId: 'bidId',
+          adUnitCode: 'au',
+          auctionId: 'aid',
+          mediaTypes: {
+            banner: {
+              sizes: [[123, 321]]
+            }
+          }
+        }];
+        bidderRequest = {auctionId: 'aid', bidderCode: 'mockBidder', paapi: {enabled: true}, bids};
+        restOfTheArgs = [{more: 'args'}];
+        mockConfig = {
+          seller: 'mock.seller',
+          decisionLogicURL: 'mock.seller/decisionLogic',
+          interestGroupBuyers: ['mock.buyer']
+        }
+        mockAuction = {};
+        bidsReceived = [{adUnitCode: 'au', cpm: 1}];
+        adUnits = [{code: 'au'}]
+        adUnitCodes = ['au'];
+        bidderRequests = [bidderRequest];
+        sandbox.stub(auctionManager.index, 'getAuction').callsFake(() => mockAuction);
+        sandbox.stub(auctionManager.index, 'getAdUnit').callsFake((req) => bids.find(bid => bid.adUnitCode === req.adUnitCode))
+        config.setConfig({paapi: {enabled: true}});
+      });
+
+      afterEach(() => {
+        sinon.assert.calledWith(next, spec, bids, bidderRequest, ...restOfTheArgs);
+        config.resetConfig();
+      });
+
+      function startParallel() {
+        parallelPaapiProcessing(next, spec, bids, bidderRequest, ...restOfTheArgs);
+        onAuctionInit({auctionId: 'aid'})
+      }
+
+      function endAuction() {
+        events.emit(EVENTS.AUCTION_END, {auctionId: 'aid', bidsReceived, bidderRequests, adUnitCodes, adUnits})
+      }
+
+      describe('should have no effect when', () => {
+        afterEach(() => {
+          expect(getPAAPIConfig({}, true)).to.eql({au: null});
+        })
+        it('spec has no buildPAAPIConfigs', () => {
+          startParallel();
+        });
+        Object.entries({
+          'returns no configs': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []); },
+          'throws': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => { throw new Error() }) },
+          'returns too little config': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [ {bidId: 'bidId', config: {seller: 'mock.seller'}} ]) },
+          'bidder is not paapi enabled': () => {
+            bidderRequest.paapi.enabled = false;
+            spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [{config: mockConfig, bidId: 'bidId'}])
+          },
+          'paapi module is not enabled': () => {
+            delete bidderRequest.paapi;
+            spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [{config: mockConfig, bidId: 'bidId'}])
+          },
+          'bidId points to missing bid': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [{config: mockConfig, bidId: 'missing'}]) }
+        }).forEach(([t, setup]) => {
+          it(`buildPAAPIConfigs ${t}`, () => {
+            setup();
+            startParallel();
+          });
+        });
+      });
+
+      function resolveConfig(auctionConfig) {
+        return Promise.all(
+          Object.entries(auctionConfig)
+            .map(([key, value]) => Promise.resolve(value).then(value => [key, value]))
+        ).then(result => Object.fromEntries(result))
+      }
+
+      describe('when buildPAAPIConfigs returns valid config', () => {
+        let builtCfg;
+        beforeEach(() => {
+          builtCfg = [{bidId: 'bidId', config: mockConfig}];
+          spec.buildPAAPIConfigs = sinon.stub().callsFake(() => builtCfg);
+        });
+
+        it('should make async config available from getPAAPIConfig', () => {
+          startParallel();
+          const actual = getPAAPIConfig();
+          const promises = Object.fromEntries(ASYNC_SIGNALS.map(signal => [signal, sinon.match((arg) => arg instanceof Promise)]))
+          sinon.assert.match(actual, {
+            au: sinon.match({
+              ...promises,
+              requestedSize: {
+                width: 123,
+                height: 321
+              },
+              componentAuctions: [
+                sinon.match({
+                  ...mockConfig,
+                  ...promises,
+                  requestedSize: {
+                    width: 123,
+                    height: 321
+                  }
+                })
+              ]
+            })
+          });
+        });
+
+        it('should work when called multiple times for the same auction', () => {
+          startParallel();
+          spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []);
+          startParallel();
+          expect(getPAAPIConfig().au.componentAuctions.length).to.eql(1);
+        });
+
+        it('should hide TIDs from buildPAAPIConfigs', () => {
+          config.setConfig({enableTIDs: false});
+          startParallel();
+          sinon.assert.calledWith(
+            spec.buildPAAPIConfigs,
+            sinon.match(bidRequests => bidRequests.every(req => req.auctionId == null)),
+            sinon.match(bidderRequest => bidderRequest.auctionId == null)
+          );
+        });
+
+        it('should show TIDs when enabled', () => {
+          config.setConfig({enableTIDs: true});
+          startParallel();
+          sinon.assert.calledWith(
+            spec.buildPAAPIConfigs,
+            sinon.match(bidRequests => bidRequests.every(req => req.auctionId === 'aid')),
+            sinon.match(bidderRequest => bidderRequest.auctionId === 'aid')
+          )
+        })
+
+        it('should respect requestedSize from adapter', () => {
+          mockConfig.requestedSize = {width: 1, height: 2};
+          startParallel();
+          sinon.assert.match(getPAAPIConfig().au, {
+            requestedSize: {
+              width: 123,
+              height: 321
+            },
+            componentAuctions: [sinon.match({
+              requestedSize: {
+                width: 1,
+                height: 2
+              }
+            })]
+          })
+        })
+
+        it('should not accept multiple partial configs for the same bid/seller', () => {
+          builtCfg.push(builtCfg[0])
+          startParallel();
+          expect(getPAAPIConfig().au.componentAuctions.length).to.eql(1);
+        });
+        it('should resolve top level config with auction signals', async () => {
+          startParallel();
+          let config = getPAAPIConfig().au;
+          endAuction();
+          config = await resolveConfig(config);
+          sinon.assert.match(config, {
+            auctionSignals: {
+              prebid: {bidfloor: 1}
+            }
+          })
+        });
+
+        describe('when adapter returns the rest of auction config', () => {
+          let configRemainder;
+          beforeEach(() => {
+            configRemainder = {
+              ...Object.fromEntries(ASYNC_SIGNALS.map(signal => [signal, {type: signal}])),
+              seller: 'mock.seller'
+            };
+          })
+          function returnRemainder() {
+            addPaapiConfigHook(sinon.stub(), bids[0], {config: configRemainder});
+          }
+          it('should resolve component configs with values returned by adapters', async () => {
+            startParallel();
+            let config = getPAAPIConfig().au.componentAuctions[0];
+            returnRemainder();
+            endAuction();
+            config = await resolveConfig(config);
+            sinon.assert.match(config, configRemainder);
+          });
+
+          it('should pick first config that matches bidId/seller', async () => {
+            startParallel();
+            let config = getPAAPIConfig().au.componentAuctions[0];
+            returnRemainder();
+            const expectedSignals = {...configRemainder};
+            configRemainder = {
+              ...configRemainder,
+              auctionSignals: {
+                this: 'should be ignored'
+              }
+            }
+            returnRemainder();
+            endAuction();
+            config = await resolveConfig(config);
+            sinon.assert.match(config, expectedSignals);
+          });
+
+          describe('should default to values returned from buildPAAPIConfigs when interpretResponse does not return', () => {
+            beforeEach(() => {
+              ASYNC_SIGNALS.forEach(signal => mockConfig[signal] = {default: signal})
+            });
+            Object.entries({
+              'returns no matching config'() {
+              },
+              'does not include values in response'() {
+                configRemainder = {};
+                returnRemainder();
+              }
+            }).forEach(([t, postResponse]) => {
+              it(t, async () => {
+                startParallel();
+                let config = getPAAPIConfig().au.componentAuctions[0];
+                postResponse();
+                endAuction();
+                config = await resolveConfig(config);
+                sinon.assert.match(config, mockConfig);
+              });
+            });
+          });
+
+          it('should resolve to undefined when no value is available', async () => {
+            startParallel();
+            let config = getPAAPIConfig().au.componentAuctions[0];
+            delete configRemainder.sellerSignals;
+            returnRemainder();
+            endAuction();
+            config = await resolveConfig(config);
+            expect(config.sellerSignals).to.be.undefined;
+          });
+
+          [
+            {
+              start: {t: 'scalar', value: 'str'},
+              end: {t: 'array', value: ['abc']},
+              should: {t: 'array', value: ['abc']}
+            },
+            {
+              start: {t: 'object', value: {a: 'b'}},
+              end: {t: 'scalar', value: 'abc'},
+              should: {t: 'scalar', value: 'abc'}
+            },
+            {
+              start: {t: 'object', value: {outer: {inner: 'val'}}},
+              end: {t: 'object', value: {outer: {other: 'val'}}},
+              should: {t: 'merge', value: {outer: {inner: 'val', other: 'val'}}}
+            }
+          ].forEach(({start, end, should}) => {
+            it(`when buildPAAPIConfigs returns ${start.t}, interpretResponse return ${end.t}, promise should resolve to ${should.t}`, async () => {
+              mockConfig.sellerSignals = start.value
+              startParallel();
+              let config = getPAAPIConfig().au.componentAuctions[0];
+              configRemainder.sellerSignals = end.value;
+              returnRemainder();
+              endAuction();
+              config = await resolveConfig(config);
+              expect(config.sellerSignals).to.eql(should.value);
+            })
+          })
+
+          it('should make extra configs available', async () => {
+            startParallel();
+            returnRemainder();
+            configRemainder = {...configRemainder, seller: 'other.seller'};
+            returnRemainder();
+            endAuction();
+            let configs = getPAAPIConfig().au.componentAuctions;
+            configs = [await resolveConfig(configs[0]), configs[1]];
+            expect(configs.map(cfg => cfg.seller)).to.eql(['mock.seller', 'other.seller']);
+          });
+
+          describe('submodule\'s onAuctionConfig', () => {
+            let onAuctionConfig;
+            beforeEach(() => {
+              onAuctionConfig = sinon.stub();
+              registerSubmodule({onAuctionConfig})
+            });
+
+            Object.entries({
+              'parallel=true, some configs deferred': {
+                setup() {
+                  config.mergeConfig({paapi: {parallel: true}})
+                },
+                delayed: false,
+              },
+              'parallel=true, no deferred configs': {
+                setup() {
+                  config.mergeConfig({paapi: {parallel: true}});
+                  spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []);
+                },
+                delayed: true
+              },
+              'parallel=false, some configs deferred': {
+                setup() {
+                  config.mergeConfig({paapi: {parallel: false}})
+                },
+                delayed: true
+              }
+            }).forEach(([t, {setup, delayed}]) => {
+              describe(`when ${t}`, () => {
+                beforeEach(() => {
+                  mockAuction.requestsDone = Promise.resolve();
+                  setup();
+                });
+
+                function expectInvoked(shouldBeInvoked) {
+                  if (shouldBeInvoked) {
+                    sinon.assert.calledWith(onAuctionConfig, 'aid', sinon.match(arg => arg.au.componentAuctions[0].seller === 'mock.seller'));
+                  } else {
+                    sinon.assert.notCalled(onAuctionConfig);
+                  }
+                }
+
+                it(`should invoke onAuctionConfig when ${delayed ? 'auction ends' : 'auction requests have started'}`, async () => {
+                  startParallel();
+                  await mockAuction.requestsDone;
+                  expectInvoked(!delayed);
+                  onAuctionConfig.reset();
+                  returnRemainder();
+                  endAuction();
+                  expectInvoked(delayed);
+                })
+              })
+            })
+          })
+        });
+      });
+      describe('when buildPAAPIConfigs returns igb', () => {
+        let builtCfg, igb, auctionConfig;
+        beforeEach(() => {
+          igb = {origin: 'mock.buyer'}
+          builtCfg = [{bidId: 'bidId', igb}];
+          spec.buildPAAPIConfigs = sinon.stub().callsFake(() => builtCfg);
+          auctionConfig = {
+            seller: 'mock.seller',
+            decisionLogicUrl: 'mock.seller/decisionLogic'
+          }
+          config.mergeConfig({
+            paapi: {
+              componentSeller: {
+                auctionConfig
+              }
+            }
+          })
+          bidderRequest.paapi.componentSeller = true;
+        });
+        Object.entries({
+          'componentSeller not configured'() {
+            bidderRequest.paapi.componentSeller = false;
+          },
+          'buildPAAPIconfig returns nothing'() {
+            builtCfg = []
+          },
+          'returned igb is not valid'() {
+            builtCfg = [{bidId: 'bidId', igb: {}}];
+          }
+        }).forEach(([t, setup]) => {
+          it(`should have no effect when ${t}`, () => {
+            setup();
+            startParallel();
+            expect(getPAAPIConfig()).to.eql({});
+          })
+        })
+
+        describe('when component seller is set up', () => {
+          it('should generate a deferred auctionConfig', () => {
+            startParallel();
+            sinon.assert.match(getPAAPIConfig().au.componentAuctions[0], {
+              ...auctionConfig,
+              interestGroupBuyers: ['mock.buyer'],
+            })
+          });
+
+          it('should use signal values from componentSeller.auctionConfig', async () => {
+            auctionConfig.auctionSignals = {test: 'signal'};
+            config.mergeConfig({
+              paapi: {componentSeller: {auctionConfig}}
+            })
+            startParallel();
+            endAuction();
+            const cfg = await resolveConfig(getPAAPIConfig().au.componentAuctions[0]);
+            sinon.assert.match(cfg.auctionSignals, auctionConfig.auctionSignals);
+          })
+
+          it('should collate buyers', () => {
+            startParallel();
+            startParallel();
+            sinon.assert.match(getPAAPIConfig().au.componentAuctions[0], {
+              interestGroupBuyers: ['mock.buyer']
+            });
+          });
+
+          function returnIgb(igb) {
+            addPaapiConfigHook(sinon.stub(), bids[0], {igb});
+          }
+
+          it('should resolve to values from interpretResponse as well as buildPAAPIConfigs', async () => {
+            igb.cur = 'cur';
+            igb.pbs = {over: 'ridden'}
+            startParallel();
+            let cfg = getPAAPIConfig().au.componentAuctions[0];
+            returnIgb({
+              origin: 'mock.buyer',
+              pbs: {some: 'signal'}
+            });
+            endAuction();
+            cfg = await resolveConfig(cfg);
+            sinon.assert.match(cfg, {
+              perBuyerSignals: {
+                [igb.origin]: {some: 'signal'},
+              },
+              perBuyerCurrencies: {
+                [igb.origin]: 'cur'
+              }
+            })
+          });
+
+          it('should not overwrite config once resolved', () => {
+            startParallel();
+            returnIgb({
+              origin: 'mock.buyer',
+            });
+            endAuction();
+            const cfg = getPAAPIConfig().au;
+            sinon.assert.match(cfg, Object.fromEntries(ASYNC_SIGNALS.map(signal => [signal, sinon.match(arg => arg instanceof Promise)])))
+          })
+
+          it('can resolve multiple igbs', async () => {
+            igb.cur = 'cur1';
+            startParallel();
+            spec.code = 'other';
+            igb.origin = 'other.buyer'
+            igb.cur = 'cur2'
+            startParallel();
+            let cfg = getPAAPIConfig().au.componentAuctions[0];
+            returnIgb({
+              origin: 'mock.buyer',
+              pbs: {signal: 1}
+            });
+            returnIgb({
+              origin: 'other.buyer',
+              pbs: {signal: 2}
+            });
+            endAuction();
+            cfg = await resolveConfig(cfg);
+            sinon.assert.match(cfg, {
+              perBuyerSignals: {
+                'mock.buyer': {signal: 1},
+                'other.buyer': {signal: 2}
+              },
+              perBuyerCurrencies: {
+                'mock.buyer': 'cur1',
+                'other.buyer': 'cur2'
+              }
+            })
+          })
+
+          function startMultiple() {
+            startParallel();
+            spec.code = 'other';
+            igb.origin = 'other.buyer'
+            startParallel();
+          }
+
+          describe('when using separateAuctions=false', () => {
+            beforeEach(() => {
+              config.mergeConfig({
+                paapi: {
+                  componentSeller: {
+                    separateAuctions: false
+                  }
+                }
+              })
+            });
+
+            it('should merge igb from different specs into a single auction config', () => {
+              startMultiple();
+              sinon.assert.match(getPAAPIConfig().au.componentAuctions[0], {
+                interestGroupBuyers: ['mock.buyer', 'other.buyer']
+              });
+            });
+          })
+
+          describe('when using separateAuctions=true', () => {
+            beforeEach(() => {
+              config.mergeConfig({
+                paapi: {
+                  componentSeller: {
+                    separateAuctions: true
+                  }
+                }
+              })
+            });
+            it('should generate an auction config for each bidder', () => {
+              startMultiple();
+              const components = getPAAPIConfig().au.componentAuctions;
+              sinon.assert.match(components[0], {
+                interestGroupBuyers: ['mock.buyer']
+              })
+              sinon.assert.match(components[1], {
+                interestGroupBuyers: ['other.buyer']
+              })
+            })
+          })
+        })
+      })
     });
   });
 

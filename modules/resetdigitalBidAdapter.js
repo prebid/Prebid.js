@@ -1,4 +1,4 @@
-import { timestamp, deepAccess, isStr, deepClone } from '../src/utils.js';
+import { timestamp, deepAccess, isStr, deepClone, isPlainObject } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -92,7 +92,7 @@ export const spec = {
           size: '*',
         });
         if (
-          typeof floorInfo === 'object' &&
+          isPlainObject(floorInfo) &&
           floorInfo.currency === CURRENCY &&
           !isNaN(parseFloat(floorInfo.floor))
         ) {
@@ -101,10 +101,16 @@ export const spec = {
         }
       }
 
-      // get param kewords (if it exists)
+      // get param keywords (if it exists)
       let paramsKeywords = req.params.keywords
-        ? req.params.keywords.split(',')
-        : [];
+
+      if (typeof req.params.keywords === 'string') {
+        paramsKeywords = req.params.keywords.split(',');
+      } else if (Array.isArray(req.params.keywords)) {
+        paramsKeywords = req.params.keywords;
+      } else {
+        paramsKeywords = [];
+      }
       // merge all keywords
       let keywords = ortb2KeywordsList
         .concat(paramsKeywords)

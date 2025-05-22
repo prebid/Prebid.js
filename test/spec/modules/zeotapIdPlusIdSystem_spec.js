@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
-import {attachIdSystem, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
+import {attachIdSystem, init, startAuctionHook, setSubmoduleRegistry} from 'modules/userId/index.js';
 import { storage, getStorage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
 import * as storageManager from 'src/storageManager.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
@@ -176,7 +176,7 @@ describe('Zeotap ID System', function() {
     });
 
     it('when a stored Zeotap ID exists it is added to bids', function(done) {
-      requestBidsHook(function() {
+      startAuctionHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.IDP');

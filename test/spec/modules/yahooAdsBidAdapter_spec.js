@@ -3,6 +3,7 @@ import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { spec } from 'modules/yahooAdsBidAdapter.js';
 import {createEidsArray} from '../../../modules/userId/eids';
+import {deepAccess} from '../../../src/utils';
 
 const DEFAULT_BID_ID = '84ab500420319d';
 const DEFAULT_BID_DCN = '2093845709823475';
@@ -193,7 +194,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     });
 
     it('should define the correct bidder aliases', () => {
-      expect(spec.aliases).to.deep.equal(['yahoossp', 'yahooAdvertising']);
+      expect(spec.aliases).to.deep.equal([{ 'code': 'yahoossp', 'gvlid': 25 }, { 'code': 'yahooAdvertising', 'gvlid': 25 }]);
     });
 
     it('should define the correct vendor ID', () => {
@@ -1495,15 +1496,6 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         expect(response[0].mediaType).to.equal('video');
       })
 
-      it('should insert video VAST win notification into vastUrl', () => {
-        const { serverResponse, bidderRequest } = generateResponseMock('video', 'vast');
-        const response = spec.interpretResponse(serverResponse, {bidderRequest});
-        expect(response[0].ad).to.be.undefined;
-        expect(response[0].vastUrl).to.equal('https://yahoo.com?event=adAttempt');
-        expect(response[0].vastXml).to.equal('<VAST></VAST>');
-        expect(response[0].mediaType).to.equal('video');
-      })
-
       describe('wrapped in video players for display inventory', () => {
         beforeEach(() => {
           config.setConfig({
@@ -1626,6 +1618,75 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         const { serverResponse, bidderRequest } = generateResponseMock('banner');
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].bidderCode).to.be.undefined;
+      });
+    });
+
+    describe('Renderer:', () => {
+      it('should create and set renderer when bidder request context is outstream, bidder request renderer is falsy, and bid response mediaType is VIDEO', () => {
+        config.setConfig({
+          yahooAds: {
+            mode: VIDEO
+          }
+        });
+        const { serverResponse, bidderRequest } = generateResponseMock('video', 'vast');
+        bidderRequest.mediaTypes = {
+          video: {
+            context: 'outstream'
+          }
+        };
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(deepAccess(bidderRequest, 'mediaTypes.video.context')).to.equal('outstream');
+        expect(bidderRequest.renderer).to.be.undefined;
+        expect(response[0].mediaType).to.equal('video');
+        expect(response[0].renderer).to.not.be.undefined;
+      });
+
+      it('should not create and set renderer when bidder request renderer is falsy and bid response mediaType is VIDEO, but bidder request context is not outstream,', () => {
+        config.setConfig({
+          yahooAds: {
+            mode: VIDEO
+          }
+        });
+        const { serverResponse, bidderRequest } = generateResponseMock('video', 'vast');
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(deepAccess(bidderRequest, 'mediaTypes.video.context')).to.not.equal('outstream');
+        expect(bidderRequest.renderer).to.be.undefined;
+        expect(response[0].mediaType).to.equal('video');
+        expect(response[0].renderer).to.be.undefined;
+      });
+
+      it('should not create and set renderer when bidder request context is outstream and bid response mediaType is VIDEO, but bidder request renderer is not falsy', () => {
+        config.setConfig({
+          yahooAds: {
+            mode: VIDEO
+          }
+        });
+        const { serverResponse, bidderRequest } = generateResponseMock('video', 'vast');
+        bidderRequest.mediaTypes = {
+          video: {
+            context: 'outstream'
+          }
+        };
+        bidderRequest.renderer = 'not falsy';
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(deepAccess(bidderRequest, 'mediaTypes.video.context')).to.equal('outstream');
+        expect(bidderRequest.renderer).to.not.be.undefined;
+        expect(response[0].mediaType).to.equal('video');
+        expect(response[0].renderer).to.be.undefined;
+      });
+
+      it('should not create and set renderer when bidder request context is outstream and bidder request renderer is falsy, but bid response mediaType is not VIDEO', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        bidderRequest.mediaTypes = {
+          video: {
+            context: 'outstream'
+          }
+        };
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(deepAccess(bidderRequest, 'mediaTypes.video.context')).to.equal('outstream');
+        expect(bidderRequest.renderer).to.be.undefined;
+        expect(response[0].mediaType).to.not.equal('video');
+        expect(response[0].renderer).to.be.undefined;
       });
     });
   });

@@ -1,6 +1,7 @@
 import * as priceFloors from '../../../modules/priceFloors';
 import {
   FLOORS_END_POINT,
+  storage,
   FLOORS_EVENT_HANDLE,
   FloorsApiStatus,
   beforeInit,
@@ -45,6 +46,7 @@ const resetGlobals = () => {
   window.__pubxFloorsConfig__ = undefined;
   window.__pubxFloorsApiStatus__ = undefined;
   window.__pubxFloorRulesPromise__ = null;
+  localStorage.removeItem('pubx:dynamicFloors');
 };
 
 const fakeServer = (
@@ -119,7 +121,7 @@ describe('pubxaiRtdProvider', () => {
       stub.restore();
     });
     it('createFloorsDataForAuction called once before and once after __pubxFloorRulesPromise__. Also getBidRequestData executed only once', async () => {
-      pubxaiSubmodule.getBidRequestData(reqBidsConfigObj, () => {});
+      pubxaiSubmodule.getBidRequestData(reqBidsConfigObj, () => { });
       assert(priceFloors.createFloorsDataForAuction.calledOnce);
       await window.__pubxFloorRulesPromise__;
       assert(priceFloors.createFloorsDataForAuction.calledTwice);
@@ -129,7 +131,7 @@ describe('pubxaiRtdProvider', () => {
           reqBidsConfigObj.auctionId
         )
       );
-      pubxaiSubmodule.getBidRequestData(reqBidsConfigObj, () => {});
+      pubxaiSubmodule.getBidRequestData(reqBidsConfigObj, () => { });
       await window.__pubxFloorRulesPromise__;
       assert(priceFloors.createFloorsDataForAuction.calledTwice);
     });
@@ -137,6 +139,16 @@ describe('pubxaiRtdProvider', () => {
   describe('fetchFloorRules', () => {
     const providerConfig = getConfig();
     const floorsResponse = getFloorsResponse();
+    let storageStub;
+
+    beforeEach(() => {
+      storageStub = sinon.stub(storage, 'getDataFromSessionStorage');
+    });
+
+    afterEach(() => {
+      storageStub.restore();
+    });
+
     it('success with floors response', (done) => {
       const promise = fetchFloorRules(providerConfig);
       fakeServer(floorsResponse);
@@ -145,6 +157,7 @@ describe('pubxaiRtdProvider', () => {
         done();
       });
     });
+
     it('success with no floors response', (done) => {
       const promise = fetchFloorRules(providerConfig);
       fakeServer(undefined);
@@ -153,6 +166,7 @@ describe('pubxaiRtdProvider', () => {
         done();
       });
     });
+
     it('API call error', (done) => {
       const promise = fetchFloorRules(providerConfig);
       fakeServer(undefined, undefined, 404);
@@ -167,6 +181,7 @@ describe('pubxaiRtdProvider', () => {
           done();
         });
     });
+
     it('Wrong API response', (done) => {
       const promise = fetchFloorRules(providerConfig);
       fakeServer('floorsResponse');
@@ -180,6 +195,25 @@ describe('pubxaiRtdProvider', () => {
         .finally(() => {
           done();
         });
+    });
+
+    it('success with local data response', (done) => {
+      const localFloorsResponse = getFloorsResponse();
+      storageStub.withArgs('pubx:dynamicFloors').returns(JSON.stringify(localFloorsResponse));
+      const promise = fetchFloorRules({ params: {} });
+      promise.then((res) => {
+        expect(res).to.deep.equal(localFloorsResponse);
+        done();
+      });
+    });
+
+    it('no local data response', (done) => {
+      storageStub.withArgs('pubx:dynamicFloors').returns(null);
+      const promise = fetchFloorRules({ params: {} });
+      promise.then((res) => {
+        expect(res).to.deep.equal(null);
+        done();
+      });
     });
   });
   describe('setPriceFloors', () => {
@@ -383,9 +417,7 @@ describe('pubxaiRtdProvider', () => {
       expect(FLOORS_END_POINT).to.equal('https://floor.pbxai.com/');
     });
     it('standard case', () => {
-      expect(getUrl(provider)).to.equal(
-        `https://floor.pbxai.com/?pubxId=12345&page=${window.location.href}`
-      );
+      expect(getUrl(provider)).to.equal(null);
     });
     it('custom url provided', () => {
       provider.params.endpoint = 'https://custom.floor.com/';

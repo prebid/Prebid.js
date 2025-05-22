@@ -1,5 +1,5 @@
 import {isEmptyStr, isStr, isEmpty} from '../utils.js';
-import {GreedyPromise} from '../utils/promise.js';
+import {PbPromise} from '../utils/promise.js';
 
 export const SUA_SOURCE_UNKNOWN = 0;
 export const SUA_SOURCE_LOW_ENTROPY = 1;
@@ -60,7 +60,7 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
           return isEmpty(result) ? null : Object.freeze(uaDataToSUA(SUA_SOURCE_HIGH_ENTROPY, result))
         }).catch(() => null);
       } catch (e) {
-        cache[key] = GreedyPromise.resolve(null);
+        cache[key] = PbPromise.resolve(null);
       }
     }
     return cache[key];

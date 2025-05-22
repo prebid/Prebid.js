@@ -1,37 +1,15 @@
-import {deepAccess, isEmpty, logWarn, mergeDeep, sizesToSizeTuples, sizeTupleToRtbSize} from '../../../src/utils.js';
+import {isEmpty, logWarn, mergeDeep, sizesToSizeTuples, sizeTupleToRtbSize} from '../../../src/utils.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 
-// parameters that share the same name & semantics between pbjs adUnits and imp.video
-const ORTB_VIDEO_PARAMS = new Set([
-  'pos',
-  'placement',
-  'plcmt',
-  'api',
-  'mimes',
-  'protocols',
-  'playbackmethod',
-  'minduration',
-  'maxduration',
-  'w',
-  'h',
-  'startdelay',
-  'placement',
-  'linearity',
-  'skip',
-  'skipmin',
-  'skipafter',
-  'minbitrate',
-  'maxbitrate',
-  'delivery',
-  'playbackend'
-]);
+import {ORTB_VIDEO_PARAMS} from '../../../src/video.js';
 
 export function fillVideoImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== VIDEO) return;
 
-  const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+  const videoParams = bidRequest?.mediaTypes?.video;
   if (!isEmpty(videoParams)) {
     const video = Object.fromEntries(
+      // Parameters that share the same name & semantics between pbjs adUnits and imp.video
       Object.entries(videoParams)
         .filter(([name]) => ORTB_VIDEO_PARAMS.has(name))
     );
@@ -49,7 +27,7 @@ export function fillVideoImp(imp, bidRequest, context) {
 
 export function fillVideoResponse(bidResponse, seatbid, context) {
   if (bidResponse.mediaType === VIDEO) {
-    if (deepAccess(context.imp, 'video.w') && deepAccess(context.imp, 'video.h')) {
+    if (context?.imp?.video?.w && context?.imp?.video?.h) {
       [bidResponse.playerWidth, bidResponse.playerHeight] = [context.imp.video.w, context.imp.video.h];
     }
 

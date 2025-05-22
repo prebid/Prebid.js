@@ -1,7 +1,7 @@
 import {isEmpty, logError, logWarn, mergeDeep, safeJSONParse} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
 import {getCoreStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
@@ -92,13 +92,13 @@ export function getTopics(doc = document) {
 
   try {
     if (isTopicsSupported(doc)) {
-      topics = GreedyPromise.resolve(doc.browsingTopics());
+      topics = PbPromise.resolve(doc.browsingTopics());
     }
   } catch (e) {
     logError('Could not call topics API', e);
   }
   if (topics == null) {
-    topics = GreedyPromise.resolve([]);
+    topics = PbPromise.resolve([]);
   }
 
   return topics;
@@ -130,7 +130,7 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
 export function getCachedTopics() {
   let cachedTopicData = [];
   const topics = config.getConfig('userSync.topics');
-  const bidderList = topics.bidders || [];
+  const bidderList = topics?.bidders || [];
   let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data

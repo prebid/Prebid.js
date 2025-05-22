@@ -1,4 +1,4 @@
-import {arrayFrom, find} from '../src/polyfill.js';
+import {find} from '../src/polyfill.js';
 import {
   cleanObj,
   deepAccess,
@@ -11,6 +11,7 @@ import {
   isFn,
   isInteger,
   isNumber,
+  isPlainObject,
   isStr,
   logError,
   logWarn,
@@ -72,7 +73,7 @@ const ORTB_VIDEO_PARAMS = {
   skipmin: value => isInteger(value),
   skipafter: value => isInteger(value),
   sequence: value => isInteger(value),
-  battr: value => Array.isArray(value) && value.every(v => arrayFrom({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  battr: value => Array.isArray(value) && value.every(v => Array.from({ length: 17 }, (_, i) => i + 1).includes(v)),
   maxextended: value => isInteger(value),
   minbitrate: value => isInteger(value),
   maxbitrate: value => isInteger(value),
@@ -139,7 +140,7 @@ function getFloor(bid, mediaType, size = '*') {
     size
   })
 
-  return (!isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
+  return (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
 }
 
 /**

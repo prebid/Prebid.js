@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
-import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import { init, startAuctionHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, idxIdSubmodule } from 'modules/idxIdSystem.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import 'src/prebid.js';
@@ -101,10 +101,15 @@ describe('IDx ID System', () => {
 
     afterEach(() => {
       sandbox.restore();
+      config.resetConfig();
+    })
+
+    after(() => {
+      init(config);
     })
 
     it('when a stored IDx exists it is added to bids', (done) => {
-      requestBidsHook(() => {
+      startAuctionHook(() => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.idx');
