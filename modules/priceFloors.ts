@@ -252,6 +252,15 @@ declare module '../src/adapterManager' {
     }
 }
 
+declare module '../src/bidderSettings' {
+    interface BidderSettings<B extends BidderCode> {
+        /**
+         * Inverse of bidCpmAdjustment
+         */
+        inverseBidAdjustment?: (floor: number, bidRequest: BidRequest<B>, params: {[K in keyof GetFloorParams]?: Exclude<GetFloorParams[K], '*'>}) => number;
+    }
+}
+
 /**
  * @summary This is the function which will return a single floor based on the input requests
  * and matching it to a rule for the current auction

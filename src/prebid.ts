@@ -59,11 +59,12 @@ import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
 import type {Bid} from "./bidfactory.ts";
-import type {AdUnit, AdUnitDefinition} from "./adUnits.ts";
+import type {AdUnit, AdUnitDefinition, BidderParams} from "./adUnits.ts";
 import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
+import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -74,11 +75,15 @@ const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = EVENTS;
 // initialize existing debugging sessions if present
 loadSession();
 
-/* Public vars */
-
 declare module './prebidGlobal' {
     interface PrebidJS {
-        bidderSettings; // WIP-TYPE;
+        bidderSettings: {
+            standard?: BidderSettings<BidderCode>
+        } & {
+            [B in BidderCode]?: BidderScopedSettings<B>
+        } & {
+            [B in keyof BidderParams]?: BidderScopedSettings<B>
+        };
         /**
          * True once Prebid is loaded.
          */

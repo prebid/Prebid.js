@@ -7,7 +7,7 @@ export const JSON_MAPPING = {
   BD_PL_ID: 'placementId',
   ADSERVER_TARGETING: 'adserverTargeting',
   BD_SETTING_STANDARD: 'standard'
-};
+} as const;
 
 export const DEBUG_MODE = 'pbjs_debug';
 
