@@ -1,9 +1,5 @@
 import {logError, deepClone, isFn, isStr} from '../../src/utils.js';
 
-/**
- * @typedef {import('./index.js').SubmodulePriorityMap} SubmodulePriorityMap
- */
-
 export const EID_CONFIG = new Map();
 
 // this function will create an eid object for the given UserId sub-module
@@ -76,9 +72,6 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
   return Object.values(allEids);
 }
 
-/**
- * @param {SubmodulePriorityMap} priorityMap
- */
 export function getEids(priorityMap) {
   const eidConfigs = new Map();
   const idValues = {};

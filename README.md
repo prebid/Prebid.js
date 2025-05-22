@@ -24,71 +24,8 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 
 ## Usage (as a npm dependency)
 
-*Note:* Requires Prebid.js v1.38.0+
-
-Prebid.js depends on Babel and some Babel Plugins in order to run correctly in the browser.  Here are some examples for
-configuring webpack to work with Prebid.js.
-
-With Babel 7:
-```javascript
-// webpack.conf.js
-let path = require('path');
-module.exports = {
-  mode: 'production',
-  module: {
-    rules: [
-
-      // this rule can be excluded if you don't require babel-loader for your other application files
-      {
-        test: /\.m?js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-        }
-      },
-
-      // this separate rule is required to make sure that the Prebid.js files are babel-ified.  this rule will
-      // override the regular exclusion from above (for being inside node_modules).
-      {
-        test: /.js$/,
-        include: new RegExp(`\\${path.sep}prebid\\.js`),
-        use: {
-          loader: 'babel-loader',
-          // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
-          // this can be accomplished by requiring prebid's .babelrc.js file (requires Babel 7 and Node v8.9.0+)
-          // as of Prebid 6, babelrc.js only targets modern browsers. One can change the targets and build for
-          // older browsers if they prefer, but integration tests on ie11 were removed in Prebid.js 6.0
-          options: require('prebid.js/.babelrc.js')
-        }
-      }
-    ]
-  }
-}
-```
-
-Or for Babel 6:
-```javascript
-            // you must manually install and specify the presets and plugins yourself
-            options: {
-              plugins: [
-                "transform-object-assign", // required (for IE support) and "babel-plugin-transform-object-assign"
-                                           // must be installed as part of your package.
-                require('prebid.js/plugins/pbjsGlobals.js') // required!
-              ],
-              presets: [
-                ["env", {                 // you can use other presets if you wish.
-                  "targets": {            // this example is using "babel-presets-env", which must be installed if you
-                    "browsers": [         // follow this example.
-                      ... // your browser targets. they should probably match the targets you're using for the rest
-                          // of your application
-                    ]
-                  }
-                }]
-              ]
-            }
-```
-
-Then you can use Prebid.js as any other npm dependency
+**Note**: versions prior to v10 required some Babel plugins to be configured when used as an NPM dependency -
+refer to [v9 README](https://github.com/prebid/Prebid.js/blob/9.43.0/README.md)
 
 ```javascript
 import pbjs from 'prebid.js';
@@ -99,10 +36,26 @@ pbjs.processQueue();  // required to process existing pbjs.queue blocks and setu
 pbjs.requestBids({
   ...
 })
-
 ```
 
+You can import just type definitions for every module from `types.d.ts`, and for the `pbjs` global from `global.d.ts`:
 
+```typescript
+import 'prebid.js/types.d.ts';
+import 'prebid.js/global.d.ts';
+pbjs.que.push(/* ... */)
+```
+
+Or, if your Prebid bundle uses a different global variable name:
+
+```typescript
+import type {PrebidJS} from 'prebid.js/types.d.ts';
+declare global {
+    interface Window {
+        myCustomPrebidGlobal: PrebidJS;
+    }
+}
+```
 
 <a name="Install"></a>
 
