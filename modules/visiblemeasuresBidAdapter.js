@@ -127,6 +127,7 @@ export const spec = {
       winLocation = winTop.location;
     } catch (e) {
       winLocation = window.location;
+      logMessage(e);
     }
 
     const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
