@@ -1,4 +1,4 @@
-import { deepSetValue, isFn, isPlainObject } from '../src/utils.js';
+import { deepClone, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -28,7 +28,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     var i, l, bid, reqParams, netRevenue, gdprObject;
     var request = [];
-    var bids = JSON.parse(JSON.stringify(validBidRequests));
+    var bids = deepClone(validBidRequests);
     var lastCountry = 'sk';
     var floors = [];
     for (i = 0, l = bids.length; i < l; i++) {

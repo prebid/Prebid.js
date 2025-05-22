@@ -26,7 +26,6 @@ import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'ix';
-const ALIAS_BIDDER_CODE = 'roundel';
 const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
@@ -59,22 +58,9 @@ const SOURCE_RTI_MAPPING = {
   'neustar.biz': 'fabrickId',
   'zeotap.com': 'zeotapIdPlus',
   'uidapi.com': 'UID2',
-  'adserver.org': 'TDID',
-  'id5-sync.com': '', // ID5 Universal ID, configured as id5Id
-  'crwdcntrl.net': '', // Lotame Panorama ID, lotamePanoramaId
-  'epsilon.com': '', // Publisher Link, publinkId
-  'audigent.com': '', // Hadron ID from Audigent, hadronId
-  'pubcid.org': '', // SharedID, pubcid
-  'utiq.com': '', // Utiq
-  'criteo.com': '', // Criteo
-  'euid.eu': '', // EUID
-  'intimatemerger.com': '',
-  '33across.com': '',
-  'liveintent.indexexchange.com': '',
-  'google.com': ''
+  'adserver.org': 'TDID'
 };
 const PROVIDERS = [
-  'britepoolid',
   'lipbid',
   'criteoId',
   'merkleId',
@@ -510,6 +496,11 @@ function parseBid(rawBid, currency, bidRequest) {
   if (rawBid.ext?.dsa) {
     bid.meta.dsa = rawBid.ext.dsa
   }
+
+  if (rawBid.ext?.ibv) {
+    bid.ext = bid.ext || {}
+    bid.ext.ibv = rawBid.ext.ibv
+  }
   return bid;
 }
 
@@ -650,10 +641,9 @@ function getEidInfo(allEids) {
   if (isArray(allEids)) {
     for (const eid of allEids) {
       const isSourceMapped = SOURCE_RTI_MAPPING.hasOwnProperty(eid.source);
-      const allowAllEidsFeatureEnabled = FEATURE_TOGGLES.isFeatureEnabled('pbjs_allow_all_eids');
       const hasUids = deepAccess(eid, 'uids.0');
 
-      if ((isSourceMapped || allowAllEidsFeatureEnabled) && hasUids) {
+      if (hasUids) {
         seenSources[eid.source] = true;
 
         if (isSourceMapped && SOURCE_RTI_MAPPING[eid.source] !== '') {
@@ -661,7 +651,6 @@ function getEidInfo(allEids) {
             rtiPartner: SOURCE_RTI_MAPPING[eid.source]
           };
         }
-        delete eid.uids[0].atype;
         toSend.push(eid);
         if (toSend.length >= MAX_EID_SOURCES) {
           break;
@@ -696,11 +685,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     addRTI(userEids, eidInfo);
   }
 
-  // If `roundel` alias bidder, only send requests if liveramp ids exist.
-  if (bidderRequest && bidderRequest.bidderCode === ALIAS_BIDDER_CODE && !eidInfo.seenSources['liveramp.com']) {
-    return [];
-  }
-
   const requests = [];
   let r = createRequest(validBidRequests);
 
@@ -708,7 +692,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
   let ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
   for (let key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
@@ -772,8 +756,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         method: 'POST',
         url: exchangeUrl,
         data: deepClone(r),
-        option: {
+        options: {
           contentType: 'text/plain',
+          withCredentials: true
         },
         validBidRequests
       });
@@ -1195,6 +1180,16 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     if (!isEmpty(sua)) {
       deepSetValue(r, 'device.sua', sua);
     }
+
+    const ip = fpd.device.ip;
+    if (ip) {
+      deepSetValue(r, 'device.ip', ip);
+    }
+
+    const ipv6 = fpd.device.ipv6;
+    if (ipv6) {
+      deepSetValue(r, 'device.ipv6', ipv6);
+    }
   }
 
   // regulations from ortb2
@@ -1439,7 +1434,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
   // Add Fledge flag if enabled
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
   if (fledgeEnabled) {
     const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
     const paapi = deepAccess(validBidRequest, 'ortb2Imp.ext.paapi')
@@ -1452,8 +1447,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
       } else {
         logWarn('error setting auction environment flag - must be an integer')
       }
-    } else if (deepAccess(bidderRequest, 'defaultForSlots') == 1) {
-      bannerImps[validBidRequest.adUnitCode].ae = 1
     }
   }
 
@@ -1609,11 +1602,6 @@ export const spec = {
 
   code: BIDDER_CODE,
   gvlid: GLOBAL_VENDOR_ID,
-  aliases: [{
-    code: ALIAS_BIDDER_CODE,
-    gvlid: GLOBAL_VENDOR_ID,
-    skipPbsAliasing: false
-  }],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
@@ -1865,7 +1853,7 @@ export const spec = {
       try {
         return {
           bids,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         };
       } catch (error) {
         logWarn('Error attaching AuctionConfigs', error);

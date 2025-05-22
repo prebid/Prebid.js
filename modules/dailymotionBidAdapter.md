@@ -11,6 +11,16 @@ Maintainer: ad-leo-engineering@dailymotion.com
 Dailymotion prebid adapter.
 Supports video ad units in instream context.
 
+### Usage
+
+Make sure to have the following modules listed while building prebid : `priceFloors,dailymotionBidAdapter`
+
+`priceFloors` module is needed to retrieve the price floor: https://docs.prebid.org/dev-docs/modules/floors.html 
+
+```shell
+gulp build --modules=priceFloors,dailymotionBidAdapter
+```
+
 ### Configuration options
 
 Before calling this adapter, you need to at least set a video adUnit in an instream context and the API key in the bid parameters:
@@ -58,6 +68,116 @@ pbjs.setConfig({
 });
 ```
 
+#### Price floor
+
+The price floor can be set at the ad unit level, for example : 
+
+```javascript
+const adUnits = [{
+  floors: {
+    currency: 'USD',
+    schema: {
+      fields: [ 'mediaType', 'size' ]
+    },
+    values: {
+      'video|300x250': 2.22,
+      'video|*': 1
+    }
+  },
+  bids: [{
+    bidder: 'dailymotion',
+    params: {
+      apiKey: 'dailymotion-testing',
+    }
+  }],
+  code: 'test-ad-unit',
+  mediaTypes: {
+    video: {
+      playerSize: [300, 250],
+      context: 'instream',
+    },
+  }
+}];
+
+// Do not forget to set an empty object for "floors" to active the price floor module
+pbjs.setConfig({floors: {}});
+```
+
+The following request will be sent to Dailymotion Prebid Service : 
+
+```javascript
+{
+  "pbv": "9.23.0-pre",
+  "ortb": {
+    "imp": [
+      {
+        ...
+        "bidfloor": 2.22,
+        "bidfloorcur": "USD"
+      }
+    ],
+  }
+  ...
+}
+```
+
+Or the price floor can be set at the package level, for example : 
+
+```javascript
+const adUnits = [
+  {
+    bids: [{
+      bidder: 'dailymotion',
+      params: {
+        apiKey: 'dailymotion-testing',
+      }
+    }],
+    code: 'test-ad-unit',
+    mediaTypes: {
+      video: {
+        playerSize: [1280,720],
+        context: 'instream',
+      },
+    }
+  }
+];
+
+pbjs.setConfig({
+  floors: {
+      data: { 
+          currency: 'USD',
+          schema: {
+              fields: [ 'mediaType', 'size' ]
+          },
+          values: {
+              'video|300x250': 2.22,
+              'video|*': 1
+          }
+      }
+  }
+})
+```
+
+This will send the following bid floor in the request to Daiymotion Prebid Service : 
+
+```javascript
+{
+  "pbv": "9.23.0-pre",
+  "ortb": {
+    "imp": [
+      {
+        ...
+        "bidfloor": 1,
+        "bidfloorcur": "USD"
+      }
+    ],
+    ...
+  }
+}
+```
+
+You can also [set dynamic floors](https://docs.prebid.org/dev-docs/modules/floors.html#bid-adapter-interface).
+
 ### Test Parameters
 
 By setting the following bid parameters, you'll get a constant response to any request, to validate your adapter integration:
@@ -88,7 +208,7 @@ Please note that failing to set these will result in the adapter not bidding at 
 To allow better targeting, you should provide as much context about the video as possible.
 There are three ways of doing this depending on if you're using Dailymotion player or a third party one.
 
-If you are using the Dailymotion player, you should only provide the video `xid` in your ad unit, example:
+If you are using the Dailymotion player, you must provide the video `xid` in the `video.id` field of your ad unit, example:
 
 ```javascript
 const adUnits = [
@@ -98,7 +218,10 @@ const adUnits = [
       params: {
         apiKey: 'dailymotion-testing',
         video: {
-          xid: 'x123456'     // Dailymotion infrastructure unique video ID
+          id: 'x123456'     // Dailymotion infrastructure unique video ID
+          autoplay: false,
+          playerName: 'dailymotion',
+          playerVolume: 8
         },
       }
     }],
@@ -117,9 +240,9 @@ const adUnits = [
 ```
 
 This will automatically fetch the most up-to-date information about the video.
-If you provide any other metadata in addition to the `xid`, they will be ignored.
+Please note that if you provide any video metadata not listed above, they will be replaced by the ones fetched from the `video.id`.
 
-If you are using a third party video player, you should not provide any `xid` and instead fill the following members:
+If you are using a third party video player, you should fill the following members:
 
 ```javascript
 const adUnits = [
@@ -139,10 +262,12 @@ const adUnits = [
           private: false,
           tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
+          url: 'https://test.com/testvideo'
           topics: 'topic_1, topic_2',
           isCreatedForKids: false,
           videoViewsInSession: 1,
           autoplay: false,
+          playerName: 'video.js',
           playerVolume: 8
         }
       }
@@ -157,7 +282,7 @@ const adUnits = [
         maxduration: 30,
         playbackmethod: [3],
         plcmt: 1,
-        protocols: [7, 8, 11, 12, 13, 14]
+        protocols: [7, 8, 11, 12, 13, 14],
         startdelay: 0,
         w: 1280,
         h: 720,
@@ -181,14 +306,14 @@ Each of the following video metadata fields can be added in bids.params.video.
 * `title` - Video title
 * `url` - URL of the content
 * `topics` - Main topics for the video, comma separated
-* `xid` - Dailymotion video identifier (only applicable if using the Dailymotion player)
 * `isCreatedForKids` - [The content is created for children as primary audience](https://faq.dailymotion.com/hc/en-us/articles/360020920159-Content-created-for-kids)
 
-The following contextual informations can also be added in bids.params.video.
+The following contextual information can also be added in bids.params.video.
 
-* `videoViewsInSession` - Number of videos viewed within the current user session
 * `autoplay` - Playback was launched without user interaction
+* `playerName` - Name of the player used to display the video
 * `playerVolume` - Player volume between 0 (muted, 0%) and 10 (100%)
+* `videoViewsInSession` - Number of videos viewed within the current user session
 
 If you already specify [First-Party data](https://docs.prebid.org/features/firstPartyData.html) through the `ortb2` object when calling [`pbjs.requestBids(requestObj)`](https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html), we will collect the following values and fallback to bids.params.video values when applicable. See the mapping below.
 
@@ -202,16 +327,4 @@ If you already specify [First-Party data](https://docs.prebid.org/features/first
 | `ortb2.site.content.keywords`                                                   | `tags`          |
 | `ortb2.site.content.title`                                                      | `title`         |
 | `ortb2.site.content.url`                                                        | `url`           |
-| `ortb2.app.bundle`                                                              | N/A             |
-| `ortb2.app.storeurl`                                                            | N/A             |
-| `ortb2.device.lmt`                                                              | N/A             |
-| `ortb2.device.ifa`                                                              | N/A             |
-| `ortb2.device.ext.atts`                                                         | N/A             |
-
-### Integrating the adapter
-
-To use the adapter with any non-test request, you first need to ask an API key from Dailymotion. Please contact us through **DailymotionPrebid.js@dailymotion.com**.
-
-You will then be able to use it within the bid parameters before making a bid request.
-
-This API key will ensure proper identification of your inventory and allow you to get real bids.
+| `ortb2.*`                                                                       | N/A             |

@@ -3,12 +3,12 @@ import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
 import 'src/prebid.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
-import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
@@ -93,7 +93,7 @@ describe(`UID2 module`, function () {
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
-    uninstallGdprEnforcement();
+    uninstallTcfControl();
     attachIdSystem(uid2IdSubmodule);
 
     suiteSandbox = sinon.sandbox.create();
@@ -169,15 +169,17 @@ describe(`UID2 module`, function () {
   });
 
   describe('Configuration', function() {
-    it('When no baseUrl is provided in config, the module calls the production endpoint', function() {
+    it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token}));
+      await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://prod.uidapi.com/v2/token/refresh');
     });
 
-    it('When a baseUrl is provided in config, the module calls the provided endpoint', function() {
+    it('When a baseUrl is provided in config, the module calls the provided endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token, uid2ApiBase: 'https://operator-integ.uidapi.com'}));
+      await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://operator-integ.uidapi.com/v2/token/refresh');
     });
   });
@@ -223,7 +225,7 @@ describe(`UID2 module`, function () {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       const consentConfig = setGdprApplies();
       let configObj = makePrebidConfig(legacyConfigParams);
-      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], consentConfig.consentData);
+      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], {gdpr: consentConfig.consentData});
       expect(result?.id).to.not.exist;
     });
 

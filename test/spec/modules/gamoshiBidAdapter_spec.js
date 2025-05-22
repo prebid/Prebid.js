@@ -398,7 +398,7 @@ describe('GamoshiAdapter', () => {
 
       expect(response.data.imp[0].video.mimes).to.equal(bidRequestWithVideo.mediaTypes.video.mimes);
       expect(response.data.imp[0].video.skip).to.not.exist;
-      expect(response.data.imp[0].video.placement).to.equal(1);
+      expect(response.data.imp[0].video.plcmt).to.equal(1);
       expect(response.data.imp[0].video.minduration).to.equal(1);
       expect(response.data.imp[0].video.playbackmethod).to.equal(1);
       expect(response.data.imp[0].video.startdelay).to.equal(1);

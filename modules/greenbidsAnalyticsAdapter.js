@@ -4,9 +4,17 @@ import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName} from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
+/**
+ * @typedef {object} Message Payload message sent to the Greenbids API
+ */
+
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.2.1';
+export const ANALYTICS_VERSION = '2.3.2';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -97,6 +105,11 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       contentType: 'application/json'
     });
   },
+  /**
+   *
+   * @param {string} auctionId
+   * @returns {Message}
+   */
   createCommonMessage(auctionId) {
     const cachedAuction = this.getCachedAuction(auctionId);
     return {
@@ -111,13 +124,27 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       adUnits: [],
     };
   },
+  /**
+   * @param {Bid} bid
+   * @param {BIDDER_STATUS} status
+   */
   serializeBidResponse(bid, status) {
     return {
       bidder: bid.bidder,
       isTimeout: (status === BIDDER_STATUS.TIMEOUT),
       hasBid: (status === BIDDER_STATUS.BID),
+      params: (bid.params && Object.keys(bid.params).length > 0) ? bid.params : {},
+      ...(status === BIDDER_STATUS.BID ? {
+        cpm: bid.cpm,
+        currency: bid.currency
+      } : {}),
     };
   },
+  /**
+   * @param {*} message Greenbids API payload
+   * @param {Bid} bid Bid to add to the payload
+   * @param {BIDDER_STATUS} status Bidding status
+   */
   addBidResponseToMessage(message, bid, status) {
     const adUnitCode = bid.adUnitCode.toLowerCase();
     const adUnitIndex = message.adUnits.findIndex((adUnit) => {
@@ -133,8 +160,11 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (bidderIndex === -1) {
       message.adUnits[adUnitIndex].bidders.push(this.serializeBidResponse(bid, status));
     } else {
+      message.adUnits[adUnitIndex].bidders[bidderIndex].params = (bid.params && Object.keys(bid.params).length > 0) ? bid.params : {};
       if (status === BIDDER_STATUS.BID) {
         message.adUnits[adUnitIndex].bidders[bidderIndex].hasBid = true;
+        message.adUnits[adUnitIndex].bidders[bidderIndex].cpm = bid.cpm;
+        message.adUnits[adUnitIndex].bidders[bidderIndex].currency = bid.currency;
       } else if (status === BIDDER_STATUS.TIMEOUT) {
         message.adUnits[adUnitIndex].bidders[bidderIndex].isTimeout = true;
       }
@@ -193,9 +223,12 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
-    this.sendEventMessage('/',
-      this.createBidMessage(auctionEndArgs, cachedAuction)
-    );
+    const isFilteringForced = getParameterByName('greenbids_force_filtering');
+    if (!isFilteringForced) {
+      this.sendEventMessage('/',
+        this.createBidMessage(auctionEndArgs, cachedAuction)
+      )
+    };
   },
   handleBidTimeout(timeoutBids) {
     timeoutBids.forEach((bid) => {

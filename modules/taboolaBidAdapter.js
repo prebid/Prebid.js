@@ -3,7 +3,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse} from '../src/utils.js';
+import {deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse, isPlainObject} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
@@ -206,7 +206,7 @@ export const spec = {
     if (fledgeAuctionConfigs.length) {
       return {
         bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       };
     }
     return bids;
@@ -276,7 +276,7 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
 function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
-  deepSetValue(data, 'device.ua', navigator.userAgent);
+  deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
   const extractedUserId = userData.getUserId(gdprConsent, uspConsent);
   if (data.user == undefined) {
     data.user = {
@@ -338,7 +338,7 @@ function fillTaboolaImpData(bid, imp) {
       currency: CURRENCY,
       size: '*'
     });
-    if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
       imp.bidfloor = parseFloat(floorInfo.floor);
       imp.bidfloorcur = CURRENCY;
     }
@@ -347,7 +347,7 @@ function fillTaboolaImpData(bid, imp) {
     imp.bidfloor = bidfloor;
     imp.bidfloorcur = bidfloorcur;
   }
-  deepSetValue(imp, 'ext.gpid', deepAccess(bid, 'ortb2Imp.ext.gpid'));
+  deepSetValue(imp, 'ext.gpid', bid?.ortb2Imp?.ext?.gpid);
 }
 
 function getBanners(bid, pos) {

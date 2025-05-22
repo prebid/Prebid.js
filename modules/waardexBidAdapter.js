@@ -147,7 +147,6 @@ const createVideoObject = (videoMediaTypes, videoParams) => {
     maxduration: getBidIdParameter('maxduration', videoParams) || 500,
     protocols: getBidIdParameter('protocols', videoParams) || [2, 3, 5, 6],
     startdelay: getBidIdParameter('startdelay', videoParams) || 0,
-    placement: getBidIdParameter('placement', videoParams) || videoMediaTypes.context === 'outstream' ? 3 : 1,
     skip: getBidIdParameter('skip', videoParams) || 1,
     skipafter: getBidIdParameter('skipafter', videoParams) || 0,
     minbitrate: getBidIdParameter('minbitrate', videoParams) || 0,

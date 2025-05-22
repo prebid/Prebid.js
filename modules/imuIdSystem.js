@@ -166,6 +166,7 @@ export const imuIdSubmodule = {
       }
     };
   },
+  primaryIds: ['imppid', 'imuid'],
   eids: {
     'imppid': {
       source: 'ppid.intimatemerger.com',

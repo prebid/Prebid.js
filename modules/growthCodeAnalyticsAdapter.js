@@ -31,7 +31,7 @@ let analyticsType = 'endpoint';
 
 let growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}), {
   track({eventType, args}) {
-    let eventData = args ? JSON.parse(JSON.stringify(args)) : {};
+    let eventData = args ? utils.deepClone(args) : {};
     let data = {};
     if (!trackEvents.includes(eventType)) return;
     switch (eventType) {
@@ -140,7 +140,7 @@ function logToServer() {
   if (pid === DEFAULT_PID) return;
   if (eventQueue.length >= 1) {
     // Get the correct GCID
-    let gcid = localStorage.getItem('gcid')
+    let gcid = storage.getDataFromLocalStorage('gcid');
 
     let data = {
       session: sessionId,

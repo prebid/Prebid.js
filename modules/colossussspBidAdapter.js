@@ -152,7 +152,6 @@ export const spec = {
         placement.gpid = gpid;
       }
       if (bid.userId) {
-        getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
         getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
