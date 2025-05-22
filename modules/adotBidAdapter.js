@@ -53,7 +53,7 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
 /**
  * @typedef {Object} OpenRtbBidResponse
  * @property {string} id - ID of the bid response
- * @property {Array<{bid: Array<OpenRTBBid>}>} seatbid - Array of seat bids, each containing a list of bids
+ * @property {Array<{bid: Array<OpenRtbBid>}>} seatbid - Array of seat bids, each containing a list of bids
  * @property {string} cur - Currency in which bid amounts are expressed
  */
 
@@ -358,7 +358,7 @@ function isBidRequestValid(bid) {
  * @param {BidderRequest} bidderRequest PrebidJS BidderRequest
  * @param {string} requestId Request ID
  *
- * @returns {OpenRTBBidRequest} OpenRTB bid request
+ * @returns {OpenRtbRequest} OpenRTB bid request
  */
 function buildBidRequest(adUnits, bidderRequest, requestId) {
   const data = {

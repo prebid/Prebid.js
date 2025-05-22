@@ -450,7 +450,8 @@ export function callPrebidCacheAfterAuction(bids, callback) {
 
 /**
  * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
- * @param {Object} bid
+ * @param {Object} a
+ * @param {Object} b
  */
 export function sortByPricePerSecond(a, b) {
   if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {

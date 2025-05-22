@@ -9,6 +9,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const VERSION = '1.0';
@@ -187,7 +188,7 @@ export const spec = {
    *
    * @param {*} syncOptions Publisher prebid configuration.
    * @param {*} serverResponses A successful response from the server.
-   * @return {syncs[]} An array of syncs that should be executed.
+   * @return {UserSync[]} An array of syncs that should be executed.
    */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     if (!syncOptions.iframeEnabled) {
