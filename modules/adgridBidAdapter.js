@@ -22,6 +22,7 @@ const ADGRID_KEY = 'adgrid';
 
 const ALIASES = [];
 
+// Define the storage manager for the Adgrid bidder
 export const STORAGE = getStorageManager({
   bidderCode: BIDDER_CODE,
 });
