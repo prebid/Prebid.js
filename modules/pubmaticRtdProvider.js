@@ -278,8 +278,13 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
  * @return {Object} - Targeting data for ad units
  */
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
+  // Return empty object if adServerTargeting is explicitly set to false
+  if (config?.params?.adServerTargeting === false) return {};
+  
   const isRtdFloorApplied = bid =>
-    bid.floorData?.modelVersion?.includes("RTD model") && !bid.floorData.skipped;
+    bid.floorData?.floorProvider === "PM" && 
+    bid.floorData?.modelVersion?.includes("RTD model") && 
+    !bid.floorData.skipped
 
   const hasRtdFloorAppliedBid = auction?.adUnits?.some(adUnit =>
     adUnit.bids?.some(isRtdFloorApplied)
@@ -287,7 +292,7 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
 
   if (hasRtdFloorAppliedBid) {
     const targeting = adUnitCodes.reduce((acc, code) => {
-      acc[code] = { [CONSTANTS.TARGETING_KEYS.PM_YM]: 1 };
+      acc[code] = { [CONSTANTS.TARGETING_KEYS.PM_YM]: 1 }; // 1 indicates Test group
       return acc;
     }, {});
 
