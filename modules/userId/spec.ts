@@ -72,7 +72,7 @@ export interface UserIdConfig<P extends UserIdProvider> {
     value?: UserIdFor<P>;
 }
 
-type SerializedId = string | object;
+type SerializableId = string | Record<string, unknown>;
 
 /**
  * If your module can provide ID data synchronously it should set id directly; otherwise it should provide a callback that calls its first argument setId passing it ID data.
@@ -84,11 +84,11 @@ export type ProviderResponse = {
     /**
      * Serializable ID data. Objects will be passed through JSON.stringify
      */
-    id?: SerializedId;
+    id?: SerializableId;
     /**
      * If provided, will be invoked at a later point.
      */
-    callback?: (setId: (id: SerializedId) => void, getStoredValue: () => SerializedId) => void;
+    callback?: (setId: (id: SerializableId) => void, getStoredValue: () => SerializableId) => void;
 }
 
 type DecodedId<P extends UserIdProvider> = P extends keyof ProvidersToId ? { [K in UserIdKeyFor<P>]: UserIdFor<P> } & Partial<UserId> : Partial<UserId>;
@@ -134,7 +134,7 @@ export type IdProviderSpec<P extends UserIdProvider> = {
     name: P;
     aliasName?: UserIdProvider;
     /**
-     * GVL ID to use for TCF. If omitted your module may be be excluded when TCF is in scope.
+     * GVL ID to use for TCF. If omitted your module may be excluded when TCF is in scope.
      */
     gvlid?: number;
     /**
@@ -147,7 +147,7 @@ export type IdProviderSpec<P extends UserIdProvider> = {
      * @param consentData available consent data (when the relevant modules are present)
      * @param storedId Your previously stored ID data, if any, as was returned by getId or extendId
      */
-    getId: (config: UserIdConfig<P>, consentData: AllConsentData, storedId?: SerializedId) => ProviderResponse;
+    getId: (config: UserIdConfig<P>, consentData: AllConsentData, storedId?: SerializableId) => ProviderResponse;
     /**
      * If provided, it’s invoked when getId is not; namely:
      *
@@ -162,7 +162,7 @@ export type IdProviderSpec<P extends UserIdProvider> = {
     /**
      * Decode ID data. Invoked every time data from your module is available, either from storage or getId / extendId.
      */
-    decode: (id: SerializedId, config: UserIdConfig<P>) => DecodedId<P>;
+    decode: (id: SerializableId, config: UserIdConfig<P>) => DecodedId<P>;
     onDataDeletionRequest?: (config: UserIdConfig<P>, userId: UserId[P], ...cmpArgs: any[]) => void;
     /**
      * Domain to use for cookie storage.
