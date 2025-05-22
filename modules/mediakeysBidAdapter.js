@@ -620,8 +620,9 @@ export const spec = {
       payload.imp.push(imp);
     });
 
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {

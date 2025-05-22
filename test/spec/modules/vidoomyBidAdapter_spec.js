@@ -74,32 +74,38 @@ describe('vidoomyBidAdapter', function() {
             'sizes': [[300, 250], [200, 100]]
           }
         },
-        'schain': {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'exchange1.com',
-              'sid': '1234!abcd',
-              'hp': 1,
-              'rid': 'bid-request-1',
-              'name': 'publisher, Inc.',
-              'domain': 'publisher.com'
-            },
-            {
-              'asi': 'exchange2.com',
-              'sid': 'abcd',
-              'hp': 1
-            },
-            {
-              'asi': 'exchange2.com',
-              'sid': 'abcd',
-              'hp': 1,
-              'rid': 'bid-request-2',
-              'name': 'intermediary',
-              'domain': 'intermediary.com'
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'exchange1.com',
+                    'sid': '1234!abcd',
+                    'hp': 1,
+                    'rid': 'bid-request-1',
+                    'name': 'publisher, Inc.',
+                    'domain': 'publisher.com'
+                  },
+                  {
+                    'asi': 'exchange2.com',
+                    'sid': 'abcd',
+                    'hp': 1
+                  },
+                  {
+                    'asi': 'exchange2.com',
+                    'sid': 'abcd',
+                    'hp': 1,
+                    'rid': 'bid-request-2',
+                    'name': 'intermediary',
+                    'domain': 'intermediary.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       },
       {

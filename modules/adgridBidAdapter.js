@@ -41,8 +41,9 @@ function getAudience(validBidRequests, bidderRequest) {
     params.usp = deepAccess(bidderRequest, 'uspConsent');
   }
 
-  if (deepAccess(validBidRequests[0], 'schain')) {
-    params.schain = deepAccess(validBidRequests[0], 'schain');
+  const schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain');
+  if (schain) {
+    params.schain = schain;
   }
 
   if (deepAccess(validBidRequests[0], 'userId')) {

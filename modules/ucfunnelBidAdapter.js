@@ -261,7 +261,8 @@ function getRequestData(bid, bidderRequest) {
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
-  const supplyChain = getSupplyChain(bid.schain);
+  const schain = bid?.ortb2?.source?.ext?.schain;
+  const supplyChain = getSupplyChain(schain);
   const bidFloor = getFloor(bid, size, bid.mediaTypes);
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   // general bid data

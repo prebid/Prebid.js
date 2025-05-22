@@ -53,8 +53,9 @@ export const spec = {
       request.regs = {ext: {gdpr: gdpr}};
       request.user = {ext: {consent: consentStr}};
     }
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (bidSchain) {
+      const schain = mapSchain(bidSchain);
       if (schain) {
         request.ext = {
           schain: schain,

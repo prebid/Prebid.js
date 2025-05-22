@@ -73,7 +73,7 @@ export const spec = {
           });
       }
 
-      const schain = validBidRequests[0].schain;
+      const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
 
       const payload = {
         tags: [...tags],

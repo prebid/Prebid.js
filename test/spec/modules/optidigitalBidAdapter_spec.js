@@ -222,14 +222,20 @@ describe('optidigitalAdapterTests', function () {
 
     it('should add schain object to payload if exists', function () {
       const bidRequest = Object.assign({}, validBidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{
-            asi: 'examplewebsite.com',
-            sid: '00001',
-            hp: 1
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [{
+                  asi: 'examplewebsite.com',
+                  sid: '00001',
+                  hp: 1
+                }]
+              }
+            }
+          }
         }
       });
       const request = spec.buildRequests([bidRequest], bidderRequest);

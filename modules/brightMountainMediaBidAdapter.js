@@ -81,7 +81,8 @@ export const spec = {
 
       oRTBRequest.imp[0].bidfloor = getFloor(bid, size);
       oRTBRequest.user = getUserIdAsEids(bid.userIdAsEids)
-      oRTBRequest.source = getSchain(bid.schain)
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      oRTBRequest.source = getSchain(schain)
 
       requestData.push({
         method: 'POST',

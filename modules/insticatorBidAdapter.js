@@ -357,9 +357,10 @@ function buildUser(bid) {
 }
 
 function extractSchain(bids, requestId) {
-  if (!bids || bids.length === 0 || !bids[0].schain) return;
+  if (!bids || bids.length === 0) return;
 
-  const schain = bids[0].schain;
+  const schain = bids[0]?.ortb2?.source?.ext?.schain;
+  if (!schain) return;
   if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
     schain.nodes[0].rid = requestId;
   }

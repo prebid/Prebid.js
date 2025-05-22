@@ -86,10 +86,11 @@ function nobidBuildRequests(bids, bidderRequest) {
       return gppConsent;
     }
     var schain = function(bids) {
-      if (bids && bids.length > 0) {
-        return bids[0].schain
+      try {
+        return bids[0]?.ortb2?.source?.ext?.schain;
+      } catch (e) {
+        return null;
       }
-      return null;
     }
     var coppa = function() {
       if (config.getConfig('coppa') === true) {

@@ -197,8 +197,9 @@ export const spec = {
     }
 
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params

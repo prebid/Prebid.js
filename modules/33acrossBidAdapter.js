@@ -316,9 +316,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppCo
     }
   };
 
-  if (firstBidRequest.ortb2?.source?.schain) {
+  if (firstBidRequest.ortb2?.source?.ext?.schain) {
     ttxRequest.source = setExtensions(ttxRequest.source, {
-      'schain': firstBidRequest.ortb2.source.schain
+      'schain': firstBidRequest.ortb2.source.ext.schain
     });
   }
 

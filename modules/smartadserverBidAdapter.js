@@ -204,7 +204,7 @@ export const spec = {
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
         prebidVersion: '$prebid.version$',
-        schain: spec.serializeSupplyChain(bid.schain),
+        schain: spec.serializeSupplyChain(bid?.ortb2?.source?.ext?.schain),
         sda: sellerDefinedAudience,
         sdc: sellerDefinedContext
       };
