@@ -126,8 +126,8 @@ export const spec = {
       deviceHeight = winTop.screen.height;
       winLocation = winTop.location;
     } catch (e) {
-      winLocation = window.location;
       logMessage(e);
+      winLocation = window.location;
     }
 
     const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
