@@ -606,14 +606,22 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.not.have.nested.property('user.ext.eids');
   });
 
+  const userId = {
+    pubcid: [{
+      source: 'pubcid.org',
+      uids: [{
+        id: '67890'
+      }]
+    }]
+  };
   it('Verify User ID publisher commond id support', function() {
     // clone bidRequests
     let requests = utils.deepClone(bidRequests);
 
     // add pubcid to every entry
     requests.forEach((unit) => {
-      Object.assign(unit, {userId: {pubcid: 67890}});
-      Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
+      // Object.assign(unit, {userId: {pubcid: 67890}});
+      Object.assign(unit, {userIdAsEids: userId});
     });
     //  construct http post payload
     const payload = spec.buildRequests(requests, {}).data;
