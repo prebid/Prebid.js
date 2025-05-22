@@ -1,164 +1,3 @@
-/**
- * This module adds Real time data support to prebid.js
- * @module modules/realTimeData
- * @typedef {import('../../modules/rtdModule/index.js').SubmoduleConfig} SubmoduleConfig
- */
-
-/**
- * @interface UserConsentData
- */
-/**
- * @property
- * @summary gdpr consent
- * @name UserConsentData#gdpr
- * @type {Object}
- */
-/**
- * @property
- * @summary usp consent
- * @name UserConsentData#usp
- * @type {Object}
- */
-/**
- * @property
- * @summary coppa
- * @name UserConsentData#coppa
- * @type {boolean}
- */
-
-/**
- * @interface RtdSubmodule
- */
-
-/**
- * @function
- * @summary return real time data
- * @name RtdSubmodule#getTargetingData
- * @param {string[]} adUnitsCodes
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- * @param {auction} auction
- */
-
-/**
- * @function
- * @summary modify bid request data
- * @name RtdSubmodule#getBidRequestData
- * @param {Object} reqBidsConfigObj
- * @param {function} callback
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- */
-
-/**
- * @property
- * @summary used to link submodule with config
- * @name RtdSubmodule#name
- * @type {string}
- */
-
-/**
- * @property
- * @summary used to link submodule with config
- * @name RtdSubmodule#config
- * @type {Object}
- */
-
-/**
- * @function
- * @summary init sub module
- * @name RtdSubmodule#init
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} user consent
- * @return {boolean} false to remove sub module
- */
-
-/**
- * @function
- * @summary on auction init event
- * @name RtdSubmodule#onAuctionInitEvent
- * @param {Object} data
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- */
-
-/**
- * @function
- * @summary on auction end event
- * @name RtdSubmodule#onAuctionEndEvent
- * @param {Object} data
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- */
-
-/**
- * @function
- * @summary on bid response event
- * @name RtdSubmodule#onBidResponseEvent
- * @param {Object} data
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- */
-
-/**
- * @function
- * @summary on bid requested event
- * @name RtdSubmodule#onBidRequestEvent
- * @param {Object} data
- * @param {SubmoduleConfig} config
- * @param {UserConsentData} userConsent
- */
-
-/**
- * @function
- * @summary on data deletion request
- * @name RtdSubmodule#onDataDeletionRequest
- * @param {SubmoduleConfig} config
- */
-
-/**
- * @interface ModuleConfig
- */
-
-/**
- * @property
- * @summary auction delay
- * @name ModuleConfig#auctionDelay
- * @type {number}
- */
-
-/**
- * @property
- * @summary list of sub modules
- * @name ModuleConfig#dataProviders
- * @type {SubmoduleConfig[]}
- */
-
-/**
- * @interface SubModuleConfig
- */
-
-/**
- * @property
- * @summary params for provide (sub module)
- * @name SubModuleConfig#params
- * @type {Object}
- */
-
-/**
- * @property
- * @summary name
- * @name ModuleConfig#name
- * @type {string}
- */
-
-/**
- * @property
- * @summary delay auction for this sub module
- * @name ModuleConfig#waitForIt
- * @type {boolean}
- */
-
 import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
@@ -171,20 +10,18 @@ import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
 import {guardOrtb2Fragments} from '../../libraries/objectGuard/ortbGuard.js';
 import {activityParamsBuilder} from '../../src/activities/params.js';
+import type {StartAuctionOptions} from "../../src/prebid.ts";
+import type {ProviderConfig, RTDProvider, RTDProviderConfig} from "./spec.ts";
+
 
 const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-/** @type {RtdSubmodule[]} */
 let registeredSubModules = [];
-/** @type {RtdSubmodule[]} */
 export let subModules = [];
-/** @type {ModuleConfig} */
-let _moduleConfig;
-/** @type {SubmoduleConfig[]} */
+let _moduleConfig: RealTimeDataConfig;
 let _dataProviders = [];
-/** @type {UserConsentData} */
 let _userConsent;
 
 /**
@@ -221,11 +58,11 @@ const setEventsListeners = (function () {
         [EVENTS.BID_REQUESTED]: ['onBidRequestEvent'],
         [EVENTS.BID_ACCEPTED]: ['onBidAcceptedEvent']
       }).forEach(([ev, [handler, preprocess]]) => {
-        events.on(ev, (args) => {
-          preprocess && preprocess(args);
+        events.on(ev as any, (args) => {
+          preprocess && (preprocess as any)(args);
           subModules.forEach(sm => {
             try {
-              sm[handler] && sm[handler](args, sm.config, _userConsent)
+              sm[handler as string] && sm[handler as string](args, sm.config, _userConsent)
             } catch (e) {
               logError(`RTD provider '${sm.name}': error in '${handler}':`, e);
             }
@@ -236,6 +73,20 @@ const setEventsListeners = (function () {
     }
   }
 })();
+
+type RealTimeDataConfig = {
+    dataProviders: (RTDProviderConfig<keyof ProviderConfig> | RTDProviderConfig<RTDProvider>)[];
+    /**
+     * Maximum amount of time (in milliseconds) to delay auctions while waiting for RTD providers.
+     */
+    auctionDelay?: number;
+}
+
+declare module '../../src/config' {
+    interface Config {
+        [MODULE_NAME]?: RealTimeDataConfig;
+    }
+}
 
 export function init(config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
@@ -287,7 +138,7 @@ function initSubModules() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.ts
  */
-export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj) {
+export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj: StartAuctionOptions) {
   _userConsent = getConsentData();
 
   const relevantSubModules = [];
