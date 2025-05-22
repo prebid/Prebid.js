@@ -22,6 +22,7 @@ declare module './rtdModule/spec' {
         }
     }
 }
+
 export const geolocationSubmodule: RtdProviderSpec<'geolocation'> = {
   name: 'geolocation',
   gvlid: VENDORLESS_GVLID as any,

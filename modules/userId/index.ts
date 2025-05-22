@@ -100,29 +100,14 @@ declare module '../../src/userSync' {
 }
 
 let submodules: SubmoduleContainer<UserIdProvider>[] = [];
-
-/** @type {PriorityMaps} */
 let initializedSubmodules;
-
-/** @type {SubmoduleConfig[]} */
 let configRegistry = [];
-
-/** @type {Object} */
 let idPriority = {};
-
-/** @type {Submodule[]} */
 let submoduleRegistry: IdProviderSpec<UserIdProvider>[] = [];
-
-/** @type {(number|undefined)} */
 let timeoutID;
-
-/** @type {(number|undefined)} */
 export let syncDelay;
-
-/** @type {(number|undefined)} */
 export let auctionDelay;
 
-/** @type {(string|undefined)} */
 let ppidSource;
 
 let configListener;
