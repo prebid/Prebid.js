@@ -14,7 +14,7 @@ General gulp commands include separate commands for serving the codebase on a bu
     - A page will open which provides a hub for common reviewer tools.
     - If you need to manually access the tools:
         - Navigate to build/coverage/lcov-report/index.html to view coverage
-        - Navigate to integrationExamples/gpt/hellow_world.html for basic integration testing
+        - Navigate to integrationExamples/gpt/hello_world.html for basic integration testing
         - The hello_world.html and other examples can be edited and used as needed to verify functionality
 
 ### General PR review Process
