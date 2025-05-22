@@ -168,9 +168,6 @@ describe('nextMillenniumBidAdapterTests', () => {
           id: 'e36ea395f67a',
           ext: {
             prebid: {storedrequest: {id: '123'}},
-            data: {
-              pbadslot: 'slot-123'
-            }
           },
           banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },

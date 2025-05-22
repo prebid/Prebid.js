@@ -20,9 +20,8 @@ describe('ColossussspAdapter', function () {
     ortb2Imp: {
       ext: {
         tid: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
-        data: {
-          pbadslot: '/19968336/prebid_cache_video_adunit'
-        }
+        gpid: '/19968336/prebid_cache_video_adunit',
+        data: {}
       }
     },
     schain: {

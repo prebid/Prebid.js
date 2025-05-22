@@ -65,9 +65,8 @@ const videoBidReq = [{
   },
   ortb2Imp: {
     ext: {
-      data: {
-        pbadslot: '/1111/pbadslot#728x90'
-      }
+      data: {},
+      gpid: '/1111/pbadslot#728x90'
     }
   },
   mediaTypes: {
