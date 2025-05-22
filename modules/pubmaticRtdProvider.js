@@ -35,7 +35,7 @@ const CONSTANTS = Object.freeze({
     CONFIGS: 'config.json'
   },
   TARGETING_KEYS: {
-    PM_YM: 'pm_ym'
+    PM_YM: 'pm_ym',
   }
 });
 
@@ -282,25 +282,27 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   if (config?.params?.adServerTargeting === false) return {};
   
   const isRtdFloorApplied = bid =>
-    bid.floorData?.floorProvider === "PM" && 
-    bid.floorData?.modelVersion?.includes("RTD model") && 
+    bid.floorData?.floorProvider === "PM" &&
     !bid.floorData.skipped
 
   const hasRtdFloorAppliedBid = auction?.adUnits?.some(adUnit =>
     adUnit.bids?.some(isRtdFloorApplied)
   ) || auction?.bidsReceived?.some(isRtdFloorApplied);
 
+  // Log message if RTD floor is applied, regardless of whether there are ad units
   if (hasRtdFloorAppliedBid) {
-    const targeting = adUnitCodes.reduce((acc, code) => {
-      acc[code] = { [CONSTANTS.TARGETING_KEYS.PM_YM]: 1 }; // 1 indicates Test group
-      return acc;
-    }, {});
-
     logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData');
-    return targeting;
   }
 
-  return {};
+  // Create targeting object for all ad units (or empty object if adUnitCodes is empty)
+  const targeting = adUnitCodes.length === 0 ? {} : adUnitCodes.reduce((acc, code) => {
+    // If RTD floor is applied, set PM_YM to 1 (Test group)
+    // Otherwise, set PM_YM to 0 (Control group)
+    acc[code] = { [CONSTANTS.TARGETING_KEYS.PM_YM]: hasRtdFloorAppliedBid ? 1 : 0 };
+    return acc;
+  }, {});
+
+  return targeting;
 };
 
 /** @type {RtdSubmodule} */

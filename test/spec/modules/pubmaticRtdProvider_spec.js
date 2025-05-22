@@ -625,6 +625,7 @@ describe('Pubmatic RTD Provider', () => {
                 adUnits: [{
                     bids: [{
                         floorData: {
+                            floorProvider: 'PM',
                             modelVersion: 'RTD model v1',
                             skipped: false
                         }
@@ -649,6 +650,7 @@ describe('Pubmatic RTD Provider', () => {
                 adUnits: [],
                 bidsReceived: [{
                     floorData: {
+                        floorProvider: 'PM',
                         modelVersion: 'RTD model v2',
                         skipped: false
                     }
@@ -663,7 +665,7 @@ describe('Pubmatic RTD Provider', () => {
             expect(logInfoStub.calledWith(sinon.match.any, 'Setting targeting via getTargetingData')).to.be.true;
         });
 
-        it('should return empty object when no RTD floor is applied', () => {
+        it('should return PM_YM: 0 when no RTD floor is applied', () => {
             const adUnitCodes = ['ad-unit-1'];
             const config = {};
             const userConsent = {};
@@ -671,6 +673,7 @@ describe('Pubmatic RTD Provider', () => {
                 adUnits: [{
                     bids: [{
                         floorData: {
+                            floorProvider: 'Other', // Not 'PM', so RTD floor is not applied
                             modelVersion: 'Standard model',
                             skipped: false
                         }
@@ -678,6 +681,7 @@ describe('Pubmatic RTD Provider', () => {
                 }],
                 bidsReceived: [{
                     floorData: {
+                        floorProvider: 'PM',
                         modelVersion: 'RTD model',
                         skipped: true // skipped is true, so RTD floor is not applied
                     }
@@ -686,7 +690,9 @@ describe('Pubmatic RTD Provider', () => {
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
-            expect(result).to.deep.equal({});
+            expect(result).to.deep.equal({
+                'ad-unit-1': { 'pm_ym': 0 } // 0 indicates Control group
+            });
             expect(logInfoStub.called).to.be.false;
         });
 
@@ -698,6 +704,7 @@ describe('Pubmatic RTD Provider', () => {
                 adUnits: [{
                     bids: [{
                         floorData: {
+                            floorProvider: 'PM',
                             modelVersion: 'RTD model',
                             skipped: false
                         }
@@ -719,7 +726,9 @@ describe('Pubmatic RTD Provider', () => {
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
-            expect(result).to.deep.equal({});
+            expect(result).to.deep.equal({
+                'ad-unit-1': { 'pm_ym': 0 } // 0 indicates Control group
+            });
             expect(logInfoStub.called).to.be.false;
         });
 
@@ -734,7 +743,59 @@ describe('Pubmatic RTD Provider', () => {
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
+            expect(result).to.deep.equal({
+                'ad-unit-1': { 'pm_ym': 0 } // 0 indicates Control group
+            });
+            expect(logInfoStub.called).to.be.false;
+        });
+
+        it('should return empty object when adServerTargeting is explicitly set to false', () => {
+            const adUnitCodes = ['ad-unit-1'];
+            const config = {
+                params: {
+                    adServerTargeting: false
+                }
+            };
+            const userConsent = {};
+            const auction = {
+                adUnits: [{
+                    bids: [{
+                        floorData: {
+                            floorProvider: 'PM',
+                            modelVersion: 'RTD model',
+                            skipped: false
+                        }
+                    }]
+                }]
+            };
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
             expect(result).to.deep.equal({});
+            expect(logInfoStub.called).to.be.false;
+        });
+
+        it('should only consider bids with floorProvider="PM" to have RTD floor applied', () => {
+            const adUnitCodes = ['ad-unit-1'];
+            const config = {};
+            const userConsent = {};
+            const auction = {
+                adUnits: [{
+                    bids: [{
+                        floorData: {
+                            floorProvider: 'Other',  // Not PM
+                            modelVersion: 'RTD model',
+                            skipped: false
+                        }
+                    }]
+                }]
+            };
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({
+                'ad-unit-1': { 'pm_ym': 0 } // 0 indicates Control group
+            });
             expect(logInfoStub.called).to.be.false;
         });
     });
