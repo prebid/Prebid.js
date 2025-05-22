@@ -156,7 +156,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function _getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'schain');
+  return deepAccess(bidRequest, 'ortb2.source.ext.schain');
 }
 
 function _getEids(bidRequest) {

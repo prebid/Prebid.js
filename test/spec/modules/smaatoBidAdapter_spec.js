@@ -1271,7 +1271,15 @@ describe('smaatoBidAdapterTest', () => {
             }
           ]
         };
-        const bidRequestWithSchain = Object.assign({}, singleBannerBidRequest, {schain: schain});
+        const bidRequestWithSchain = Object.assign({}, singleBannerBidRequest, {
+          ortb2: {
+            source: {
+              ext: {
+                schain: schain
+              }
+            }
+          }
+        });
 
         const reqs = spec.buildRequests([bidRequestWithSchain], defaultBidderRequest);
 

@@ -117,7 +117,7 @@ const bidReq = [{
   sizes: [[1, 1]],
   bidId: '453cf42d72bb3c',
   auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874',
-  schain: schainObj
+  ortb2: { source: { ext: { schain: schainObj } } }
 }];
 
 const supplyChainedBidReqs = [{
@@ -130,7 +130,7 @@ const supplyChainedBidReqs = [{
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
-  schain: schainObj
+  ortb2: { source: { ext: { schain: schainObj } } }
 }, {
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,

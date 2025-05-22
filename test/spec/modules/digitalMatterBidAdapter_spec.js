@@ -117,10 +117,16 @@ describe('Digital Matter BidAdapter', function () {
     it('should pass supply chain object', function () {
       let validBidRequests = {
         ...bid,
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       };

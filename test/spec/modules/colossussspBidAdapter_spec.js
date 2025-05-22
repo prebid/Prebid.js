@@ -25,7 +25,10 @@ describe('ColossussspAdapter', function () {
         }
       }
     },
-    schain: {
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
       ver: '1.0',
       complete: 1,
       nodes: [
@@ -38,6 +41,9 @@ describe('ColossussspAdapter', function () {
           domain: 'example.com'
         }
       ]
+          }
+        }
+      }
     }
   };
   let bidderRequest = {

@@ -26,7 +26,10 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         floor: 0.5,
       }
     },
-    schain: {
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
       ver: '1.0',
       complete: 1,
       nodes: [
@@ -37,6 +40,9 @@ describe('brightMountainMediaBidAdapter_spec', function () {
           hp: 1
         }
       ]
+          }
+        }
+      }
     },
     userIdAsEids: [
       {

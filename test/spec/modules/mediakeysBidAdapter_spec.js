@@ -452,7 +452,10 @@ describe('mediakeysBidAdapter', function () {
         ],
       };
       const bidRequests = [utils.deepClone(bid)];
-      bidRequests[0].schain = schain;
+      bidRequests[0].ortb2 = bidRequests[0].ortb2 || {};
+      bidRequests[0].ortb2.source = bidRequests[0].ortb2.source || {};
+      bidRequests[0].ortb2.source.ext = bidRequests[0].ortb2.source.ext || {};
+      bidRequests[0].ortb2.source.ext.schain = schain;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const data = request.data;
       expect(data.source.ext.schain).to.equal(schain);

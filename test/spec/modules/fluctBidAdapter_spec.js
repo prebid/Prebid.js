@@ -338,16 +338,22 @@ describe('fluctAdapter', function () {
       // this should be done by schain.js
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign({}, bidReq, {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'example.com',
-                sid: 'publisher-id',
-                hp: 1
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [
+                    {
+                      asi: 'example.com',
+                      sid: 'publisher-id',
+                      hp: 1
+                    }
+                  ]
+                }
               }
-            ]
+            }
           }
         })
       );

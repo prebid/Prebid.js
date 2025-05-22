@@ -356,8 +356,9 @@ function generateSharedParams(sharedParams, bidderRequest) {
     params.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
-  if (sharedParams.schain) {
-    params.schain = getSupplyChain(sharedParams.schain);
+  const schain = sharedParams?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    params.schain = getSupplyChain(schain);
   }
 
   if (userIds) {

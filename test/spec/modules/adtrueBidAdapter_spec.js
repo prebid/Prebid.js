@@ -33,22 +33,28 @@ describe('AdTrueBidAdapter', function () {
             tid: '92489f71-1bf2-49a0-adf9-000cea934729',
           }
         },
-        schain: {
-          'ver': '1.0',
-          'complete': 1,
-          'nodes': [
-            {
-              'asi': 'indirectseller.com',
-              'sid': '00001',
-              'hp': 1
-            },
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                'ver': '1.0',
+                'complete': 1,
+                'nodes': [
+                  {
+                    'asi': 'indirectseller.com',
+                    'sid': '00001',
+                    'hp': 1
+                  },
 
-            {
-              'asi': 'indirectseller-2.com',
-              'sid': '00002',
-              'hp': 2
+                  {
+                    'asi': 'indirectseller-2.com',
+                    'sid': '00002',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];
@@ -291,7 +297,7 @@ describe('AdTrueBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
       it('Request params check with GDPR Consent', function () {
         let bidRequest = {
@@ -314,7 +320,7 @@ describe('AdTrueBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
       it('Request params check with USP/CCPA Consent', function () {
         let bidRequest = {
@@ -334,7 +340,7 @@ describe('AdTrueBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
 
       it('should NOT include coppa flag in bid request if coppa config is not present', () => {

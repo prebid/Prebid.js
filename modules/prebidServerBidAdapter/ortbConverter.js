@@ -223,10 +223,7 @@ const PBS_CONVERTER = ortbConverter({
               .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
               .map((req) => {
                 const bid = req?.bids?.[0] || {};
-                // Check for schain in different locations with priority
-                const schain = bid?.ortb2?.source?.ext?.schain || // First check in ortb2.source.ext.schain (new location)
-                               bid?.ortb2?.source?.schain || // Then check in ortb2.source.schain (transitional location)
-                               bid?.schain; // Finally check directly on the bid (legacy location)
+                const schain = bid?.ortb2?.source?.ext?.schain;
 
                 return {
                   bidders: [req.bidderCode],

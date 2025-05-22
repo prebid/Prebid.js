@@ -3151,7 +3151,10 @@ describe('ozone Adapter', function () {
           }
         ]
       };
-      br[0]['schain'] = schainConfigObject;
+      br[0].ortb2 = br[0].ortb2 || {};
+      br[0].ortb2.source = br[0].ortb2.source || {};
+      br[0].ortb2.source.ext = br[0].ortb2.source.ext || {};
+      br[0].ortb2.source.ext.schain = schainConfigObject;
       const request = spec.buildRequests(br, validBidderRequest);
       const data = JSON.parse(request.data);
       expect(data.source.ext).to.haveOwnProperty('schain');

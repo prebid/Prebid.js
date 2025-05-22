@@ -252,8 +252,9 @@ function buildRequestData(bidRequest, bidderRequest) {
   }
 
   // adding schain object
-  if (bidRequest.schain) {
-    deepSetValue(openrtbRequest, 'source.ext.schain', bidRequest.schain);
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    deepSetValue(openrtbRequest, 'source.ext.schain', schain);
     openrtbRequest.source.ext.schain.nodes[0].rid = openrtbRequest.id;
   }
 

@@ -377,23 +377,29 @@ describe('cadent_aperture_mx Adapter', function () {
 
       it('should add schain object to request', function() {
         const schainBidderRequest = utils.deepClone(bidderRequest);
-        schainBidderRequest.bids[0].schain = {
-          'complete': 1,
-          'ver': '1.0',
-          'nodes': [
-            {
-              'asi': 'testing.com',
-              'sid': 'abc',
-              'hp': 1
+        schainBidderRequest.bids[0].ortb2 = {
+          source: {
+            ext: {
+              schain: {
+                'complete': 1,
+                'ver': '1.0',
+                'nodes': [
+                  {
+                    'asi': 'testing.com',
+                    'sid': 'abc',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         };
         let request = spec.buildRequests(schainBidderRequest.bids, schainBidderRequest);
         request = JSON.parse(request.data);
         expect(request.source.ext.schain).to.exist;
         expect(request.source.ext.schain).to.have.property('complete', 1);
         expect(request.source.ext.schain).to.have.property('ver', '1.0');
-        expect(request.source.ext.schain.nodes[0].asi).to.equal(schainBidderRequest.bids[0].schain.nodes[0].asi);
+        expect(request.source.ext.schain.nodes[0].asi).to.equal(schainBidderRequest.bids[0].ortb2.source.ext.schain.nodes[0].asi);
       });
 
       it('should add liveramp identitylink id to request', () => {

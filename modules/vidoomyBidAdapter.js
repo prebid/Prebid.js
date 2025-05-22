@@ -158,7 +158,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      schain: serializeSupplyChainObj(bid.schain) || '',
+      schain: serializeSupplyChainObj(bid?.ortb2?.source?.ext?.schain) || '',
       eids: eids || '',
       bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',

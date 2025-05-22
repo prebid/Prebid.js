@@ -171,27 +171,33 @@ describe('gumgumAdapter', function () {
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'exchange1.com',
-              sid: '1234',
-              hp: 1,
-              rid: 'bid-request-1',
-              name: 'publisher',
-              domain: 'publisher.com'
-            },
-            {
-              asi: 'exchange2.com',
-              sid: 'abcd',
-              hp: 1,
-              rid: 'bid-request-2',
-              name: 'intermediary',
-              domain: 'intermediary.com'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'exchange1.com',
+                    sid: '1234',
+                    hp: 1,
+                    rid: 'bid-request-1',
+                    name: 'publisher',
+                    domain: 'publisher.com'
+                  },
+                  {
+                    asi: 'exchange2.com',
+                    sid: 'abcd',
+                    hp: 1,
+                    rid: 'bid-request-2',
+                    name: 'intermediary',
+                    domain: 'intermediary.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];

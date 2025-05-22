@@ -4625,7 +4625,8 @@ describe('the rubicon adapter', function () {
     beforeEach(() => {
       bidRequests = getBidderRequest();
       schainConfig = getSupplyChainConfig();
-      bidRequests.bids[0].ortb2.source.schain = schainConfig;
+      bidRequests.bids[0].ortb2.source.ext = bidRequests.bids[0].ortb2.source.ext || {};
+      bidRequests.bids[0].ortb2.source.ext.schain = schainConfig;
     });
 
     it('should properly serialize schain object with correct delimiters', () => {
@@ -4644,14 +4645,14 @@ describe('the rubicon adapter', function () {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
       const schain = new URLSearchParams(results[0].data).get('rp_schain').split('!');
       const version = schain.shift().split(',')[0];
-      expect(version).to.equal(bidRequests.bids[0].ortb2.source.schain.ver);
+      expect(version).to.equal(bidRequests.bids[0].ortb2.source.ext.schain.ver);
     });
 
     it('should send the correct value for complete in schain', () => {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
       const schain = new URLSearchParams(results[0].data).get('rp_schain').split('!');
       const complete = schain.shift().split(',')[1];
-      expect(complete).to.equal(String(bidRequests.bids[0].ortb2.source.schain.complete));
+      expect(complete).to.equal(String(bidRequests.bids[0].ortb2.source.ext.schain.complete));
     });
 
     it('should send available params in the right order', () => {

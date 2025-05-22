@@ -110,18 +110,24 @@ describe('dspxAdapter', function () {
       'crumbs': {
         'pubcid': 'e09ab6a3-ae74-4f01-b2e8-81b141d6dc61'
       },
-      'schain': {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'example.com',
-            'sid': '0',
-            'hp': 1,
-            'rid': 'bidrequestid',
-            'domain': 'example.com'
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
+              'ver': '1.0',
+              'complete': 1,
+              'nodes': [
+                {
+                  'asi': 'example.com',
+                  'sid': '0',
+                  'hp': 1,
+                  'rid': 'bidrequestid',
+                  'domain': 'example.com'
+                }
+              ]
+            }
           }
-        ]
+        }
       }
     },
     {

@@ -91,7 +91,8 @@ export const spec = {
         };
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+      if (schain) { payload.schain = schain; }
       if (bidderRequest.userId) {
         payload.userId = bidderRequest.userId;
       } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {

@@ -29,8 +29,9 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
   const anyKey = Object.keys(masterBidRequests)[0];
-  if (masterBidRequests[anyKey].schain) {
-    payload.schain = serializeSupplyChain(masterBidRequests[anyKey].schain);
+  const schain = masterBidRequests[anyKey]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    payload.schain = serializeSupplyChain(schain);
   }
 
   const bidIdMap = {};

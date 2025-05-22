@@ -130,7 +130,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -157,7 +163,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -185,7 +197,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -214,7 +232,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -239,7 +263,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -273,7 +303,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -311,7 +347,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -349,7 +391,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -383,7 +431,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -427,7 +481,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -499,7 +559,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -546,7 +612,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4f',
       bidderRequestId: '11a22b33c44f',
       auctionId: '1aa2bb3cc4df',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -587,7 +659,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -2074,7 +2152,9 @@ describe('IndexexchangeAdapter', function () {
 
   describe('buildRequests', function () {
     const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-    delete bidWithoutSchain[0].schain;
+    if (bidWithoutSchain[0].ortb2 && bidWithoutSchain[0].ortb2.source && bidWithoutSchain[0].ortb2.source.ext) {
+      delete bidWithoutSchain[0].ortb2.source.ext.schain;
+    }
     const GPID = '/19968336/some-adunit-path';
     let request, requestUrl, requestMethod, payloadData, requestWithoutSchain, payloadWithoutSchain;
 
@@ -2682,7 +2762,9 @@ describe('IndexexchangeAdapter', function () {
         const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
         bid[0].mediaTypes.video.context = 'outstream';
         bid[0].mediaTypes.video.w = [[300, 143]];
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('ix');
@@ -2695,7 +2777,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'http://publisherplayer.js',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
@@ -2708,7 +2792,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'publisherplayer.js',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.be.undefined;
@@ -2721,7 +2807,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'http://js-sec.indexww.rendererplayer.com',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('ix');
@@ -2733,7 +2821,9 @@ describe('IndexexchangeAdapter', function () {
         bid[0].mediaTypes.video.renderer = {
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.be.undefined;
@@ -2742,7 +2832,13 @@ describe('IndexexchangeAdapter', function () {
         const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
         bid[0].mediaTypes.video.context = 'outstream';
         bid[0].mediaTypes.video.w = [[300, 143]];
-        bid[0].schain = SAMPLE_SCHAIN;
+        bid[0].ortb2 = {
+          source: {
+            ext: {
+              schain: SAMPLE_SCHAIN
+            }
+          }
+        };
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');

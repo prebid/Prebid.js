@@ -253,9 +253,10 @@ export const spec = {
     // passing transactionId in source.tid
     deepSetValue(payload, 'source.tid', bidderRequest?.ortb2?.source?.tid);
 
-    // schain
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    // schain - check for schain in the new location
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     // gdpr consent
