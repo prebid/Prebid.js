@@ -80,8 +80,12 @@ export function module(name, install, {postInstallAllowed = false} = {}) {
   }, name)([]); // will be queued until hook.ready() called in pbjs.processQueue();
 }
 
-export function submodule(name, ...args) {
-  const install = submoduleInstallMap[name];
+export interface Submodules {
+    [name: string]: unknown[]
+}
+
+export function submodule<N extends keyof Submodules>(name: N, ...args: Submodules[N]) {
+  const install = submoduleInstallMap[name as any];
   if (install) return install(...args);
   getHook(name).before((next, modules) => {
     modules.push(args);

@@ -3,120 +3,6 @@
  * @module modules/userId
  */
 
-/**
- * @typedef Submodule
- * @property {string} name - used to link submodule with config
- * @property {decode} decode
- * @property {getId} getId
- * @property {Object} eids
- * @property {number} [gvlid] - vendor ID
- * @property {extendId} [extendId]
- * @property {function} [domainOverride] - use a predefined domain override for cookies or provide your own
- * @property {function(): string} [findRootDomain] - returns the root domain
- */
-
-/**
- * Performs action to obtain id and return a value in the callback's response argument.
- * If IdResponse#id is defined, then it will be written to the current active storage.
- * If IdResponse#callback is defined, then it'll called at the end of auction.
- * It's permissible to return neither, one, or both fields.
- * @callback getId
- * @param {SubmoduleConfig} config
- * @param {ConsentData|undefined} [consentData]
- * @param {Object|undefined} [cacheIdObj]
- * @returns {IdResponse|undefined} A response object that contains id and/or callback.
- */
-
-/**
- * Similar to `getId`, this optional method returns response to for id that exists already.
- * If IdResponse#id is defined, then it will be written to the current active storage even if it exists already.
- * If IdResponse#callback is defined, then it'll called at the end of auction.
- * It's permissible to return neither, one, or both fields.
- * @callback extendId
- * @param {SubmoduleConfig} config
- * @param {ConsentData|undefined} consentData
- * @param {Object} storedId - existing id, if any
- * @returns {IdResponse|{callback:function}} A response object that contains id and/or callback.
- */
-
-/**
- * Decode a stored value for passing to bid requests
- * @callback decode
- * @param {Object|string} value
- * @param {SubmoduleConfig|undefined} [config]
- * @returns {Object|undefined}
- */
-
-/**
- * @typedef {Object} SubmoduleConfig
- * @property {string} name - the User ID submodule name (used to link submodule with config)
- * @property {(SubmoduleStorage|undefined)} storage - browser storage config
- * @property {(SubmoduleParams|undefined)} params - params config for use by the submodule.getId function
- * @property {(Object|undefined)} value - if not empty, this value is added to bid requests for access in adapters
- * @property {string[]} [enabledStorageTypes]
- */
-
-/**
- * @typedef {Object} SubmoduleStorage
- * @property {string} type - browser storage type (html5 or cookie)
- * @property {string} name - key name to use when saving/reading to local storage or cookies
- * @property {number} expires - time to live for browser storage in days
- * @property {(number|undefined)} refreshInSeconds - if not empty, this value defines the maximum time span in seconds before refreshing user ID stored in browser
- */
-
-/**
- * @typedef {Object} LiveIntentCollectConfig
- * @property {(string|undefined)} fpiStorageStrategy - defines whether the first party identifiers that LiveConnect creates and updates are stored in a cookie jar, local storage, or not created at all
- * @property {(number|undefined)} fpiExpirationDays - the expiration time of an identifier created and updated by LiveConnect
- * @property {(string|undefined)} collectorUrl - defines where the LiveIntentId signal pixels are pointing to
- * @property {(string|undefined)} appId - the  unique identifier of the application in question
- */
-
-/**
- * @typedef {Object} SubmoduleParams
- * @property {(string|undefined)} partner - partner url param value
- * @property {(string|undefined)} url - webservice request url used to load Id data
- * @property {(string|undefined)} pixelUrl - publisher pixel to extend/modify cookies
- * @property {(boolean|undefined)} create - create id if missing.  default is true.
- * @property {(boolean|undefined)} extend - extend expiration time on each access.  default is false.
- * @property {(string|undefined)} pid - placement id url param value
- * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
- * @property {(string|undefined)} ajaxTimeout - the number of milliseconds a resolution request can take before automatically being terminated
- * @property {(Array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
- * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
- * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
- * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
- * @property {(string|undefined)} notUse3P - use to retrieve envelope from 3p endpoint
- */
-
-/**
- * @typedef {Object} SubmoduleContainer
- * @property {Submodule} submodule
- * @property {SubmoduleConfig} config
- * @property {(Object|undefined)} idObj - cache decoded id value (this is copied to every adUnit bid)
- * @property {(function|undefined)} callback - holds reference to submodule.getId() result if it returned a function. Will be set to undefined after callback executes
- * @property {StorageManager} storageMgr
- * @property {string[]} [enabledStorageTypes]
- */
-
-/**
- * @typedef {Object} ConsentData
- * @property {Object} gdpr
- * @property {Object} gpp
- * @property {Object} usp
- * @property {Object} coppa
- */
-
-/**
- * @typedef {Object} IdResponse
- * @property {Object} [id] - id data
- * @property {function} [callback] - function that will return an id
- */
-
-/**
- * @typedef {{[idKey: string]: () => SubmoduleContainer[]}} SubmodulePriorityMap
- */
-
 import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
@@ -130,6 +16,7 @@ import {
     getStorageManager,
     STORAGE_TYPE_COOKIES,
     STORAGE_TYPE_LOCALSTORAGE,
+    type StorageManager,
     type StorageType
 } from '../../src/storageManager.js';
 import {
@@ -158,8 +45,7 @@ import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.js';
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
-import type {BidderCode} from "../../src/types/common.d.ts";
-import type {ProviderParams, ProvidersToId, UserId, UserIdProvider} from "./spec.ts";
+import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -168,51 +54,6 @@ export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
   isAllowed: isActivityAllowed
-}
-
-export interface UserIdConfig<M extends UserIdProvider> {
-    /**
-     * User ID provider name.
-     */
-    name: M;
-    /**
-     * Module specific configuration parameters.
-     */
-    params?: M extends keyof ProviderParams ? ProviderParams[M] : Record<string, unknown>;
-    /**
-     * An array of bidder codes to which this user ID may be sent.
-     */
-    bidders?: BidderCode[];
-    /**
-     * Where the user ID will be stored.
-     */
-    storage?: {
-        /**
-         * Storage method.
-         */
-        type: StorageType | `${typeof STORAGE_TYPE_COOKIES}&${typeof STORAGE_TYPE_LOCALSTORAGE}` | `${typeof STORAGE_TYPE_LOCALSTORAGE}&${typeof STORAGE_TYPE_COOKIES}`;
-        /**
-         * The name of the cookie or html5 local storage where the user ID will be stored.
-         */
-        name: string;
-        /**
-         * How long (in days) the user ID information will be stored. If this parameter isn’t specified,
-         * session cookies are used in cookie-mode, and local storage mode will create new IDs on every page.
-         */
-        expires?: number;
-        /**
-         * The amount of time (in seconds) the user ID should be cached in storage before calling the provider again
-         * to retrieve a potentially updated value for their user ID.
-         * If set, this value should equate to a time period less than the number of days defined in storage.expires.
-         * By default the ID will not be refreshed until it expires.
-         */
-        refreshInSeconds?: number;
-        /**
-         * Used only if the page has a separate mechanism for storing a User ID.
-         * The value is an object containing the values to be sent to the adapters.
-         */
-        value?: M extends keyof ProvidersToId ? UserId[ProvidersToId[M]] : unknown;
-    }
 }
 
 declare module '../../src/userSync' {
@@ -258,8 +99,7 @@ declare module '../../src/userSync' {
     }
 }
 
-/** @type {SubmoduleContainer[]} */
-let submodules = [];
+let submodules: SubmoduleContainer<UserIdProvider>[] = [];
 
 /** @type {PriorityMaps} */
 let initializedSubmodules;
@@ -271,7 +111,7 @@ let configRegistry = [];
 let idPriority = {};
 
 /** @type {Submodule[]} */
-let submoduleRegistry = [];
+let submoduleRegistry: IdProviderSpec<UserIdProvider>[] = [];
 
 /** @type {(number|undefined)} */
 let timeoutID;
@@ -423,11 +263,6 @@ function getValueFromLocalStorage(submodule, storedKey) {
   }
 }
 
-/**
- * @param {SubmoduleContainer} submodule
- * @param {String|undefined} key optional key of the value
- * @returns {string}
- */
 function getStoredValue(submodule, key = undefined) {
   const storage = submodule.config.storage;
   const storedKey = key ? `${storage.name}_${key}` : storage.name;
@@ -456,11 +291,6 @@ function getStoredValue(submodule, key = undefined) {
   return storedValue;
 }
 
-/**
- * @param {SubmoduleContainer[]} submodules
- * @param {function} cb - callback for after processing is done.
- * @param {PriorityMaps} priorityMaps
- */
 function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
   cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
@@ -495,9 +325,6 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
   });
 }
 
-/**
- * @param {SubmodulePriorityMap} priorityMap
- */
 function getIds(priorityMap): Partial<UserId> {
   return Object.fromEntries(
     Object.entries(priorityMap)
@@ -519,11 +346,6 @@ function getPrimaryIds(submodule) {
  * Given a collection of items, where each item maps to any number of IDs (getKeys) and an ID module (getIdMod),
  * return a map from ID key to all items that map to that ID key, in order of priority (highest priority first).
  *
- * @template T
- * @param {T[]} items
- * @param {(item: T) => string[]} getKeys
- * @param {(item: T) => Submodule} getIdMod
- * @returns {{[key: string]: T[]}}
  */
 function orderByPriority(items, getKeys, getIdMod) {
   const tally = {};
@@ -540,19 +362,6 @@ function orderByPriority(items, getKeys, getIdMod) {
   return Object.fromEntries(Object.entries(tally).map(([key, items]: [string, any]) => [key, items.map(([_, item]) => item)]))
 }
 
-/**
- * @typedef {Object} PriorityMaps
- * @property {SubmoduleContainer[]} submodules all active submodules
- * @property {SubmodulePriorityMap} global priority map for global (not bidder-specific) submodules
- * @property {SubmodulePriorityMap} combined priority map for ALL submodules, disregarding bidder filters
- * @property {{[bidder: string]: SubmodulePriorityMap}} bidder priority maps for each bidder's specific submodules
- * @property {(submodules: SubmoduleContainer[]) => void} refresh refresh priority maps, optionally adding or updating some submodules.
- *    Should be called every time a submodule's ID is updated.
- */
-
-/**
- * @returns PriorityMaps
- */
 function mkPriorityMaps() {
   const map = {
     submodules: [],
@@ -1001,7 +810,7 @@ function consentChanged(submodule) {
   return !storedConsent || storedConsent !== getConsentHash();
 }
 
-function populateSubmoduleId(submodule, forceRefresh) {
+function populateSubmoduleId(submodule: SubmoduleContainer<UserIdProvider>, forceRefresh) {
   const consentData = allConsent.getConsentData();
 
   // There are two submodule configuration types to handle: storage or value
@@ -1036,7 +845,7 @@ function populateSubmoduleId(submodule, forceRefresh) {
 
       if (typeof response.callback === 'function') {
         // Save async callback to be invoked after auction
-        submodule.callback = response.callback;
+        submodule.callback = response.callback as any;
       }
     }
 
@@ -1194,7 +1003,7 @@ function canUseCookies(submodule) {
   return true
 }
 
-function populateEnabledStorageTypes(submodule) {
+function populateEnabledStorageTypes(submodule: SubmoduleContainer<UserIdProvider>) {
   if (submodule.enabledStorageTypes) {
     return;
   }
@@ -1228,6 +1037,17 @@ function updateEIDConfig(submodules) {
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
+
+type SubmoduleContainer<P extends UserIdProvider> = {
+    submodule: IdProviderSpec<P>;
+    enabledStorageTypes?: StorageType[];
+    config: UserIdConfig<P>;
+    callback?: ProviderResponse['callback'];
+    idObj;
+    storageMgr: StorageManager;
+    refreshIds?: boolean;
+}
+
 export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
   const {autoRefresh, retainConfig} = options;
   return registry
@@ -1242,7 +1062,7 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
         return previousSubmodule ? [...acc, previousSubmodule] : acc;
       }
 
-      const newSubmoduleContainer = {
+      const newSubmoduleContainer: SubmoduleContainer<UserIdProvider> = {
         submodule,
         config: {
           ...submoduleConfig,
@@ -1251,7 +1071,7 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
         callback: undefined,
         idObj: undefined,
         storageMgr: getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: submoduleConfig.name})
-      } as any;
+      };
 
       if (autoRefresh) {
         const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
@@ -1327,7 +1147,7 @@ export function requestDataDeletion(next, ...args) {
  * enable submodule in User ID
  * @param {Submodule} submodule
  */
-export function attachIdSystem(submodule) {
+export function attachIdSystem(submodule: IdProviderSpec<UserIdProvider>) {
   submodule.findRootDomain = findRootDomain;
   if (!find(submoduleRegistry, i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
@@ -1391,7 +1211,7 @@ export function init(config, {mkDelay = delay} = {}) {
         initIdSystem({ready: true});
         const submodulesToRefresh = submodules.filter(item => item.refreshIds);
         if (submodulesToRefresh.length) {
-          refreshUserIds({submoduleNames: submodulesToRefresh.map(item => item.name)});
+          refreshUserIds({submoduleNames: submodulesToRefresh.map(item => item.submodule.name)});
         }
       }
     }

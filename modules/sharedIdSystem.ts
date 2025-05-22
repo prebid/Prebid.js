@@ -11,15 +11,8 @@ import {getStorageManager} from '../src/storageManager.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
-import type {UserIdConfig} from "./userId/index.ts";
 
-/**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').SubmoduleParams} SubmoduleParams
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
- */
+import type {IdProviderSpec} from "./userId/spec.ts";
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'sharedId'});
 const COOKIE = 'cookie';
@@ -42,6 +35,10 @@ type SharedIdParams = {
      * For publisher server support only. Where to call out to for a server cookie.
      */
     pixelUrl?: string;
+    /**
+     * The value to use for `inserter` in EIDs.
+     */
+    inserter?: string;
 }
 
 declare module './userId/spec' {
@@ -113,21 +110,17 @@ function hasOptedOut() {
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)));
 }
 
-export const sharedIdSystemSubmodule = {
+export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: 'sharedId',
   aliasName: 'pubCommonId',
-  gvlid: VENDORLESS_GVLID,
+  gvlid: VENDORLESS_GVLID as any,
 
   /**
    * decode the stored id value for passing to bid requests
-   * @function
-   * @param {string} value
-   * @param {SubmoduleConfig} config
-   * @returns {{pubcid:string}}
    */
   decode(value, config) {
     if (hasOptedOut()) {
@@ -135,18 +128,10 @@ export const sharedIdSystemSubmodule = {
       return undefined;
     }
     logInfo(' Decoded value PubCommonId ' + value);
-    const idObj = {'pubcid': value};
+    const idObj = {'pubcid': value as string};
     return idObj;
   },
-  /**
-   * performs action to obtain id
-   * @function
-   * @param {SubmoduleConfig} [config] Config object with params and storage properties
-   * @param {Object} consentData
-   * @param {string} storedId Existing pubcommon id
-   * @returns {IdResponse}
-   */
-  getId: function (config: UserIdConfig<'sharedId'> = {} as any, consentData, storedId) {
+  getId: function (config = {} as any, consentData, storedId) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return;
@@ -183,14 +168,8 @@ export const sharedIdSystemSubmodule = {
    *
    * On the other hand, if there is no pixelUrl, then the extendId should return storedId so that
    * its expiration time is updated.
-   *
-   * @function
-   * @param {SubmoduleParams} [config]
-   * @param {ConsentData|undefined} consentData
-   * @param {Object} storedId existing id
-   * @returns {IdResponse|undefined}
    */
-  extendId: function(config: UserIdConfig<'sharedId'> = {} as any, consentData, storedId) {
+  extendId: function(config = {} as any, consentData, storedId) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return {id: undefined};
@@ -203,14 +182,13 @@ export const sharedIdSystemSubmodule = {
 
     if (extend) {
       if (pixelUrl) {
-        const callback = queuePixelCallback(pixelUrl, storedId);
+        const callback = queuePixelCallback(pixelUrl, storedId as string);
         return {callback: callback};
       } else {
         return {id: storedId};
       }
     }
   },
-
   domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
   eids: {
     'pubcid'(values, config) {

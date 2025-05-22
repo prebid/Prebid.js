@@ -252,7 +252,7 @@ const ALL_HANDLERS = {
   [CONSENT_COPPA]: coppaDataHandler,
 } as const;
 
-type AllConsentData = {
+export type AllConsentData = {
     [K in keyof typeof ALL_HANDLERS]: ReturnType<(typeof ALL_HANDLERS)[K]['getConsentData']>
 }
 
