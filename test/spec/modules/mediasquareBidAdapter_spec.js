@@ -128,7 +128,14 @@ describe('MediaSquare bid adapter tests', function () {
             }]
           }
         }
-      }
+      },
+      user: { ext: { eids : [{
+        "source": "superid.com",
+        "uids": [{
+          "id": "12345678",
+          "atype": 1
+         }]
+      }]}}
     },
     gdprConsent: {
       gdprApplies: true,
@@ -140,7 +147,6 @@ describe('MediaSquare bid adapter tests', function () {
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
     },
     uspConsent: '111222333',
-    userId: { 'id5id': { uid: '1111' } },
     schain: {
       'ver': '1.0',
       'complete': 1,
@@ -167,6 +173,8 @@ describe('MediaSquare bid adapter tests', function () {
     expect(requestContent.codes[0]).to.have.property('transactionId').and.to.equal('cccc1234');
     expect(requestContent.codes[0]).to.have.property('mediatypes').exist;
     expect(requestContent.codes[0]).to.have.property('floor').exist;
+    expect(requestContent.eids).exist;
+    expect(requestContent.eids).to.have.lengthOf(1);
     expect(requestContent.codes[0].floor).to.deep.equal({});
     expect(requestContent).to.have.property('dsa');
     const requestfloor = spec.buildRequests(FLOORS_PARAMS, DEFAULT_OPTIONS);
