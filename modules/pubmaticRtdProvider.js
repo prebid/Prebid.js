@@ -33,6 +33,9 @@ const CONSTANTS = Object.freeze({
     BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
     FLOORS: 'floors.json',
     CONFIGS: 'config.json'
+  },
+  TARGETING_KEYS: {
+    PM_YM: 'pm_ym'
   }
 });
 
@@ -284,7 +287,7 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
 
   if (hasRtdFloorAppliedBid) {
     const targeting = adUnitCodes.reduce((acc, code) => {
-      acc[code] = { 'pm_ym': 1 };
+      acc[code] = { [CONSTANTS.TARGETING_KEYS.PM_YM]: 1 };
       return acc;
     }, {});
 
