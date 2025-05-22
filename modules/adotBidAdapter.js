@@ -41,6 +41,18 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {Record<string, BidRequest>} Dictionnary
  */
 
+/**
+ * @typedef {Object} OpenRtbRequest
+ * @property {string} id - Unique request ID
+ * @property {Array<Imp>} imp - List of impression objects
+ * @property {Site} site - Site information
+ * @property {Device} device - Device information
+ * @property {User} user - User information
+ * @property {object} regs - Regulatory data, including GDPR and COPPA
+ * @property {object} ext - Additional extensions, such as custom data for the bid request
+ * @property {number} at - Auction type, typically first-price or second-price
+ */
+
 const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
 const GVLID = 272;
