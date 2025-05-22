@@ -1,9 +1,13 @@
 import Adapter from '../../src/adapter.js';
 import {
+  compressDataWithGZip,
+  debugTurnedOn,
   deepClone,
   flatten,
   generateUUID,
+  getParameterByName,
   insertUserSyncIframe,
+  isGzipCompressionSupported,
   isNumber,
   isPlainObject,
   isStr,
@@ -14,7 +18,7 @@ import {
   triggerPixel,
   uniques,
 } from '../../src/utils.js';
-import {EVENTS, REJECTION_REASON, S2S} from '../../src/constants.js';
+import {DEBUG_MODE, EVENTS, REJECTION_REASON, S2S} from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
@@ -511,43 +515,61 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
   events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
   logInfo('BidRequest: ' + requestData);
   if (request && requestData.requestJson && requestData.endpointUrl) {
-    const networkDone = s2sBidRequest.metrics.startTiming('net');
-    ajax(
-      requestData.endpointUrl,
-      {
-        success: function (response) {
-          networkDone();
-          let result;
-          try {
-            result = JSON.parse(response);
-            const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
-            bids.forEach(onBid);
-            if (paapi) {
-              paapi.forEach(onFledge);
+
+    const callAjax = (payload, customHeaders) => {
+      const networkDone = s2sBidRequest.metrics.startTiming('net');
+      ajax(
+        requestData.endpointUrl,
+        {
+          success: function (response) {
+            networkDone();
+            let result;
+            try {
+              result = JSON.parse(response);
+              const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+              bids.forEach(onBid);
+              if (paapi) {
+                paapi.forEach(onFledge);
+              }
+            } catch (error) {
+              logError(error);
             }
-          } catch (error) {
-            logError(error);
-          }
-          if (!result || (result.status && includes(result.status, 'Error'))) {
-            logError('error parsing response: ', result ? result.status : 'not valid JSON');
-            onResponse(false, requestedBidders);
-          } else {
-            onResponse(true, requestedBidders, result);
+            if (!result || (result.status && includes(result.status, 'Error'))) {
+              logError('error parsing response: ', result ? result.status : 'not valid JSON');
+              onResponse(false, requestedBidders);
+            } else {
+              onResponse(true, requestedBidders, result);
+            }
+          },
+          error: function () {
+            networkDone();
+            onError.apply(this, arguments);
           }
         },
-        error: function () {
-          networkDone();
-          onError.apply(this, arguments);
+        payload,
+        {
+          contentType: 'text/plain',
+          withCredentials: true,
+          browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
+          customHeaders
         }
-      },
-      requestData.requestJson,
-      {
-        contentType: 'text/plain',
-        withCredentials: true,
-        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
-        customHeaders: requestData.customHeaders
-      }
-    );
+      );
+    }
+
+    const enableGZipCompression = s2sBidRequest.s2sConfig.endpointCompression && !requestData.customHeaders['Content-Encoding'];
+    const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
+    if (enableGZipCompression && debugMode) {
+      logWarn('Skipping GZIP compression for PBS as debug mode is enabled');
+    }
+
+    if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
+      compressDataWithGZip(requestData.requestJson).then(compressedPayload => {
+        requestData.customHeaders['Content-Encoding'] = 'gzip';
+        callAjax(compressedPayload, requestData.customHeaders);
+      });
+    } else {
+      callAjax(requestData.requestJson, requestData.customHeaders);
+    }
   } else {
     logError('PBS request not made.  Check endpoints.');
   }
