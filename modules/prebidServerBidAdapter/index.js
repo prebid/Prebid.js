@@ -515,7 +515,6 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
   events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
   logInfo('BidRequest: ' + requestData);
   if (request && requestData.requestJson && requestData.endpointUrl) {
-
     const callAjax = (payload, customHeaders) => {
       const networkDone = s2sBidRequest.metrics.startTiming('net');
       ajax(
