@@ -186,14 +186,14 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    *
-   * @param {data} timeoutData Containing timeout specific data
+   * @param {Object} timeoutData Containing timeout specific data
    */
   onTimeout: function (timeoutData) { },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    *
-   * @param {Bid} bid The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     if (!bid || !isStr(bid.nurl)) {
@@ -486,9 +486,9 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
 /**
  * Create an imp array
  *
- * @param {BidRequest} bidRequest
- * @param {Currency} cur
- * @returns {Imp[]}
+ * @param {Object} bidRequest
+ * @param {string} cur
+ * @returns {Array}
  */
 function createImp(bidRequest) {
   const imp = [];
