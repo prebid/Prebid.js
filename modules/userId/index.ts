@@ -120,7 +120,7 @@
 import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
-import {addApiMethod} from '../../src/prebid.js';
+import {addApiMethod, startAuction, type StartAuctionOptions} from '../../src/prebid.js';
 import adapterManager from '../../src/adapterManager.js';
 import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
@@ -133,18 +133,18 @@ import {
     type StorageType
 } from '../../src/storageManager.js';
 import {
-  deepSetValue,
-  delayExecution,
-  isArray,
-  isEmpty,
-  isFn,
-  isGptPubadsDefined,
-  isNumber,
-  isPlainObject,
-  logError,
-  logInfo,
-  logWarn,
-  deepEqual,
+    deepEqual,
+    deepSetValue,
+    delayExecution,
+    isArray,
+    isEmpty,
+    isFn,
+    isGptPubadsDefined,
+    isNumber,
+    isPlainObject,
+    logError,
+    logInfo,
+    logWarn,
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, delay, PbPromise} from '../../src/utils/promise.js';
@@ -156,10 +156,10 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.js';
-import {startAuction, type StartAuctionOptions} from '../../src/prebid.js';
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
 import type {BidderCode} from "../../src/types/common.d.ts";
+import type {ProviderParams, ProvidersToId, UserId, UserIdProvider} from "./spec.ts";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -168,26 +168,6 @@ export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
   isAllowed: isActivityAllowed
-}
-
-type UserIdProvider = string;
-
-export interface UserId {
-    [idName: string]: unknown;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ProvidersToId {
-    /**
-     * Map from ID provider name to the key they provide in .userId.
-     */
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ProviderParams {
-    /**
-     * Map from ID provider name to the type of their configuration params.
-     */
 }
 
 export interface UserIdConfig<M extends UserIdProvider> {

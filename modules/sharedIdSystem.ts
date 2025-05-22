@@ -44,7 +44,7 @@ type SharedIdParams = {
     pixelUrl?: string;
 }
 
-declare module './userId/index' {
+declare module './userId/spec' {
     interface UserId {
         pubcid: string;
     }
