@@ -144,6 +144,14 @@ export const spec = {
         meta: ad.meta
       };
 
+      if (ad.meta?.dealId) {
+        bidResponse.dealId = ad.meta?.dealId;
+      }
+
+      if (ad.fwb) {
+        bidResponse.bidderCode = ad.meta?.bidder;
+      }
+
       if (ad.native) {
         bidResponse.native = ad.native;
         bidResponse.mediaType = NATIVE;

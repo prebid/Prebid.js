@@ -402,6 +402,40 @@ describe('sovrnBidAdapter', function() {
       expect(regs.coppa).to.equal(1)
     })
 
+    it('should not set bcat array when ortb2 bcat is undefined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest],
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+      }
+      const {bcat} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(bcat).to.be.undefined
+    })
+
+    it('should set bcat array when valid ortb2 bcat is provided', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          bcat: ['IAB1-1', 'IAB1-2']
+        },
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest]
+      }
+      const {bcat} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(bcat).to.exist.and.to.be.a('array')
+      expect(bcat).to.deep.equal(['IAB1-1', 'IAB1-2'])
+    })
+
     it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
       const bidderRequest = {
         ...baseBidderRequest,

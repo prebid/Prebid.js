@@ -194,11 +194,9 @@ const PBS_CONVERTER = ortbConverter({
         context.getRedactor().ortb2(ortbRequest);
 
         const fpdConfigs = Object.entries(context.s2sBidRequest.ortb2Fragments?.bidder || {}).filter(([bidder]) => {
-          const s2sConfig = context.s2sBidRequest.s2sConfig;
-          const bidders = s2sConfig.bidders;
-          const syncBidders = s2sConfig.syncBidders;
-          const allowUnknownBidderCodes = s2sConfig.allowUnknownBidderCodes;
-          return allowUnknownBidderCodes || (bidders?.includes(bidder)) || (syncBidders?.includes(bidder));
+          const bidders = context.s2sBidRequest.s2sConfig.bidders;
+          const allowUnknownBidderCodes = context.s2sBidRequest.s2sConfig.allowUnknownBidderCodes;
+          return allowUnknownBidderCodes || (bidders && bidders.includes(bidder));
         }).map(([bidder, ortb2]) => ({
           // ... but for bidder specific FPD we can use the actual bidder
           bidders: [bidder],

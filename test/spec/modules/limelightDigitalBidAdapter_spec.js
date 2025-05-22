@@ -540,10 +540,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -567,10 +567,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-1.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-1.ortb.net/sync.html';
               }
             }
@@ -602,10 +602,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -629,10 +629,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-1.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-1.ortb.net/sync.html';
               }
             }
@@ -642,10 +642,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-2.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-2.ortb.net/sync.html';
               }
             }
@@ -673,10 +673,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -686,10 +686,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -713,10 +713,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }

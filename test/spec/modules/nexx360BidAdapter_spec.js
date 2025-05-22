@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import {
-  spec, storage, getNexx360LocalStorage,
+  spec, STORAGE, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
 import { sandbox } from 'sinon';
-import { getAmxId } from '../../../modules/nexx360BidAdapter';
+import { getAmxId } from '../../../libraries/nexx360Utils';
 
 describe('Nexx360 bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -91,7 +91,7 @@ describe('Nexx360 bid adapter tests', () => {
 
   describe('getNexx360LocalStorage disabled', () => {
     before(() => {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => false);
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => false);
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
@@ -104,9 +104,9 @@ describe('Nexx360 bid adapter tests', () => {
 
   describe('getNexx360LocalStorage enabled but nothing', () => {
     before(() => {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => null);
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null);
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
@@ -119,9 +119,9 @@ describe('Nexx360 bid adapter tests', () => {
 
   describe('getNexx360LocalStorage enabled but wrong payload', () => {
     before(() => {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
@@ -134,9 +134,9 @@ describe('Nexx360 bid adapter tests', () => {
 
   describe('getNexx360LocalStorage enabled', () => {
     before(() => {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
     });
     it('We test if we get the nexx360Id', () => {
       const output = getNexx360LocalStorage();
@@ -149,12 +149,12 @@ describe('Nexx360 bid adapter tests', () => {
 
   describe('getAmxId() with localStorage enabled and data not set', () => {
     before(() => {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => null);
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => null);
     });
     it('We test if we get the amxId', () => {
-      const output = getAmxId();
+      const output = getAmxId(STORAGE, 'nexx360');
       expect(output).to.be.eql(false);
     });
     after(() => {
@@ -164,12 +164,12 @@ describe('Nexx360 bid adapter tests', () => {
 
   describe('getAmxId() with localStorage enabled and data set', () => {
     before(() => {
-      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
-      sandbox.stub(storage, 'setDataInLocalStorage');
-      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => 'abcdef');
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => 'abcdef');
     });
     it('We test if we get the amxId', () => {
-      const output = getAmxId();
+      const output = getAmxId(STORAGE, 'nexx360');
       expect(output).to.be.eql('abcdef');
     });
     after(() => {
@@ -188,6 +188,9 @@ describe('Nexx360 bid adapter tests', () => {
           maxHeight: '350px',
         }
       });
+      sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(STORAGE, 'setDataInLocalStorage');
+      sandbox.stub(STORAGE, 'getDataFromLocalStorage').callsFake((key) => 'abcdef');
     });
     describe('We test with a multiple display bids', () => {
       const sampleBids = [
@@ -210,32 +213,6 @@ describe('Nexx360 bid adapter tests', () => {
           bidId: '44a2706ac3574',
           bidderRequestId: '359bf8a3c06b2e',
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
-          userIdAsEids: [
-            {
-              source: 'id5-sync.com',
-              uids: [
-                {
-                  id: 'ID5*xe3R0Pbrc5Y4WBrb5UZSWTiS1t9DU2LgQrhdZOgFdXMoglhqmjs_SfBbyHfSYGZKKIT4Gf-XOQ_anA3iqi0hJSiFyD3aICGHDJFxNS8LO84ohwTQ0EiwOexZAbBlH0chKIhbvdGBfuouNuVF_YHCoyiLQJDp3WQiH96lE9MH2T0ojRqoyR623gxAWlBCBPh7KI4bYtZlet3Vtr-gH5_xqCiSEd7aYV37wHxUTSN38Isok_0qDCHg4pKXCcVM2h6FKJSGmvw-xPm9HkfkIcbh1CiVVG4nREP142XrBecdzhQomNlcalmwdzGHsuHPjTP-KJraa15yvvZDceq-f_YfECicDllYBLEsg24oPRM-ibMonWtT9qOm5dSfWS5G_r09KJ4HMB6REICq1wleDD1mwSigXkM_nxIKa4TxRaRqEekoooWRwuKA5-euHN3xxNfIKKP19EtGhuNTs0YdCSe8_w',
-                  atype: 1,
-                  ext: {
-                    linkType: 2
-                  }
-                }
-              ]
-            },
-            {
-              source: 'domain.com',
-              uids: [
-                {
-                  id: 'value read from cookie or local storage',
-                  atype: 1,
-                  ext: {
-                    stype: 'ppuid'
-                  }
-                }
-              ]
-            }
-          ],
         },
         {
           bidder: 'nexx360',
@@ -256,7 +233,7 @@ describe('Nexx360 bid adapter tests', () => {
           bidderRequestId: '359bf8a3c06b2e',
           auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
         }
-      ]
+      ];
       const bidderRequest = {
         bidderCode: 'nexx360',
         auctionId: '2e684815-b44e-4e04-b812-56da54adbe74',
@@ -357,12 +334,27 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '5.0',
+            bidderVersion: '6.0',
+            localStorage: { amxId: 'abcdef'}
           },
           cur: [
             'USD',
           ],
-          user: {},
+          user: {
+            ext: {
+              eids: [
+                {
+                  source: 'amxdt.net',
+                  uids: [
+                    {
+                      id: 'abcdef',
+                      atype: 1,
+                    }
+                  ]
+                }
+              ]
+            }
+          },
         };
         expect(requestContent).to.be.eql(expectedRequest);
       });
@@ -433,64 +425,6 @@ describe('Nexx360 bid adapter tests', () => {
       };
       const output = spec.interpretResponse(response);
       expect(output.length).to.be.eql(0);
-    });
-    it('banner responses with adUrl only', () => {
-      const response = {
-        body: {
-          id: 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
-          cur: 'USD',
-          seatbid: [
-            {
-              bid: [
-                {
-                  id: '4427551302944024629',
-                  impid: '226175918ebeda',
-                  price: 1.5,
-                  adomain: [
-                    'http://prebid.org',
-                  ],
-                  crid: '98493581',
-                  ssp: 'appnexus',
-                  h: 600,
-                  w: 300,
-                  dealid: 'testdeal',
-                  cat: [
-                    'IAB3-1',
-                  ],
-                  ext: {
-                    adUnitCode: 'div-1',
-                    mediaType: 'banner',
-                    adUrl: 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493',
-                    ssp: 'appnexus',
-                  },
-                },
-              ],
-              seat: 'appnexus',
-            },
-          ],
-          ext: {
-            id: 'de3de7c7-e1cf-4712-80a9-94eb26bfc718',
-            cookies: [],
-          },
-        },
-      };
-      
-      const output = spec.interpretResponse(response);
-      const expectedOutput = [{
-        requestId: '226175918ebeda',
-        cpm: 1.5,
-        width: 300,
-        height: 600,
-        creativeId: '98493581',
-        currency: 'USD',
-        netRevenue: true,
-        dealid: 'testdeal',
-        ttl: 120,
-        mediaType: 'banner',
-        meta: { advertiserDomains: ['http://prebid.org'], demandSource: 'appnexus' },
-        adUrl: 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493',
-      }];
-      expect(output).to.eql(expectedOutput);
     });
     it('banner responses with adm', () => {
       const response = {
