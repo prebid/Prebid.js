@@ -1,5 +1,5 @@
 // This module, when included, will trigger a BID_VIEWABLE event which can be consumed by Bidders and Analytics adapters
-// GPT API is used to when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent
+// GPT API is used to find when a bid is viewable, https://developers.google.com/publisher-tag/reference#googletag.events.impressionviewableevent
 // Does not work with other than GPT integration
 
 import {config} from '../src/config.js';
