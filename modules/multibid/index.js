@@ -46,7 +46,7 @@ config.getConfig(MODULE_NAME, conf => {
 
 /**
  * @summary validates multibid configuration entries
- * @param {Object[]} multibid - example [{bidder: 'bidderA', maxbids: 2, prefix: 'bidA'}, {bidder: 'bidderB', maxbids: 2}]
+ * @param {Object[]} conf - example [{bidder: 'bidderA', maxbids: 2, prefix: 'bidA'}, {bidder: 'bidderB', maxbids: 2}]
  * @return {Boolean}
  */
 export function validateMultibid(conf) {
@@ -79,7 +79,7 @@ export function validateMultibid(conf) {
 /**
  * @summary addBidderRequests before hook
  * @param {Function} fn reference to original function (used by hook logic)
- * @param {Object[]} array containing copy of each bidderRequest object
+ * @param {Object[]} bidderRequests containing copy of each bidderRequest object
  */
 export function adjustBidderRequestsHook(fn, bidderRequests) {
   bidderRequests.map(bidRequest => {
@@ -164,10 +164,10 @@ export function sortByMultibid(a, b) {
 /**
  * @summary getHighestCpmBidsFromBidPool before hook
  * @param {Function} fn reference to original function (used by hook logic)
- * @param {Object[]} array of objects containing all bids from bid pool
- * @param {Function} function to reduce to only highest cpm value for each bidderCode
- * @param {Number} adUnit bidder targeting limit, default set to 0
- * @param {Boolean} default set to false, this hook modifies targeting and sets to true
+ * @param {Object[]} bidsReceived array of objects containing all bids from bid pool
+ * @param {Function} highestCpmCallback function to reduce to only highest cpm value for each bidderCode
+ * @param {Number} adUnitBidLimit bidder targeting limit, default set to 0
+ * @param {Boolean} hasModified default set to false, this hook modifies targeting and sets to true
  */
 export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
   if (!config.getConfig('multibid')) resetMultiConfig();

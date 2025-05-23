@@ -390,7 +390,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   //   onTimeout: function (data) {
   //     // console.log('onTimeout', data);
@@ -399,7 +399,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     // console.log('onBidWon： ', bid, config.getConfig('priceGranularity'));
