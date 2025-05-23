@@ -526,7 +526,7 @@ export const spec = {
   },
 
   /**
-   * @param {Object} bid
+   * @param {TimedOutBid} timeoutData
    */
   onTimeout: (timeoutData) => {
     try {
@@ -540,7 +540,7 @@ export const spec = {
   },
 
   /**
-   * @param {TimedOutBid} timeoutData
+   * @param {Bid} bid
    */
   onBidWon: (bid) => {
     try {

@@ -14,6 +14,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
  * @typedef {import('../modules/userId/index.js').SubmoduleParams} SubmoduleParams
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
 const openLinkID = {
