@@ -173,7 +173,7 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
-
+    // eslint-disable-next-line no-debugger
     let mediaTypes = getKv(req, 'mediaTypes');
 
     const bidFloor = getBidFloor(req);
@@ -248,8 +248,11 @@ export const buildUTMTagData = (url) => {
  * @return {Object}
  */
 function getParam(validBidRequests, bidderRequest) {
-  const sharedid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  const eids = validBidRequests[0].userIdAsEids;
+  const sharedid =
+    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
+    utils.deepAccess(validBidRequests[0], 'userId.pubcid') ||
+    utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
+  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
 
   let isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
