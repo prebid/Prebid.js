@@ -8,7 +8,7 @@
 
 import javascript
 
-from PropertyAssignment prop
+from Property prop
 where
   prop.getPropertyName() = "contentType" and
   prop.getValue() instanceof StringLiteral and
