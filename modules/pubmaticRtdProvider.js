@@ -35,7 +35,7 @@ const CONSTANTS = Object.freeze({
     CONFIGS: 'config.json'
   },
   TARGETING_KEYS: {
-    PM_YM: 'pm_ym',
+    PM_YM_FLRS: 'pm_ym_flrs',
   }
 });
 
@@ -296,9 +296,9 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
 
   // Create targeting object for all ad units (or empty object if adUnitCodes is empty)
   const targeting = adUnitCodes.length === 0 ? {} : adUnitCodes.reduce((acc, code) => {
-    // If RTD floor is applied, set PM_YM to 1 (Test group)
-    // Otherwise, set PM_YM to 0 (Control group)
-    acc[code] = { [CONSTANTS.TARGETING_KEYS.PM_YM]: hasRtdFloorAppliedBid ? 1 : 0 };
+    // If RTD floor is applied, set PM_YM_FLRS to 1 (Test group)
+    // Otherwise, set PM_YM_FLRS to 0 (Control group)
+    acc[code] = { [CONSTANTS.TARGETING_KEYS.PM_YM_FLRS]: hasRtdFloorAppliedBid ? 1 : 0 };
     return acc;
   }, {});
 
