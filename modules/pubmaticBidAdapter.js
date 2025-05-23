@@ -11,6 +11,7 @@ import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'pubmatic';
