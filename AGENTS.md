@@ -5,6 +5,7 @@ This file contains instructions for the Codex agent when working on tasks in thi
 ## Programmatic checks
 - Before committing code changes, run `gulp lint` and `gulp test`.
 - npm test can take a very long time to run, don't time it out too soon. Wait at least 15 minutes or poll it to see if it is still generating output.
+- npx gulp test can take a long time too. if it seems like it is hanging on bundling, keep waiting a few more minutes.
 - If additional tests are added, ensure they pass in the environment.
 - `gulp review-start` can be used for manual testing; it opens coverage reports and integration examples such as `integrationExamples/gpt/hello_world.html`.
 
