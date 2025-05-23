@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 
@@ -21,14 +21,14 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params.adUnitId && !isNaN(parseFloat(bid.params.adUnitId)) && isFinite(bid.params.adUnitId));
+    return !!bid.params.adUnitId; // only adUnitId is required
   },
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} validBidRequests an array of bids
+   * @param {BidRequest[]} validBidRequests an array of bids
    * @param {BidderRequest} bidderRequest request by bidder
-   * @return ServerRequest Info describing the request to the server.
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     /*
@@ -102,12 +102,31 @@ export const spec = {
       });
     });
 
-    // Stuff to send: page URL
+    // Consent data
+    const gdprConsentObj = bidderRequest && bidderRequest.gdprConsent;
+    const gppConsentObj = bidderRequest && bidderRequest.gppConsent;
+    const gppApplicableSections = gppConsentObj && gppConsentObj.applicableSections;
+    const ortb2Regs = bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs;
+    const ortb2Gpp = ortb2Regs && ortb2Regs.gpp;
+
+    // Build bid request data to be sent to ad server
     const bidReq = {
       reqId: getUniqueIdentifierStr(),
       imps: imps,
       ref: getReferer(),
-      ori: getOrigins()
+      ori: getOrigins(),
+
+      // GDPR applies? numeric boolean
+      gdprApplies: (gdprConsentObj && gdprConsentObj.gdprApplies) ? 1 : '',
+      // IAB TCF consent string
+      gdprConsent: (gdprConsentObj && gdprConsentObj.consentString) || '',
+
+      // IAB GPP consent string
+      gppString: (gppConsentObj && gppConsentObj.gppString) || ortb2Gpp || '',
+      // GPP Applicable Section IDs
+      gppSid: (isArray(gppApplicableSections) && gppApplicableSections.length)
+        ? gppApplicableSections.join(',')
+        : ((ortb2Gpp && ortb2Regs.gpp_sid) || '')
     };
 
     let url = 'https://bid.glass/ad/hb.php?' +
@@ -128,10 +147,12 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {ServerRequest} serverRequest The original server request for this bid
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function(serverResponse, serverRequest) {
     const bidResponses = [];
+    const bidReq = JSON.parse(serverRequest.data);
 
     _each(serverResponse.body.bidResponses, function(serverBid) {
       const bidResponse = {
@@ -145,7 +166,19 @@ export const spec = {
         mediaType: serverBid.mediaType || 'banner',
         netRevenue: true,
         ttl: serverBid.ttl || 10,
-        ad: serverBid.ad,
+        // Replace the &replaceme placeholder in the returned <script> URL with
+        // URL-encoded GDPR/GPP params from the bid request. If no relevant values
+        // are present, &replaceme is removed entirely.
+        ad: serverBid.ad.replace(
+          '&replaceme',
+          () => {
+            const urlEncodedExtras = ['gdprApplies', 'gdprConsent', 'gppString', 'gppSid']
+              .filter(key => bidReq[key] != null)
+              .map(key => `${key}=${encodeURIComponent(bidReq[key])}`)
+              .join('&');
+            return urlEncodedExtras ? ('&' + urlEncodedExtras) : '';
+          }
+        ),
         meta: {}
       };
 

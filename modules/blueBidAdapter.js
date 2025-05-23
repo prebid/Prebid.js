@@ -2,15 +2,38 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-
+import {
+  replaceAuctionPrice,
+  isFn,
+  isPlainObject,
+  deepSetValue,
+  isEmpty,
+  triggerPixel,
+} from '../src/utils.js';
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
-const GVLID = 620; // GVLID for your bidder
-const COOKIE_NAME = 'ckid'; // Cookie name for identifying users
-const CURRENCY = 'USD'; // Currency used in bid floors
+const GVLID = 620;
+const DEFAULT_CURRENCY = 'USD';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+function getBidFloor(bid) {
+  if (isFn(bid.getFloor)) {
+    let floor = bid.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: BANNER,
+      size: '*',
+    });
+    if (
+      isPlainObject(floor) &&
+      !isNaN(floor.floor) &&
+      floor.currency === DEFAULT_CURRENCY
+    ) {
+      return floor.floor;
+    }
+  }
+  return null;
+}
 
 const converter = ortbConverter({
   context: {
@@ -28,37 +51,22 @@ function request(buildRequest, imps, bidderRequest, context) {
 }
 
 function imp(buildImp, bidRequest, context) {
-  const imp = buildImp(bidRequest, context);
+  let imp = buildImp(bidRequest, context);
   const floor = getBidFloor(bidRequest);
+  imp.tagid = bidRequest.params.placementId;
+
   if (floor) {
     imp.bidfloor = floor;
-    imp.bidfloorcur = CURRENCY;
+    imp.bidfloorcur = DEFAULT_CURRENCY;
   }
-  return imp;
-}
 
-function getBidFloor(bid) {
-  if (isFn(bid.getFloor)) {
-    let floor = bid.getFloor({
-      currency: CURRENCY,
-      mediaType: BANNER,
-      size: '*',
-    });
-    if (
-      isPlainObject(floor) &&
-      !isNaN(floor.floor) &&
-      floor.currency === CURRENCY
-    ) {
-      return floor.floor;
-    }
-  }
-  return null;
+  return imp;
 }
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER], // Supported ad types
+  supportedMediaTypes: [BANNER],
 
   // Validate bid request
   isBidRequestValid: function (bid) {
@@ -79,43 +87,63 @@ export const spec = {
       context,
     });
 
-    // Add GVLID and cookie ID to the request
+    // Add extensions to the request
     ortbRequest.ext = ortbRequest.ext || {};
     deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
 
-    // Include user cookie if available
-    const ckid = storage.getDataFromLocalStorage('blueID') || storage.getCookie(COOKIE_NAME) || null;
-    if (ckid) {
-      deepSetValue(ortbRequest, 'user.ext.buyerid', ckid);
-    }
-
-    return {
-      method: 'POST',
-      url: ENDPOINT_URL,
-      data: JSON.stringify(ortbRequest),
-      options: {
-        contentType: 'text/plain',
+    return [
+      {
+        method: 'POST',
+        url: ENDPOINT_URL,
+        data: ortbRequest,
+        options: {
+          contentType: 'application/json',
+        },
       },
-    };
+    ];
   },
 
-  // Interpret OpenRTB responses using `ortbConverter`
-  interpretResponse: function (serverResponse, request) {
-    const ortbResponse = serverResponse.body;
+  interpretResponse: (serverResponse) => {
+    if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
-    // Parse the OpenRTB response into Prebid bid responses
-    const prebidResponses = converter.fromORTB({
-      response: ortbResponse,
-      request: request.data,
-    }).bids;
-
-    // Example: Modify bid responses if needed
-    prebidResponses.forEach((bid) => {
-      bid.meta = bid.meta || {};
-      bid.meta.adapterVersion = '1.0.0';
+    let bids = [];
+    serverResponse.body.seatbid.forEach((response) => {
+      response.bid.forEach((bid) => {
+        const mediaType = bid.ext?.mediaType || 'banner';
+        bids.push({
+          ad: replaceAuctionPrice(bid.adm, bid.price),
+          adapterCode: BIDDER_CODE,
+          cpm: bid.price,
+          creativeId: bid.ext.blue.adId,
+          creative_id: bid.ext.blue.adId,
+          currency: serverResponse.body.cur || 'USD',
+          deferBilling: false,
+          deferRendering: false,
+          width: bid.w,
+          height: bid.h,
+          mediaType,
+          netRevenue: true,
+          originalCpm: bid.price,
+          originalCurrency: serverResponse.body.cur || 'USD',
+          requestId: bid.impid,
+          seatBidId: bid.id,
+          ttl: 1200,
+        });
+      });
     });
+    return bids;
+  },
 
-    return prebidResponses;
+  onBidWon: function (bid) {
+    const { burl, nurl } = bid || {};
+
+    if (nurl) {
+      triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
+    }
+
+    if (burl) {
+      triggerPixel(replaceAuctionPrice(burl, bid.originalCpm || bid.cpm));
+    }
   },
 };
 

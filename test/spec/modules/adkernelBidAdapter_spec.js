@@ -206,7 +206,7 @@ describe('Adkernel adapter', function () {
       auctionId: 'auc-001'
     };
 
-  const bidResponse1 = {
+  const bannerBidResponse = {
       id: 'bid1',
       seatbid: [{
         bid: [{
@@ -239,7 +239,23 @@ describe('Adkernel adapter', function () {
           mtype: 2
         }]
       }],
-    }, usersyncOnlyResponse = {
+    }, videoBidResponseWithAdm = {
+      id: '47ce4badcf7482',
+      seatbid: [{
+        bid: [{
+          id: 'sZSYq5zYMxo_0',
+          impid: 'Bid_Video',
+          crid: '100_003',
+          price: 0.00145,
+          adid: '158801',
+          adm: '<VAST></VAST>',
+          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0',
+          cid: '16855',
+          mtype: 2
+        }]
+      }],
+    },
+    usersyncOnlyResponse = {
       id: 'nobid1',
       ext: {
         adk_usersync: [{type: 2, url: 'https://adk.sync.com/sync'}]
@@ -519,7 +535,7 @@ describe('Adkernel adapter', function () {
 
   describe('multiformat request building', function () {
     let pbRequests, bidRequests;
-    before(function () {
+    before(() => {
       [pbRequests, bidRequests] = buildRequest([bid_multiformat]);
     });
     it('should contain single request', function () {
@@ -534,7 +550,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].imp[1].id).to.be.not.eql('Bid_01');
       expect(bidRequests[0].imp[1].id).to.be.not.eql(bidRequests[0].imp[0].id);
     });
-    it('x', function() {
+    it('should collect ads back to same requestId', function() {
       let bids = spec.interpretResponse({body: multiformat_response}, pbRequests[0]);
       expect(bids).to.have.length(2);
       expect(bids[0].requestId).to.be.eql('Bid_01');
@@ -641,7 +657,7 @@ describe('Adkernel adapter', function () {
   describe('responses processing', function () {
     it('should return fully-initialized banner bid-response', function () {
       let [pbRequests, _] = buildRequest([bid1_zone1]);
-      let resp = spec.interpretResponse({body: bidResponse1}, pbRequests[0])[0];
+      let resp = spec.interpretResponse({body: bannerBidResponse}, pbRequests[0])[0];
       expect(resp).to.have.property('requestId', 'Bid_01');
       expect(resp).to.have.property('cpm', 3.01);
       expect(resp).to.have.property('width', 300);
@@ -653,6 +669,7 @@ describe('Adkernel adapter', function () {
       expect(resp).to.have.property('ad');
       expect(resp).to.have.property('dealId', 'deal');
       expect(resp.ad).to.have.string('<!-- admarkup here -->');
+      expect(resp).to.not.have.property('nurl');
     });
 
     it('should return fully-initialized video bid-response', function () {
@@ -666,10 +683,22 @@ describe('Adkernel adapter', function () {
       expect(resp.height).to.equal(480);
     });
 
+    it('should support vast xml in adm', function () {
+      let [pbRequests, _] = buildRequest([bid_video]);
+      let resp = spec.interpretResponse({body: videoBidResponseWithAdm}, pbRequests[0])[0];
+      expect(resp).to.have.property('requestId', 'Bid_Video');
+      expect(resp.mediaType).to.equal(VIDEO);
+      expect(resp.cpm).to.equal(0.00145);
+      expect(resp.vastXml).to.equal('<VAST></VAST>');
+      expect(resp.nurl).to.equal('https://rtb.com/win?i=sZSYq5zYMxo_0');
+      expect(resp.width).to.equal(640);
+      expect(resp.height).to.equal(480);
+    });
+
     it('should add nurl as pixel for banner response', function () {
       let [pbRequests, _] = buildRequest([bid1_zone1]);
-      let resp = spec.interpretResponse({body: bidResponse1}, pbRequests[0])[0];
-      let expectedNurl = bidResponse1.seatbid[0].bid[0].nurl + '&px=1';
+      let resp = spec.interpretResponse({body: bannerBidResponse}, pbRequests[0])[0];
+      let expectedNurl = bannerBidResponse.seatbid[0].bid[0].nurl + '&px=1';
       expect(resp.ad).to.have.string(expectedNurl);
     });
 
@@ -682,9 +711,9 @@ describe('Adkernel adapter', function () {
     it('should perform usersync', function () {
       let syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, []);
       expect(syncs).to.have.length(0);
-      syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, [{body: bidResponse1}]);
+      syncs = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, [{body: bannerBidResponse}]);
       expect(syncs).to.have.length(0);
-      syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [{body: bidResponse1}]);
+      syncs = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [{body: bannerBidResponse}]);
       expect(syncs).to.have.length(1);
       expect(syncs[0]).to.have.property('type', 'iframe');
       expect(syncs[0]).to.have.property('url', 'https://adk.sync.com/sync');
@@ -755,6 +784,21 @@ describe('Adkernel adapter', function () {
         link: {url: 'http://rtb.com/click?i=pTuOlf5KHUo_0'},
         imptrackers: ['http://rtb.com/win?i=pTuOlf5KHUo_0&f=imp']
       });
+    });
+  });
+
+  describe('onBidWon', () => {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('should trigger pixel for nurl', () => {
+      let [pbRequests, _] = buildRequest([bid_video]);
+      let bid = spec.interpretResponse({body: videoBidResponseWithAdm}, pbRequests[0])[0];
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.callCount).to.equal(1);
     });
   });
 });
