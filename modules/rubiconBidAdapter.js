@@ -156,7 +156,9 @@ var sizeMap = {
   684: '970x550',
   686: '300x210',
   688: '300x220',
-  690: '970x170'
+  690: '970x170',
+  710: '600x250',
+  712: '340x430'
 };
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -922,7 +924,7 @@ function applyFPD(bidRequest, mediaType, data) {
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const dsa = deepAccess(fpd, 'regs.ext.dsa');
-  const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
+  const SEGTAX = {user: [4], site: [1, 2, 5, 6, 7]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {

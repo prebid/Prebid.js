@@ -163,7 +163,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 function handleTimeoutIncrement(reqBidsConfigObj, rules) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const timeoutModifier = timeoutRtdFunctions.calculateTimeoutModifier(adUnits, rules);
-  const bidderTimeout = getGlobal().getConfig('bidderTimeout');
+  const bidderTimeout = reqBidsConfigObj.timeout || getGlobal().getConfig('bidderTimeout');
   reqBidsConfigObj.timeout = bidderTimeout + timeoutModifier;
 }
 

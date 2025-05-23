@@ -53,11 +53,21 @@ export const spec = {
     }
     return isValid;
   },
-  buildRequests(bidRequests, bidderRequest) {
-    const params = bidRequests[0]?.params || {};
+  buildRequests(bidRequests = [], bidderRequest) {
+    const commonParams = bidRequests[0]?.params || {};
     const siteContent = bidRequests[0]?.site?.content || null;
     let data = {};
-    let FINAL_ENDPOINT_URL = params.endpoint || ENDPOINT_URL
+    let FINAL_ENDPOINT_URL = ENDPOINT_URL;
+
+    if (commonParams.endpoint) {
+      // Replace subdomain in FINAL_ENDPOINT_URL with commonParams.endpoint
+      const url = new URL(FINAL_ENDPOINT_URL);
+      const hostParts = url.hostname.split('.');
+      hostParts[0] = commonParams.endpoint;
+      url.hostname = hostParts.join('.');
+      FINAL_ENDPOINT_URL = url.toString();
+    }
+
     try {
       data = converter.toORTB({ bidRequests, bidderRequest });
       const testBidsRequested = location.hash.includes('rediads-test-bids');
@@ -66,13 +76,21 @@ export const spec = {
       if (stagingEnvRequested) {
         FINAL_ENDPOINT_URL = STAGING_ENDPOINT_URL;
       }
-      deepSetValue(data, 'ext.rediads.params', params);
+      deepSetValue(data, 'site.publisher.id', commonParams.account_id);
       deepSetValue(data, 'site.content', siteContent);
 
       if (testBidsRequested) {
         deepSetValue(data, 'test', 1);
         logWarn(`${LOG_PREFIX} test bids are enabled as rediads-test-bids is present in page URL hash.`)
       }
+
+      // handle impression/bid level requirements
+      data.imp.forEach((impression, idx) => {
+        const bidRequest = bidRequests[idx];
+        if (bidRequest?.params?.slot) {
+          impression.tagid = bidRequest?.params?.slot;
+        }
+      });
     } catch (err) {
       logError(`${LOG_PREFIX} encountered an error while building bid requests :: ${err}`)
     }

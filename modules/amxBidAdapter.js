@@ -15,6 +15,7 @@ import {
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { fetch } from '../src/ajax.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -161,8 +162,8 @@ function convertRequest(bid) {
 
   const au =
     bid.params != null &&
-      typeof bid.params.adUnitId === 'string' &&
-      bid.params.adUnitId !== ''
+    typeof bid.params.adUnitId === 'string' &&
+    bid.params.adUnitId !== ''
       ? bid.params.adUnitId
       : bid.adUnitCode;
 
@@ -298,6 +299,14 @@ function buildReferrerInfo(bidderRequest) {
   };
 }
 
+const alternateCodesAllowed = (bidderSettings, currentBidder) =>
+  !!(
+    bidderSettings.amx ??
+    bidderSettings[currentBidder] ??
+    bidderSettings.standard ??
+    {}
+  ).allowAlternateBidderCodes;
+
 const isTrue = (boolValue) =>
   boolValue === true || boolValue === 1 || boolValue === 'true';
 
@@ -323,8 +332,7 @@ export const spec = {
         : {
           bidderRequestsCount: 0,
           bidderWinsCount: 0,
-          bidRequestsCount: 0,
-        };
+          bidRequestsCount: 0 };
 
     const payload = {
       a: generateUUID(),
@@ -418,9 +426,9 @@ export const spec = {
     const output = [];
     let hasFrame = false;
 
-    _each(serverResponses, function({ body: response }) {
+    _each(serverResponses, function ({ body: response }) {
       if (response != null && response.p != null && response.p.hreq) {
-        _each(response.p.hreq, function(syncPixel) {
+        _each(response.p.hreq, function (syncPixel) {
           const pixelType =
             syncPixel.indexOf('__st=iframe') !== -1 ? 'iframe' : 'image';
           if (syncOptions.iframeEnabled || pixelType === 'image') {
@@ -454,9 +462,10 @@ export const spec = {
       setUIDSafe(response.am);
     }
 
-    const bidderSettings = config.getConfig('bidderSettings');
-    const settings = bidderSettings?.amx ?? bidderSettings?.standard ?? {};
-    const allowAlternateBidderCodes = !!settings.allowAlternateBidderCodes;
+    let { bidderSettings } = getGlobal();
+    const currentBidder = config.getCurrentBidder();
+    const allowAlternateBidderCodes = alternateCodesAllowed(bidderSettings ?? {}, currentBidder) ||
+      alternateCodesAllowed(config.getConfig('bidderSettings') ?? {}, currentBidder);
 
     return flatMap(Object.keys(response.r), (bidID) => {
       return flatMap(response.r[bidID], (siteBid) =>
@@ -470,10 +479,16 @@ export const spec = {
 
           const size = resolveSize(bid, request.data, bidID);
           const defaultExpiration = mediaType === BANNER ? 240 : 300;
-          const { bc: bidderCode, ds: demandSource } = bid.ext ?? {};
+          const {
+            bc: bidderCode,
+            ds: demandSource,
+            dsp: dspCode,
+          } = bid.ext ?? {};
 
           return {
-            ...(bidderCode != null && allowAlternateBidderCodes ? { bidderCode } : {}),
+            ...(bidderCode != null && allowAlternateBidderCodes
+              ? { bidderCode }
+              : {}),
             requestId: bidID,
             cpm: bid.price,
             width: size[0],
@@ -485,6 +500,7 @@ export const spec = {
             meta: {
               advertiserDomains: bid.adomain,
               mediaType,
+              ...(dspCode != null ? { networkId: dspCode } : {}),
               ...(demandSource != null ? { demandSource } : {}),
             },
             mediaType,
@@ -559,7 +575,7 @@ export const spec = {
       body: payload,
       keepalive: true,
       withCredentials: true,
-      method: 'POST'
+      method: 'POST',
     }).catch((_e) => {
       // do nothing; ignore errors
     });

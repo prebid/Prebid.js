@@ -1,4 +1,4 @@
-import { deepAccess, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
+import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -13,7 +13,7 @@ const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '6.10';
+const BIDDER_VERSION = '6.11';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -35,6 +35,11 @@ var nativeAssetMap = {
   body: 4,
   sponsoredBy: 5
 };
+
+/**
+ * currency used in bidRequest - updated on request
+ */
+var requestCurrency = DEFAULT_CURRENCY;
 
 /**
  * return native asset type, based on asset id
@@ -161,7 +166,7 @@ const getNotificationPayload = bidData => {
 const applyClientHints = ortbRequest => {
   const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
-  const viewport = W.visualViewport || false;
+  const viewport = getWinDimensions().visualViewport || false;
   const segments = [];
   const hints = {
     'CH-Ect': connection.effectiveType,
@@ -263,7 +268,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
-  const currency = getCurrency();
+  const currency = requestCurrency
   let result = { floor: 0, currency };
 
   if (typeof slot.getFloor === 'function') {
@@ -274,7 +279,7 @@ const getHighestFloor = (slot) => {
         const { floor: currentFloor = 0 } = slot.getFloor({
           mediaType: 'banner',
           size: next,
-          currency
+          currency,
         }) || {};
         return prev > currentFloor ? prev : currentFloor;
       }, 0);
@@ -605,6 +610,9 @@ const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
+    // update auction currency
+    requestCurrency = getCurrency(bidderRequest);
+
     if ((!validBidRequests) || (validBidRequests.length < 1)) {
       return false;
     }
@@ -633,7 +641,7 @@ const spec = {
         content: { language: getContentLanguage() },
       },
       imp: validBidRequests.map(slot => mapImpression(slot)),
-      cur: [getCurrency(bidderRequest)],
+      cur: [requestCurrency],
       tmax,
       user: {},
       regs,
