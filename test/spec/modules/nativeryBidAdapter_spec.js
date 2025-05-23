@@ -101,28 +101,28 @@ describe('NativeryAdapter', function () {
 
   describe('interpretResponse', function () {
     const bidderRequest = spec.buildRequests(bidRequests, {});
-    it('dovrebbe ritornare [] se serverResponse.body è falsy', function () {
-      // Caso: serverResponse.body non esiste
+    it('should return [] if serverResponse.body is falsy', function () {
+      // Case: serverResponse.body does not exist
       let serverResponse = {};
       let result = spec.interpretResponse(serverResponse, bidderRequest);
       expect(result).to.be.an('array').that.is.empty;
 
-      // Caso: serverResponse.body è null
+      // Case: serverResponse.body is null
       serverResponse = { body: null };
       result = spec.interpretResponse(serverResponse, bidderRequest);
       expect(result).to.be.an('array').that.is.empty;
     });
 
-    it('dovrebbe ritornare [] se serverResponse.body non è un oggetto', function () {
+    it('should return [] if serverResponse.body is not an object', function () {
       const serverResponse = { body: 'not an object' };
       const result = spec.interpretResponse(serverResponse, bidderRequest);
       expect(result).to.be.an('array').that.is.empty;
     });
 
-    it('dovrebbe ritornare [] se serverResponse.body.seatbid non è un array', function () {
+    it('should return [] if serverResponse.body.seatbid is not an array', function () {
       const serverResponse = {
         body: {
-          seatbid: {}, // Non è un array
+          seatbid: {}, // Not an array
         },
       };
 
@@ -130,7 +130,7 @@ describe('NativeryAdapter', function () {
       expect(result).to.be.an('array').that.is.empty;
     });
 
-    it('dovrebbe processare correttamente una risposta con seatbid array e ritornare bids', function () {
+    it('should correctly process a response with a seatbid array and return bids', function () {
       const bidsMock = [{ bid: 1 }, { bid: 2 }];
       const serverResponse = {
         body: {
@@ -148,7 +148,7 @@ describe('NativeryAdapter', function () {
       });
     });
 
-    it('dovrebbe loggare un warning se deepAccess restituisce errori, ma comunque ritornare bids', function () {
+    it('should log a warning if deepAccess returns errors, but still return bids', function () {
       const logWarnSpy = sinon.spy(utils, 'logWarn');
       const bidsMock = [{ bid: 1 }];
       const bidderRequest = spec.buildRequests(bidRequests, {});
@@ -173,7 +173,7 @@ describe('NativeryAdapter', function () {
       logWarnSpy.restore();
     });
 
-    it('dovrebbe ritornare [] e loggare un errore se converter.fromORTB lancia un errore', function () {
+    it('should return [] and log an error if converter.fromORTB throws an error', function () {
       const logErrorSpy = sinon.spy(utils, 'logError');
       const bidderRequest = spec.buildRequests(bidRequests, {});
 
