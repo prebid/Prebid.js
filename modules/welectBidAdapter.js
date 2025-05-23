@@ -33,8 +33,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests) {
     return validBidRequests.map((bidRequest) => {
