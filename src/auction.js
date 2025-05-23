@@ -638,6 +638,7 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
 
   const adUnit = index.getAdUnit(bid);
   bid.instl = adUnit?.ortb2Imp?.instl === 1;
+  bid.anchor = !!adUnit?.anchor;
 
   // a publisher-defined renderer can be used to render bids
   const bidRenderer = index.getBidRequest(bid)?.renderer || adUnit.renderer;

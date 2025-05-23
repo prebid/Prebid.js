@@ -127,7 +127,7 @@ function creativeMessageHandler(deps) {
 }
 
 export const getRenderingData = hook('sync', function (bidResponse, options) {
-  const {ad, adUrl, cpm, originalCpm, width, height, instl} = bidResponse
+  const {ad, adUrl, cpm, originalCpm, width, height, instl, anchor} = bidResponse
   const repl = {
     AUCTION_PRICE: originalCpm || cpm,
     CLICKTHROUGH: options?.clickUrl || ''
@@ -137,7 +137,8 @@ export const getRenderingData = hook('sync', function (bidResponse, options) {
     adUrl: replaceMacros(adUrl, repl),
     width,
     height,
-    instl
+    instl,
+    anchor
   };
 })
 
@@ -154,9 +155,9 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
   }
   const data = getRenderingData(bidResponse, options);
   renderFn(Object.assign({adId: bidResponse.adId}, data));
-  const {width, height} = data;
+  const {width, height, anchor} = data;
   if ((width ?? height) != null) {
-    resizeFn(width, height);
+    resizeFn(width, height, anchor);
   }
 });
 
@@ -256,10 +257,17 @@ export function renderAdDirect(doc, adId, options) {
   function fail(reason, message) {
     emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
-  function resizeFn(width, height) {
+  function resizeFn(width, height, anchor) {
     const frame = doc.defaultView?.frameElement;
     if (frame) {
-      if (width) {
+      if (anchor) {
+        if (width) {
+          frame.width = width;
+        }
+        frame.style.width = '100%';
+        frame.style.marginLeft = 'auto';
+        frame.style.marginRight = 'auto';
+      } else if (width) {
         frame.width = width;
         frame.style.width && (frame.style.width = `${width}px`);
       }
