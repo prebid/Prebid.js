@@ -210,7 +210,6 @@ describe('Unit: Prebid Module', function () {
     hook.ready();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
     resetDebugging();
-    sinon.stub(filters, 'isActualBid').returns(true); // stub this out so that we can use vanilla objects as bids
     getBidToRender.before(getBidToRenderHook, 100);
     // preload creative renderer
     getCreativeRenderer({}).then(() => done());
@@ -233,7 +232,6 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
-    filters.isActualBid.restore();
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
