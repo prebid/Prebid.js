@@ -426,6 +426,30 @@ function getFloorFetchStatus(floorData) {
   return isDataValid && (isAdUnitOrSetConfig || isFetchSuccessful);
 }
 
+function getListOfIdentityPartners() {
+  const namespace = getGlobal();
+  const publisherProvidedEids = namespace.getConfig("ortb2.user.eids") || [];
+  const availableUserIds = namespace.adUnits[0]?.bids[0]?.userId || {};
+  const identityModules = namespace.getConfig('userSync')?.userIds || [];
+  const identityModuleNameMap = identityModules.reduce((mapping, module) => {
+    if (module.storage?.name) {
+      mapping[module.storage.name] = module.name;
+    }
+    return mapping;
+  }, {});
+
+  const userIdPartners = Object.keys(availableUserIds).map(storageName =>
+    identityModuleNameMap[storageName] || storageName
+  );
+
+  const publisherProvidedEidList = publisherProvidedEids.map(eid =>
+    identityModuleNameMap[eid.source] || eid.source
+  );
+
+  const identityPartners = Array.from(new Set([...userIdPartners, ...publisherProvidedEidList]));
+  return identityPartners.length > 0 ? identityPartners : undefined;
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
@@ -459,6 +483,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dmv'] = '$prebid.version$' || '-1';
   outputObj['bm'] = getBrowserType();
   outputObj['ctr'] = country || '';
+  outputObj['lip'] = getListOfIdentityPartners();
 
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData?.floorRequestData);

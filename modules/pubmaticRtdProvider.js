@@ -233,8 +233,6 @@ const init = (config, _userConsent) => {
 /**
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
- * @param {Object} config
- * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
     configMergedPromise.then(() => {
