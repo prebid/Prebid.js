@@ -22,4 +22,4 @@ This file contains instructions for the Codex agent when working on tasks in thi
 - Link any required documentation PRs in the PR description.
 - Avoid modifying files in `node_modules` or generated build artifacts under `build`.
 - Do not include changes to the package_lock.json that are not relevant to the task.
-- Do not include any changes to this file or any other .md file in the root directory of the repo in any pr
+- Do not include any changes to this file or any other .md file in the root directory of the repo in any pr.
