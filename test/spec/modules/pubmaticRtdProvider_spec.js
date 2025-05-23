@@ -7,7 +7,8 @@ import * as hook from '../../../src/hook.js';
 import {
     registerSubModule, pubmaticSubmodule, getFloorsConfig, fetchData,
     getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, _country,
-    getProfileConfigs, setProfileConfigs, _floorsData, defaultValueTemplate, withTimeout, configMerged, getTargetingData
+    getProfileConfigs, setProfileConfigs, _floorsData, defaultValueTemplate, withTimeout, configMerged, getTargetingData,
+    CONSTANTS
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
 
@@ -616,6 +617,12 @@ describe('Pubmatic RTD Provider', () => {
         beforeEach(() => {
             logInfoStub = sandbox.stub(utils, 'logInfo');
             // Reset profile configs before each test
+            // Each test will set up the appropriate configuration
+            setProfileConfigs(undefined);
+        });
+        
+        afterEach(() => {
+            // Reset profile configs after each test
             setProfileConfigs(undefined);
         });
 
@@ -634,6 +641,17 @@ describe('Pubmatic RTD Provider', () => {
                     }]
                 }]
             };
+            
+            // Set up profile configs for this test
+            setProfileConfigs({
+                plugins: {
+                    dynamicFloors: {
+                        adServerTargeting: true,
+                        enabled: true,
+                        config: {}
+                    }
+                }
+            });
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
@@ -658,6 +676,17 @@ describe('Pubmatic RTD Provider', () => {
                     }
                 }]
             };
+            
+            // Set up profile configs for this test
+            setProfileConfigs({
+                plugins: {
+                    dynamicFloors: {
+                        adServerTargeting: true,
+                        enabled: true,
+                        config: {}
+                    }
+                }
+            });
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
@@ -689,6 +718,17 @@ describe('Pubmatic RTD Provider', () => {
                     }
                 }]
             };
+            
+            // Set up profile configs for this test
+            setProfileConfigs({
+                plugins: {
+                    dynamicFloors: {
+                        adServerTargeting: true,
+                        enabled: true,
+                        config: {}
+                    }
+                }
+            });
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
@@ -713,6 +753,17 @@ describe('Pubmatic RTD Provider', () => {
                     }]
                 }]
             };
+            
+            // Set up profile configs for this test
+            setProfileConfigs({
+                plugins: {
+                    dynamicFloors: {
+                        adServerTargeting: true,
+                        enabled: true,
+                        config: {}
+                    }
+                }
+            });
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
@@ -725,6 +776,17 @@ describe('Pubmatic RTD Provider', () => {
             const config = {};
             const userConsent = {};
             const auction = undefined;
+            
+            // Set up profile configs for this test
+            setProfileConfigs({
+                plugins: {
+                    dynamicFloors: {
+                        adServerTargeting: true,
+                        enabled: true,
+                        config: {}
+                    }
+                }
+            });
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
@@ -742,6 +804,17 @@ describe('Pubmatic RTD Provider', () => {
                 adUnits: null,
                 bidsReceived: null
             };
+            
+            // Set up profile configs for this test
+            setProfileConfigs({
+                plugins: {
+                    dynamicFloors: {
+                        adServerTargeting: true,
+                        enabled: true,
+                        config: {}
+                    }
+                }
+            });
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
@@ -783,9 +856,38 @@ describe('Pubmatic RTD Provider', () => {
             expect(result).to.deep.equal({});
             // We expect logInfoStub to be called because we log a message when adServerTargeting is false
             expect(logInfoStub.called).to.be.true;
+            // Verify the log message
+            expect(logInfoStub.calledWith(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled or profileConfigs is undefined`)).to.be.true;
 
-            // Reset profile configs for other tests
+            // No need to reset here, we have an afterEach hook
+        });
+
+        it('should return empty object when profileConfigs is undefined', () => {
+            const adUnitCodes = ['ad-unit-1'];
+            const config = {};
+            const userConsent = {};
+            const auction = {
+                adUnits: [{
+                    bids: [{
+                        floorData: {
+                            floorProvider: 'PM',
+                            modelVersion: 'RTD model',
+                            skipped: false
+                        }
+                    }]
+                }]
+            };
+
+            // Ensure profile configs is undefined
             setProfileConfigs(undefined);
+
+            const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+            
+            expect(result).to.deep.equal({});
+            // We expect logInfoStub to be called because we log a message when profileConfigs is undefined
+            expect(logInfoStub.called).to.be.true;
+            // Verify the log message
+            expect(logInfoStub.calledWith(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled or profileConfigs is undefined`)).to.be.true;
         });
 
         it('should only consider bids with floorProvider="PM" to have RTD floor applied', () => {
@@ -803,6 +905,17 @@ describe('Pubmatic RTD Provider', () => {
                     }]
                 }]
             };
+            
+            // Set up profile configs for this test
+            setProfileConfigs({
+                plugins: {
+                    dynamicFloors: {
+                        adServerTargeting: true,
+                        enabled: true,
+                        config: {}
+                    }
+                }
+            });
 
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             

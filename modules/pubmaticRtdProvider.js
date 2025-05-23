@@ -14,7 +14,7 @@ import { getLowEntropySUA } from '../src/fpd/sua.js';
  */
 import { continueAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
-const CONSTANTS = Object.freeze({
+export const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'pubmatic',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'PubMatic-Rtd-Provider: ',
@@ -290,9 +290,9 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   // Access the profile configs stored globally
   const profileConfigs = getProfileConfigs();
 
-  // Return empty object if adServerTargeting is explicitly set to false in dynamicFloors config
-  if (profileConfigs?.plugins?.dynamicFloors?.adServerTargeting === false) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled in dynamicFloors config`);
+  // Return empty object if profileConfigs is undefined or adServerTargeting is explicitly set to false
+  if (!profileConfigs || profileConfigs?.plugins?.dynamicFloors?.adServerTargeting === false) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled or profileConfigs is undefined`);
     return {};
   }
 
