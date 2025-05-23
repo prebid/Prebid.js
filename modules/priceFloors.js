@@ -634,7 +634,7 @@ function handleFetchError(status) {
 
 /**
  * This function handles sending and receiving the AJAX call for a floors fetch
- * @param {object} floorsConfig the floors config coming from setConfig
+ * @param {object} floorEndpoint the floors config coming from setConfig
  */
 export function generateAndHandleFetch(floorEndpoint) {
   // if a fetch url is defined and one is not already occuring, fire it!
