@@ -24,6 +24,23 @@ import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEME
  * @typedef {import('../src/adapters/bidderFactory.js').Video} Video
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
  * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp
+ * @typedef {Object} OpenRtbBid
+ * @typedef {Object} OpenRtbBidResponse
+ * @typedef {Object} OpenRTBBidRequest
+ * @typedef {Object} Regs
+ * @typedef {Object} Ext
+ * @typedef {Object} OpenRtbBanner
+ * @typedef {Object} OpenRtbVideo
+ * @typedef {Object} NativeMedia
+ * @typedef {Object} OpenRtbNativeAssets
+ * @typedef {Object} OpenRtbNative
+ * @typedef {Object} VideoMedia
+ * @typedef {Object} AjaxRequest
+ * @typedef {Object} NativeAssets
+ * @typedef {Object} PrebidJSResponse
+ * @typedef {Object} Format
+ * @typedef {BidRequest} PrebidBidRequest
+ * @typedef {Record<string, BidRequest>} Dictionnary
  */
 
 /**
@@ -152,7 +169,6 @@ function getOpenRTBRegsObject(bidderRequest) {
 /**
  * Create and return Ext OpenRtb object
  *
- * @param {BidderRequest} bidderRequest
  * @returns {Ext|null} Formatted Ext OpenRtb object or null
  */
 function getOpenRTBExtObject() {
@@ -381,7 +397,7 @@ function buildBidRequest(adUnits, bidderRequest, requestId) {
  * @param {BidderRequest} bidderRequest PrebidJS BidderRequest
  * @param {string} bidderUrl Adot Bidder URL
  * @param {string} requestId Request ID
- * @returns
+ * @returns {AjaxRequest}
  */
 function buildAjaxRequest(adUnits, bidderRequest, bidderUrl, requestId) {
   return {
@@ -394,8 +410,8 @@ function buildAjaxRequest(adUnits, bidderRequest, bidderUrl, requestId) {
 /**
  * Split given PrebidJS Request in Dictionnary
  *
- * @param {Array<PrebidBidRequest>} validBidRequests
- * @returns {Dictionnary<PrebidBidRequest>}
+ * @param {Array<BidRequest>} validBidRequests
+ * @returns {Dictionnary}
  */
 function splitAdUnits(validBidRequests) {
   return validBidRequests.reduce((adUnits, adUnit) => {
@@ -411,7 +427,7 @@ function splitAdUnits(validBidRequests) {
 /**
  * Build Ajax request Array
  *
- * @param {Array<PrebidBidRequest>} validBidRequests
+ * @param {Array<BidRequest>} validBidRequests
  * @param {BidderRequest} bidderRequest
  * @returns {Array<AjaxRequest>}
  */
@@ -541,7 +557,7 @@ function isBidImpInvalid(bid, imp) {
  *
  * @param {OpenRtbBid} bid
  * @param {OpenRtbBidResponse} bidResponse
- * @param {OpenRtbBid} imp
+ * @param {Imp} imp
  * @returns {PrebidJSResponse}
  */
 function buildBidResponse(bid, bidResponse, imp) {
@@ -568,7 +584,7 @@ function buildBidResponse(bid, bidResponse, imp) {
  * Find OpenRtb Imp from request with same id that given bid
  *
  * @param {OpenRtbBid} bid
- * @param {OpenRtbRequest} bidRequest
+ * @param {Object} bidRequest
  * @returns {Imp} OpenRtb Imp
  */
 function getImpfromBid(bid, bidRequest) {
@@ -593,7 +609,7 @@ function isValidResponse(response) {
 /**
  * Return if given request is valid
  *
- * @param {OpenRtbRequest} request
+ * @param {Object} request
  * @returns {boolean}
  */
 function isValidRequest(request) {
@@ -606,7 +622,7 @@ function isValidRequest(request) {
  * Interpret given OpenRtb Response to build PrebidJS Response
  *
  * @param {OpenRtbBidResponse} serverResponse
- * @param {OpenRtbRequest} request
+ * @param {Object} request
  * @returns {PrebidJSResponse}
  */
 function interpretResponse(serverResponse, request) {
@@ -648,9 +664,6 @@ function getFloor(adUnit, size, mediaType, currency) {
 /**
  * Call getFloor for each format and return the lower floor
  * Return 0 by default
- *
- * interface Format { w: number; h: number }
- *
  * @param {AdUnit} adUnit
  * @param {Array<Format>} formats Media formats
  * @param {string} mediaType
