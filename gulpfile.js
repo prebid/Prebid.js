@@ -541,7 +541,7 @@ gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
 gulp.task('test', gulp.series('update-browserslist', clean, lint, 'test-all-features-disabled', 'test-only'));
 
-gulp.task('test-coverage', gulp.series('update-browserslist', clean, testCoverage));
+gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
