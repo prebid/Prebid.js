@@ -409,9 +409,8 @@ describe('microadBidAdapter', () => {
           ortb2Imp: {
             ext: {
               tid: 'transaction-id',
-              data: {
-                pbadslot: '3333/4444'
-              }
+              gpid: '3333/4444',
+              data: {}
             }
           }
         });
@@ -421,7 +420,6 @@ describe('microadBidAdapter', () => {
             Object.assign({}, expectedResultTemplate, {
               cbt: request.data.cbt,
               gpid: '3333/4444',
-              pbadslot: '3333/4444'
             })
           );
         })

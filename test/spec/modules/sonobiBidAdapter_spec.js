@@ -296,9 +296,8 @@ describe('SonobiBidAdapter', function () {
       'bidId': '30b31c1838de1f',
       ortb2Imp: {
         ext: {
-          data: {
-            pbadslot: '/123123/gpt_publisher/adunit-code-1'
-          }
+          data: {},
+          gpid: '/123123/gpt_publisher/adunit-code-1'
         }
       },
       mediaTypes: {

@@ -109,7 +109,7 @@ export const sharethroughAdapterSpec = {
         // mergeDeep(impression, bidReq.ortb2Imp); // leaving this out for now as we may want to leave stuff out on purpose
         const tid = deepAccess(bidReq, 'ortb2Imp.ext.tid');
         if (tid) impression.ext.tid = tid;
-        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid') || deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
+        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid');
         if (gpid) impression.ext.gpid = gpid;
 
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');

@@ -434,7 +434,7 @@ describe('cadent_aperture_mx Adapter', function () {
       it('should add gpid to request if present in ext.data.pbadslot', () => {
         const gpid = '/12345/my-gpt-tag-0';
         let bid = utils.deepClone(bidderRequest.bids[0]);
-        bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
+        bid.ortb2Imp = { ext: { data: {}, gpid } };
         let requestWithGPID = spec.buildRequests([bid], bidderRequest);
         requestWithGPID = JSON.parse(requestWithGPID.data);
         expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
