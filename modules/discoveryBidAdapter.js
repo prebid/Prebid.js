@@ -173,7 +173,6 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
-    // eslint-disable-next-line no-debugger
     let mediaTypes = getKv(req, 'mediaTypes');
 
     const bidFloor = getBidFloor(req);
