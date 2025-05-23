@@ -53,9 +53,6 @@ const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([BID_STATUS.RENDERED], bid.status)) || !bid.status);
 
 export let filters = {
-  isActualBid(bid) {
-    return true;
-  },
   isBidNotExpired,
   isUnusedBid
 };
