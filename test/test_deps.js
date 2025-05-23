@@ -21,6 +21,7 @@ window.addEventListener('error', function (ev) {
 })
 
 window.addEventListener('unhandledrejection', function (ev) {
+  if (ev.reason === 'pending failure') return;
   // eslint-disable-next-line no-console
   console.error('Unhandled rejection:', ev.reason);
 })
