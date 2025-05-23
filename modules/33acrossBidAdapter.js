@@ -69,8 +69,7 @@ function getTTXConfig() {
 function isBidRequestValid(bid) {
   return (
     _validateBasic(bid) &&
-    _validateBanner(bid) &&
-    _validateVideo(bid)
+    _validateBanner(bid)
   );
 }
 
@@ -110,55 +109,7 @@ function _validateBanner(bid) {
   return true;
 }
 
-function _validateVideo(bid) {
-  const videoAdUnit = deepAccess(bid, 'mediaTypes.video');
-  const videoBidderParams = deepAccess(bid, 'params.video', {});
 
-  // If there's no video no need to validate against video rules
-  if (videoAdUnit === undefined) {
-    return true;
-  }
-
-  if (!Array.isArray(videoAdUnit.playerSize)) {
-    return false;
-  }
-
-  if (!videoAdUnit.context) {
-    return false;
-  }
-
-  const videoParams = {
-    ...videoAdUnit,
-    ...videoBidderParams
-  };
-
-  if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-    return false;
-  }
-
-  if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-    return false;
-  }
-
-  // If placement if defined, it must be a number
-  if ([ videoParams.placement, videoParams.plcmt ].some(value => (
-    typeof value !== 'undefined' &&
-    typeof value !== 'number'
-  ))) {
-    return false;
-  }
-
-  // If startdelay is defined it must be a number
-  if (
-    videoAdUnit.context === 'instream' &&
-    typeof videoParams.startdelay !== 'undefined' &&
-    typeof videoParams.startdelay !== 'number'
-  ) {
-    return false;
-  }
-
-  return true;
-}
 
 // **************************** BUILD REQUESTS *************************** //
 // NOTE: With regards to gdrp consent data, the server will independently

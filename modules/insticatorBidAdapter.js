@@ -550,65 +550,6 @@ function validateBanner(bid) {
   return true;
 }
 
-function validateVideo(bid) {
-  const videoParams = deepAccess(bid, 'mediaTypes.video');
-  const videoBidderParams = deepAccess(bid, 'params.video');
-  let video = {
-    ...videoParams,
-    ...videoBidderParams // bidder specific overrides for video
-  }
-
-  // Check if the video object is undefined
-  if (videoParams === undefined) {
-    return true;
-  }
-
-  let w = deepAccess(bid, 'mediaTypes.video.w');
-  let h = deepAccess(bid, 'mediaTypes.video.h');
-  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-
-  if (!h && !w && playerSize) {
-    ({w, h} = parsePlayerSizeToWidthHeight(playerSize, w, h));
-  }
-
-  const videoSize = [w, h];
-
-  if (
-    !validateSize(videoSize)
-  ) {
-    logError('insticator: video size not specified or invalid');
-    return false;
-  }
-
-  const mimes = deepAccess(bid, 'mediaTypes.video.mimes');
-
-  if (!Array.isArray(mimes) || mimes.length === 0) {
-    logError('insticator: mimes not specified');
-    return false;
-  }
-
-  const plcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
-
-  if (typeof plcmt !== 'undefined' && typeof plcmt !== 'number') {
-    logError('insticator: video plcmt is not a number');
-    return false;
-  }
-
-  for (const param in OPTIONAL_VIDEO_PARAMS) {
-    if (video[param]) {
-      if (!OPTIONAL_VIDEO_PARAMS[param](video[param])) {
-        logError(`insticator: video ${param} is invalid or not supported by insticator`);
-      }
-    }
-  }
-
-  if (video.minduration && video.maxduration && video.minduration > video.maxduration) {
-    logError('insticator: video minduration is greater than maxduration');
-    return false;
-  }
-
-  return true;
-}
 
 function parsePlayerSizeToWidthHeight(playerSize, w, h) {
   if (!w && playerSize) {
@@ -638,8 +579,7 @@ export const spec = {
     return (
       validateAdUnitId(bid) &&
       validateMediaType(bid) &&
-      validateBanner(bid) &&
-      validateVideo(bid)
+      validateBanner(bid)
     );
   },
 

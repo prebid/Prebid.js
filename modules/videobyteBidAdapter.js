@@ -270,38 +270,8 @@ function buildRequestData(bidRequest, bidderRequest) {
 }
 
 function validateVideo(bidRequest) {
-  if (!bidRequest.params) {
-    return false;
-  }
-
-  if (!bidRequest.params.pubId) {
+  if (!bidRequest.params || !bidRequest.params.pubId) {
     logError('failed validation: pubId not declared');
-    return false;
-  }
-
-  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-
-  if (videoBidderParams && videoBidderParams.e2etest) {
-    return true;
-  }
-
-  const videoParams = {
-    ...videoAdUnit,
-    ...videoBidderParams // Bidder Specific overrides
-  };
-
-  if (!videoParams.context) {
-    logError('failed validation: context id not declared');
-    return false;
-  }
-  if (videoParams.context !== 'instream') {
-    logError('failed validation: only context instream is supported ');
-    return false;
-  }
-
-  if (typeof videoParams.playerSize === 'undefined' || !Array.isArray(videoParams.playerSize) || !Array.isArray(videoParams.playerSize[0])) {
-    logError('failed validation: player size not declared or is not in format [[w,h]]');
     return false;
   }
 
