@@ -86,7 +86,8 @@ describe('C-WIRE bid adapter', () => {
       const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         offsetWidth: 200,
-        offsetHeight: 250
+        offsetHeight: 250,
+        getBoundingClientRect() { return { width: 200, height: 250 }; }
       });
     });
     it('width and height should be set', function () {
@@ -115,7 +116,8 @@ describe('C-WIRE bid adapter', () => {
         style: {
           maxWidth: '400px',
           maxHeight: '350px',
-        }
+        },
+        getBoundingClientRect() { return { width: 0, height: 0 }; }
       });
     });
     it('css maxWidth should be set', function () {
@@ -231,7 +233,9 @@ describe('C-WIRE bid adapter', () => {
   describe('buildRequests maps flattens params for legacy compat', function () {
     before(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({});
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+        getBoundingClientRect() { return { width: 0, height: 0 }; }
+      });
     });
     it('pageId flattened', function () {
       let bidRequest = deepClone(bidRequests[0]);
