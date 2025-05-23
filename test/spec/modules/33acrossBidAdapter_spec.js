@@ -5,6 +5,7 @@ import { internal } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
+import { validateVideoMediaType } from '../../../src/prebid.js';
 import { resetWinDimensions } from '../../../src/utils';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
@@ -627,7 +628,7 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('video validation', function() {
+    context('video validation handled in core', function() {
       beforeEach(function() {
         // Basic Valid BidRequest
         this.bid = {
@@ -661,111 +662,11 @@ describe('33acrossBidAdapter:', function () {
         expect(spec.isBidRequestValid(this.bid)).to.be.true;
       });
 
-      it('returns false when video context is not defined', function() {
-        delete this.bid.mediaTypes.video.context;
-
-        expect(spec.isBidRequestValid(this.bid)).to.be.false;
-      });
-
-      it('returns false when video playserSize is invalid', function() {
-        const invalidSizes = [
-          undefined,
-          '16:9',
-          300,
-          'foo'
-        ];
-
-        invalidSizes.forEach((playerSize) => {
-          this.bid.mediaTypes.video.playerSize = playerSize;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        });
-      });
-
-      it('returns false when video mimes is invalid', function() {
-        const invalidMimes = [
-          undefined,
-          'foo',
-          1,
-          []
-        ]
-
-        invalidMimes.forEach((mimes) => {
-          this.bid.mediaTypes.video.mimes = mimes;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        })
-      });
-
-      it('returns false when video protocols is invalid', function() {
-        const invalidMimes = [
-          undefined,
-          'foo',
-          1,
-          []
-        ]
-
-        invalidMimes.forEach((protocols) => {
-          this.bid.mediaTypes.video.protocols = protocols;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        })
-      });
-
-      it('returns false when video placement is invalid', function() {
-        const invalidPlacement = [
-          [],
-          '1',
-          {},
-          'foo'
-        ];
-
-        invalidPlacement.forEach((placement) => {
-          this.bid.mediaTypes.video.plcmt = placement;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        });
-
-        invalidPlacement.forEach((placement) => {
-          this.bid.mediaTypes.video.placement = placement;
-          expect(spec.isBidRequestValid(this.bid)).to.be.false;
-        });
-      });
-
-      it('returns false when video startdelay is invalid for instream context', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar']})
-            .build()
-        );
-
-        const invalidStartdelay = [
-          [],
-          '1',
-          {},
-          'foo'
-        ];
-
-        invalidStartdelay.forEach((startdelay) => {
-          bidRequests[0].mediaTypes.video.startdelay = startdelay;
-          expect(spec.isBidRequestValid(bidRequests[0])).to.be.false;
-        });
-      });
-
-      it('returns true when video startdelay is invalid for outstream context', function() {
-        const bidRequests = (
-          new BidRequestsBuilder()
-            .withVideo({context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar']})
-            .build()
-        );
-
-        const invalidStartdelay = [
-          [],
-          '1',
-          {},
-          'foo'
-        ];
-
-        invalidStartdelay.forEach((startdelay) => {
-          bidRequests[0].mediaTypes.video.startdelay = startdelay;
-          expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
-        });
+      it('removes invalid video fields via validateVideoMediaType before adapter check', function() {
+        this.bid.mediaTypes.video.mimes = [];
+        const cleaned = validateVideoMediaType(this.bid);
+        expect(cleaned.mediaTypes.video).to.not.have.property('mimes');
+        expect(spec.isBidRequestValid(cleaned)).to.be.true;
       });
     })
   });

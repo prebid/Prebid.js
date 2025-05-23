@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/videobyteBidAdapter.js';
+import { validateVideoMediaType } from '../../../src/prebid.js';
 
 describe('VideoByteBidAdapter', function () {
   let bidRequest;
@@ -102,36 +103,14 @@ describe('VideoByteBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('should return false when both mediaTypes.video and params.video Objects are missing', function () {
+    it('allows bid after core removes empty video objects', function () {
       bidRequest.mediaTypes = {};
-      bidRequest.params = {
-        pubId: 'brxd'
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
+      bidRequest.params = { pubId: 'brxd' };
+      const cleaned = validateVideoMediaType(bidRequest);
+      expect(cleaned.mediaTypes).to.be.undefined;
+      expect(spec.isBidRequestValid(cleaned)).to.equal(true);
     });
 
-    it('should return false when both mediaTypes.video and params.video are missing mimes and player size', function () {
-      bidRequest.mediaTypes = {
-        video: {
-          context: 'instream'
-        }
-      };
-      bidRequest.params = {
-        pubId: 'brxd'
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
-
-    it('should return false when the "pubId" param is missing', function () {
-      bidRequest.params = {
-        video: {
-          playerWidth: 480,
-          playerHeight: 640,
-          mimes: ['video/mp4', 'application/javascript'],
-        }
-      };
-      expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
-    });
     it('should return false when the "pubId" param is missing', function () {
       bidRequest.params = {
         video: {

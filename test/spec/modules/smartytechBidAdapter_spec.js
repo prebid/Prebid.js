@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, ENDPOINT_PROTOCOL, ENDPOINT_DOMAIN, ENDPOINT_PATH} from 'modules/smartytechBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import { validateVideoMediaType } from '../../../src/prebid.js';
 
 const BIDDER_CODE = 'smartytech';
 
@@ -36,44 +37,14 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
     expect(spec.isBidRequestValid(bidFixture)).to.be.true
   });
 
-  it('Invalid bid request. Check video block', function () {
+  it('cleans bad video params before adapter check', function () {
     const bidFixture = {
-      params: {
-        endpointId: 1
-      },
-      mediaTypes: {
-        video: {}
-      }
+      params: { endpointId: 1 },
+      mediaTypes: { video: { playerSize: '300x250' } }
     }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
-  });
-
-  it('Invalid bid request. Check playerSize', function () {
-    const bidFixture = {
-      params: {
-        endpointId: 1
-      },
-      mediaTypes: {
-        video: {
-          playerSize: '300x250'
-        }
-      }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
-  });
-
-  it('Invalid bid request. Check context', function () {
-    const bidFixture = {
-      params: {
-        endpointId: 1
-      },
-      mediaTypes: {
-        video: {
-          playerSize: [300, 250]
-        }
-      }
-    }
-    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+    const cleaned = validateVideoMediaType(bidFixture);
+    expect(cleaned.mediaTypes.video.playerSize).to.be.undefined;
+    expect(spec.isBidRequestValid(cleaned)).to.be.true;
   });
 
   it('Valid bid request. valid video bid', function () {

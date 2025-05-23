@@ -119,8 +119,7 @@ export const spec = {
 function validateBidRequest(bid) {
   return (
     _validateParams(bid) &&
-    _validateBanner(bid) &&
-    _validateVideo(bid)
+    _validateBanner(bid)
   );
 }
 
@@ -207,58 +206,5 @@ function _validateBanner(bidRequest) {
   return true;
 }
 
-function _validateVideo(bidRequest) {
-  if (!hasVideoMediaType(bidRequest)) {
-    return true;
-  }
-
-  const videoPlacement = bidRequest.mediaTypes?.video || {};
-  const videoBidderParams = bidRequest.params?.video || {};
-  const params = bidRequest.params || {};
-
-  if (params && params.test) {
-    return true;
-  }
-
-  const videoParams = {
-    ...videoPlacement,
-    ...videoBidderParams,
-  };
-
-  if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-    logWarn('Invalid MIME types (madSense)');
-    return false;
-  }
-
-  if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-    logWarn('Invalid protocols (madSense)');
-    return false;
-  }
-
-  if (!videoParams.context) {
-    logWarn('Context not declared (madSense)');
-    return false;
-  }
-
-  if (videoParams.context !== 'instream') {
-    if (hasBannerMediaType(bidRequest)) {
-      logWarn('Context is not instream, preferring banner (madSense)');
-      return true;
-    } else {
-      logWarn('Only instream context is supported (madSense)');
-    }
-  }
-
-  if (
-    typeof videoParams.playerSize === 'undefined' ||
-    !Array.isArray(videoParams.playerSize) ||
-    !Array.isArray(videoParams.playerSize[0])
-  ) {
-    logWarn('Player size not declared or not in [[w,h]] format');
-    return false;
-  }
-
-  return true;
-}
 
 registerBidder(spec);
