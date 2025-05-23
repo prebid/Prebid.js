@@ -71,7 +71,6 @@ export const oneKeyIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} [config]
-   * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
   getId(config) {

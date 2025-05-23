@@ -352,25 +352,21 @@ export const spec = {
       }
     }
 
-    if (bidRequests[0].userId) {
+    if (bidRequests[0].userIdAsEids?.length > 0) {
       let eids = [];
-      const processEids = (uids) => {
-        uids.forEach(eid => {
-          if (!eid || !eid.uids || eid.uids.length < 1) { return; }
-          eid.uids.forEach(uid => {
-            let tmp = {'source': eid.source, 'id': uid.id};
-            if (eid.source == 'adserver.org') {
-              tmp.rti_partner = 'TDID';
-            } else if (eid.source == 'uidapi.com') {
-              tmp.rti_partner = 'UID2';
-            }
-            eids.push(tmp);
-          });
+      bidRequests[0].userIdAsEids.forEach(eid => {
+        if (!eid || !eid.uids || eid.uids.length < 1) { return; }
+        eid.uids.forEach(uid => {
+          let tmp = {'source': eid.source, 'id': uid.id};
+          if (eid.source == 'adserver.org') {
+            tmp.rti_partner = 'TDID';
+          } else if (eid.source == 'uidapi.com') {
+            tmp.rti_partner = 'UID2';
+          }
+          eids.push(tmp);
         });
-      }
-      if (bidRequests[0].userIdAsEids) {
-        processEids(bidRequests[0].userIdAsEids);
-      }
+      });
+
       if (eids.length) {
         payload.eids = eids;
       }
