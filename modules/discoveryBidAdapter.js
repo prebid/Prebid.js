@@ -131,7 +131,6 @@ export function getCookieTimeToUTCString() {
 
 /**
  * format imp ad test ext params
- *
  * @param {Object} bidRequest single bid request
  * @param {Object} bidderRequest bidder request object
  */
@@ -496,7 +495,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which  will execute if a bid from this bidder won the auction
-   * @param {Bid} bid The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     if (bid['nurl']) {

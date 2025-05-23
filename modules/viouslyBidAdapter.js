@@ -4,6 +4,10 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'viously';
 const GVLID = 1028;
 const CURRENCY = 'EUR';
