@@ -87,13 +87,13 @@ describe('NativeryAdapter', function () {
       );
       expect(request).to.be.an('array').that.has.lengthOf(expectedNumRequests);
 
-      // Verifica i singoli oggetti della request
+      // Check each object of the request
       request.forEach((req) => {
         expect(req).to.have.property('method', 'POST');
         expect(req).to.have.property('url', ENDPOINT);
         expect(req).to.have.property('data').that.is.an('object');
         expect(req.data).to.have.property('imp').that.is.an('array');
-        // Ogni chunk deve avere al massimo MAX_IMPS_PER_REQUEST elementi
+        // Each chunk must contain at most MAX_IMPS_PER_REQUEST elements.
         expect(req.data.imp.length).to.be.at.most(MAX_IMPS_PER_REQUEST);
       });
     });
