@@ -11,7 +11,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {find, includes} from '../src/polyfill.js';
+import {includes} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
@@ -61,7 +61,7 @@ export const cadentAdapter = {
   formatVideoResponse: (bidResponse, cadentBid, bidRequest) => {
     bidResponse.vastXml = cadentBid.adm;
     if (bidRequest.bidderRequest && bidRequest.bidderRequest.bids && bidRequest.bidderRequest.bids.length > 0) {
-      const matchingBid = find(bidRequest.bidderRequest.bids, bid => bidResponse.requestId && bid.bidId && bidResponse.requestId === bid.bidId && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream');
+      const matchingBid = ((bidRequest.bidderRequest.bids) || []).find(bid => bidResponse.requestId && bid.bidId && bidResponse.requestId === bid.bidId && bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context === 'outstream');
       if (matchingBid) {
         bidResponse.renderer = cadentAdapter.createRenderer(bidResponse, {
           id: cadentBid.id,
@@ -85,8 +85,7 @@ export const cadentAdapter = {
       h: screen.height,
       w: screen.width,
       devicetype: cadentAdapter.isMobile() ? 1 : cadentAdapter.isConnectedTV() ? 3 : 2,
-      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-    };
+      language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage)};
   },
   cleanProtocols: (video) => {
     if (video.protocols && includes(video.protocols, 7)) {

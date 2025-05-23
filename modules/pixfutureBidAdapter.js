@@ -2,7 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {find, includes} from '../src/polyfill.js';
+import {includes} from '../src/polyfill.js';
 import {deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
@@ -46,7 +46,7 @@ export const spec = {
         referer = bidderRequest.refererInfo.page || '';
       }
 
-      const userObjBid = find(validBidRequests, hasUserInfo);
+      const userObjBid = ((validBidRequests) || []).find(hasUserInfo);
       let userObj = {};
       if (config.getConfig('coppa') === true) {
         userObj = {'coppa': true};
@@ -289,7 +289,7 @@ function bidToTag(bid) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
   // TODO: why does this need to iterate through every adUnit?
-  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
+  let adUnit = ((auctionManager.getAdUnits()) || []).find(au => bid.transactionId === au.transactionId);
   if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);
   }

@@ -9,10 +9,9 @@
 import {deepSetValue, isEmpty, logError, mergeDeep} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-import {findIndex} from '../src/polyfill.js';
-import {getRefererInfo} from '../src/refererDetection.js';
 import {config} from '../src/config.js';
 
+import {getRefererInfo} from '../src/refererDetection.js';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'RelevadRTDModule';
 
@@ -247,7 +246,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
     noWhitelists && deepSetValue(adUnit, 'ortb2Imp.ext.data.relevad_rtd', relevadList);
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
-      let bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? findIndex(moduleConfig.params.bidders, function (i) {
+      let bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? (moduleConfig.params.bidders || []).findIndex(function (i) {
         return i.bidder === bid.bidder;
       }) : false);
       const indexFound = !!(typeof bidderIndex == 'number' && bidderIndex >= 0);
