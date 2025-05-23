@@ -115,7 +115,8 @@ describe('Generic analytics', () => {
         handler.throws(new Error());
         events.emit(AUCTION_INIT, {i: 0});
         let recv;
-        handler.reset();
+        handler.resetHistory();
+        handler.resetBehavior();
         handler.callsFake((arg) => {
           recv = arg;
         });

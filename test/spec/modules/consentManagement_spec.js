@@ -364,7 +364,7 @@ describe('consentManagement', function () {
         cmpStub = sinon.stub(window, '__tcfapi').callsFake(mockCMP(testConsentData));
         await setConsentConfig(goodConfig);
         expect(await runHook()).to.be.true;
-        cmpStub.reset();
+        cmpStub.resetHistory();
 
         expect(await runHook()).to.be.true;
         let consent = gdprDataHandler.getConsentData();
