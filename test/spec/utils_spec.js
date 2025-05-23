@@ -1242,6 +1242,104 @@ describe('Utils', function () {
       expect(result).to.equal('');
     });
   });
+
+  describe('isGzipCompressionSupported', () => {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'isGzipCompressionSupported').callsFake((() => {
+        let cachedResult;
+        return function () {
+          if (cachedResult !== undefined) {
+            return cachedResult;
+          }
+          try {
+            if (typeof window.CompressionStream === 'undefined') {
+              cachedResult = false;
+            } else {
+              let newCompressionStream = new window.CompressionStream('gzip');
+              cachedResult = true;
+            }
+          } catch (error) {
+            cachedResult = false;
+          }
+          return cachedResult;
+        };
+      })());
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should return true if CompressionStream is available', () => {
+      window.CompressionStream = class {}; // Mock valid CompressionStream
+      expect(utils.isGzipCompressionSupported()).to.be.true;
+    });
+
+    it('should return false if CompressionStream is undefined', () => {
+      delete window.CompressionStream; // Simulate an unsupported environment
+      expect(utils.isGzipCompressionSupported()).to.be.false;
+    });
+
+    it('should cache the result after first execution', () => {
+      window.CompressionStream = class {}; // Mock valid CompressionStream
+
+      const firstCall = utils.isGzipCompressionSupported();
+      const secondCall = utils.isGzipCompressionSupported();
+
+      expect(firstCall).to.equal(secondCall); // Ensure memoization is working
+    });
+  });
+
+  describe('compressDataWithGZip', () => {
+    let originalCompressionStream;
+
+    beforeEach(() => {
+      originalCompressionStream = global.CompressionStream;
+      global.CompressionStream = class {
+        constructor(type) {
+          if (type !== 'gzip') {
+            throw new Error('Unsupported compression type');
+          }
+          this.readable = new ReadableStream({
+            start(controller) {
+              controller.enqueue(new Uint8Array([1, 2, 3, 4]));
+              controller.close();
+            }
+          });
+          this.writable = new WritableStream();
+        }
+      };
+    });
+
+    afterEach(() => {
+      if (originalCompressionStream) {
+        global.CompressionStream = originalCompressionStream;
+      } else {
+        delete global.CompressionStream;
+      }
+    });
+
+    it('should compress data correctly when CompressionStream is available', async () => {
+      const data = JSON.stringify({ test: 'data' });
+      const compressedData = await utils.compressDataWithGZip(data);
+  
+      expect(compressedData).to.be.instanceOf(Uint8Array);
+      expect(compressedData.length).to.be.greaterThan(0);
+      expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
+    });
+  
+    it('should handle non-string input by stringifying it', async () => {
+      const nonStringData = { test: 'data' };
+      const compressedData = await utils.compressDataWithGZip(nonStringData);
+  
+      expect(compressedData).to.be.instanceOf(Uint8Array);
+      expect(compressedData.length).to.be.greaterThan(0);
+      expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
+    });
+  });
 });
 
 describe('memoize', () => {
@@ -1324,7 +1422,7 @@ describe('memoize', () => {
         });
       });
     })
-  });
+  })
 })
 
 describe('getWinDimensions', () => {
