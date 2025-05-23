@@ -128,15 +128,15 @@ describe('MediaSquare bid adapter tests', function () {
             }]
           }
         }
-      },
-      user: { ext: { eids : [{
-        "source": "superid.com",
-        "uids": [{
-          "id": "12345678",
-          "atype": 1
-         }]
-      }]}}
+      }
     },
+    userIdAsEids: [{
+      "source": "superid.com",
+      "uids": [{
+        "id": "12345678",
+        "atype": 1
+       }]
+    }],
     gdprConsent: {
       gdprApplies: true,
       consentString: 'BOzZdA0OzZdA0AGABBENDJ-AAAAvh7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__79__3z3_9pxP78k89r7337Mw_v-_v-b7JCPN_Y3v-8Kg',
