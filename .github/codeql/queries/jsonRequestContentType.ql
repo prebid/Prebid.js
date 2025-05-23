@@ -10,7 +10,7 @@ import javascript
 
 from Property prop
 where
-  prop.getPropertyName() = "contentType" and
+  prop.getName() = "contentType" and
   prop.getValue() instanceof StringLiteral and
   prop.getValue().(StringLiteral).getStringValue() = "application/json"
 select prop, "application/json request type triggers preflight requests and may increase bidder timeouts"
