@@ -173,6 +173,7 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
+
     let mediaTypes = getKv(req, 'mediaTypes');
 
     const bidFloor = getBidFloor(req);
