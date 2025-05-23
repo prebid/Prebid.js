@@ -1,4 +1,4 @@
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
 import {
   deepAccess,
@@ -43,7 +43,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: BIDDER_ALIAS,
-  supportedMediaTypes: [BANNER, NATIVE],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
