@@ -277,6 +277,7 @@ function _getDeviceData(ortb2Data) {
     ip: _device.ip,
     ipv6: _device.ipv6,
     ua: _device.ua,
+    sua: _device.sua ? JSON.stringify(_device.sua) : undefined,
     dnt: _device.dnt,
     os: _device.os,
     osv: _device.osv,
