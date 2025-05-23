@@ -208,14 +208,9 @@ export function getCurrentTimeToUTCString() {
  */
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  const sharedid =
-    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    utils.deepAccess(validBidRequests[0], 'userId.pubcid');
 
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
-  const bidsUserid = validBidRequests[0].userId;
-  const eids = bidsUserIdAsEids || bidsUserid;
-  const ppuid = bidsUserid && bidsUserid.pubProvidedId;
+  const eids = bidsUserIdAsEids;
   const content = utils.deepAccess(bidderRequest, 'ortb2.site.content');
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
   reqTimes += 1;
@@ -258,8 +253,6 @@ function getParam(validBidRequests, bidderRequest) {
       ext: {
         eids,
         bidsUserIdAsEids,
-        bidsUserid,
-        ppuid,
         firstPartyData,
         content,
         cat,
@@ -277,7 +270,7 @@ function getParam(validBidRequests, bidderRequest) {
       },
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
-        id: sharedid || pubcid,
+        id: pubcid,
       },
       eids,
       site: {
