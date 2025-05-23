@@ -69,6 +69,12 @@ export let configMerged;
 let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
 export let _country;
 
+// Use a private variable for profile configs
+let _profileConfigs;
+// Export getter and setter functions for _profileConfigs
+export const getProfileConfigs = () => _profileConfigs;
+export const setProfileConfigs = (configs) => { _profileConfigs = configs; };
+
 // Waits for a given promise to resolve within a timeout
 export function withTimeout(promise, ms) {
     let timeout;
@@ -225,6 +231,9 @@ const init = (config, _userConsent) => {
       const remainingTime = Math.max(maxWaitTime - elapsedTime, 0);
       const floorsData = await withTimeout(_fetchFloorRulesPromise, remainingTime);
 
+      // Store the profile configs globally
+      setProfileConfigs(profileConfigs);
+
       const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
       floorsConfig && conf.setConfig(floorsConfig);
       configMerged();
@@ -278,9 +287,15 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
  * @return {Object} - Targeting data for ad units
  */
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
-  // Return empty object if adServerTargeting is explicitly set to false
-  if (config?.params?.adServerTargeting === false) return {};
-  
+  // Access the profile configs stored globally
+  const profileConfigs = getProfileConfigs();
+
+  // Return empty object if adServerTargeting is explicitly set to false in dynamicFloors config
+  if (profileConfigs?.plugins?.dynamicFloors?.adServerTargeting === false) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled in dynamicFloors config`);
+    return {};
+  }
+
   const isRtdFloorApplied = bid =>
     bid.floorData?.floorProvider === "PM" &&
     !bid.floorData.skipped
