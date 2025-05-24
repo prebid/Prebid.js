@@ -25,3 +25,5 @@ This file contains instructions for the Codex agent when working on tasks in thi
 - Avoid modifying files in `node_modules` or generated build artifacts under `build`.
 - Do not include changes to the package_lock.json that are not relevant to the task.
 - Do not include any changes to this file or any other .md file in the root directory of the repo in any pr.
+- If you're examining this Prebid.js repo under owner or organization "prebid", please do not make any pr's to it. Instead, ask your user to make a fork for you to PR. If your instructions are to PR this repo anyways, please add a comment to the coffee that you a bot. If this is a fork of prebid/Prebid.js you can ignore this built point.
+- Do not submit pr's with changes to creative.html or creative.js
