@@ -250,7 +250,9 @@ describe('bridgeuppBidAdapter_spec', function () {
       const ortb2 = {
         source: {
           pchain: 'sonarads',
-          schain: expectedSchain
+          ext: {
+            schain: expectedSchain
+          }
         }
       };
       const bidRequests = [
