@@ -3,7 +3,6 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { TARGETING_KEYS } from '../src/constants.js';
 import { getHook } from '../src/hook.js';
-import { find } from '../src/polyfill.js';
 import {
   deepAccess,
   deepSetValue,
@@ -79,7 +78,7 @@ export const appendGptSlots = adUnits => {
   const adUnitPaths = {};
 
   window.googletag.pubads().getSlots().forEach(slot => {
-    const matchingAdUnitCode = find(Object.keys(adUnitMap), customGptSlotMatching
+    const matchingAdUnitCode = Object.keys(adUnitMap).find(customGptSlotMatching
       ? customGptSlotMatching(slot)
       : isAdUnitCodeMatchingSlot(slot));
 

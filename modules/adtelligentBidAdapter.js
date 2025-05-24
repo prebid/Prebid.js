@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
-import {find} from '../src/polyfill.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 import {
   createTag, getUserSyncsFn,
@@ -31,8 +30,7 @@ const HOST_GETTERS = {
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
   indicue: () => 'ghb.console.indicue.com',
-  stellormedia: () => 'ghb.ads.stellormedia.com',
-}
+  stellormedia: () => 'ghb.ads.stellormedia.com'}
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
   let getter = HOST_GETTERS[bidderWithoutSuffix] || HOST_GETTERS['default'];
@@ -114,7 +112,7 @@ function parseRTBResponse(serverResponse, adapterRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const request = find(adapterRequest.bids, (bidRequest) => {
+    const request = ((adapterRequest.bids) || []).find((bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 

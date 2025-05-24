@@ -11,7 +11,7 @@ import {
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
+import {includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
@@ -74,8 +74,7 @@ function wrapAd(bid, position) {
               inR: {
                 tg: ${position.domParent},
                 rf: ${position.child}
-              },
-            };
+              }};
           \`;
           var s = parent.document.head.getElementsByTagName("script")[0];
           s.parentNode.insertBefore(w, s);
@@ -146,7 +145,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
-    const userObjBid = find(bidRequests, hasUserInfo);
+    const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
       userObj = { 'coppa': true };
@@ -176,7 +175,7 @@ export const spec = {
         });
     }
 
-    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
     let appDeviceObj;
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
@@ -185,7 +184,7 @@ export const spec = {
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
-    const appIdObjBid = find(bidRequests, hasAppId);
+    const appIdObjBid = ((bidRequests) || []).find(hasAppId);
     let appIdObj;
     if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {
@@ -193,7 +192,7 @@ export const spec = {
       };
     }
 
-    const memberIdBid = find(bidRequests, hasMemberId);
+    const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
     const schain = bidRequests[0].schain;
 
@@ -493,7 +492,7 @@ function hasAppId(bid) {
 }
 
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, (ad) => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
 }
 
 function parseMediaType(rtbBid) {

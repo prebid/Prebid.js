@@ -6,14 +6,12 @@ import {
   isPlainObject,
   isStr,
   parseUrl,
-  replaceAuctionPrice,
-} from '../src/utils.js';
+  replaceAuctionPrice} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
 
-import {find} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -338,7 +336,7 @@ function _getOs(userAgent) {
     'windows': /windows/i
   };
 
-  return find(Object.keys(osTable), os => {
+  return ((Object.keys(osTable)) || []).find(os => {
     if (userAgent.match(osTable[os])) {
       return os;
     }

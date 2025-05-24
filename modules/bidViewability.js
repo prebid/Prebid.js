@@ -8,7 +8,6 @@ import {EVENTS} from '../src/constants.js';
 import {isFn, logWarn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager, {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
-import {find} from '../src/polyfill.js';
 import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 
 const MODULE_NAME = 'bidViewability';
@@ -23,7 +22,7 @@ export let isBidAdUnitCodeMatchingSlot = (bid, slot) => {
 }
 
 export let getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
-  return find(getGlobal().getAllWinningBids(),
+  return getGlobal().getAllWinningBids().find(
     // supports custom match function from config
     bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
       ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot)

@@ -1,5 +1,5 @@
 import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
-import { find } from '../src/polyfill.js';
+import { } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -100,7 +100,7 @@ export const spec = {
           const aidParam = { type: audienceId.type, id: bidAudienceId };
           // Set ext
           if (isArray(userIdAsEids)) {
-            const targetEid = find(userIdAsEids, (eid) => eid.source === audienceId.source) || {};
+            const targetEid = ((userIdAsEids) || []).find((eid) => eid.source === audienceId.source) || {};
             if (!isEmpty(deepAccess(targetEid, 'uids.0.ext'))) {
               aidParam.ext = targetEid.uids[0].ext;
             }

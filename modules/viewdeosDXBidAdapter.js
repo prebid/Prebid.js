@@ -2,7 +2,6 @@ import {deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/ut
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {findIndex} from '../src/polyfill.js';
 import {
   getUserSyncsFn,
   isBidRequestValid,
@@ -81,7 +80,7 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const requestId = findIndex(bidderRequest.bids, (bidRequest) => {
+    const requestId = ((bidderRequest.bids) || []).findIndex((bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 

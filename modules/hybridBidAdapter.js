@@ -2,7 +2,6 @@ import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import {find} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -86,8 +85,7 @@ function buildBid(bidData) {
     netRevenue: true,
     ttl: TTL,
     meta: {
-      advertiserDomains: bidData.advertiserDomains || [],
-    }
+      advertiserDomains: bidData.advertiserDomains || []}
   };
 
   if (bidData.placement === PLACEMENT_TYPE_VIDEO) {
@@ -245,7 +243,7 @@ export const spec = {
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
-        let rawBid = find(bidRequests, function (item) {
+        let rawBid = ((bidRequests) || []).find(function (item) {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;
