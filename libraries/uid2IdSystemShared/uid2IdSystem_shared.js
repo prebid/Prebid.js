@@ -746,7 +746,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
           promise.then((result) => {
             logInfo('Token generation responded, passing the new token on.', result);
             cb(result);
-          });
+          }).catch(() => {});
         } };
       }
     }
@@ -766,13 +766,14 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
       promise.then((result) => {
         logInfo('Refresh reponded, passing the updated token on.', result);
         cb(result);
-      });
+      }).catch(() => {});
     } };
   }
   // If should refresh (but don't need to), refresh in the background.
   if (Date.now() > newestAvailableToken.refresh_from) {
     logInfo(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn)
+      .catch(() => {});
   }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
