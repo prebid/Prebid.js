@@ -1003,7 +1003,7 @@ describe('gdpr enforcement', function () {
 
       beforeEach(function() {
         entry = {modules: {}};
-        GDPR_GVLIDS.get.reset();
+        GDPR_GVLIDS.get.resetHistory();
         GDPR_GVLIDS.get.callsFake((mod) => mod === MOCK_MODULE ? entry : {modules: {}});
       });
 

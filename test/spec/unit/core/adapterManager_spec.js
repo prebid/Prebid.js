@@ -749,7 +749,7 @@ describe('adapterManager tests', function () {
         expect(cnt).to.equal(2);
         sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
         sinon.assert.calledOnce(adequantAdapterMock.callBids);
-        adequantAdapterMock.callBids.reset();
+        adequantAdapterMock.callBids.resetHistory();
         delete adapterManager.bidderRegistry['adequant'];
       });
     });
@@ -1154,7 +1154,7 @@ describe('adapterManager tests', function () {
         expect(cnt).to.equal(3);
         sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
         sinon.assert.calledOnce(adequantAdapterMock.callBids);
-        adequantAdapterMock.callBids.reset();
+        adequantAdapterMock.callBids.resetHistory();
         delete adapterManager.bidderRegistry['adequant'];
       });
     });
