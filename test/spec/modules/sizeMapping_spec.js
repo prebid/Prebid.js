@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import {resolveStatus, setSizeConfig, sizeSupported} from 'modules/sizeMapping.js';
-import {includes} from 'src/polyfill.js';
 
 let utils = require('src/utils.js');
 let deepClone = utils.deepClone;
