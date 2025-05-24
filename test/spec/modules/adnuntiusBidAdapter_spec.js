@@ -39,13 +39,14 @@ describe('adnuntiusBidAdapter', function () {
 
   afterEach(function () {
     config.resetConfig();
-
+    config.setBidderConfig({ bidders: [] });
     if (stub1.restore) {
       stub1.restore();
     }
     if (stub2.restore) {
       stub2.restore();
     }
+    localStorage.removeItem('adn.metaData');
   });
 
   const tzo = new Date().getTimezoneOffset();
