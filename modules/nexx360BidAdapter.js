@@ -6,6 +6,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
 import { createResponse, enrichImp, enrichRequest, getAmxId, getUserSyncs } from '../libraries/nexx360Utils/index.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -77,8 +78,9 @@ const converter = ortbConverter({
     const divId = bidRequest.params.divId || bidRequest.adUnitCode;
     const slotEl = document.getElementById(divId);
     if (slotEl) {
-      deepSetValue(imp, 'ext.dimensions.slotW', slotEl.offsetWidth);
-      deepSetValue(imp, 'ext.dimensions.slotH', slotEl.offsetHeight);
+      const { width, height } = getBoundingClientRect(slotEl);
+      deepSetValue(imp, 'ext.dimensions.slotW', width);
+      deepSetValue(imp, 'ext.dimensions.slotH', height);
       deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
     }

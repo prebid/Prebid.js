@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import { sendBeacon } from '../src/ajax.js';
 
@@ -37,8 +38,7 @@ function slotDimensions(bid) {
 
   if (slotEl) {
     logInfo(`Slot element found: ${adUnitCode}`)
-    const slotW = slotEl.offsetWidth
-    const slotH = slotEl.offsetHeight
+    const { width: slotW, height: slotH } = getBoundingClientRect(slotEl);
     const cssMaxW = slotEl.style?.maxWidth;
     const cssMaxH = slotEl.style?.maxHeight;
     logInfo(`Slot dimensions (w/h): ${slotW} / ${slotH}`)
