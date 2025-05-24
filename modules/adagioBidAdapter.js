@@ -13,7 +13,8 @@ import {
   logError,
   logInfo,
   logWarn,
-  mergeDeep} from '../src/utils.js';
+  mergeDeep,
+} from '../src/utils.js';
 import { getRefererInfo, parseDomain } from '../src/refererDetection.js';
 import { OUTSTREAM, validateOrtbVideoFields } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
