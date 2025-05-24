@@ -76,8 +76,9 @@ export const spec = {
       'uids': validBidRequests[0].userId,
       'pageSize': pageSizeArray
     };
-    if (validBidRequests[0].schain) {
-      commons.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      commons.schain = schain;
     }
     const payload = {
       'x-ut-hb-params': [],

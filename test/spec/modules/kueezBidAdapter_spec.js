@@ -260,7 +260,7 @@ describe('kueezBidAdapter', function () {
         complete: 1,
         nodes: [{ asi: 'indirectseller.com', sid: '00001', hp: 1 }],
       };
-      bidRequests[0].schain = schain;
+      bidRequests[0].ortb2 = { source: { ext: { schain: schain } } };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');

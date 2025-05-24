@@ -77,8 +77,9 @@ export const spec = {
           query[prop] = bid.params.customParams[prop];
         }
       }
-      if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
-        query.schain = createSchainString(bid.schain);
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain && isPlainObject(schain) && Array.isArray(schain.nodes)) {
+        query.schain = createSchainString(schain);
       }
 
       const iabContent = getContentObject(bid);

@@ -32,7 +32,11 @@ export const spec = {
     return validBidRequests.map((bid) => {
       const requestData = {
         ...bid.ortb2,
-        source: { schain: bid.schain },
+        source: {
+          ext: {
+            schain: bid?.ortb2?.source?.ext?.schain
+          }
+        },
         id: bidderRequest.bidderRequestId,
         imp: [getImp(bid)],
         tmax: TMAX,

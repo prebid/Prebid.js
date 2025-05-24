@@ -69,8 +69,9 @@ export const spec = {
       if (!isVideoRequest(bidRequest)) {
         payload._f = 'html';
       }
-      if (bidRequest.schain) {
-        payload.schain = serializeSChain(bidRequest.schain);
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        payload.schain = serializeSChain(schain);
       } else {
         delete payload.schain;
       }

@@ -66,16 +66,22 @@ describe('luponmediaBidAdapter', function () {
         'bidRequestsCount': 1,
         'bidderRequestsCount': 1,
         'bidderWinsCount': 0,
-        'schain': {
-          'ver': '1.0',
-          'complete': 1,
-          'nodes': [
-            {
-              'asi': 'novi.ba',
-              'sid': '199424',
-              'hp': 1
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                'ver': '1.0',
+                'complete': 1,
+                'nodes': [
+                  {
+                    'asi': 'novi.ba',
+                    'sid': '199424',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];
@@ -119,16 +125,22 @@ describe('luponmediaBidAdapter', function () {
           'bidRequestsCount': 1,
           'bidderRequestsCount': 1,
           'bidderWinsCount': 0,
-          'schain': {
-            'ver': '1.0',
-            'complete': 1,
-            'nodes': [
-              {
-                'asi': 'novi.ba',
-                'sid': '199424',
-                'hp': 1
+          'ortb2': {
+            'source': {
+              'ext': {
+                'schain': {
+                  'ver': '1.0',
+                  'complete': 1,
+                  'nodes': [
+                    {
+                      'asi': 'novi.ba',
+                      'sid': '199424',
+                      'hp': 1
+                    }
+                  ]
+                }
               }
-            ]
+            }
           }
         }
       ],

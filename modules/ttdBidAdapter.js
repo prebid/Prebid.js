@@ -81,8 +81,9 @@ function getSource(validBidRequests, bidderRequest) {
   let source = {
     tid: bidderRequest?.ortb2?.source?.tid,
   };
-  if (validBidRequests[0].schain) {
-    utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
+  const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    utils.deepSetValue(source, 'ext.schain', schain);
   }
   return source;
 }

@@ -175,7 +175,7 @@ function setDisplayManager(imp, bid) {
       renderer = deepAccess(bid, 'renderer');
     }
 
-    if (deepAccess(bid, 'schain', false)) {
+    if (deepAccess(bid, 'ortb2.source.ext.schain', false)) {
       imp.displaymanager = 'pbjs_wrapper';
     } else if (renderer && typeof (renderer) === 'object') {
       if (renderer.url !== undefined) {
@@ -861,9 +861,11 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
   }
 
   // if an schain is provided, send it along
-  if (validBidRequests[0].schain) {
-    r.source.ext = {};
-    r.source.ext.schain = validBidRequests[0].schain;
+  const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    r.source = r.source || {};
+    r.source.ext = r.source.ext || {};
+    r.source.ext.schain = schain;
   }
 
   if (userEids.length > 0) {

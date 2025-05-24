@@ -75,7 +75,7 @@ function buildRequests(bidRequests, bidderRequest) {
           sizes: bidRequest.sizes,
           media_types: bidRequest.mediaTypes,
           placement_id: bidRequest.params.placementId,
-          schain: bidRequest.schain,
+          schain: bidRequest?.ortb2?.source?.ext?.schain,
         };
       }),
     }),

@@ -340,7 +340,7 @@ const converter = ortbConverter({
 
     request.source = {
       ext: {
-        schain: bidRequest.schain
+        schain: bidRequest?.ortb2?.source?.ext?.schain
       }
     };
     request.ext = {

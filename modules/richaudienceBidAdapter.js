@@ -54,7 +54,7 @@ export const spec = {
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
         kws: bid.params.keywords,
-        schain: bid.schain,
+        schain: bid?.ortb2?.source?.ext?.schain,
         gpid: raiSetPbAdSlot(bid),
         dsa: setDSA(bid),
         userData: deepAccess(bid, 'ortb2.user.data')

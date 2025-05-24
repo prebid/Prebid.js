@@ -239,7 +239,10 @@ describe('AudienceRun bid adapter tests', function () {
 
     it('should add schain object if available', function() {
       const bid = Object.assign({}, bidRequest)
-      bid.schain = {
+      bid.ortb2 = {
+        source: {
+          ext: {
+            schain: {
         ver: '1.0',
         complete: 1,
         nodes: [
@@ -250,6 +253,9 @@ describe('AudienceRun bid adapter tests', function () {
             hp: 1,
           },
         ],
+            }
+          }
+        }
       };
 
       const request = spec.buildRequests([bid]);

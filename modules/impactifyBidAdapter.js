@@ -137,7 +137,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   }
 
   // Set SChain in request
-  let schain = deepAccess(validBidRequests, '0.schain');
+  let schain = deepAccess(validBidRequests, '0.ortb2.source.ext.schain');
   if (schain) request.source.ext = { schain: schain };
 
   // Set Eids
