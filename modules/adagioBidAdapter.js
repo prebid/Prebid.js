@@ -757,7 +757,7 @@ export const spec = {
         }
         if (response.bids) {
           response.bids.forEach(bidObj => {
-            const bidReq = (((bidRequest.data.adUnits) || []).find(bid => bid.bidId === bidObj.requestId));
+            const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
 
             if (bidReq) {
               // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
