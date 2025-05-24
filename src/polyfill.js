@@ -8,3 +8,7 @@ export function includes(target, elem, start) {
 export function find(arr, pred, thisArg) {
   return arr && arr.find(pred, thisArg);
 }
+
+export function findIndex(arr, pred, thisArg) {
+  return arr && arr.findIndex(pred, thisArg);
+}
