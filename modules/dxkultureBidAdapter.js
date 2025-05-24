@@ -102,8 +102,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return (
       _validateParams(bid) &&
-      _validateBanner(bid) &&
-      _validateVideo(bid)
+      _validateBanner(bid)
     );
   },
 
@@ -290,51 +289,5 @@ function _validateBanner(bidRequest) {
  * @param {Object} bidRequest bid to validate
  * @return {boolean} true if valid, otherwise false
  */
-function _validateVideo(bidRequest) {
-  // If there's no video no need to validate
-  if (!hasVideoMediaType(bidRequest)) {
-    return true;
-  }
-
-  const videoPlacement = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-  const params = deepAccess(bidRequest, 'params', {});
-
-  if (params && params.e2etest) {
-    return true;
-  }
-
-  const videoParams = {
-    ...videoPlacement,
-    ...videoBidderParams // Bidder Specific overrides
-  };
-
-  if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
-    logError('dxkulture: Validation failed: mimes are invalid');
-    return false;
-  }
-
-  if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
-    logError('dxkulture: Validation failed: protocols are invalid');
-    return false;
-  }
-
-  if (!videoParams.context) {
-    logError('dxkulture: Validation failed: context id not declared');
-    return false;
-  }
-
-  if (videoParams.context !== 'instream') {
-    logError('dxkulture: Validation failed: only context instream is supported ');
-    return false;
-  }
-
-  if (typeof videoParams.playerSize === 'undefined' || !Array.isArray(videoParams.playerSize) || !Array.isArray(videoParams.playerSize[0])) {
-    logError('dxkulture: Validation failed: player size not declared or is not in format [[w,h]]');
-    return false;
-  }
-
-  return true;
-}
 
 registerBidder(spec);

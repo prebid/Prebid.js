@@ -14,8 +14,7 @@ export const spec = {
   isBidRequestValid: function (bidRequest) {
     return (
       !!parseInt(bidRequest.params.endpointId) &&
-      spec._validateBanner(bidRequest) &&
-      spec._validateVideo(bidRequest)
+      spec._validateBanner(bidRequest)
     );
   },
 
@@ -33,23 +32,6 @@ export const spec = {
     return true;
   },
 
-  _validateVideo: function(bidRequest) {
-    const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video');
-
-    if (videoAdUnit === undefined) {
-      return true;
-    }
-
-    if (!Array.isArray(videoAdUnit.playerSize)) {
-      return false;
-    }
-
-    if (!videoAdUnit.context) {
-      return false;
-    }
-
-    return true;
-  },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const referer = bidderRequest?.refererInfo?.page || window.location.href;

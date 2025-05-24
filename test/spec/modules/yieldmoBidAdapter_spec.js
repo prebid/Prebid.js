@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldmoBidAdapter.js';
+import { validateVideoMediaType } from '../../../src/prebid.js';
 import * as utils from 'src/utils.js';
 
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
@@ -127,25 +128,12 @@ describe('YieldmoAdapter', function () {
         expect(spec.isBidRequestValid(mockVideoBid({adUnitCode: ''}))).to.be.false;
       });
 
-      it('should return false when required mediaTypes.video.* param is not found', function () {
-        const getBidAndExclude = paramToRemove => getVideoBidWithoutParam('mediaTypes.video', paramToRemove);
-
-        expect(spec.isBidRequestValid(getBidAndExclude('playerSize'))).to.be.false;
-        expect(spec.isBidRequestValid(getBidAndExclude('mimes'))).to.be.false;
-      });
-
-      it('should return false when required bid.params.* is not found', function () {
-        const getBidAndExclude = paramToRemove => getVideoBidWithoutParam('params', paramToRemove);
-
-        expect(spec.isBidRequestValid(getBidAndExclude('placementId'))).to.be.false;
-        expect(spec.isBidRequestValid(getBidAndExclude('video'))).to.be.false;
-      });
-
-      it('should return false when required bid.params.video.* is not found', function () {
-        const getBidAndExclude = paramToRemove => getVideoBidWithoutParam('params.video', paramToRemove);
-        expect(spec.isBidRequestValid(getBidAndExclude('maxduration'))).to.be.false;
-        expect(spec.isBidRequestValid(getBidAndExclude('protocols'))).to.be.false;
-        expect(spec.isBidRequestValid(getBidAndExclude('api'))).to.be.false;
+      it('core validation removes missing video fields before adapter check', function () {
+        const bid = mockVideoBid();
+        delete bid.mediaTypes.video.playerSize;
+        const cleaned = validateVideoMediaType(bid);
+        expect(cleaned.mediaTypes.video).to.not.have.property('playerSize');
+        expect(spec.isBidRequestValid(cleaned)).to.be.true;
       });
     });
   });

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
+import { validateVideoMediaType } from '../../../src/prebid.js';
 import { getWinDimensions } from '../../../src/utils.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
@@ -152,15 +153,13 @@ describe('InsticatorBidAdapter', function () {
       })).to.be.true;
     });
 
-    it('should return false if there is no video sizes', () => {
-      expect(spec.isBidRequestValid({
+    it('sanitizes invalid video size via validateVideoMediaType', () => {
+      const updated = validateVideoMediaType({
         ...bidRequest,
-        ...{
-          mediaTypes: {
-            video: {},
-          }
-        }
-      })).to.be.false;
+        mediaTypes: {video: {playerSize: 'bad'}}
+      });
+      expect(updated.mediaTypes.video.playerSize).to.be.undefined;
+      expect(spec.isBidRequestValid(updated)).to.be.true;
     });
 
     it('should return true if video object is absent/undefined', () => {
@@ -176,23 +175,13 @@ describe('InsticatorBidAdapter', function () {
       })).to.be.true;
     })
 
-    it('should return false if video plcmt is not a number', () => {
-      expect(spec.isBidRequestValid({
+    it('removes invalid plcmt before calling the adapter', () => {
+      const updated = validateVideoMediaType({
         ...bidRequest,
-        ...{
-          mediaTypes: {
-            video: {
-              mimes: [
-                'video/mp4',
-                'video/mpeg',
-              ],
-              w: 250,
-              h: 300,
-              plcmt: 'NaN',
-            },
-          }
-        }
-      })).to.be.false;
+        mediaTypes: {video: {plcmt: 'NaN', mimes: ['video/mp4'], w: 250, h: 300}}
+      });
+      expect(updated.mediaTypes.video).to.not.have.property('plcmt');
+      expect(spec.isBidRequestValid(updated)).to.be.true;
     });
 
     it('should return true if playerSize is present instead of w and h', () => {
@@ -244,24 +233,13 @@ describe('InsticatorBidAdapter', function () {
       })).to.be.true;
     });
 
-    it('should return false if video min duration > max duration', () => {
-      expect(spec.isBidRequestValid({
+    it('cleans duration fields using core validation', () => {
+      const updated = validateVideoMediaType({
         ...bidRequest,
-        ...{
-          mediaTypes: {
-            video: {
-              mimes: [
-                'video/mp4',
-                'video/mpeg',
-              ],
-              playerSize: [250, 300],
-              placement: 1,
-              minduration: 5,
-              maxduration: 4,
-            },
-          }
-        }
-      })).to.be.false;
+        mediaTypes: {video: {playerSize: [250, 300], minduration: 5, maxduration: 4, mimes: ['video/mp4']}}
+      });
+      expect(updated.mediaTypes.video.maxduration).to.equal(4);
+      expect(spec.isBidRequestValid(updated)).to.be.true;
     });
 
     it('should return true when video bidder params override bidRequest video params', () => {

@@ -5,11 +5,7 @@ import {
   getWindowTop,
   isArray,
   isArrayOfNums,
-  isBoolean,
   isEmpty,
-  isInteger,
-  isNumber,
-  isStr,
   logError,
   parseQueryStringParameters,
   parseUrl
@@ -616,84 +612,17 @@ function validateVideoParams(bid) {
   if (!hasVideoMediaType(bid)) {
     return true;
   }
-
-  const paramRequired = (paramStr, value, conditionStr) => {
-    let error = `"${paramStr}" is required`;
-    if (conditionStr) {
-      error += ' when ' + conditionStr;
-    }
-    throw new Error(error);
-  };
-
-  const paramInvalid = (paramStr, value, expectedStr) => {
-    expectedStr = expectedStr ? ', expected: ' + expectedStr : '';
-    value = JSON.stringify(value);
-    throw new Error(`"${paramStr}"=${value} is invalid${expectedStr}`);
-  };
-
-  const isDefined = val => typeof val !== 'undefined';
-  const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
-    if (fieldPath.indexOf('video') === 0) {
-      const valueFieldPath = 'params.' + fieldPath;
-      const mediaFieldPath = 'mediaTypes.' + fieldPath;
-      const valueParams = deepAccess(bid, valueFieldPath);
-      const mediaTypesParams = deepAccess(bid, mediaFieldPath);
-      const hasValidValueParams = validateCb(valueParams);
-      const hasValidMediaTypesParams = validateCb(mediaTypesParams);
-
-      if (hasValidValueParams) return valueParams;
-      else if (hasValidMediaTypesParams) return hasValidMediaTypesParams;
-      else {
-        if (!hasValidValueParams) errorCb(valueFieldPath, valueParams, errorCbParam);
-        else if (!hasValidMediaTypesParams) errorCb(mediaFieldPath, mediaTypesParams, errorCbParam);
-      }
-      return valueParams || mediaTypesParams;
-    } else {
-      const value = deepAccess(bid, fieldPath);
-      if (!validateCb(value)) {
-        errorCb(fieldPath, value, errorCbParam);
-      }
-      return value;
-    }
-  };
-
-  try {
-    validate('video.context', val => !isEmpty(val), paramRequired);
-
-    validate('params.placementId', val => !isEmpty(val), paramRequired);
-
-    validate('video.playerSize', val => isArrayOfNums(val, 2) ||
-      (isArray(val) && val.every(v => isArrayOfNums(v, 2))),
-    paramInvalid, 'array of 2 integers, ex: [640,480] or [[640,480]]');
-
-    validate('video.mimes', val => isDefined(val), paramRequired);
-    validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
-      'array of strings, ex: ["video/mp4"]');
-    validate('video.protocols', val => isDefined(val), paramRequired);
-
-    validate('video.api', val => isDefined(val), paramRequired);
-    // PS-6597 - Allow video.api to be any number greater than 0
-    validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1)),
-      paramInvalid, 'array of numbers, ex: [2,3]');
-
-    validate('video.playbackmethod', val => !isDefined(val) || isArrayOfNums(val), paramInvalid,
-      'array of integers, ex: [2,6]');
-
-    validate('video.maxduration', val => isDefined(val), paramRequired);
-    validate('video.maxduration', val => isInteger(val), paramInvalid);
-    validate('video.minduration', val => !isDefined(val) || isNumber(val), paramInvalid);
-    validate('video.skippable', val => !isDefined(val) || isBoolean(val), paramInvalid);
-    validate('video.skipafter', val => !isDefined(val) || isNumber(val), paramInvalid);
-    validate('video.pos', val => !isDefined(val) || isNumber(val), paramInvalid);
-    validate('params.badv', val => !isDefined(val) || isArray(val), paramInvalid,
-      'array of strings, ex: ["ford.com","pepsi.com"]');
-    validate('params.bcat', val => !isDefined(val) || isArray(val), paramInvalid,
-      'array of strings, ex: ["IAB1-5","IAB1-6"]');
-    return true;
-  } catch (e) {
-    logError(e.message);
+  const context = deepAccess(bid, 'mediaTypes.video.context');
+  const placementId = deepAccess(bid, 'params.placementId');
+  if (!context) {
+    logError('"video.context" is required');
     return false;
   }
+  if (!placementId) {
+    logError('"params.placementId" is required');
+    return false;
+  }
+  return true;
 }
 
 /**
