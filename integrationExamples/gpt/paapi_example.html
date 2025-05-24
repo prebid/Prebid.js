@@ -63,11 +63,15 @@
         if (pbjs.adserverRequestSent) return;
         pbjs.adserverRequestSent = true;
         googletag.cmd.push(function() {
-          pbjs.que.push(function() {
-            pbjs.setTargetingForGPTAsync();
-            pbjs.setPAAPIConfigForGPT();
+          if (pbjs.libLoaded) {
+            pbjs.que.push(function() {
+              pbjs.setTargetingForGPTAsync();
+              pbjs.setPAAPIConfigForGPT();
+              googletag.pubads().refresh();
+            });
+          } else {
             googletag.pubads().refresh();
-          });
+          }
         });
       }
 

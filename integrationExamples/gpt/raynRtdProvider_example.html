@@ -116,15 +116,19 @@
         document.getElementById("rayn-segments").innerHTML =
           window.localStorage.getItem("rayn-segtax");
 
-        if (pbjs.adserverRequestSent) return;
-        pbjs.adserverRequestSent = true;
-        googletag.cmd.push(function () {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        if (pbjs.libLoaded) {
           pbjs.que.push(function () {
             pbjs.setTargetingForGPTAsync();
             googletag.pubads().refresh();
           });
-        });
-      }
+        } else {
+          googletag.pubads().refresh();
+        }
+      });
+    }
 
       setTimeout(function () {
         sendAdserverRequest();

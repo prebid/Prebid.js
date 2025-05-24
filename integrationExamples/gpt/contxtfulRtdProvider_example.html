@@ -151,10 +151,14 @@ function refreshBids() {
 
 function initAdserver() {
   googletag.cmd.push(function () {
-    pbjs.que.push(function () {
-      pbjs.setTargetingForGPTAsync();
+    if (pbjs.libLoaded) {
+      pbjs.que.push(function () {
+        pbjs.setTargetingForGPTAsync();
+        googletag.pubads().refresh();
+      });
+    } else {
       googletag.pubads().refresh();
-    });
+    }
   });
 }
 
