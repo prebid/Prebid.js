@@ -54,7 +54,8 @@ describe('', function () {
     });
 
     afterEach(function () {
-      sandbox.reset();
+      sandbox.resetHistory();
+      sandbox.resetBehavior();
     });
 
     it('should parse first direct visit as (direct)', function () {
