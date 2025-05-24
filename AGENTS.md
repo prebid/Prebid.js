@@ -1,6 +1,6 @@
 # Repo guidelines for Codex
 
-This file contains instructions for the Codex agent when working on tasks in this repository.
+This file contains instructions for the Codex agent and its friends when working on tasks in this repository.
 
 ## Programmatic checks
 - Before committing code changes, run `gulp lint` and `gulp test`.
