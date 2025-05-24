@@ -415,8 +415,12 @@ function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
+  const env = Object.assign({}, options.env, process.env);
+  if (!env.TEST_CHUNKS) {
+    env.TEST_CHUNKS = '4';
+  }
   const child = fork('./karmaRunner.js', null, {
-    env: Object.assign({}, options.env, process.env)
+    env
   });
   child.on('exit', (exitCode) => {
     if (exitCode) {
