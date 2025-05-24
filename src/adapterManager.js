@@ -309,13 +309,24 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const ortb2 = ortb2Fragments.global || {};
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
+  function moveUserEidsToExt(o) {
+    const eids = o.user?.eids;
+    if (Array.isArray(eids) && eids.length) {
+      o.user.ext = o.user.ext || {};
+      o.user.ext.eids = [...(o.user.ext.eids || []), ...eids];
+      delete o.user.eids;
+    }
+  }
+
   function addOrtb2(bidderRequest, s2sActivityParams) {
     const redact = dep.redact(
       s2sActivityParams != null
         ? s2sActivityParams
         : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
     );
-    const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
+    const merged = mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]);
+    moveUserEidsToExt(merged);
+    const fpd = Object.freeze(redact.ortb2(merged));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {
       bid.ortb2 = fpd;
