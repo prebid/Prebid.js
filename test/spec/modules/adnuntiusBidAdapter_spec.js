@@ -31,7 +31,7 @@ describe('adnuntiusBidAdapter', function () {
 
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
-    global.$$PREBID_GLOBAL$$ = { version: 'test-version' };
+    $$PREBID_GLOBAL$$.version = 'test-version';
   });
 
   after(() => {
