@@ -91,7 +91,7 @@ describe('R2B2 adapter', function () {
         },
         site: {},
         device: {},
-        source: {schain: schain}
+        source: {ext: {schain: schain}}
       },
     }, {
       bidder: 'r2b2',
@@ -128,7 +128,7 @@ describe('R2B2 adapter', function () {
         },
         site: {},
         device: {},
-        source: {schain: schain}
+        source: {ext: {schain: schain}}
       },
     }];
     bidderRequest = {
@@ -150,7 +150,7 @@ describe('R2B2 adapter', function () {
         },
         site: {},
         device: {},
-        source: {schain: schain}
+        source: {ext: {schain: schain}}
       },
       gdprConsent: {
         consentString: 'consent-string',

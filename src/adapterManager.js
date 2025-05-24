@@ -41,6 +41,7 @@ import {
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
+import {moveSchainToExt} from './fpd/schain.js';
 import {EVENTS, S2S} from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
@@ -315,7 +316,9 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
         ? s2sActivityParams
         : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
     );
-    const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
+    let fpd = redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]));
+    fpd = moveSchainToExt(fpd);
+
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {
       bid.ortb2 = fpd;

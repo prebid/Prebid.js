@@ -5,7 +5,6 @@ import {setResponseMediaType} from './mediaType.js';
 import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
 import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
-import {moveSchainToExt} from './schain.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -34,11 +33,6 @@ export const DEFAULT_PROCESSORS = {
         }
       }
     },
-    // Add the moveSchainToExt processor to move schain from source.schain to source.ext.schain
-    moveSchainToExt: {
-      priority: -50,
-      fn: moveSchainToExt
-    }
   },
   [IMP]: {
     fpd: {
