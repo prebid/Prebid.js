@@ -1,15 +1,15 @@
-import { deepAccess, generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
+import { generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
 import { config } from '../../src/config.js';
 import { find, includes } from '../../src/polyfill.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export function isBannerBid(bid) {
-  return deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+  return bid?.mediaTypes?.banner || !isVideoBid(bid);
 }
 
 export function isVideoBid(bid) {
-  return deepAccess(bid, 'mediaTypes.video');
+  return bid?.mediaTypes?.video;
 }
 
 export function getBannerBidFloor(bid) {
@@ -31,11 +31,11 @@ export function isBannerBidValid(bid) {
 }
 
 export function getVideoBidParam(bid, key) {
-  return deepAccess(bid, 'params.video.' + key) || deepAccess(bid, 'params.' + key);
+  return bid?.params?.video?.[key] || bid?.params?.[key];
 }
 
 export function getBannerBidParam(bid, key) {
-  return deepAccess(bid, 'params.banner.' + key) || deepAccess(bid, 'params.' + key);
+  return bid?.params?.banner?.[key] || bid?.params?.[key];
 }
 
 export function isMobile() {
@@ -96,11 +96,11 @@ export function parseSizes(sizes) {
 }
 
 export function getVideoSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+  return parseSizes(bid?.mediaTypes?.video?.playerSize || bid.sizes);
 }
 
 export function getBannerSizes(bid) {
-  return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
+  return parseSizes(bid?.mediaTypes?.banner?.sizes || bid.sizes);
 }
 
 export function getTopWindowReferrer(bidderRequest) {
