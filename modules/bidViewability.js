@@ -79,24 +79,21 @@ export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
   }
 };
 
-export let init = () => {
-  events.on(EVENTS.AUCTION_INIT, () => {
-    // read the config for the module
-    const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
-    // do nothing if module-config.enabled is not set to true
-    // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
-    if (globalModuleConfig[CONFIG_ENABLED] !== true) {
-      return;
-    }
-    // add the GPT event listener
-    window.googletag = window.googletag || {};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
-        impressionViewableHandler(globalModuleConfig, event.slot, event);
-      });
+const handleSetConfig = (config) => {
+  const globalModuleConfig = config || {};
+  // do nothing if module-config.enabled is not set to true
+  // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
+  if (globalModuleConfig[CONFIG_ENABLED] !== true) {
+    return;
+  }
+  // add the GPT event listener
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(() => {
+    window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
+      impressionViewableHandler(globalModuleConfig, event.slot, event);
     });
   });
 }
 
-init()
+config.getConfig(MODULE_NAME, config => handleSetConfig(config[MODULE_NAME]));
