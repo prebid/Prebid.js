@@ -80,8 +80,8 @@ function getResizer(adId, bidResponse) {
   // in some situations adId !== bidResponse.adId
   // the first is the one that was requested and is tied to the element
   // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
-  return function (width, height) {
-    resizeRemoteCreative({...bidResponse, width, height, adId});
+  return function (width, height, anchor = bidResponse.anchor) {
+    resizeRemoteCreative({...bidResponse, width, height, anchor, adId});
   }
 }
 function handleRenderRequest(reply, message, bidResponse) {
@@ -135,7 +135,7 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
-export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative({instl, anchor, adId, adUnitCode, width, height}) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;
@@ -148,7 +148,12 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
     let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
-      elementStyle.width = getDimension(width)
+      if (anchor && elmType === 'div') {
+        elementStyle.width = '100%';
+        elementStyle.textAlign = 'center';
+      } else {
+        elementStyle.width = getDimension(width)
+      }
       elementStyle.height = getDimension(height);
     } else {
       logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
