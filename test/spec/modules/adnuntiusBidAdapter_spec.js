@@ -31,7 +31,6 @@ describe('adnuntiusBidAdapter', function () {
 
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
-    $$PREBID_GLOBAL$$.version = 'test-version';
   });
 
   after(() => {
@@ -48,7 +47,6 @@ describe('adnuntiusBidAdapter', function () {
       stub2.restore();
     }
     localStorage.removeItem('adn.metaData');
-    sinon.restore();
   });
 
   const tzo = new Date().getTimezoneOffset();
