@@ -2,7 +2,7 @@ import { deepAccess, getWinDimensions, getWindowTop, isArray, logInfo, logWarn }
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { includes as strIncludes } from '../src/polyfill.js';
+
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
@@ -713,7 +713,7 @@ const spec = {
             }
           };
 
-          if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
+          if (bidRequest && site.id && !site.id.includes('bidid')) {
             // found a matching request; add this bid
             const { adUnitCode } = bidRequest;
 

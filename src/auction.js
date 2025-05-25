@@ -84,7 +84,7 @@ import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
 import {hook, ignoreCallbackArg} from './hook.js';
-import {find, includes} from './polyfill.js';
+import {find} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
 import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
@@ -509,8 +509,8 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
     if (auctionOptionsConfig && !isEmpty(auctionOptionsConfig)) {
       const secondaryBidders = auctionOptionsConfig.secondaryBidders;
-      if (secondaryBidders && !bidderRequests.every(bidder => includes(secondaryBidders, bidder.bidderCode))) {
-        bidderRequests = bidderRequests.filter(request => !includes(secondaryBidders, request.bidderCode));
+      if (secondaryBidders && !bidderRequests.every(bidder => secondaryBidders.includes(bidder.bidderCode))) {
+        bidderRequests = bidderRequests.filter(request => !secondaryBidders.includes(request.bidderCode));
       }
     }
 

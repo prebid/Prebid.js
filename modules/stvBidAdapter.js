@@ -1,7 +1,7 @@
 import {deepAccess, logMessage} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {includes} from '../src/polyfill.js';
+
 import {
   handleSyncUrls,
   isBannerRequest,
@@ -101,7 +101,7 @@ export const spec = {
       if (mediaTypesInfo[VIDEO] !== undefined) {
         let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
-          .filter(key => includes(Object.keys(VIDEO_ORTB_PARAMS), key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
+          .filter(key => Object.keys(VIDEO_ORTB_PARAMS).includes(key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
           .forEach(key => payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key]);
       }
       if (Object.keys(payload.pfilter).length == 0) { delete payload.pfilter }

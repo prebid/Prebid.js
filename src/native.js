@@ -10,7 +10,7 @@ import {
   pick,
   triggerPixel
 } from './utils.js';
-import {includes} from './polyfill.js';
+
 import {auctionManager} from './auctionManager.js';
 import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS} from './constants.js';
 import {NATIVE} from './mediaTypes.js';
@@ -184,7 +184,7 @@ function isOpenRTBAssetValid(asset) {
  * Check if the native type specified in the adUnit is supported by Prebid.
  */
 function typeIsSupported(type) {
-  if (!(type && includes(Object.keys(SUPPORTED_TYPES), type))) {
+  if (!(type && Object.keys(SUPPORTED_TYPES).includes(type))) {
     logError(`${type} nativeParam is not supported`);
     return false;
   }
@@ -202,7 +202,7 @@ export const nativeAdUnit = adUnit => {
   const mediaTypes = adUnit?.mediaTypes?.native;
   return mediaType || mediaTypes;
 }
-export const nativeBidder = bid => includes(nativeAdapters, bid.bidder);
+export const nativeBidder = bid => nativeAdapters.includes(bid.bidder);
 export const hasNonNativeBidder = adUnit =>
   adUnit.bids.filter(bid => !nativeBidder(bid)).length;
 
@@ -230,7 +230,7 @@ export function isNativeOpenRTBBidValid(bidORTB, bidRequestORTB) {
   let requiredAssetIds = bidRequestORTB.assets.filter(asset => asset.required === 1).map(a => a.id);
   let returnedAssetIds = bidORTB.assets.map(asset => asset.id);
 
-  const match = requiredAssetIds.every(assetId => includes(returnedAssetIds, assetId));
+  const match = requiredAssetIds.every(assetId => returnedAssetIds.includes(assetId));
   if (!match) {
     logError(`didn't receive a bid with all required assets. Required ids: ${requiredAssetIds}, but received ids in response: ${returnedAssetIds}`);
   }

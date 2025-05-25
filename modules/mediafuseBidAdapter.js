@@ -20,7 +20,7 @@ import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
+import {find} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
@@ -123,7 +123,7 @@ export const spec = {
     }
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
-        .filter(param => includes(USER_PARAMS, param))
+        .filter(param => USER_PARAMS.includes(param))
         .forEach((param) => {
           let uparam = convertCamelToUnderscore(param);
           if (param === 'segments' && isArray(userObjBid.params.user[param])) {
@@ -147,7 +147,7 @@ export const spec = {
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
-        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .filter(param => APP_DEVICE_PARAMS.includes(param))
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
@@ -179,7 +179,7 @@ export const spec = {
 
     if (debugObj && debugObj.enabled) {
       Object.keys(debugObj)
-        .filter(param => includes(DEBUG_PARAMS, param))
+        .filter(param => DEBUG_PARAMS.includes(param))
         .forEach(param => {
           debugObjParams[param] = debugObj[param];
         });
@@ -313,7 +313,7 @@ export const spec = {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
           const cpmCheck = (bidderSettings.get(bidderRequest.bidderCode, 'allowZeroCpmBids') === true) ? rtbBid.cpm >= 0 : rtbBid.cpm > 0;
-          if (cpmCheck && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          if (cpmCheck && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -767,7 +767,7 @@ function bidToTag(bid) {
     tag.video = {};
     // place any valid video params on the tag
     Object.keys(bid.params.video)
-      .filter(param => includes(VIDEO_TARGETING, param))
+      .filter(param => VIDEO_TARGETING.includes(param))
       .forEach(param => {
         switch (param) {
           case 'context':
@@ -793,7 +793,7 @@ function bidToTag(bid) {
   if (videoMediaType) {
     tag.video = tag.video || {};
     Object.keys(videoMediaType)
-      .filter(param => includes(VIDEO_RTB_TARGETING, param))
+      .filter(param => VIDEO_RTB_TARGETING.includes(param))
       .forEach(param => {
         switch (param) {
           case 'minduration':
@@ -914,10 +914,10 @@ function hasOmidSupport(bid) {
   const bidderParams = bid.params;
   const videoParams = bid.params.video;
   if (bidderParams.frameworks && isArray(bidderParams.frameworks)) {
-    hasOmid = includes(bid.params.frameworks, 6);
+    hasOmid = bid.params.frameworks.includes(6);
   }
   if (!hasOmid && videoParams && videoParams.frameworks && isArray(videoParams.frameworks)) {
-    hasOmid = includes(bid.params.video.frameworks, 6);
+    hasOmid = bid.params.video.frameworks.includes(6);
   }
   return hasOmid;
 }

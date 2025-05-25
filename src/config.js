@@ -13,7 +13,7 @@
  */
 
 import {isValidPriceConfig} from './cpmBucketManager.js';
-import {find, includes} from './polyfill.js';
+import {find} from './polyfill.js';
 import {
   deepAccess,
   deepClone,
@@ -439,7 +439,7 @@ export function newConfig() {
 
     // call subscribers of a specific topic, passing only that configuration
     listeners
-      .filter(listener => includes(TOPICS, listener.topic))
+      .filter(listener => TOPICS.includes(listener.topic))
       .forEach(listener => {
         listener.callback({ [listener.topic]: options[listener.topic] });
       });

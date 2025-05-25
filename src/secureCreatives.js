@@ -6,7 +6,7 @@
 import {getAllAssetsMessage, getAssetMessage} from './native.js';
 import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
-import {find, includes} from './polyfill.js';
+import {find} from './polyfill.js';
 import {
   deferRendering,
   getBidToRender,
@@ -174,7 +174,7 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
   function getDfpElementId(adId) {
     const slot = find(window.googletag.pubads().getSlots(), slot => {
       return find(slot.getTargetingKeys(), key => {
-        return includes(slot.getTargeting(key), adId);
+        return slot.getTargeting(key).includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;

@@ -1,7 +1,7 @@
 import {getBidRequest} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
+import {find} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
@@ -71,7 +71,7 @@ export const spec = {
     try {
       const bids = interpretResponseUtil(serverResponse, {bidderRequest}, serverBid => {
         const rtbBid = getRtbBid(serverBid);
-        if (rtbBid && rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+        if (rtbBid && rtbBid.cpm !== 0 && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
           const bid = newBid(serverBid, rtbBid, bidderRequest);
           bid.mediaType = parseMediaType(rtbBid);
           return bid;

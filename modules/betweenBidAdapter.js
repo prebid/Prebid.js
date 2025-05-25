@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {parseSizesInput} from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
+
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
@@ -64,7 +64,7 @@ export const spec = {
         params.mind = video.mind;
         params.pos = 'atf';
         params.jst = 'pvc';
-        params.codeType = includes(CODE_TYPES, video.codeType) ? video.codeType : 'inpage';
+        params.codeType = CODE_TYPES.includes(video.codeType) ? video.codeType : 'inpage';
       }
 
       if (i.params.itu !== undefined) {
