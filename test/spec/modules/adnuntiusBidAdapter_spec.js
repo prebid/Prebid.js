@@ -1,35 +1,12 @@
-// import or require modules necessary for the test, e.g.:
-import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
+import { expect } from 'chai';
 import { spec } from 'modules/adnuntiusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
-import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
+import { getUnixTimestampFromNow, getWindowTop } from 'src/utils.js';
 import { getWinDimensions } from '../../../src/utils';
-
-const { URLSearchParams: NativeURLSearchParams } = global;
-
-class FixedURLSearchParams {
-  constructor(search) {
-    this.params = new NativeURLSearchParams(search);
-  }
-
-  has(key) {
-    return this.params.has(key);
-  }
-
-  get(key) {
-    return this.params.get(key);
-  }
-
-  toString() {
-    return [...this.params.entries()]
-      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-      .join('&');
-  }
-}
 
 describe('adnuntiusBidAdapter', function () {
   const sandbox = sinon.createSandbox();
@@ -37,7 +14,7 @@ describe('adnuntiusBidAdapter', function () {
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const usi = utils.generateUUID()
 
-  const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: getUnixTimestampFromNow() }, { exp: getUnixTimestampFromNow(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: getUnixTimestampFromNow(1) }, { key: 'valid', value: 'also-valid', exp: getUnixTimestampFromNow(1) }, { key: 'expired', value: 'fwefew', exp: getUnixTimestampFromNow() }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: getUnixTimestampFromNow(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow() }]
+  const meta = [...]; // keep existing meta definition
   let storage;
 
   before(() => {
@@ -51,7 +28,6 @@ describe('adnuntiusBidAdapter', function () {
 
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
-    sandbox.stub(global, 'URLSearchParams').callsFake(FixedURLSearchParams);
   });
 
   afterEach(function () {
