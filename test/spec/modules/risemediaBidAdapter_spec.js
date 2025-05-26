@@ -80,7 +80,6 @@ describe('RiseMediaTech adapter', () => {
       expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
     });
 
-    // Add to: describe('isBidRequestValid', ...)
     it('should return false for video bid request with missing mimes', () => {
       const invalidVideoRequest = {
         ...validBidRequest,
@@ -94,6 +93,65 @@ describe('RiseMediaTech adapter', () => {
       };
       expect(spec.isBidRequestValid(invalidVideoRequest)).to.equal(false);
     });
+
+    it('should return false for video request with invalid mimes (not an array)', () => {
+      const invalidBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: 'video/mp4', // Not an array
+            w: 640,
+            h: 480
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+
+    it('should return false for video request with empty mimes array', () => {
+      const invalidBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: [],
+            w: 640,
+            h: 480
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+
+
+    it('should return false for video request with width <= 0', () => {
+      const invalidBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4'],
+            w: 0,
+            h: 480
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+
+
+    it('should return false for video request with height <= 0', () => {
+      const invalidBid = {
+        ...validBidRequest,
+        mediaTypes: {
+          video: {
+            mimes: ['video/mp4'],
+            w: 640,
+            h: -10
+          }
+        }
+      };
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+    });
+
 
     it('should return false for video bid request with invalid width', () => {
       const invalidVideoRequest = {
@@ -238,6 +296,82 @@ describe('RiseMediaTech adapter', () => {
       expect(bids).to.be.an('array').with.lengthOf(0);
     });
 
+    it('should interpret multiple seatbids as multiple bids', () => {
+      const multiSeatbidResponse = {
+        body: {
+          id: '2def',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1abc',
+                  impid: '1abc',
+                  price: 1.5,
+                  adm: '<div>Ad1</div>',
+                  w: 300,
+                  h: 250,
+                  crid: 'creative123',
+                  adomain: ['example.com'],
+                  mtype: 1
+                },
+              ],
+            },
+            {
+              bid: [
+                {
+                  id: '2bcd',
+                  impid: '2bcd',
+                  price: 2.0,
+                  adm: '<div>Ad2</div>',
+                  w: 728,
+                  h: 90,
+                  crid: 'creative456',
+                  adomain: ['another.com'],
+                  mtype: 2
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(multiSeatbidResponse, request);
+      expect(bids).to.be.an('array').with.lengthOf(2);
+      expect(bids[0]).to.have.property('requestId', '1abc');
+      expect(bids[1]).to.have.property('requestId', '2bcd');
+      expect(bids[0].meta.mediaType).to.equal('banner');
+      expect(bids[1].meta.mediaType).to.equal('video');
+      expect(bids[0]).to.have.property('cpm', 1.5);
+      expect(bids[1]).to.have.property('cpm', 2.0);
+    });
+
+    it('should set meta.mediaType to banner if mtype is missing', () => {
+      const responseNoMtype = {
+        body: {
+          id: '2def',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: '1abc',
+                  impid: '1abc',
+                  price: 1.5,
+                  adm: '<div>Ad</div>',
+                  w: 300,
+                  h: 250,
+                  crid: 'creative123',
+                  adomain: ['example.com']
+                  // mtype missing
+                }
+              ]
+            }
+          ]
+        }
+      };
+      const request = spec.buildRequests([validBidRequest], bidderRequest);
+      const bids = spec.interpretResponse(responseNoMtype, request);
+      expect(bids[0].meta.mediaType).to.equal('banner');
+    });
 
     it('should set meta.advertiserDomains to an empty array if adomain is missing', () => {
       const responseWithoutAdomain = {

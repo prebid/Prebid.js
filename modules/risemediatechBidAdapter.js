@@ -62,13 +62,6 @@ const converter = ortbConverter({
 
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
-    logInfo('Building bid response for bid:', bid);
-    const bidResponse = buildBidResponse(bid, context);
-    bidResponse.meta = bidResponse.meta || {};
-    bidResponse.meta.advertiserDomains = bid.adomain || [];
-    return bidResponse;
-  },
 });
 
 /**
@@ -80,7 +73,7 @@ const isBidRequestValid = (bid) => {
   logInfo('Validating bid request:', bid);
 
   // Validate params
-  if (!bid.params || !bid.params.publisherId || !bid.params.adSlot) {
+  if (!bid.params || !bid.params.publisherId) {
     logWarn('Invalid bid request: Missing required params (publisherId or adSlot).');
     return false;
   }
@@ -117,6 +110,7 @@ const isBidRequestValid = (bid) => {
 const buildRequests = (validBidRequests, bidderRequest) => {
   logInfo('Building server request for valid bid requests:', validBidRequests);
   const request = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
+  logInfo('Converted to ORTB request:', request);
   return {
     method: 'POST',
     url: ENDPOINT_URL,
@@ -133,41 +127,60 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 const interpretResponse = (serverResponse, request) => {
   logInfo('Interpreting server response:', serverResponse);
 
-  if (!serverResponse || !serverResponse.body) {
-    logWarn('Server response is empty or invalid.');
+  const bidResp = serverResponse && serverResponse.body;
+  if (!bidResp || !Array.isArray(bidResp.seatbid)) {
+    logWarn('Server response is empty, invalid, or does not contain seatbid array.');
     return [];
   }
 
-  const { bids } = converter.fromORTB({ response: serverResponse.body, request: request.data });
+  const responses = [];
+  bidResp.seatbid.forEach(seatbid => {
+    if (Array.isArray(seatbid.bid) && seatbid.bid.length > 0) {
+      const bid = seatbid.bid[0];
+      logInfo('Processing bid response:', bid);
+      const bidResponse = {
+        requestId: bid.impid,
+        cpm: bid.price,
+        currency: bidResp.cur || DEFAULT_CURRENCY,
+        width: bid.w,
+        height: bid.h,
+        ad: bid.adm,
+        creativeId: bid.crid,
+        netRevenue: true,
+        ttl: DEFAULT_TTL,
+        meta: {
+          advertiserDomains: bid.adomain || [],
+        }
+      }
 
-  if (bids && Array.isArray(bids) && bids.length > 0) {
-    return bids;
-  }
+      //Set media type based on bid.mtype
+      if (bid.mtype == null) {
+        logWarn('Bid response does not contain media type for bidId: ', bid.id);
+        bidResponse.meta.mediaType = BANNER;
+      }
+      switch (bid.mtype) {
+        case 1:
+          bidResponse.meta.mediaType = BANNER;
+          break;
+        case 2:
+          bidResponse.meta.mediaType = VIDEO;
+          break;
+        default:
+          logWarn('Unknown media type: ', bid.mtype, ' for bidId: ', bid.id);
+          break;
+      }
 
-  // Fallback: manually parse OpenRTB response
-  const resp = serverResponse.body;
-  if (!resp.seatbid || !Array.isArray(resp.seatbid)) return [];
-
-  const result = [];
-  resp.seatbid.forEach(seat => {
-    if (seat.bid && Array.isArray(seat.bid)) {
-      seat.bid.forEach(bid => {
-        result.push({
-          requestId: bid.impid,
-          cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
-          creativeId: bid.crid || bid.id,
-          currency: DEFAULT_CURRENCY,
-          netRevenue: true,
-          ttl: DEFAULT_TTL,
-          ad: bid.adm,
-          meta: { advertiserDomains: bid.adomain || [] }
-        });
-      });
+      //set dealId if present
+      if (bid.dealid) {
+        bidResponse.dealId = bid.dealid;
+      }
+      logInfo('Interpreted response:', bidResponse, ' for bidId: ', bid.id);
+      responses.push(bidResponse);
     }
   });
-  return result;
+
+  logInfo('Interpreted bid responses:', responses);
+  return responses;
 };
 
 /**
