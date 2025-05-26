@@ -26,7 +26,7 @@ describe('adnuntiusBidAdapter', function () {
     };
     storage = getStorageManager({ bidderCode: 'adnuntius' });
   });
-  
+
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
     if (!URLSearchParams.prototype.has.restore) {
