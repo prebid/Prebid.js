@@ -380,7 +380,7 @@ export function checkIfCredentialsAllowed(next, options = {}, moduleType, module
   const {purpose} = getConsent(consentData, ruleOptions.type, ruleOptions.id, null);
   if (!purpose) {
     options.withCredentials = false;
-    logWarn('withCredentials option overwritten with false accordingly to tcf consent data');
+    logWarn(${RULE_NAME} denied '${ACTIVITY_ACCESS_REQUEST_CREDENTIALS}'');
   }
   next(options);
 }
