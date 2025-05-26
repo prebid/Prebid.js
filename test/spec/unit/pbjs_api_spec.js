@@ -109,6 +109,7 @@ var createSlotArrayScenario2 = function createSlotArrayScenario2() {
   var slot1 = new Slot(config.adUnitElementIDs[0], config.adUnitCodes[0]);
   slot1.setTargeting('pos1', '750x350');
   var slot2 = new Slot(config.adUnitElementIDs[1], config.adUnitCodes[0]);
+  slot2.setTargeting('pos1', '750x350');
   return [
     slot1,
     slot2
@@ -1005,6 +1006,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('setTargetingForGPTAsync', function () {
     let logErrorSpy;
+    let targeting; 
 
     beforeEach(function () {
       logErrorSpy = sinon.spy(utils, 'logError');
@@ -1013,43 +1015,28 @@ describe('Unit: Prebid Module', function () {
 
     afterEach(function () {
       utils.logError.restore();
-      resetAuction();
     });
 
-    it('should set googletag targeting keys after calling setTargetingForGPTAsync function', function () {
+    it('should set pbjs targeting keys with values after calling setTargetingForGPTAsync function', function () {
       var slots = createSlotArrayScenario2();
-
-      // explicitly setting some PBJS key value pairs to verify whether these are removed befor new keys are set
 
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
-      // we need to transform the spySetTargeting into something that looks like
-      // googletag's targeting structure
-      // googletag setTargeting will override old value if invoked with same key
-
-      let targeting = [];
-      slots[1].getTargetingKeys().map(function (key) {
-        const value = slots[1].getTargeting(key);
-        targeting.push([key, value]);
+      
+      slots.forEach(function(slot) {
+        targeting = {};
+        slot.getTargetingKeys().map(function (key) {
+          const value = slot.getTargeting(key);
+          targeting[key] = value[0]
+        });
+        expect(targeting['pos1']).to.equal('750x350'); // non prebid targeting that was set should still be there
+        // Check that some of the keys with the hb_ prefix  have values with length > 1
+        const hasSomePrebidTargetingValues = Object.keys(targeting).some(target => target.startsWith('hb_') && targeting[target]?.length > 0);
+        expect(hasSomePrebidTargetingValues).to.equal(true);
       });
-
-      var invokedTargetingMap = {};
-      slots[1].spySetTargeting.args.map(function (entry) {
-        invokedTargetingMap[entry[0]] = entry[1];
-      });
-
-      var invokedTargeting = [];
-
-      Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
-        const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
-        invokedTargeting.push([key, value]);
-      });
-      assert.deepEqual(targeting, invokedTargeting, 'google tag targeting options not matching');
-
-      // resetPresetTargeting: initiate a new auction with no winning bids, now old targeting should be removed
-
-      resetAuction();
+    });
+    it('should remove pbjs targeting when a new auction is run without any bids returned', function () {
       auction.getBidsReceived = function() { return [] };
 
       var slots = createSlotArrayScenario2();
@@ -1057,27 +1044,17 @@ describe('Unit: Prebid Module', function () {
 
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
-      targeting = [];
-      slots[1].getTargetingKeys().map(function (key) {
-        const value = slots[1].getTargeting(key);
-        targeting.push([key, value]);
-      });
+      slots.forEach(function(slot) {
+        targeting = {};
+        slot.getTargetingKeys().map(function (key) {
+          const value = slot.getTargeting(key);
+          targeting[key] = value[0]
+        });
 
-      invokedTargetingMap = {};
-      slots[1].spySetTargeting.args.map(function (entry) {
-        invokedTargetingMap[entry[0]] = entry[1];
-      });
-
-      var invokedTargeting = [];
-
-      Object.getOwnPropertyNames(invokedTargetingMap).map(function (key) {
-        const value = Array.isArray(invokedTargetingMap[key]) ? invokedTargetingMap[key] : [invokedTargetingMap[key]]; // values are always returned as array in googletag
-        invokedTargeting.push([key, value]);
-      });
-      assert.deepEqual(targeting, invokedTargeting, 'google tag targeting options not matching');
-      targeting.forEach(function(e) {
-        // here e[0] is key and e[1] is value in array that should be [null] as we are un-setting prebid keys in resetPresetTargeting
-        assert.deepEqual(e[1], [null], 'resetPresetTargeting: the value of the key ' + e[0] + ' should be [null]');
+        expect(targeting['pos1']).to.equal('750x350'); // non prebid targeting that was set should still be there
+        // ensure that all of the keys with the hb_ prefix have values with length === 0, ignore other keys
+        const hasNoPrebidTargetingValues = Object.keys(targeting).every(targetKey => (targetKey.startsWith('hb_') && targeting[targetKey] === null) || !targetKey.startsWith('hb_'))
+        expect(hasNoPrebidTargetingValues).to.equal(true);
       });
     });
 
@@ -1087,11 +1064,7 @@ describe('Unit: Prebid Module', function () {
 
       $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
 
-      var slots = [
-        new Slot('div-id-one', config.adUnitCodes[0]),
-        new Slot('div-id-two', config.adUnitCodes[0]),
-        new Slot(config.adUnitElementIDs[2], config.adUnitCodes[2])
-      ];
+      var slots = createSlotArrayScenario2();
 
       slots[0].spySetTargeting.resetHistory();
       slots[1].spySetTargeting.resetHistory();

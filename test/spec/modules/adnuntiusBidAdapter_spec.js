@@ -1,8 +1,8 @@
 // import or require modules necessary for the test, e.g.:
 import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
-import { misc, spec } from 'modules/adnuntiusBidAdapter.js';
+import { spec } from 'modules/adnuntiusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import {config, newConfig} from 'src/config.js';
+import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal';
@@ -52,12 +52,13 @@ describe('adnuntiusBidAdapter', function () {
   const winDimensions = getWinDimensions();
   const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
   const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&screen=${screen}&viewport=${viewport}`;
+  const prebidVersion = window.$$PREBID_GLOBAL$$.version;
+  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
-  const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+  const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
   const adapter = newBidder(spec);
 
   const bidderRequests = [

@@ -15,7 +15,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
  */
 import { continueAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
-const CONSTANTS = Object.freeze({
+export const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'pubmatic',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'PubMatic-Rtd-Provider: ',
@@ -44,6 +44,11 @@ const CONSTANTS = Object.freeze({
     WIN: 1.0,
     FLOORED: 0.8,
     NOBID: 1.6
+  },
+  TARGETING_KEYS: {
+    PM_YM_FLRS: 'pm_ym_flrs',
+    PM_YM_FLRV: 'pm_ym_flrv',
+    PM_YM_BID_S: 'pm_ym_bid_s'
   }
 });
 
@@ -78,6 +83,12 @@ let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
 export let _country;
 // Store multipliers from floors.json, will use default values from CONSTANTS if not available
 export let _multipliers = null;
+
+// Use a private variable for profile configs
+let _profileConfigs;
+// Export getter and setter functions for _profileConfigs
+export const getProfileConfigs = () => _profileConfigs;
+export const setProfileConfigs = (configs) => { _profileConfigs = configs; };
 
 // Waits for a given promise to resolve within a timeout
 export function withTimeout(promise, ms) {
@@ -246,6 +257,9 @@ const init = (config, _userConsent) => {
       const elapsedTime = Date.now() - initTime;
       const remainingTime = Math.max(maxWaitTime - elapsedTime, 0);
       const floorsData = await withTimeout(_fetchFloorRulesPromise, remainingTime);
+
+      // Store the profile configs globally
+      setProfileConfigs(profileConfigs);
 
       const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
       floorsConfig && conf.setConfig(floorsConfig);
@@ -441,11 +455,15 @@ function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit
 }
 
 // Set targeting keys for an ad unit
-function setTargetingForAdUnit(acc, code, bidStatus, baseValue, multiplier) {
+function setTargetingForAdUnit(hasRtdFloorAppliedBid, acc, code, bidStatus, baseValue, multiplier) {
   const floorValue = baseValue * multiplier;
-  
-  acc[code]['pm_ym_flrv'] = floorValue;
-  acc[code]['pm_ym_bid_s'] = bidStatus;
+  // Initialize acc[code] as an empty object if it doesn't exist
+ // One-line solution that handles initialization and assignment
+ acc[code] = Object.assign(acc[code] || {}, {
+   [CONSTANTS.TARGETING_KEYS.PM_YM_FLRS]: hasRtdFloorAppliedBid ? 1 : 0,
+   [CONSTANTS.TARGETING_KEYS.PM_YM_FLRV]: floorValue,
+   [CONSTANTS.TARGETING_KEYS.PM_YM_BID_S]: bidStatus
+ });
   
   logInfo(CONSTANTS.LOG_PRE_FIX, `Setting targeting for ad unit: ${code}, Status: ${bidStatus}, Base value: ${baseValue}, Multiplier: ${multiplier}, Final floor: ${floorValue}`);
   
@@ -453,16 +471,24 @@ function setTargetingForAdUnit(acc, code, bidStatus, baseValue, multiplier) {
 }
 
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
+  // Access the profile configs stored globally
+  const profileConfigs = getProfileConfigs();
+
+  // Return empty object if profileConfigs is undefined or adServerTargeting is explicitly set to false
+  if (!profileConfigs || profileConfigs?.plugins?.dynamicFloors?.adServerTargeting === false) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled or profileConfigs is undefined`);
+    return {};
+  }
+
   const isRtdFloorApplied = bid =>
-    bid.floorData?.modelVersion?.includes("RTD model") && !bid.floorData.skipped;
+    bid.floorData?.floorProvider === "PM" &&
+    !bid.floorData.skipped
 
   const hasRtdFloorAppliedBid = auction?.adUnits?.some(adUnit =>
     adUnit.bids?.some(isRtdFloorApplied)
   ) || auction?.bidsReceived?.some(isRtdFloorApplied);
 
   const targeting = adUnitCodes.reduce((acc, code) => {
-    // Initialize targeting object
-    acc[code] = hasRtdFloorAppliedBid ? { 'pm_ym': 1 } : {};
     
     // Find bids and determine status
     const bidsForAdUnit = findBidsForAdUnit(auction, code);
@@ -480,17 +506,12 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
     );
     
     // Set targeting keys
-    setTargetingForAdUnit(acc, code, bidStatus, baseValue, multiplier);
+    setTargetingForAdUnit(hasRtdFloorAppliedBid,acc, code, bidStatus, baseValue, multiplier);
     
     return acc;
   }, {});
 
-  if (Object.keys(targeting).length > 0) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData', targeting);
-    return targeting;
-  }
-
-  return {};
+  return targeting;
 };
 
 /** @type {RtdSubmodule} */
