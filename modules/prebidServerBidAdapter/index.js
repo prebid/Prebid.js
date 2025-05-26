@@ -326,7 +326,7 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
- * @param {number} timeout: maximum time to wait for rendering in milliseconds
+ * @param {number} timeout maximum time to wait for rendering in milliseconds
  */
 function doBidderSync(type, url, bidder, done, timeout) {
   if (!url) {
@@ -492,7 +492,7 @@ export function PrebidServer() {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
+export const processPBSRequest = hook('async', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 

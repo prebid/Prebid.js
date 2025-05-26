@@ -4,7 +4,7 @@ import {
   getVastTrackers,
   insertVastTrackers,
   registerVastTrackers,
-  reset, responseHook,
+  reset, cacheVideoBidHook,
   disable
 } from 'libraries/vastTrackers/vastTrackers.js';
 import {MODULE_TYPE_ANALYTICS} from '../../../src/activities/modules.js';
@@ -79,7 +79,7 @@ describe('vast trackers', () => {
 
   if (FEATURES.VIDEO) {
     it('should add trackers to bid response', () => {
-      responseHook({index})(sinon.stub(), 'au', bid);
+      cacheVideoBidHook({index})(sinon.stub(), 'au', bid);
       expect(bid.vastImpUrl).to.eql([
         'https://vasttracking.mydomain.com/vast?cpm=1'
       ])

@@ -36,7 +36,7 @@
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {Object} storedId - existing id, if any
- * @returns {IdResponse|function(callback:function)} A response object that contains id and/or callback.
+ * @returns {IdResponse|function} A response object that contains id and/or callback.
  */
 
 /**
@@ -82,7 +82,7 @@
  * @property {(string|undefined)} pid - placement id url param value
  * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
  * @property {(string|undefined)} ajaxTimeout - the number of milliseconds a resolution request can take before automatically being terminated
- * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
+ * @property {(Array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
@@ -488,6 +488,9 @@ function mkPriorityMaps() {
     function activeModuleGetter(key, useGlobals, modules) {
       return function () {
         for (const {allowed, bidders, module} of modules) {
+          if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
+            continue;
+          }
           const value = module.idObj?.[key];
           if (value != null) {
             if (allowed) {
@@ -566,7 +569,7 @@ export function enrichEids(ortb2Fragments) {
   return ortb2Fragments;
 }
 
-function addIdData({adUnits, ortb2Fragments}) {
+export function addIdData({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
@@ -853,8 +856,8 @@ function retryOnCancel(initParams) {
  * return a promise that resolves to the same value as `getUserIds()` when the refresh is complete.
  * If a refresh is already in progress, it will be canceled (rejecting promises returned by previous calls to `refreshUserIds`).
  *
- * @param submoduleNames? submodules to refresh. If omitted, refresh all submodules.
- * @param callback? called when the refresh is complete
+ * @param {string[]} [submoduleNames] submodules to refresh. If omitted, refresh all submodules.
+ * @param {Function} [callback] called when the refresh is complete
  */
 function refreshUserIds({submoduleNames} = {}, callback) {
   return retryOnCancel({refresh: true, submoduleNames})
