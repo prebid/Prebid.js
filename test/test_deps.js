@@ -34,3 +34,4 @@ require('test/mocks/adloaderStub.js');
 require('test/mocks/xhr.js');
 require('test/mocks/analyticsStub.js');
 require('test/mocks/ortbConverter.js')
+require('modules/rtdModule/index.js');
