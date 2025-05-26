@@ -287,6 +287,7 @@ export const spec = {
     queryParamsAndValues.push('format=prebid')
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
+    queryParamsAndValues.push('pbv=' + window.$$PREBID_GLOBAL$$.version);
     if (gdprApplies !== undefined) {
       const flag = gdprApplies ? '1' : '0'
       queryParamsAndValues.push('consentString=' + consentString);

@@ -83,8 +83,9 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids
-   * @param serverResponse
-   * @param adapterRequest
+   * @param {*} serverResponse
+   * @param {Object} responseArgs
+   * @param {*} responseArgs.adapterRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, { adapterRequest }) {

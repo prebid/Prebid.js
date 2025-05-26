@@ -9,6 +9,11 @@ import {
   supportedMediaTypes
 } from '../libraries/adtelligentUtils/adtelligentUtils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 const URL = 'https://ghb.sync.viewdeos.com/auction/';
 const OUTSTREAM_SRC = 'https://player.sync.viewdeos.com/outstream-unit/2.01/outstream.min.js';
 const BIDDER_CODE = 'viewdeosDX';
@@ -41,8 +46,8 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids
-   * @param serverResponse
-   * @param bidderRequest
+   * @param {Object} serverResponse
+   * @param {BidderRequest} bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, {bidderRequest}) {
