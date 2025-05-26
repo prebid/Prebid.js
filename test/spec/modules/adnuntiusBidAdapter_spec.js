@@ -9,6 +9,28 @@ import { getGlobal } from '../../../src/prebidGlobal';
 import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
 import { getWinDimensions } from '../../../src/utils';
 
+const { URLSearchParams: NativeURLSearchParams } = global;
+
+class FixedURLSearchParams {
+  constructor(search) {
+    this.params = new NativeURLSearchParams(search);
+  }
+
+  has(key) {
+    return this.params.has(key);
+  }
+
+  get(key) {
+    return this.params.get(key);
+  }
+
+  toString() {
+    return [...this.params.entries()]
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+      .join('&');
+  }
+}
+
 describe('adnuntiusBidAdapter', function () {
   const sandbox = sinon.createSandbox();
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
@@ -17,7 +39,6 @@ describe('adnuntiusBidAdapter', function () {
 
   const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: getUnixTimestampFromNow() }, { exp: getUnixTimestampFromNow(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: getUnixTimestampFromNow(1) }, { key: 'valid', value: 'also-valid', exp: getUnixTimestampFromNow(1) }, { key: 'expired', value: 'fwefew', exp: getUnixTimestampFromNow() }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: getUnixTimestampFromNow(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow() }]
   let storage;
-  let urlSearchParamsStub;
 
   before(() => {
     getGlobal().bidderSettings = {
@@ -30,14 +51,7 @@ describe('adnuntiusBidAdapter', function () {
   
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
-    if (!urlSearchParamsStub) {
-      sandbox.stub(global, 'URLSearchParams').callsFake(function (search) {
-        return {
-          has: () => true,
-          get: () => 'overridden-value'
-        };
-      });
-    }
+    sandbox.stub(global, 'URLSearchParams').callsFake(FixedURLSearchParams);
   });
 
   afterEach(function () {
@@ -45,7 +59,6 @@ describe('adnuntiusBidAdapter', function () {
     config.setBidderConfig({ bidders: [] });
     localStorage.removeItem('adn.metaData');
     sandbox.restore();
-    urlSearchParamsStub = null;
   });
 
   after(() => {
