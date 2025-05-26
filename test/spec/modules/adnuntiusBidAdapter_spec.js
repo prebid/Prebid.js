@@ -17,6 +17,7 @@ describe('adnuntiusBidAdapter', function () {
 
   const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: getUnixTimestampFromNow() }, { exp: getUnixTimestampFromNow(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: getUnixTimestampFromNow(1) }, { key: 'valid', value: 'also-valid', exp: getUnixTimestampFromNow(1) }, { key: 'expired', value: 'fwefew', exp: getUnixTimestampFromNow() }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: getUnixTimestampFromNow(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow() }]
   let storage;
+  let urlSearchParamsStub;
 
   before(() => {
     getGlobal().bidderSettings = {
@@ -26,14 +27,14 @@ describe('adnuntiusBidAdapter', function () {
     };
     storage = getStorageManager({ bidderCode: 'adnuntius' });
   });
-
+  
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
-    if (!URLSearchParams.prototype.has.restore) {
+    if (!urlSearchParamsStub) {
       sandbox.stub(global, 'URLSearchParams').callsFake(function (search) {
         return {
           has: () => true,
-          get: () => null,
+          get: () => 'overridden-value',
           toString: () => search,
         };
       });
@@ -45,6 +46,7 @@ describe('adnuntiusBidAdapter', function () {
     config.setBidderConfig({ bidders: [] });
     localStorage.removeItem('adn.metaData');
     sandbox.restore();
+    urlSearchParamsStub = null;
   });
 
   after(() => {
@@ -858,13 +860,6 @@ describe('adnuntiusBidAdapter', function () {
 
   describe('buildRequests', function () {
     it('Test requests', function () {
-      stub1 = sinon.stub(URLSearchParams.prototype, 'has').callsFake(() => {
-        return true;
-      });
-      stub2 = sinon.stub(URLSearchParams.prototype, 'get').callsFake(() => {
-        return 'overridden-value';
-      });
-
       const request = spec.buildRequests(bidderRequests, {
         refererInfo: {
           canonicalUrl: 'https://canonical.com/page.html',
