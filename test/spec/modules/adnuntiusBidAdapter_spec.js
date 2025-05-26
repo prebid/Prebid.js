@@ -10,15 +10,13 @@ import {getUnixTimestampFromNow, getWindowTop} from 'src/utils.js';
 import { getWinDimensions } from '../../../src/utils';
 
 describe('adnuntiusBidAdapter', function () {
+  const sandbox = sinon.createSandbox();
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const usi = utils.generateUUID()
 
   const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: getUnixTimestampFromNow() }, { exp: getUnixTimestampFromNow(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: getUnixTimestampFromNow(1) }, { key: 'valid', value: 'also-valid', exp: getUnixTimestampFromNow(1) }, { key: 'expired', value: 'fwefew', exp: getUnixTimestampFromNow() }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: getUnixTimestampFromNow(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow() }]
   let storage;
-
-  // need this to make the restore work correctly -- something to do with stubbing static prototype methods
-  let stub1 = {}, stub2 = {};
 
   before(() => {
     getGlobal().bidderSettings = {
@@ -28,27 +26,23 @@ describe('adnuntiusBidAdapter', function () {
     };
     storage = getStorageManager({ bidderCode: 'adnuntius' });
   });
-  const sandbox = sinon.createSandbox();
+  
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
-    sandbox.stub(URLSearchParams.prototype, 'has').callsFake(() => true);
-  });
-
-  after(() => {
-    getGlobal().bidderSettings = {};
+    if (!URLSearchParams.prototype.has.restore) {
+      sandbox.stub(URLSearchParams.prototype, 'has').callsFake(() => true);
+    }
   });
 
   afterEach(function () {
     config.resetConfig();
     config.setBidderConfig({ bidders: [] });
-    if (stub1.restore) {
-      stub1.restore();
-    }
-    if (stub2.restore) {
-      stub2.restore();
-    }
     localStorage.removeItem('adn.metaData');
     sandbox.restore();
+  });
+
+  after(() => {
+    getGlobal().bidderSettings = {};
   });
 
   const tzo = new Date().getTimezoneOffset();
