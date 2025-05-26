@@ -67,7 +67,7 @@ export const spec = {
         data,
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-        // url: 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169',
+        // url: 'https://ssb.eqtv.dev/api/bid?callerId=169',
         // options: {
         //   customHeaders: {
         //     'X-Eqtv-Debug': '6708e3aeca04848e919e9c8c'  // banner

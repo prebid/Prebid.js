@@ -10,12 +10,12 @@ const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
 // const EQT_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=169';
-const EQT_ENDPOINT = 'https://ssb-engine-argocd-dev.internal.smartadserver.com/api/bid?callerId=169';
+const EQT_ENDPOINT = 'https://ssb.eqtv.dev/api/bid?callerId=169';
 const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 const IDENTIFIER_PREFIX = 'Sharethrough:';
 
-let impIdMap = {};
-let isEqtTest = null;
+const impIdMap = {};
+let isEqtvTest = null;
 
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
@@ -80,7 +80,7 @@ export const sharethroughAdapterSpec = {
     };
 
     if (bidRequests[0].params.publisherId) {
-      isEqtTest = true;
+      isEqtvTest = true;
       req.site.publisher = {
         id: bidRequests[0].params.publisherId,
         ...req.site.publisher
@@ -181,18 +181,18 @@ export const sharethroughAdapterSpec = {
             h,
           };
 
-          let propertiesToConsider = [
+          const propertiesToConsider = [
             'api', 'battr', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
           ];
 
-          if (!isEqtTest) {
+          if (!isEqtvTest) {
             propertiesToConsider.push('companionad');
           }
 
           propertiesToConsider.forEach(propertyToConsider => {
             applyVideoProperty(propertyToConsider, videoRequest, impression);
           });
-        } else if (isEqtTest && nativeRequest) {
+        } else if (isEqtvTest && nativeRequest) {
           const nativeImp = converter.toORTB({
             bidRequests: [bidReq],
             bidderRequest
@@ -207,11 +207,11 @@ export const sharethroughAdapterSpec = {
             topframe: inIframe() ? 0 : 1,
             format: bidReq.sizes.map((size) => ({ w: +size[0], h: +size[1] })),
           };
-          const battr = deepAccess(bidReq, 'mediaTypes.banner.battr', null) || deepAccess(bidReq, 'ortb2Imp.banner.battr')
+          const battr = deepAccess(bidReq, 'mediaTypes.banner.battr', null) || deepAccess(bidReq, 'ortb2Imp.banner.battr');
           if (battr) impression.banner.battr = battr;
         }
 
-        const tagid = isEqtTest ? bidReq.adUnitCode : String(bidReq.params.pkey);
+        const tagid = isEqtvTest ? bidReq.adUnitCode : String(bidReq.params.pkey);
 
         return {
           id: bidReq.bidId,
@@ -224,7 +224,7 @@ export const sharethroughAdapterSpec = {
       .filter((imp) => !!imp);
 
     const splitImps = [];
-    if (isEqtTest) {
+    if (isEqtvTest) {
       const bid = bidRequests[0];
       const currency = config.getConfig('currency.adServerCurrency') || 'USD';
 
@@ -285,15 +285,15 @@ export const sharethroughAdapterSpec = {
       // '67ff7ea9b4590cf0ca852f94'; // banner + ttl
       // '682c50e92634fafa0d974114'; // native
       // '67c8545f9d44a9f4fd5de345'; // video
-    const options = isEqtTest ? { options: { customHeaders: { 'X-Eqtv-Debug': hash } } } : undefined;
+    const options = isEqtvTest ? { options: { customHeaders: { 'X-Eqtv-Debug': hash } } } : undefined;
 
     return imps.map((impression) => {
       return {
         method: 'POST',
-        url: isEqtTest ? EQT_ENDPOINT : STR_ENDPOINT,
+        url: isEqtvTest ? EQT_ENDPOINT : STR_ENDPOINT,
         data: {
           ...req,
-          imp: isEqtTest ? splitImps : [impression],
+          imp: isEqtvTest ? splitImps : [impression],
         },
         ...options
       };
@@ -318,7 +318,7 @@ export const sharethroughAdapterSpec = {
     const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
       // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
       const response = {
-        requestId: isEqtTest ? impIdMap[bid.impid] : bid.impid,
+        requestId: isEqtvTest ? impIdMap[bid.impid] : bid.impid,
         width: +bid.w,
         height: +bid.h,
         cpm: +bid.price,
@@ -360,7 +360,7 @@ export const sharethroughAdapterSpec = {
       return response;
     });
 
-    if (fledgeAuctionEnabled && !isEqtTest) {
+    if (fledgeAuctionEnabled && !isEqtvTest) {
       return {
         bids: bidsFromExchange,
         paapi: body.ext?.auctionConfigs || {},
