@@ -75,7 +75,8 @@ import {
   logMessage,
   logWarn,
   parseUrl,
-  timestamp
+  timestamp,
+  scheduleBackgroundTask
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
@@ -235,13 +236,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         } finally {
           // Calling timed out bidders
           if (timedOutRequests.length) {
-            adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
+            scheduleBackgroundTask(() => adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout));
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
           let userSyncConfig = config.getConfig('userSync') || {};
           if (!userSyncConfig.enableOverride) {
             // Delay the auto sync by the config delay
-            syncUsers(userSyncConfig.syncDelay);
+            scheduleBackgroundTask(() => syncUsers(userSyncConfig.syncDelay));
           }
         }
       })

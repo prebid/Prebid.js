@@ -1,4 +1,5 @@
 import {defaultHandler, GenericAnalytics} from '../../../modules/genericAnalyticsAdapter.js';
+import * as utils from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 
@@ -249,9 +250,17 @@ describe('Generic analytics', () => {
   describe('default handler', () => {
     const url = 'mock-url';
 
-    let ajax;
+    let ajax, sched;
     beforeEach(() => {
       ajax = sinon.stub();
+      sched = sinon.stub(utils, 'scheduleBackgroundTask').callsFake(fn => {
+        fn();
+        return Promise.resolve();
+      });
+    });
+
+    afterEach(() => {
+      sched.restore();
     });
 
     Object.entries({

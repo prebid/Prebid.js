@@ -11,6 +11,7 @@ import {
   parseUrl,
   triggerPixel,
   generateUUID,
+  scheduleBackgroundTask,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -113,13 +114,15 @@ function createBidMap(bids) {
 }
 
 const trackEvent = (eventName, data) =>
-  triggerPixel(
-    `${TRACKING_ENDPOINT}g_${eventName}?${formatQS({
-      ...data,
-      ts: Date.now(),
-      eid: getUniqueIdentifierStr(),
-    })}`
-  );
+  scheduleBackgroundTask(() => {
+    triggerPixel(
+      `${TRACKING_ENDPOINT}g_${eventName}?${formatQS({
+        ...data,
+        ts: Date.now(),
+        eid: getUniqueIdentifierStr(),
+      })}`
+    );
+  });
 
 const DEFAULT_MIN_FLOOR = 0;
 
@@ -571,13 +574,15 @@ export const spec = {
     });
 
     const payload = JSON.stringify({ c: common, e: events });
-    fetch(POST_TRACKING_ENDPOINT, {
-      body: payload,
-      keepalive: true,
-      withCredentials: true,
-      method: 'POST',
-    }).catch((_e) => {
-      // do nothing; ignore errors
+    scheduleBackgroundTask(() => {
+      fetch(POST_TRACKING_ENDPOINT, {
+        body: payload,
+        keepalive: true,
+        withCredentials: true,
+        method: 'POST',
+      }).catch((_e) => {
+        // do nothing; ignore errors
+      });
     });
   },
 

@@ -1,5 +1,5 @@
 import AnalyticsAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import {prefixLog, isPlainObject} from '../src/utils.js';
+import {prefixLog, isPlainObject, scheduleBackgroundTask} from '../src/utils.js';
 import {has as hasEvent} from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
@@ -142,7 +142,9 @@ export function defaultHandler({url, method, batchSize, ajax = ajaxBuilder()}) {
   const serialize = method === 'GET' ? (data) => ({data: JSON.stringify(data)}) : (data) => JSON.stringify(data);
 
   return function (events) {
-    ajax(url, callbacks, serialize(extract(events)), {method, keepalive: true})
+    scheduleBackgroundTask(() => {
+      ajax(url, callbacks, serialize(extract(events)), {method, keepalive: true})
+    });
   }
 }
 

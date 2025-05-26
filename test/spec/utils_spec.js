@@ -1353,3 +1353,43 @@ describe('getWinDimensions', () => {
     sinon.assert.calledTwice(resetWinDimensionsSpy);
   });
 });
+
+describe('scheduleBackgroundTask', () => {
+  let origScheduler;
+
+  beforeEach(() => {
+    origScheduler = global.scheduler;
+  });
+
+  afterEach(() => {
+    global.scheduler = origScheduler;
+  });
+
+  it('uses scheduler.postTask when available', () => {
+    const postTask = sinon.stub().resolves();
+    global.scheduler = {postTask};
+    const spy = sinon.spy();
+    return utils.scheduleBackgroundTask(spy).then(() => {
+      sinon.assert.calledWith(postTask, spy, {priority: 'background'});
+      sinon.assert.calledOnce(spy);
+    });
+  });
+
+  it('falls back to scheduler.yield', () => {
+    const yieldStub = sinon.stub().resolves();
+    global.scheduler = {yield: yieldStub};
+    const spy = sinon.spy();
+    return utils.scheduleBackgroundTask(spy).then(() => {
+      sinon.assert.calledOnce(yieldStub);
+      sinon.assert.calledOnce(spy);
+    });
+  });
+
+  it('uses microtask when scheduler API missing', () => {
+    global.scheduler = undefined;
+    const spy = sinon.spy();
+    return utils.scheduleBackgroundTask(spy).then(() => {
+      sinon.assert.calledOnce(spy);
+    });
+  });
+});
