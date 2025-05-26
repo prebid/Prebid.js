@@ -30,7 +30,13 @@ describe('adnuntiusBidAdapter', function () {
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
     if (!URLSearchParams.prototype.has.restore) {
-      sandbox.stub(URLSearchParams.prototype, 'has').callsFake(() => true);
+      sandbox.stub(global, 'URLSearchParams').callsFake(function (search) {
+        return {
+          has: () => true,
+          get: () => null,
+          toString: () => search,
+        };
+      });
     }
   });
 
