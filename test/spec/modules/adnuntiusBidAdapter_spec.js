@@ -28,9 +28,10 @@ describe('adnuntiusBidAdapter', function () {
     };
     storage = getStorageManager({ bidderCode: 'adnuntius' });
   });
-
+  const sandbox = sinon.createSandbox();
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
+    sandbox.stub(URLSearchParams.prototype, 'has').callsFake(() => true);
   });
 
   after(() => {
@@ -39,13 +40,15 @@ describe('adnuntiusBidAdapter', function () {
 
   afterEach(function () {
     config.resetConfig();
-
+    config.setBidderConfig({ bidders: [] });
     if (stub1.restore) {
       stub1.restore();
     }
     if (stub2.restore) {
       stub2.restore();
     }
+    localStorage.removeItem('adn.metaData');
+    sandbox.restore();
   });
 
   const tzo = new Date().getTimezoneOffset();
