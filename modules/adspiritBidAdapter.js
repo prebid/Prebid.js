@@ -95,10 +95,12 @@ export const spec = {
             name: bidRequest.params.publisherName || ''
           }
         },
-        user: {
-          id: bidRequest.userId || '',
+         user: {
           data: bidRequest.userData || [],
           ext: {
+            eids: (getGlobal().getUserIdsAsEids && typeof getGlobal().getUserIdsAsEids === 'function')
+              ? getGlobal().getUserIdsAsEids(bidRequest)
+              : [],
             consent: gdprConsentString || ''
           }
         },
@@ -130,6 +132,7 @@ export const spec = {
         }
       };
 
+
       if (bidRequest.schain) {
         openRTBRequest.source = {
           ext: {
@@ -137,7 +140,6 @@ export const spec = {
           }
         };
       }
-
       requests.push({
         method: 'POST',
         url: reqUrl,
