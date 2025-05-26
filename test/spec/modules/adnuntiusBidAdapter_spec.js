@@ -848,20 +848,75 @@ describe('adnuntiusBidAdapter', function () {
 
   describe('buildRequests', function () {
     it('Test requests', function () {
+      const winDimensions = getWinDimensions();
+      const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
+      const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
+      const prebidVersion = window.$$PREBID_GLOBAL$$.version;
+      const tzo = new Date().getTimezoneOffset();
+      const ENDPOINT_URL = `https://ads.adnuntius.delivery/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+
+      const bidderRequests = [
+        {
+          bidId: 'adn-000000000008b6bc',
+          bidder: 'adnuntius',
+          params: {
+            auId: '000000000008b6bc',
+            targetId: '123',
+            network: 'adnuntius',
+            maxDeals: 1
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[640, 480], [600, 400]],
+            }
+          },
+        },
+        {
+          bidId: 'adn-0000000000000551',
+          bidder: 'adnuntius',
+          params: {
+            auId: '0000000000000551',
+            network: 'adnuntius',
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[1640, 1480], [1600, 1400]],
+            }
+          },
+        }
+      ];
+
       const request = spec.buildRequests(bidderRequests, {
         refererInfo: {
           canonicalUrl: 'https://canonical.com/page.html',
           page: 'https://canonical.com/something-else.html'
         }
       });
+
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
-      const bid = request[0].bid[0]
+      const bid = request[0].bid[0];
       expect(bid).to.have.property('bidId');
       expect(request[0]).to.have.property('url');
-      expect(request[0].url).to.equal(ENDPOINT_URL.replace('&userId', '&so=overridden-value&userId'));
+      expect(request[0].url).to.equal(ENDPOINT_URL);
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}],"context":"https://canonical.com/something-else.html","canonical":"https://canonical.com/page.html"}');
+      expect(request[0].data).to.equal(JSON.stringify({
+        adUnits: [
+          {
+            auId: '000000000008b6bc',
+            targetId: '123',
+            maxDeals: 1,
+            dimensions: [[640, 480], [600, 400]]
+          },
+          {
+            auId: '0000000000000551',
+            targetId: 'adn-0000000000000551',
+            dimensions: [[1640, 1480], [1600, 1400]]
+          }
+        ],
+        context: 'https://canonical.com/something-else.html',
+        canonical: 'https://canonical.com/page.html'
+      }));
     });
 
     it('should pass for different end points in config', function () {
