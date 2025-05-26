@@ -1,7 +1,7 @@
 import {assert} from 'chai';
-import {spec} from 'modules/mediaforceBidAdapter.js';
+import {spec, resolveFloor} from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 
 describe('mediaforce bid adapter', function () {
   let sandbox;
@@ -76,7 +76,7 @@ describe('mediaforce bid adapter', function () {
           sizes: [300, 250],
         },
         sponsoredBy: {
-          required: true
+          required: false
         }
       },
       mediaTypes: {
@@ -93,8 +93,20 @@ describe('mediaforce bid adapter', function () {
             sizes: [300, 250],
           },
           sponsoredBy: {
-            required: true
+            required: false
           }
+        },
+        video: {
+          playerSize: [[640, 480]],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [2, 3],
+          linearity: 1,
+          skip: 1,
+          skipmin: 5,
+          skipafter: 10,
+          api: [1, 2]
         }
       },
       ortb2Imp: {
@@ -102,6 +114,82 @@ describe('mediaforce bid adapter', function () {
           tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
         }
       }
+    };
+
+    const refererInfo = {
+      ref: 'https://www.prebid.org',
+      reachedTop: true,
+      stack: [
+        'https://www.prebid.org/page.html',
+        'https://www.prebid.org/iframe1.html',
+      ]
+    };
+
+    const dnt = utils.getDNT() ? 1 : 0;
+    const secure = window.location.protocol === 'https:' ? 1 : 0;
+    const pageUrl = window.location.href;
+    const timeout = 1500;
+    const auctionId = '210a474e-88f0-4646-837f-4253b7cf14fb';
+
+    const expectedData = {
+      // id property removed as it is specific for each request generated
+      tmax: timeout,
+      ext: {
+        mediaforce: {
+          hb_key: auctionId
+        }
+      },
+      site: {
+        id: defaultBid.params.publisher_id,
+        publisher: {id: defaultBid.params.publisher_id},
+        ref: encodeURIComponent(refererInfo.ref),
+        page: pageUrl,
+      },
+      device: {
+        ua: navigator.userAgent,
+        dnt: dnt,
+        js: 1,
+        language: language,
+      },
+      imp: [{
+        tagid: defaultBid.params.placement_id,
+        secure: secure,
+        bidfloor: 0,
+        ext: {
+          mediaforce: {
+            transactionId: defaultBid.ortb2Imp.ext.tid,
+          }
+        },
+        banner: {w: 300, h: 250},
+        native: {
+          ver: '1.2',
+          request: {
+            assets: [
+              {id: 1, title: {len: 800}, required: 1},
+              {id: 3, img: {w: 300, h: 250, type: 3}, required: 1},
+              {id: 5, data: {type: 1}, required: 0}
+            ],
+            context: 1,
+            plcmttype: 1,
+            ver: '1.2'
+          }
+        },
+        video: {
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [2, 3],
+          w: 640,
+          h: 480,
+          startdelay: 0,
+          linearity: 1,
+          skip: 1,
+          skipmin: 5,
+          skipafter: 10,
+          playbackmethod: [1],
+          api: [1, 2]
+        }
+      }],
     };
 
     const multiBid = [
@@ -139,28 +227,70 @@ describe('mediaforce bid adapter', function () {
       }
     });
 
-    const refererInfo = {
-      ref: 'https://www.prebid.org',
-      reachedTop: true,
-      stack: [
-        'https://www.prebid.org/page.html',
-        'https://www.prebid.org/iframe1.html',
-      ]
-    };
-
     const requestUrl = `${baseUrl}/header_bid`;
-    const dnt = utils.getDNT() ? 1 : 0;
-    const secure = window.location.protocol === 'https:' ? 1 : 0;
-    const pageUrl = window.location.href;
-    const timeout = 1500;
 
     it('should return undefined if no validBidRequests passed', function () {
       assert.equal(spec.buildRequests([]), undefined);
     });
 
+    it('should not stop on unsupported mediaType', function () {
+      const bid = utils.deepClone(defaultBid);
+      bid.mediaTypes.audio = { size: [300, 250] };
+
+      let bidRequests = [bid];
+      let bidderRequest = {
+        bids: bidRequests,
+        refererInfo: refererInfo,
+        timeout: timeout,
+        auctionId: auctionId,
+      };
+
+      let [request] = spec.buildRequests(bidRequests, bidderRequest);
+      let data = JSON.parse(request.data);
+
+      let expectedDataCopy = utils.deepClone(expectedData);
+      assert.exists(data.id);
+
+      expectedDataCopy.id = data.id
+      assert.deepEqual(data, expectedDataCopy);
+    });
+
     it('should return proper request url: no refererInfo', function () {
       let [request] = spec.buildRequests([defaultBid]);
       assert.equal(request.url, requestUrl);
+    });
+
+    it('should use test endpoint when is_test is true', function () {
+      const bid = utils.deepClone(defaultBid);
+      bid.params.is_test = true;
+
+      const [request] = spec.buildRequests([bid]);
+      assert.equal(request.url, `${baseUrl}/header_bid?debug_key=abcdefghijklmnop`);
+    });
+
+    it('should include aspect_ratios in native asset', function () {
+      const bid = utils.deepClone(defaultBid);
+      const aspect_ratios = [{
+        min_width: 100,
+        ratio_width: 4,
+        ratio_height: 3
+      }]
+      bid.mediaTypes.native.image.aspect_ratios = aspect_ratios;
+      bid.nativeParams.image.aspect_ratios = aspect_ratios;
+
+      const [request] = spec.buildRequests([bid]);
+      const nativeAsset = JSON.parse(request.data).imp[0].native.request.assets.find(a => a.id === 3);
+      assert.equal(nativeAsset.img.wmin, 100);
+      assert.equal(nativeAsset.img.hmin, 75);
+    });
+
+    it('should include placement in video object if provided', function () {
+      const bid = utils.deepClone(defaultBid);
+      bid.mediaTypes.video.placement = 2;
+
+      const [request] = spec.buildRequests([bid]);
+      const video = JSON.parse(request.data).imp[0].video;
+      assert.equal(video.placement, 2, 'placement should be passed into video object');
     });
 
     it('should return proper banner imp', function () {
@@ -172,63 +302,19 @@ describe('mediaforce bid adapter', function () {
         bids: bidRequests,
         refererInfo: refererInfo,
         timeout: timeout,
-        auctionId: '210a474e-88f0-4646-837f-4253b7cf14fb'
+        auctionId: auctionId,
       };
 
       let [request] = spec.buildRequests(bidRequests, bidderRequest);
 
       let data = JSON.parse(request.data);
-      assert.deepEqual(data, {
-        id: data.id,
-        tmax: timeout,
-        ext: {
-          mediaforce: {
-            hb_key: bidderRequest.auctionId
-          }
-        },
-        site: {
-          id: bid.params.publisher_id,
-          publisher: {id: bid.params.publisher_id},
-          ref: encodeURIComponent(refererInfo.ref),
-          page: pageUrl,
-        },
-        device: {
-          ua: navigator.userAgent,
-          dnt: dnt,
-          js: 1,
-          language: language,
-        },
-        imp: [{
-          tagid: bid.params.placement_id,
-          secure: secure,
-          bidfloor: bid.params.bidfloor,
-          ext: {
-            mediaforce: {
-              transactionId: bid.ortb2Imp.ext.tid,
-            }
-          },
-          banner: {w: 300, h: 250},
-          native: {
-            ver: '1.2',
-            request: {
-              assets: [
-                {id: 1, title: {len: 800}, required: 1},
-                {id: 3, img: {w: 300, h: 250, type: 3}, required: 1},
-                {id: 5, data: {type: 1}, required: 1}
-              ],
-              context: 1,
-              plcmttype: 1,
-              ver: '1.2'
-            }
-          },
-        }],
-      });
 
-      assert.deepEqual(request, {
-        method: 'POST',
-        url: requestUrl,
-        data: '{"id":"' + data.id + '","site":{"page":"' + pageUrl + '","ref":"https%3A%2F%2Fwww.prebid.org","id":"pub123","publisher":{"id":"pub123"}},"device":{"ua":"' + navigator.userAgent + '","js":1,"dnt":' + dnt + ',"language":"' + language + '"},"ext":{"mediaforce":{"hb_key":"210a474e-88f0-4646-837f-4253b7cf14fb"}},"tmax":1500,"imp":[{"tagid":"202","secure":' + secure + ',"bidfloor":0,"ext":{"mediaforce":{"transactionId":"d45dd707-a418-42ec-b8a7-b70a6c6fab0b"}},"banner":{"w":300,"h":250},"native":{"ver":"1.2","request":{"assets":[{"required":1,"id":1,"title":{"len":800}},{"required":1,"id":3,"img":{"type":3,"w":300,"h":250}},{"required":1,"id":5,"data":{"type":1}}],"context":1,"plcmttype":1,"ver":"1.2"}}}]}',
-      });
+      let expectedDataCopy = utils.deepClone(expectedData);
+      assert.exists(data.id);
+
+      expectedDataCopy.id = data.id
+      expectedDataCopy.imp[0].bidfloor = bid.params.bidfloor
+      assert.deepEqual(data, expectedDataCopy);
     });
 
     it('multiple sizes', function () {
@@ -244,12 +330,22 @@ describe('mediaforce bid adapter', function () {
       assert.deepEqual(data.imp[0].banner, {w: 300, h: 600, format: [{w: 300, h: 250}]});
     });
 
+    it('should skip banner with empty sizes', function () {
+      const bid = utils.deepClone(defaultBid);
+      bid.mediaTypes.banner = { sizes: [] };
+
+      const [request] = spec.buildRequests([bid]);
+      const data = JSON.parse(request.data);
+      assert.notExists(data.imp[0].banner, 'Banner object should be omitted');
+    });
+
+
     it('should return proper requests for multiple imps', function () {
       let bidderRequest = {
         bids: multiBid,
         refererInfo: refererInfo,
         timeout: timeout,
-        auctionId: '210a474e-88f0-4646-837f-4253b7cf14fb'
+        auctionId: auctionId,
       };
 
       let requests = spec.buildRequests(multiBid, bidderRequest);
@@ -267,7 +363,7 @@ describe('mediaforce bid adapter', function () {
             tmax: timeout,
             ext: {
               mediaforce: {
-                hb_key: bidderRequest.auctionId
+                hb_key: auctionId
               }
             },
             site: {
@@ -323,7 +419,7 @@ describe('mediaforce bid adapter', function () {
             tmax: timeout,
             ext: {
               mediaforce: {
-                hb_key: bidderRequest.auctionId
+                hb_key: auctionId
               }
             },
             site: {
@@ -575,6 +671,50 @@ describe('mediaforce bid adapter', function () {
     });
   });
 
+  describe('interpretResponse() video', function () {
+    it('should interpret video response correctly', function () {
+      const vast = '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\">...</VAST>';
+
+      const bid = {
+        adid: '2_ssl',
+        adm: vast,
+        adomain: ["www3.thehealthyfat.com"],
+        burl: `${baseUrl}/burl/\${AUCTION_PRICE}`,
+        cat: ['IAB1-1'],
+        cid: '2_ssl',
+        crid: '2_ssl',
+        dealid: '3901521',
+        id: '65599d0a-42d2-446a-9d39-6086c1433ffe',
+        impid: '2b3c9d103723a7',
+        price: 5.5,
+      };
+
+      const response = {
+        body: {
+          seatbid: [{ bid: [bid] }],
+          cur: 'USD',
+          id: '620190c2-7eef-42fa-91e2-f5c7fbc2bdd3',
+        }
+      };
+
+      const [result] = spec.interpretResponse(response);
+
+      assert.deepEqual(result, {
+        burl: bid.burl,
+        cpm: bid.price,
+        creativeId: bid.adid,
+        currency: response.body.cur,
+        dealId: bid.dealid,
+        mediaType: VIDEO,
+        meta: { advertiserDomains: bid.adomain },
+        netRevenue: true,
+        requestId: bid.impid,
+        ttl: 300,
+        vastXml: vast,
+      });
+    });
+  });
+
   describe('onBidWon()', function () {
     beforeEach(function() {
       sinon.stub(utils, 'triggerPixel');
@@ -605,6 +745,65 @@ describe('mediaforce bid adapter', function () {
       }
       spec.onBidWon(bid);
       assert.equal(bid.burl, 'burl&s=0.20');
+    });
+  });
+
+  describe('resolveFloor()', function () {
+    it('should return 0 if no bidfloor and no resolveFloor API', function () {
+      const bid = {};
+      assert.equal(resolveFloor(bid), 0);
+    });
+
+    it('should return static bidfloor if no resolveFloor API', function () {
+      const bid = { params: { bidfloor: 2.5 } };
+      assert.equal(resolveFloor(bid), 2.5);
+    });
+
+    it('should return the highest floor among all sources', function () {
+      const makeBid = (mediaType, floor) => ({
+        getFloor: ({ mediaType: mt }) => ({ floor: mt === mediaType ? floor : 0.5 }),
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { playerSize: [640, 480] },
+          native: {}
+        },
+        params: { bidfloor: mediaType === 'static' ? floor : 0.5 }
+      });
+
+      assert.equal(resolveFloor(makeBid(BANNER, 3.5)), 3.5, 'banner floor should be selected');
+      assert.equal(resolveFloor(makeBid(VIDEO, 4.0)), 4.0, 'video floor should be selected');
+      assert.equal(resolveFloor(makeBid(NATIVE, 5.0)), 5.0, 'native floor should be selected');
+      assert.equal(resolveFloor(makeBid('static', 6.0)), 6.0, 'params.bidfloor should be selected');
+    });
+
+    it('should handle invalid floor values from resolveFloor API gracefully', function () {
+      const bid = {
+        getFloor: () => ({}),
+        mediaTypes: { banner: { sizes: [[300, 250]] } }
+      };
+      assert.equal(resolveFloor(bid), 0);
+    });
+
+    it('should extract sizes and apply correct floor per media type', function () {
+      const makeBid = (mediaType, expectedSize) => ({
+        getFloor: ({ mediaType: mt, size }) => {
+          if (mt === mediaType && (Array.isArray(size) ? size[0] : size) === expectedSize) {
+            return { floor: 1 };
+          }
+          return { floor: 0 };
+        },
+        mediaTypes: {
+          banner: { sizes: [[300, 250], [728, 90]] },
+          video: { playerSize: [640, 480] },
+          native: {}
+        },
+        params: {}
+      });
+
+      assert.equal(resolveFloor(makeBid(BANNER, 300)), 1, 'banner size [300, 250]');
+      assert.equal(resolveFloor(makeBid(BANNER, 728)), 1, 'banner size [728, 90]');
+      assert.equal(resolveFloor(makeBid(VIDEO, 640)), 1, 'video playerSize [640, 480]');
+      assert.equal(resolveFloor(makeBid(NATIVE, '*')), 1, 'native default size "*"');
     });
   });
 });

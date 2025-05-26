@@ -19,8 +19,10 @@ const DEFAULT_TTL = 300;
 const LOG_PREFIX = 'Equativ:';
 const PID_STORAGE_NAME = 'eqt_pid';
 
-let nwid = 0;
+let feedbackArray = [];
 let impIdMap = {};
+let nwid = 0;
+let tokens = {};
 
 /**
  * Gets value of the local variable impIdMap
@@ -39,6 +41,36 @@ export function getImpIdMap() {
  */
 function isValid(bidReq) {
   return !(bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}') && !(bidReq.mediaTypes.native && JSON.stringify(bidReq.mediaTypes.native) === '{}');
+}
+
+/**
+ * Updates bid request with data from previous auction
+ * @param {*} req A bid request object to be updated
+ * @returns {*} Updated bid request object
+ */
+function updateFeedbackData(req) {
+  if (req?.ext?.prebid?.previousauctioninfo) {
+    req.ext.prebid.previousauctioninfo.forEach(info => {
+      if (tokens[info?.bidId]) {
+        feedbackArray.push({
+          feedback_token: tokens[info.bidId],
+          loss: info.bidderCpm == info.highestBidCpm ? 0 : 102,
+          price: info.highestBidCpm
+        });
+
+        delete tokens[info.bidId];
+      }
+    });
+
+    delete req.ext.prebid;
+  }
+
+  if (feedbackArray.length) {
+    deepSetValue(req, 'ext.bid_feedback', feedbackArray[0]);
+    feedbackArray.shift();
+  }
+
+  return req;
 }
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -74,7 +106,8 @@ export const spec = {
         //     // 'X-Eqtv-Debug': '682c50e92634fafa0d974114'  // native
         //     // 'X-Eqtv-Debug': '67c8545f9d44a9f4fd5de345'  // video
         //   }
-        // }
+        // },
+        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
       })
     });
 
@@ -97,6 +130,11 @@ export const spec = {
         .forEach(seat =>
           seat.bid.forEach(bid => {
             bid.impid = impIdMap[bid.impid];
+
+            if (deepAccess(bid, 'ext.feedback_token')) {
+              tokens[bid.impid] = bid.ext.feedback_token;
+            }
+
             bid.ttl = typeof bid.exp === 'number' && bid.exp > 0 ? bid.exp : DEFAULT_TTL;
           })
         );
@@ -230,7 +268,7 @@ export const converter = ortbConverter({
       });
     });
 
-    const req = buildRequest(splitImps, bidderRequest, context);
+    let req = buildRequest(splitImps, bidderRequest, context);
 
     let env = ['ortb2.site.publisher', 'ortb2.app.publisher', 'ortb2.dooh.publisher'].find(propPath => deepAccess(bid, propPath)) || 'ortb2.site.publisher';
     nwid = deepAccess(bid, env + '.id') || bid.params.networkId;
@@ -244,7 +282,7 @@ export const converter = ortbConverter({
       if (deepAccess(bid, path)) {
         props.forEach(prop => {
           if (!deepAccess(bid, `${path}.${prop}`)) {
-            logWarn(`${LOG_PREFIX} Property "${path}.${prop}" is missing from request.  Request will proceed, but the use of "${prop}" is strongly encouraged.`, bid);
+            logWarn(`${LOG_PREFIX} Property "${path}.${prop}" is missing from request. Request will proceed, but the use of "${prop}" is strongly encouraged.`, bid);
           }
         });
       }
@@ -254,6 +292,8 @@ export const converter = ortbConverter({
     if (pid) {
       deepSetValue(req, 'user.buyeruid', pid);
     }
+
+    req = updateFeedbackData(req);
 
     return req;
   }

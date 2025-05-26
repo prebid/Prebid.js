@@ -37,7 +37,6 @@ export function toFetchRequest(url, data, options = {}) {
   }
   const headers = new Headers(options.customHeaders);
   headers.set(CTYPE, options.contentType || 'text/plain');
-
   const rqOpts = {
     method,
     headers
