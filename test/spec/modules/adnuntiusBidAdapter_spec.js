@@ -48,7 +48,7 @@ describe('adnuntiusBidAdapter', function () {
     };
     storage = getStorageManager({ bidderCode: 'adnuntius' });
   });
-  
+
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
     sandbox.stub(global, 'URLSearchParams').callsFake(FixedURLSearchParams);
