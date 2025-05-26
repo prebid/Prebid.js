@@ -405,47 +405,47 @@ class WeboramaRtdProvider {
     const purposeConsents = deepAccess(gdpr, 'vendorData.purpose.consents');
     const purposeLegitimateInterests = deepAccess(gdpr, 'vendorData.purpose.legitimateInterests');
     const publisherRestrictions = deepAccess(gdpr, 'vendorData.publisher.restrictions');
-  
-    const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]); 
-    const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]); 
-  
+
+    const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]);
+    const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]);
+
     const allPurposeIDs = new Set([...consentPurposeIDSet, ...legitimateInterestPurposeIDSet]);
-  
+
     for (const purposeID of allPurposeIDs) {
       if (publisherRestrictions?.[purposeID]?.[GVLID] === 0) {
-        return false; 
+        return false;
       }
     }
-  
+
     for (const purposeID of legitimateInterestPurposeIDSet) {
       if (publisherRestrictions?.[purposeID]?.[GVLID] === 1) {
         legitimateInterestPurposeIDSet.delete(purposeID);
-        consentPurposeIDSet.add(purposeID); 
+        consentPurposeIDSet.add(purposeID);
       }
     }
 
     if (consentPurposeIDSet.size > 0) {
       if (!vendorConsents[GVLID]) {
-        return false; 
+        return false;
       }
       for (const purposeID of consentPurposeIDSet) {
         if (!purposeConsents[purposeID]) {
-          return false; 
+          return false;
         }
       }
     }
-  
+
     if (legitimateInterestPurposeIDSet.size > 0) {
       if (!vendorLegitimateInterests[GVLID]) {
-        return false; 
+        return false;
       }
       for (const purposeID of legitimateInterestPurposeIDSet) {
         if (!purposeLegitimateInterests[purposeID]) {
-          return false; 
+          return false;
         }
       }
     }
-  
+
     return true;
   }
   /**
