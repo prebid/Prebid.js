@@ -65,6 +65,16 @@ function wrapURI(uri, impTrackerURLs) {
 }
 
 /**
+ * Function which change the AdSystem Element from the VAST XML Response
+ *
+ * @param {string} vastXml The XML Vast Response
+ * @return XML.
+ */
+function wrapVastXml(vastXml) {
+  return vastXml.replace(/<AdSystem.*>.*<\/AdSystem>/, '<AdSystem>prebid.org wrapper</AdSystem>');
+}
+
+/**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
  * the bid can't be converted cleanly.
  *

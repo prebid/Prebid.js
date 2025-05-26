@@ -53,6 +53,7 @@
       "uid2IdSystem",
       "euidIdSystem",
       "unifiedIdSystem",
+      "unifiedIdHubvisorSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",
       "yandexIdSystem"
