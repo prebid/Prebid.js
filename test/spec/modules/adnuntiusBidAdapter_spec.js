@@ -14,7 +14,7 @@ describe('adnuntiusBidAdapter', function () {
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const usi = utils.generateUUID()
 
-  const meta = [...]; // keep existing meta definition
+  const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: getUnixTimestampFromNow() }, { exp: getUnixTimestampFromNow(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: getUnixTimestampFromNow(1) }, { key: 'valid', value: 'also-valid', exp: getUnixTimestampFromNow(1) }, { key: 'expired', value: 'fwefew', exp: getUnixTimestampFromNow() }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: getUnixTimestampFromNow(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: getUnixTimestampFromNow() }]
   let storage;
 
   before(() => {
