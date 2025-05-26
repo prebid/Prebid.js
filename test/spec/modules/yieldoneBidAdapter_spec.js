@@ -508,6 +508,46 @@ describe('yieldoneBidAdapter', function () {
         expect(request[0].data.uid2id).to.equal('uid2_sample');
       });
     });
+
+    describe('GPID', function () {
+      it('dont send GPID if undefined', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+          },
+          {
+            params: {placementId: '1'},
+            ortb2Imp: {},
+          },
+          {
+            params: {placementId: '2'},
+            ortb2Imp: undefined,
+          },
+          {
+            params: {placementId: '3'},
+            ortb2Imp: {ext: {gpid: undefined, data: {pubadslot: 'aaa'}}},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data).to.not.have.property('gpid');
+        expect(request[1].data).to.not.have.property('gpid');
+        expect(request[2].data).to.not.have.property('gpid');
+        expect(request[3].data).to.not.have.property('gpid');
+      });
+
+      it('should send GPID if available', function () {
+        const bidRequests = [
+          {
+            params: {placementId: '0'},
+            ortb2Imp: {ext: {gpid: 'gpid_sample'}},
+          },
+        ];
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.ext).to.be.not.null;
+        expect(request[0].data).to.have.property('gpid');
+        expect(request[0].data.gpid).to.equal('gpid_sample');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
