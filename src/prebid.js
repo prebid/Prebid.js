@@ -922,10 +922,15 @@ pbjsInstance.getAllWinningBids = function () {
 };
 
 /**
- * Get all of the bids that have won their respective auctions.
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * Deprecated. Returns bids that have had targeting set but haven't been rendered yet.
+ * This method does not return all winning bids after auctions complete.
+ * Use `pbjs.getAllWinningBids()` for the complete list of winners.
+ * @deprecated
+ * @return {Array<AdapterBidResponse>} Bids that have had targeting set and not yet rendered.
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
+  logWarn('pbjs.getAllPrebidWinningBids is deprecated and will be removed in a future release. ' +
+    'It returns bids that have had targeting set but not yet rendered. Use pbjs.getAllWinningBids instead.');
   return auctionManager.getBidsReceived()
     .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 };
