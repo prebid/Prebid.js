@@ -257,7 +257,7 @@ describe('Prebid Adapter: Startio', function () {
       const bid = bids[0];
 
       expect(bid.meta).to.be.an('object');
-      expect(bid.meta.adomain).to.be.an('array').that.includes('start.io');
+      expect(bid.meta.advertiserDomains).to.be.an('array').that.includes('start.io');
     });
 
     if (FEATURES.VIDEO) {

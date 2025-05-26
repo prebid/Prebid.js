@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, logError } from '../src/utils.js';
+import { logError } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
 
@@ -14,15 +14,15 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
 
     if (imp?.banner?.format?.[0]) {
-      imp.banner.w ??= deepAccess(imp, 'banner.format.0.w');
-      imp.banner.h ??= deepAccess(imp, 'banner.format.0.h');
+      imp.banner.w ??= imp.banner.format[0]?.w;
+      imp.banner.h ??= imp.banner.format[0]?.h;
     }
 
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const publisherId = deepAccess(bidderRequest, 'bids.0.params.publisherId');
+    const publisherId = bidderRequest?.bids?.[0]?.params?.publisherId;
     if (request?.site) {
       request.site.publisher = request.site.publisher || {};
       request.site.publisher.id = publisherId;
@@ -30,12 +30,13 @@ const converter = ortbConverter({
       request.app.publisher = request.app.publisher || {};
       request.app.publisher.id = publisherId;
     }
-    deepSetValue(request, 'ext.prebid', {});
+    request.ext = request.ext || {};
+    request.ext.prebid = request.ext.prebid || {};
 
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
-    const isValidBidType = deepAccess(bid, 'ext.prebid.type') === deepAccess(context, 'mediaType');
+    const isValidBidType = bid?.ext?.prebid?.type === context?.mediaType;
 
     if (context.mediaType === NATIVE) {
       const ortb = JSON.parse(bid.adm);
@@ -95,7 +96,6 @@ export const spec = {
     if (bid.nurl) {
       const url = new URL(bid.nurl);
       url.searchParams.set('cpm', bid.cpm);
-
       fetch(url.toString(), { method: 'GET', keepalive: true }).catch(err =>
         logError('Error triggering win notification', err)
       );
