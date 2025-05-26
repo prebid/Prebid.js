@@ -688,8 +688,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const { page, ref } = bidderRequest?.refererInfo || {};
@@ -726,7 +727,10 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT,
       data: data,
-      bidderRequest: bidderRequest
+      bidderRequest: bidderRequest,
+      options: {
+        endpointCompression: true
+      },
     };
     return data?.imp?.length ? serverRequest : null;
   },
