@@ -34,8 +34,7 @@ describe('adnuntiusBidAdapter', function () {
       sandbox.stub(global, 'URLSearchParams').callsFake(function (search) {
         return {
           has: () => true,
-          get: () => 'overridden-value',
-          toString: () => search,
+          get: () => 'overridden-value'
         };
       });
     }
