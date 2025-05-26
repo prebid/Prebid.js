@@ -251,7 +251,7 @@ registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'deviceAccess config', deviceAcc
 /**
  * Block all access to request credentials when deviceAccess = false
  */
-registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'accessRequestCredentials config', deviceAccessRule);
+registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'deviceAccess config', deviceAccessRule);
 
 /**
  * By default, deny bidders accessDevice unless they enable it through bidderSettings
