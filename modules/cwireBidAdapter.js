@@ -248,13 +248,13 @@ export const spec = {
     logInfo('Collecting user-syncs: ', JSON.stringify({syncOptions, gdprConsent, uspConsent, serverResponses}));
 
     const syncs = []
-    if (hasPurpose1Consent(gdprConsent)) {
+    if (hasPurpose1Consent(gdprConsent) && gdprConsent.consentString) {
       logInfo('GDPR purpose 1 consent was given, adding user-syncs')
       let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
       if (type) {
         syncs.push({
           type: type,
-          url: 'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID'
+          url: 'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=' + gdprConsent.consentString,
         })
       }
     }
