@@ -84,21 +84,17 @@
       });
 
 function refreshBid() {
-  pbjs.que.push(function () {
-    pbjs.requestBids({
-      timeout: PREBID_TIMEOUT,
-      adUnitCodes: ["/19968336/header-bid-tag-0"],
-      bidsBackHandler: function () {
-        if (pbjs.libLoaded) { // Check if Prebid.js is loaded
-          pbjs.setTargetingForGPTAsync(["/19968336/header-bid-tag-0"]);
-          googletag.pubads().refresh([slot1]);
-        } else {
-          googletag.pubads().refresh([slot1]);
-        }
-      },
-    });
-  });
-}
+        pbjs.que.push(function () {
+          pbjs.requestBids({
+            timeout: PREBID_TIMEOUT,
+            adUnitCodes: ["/19968336/header-bid-tag-0"],
+            bidsBackHandler: function () {
+              pbjs.setTargetingForGPTAsync(["/19968336/header-bid-tag-0"]);
+              googletag.pubads().refresh([slot1]);
+            },
+          });
+        });
+      }
     </script>
   </head>
 
