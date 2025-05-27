@@ -4,6 +4,7 @@ import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import {hasUserInfo} from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
@@ -54,9 +55,6 @@ function validateMediaSizes(mediaSize) {
       mediaSize.every(size => (isNumber(size) && size >= 0));
 }
 
-function hasUserInfo(bid) {
-  return !!bid.params.user;
-}
 
 function validateParameters(parameters) {
   if (!(parameters.placementId)) {
