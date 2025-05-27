@@ -169,10 +169,12 @@ describe('MediaSquare bid adapter tests', function () {
     expect(requestContent.codes[0]).to.have.property('code').and.to.equal('publishername_atf_desktop_rg_pave');
     expect(requestContent.codes[0]).to.have.property('adunit').and.to.equal('banner-div');
     expect(requestContent.codes[0]).to.have.property('bidId').and.to.equal('aaaa1234');
-    expect(requestContent.codes[0]).to.have.property('auctionId').and.to.equal('bbbb1234');
-    expect(requestContent.codes[0]).to.have.property('transactionId').and.to.equal('cccc1234');
+    expect(requestContent.codes[0]).not.to.have.property('auctionId');
+    expect(requestContent.codes[0]).not.to.have.property('transactionId');
     expect(requestContent.codes[0]).to.have.property('mediatypes').exist;
     expect(requestContent.codes[0]).to.have.property('floor').exist;
+    expect(requestContent.codes[0]).to.have.property('ortb2Imp').exist;
+    expect(requestContent).to.have.property('ortb2').exist;
     expect(requestContent.eids).exist;
     expect(requestContent.eids).to.have.lengthOf(1);
     expect(requestContent.codes[0].floor).to.deep.equal({});

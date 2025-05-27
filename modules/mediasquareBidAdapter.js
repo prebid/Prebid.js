@@ -50,33 +50,30 @@ export const spec = {
 
     let codes = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let floor = {};
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
-      floor = {};
       adunitValue = validBidRequests[key];
-      if (typeof adunitValue.getFloor === 'function') {
-        if (Array.isArray(adunitValue.sizes)) {
-          adunitValue.sizes.forEach(value => {
-            let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
-            if (tmpFloor != {}) { floor[value.join('x')] = tmpFloor; }
-          });
-        }
-        let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
-        if (tmpFloor != {}) { floor['*'] = tmpFloor; }
-      }
-      codes.push({
+      let code = {
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-        auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
-        floor: floor
-      });
+        floor: {}
+      }
+      if (typeof adunitValue.getFloor === 'function') {
+        if (Array.isArray(adunitValue.sizes)) {
+          adunitValue.sizes.forEach(value => {
+            let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
+            if (tmpFloor != {}) { code.floor[value.join('x')] = tmpFloor; }
+          });
+        }
+        let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        if (tmpFloor != {}) { code.floor['*'] = tmpFloor; }
+      }
+      if (adunitValue.ortb2Imp) {code.ortb2Imp = adunitValue.ortb2Imp}
+      codes.push(code);
     });
     const payload = {
       codes: codes,
@@ -95,6 +92,7 @@ export const spec = {
       if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
       if (bidderRequest.userIdAsEids) {payload.eids = bidderRequest.userIdAsEids};
       if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
+      if (bidderRequest.ortb2) {payload.ortb2 = bidderRequest.ortb2}
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
