@@ -11,7 +11,7 @@ import {
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
+import {find} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
@@ -154,7 +154,7 @@ export const spec = {
 
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
-        .filter((param) => includes(USER_PARAMS, param))
+        .filter((param) => USER_PARAMS.includes(param))
         .forEach((param) => {
           let uparam = convertCamelToUnderscore(param);
           if (
@@ -181,7 +181,7 @@ export const spec = {
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
-        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .filter(param => APP_DEVICE_PARAMS.includes(param))
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
@@ -289,7 +289,7 @@ export const spec = {
         if (rtbBid) {
           if (
             rtbBid.cpm !== 0 &&
-            includes(this.supportedMediaTypes, rtbBid.ad_type)
+            this.supportedMediaTypes.includes(rtbBid.ad_type)
           ) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
