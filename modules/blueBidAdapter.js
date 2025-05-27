@@ -2,13 +2,14 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getBidFloor, buildOrtbRequest, ortbConverterRequest, ortbConverterImp, buildBidObjectBase, commonOnBidWonHandler } from '../../libraries/blueUtils/bidderutils.js';
 import {
   replaceAuctionPrice,
   isFn,
   isPlainObject,
   deepSetValue,
   isEmpty,
-  triggerPixel,
+  // triggerPixel, // No longer directly used here
 } from '../src/utils.js';
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
@@ -17,51 +18,18 @@ const DEFAULT_CURRENCY = 'USD';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
-function getBidFloor(bid) {
-  if (isFn(bid.getFloor)) {
-    let floor = bid.getFloor({
-      currency: DEFAULT_CURRENCY,
-      mediaType: BANNER,
-      size: '*',
-    });
-    if (
-      isPlainObject(floor) &&
-      !isNaN(floor.floor) &&
-      floor.currency === DEFAULT_CURRENCY
-    ) {
-      return floor.floor;
-    }
-  }
-  return null;
-}
-
 const converter = ortbConverter({
   context: {
     netRevenue: true, // Default netRevenue setting
     ttl: 100, // Default time-to-live for bid responses
+    mediaTypes: {
+      banner: BANNER,
+      defaultCurrency: DEFAULT_CURRENCY
+    }
   },
-  imp,
-  request,
+  imp: ortbConverterImp,
+  request: ortbConverterRequest,
 });
-
-function request(buildRequest, imps, bidderRequest, context) {
-  let request = buildRequest(imps, bidderRequest, context);
-  deepSetValue(request, 'site.publisher.id', context.publisherId);
-  return request;
-}
-
-function imp(buildImp, bidRequest, context) {
-  let imp = buildImp(bidRequest, context);
-  const floor = getBidFloor(bidRequest);
-  imp.tagid = bidRequest.params.placementId;
-
-  if (floor) {
-    imp.bidfloor = floor;
-    imp.bidfloorcur = DEFAULT_CURRENCY;
-  }
-
-  return imp;
-}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -81,15 +49,7 @@ export const spec = {
       )?.params.publisherId,
     };
 
-    const ortbRequest = converter.toORTB({
-      bidRequests: validBidRequests,
-      bidderRequest,
-      context,
-    });
-
-    // Add extensions to the request
-    ortbRequest.ext = ortbRequest.ext || {};
-    deepSetValue(ortbRequest, 'ext.gvlid', GVLID);
+    const ortbRequest = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
 
     return [
       {
@@ -109,41 +69,17 @@ export const spec = {
     let bids = [];
     serverResponse.body.seatbid.forEach((response) => {
       response.bid.forEach((bid) => {
-        const mediaType = bid.ext?.mediaType || 'banner';
-        bids.push({
-          ad: replaceAuctionPrice(bid.adm, bid.price),
-          adapterCode: BIDDER_CODE,
-          cpm: bid.price,
-          creativeId: bid.ext.blue.adId,
-          creative_id: bid.ext.blue.adId,
-          currency: serverResponse.body.cur || 'USD',
-          deferBilling: false,
-          deferRendering: false,
-          width: bid.w,
-          height: bid.h,
-          mediaType,
-          netRevenue: true,
-          originalCpm: bid.price,
-          originalCurrency: serverResponse.body.cur || 'USD',
-          requestId: bid.impid,
-          seatBidId: bid.id,
-          ttl: 1200,
-        });
+        const baseBid = buildBidObjectBase(bid, serverResponse.body, BIDDER_CODE, DEFAULT_CURRENCY);
+        const blueSpecific = { creativeId: bid.ext.blue.adId, creative_id: bid.ext.blue.adId, ttl: 1200 };
+        bids.push({ ...baseBid, ...blueSpecific });
       });
     });
     return bids;
   },
 
   onBidWon: function (bid) {
-    const { burl, nurl } = bid || {};
-
-    if (nurl) {
-      triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
-    }
-
-    if (burl) {
-      triggerPixel(replaceAuctionPrice(burl, bid.originalCpm || bid.cpm));
-    }
+    // replaceAuctionPrice is available in this scope due to the import above
+    commonOnBidWonHandler(bid, (url, bidData) => replaceAuctionPrice(url, bidData.originalCpm || bidData.cpm));
   },
 };
 
