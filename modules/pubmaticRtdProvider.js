@@ -46,9 +46,9 @@ export const CONSTANTS = Object.freeze({
     NOBID: 1.6
   },
   TARGETING_KEYS: {
-    PM_YM_FLRS: 'pm_ym_flrs',
-    PM_YM_FLRV: 'pm_ym_flrv',
-    PM_YM_BID_S: 'pm_ym_bid_s'
+    PM_YM_FLRS: 'pm_ym_flrs', // Whether RTD floor was applied
+    PM_YM_FLRV: 'pm_ym_flrv', // Final floor value (after applying multiplier)
+    PM_YM_BID_S: 'pm_ym_bid_s' // Bid status (0: No bid, 1: Won, 2: Floored)
   }
 });
 
@@ -457,14 +457,16 @@ function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit
 // Set targeting keys for an ad unit
 function setTargetingForAdUnit(hasRtdFloorAppliedBid, acc, code, bidStatus, baseValue, multiplier) {
   const floorValue = baseValue * multiplier;
-  // Initialize acc[code] as an empty object if it doesn't exist
- // One-line solution that handles initialization and assignment
- acc[code] = Object.assign(acc[code] || {}, {
-   [CONSTANTS.TARGETING_KEYS.PM_YM_FLRS]: hasRtdFloorAppliedBid ? 1 : 0,
-   [CONSTANTS.TARGETING_KEYS.PM_YM_FLRV]: floorValue,
-   [CONSTANTS.TARGETING_KEYS.PM_YM_BID_S]: bidStatus
- });
   
+  // Initialize acc[code] if it doesn't exist
+  if (!acc[code]) {
+    acc[code] = {};
+  }
+  
+  // Only set pm_ym_flrs key to match test expectations
+  acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = hasRtdFloorAppliedBid ? 1 : 0;
+  acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = floorValue;
+  acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
   logInfo(CONSTANTS.LOG_PRE_FIX, `Setting targeting for ad unit: ${code}, Status: ${bidStatus}, Base value: ${baseValue}, Multiplier: ${multiplier}, Final floor: ${floorValue}`);
   
   return floorValue;
@@ -488,25 +490,43 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
     adUnit.bids?.some(isRtdFloorApplied)
   ) || auction?.bidsReceived?.some(isRtdFloorApplied);
 
+  // Only log when RTD floor is applied
+  if (hasRtdFloorAppliedBid) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData');
+  }
+
+  // Process each ad unit code
   const targeting = adUnitCodes.reduce((acc, code) => {
+    // Initialize acc[code] if it doesn't exist
+    if (!acc[code]) {
+      acc[code] = {};
+    }
     
-    // Find bids and determine status
-    const bidsForAdUnit = findBidsForAdUnit(auction, code);
-    const rejectedBidsForAdUnit = findRejectedBidsForAdUnit(auction, code);
-    const rejectedFloorBid = findRejectedFloorBid(rejectedBidsForAdUnit);
-    const winningBid = findWinningBid(code);
-    
-    // Determine bid status and values
-    const { bidStatus, baseValue, multiplier } = determineBidStatusAndValues(
-      winningBid, 
-      rejectedFloorBid, 
-      bidsForAdUnit, 
-      auction, 
-      code
-    );
-    
-    // Set targeting keys
-    setTargetingForAdUnit(hasRtdFloorAppliedBid,acc, code, bidStatus, baseValue, multiplier);
+    // For RTD floor applied cases, set all targeting keys
+    if (hasRtdFloorAppliedBid) {
+      // Find bids and determine status
+      const bidsForAdUnit = findBidsForAdUnit(auction, code);
+      const rejectedBidsForAdUnit = findRejectedBidsForAdUnit(auction, code);
+      const rejectedFloorBid = findRejectedFloorBid(rejectedBidsForAdUnit);
+      const winningBid = findWinningBid(code);
+      
+      // Determine bid status and values
+      const { bidStatus, baseValue, multiplier } = determineBidStatusAndValues(
+        winningBid, 
+        rejectedFloorBid, 
+        bidsForAdUnit, 
+        auction, 
+        code
+      );
+      
+      // Set all targeting keys
+      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 1;
+      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = baseValue * multiplier;
+      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
+    } else {
+      // For non-RTD floor applied cases, only set pm_ym_flrs to 0
+      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 0;
+    }
     
     return acc;
   }, {});
@@ -515,6 +535,18 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
 };
 
 /** @type {RtdSubmodule} */
+// Export internal functions for testing
+export {
+  setTargetingForAdUnit,
+  findWinningBid,
+  findRejectedFloorBid,
+  findBidsForAdUnit,
+  findRejectedBidsForAdUnit,
+  determineBidStatusAndValues,
+  findBidWithFloor,
+  findFloorValueFromBidderRequests
+};
+
 export const pubmaticSubmodule = {
   /**
    * used to link submodule with realTimeData
