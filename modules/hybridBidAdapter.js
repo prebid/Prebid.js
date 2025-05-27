@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
 
-
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
