@@ -75,3 +75,28 @@ export function commonOnBidWonHandler(bid, processUrl = (url, bidData) => url) {
     triggerPixel(processUrl(burl, bid));
   }
 }
+
+export function commonIsBidRequestValid(bid) {
+  return !!bid.params.placementId && !!bid.params.publisherId;
+}
+
+export function createOrtbConverter(ortbConverterFunc, bannerMediaType, defaultCurrencyConst, impFunc, requestFunc) {
+  return ortbConverterFunc({
+    context: {
+      netRevenue: true,
+      ttl: 100,
+      mediaTypes: {
+        banner: bannerMediaType,
+        defaultCurrency: defaultCurrencyConst
+      }
+    },
+    imp: impFunc,
+    request: requestFunc,
+  });
+}
+
+export function getPublisherIdFromBids(validBidRequests) {
+  return validBidRequests.find(
+    (bidRequest) => bidRequest.params?.publisherId
+  )?.params.publisherId;
+}

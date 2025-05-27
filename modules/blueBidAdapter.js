@@ -2,13 +2,23 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { getBidFloor, buildOrtbRequest, ortbConverterRequest, ortbConverterImp, buildBidObjectBase, commonOnBidWonHandler } from '../../libraries/blueUtils/bidderutils.js';
+import {
+  getBidFloor,
+  buildOrtbRequest,
+  ortbConverterRequest,
+  ortbConverterImp,
+  buildBidObjectBase,
+  commonOnBidWonHandler,
+  commonIsBidRequestValid,
+  createOrtbConverter,
+  getPublisherIdFromBids
+} from '../../libraries/blueUtils/bidderutils.js';
 import {
   replaceAuctionPrice,
-  isFn,
-  isPlainObject,
-  deepSetValue,
   isEmpty,
+  // isFn, // No longer directly used here
+  // isPlainObject, // No longer directly used here
+  // deepSetValue, // No longer directly used here
   // triggerPixel, // No longer directly used here
 } from '../src/utils.js';
 const BIDDER_CODE = 'blue';
@@ -18,18 +28,7 @@ const DEFAULT_CURRENCY = 'USD';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
-const converter = ortbConverter({
-  context: {
-    netRevenue: true, // Default netRevenue setting
-    ttl: 100, // Default time-to-live for bid responses
-    mediaTypes: {
-      banner: BANNER,
-      defaultCurrency: DEFAULT_CURRENCY
-    }
-  },
-  imp: ortbConverterImp,
-  request: ortbConverterRequest,
-});
+const converter = createOrtbConverter(ortbConverter, BANNER, DEFAULT_CURRENCY, ortbConverterImp, ortbConverterRequest);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -37,16 +36,12 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   // Validate bid request
-  isBidRequestValid: function (bid) {
-    return !!bid.params.placementId && !!bid.params.publisherId;
-  },
+  isBidRequestValid: commonIsBidRequestValid,
 
   // Build OpenRTB requests using `ortbConverter`
   buildRequests: function (validBidRequests, bidderRequest) {
     const context = {
-      publisherId: validBidRequests.find(
-        (bidRequest) => bidRequest.params?.publisherId
-      )?.params.publisherId,
+      publisherId: getPublisherIdFromBids(validBidRequests),
     };
 
     const ortbRequest = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
