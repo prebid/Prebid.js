@@ -9,9 +9,8 @@
 import {deepSetValue, isEmpty, logError, mergeDeep} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-
-import {getRefererInfo} from '../src/refererDetection.js';
 import {config} from '../src/config.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'RelevadRTDModule';

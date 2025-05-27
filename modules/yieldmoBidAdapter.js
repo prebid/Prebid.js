@@ -96,8 +96,7 @@ export const spec = {
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
           gpp_sid:
-            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
-        }),
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || []}),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
       if (topicsData) {

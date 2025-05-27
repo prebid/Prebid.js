@@ -2,7 +2,6 @@ import {deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/ut
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-
 import {
   getUserSyncsFn,
   isBidRequestValid,
