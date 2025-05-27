@@ -3,7 +3,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  getBidFloor,
   buildOrtbRequest,
   ortbConverterRequest,
   ortbConverterImp,
@@ -13,7 +12,7 @@ import {
   createOrtbConverter,
   getPublisherIdFromBids,
   packageOrtbRequest
-} from '../../libraries/blueUtils/bidderutils.js';
+} from '../libraries/blueUtils/bidderutils.js';
 import {
   isEmpty
 } from '../src/utils.js';
