@@ -11,7 +11,8 @@ import {
   commonOnBidWonHandler,
   commonIsBidRequestValid,
   createOrtbConverter,
-  getPublisherIdFromBids
+  getPublisherIdFromBids,
+  packageOrtbRequest
 } from '../../libraries/blueUtils/bidderutils.js';
 import {
   isEmpty,
@@ -45,20 +46,12 @@ export const spec = {
     const context = {
       publisherId: getPublisherIdFromBids(validBidRequests),
     };
+    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
 
-    const ortbRequest = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
+    const bmsDataProcessor = (data) => JSON.stringify(data);
+    const bmsOptions = { contentType: 'text/plain', withCredentials: true };
 
-    return [
-      {
-        method: 'POST',
-        url: ENDPOINT_URL,
-        data: JSON.stringify(ortbRequest),
-        options: {
-          contentType: 'text/plain',
-          withCredentials: true,
-        },
-      },
-    ];
+    return packageOrtbRequest(ortbRequestData, ENDPOINT_URL, bmsDataProcessor, bmsOptions);
   },
 
   interpretResponse: (serverResponse) => {

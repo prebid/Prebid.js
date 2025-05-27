@@ -11,7 +11,8 @@ import {
   commonOnBidWonHandler,
   commonIsBidRequestValid,
   createOrtbConverter,
-  getPublisherIdFromBids
+  getPublisherIdFromBids,
+  packageOrtbRequest
 } from '../../libraries/blueUtils/bidderutils.js';
 import {
   replaceAuctionPrice,
@@ -43,19 +44,12 @@ export const spec = {
     const context = {
       publisherId: getPublisherIdFromBids(validBidRequests),
     };
+    const ortbRequestData = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
 
-    const ortbRequest = buildOrtbRequest(validBidRequests, bidderRequest, context, GVLID, converter);
+    const blueDataProcessor = (data) => data;
+    const blueOptions = { contentType: 'application/json' };
 
-    return [
-      {
-        method: 'POST',
-        url: ENDPOINT_URL,
-        data: ortbRequest,
-        options: {
-          contentType: 'application/json',
-        },
-      },
-    ];
+    return packageOrtbRequest(ortbRequestData, ENDPOINT_URL, blueDataProcessor, blueOptions);
   },
 
   interpretResponse: (serverResponse) => {

@@ -100,3 +100,14 @@ export function getPublisherIdFromBids(validBidRequests) {
     (bidRequest) => bidRequest.params?.publisherId
   )?.params.publisherId;
 }
+
+export function packageOrtbRequest(ortbRequest, endpointUrl, dataProcessor, requestOptions) {
+  return [
+    {
+      method: 'POST',
+      url: endpointUrl,
+      data: dataProcessor(ortbRequest),
+      options: requestOptions,
+    }
+  ];
+}
