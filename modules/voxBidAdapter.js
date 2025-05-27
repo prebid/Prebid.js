@@ -1,9 +1,9 @@
-import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
+import {_map, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
-import {Renderer} from '../src/Renderer.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -43,38 +43,6 @@ function buildBidRequests(validBidRequests, bidderRequest) {
   })
 }
 
-const outstreamRender = bid => {
-  bid.renderer.push(() => {
-    window.ANOutstreamVideo.renderAd({
-      sizes: [bid.width, bid.height],
-      targetId: bid.adUnitCode,
-      rendererOptions: {
-        showBigPlayButton: false,
-        showProgressBar: 'bar',
-        showVolume: false,
-        allowFullscreen: true,
-        skippable: false,
-        content: bid.vastXml
-      }
-    });
-  });
-}
-
-const createRenderer = (bid) => {
-  const renderer = Renderer.install({
-    targetId: bid.adUnitCode,
-    url: VIDEO_RENDERER_URL,
-    loaded: false
-  });
-
-  try {
-    renderer.setRender(outstreamRender);
-  } catch (err) {
-    logWarn('Prebid Error calling setRender on renderer', err);
-  }
-
-  return renderer;
-}
 
 function buildBid(bidData) {
   const bid = {
@@ -103,7 +71,7 @@ function buildBid(bidData) {
       bid.height = video.playerSize[0][1];
 
       if (video.context === 'outstream') {
-        bid.renderer = createRenderer(bid);
+        bid.renderer = createRenderer(bid, VIDEO_RENDERER_URL);
       }
     }
   } else if (bidData.placement === 'inImage') {
@@ -117,19 +85,6 @@ function buildBid(bidData) {
   return bid;
 }
 
-function getMediaTypeFromBid(bid) {
-  return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
-}
-
-function hasVideoMandatoryParams(mediaTypes) {
-  const isHasVideoContext = !!mediaTypes.video && (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
-
-  const isPlayerSize =
-    !!deepAccess(mediaTypes, 'video.playerSize') &&
-    isArray(deepAccess(mediaTypes, 'video.playerSize'));
-
-  return isHasVideoContext && isPlayerSize;
-}
 
 function wrapInImageBanner(bid, bidData) {
   return `<!DOCTYPE html>
