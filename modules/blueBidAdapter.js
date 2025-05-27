@@ -16,11 +16,7 @@ import {
 } from '../../libraries/blueUtils/bidderutils.js';
 import {
   replaceAuctionPrice,
-  isEmpty,
-  // isFn, // No longer directly used here
-  // isPlainObject, // No longer directly used here
-  // deepSetValue, // No longer directly used here
-  // triggerPixel, // No longer directly used here
+  isEmpty
 } from '../src/utils.js';
 const BIDDER_CODE = 'blue';
 const ENDPOINT_URL = 'https://bidder-us-east-1.getblue.io/engine/?src=prebid';
@@ -67,7 +63,7 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    // replaceAuctionPrice is available in this scope due to the import above
+    // replaceAuctionPrice is available in this scope due to the import from ../src/utils.js
     commonOnBidWonHandler(bid, (url, bidData) => replaceAuctionPrice(url, bidData.originalCpm || bidData.cpm));
   },
 };

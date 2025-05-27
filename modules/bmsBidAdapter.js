@@ -15,12 +15,7 @@ import {
   packageOrtbRequest
 } from '../../libraries/blueUtils/bidderutils.js';
 import {
-  isEmpty,
-  // replaceAuctionPrice, // No longer directly used here
-  // isFn, // No longer directly used here
-  // isPlainObject, // No longer directly used here
-  // deepSetValue, // No longer directly used here
-  // triggerPixel, // No longer directly used here
+  isEmpty
 } from '../src/utils.js';
 const BIDDER_CODE = 'bms';
 const ENDPOINT_URL =
