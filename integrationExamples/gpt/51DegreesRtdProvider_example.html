@@ -24,11 +24,15 @@
         function initAdserver() {
             if (pbjs.initAdserverSet) return;
 
-            googletag.cmd.push(function () {
-                pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                });
+            googletag.cmd.push(function() {
+                if (pbjs.libLoaded) { // Check if Prebid library loaded
+                    pbjs.que.push(function() {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+               } else {
+                  googletag.pubads().refresh(); // If Prebidlib not loaded, just refresh ads
+               }
             });
 
             pbjs.initAdserverSet = true;

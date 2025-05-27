@@ -85,9 +85,14 @@
     googletag.cmd.push(function() {
         var rightSlot = googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
 
-        pbjs.que.push(function() {
-            pbjs.setTargetingForGPTAsync();
-        });
+        if (pbjs.libLoaded) { // Check if Prebid library loaded
+            pbjs.que.push(function() {
+                pbjs.setTargetingForGPTAsync();
+                googletag.pubads().refresh(); // Added refresh as per standard pattern
+            });
+        } else {
+            googletag.pubads().refresh(); // If Prebidlib not loaded, just refresh ads
+        }
 
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();

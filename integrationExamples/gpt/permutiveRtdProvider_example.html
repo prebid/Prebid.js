@@ -227,10 +227,14 @@
                 if (pbjs.initAdserverSet) return;
                 pbjs.initAdserverSet = true;
                 googletag.cmd.push(function() {
-                    pbjs.que.push(function() {
-                        pbjs.setTargetingForGPTAsync();
-                        googletag.pubads().refresh();
-                    });
+                    if (pbjs.libLoaded) { // Check if Prebid library loaded
+                        pbjs.que.push(function() {
+                            pbjs.setTargetingForGPTAsync();
+                            googletag.pubads().refresh();
+                        });
+                   } else {
+                      googletag.pubads().refresh(); // If Prebidlib not loaded, just refresh ads
+                   }
                 });
             }
             // in case PBJS doesn't load
