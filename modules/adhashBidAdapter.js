@@ -42,9 +42,9 @@ function brandSafety(badWords, maxScore) {
 
   /**
    * Calculates the scoring for each bad word with dimishing returns
-   * @param {integer} points points that this word costs
-   * @param {integer} occurrences number of occurrences
-   * @returns {float} final score
+   * @param {number} points points that this word costs
+   * @param {number} occurrences number of occurrences
+   * @returns {number} final score
    */
   const scoreCalculator = (points, occurrences) => {
     let positive = true;
