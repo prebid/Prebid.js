@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -268,9 +269,10 @@ function getUserId(id, source, uidExt, atype) {
 function getOffset(el) {
   if (el) {
     const rect = getBoundingClientRect(el);
+    const viewport = getViewportCoordinates();
     return {
-      left: rect.left + window.scrollX,
-      top: rect.top + window.scrollY
+      left: rect.left + (viewport.left || 0),
+      top: rect.top + (viewport.top || 0)
     };
   }
 }
