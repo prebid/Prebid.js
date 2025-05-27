@@ -159,7 +159,7 @@ export function mergeEuidsArrays(euids1, euids2) {
   const processArray = (array) => {
     array.forEach(item => {
       if (item.uids) {
-        const foundIndex = ((mergedArray) || []).findIndex(function (x) {
+        const foundIndex = mergedArray.findIndex(function (x) {
           return x.source === item.source;
         });
         if (foundIndex !== -1) {
@@ -685,7 +685,7 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
 
   adUnits.forEach(adUnit => {
     return adUnit.bids?.forEach(bid => {
-      const bidderIndex = ((params.bidders) || []).findIndex(function (i) { return i.bidder === bid.bidder; });
+      const bidderIndex = params.bidders.findIndex(function (i) { return i.bidder === bid.bidder; });
       try {
         const aliasActualBidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
         if (aliasActualBidder === 'appnexus') {

@@ -80,7 +80,7 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   }
 
   serverResponse.bids.forEach(serverBid => {
-    const requestId = ((bidderRequest.bids) || []).findIndex((bidRequest) => {
+    const requestId = bidderRequest.bids.findIndex((bidRequest) => {
       return bidRequest.bidId === serverBid.requestId;
     });
 

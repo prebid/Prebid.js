@@ -2,7 +2,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {includes} from '../src/polyfill.js';
 import {deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
@@ -54,7 +53,7 @@ export const spec = {
 
       if (userObjBid) {
         Object.keys(userObjBid.params.user)
-          .filter(param => includes(USER_PARAMS, param))
+          .filter(param => USER_PARAMS.includes(param))
           .forEach((param) => {
             let uparam = convertCamelToUnderscore(param);
             if (param === 'segments' && isArray(userObjBid.params.user[param])) {
