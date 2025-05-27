@@ -1,0 +1,10 @@
+{
+  "threshold": 20,
+  "minTokens": 100,
+  "reporters": [
+    "json"
+  ],
+  "output": "./",
+  "pattern": "**/*.js",
+  "ignore": "**/*spec.js"
+}
