@@ -1,6 +1,5 @@
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {isArray, isNumber, isPlainObject, isStr, replaceAuctionPrice} from '../src/utils.js';
-import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
@@ -100,13 +99,12 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
     data: generateBidRequestsFromAdUnits(adUnits, bidRequestId, adUnitContext),
     options: {
       contentType: 'application/json',
-      withCredentials: false,
-    }
+      withCredentials: false}
   }
 }
 
 function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext) {
-  const userObjBid = find(bidRequests, hasUserInfo);
+  const userObjBid = ((bidRequests) || []).find(hasUserInfo);
   let userObj = {};
   if (userObjBid) {
     Object.keys(userObjBid.params.user)
@@ -130,7 +128,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
       });
   }
 
-  const deviceObjBid = find(bidRequests, hasDeviceInfo);
+  const deviceObjBid = ((bidRequests) || []).find(hasDeviceInfo);
   let deviceObj;
   if (deviceObjBid && deviceObjBid.params && deviceObjBid.params.device) {
     deviceObj = {};
@@ -153,7 +151,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   payload.at = 1
   payload.cur = ['USD']
   payload.imp = bidRequests.reduce(generateImpressionsFromAdUnit, [])
-  const appDeviceObjBid = find(bidRequests, hasAppInfo);
+  const appDeviceObjBid = ((bidRequests) || []).find(hasAppInfo);
   if (!appDeviceObjBid) {
     payload.site = generateSiteFromAdUnitContext(bidRequests, adUnitContext)
   } else {

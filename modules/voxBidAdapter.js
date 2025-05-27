@@ -1,7 +1,6 @@
 import {_map, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
 import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../libraries/hybridVoxUtils/index.js';
 
@@ -57,8 +56,7 @@ function buildBid(bidData) {
     ttl: TTL,
     content: bidData.content,
     meta: {
-      advertiserDomains: bidData.advertiserDomains || [],
-    }
+      advertiserDomains: bidData.advertiserDomains || []}
   };
 
   if (bidData.placement === 'video') {
@@ -205,7 +203,7 @@ export const spec = {
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
       return _map(serverBody.bids, function(bid) {
-        let rawBid = find(bidRequests, function (item) {
+        let rawBid = ((bidRequests) || []).find(function (item) {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;
