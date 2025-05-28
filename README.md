@@ -238,7 +238,7 @@ Features that can be disabled this way are:
 
 #### Greedy promises
 
-By default, Prebid attempts to hold control of the main thread when possible, using a [custom implementation of `Promise`](https://github.com/prebid/Prebid.js/blob/master/libraries/greedy/greedyPromise.js) that does not submit callbacks to the scheduler once the promise is resolved (running them immediately instead).
+When enabled, Prebid attempts to hold control of the main thread when possible, using a [custom implementation of `Promise`](https://github.com/prebid/Prebid.js/blob/master/libraries/greedy/greedyPromise.js) that does not submit callbacks to the scheduler once the promise is resolved (running them immediately instead).
 Disabling this behavior instructs Prebid to use the standard `window.Promise` instead; this has the effect of breaking up task execution, making them slower overall but giving the browser more chances to run other tasks in between, which can improve UX.         
 
 You may also override the `Promise` constructor used by Prebid through `pbjs.Promise`, for example:
