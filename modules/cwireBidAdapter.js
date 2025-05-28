@@ -87,6 +87,13 @@ function getRefGroups() {
 }
 
 /**
+ * Returns the downlink speed of the connection in Mbps or an empty string if not available.
+ */
+function getConnectionDownLink(nav) {
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
+}
+
+/**
  * Reads the CWID from local storage.
  */
 function getCwid() {
@@ -190,6 +197,7 @@ export const spec = {
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
       pageViewId: pageViewId,
+      networkBandwidth: getConnectionDownLink(window.navigator),
       sdk: {
         version: '$prebid.version$'
       },
