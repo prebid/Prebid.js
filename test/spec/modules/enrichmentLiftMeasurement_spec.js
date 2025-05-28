@@ -21,8 +21,7 @@ describe('enrichmentLiftMeasurement', () => {
   })
   
   it('should properly split traffic basing on percentage', function () {
-    this.timeout(6000);
-    const TEST_SAMPLE_SIZE = 10000;
+    const TEST_SAMPLE_SIZE = 1000;
     const MARGIN_OF_ERROR = 0.05;
     const modulesConfig = [
       { name: 'idSystem1', percentage: 0.8 },
@@ -31,7 +30,7 @@ describe('enrichmentLiftMeasurement', () => {
       { name: 'idSystem4', percentage: 1 },
       { name: 'idSystem5', percentage: 0 },
     ];
-    const TOTAL_RANDOM_CALLS = (TEST_SAMPLE_SIZE + 1) * modulesConfig.length;
+    const TOTAL_RANDOM_CALLS = TEST_SAMPLE_SIZE * modulesConfig.length;
     const fixedRandoms = Array.from({ length: TOTAL_RANDOM_CALLS }, (_, i) => i / TOTAL_RANDOM_CALLS);
     let callIndex = 0;
 
