@@ -3874,12 +3874,15 @@ describe('Unit: Prebid Module', function () {
 
   describe('getAllPrebidWinningBids', function () {
     let auctionManagerStub;
+    let logWarnSpy;
     beforeEach(function () {
       auctionManagerStub = sinon.stub(auctionManager, 'getBidsReceived');
+      logWarnSpy = sandbox.spy(utils, 'logWarn');
     });
 
     afterEach(function () {
       auctionManagerStub.restore();
+      logWarnSpy.restore();
     });
 
     it('should warn and return prebid auction winning bids', function () {
