@@ -3391,7 +3391,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
@@ -4811,7 +4810,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });

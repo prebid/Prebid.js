@@ -2,13 +2,13 @@ import {auctionManager} from '../../../src/auctionManager.js';
 import {config} from '../../../src/config.js';
 import {gdprDataHandler, uspDataHandler} from '../../../src/consentHandler.js';
 import parse from 'url-parse';
-import {buildAdpodVideoUrl} from '../../../modules/dfpAdpod.js';
+import {buildAdpodVideoUrl} from '../../../modules/gamAdpod.js';
 import {expect} from 'chai/index.js';
 import * as utils from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
 import * as adpod from 'modules/adpod.js';
 
-describe('dfpAdpod', function () {
+describe('gamAdpod', function () {
   let amStub;
   let amGetAdUnitsStub;
 

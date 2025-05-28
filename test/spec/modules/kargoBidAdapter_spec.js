@@ -784,18 +784,15 @@ describe('kargo adapter tests', function() {
         expect(payload.imp[3].native).to.deep.equal(nativeImp);
       });
 
-      it('pulls gpid from ortb2Imp.ext.gpid then ortb2Imp.ext.data.pbadslot', function () {
+      it('pulls gpid from ortb2Imp.ext.gpid', function () {
         const gpidGpid = 'ortb2Imp.ext.gpid-gpid';
-        const gpidPbadslot = 'ortb2Imp.ext.data.pbadslot-gpid'
         const testBids = [
           {
             ...minimumBidParams,
             ortb2Imp: {
               ext: {
                 gpid: gpidGpid,
-                data: {
-                  pbadslot: gpidPbadslot
-                }
+                data: {}
               }
             }
           },
@@ -812,9 +809,7 @@ describe('kargo adapter tests', function() {
             ...minimumBidParams,
             ortb2Imp: {
               ext: {
-                data: {
-                  pbadslot: gpidPbadslot
-                }
+                data: {}
               }
             }
           },
@@ -838,8 +833,6 @@ describe('kargo adapter tests', function() {
         expect(payload.imp[0].fpd).to.deep.equal({ gpid: gpidGpid });
         // Only ext.gpid
         expect(payload.imp[1].fpd).to.deep.equal({ gpid: gpidGpid });
-        // Only ext.data.pbadslot
-        expect(payload.imp[2].fpd).to.deep.equal({ gpid: gpidPbadslot });
         // Neither present
         expect(payload.imp[3].fpd).to.be.undefined;
         expect(payload.imp[4].fpd).to.be.undefined;

@@ -361,7 +361,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
   this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');

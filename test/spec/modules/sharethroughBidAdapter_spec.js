@@ -505,13 +505,6 @@ describe('sharethrough adapter spec', function () {
           expect(requests[0].data.imp[0].ext.gpid).to.equal('universal-id');
           expect(requests[1].data.imp[0].ext).to.be.empty;
         });
-
-        it('should include gpid when pbadslot is provided without universal id', () => {
-          delete bidRequests[0].ortb2Imp.ext.gpid;
-          const requests = spec.buildRequests(bidRequests, bidderRequest);
-
-          expect(requests[0].data.imp[0].ext.gpid).to.equal('pbadslot-id');
-        });
       });
 
       describe('secure flag', () => {
