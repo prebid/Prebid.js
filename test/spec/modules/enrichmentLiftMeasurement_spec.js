@@ -21,7 +21,7 @@ describe('enrichmentLiftMeasurement', () => {
   })
   
   it('should properly split traffic basing on percentage', () => {
-    const TEST_SAMPLE_SIZE = 400;
+    const TEST_SAMPLE_SIZE = 1000;
     const MARGIN_OF_ERROR = 0.05;
     const modulesConfig = [
       { name: 'idSystem1', percentage: 0.8 },
@@ -31,9 +31,7 @@ describe('enrichmentLiftMeasurement', () => {
       { name: 'idSystem5', percentage: 0 },
     ];
     const TOTAL_RANDOM_CALLS = TEST_SAMPLE_SIZE * modulesConfig.length;
-    const initialRandoms = Array(modulesConfig.length).fill(0.5);
-    const fixedRandomsTail = Array.from({ length: TOTAL_RANDOM_CALLS }, (_, i) => i / TOTAL_RANDOM_CALLS);
-    const fixedRandoms = [...initialRandoms, ...fixedRandomsTail];
+    const fixedRandoms = Array.from({ length: TOTAL_RANDOM_CALLS }, (_, i) => i / TOTAL_RANDOM_CALLS);
     let callIndex = 0;
 
     const mathRandomStub = sinon.stub(Math, 'random').callsFake(() => {
@@ -43,11 +41,9 @@ describe('enrichmentLiftMeasurement', () => {
         modules: modulesConfig
     }});
 
-    init();
-
     const results = [];
     for (let i = 0; i < TEST_SAMPLE_SIZE; i++) {
-        results.push(getCalculatedSubmodules());
+        results.push(getCalculatedSubmodules(modulesConfig));
     }
     modulesConfig.forEach((idSystem) => {
         const passedIdSystemsCount = results.filter((execution) => {
