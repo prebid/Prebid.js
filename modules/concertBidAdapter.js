@@ -3,12 +3,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
 const BIDDER_CODE = 'concert';
@@ -34,8 +36,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @param {bidderRequest} -
+   * @param {validBidRequests[]} validBidRequests an array of bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -144,7 +146,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function(data) {
     logMessage('concert bidder timed out');
@@ -153,7 +155,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function(bid) {
     logMessage('concert bidder won bid');
@@ -267,9 +269,10 @@ function getUserId(id, source, uidExt, atype) {
 function getOffset(el) {
   if (el) {
     const rect = getBoundingClientRect(el);
+    const viewport = getViewportCoordinates();
     return {
-      left: rect.left + window.scrollX,
-      top: rect.top + window.scrollY
+      left: rect.left + (viewport.left || 0),
+      top: rect.top + (viewport.top || 0)
     };
   }
 }
