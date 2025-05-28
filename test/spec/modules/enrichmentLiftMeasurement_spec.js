@@ -20,7 +20,7 @@ describe('enrichmentLiftMeasurement', () => {
     reset();
   })
   
-  it('should properly split traffic basing on percentage', function () {
+  it('should properly split traffic basing on percentage', () => {
     const TEST_SAMPLE_SIZE = 1000;
     const MARGIN_OF_ERROR = 0.05;
     const modulesConfig = [
