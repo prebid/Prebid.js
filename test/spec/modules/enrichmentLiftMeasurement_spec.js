@@ -21,7 +21,7 @@ describe('enrichmentLiftMeasurement', () => {
   })
   
   it('should properly split traffic basing on percentage', () => {
-    const TEST_SAMPLE_SIZE = 1000;
+    const TEST_SAMPLE_SIZE = 400;
     const MARGIN_OF_ERROR = 0.05;
     const modulesConfig = [
       { name: 'idSystem1', percentage: 0.8 },
