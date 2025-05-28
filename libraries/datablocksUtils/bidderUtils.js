@@ -171,9 +171,12 @@ const bidderUtils = {
         // Assuming isEmpty is available in this scope or using a simplified check
         const isEmpty = value => value === undefined || value === null || (typeof value === 'object' && Object.keys(value).length === 0) || (typeof value === 'string' && value.trim().length === 0);
 
-        if (!isEmpty(title)) {
-          result.title = title.text
-        } else if (!isEmpty(img)) {
+        // Handle title asset specifically
+        if (title) { // Check if the 'title' property exists on the asset
+          if (!isEmpty(title.text)) { // Then check if title.text is not empty
+            result.title = title.text;
+          }
+        } else if (!isEmpty(img)) { // For img assets, the existing check is fine
           result[key] = {
             url: img.url,
             height: img.h,
