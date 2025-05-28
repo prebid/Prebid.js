@@ -169,7 +169,7 @@ export const eids = {
     getValue: function(data) {
       return data.lipbid;
     },
-    source: 'liveintent.com',
+    source: LI_PROVIDER_DOMAIN,
     atype: 3,
     getEidExt: function(data) {
       if (Array.isArray(data.segments) && data.segments.length) {
