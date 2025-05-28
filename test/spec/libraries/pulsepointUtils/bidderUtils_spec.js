@@ -63,7 +63,15 @@ describe('PulsePoint Utils', function () {
       expect(mockBuildImp.calledWith(bidRequest, MOCK_CONTEXT)).to.be.true;
       expect(result.id).to.equal('impId');
       expect(result.tagid).to.equal('tag123');
-      expect(result.ext).to.deep.equal({ prebid: { unknownParam1: 'uvalue1' } });
+      // Params not in KNOWN_PARAMS_IMP_TEST (i.e. 'ct', 'unknownParam1', 'battr', 'deals') will be in ext.prebid
+      expect(result.ext).to.deep.equal({
+        prebid: {
+          ct: 'tag123',
+          unknownParam1: 'uvalue1',
+          battr: [1, 2],
+          deals: [{ id: 'deal1' }]
+        }
+      });
       expect(result.banner.battr).to.deep.equal([1, 2]);
       expect(result.pmp).to.deep.equal({ private_auction: 0, deals: [{ id: 'deal1' }] });
     });
@@ -78,7 +86,13 @@ describe('PulsePoint Utils', function () {
       };
       const result = processImp(mockBuildImp, bidRequest, MOCK_CONTEXT, KNOWN_PARAMS_IMP_TEST);
       expect(result.tagid).to.equal('zone456');
-      expect(result.ext).to.deep.equal({ prebid: { unknownParam2: 'uvalue2' } });
+      // Params not in KNOWN_PARAMS_IMP_TEST (i.e. 'adzoneid', 'unknownParam2') will be in ext.prebid
+      expect(result.ext).to.deep.equal({
+        prebid: {
+          adzoneid: 'zone456',
+          unknownParam2: 'uvalue2'
+        }
+      });
       expect(result.pmp).to.be.undefined;
       expect(result.video.battr).to.be.undefined;
     });
@@ -143,7 +157,14 @@ describe('PulsePoint Utils', function () {
         }
       };
       const result = processImp(mockBuildImp, bidRequest, MOCK_CONTEXT, KNOWN_PARAMS_IMP_TEST);
-      expect(result.ext).to.deep.equal({ existingExt: 'value', prebid: { unknownParam3: 'uvalue3' } });
+      // Params not in KNOWN_PARAMS_IMP_TEST (i.e. 'ct', 'unknownParam3') will be in ext.prebid
+      expect(result.ext).to.deep.equal({
+        existingExt: 'value',
+        prebid: {
+          ct: 'tag789',
+          unknownParam3: 'uvalue3'
+        }
+      });
     });
 
      it('should prefer ct over adzoneid if both present', function () {
