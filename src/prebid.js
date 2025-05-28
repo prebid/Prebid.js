@@ -532,10 +532,9 @@ pbjsInstance.setTargetingForAst = function (adUnitCodes) {
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
-pbjsInstance.renderAd = hook('async', async function (doc, id, options) {
+pbjsInstance.renderAd = hook('async', function (doc, id, options) {
   logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   logMessage('Calling renderAd with adId :' + id);
-  await pbYield();
   renderAdDirect(doc, id, options);
 });
 
