@@ -1297,7 +1297,7 @@ describe('Unit: Prebid Module', function () {
     function renderAd(...args) {
       $$PREBID_GLOBAL$$.renderAd(...args);
       return new Promise((resolve) => {
-        setTimeout(resolve, 50);
+        setTimeout(resolve, 10);
       });
     }
 
