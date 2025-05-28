@@ -166,7 +166,7 @@ const bidderUtils = {
     (assets || []).forEach((asset) => {
       const {id, img, data, title} = asset;
       // Directly use NATIVE_ID_MAP_CONST passed as an argument
-      const key = NATIVE_ID_MAP_CONST[id]; 
+      const key = NATIVE_ID_MAP_CONST[id];
       if (key) {
         // Assuming isEmpty is available in this scope or using a simplified check
         const isEmpty = value => value === undefined || value === null || (typeof value === 'object' && Object.keys(value).length === 0) || (typeof value === 'string' && value.trim().length === 0);

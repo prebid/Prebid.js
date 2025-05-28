@@ -1,7 +1,8 @@
-import { getDNT, deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize, isEmpty } from '../src/utils.js';
+import { getDNT, deepAccess, isStr, replaceAuctionPrice, triggerPixel, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import bidderUtils, { NATIVE_ID_MAP, NATIVE_PARAMS } from '../libraries/datablocksUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -25,8 +26,6 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 const BIDDER_CODE = 'mediaforce';
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
 const TEST_ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid?debug_key=abcdefghijklmnop';
-import { NATIVE_ID_MAP, NATIVE_PARAMS } from '../libraries/datablocksUtils/bidderUtils.js';
-import bidderUtils from '../libraries/datablocksUtils/bidderUtils.js';
 
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const DEFAULT_CURRENCY = 'USD'

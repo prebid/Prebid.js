@@ -1,4 +1,4 @@
-import {deepAccess, getWinDimensions, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
+import {deepAccess, getWinDimensions, getWindowTop, isGptPubadsDefined} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -6,8 +6,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
-import { NATIVE_ID_MAP, NATIVE_PARAMS } from '../libraries/datablocksUtils/bidderUtils.js';
-import bidderUtils from '../libraries/datablocksUtils/bidderUtils.js';
+import bidderUtils, { NATIVE_ID_MAP, NATIVE_PARAMS } from '../libraries/datablocksUtils/bidderUtils.js';
 
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 
