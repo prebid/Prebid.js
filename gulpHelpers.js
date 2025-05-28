@@ -175,9 +175,13 @@ module.exports = {
     return options;
   },
   getDisabledFeatures() {
-    return (argv.disable || '')
+    const disabled = (argv.disable || '')
       .split(',')
       .map((s) => s.trim())
       .filter((s) => s);
+    if (!disabled.map((s) => s.toUpperCase()).includes('GREEDY')) {
+      disabled.push('GREEDY');
+    }
+    return disabled;
   },
 };
