@@ -3882,7 +3882,7 @@ describe('Unit: Prebid Module', function () {
       auctionManagerStub.restore();
     });
 
-    it('should return prebid auction winning bids', function () {
+    it('should warn and return prebid auction winning bids', function () {
       let bidsReceived = [
         createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', status: 'targetingSet', requestId: 'reqid-1'}),
         createBidReceived({bidder: 'rubicon', cpm: 6, auctionId: 1, responseTimestamp: 101, adUnitCode: 'code-1', adId: 'adid-2', requestId: 'reqid-2'}),
@@ -3892,8 +3892,9 @@ describe('Unit: Prebid Module', function () {
       auctionManagerStub.returns(bidsReceived)
       let bids = $$PREBID_GLOBAL$$.getAllPrebidWinningBids();
 
-      expect(bids.length).to.equal(1); sandbox
+      expect(bids.length).to.equal(1);
       expect(bids[0].adId).to.equal('adid-1');
+      sinon.assert.calledOnce(logWarnSpy);
     });
   });
 
