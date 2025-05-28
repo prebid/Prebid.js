@@ -231,8 +231,10 @@ Features that can be disabled this way are:
 
  - `VIDEO` - support for video bids;
  - `NATIVE` - support for native bids;
- - `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
- - `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).    
+- `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
+- `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).
+
+`GREEDY` is disabled by default. Use `--enable GREEDY` on the `gulp build` command or remove it from `disableFeatures` to restore the original behavior.
 
 #### Greedy promises
 
@@ -245,6 +247,10 @@ You may also override the `Promise` constructor used by Prebid through `pbjs.Pro
 var pbjs = pbjs || {};
 pbjs.Promise = myCustomPromiseConstructor;
 ```
+
+#### Yield helper
+
+The `pbYield()` utility yields to `scheduler.yield()` when available, allowing long-running tasks to be broken up. Call `await pbYield()` inside async functions to cooperate with the scheduler.
 
 ## Unminified code
 
