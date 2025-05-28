@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 
 import parse from 'url-parse';
-import {buildDfpVideoUrl, dep} from 'modules/dfpAdServerVideo.js';
+import {buildGamVideoUrl as buildDfpVideoUrl, dep} from 'modules/gamAdServerVideo.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
@@ -14,7 +14,7 @@ import * as adServer from 'src/adserver.js';
 import {hook} from '../../../src/hook.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
-import { getVastXml } from '../../../modules/dfpAdServerVideo.js';
+import { getVastXml } from '../../../modules/gamAdServerVideo.js';
 import { server } from '../../mocks/xhr.js';
 import { generateUUID } from '../../../src/utils.js';
 
