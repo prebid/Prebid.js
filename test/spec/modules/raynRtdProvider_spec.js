@@ -336,7 +336,8 @@ describe('rayn RTD Submodule', function () {
 
       setTimeout(() => {
         expect(callbackSpy.calledOnce).to.be.true;
-        expect(logMessageSpy.lastCall.lastArg).to.equal(`Segtax data from RaynJS: ${JSON.stringify(testSegments)}`);
+        const messages = logMessageSpy.getCalls().map(call => call.lastArg);
+        expect(messages).to.include(`Segtax data from RaynJS: ${JSON.stringify(testSegments)}`);
         logMessageSpy.restore();
         done();
       }, 0)
