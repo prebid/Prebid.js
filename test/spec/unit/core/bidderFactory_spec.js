@@ -81,9 +81,9 @@ describe('bidderFactory', () => {
         sandbox = sinon.sandbox.create();
         sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
         ajaxStub = sandbox.stub(ajax, 'ajax');
-        addBidResponseStub.reset();
+        addBidResponseStub.resetHistory();
         getConfigSpy = sandbox.spy(config, 'getConfig');
-        doneStub.reset();
+        doneStub.resetHistory();
         aliasRegistry = {};
         aliasRegistryStub = sandbox.stub(adapterManager, 'aliasRegistry');
         aliasRegistryStub.get(() => aliasRegistry);
@@ -221,7 +221,7 @@ describe('bidderFactory', () => {
 
       describe('transaction IDs', () => {
         beforeEach(() => {
-          activityRules.isActivityAllowed.reset();
+          activityRules.isActivityAllowed.resetHistory();
           ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
           spec.interpretResponse.callsFake(() => [
             {
@@ -511,7 +511,7 @@ describe('bidderFactory', () => {
         });
 
         beforeEach(() => {
-          activityRules.isActivityAllowed.reset();
+          activityRules.isActivityAllowed.resetHistory();
           activityRules.isActivityAllowed.callsFake((activity) => activity === ACTIVITY_TRANSMIT_UFPD ? transmitUfpdAllowed : true);
           bidder = newBidder(spec);
           spec.isBidRequestValid.returns(true);
@@ -649,7 +649,7 @@ describe('bidderFactory', () => {
           fakeResponse.returns('headerContent');
           callbacks.success('response body', { getResponseHeader: fakeResponse });
         });
-        addBidResponseStub.reset();
+        addBidResponseStub.resetHistory();
         doneStub.resetBehavior();
         userSyncStub = sinon.stub(userSync, 'registerSync')
         logErrorSpy = sinon.spy(utils, 'logError');
@@ -954,8 +954,8 @@ describe('bidderFactory', () => {
         });
         callBidderErrorStub = sinon.stub(adapterManager, 'callBidderError');
         eventEmitterStub = sinon.stub(events, 'emit');
-        addBidResponseStub.reset();
-        doneStub.reset();
+        addBidResponseStub.resetHistory();
+        doneStub.resetHistory();
       });
 
       afterEach(function () {
