@@ -26,9 +26,9 @@ export function reset() {
 /**
  * Wraps native setTimeout function in order to count time only when page is focused
  *
- * @param {function(*): ()} [callback] - A function that will be invoked after passed time
+ * @param {function(): void} [callback] - A function that will be invoked after the passed time
  * @param {number} [milliseconds] - Minimum duration (in milliseconds) that the callback will be executed after
- * @returns {function(*): (number)} - Getter function for current timer id
+ * @returns {function(): number} - Getter function for current timer id
  */
 export function setFocusTimeout(callback, milliseconds) {
   const startTime = timeOutOfFocus;

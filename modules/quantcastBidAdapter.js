@@ -3,7 +3,6 @@ import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';
 
 /**
@@ -275,7 +274,7 @@ export const spec = {
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
     if (!hasUserSynced && syncOptions.pixelEnabled) {
-      const responseWithUrl = find(serverResponses, serverResponse =>
+      const responseWithUrl = ((serverResponses) || []).find(serverResponse =>
         deepAccess(serverResponse.body, 'userSync.url')
       );
 

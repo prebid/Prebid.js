@@ -845,7 +845,7 @@ describe('auctionmanager.js', function () {
 
     it('resolves .requestsDone', async () => {
       const auction = auctionManager.createAuction({adUnits});
-      stubCallAdapters.reset();
+      stubCallAdapters.resetHistory();
       auction.callBids();
       await auction.requestsDone;
     })
@@ -2103,7 +2103,7 @@ describe('auctionmanager.js', function () {
         });
 
         beforeEach(() => {
-          onBidRejected.reset();
+          onBidRejected.resetHistory();
           bid = mockBid({bidderCode: BIDDER_CODE});
           bidRequests = [
             mockBidRequest(bid),
