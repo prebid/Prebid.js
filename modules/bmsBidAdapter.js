@@ -12,7 +12,7 @@ import {
   createOrtbConverter,
   getPublisherIdFromBids,
   packageOrtbRequest
-} from '../libraries/blueUtils/bidderutils.js';
+} from '../libraries/blueUtils/bidderUtils.js';
 import {
   isEmpty
 } from '../src/utils.js';
