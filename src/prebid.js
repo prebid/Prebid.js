@@ -938,6 +938,7 @@ pbjsInstance.getAllWinningBids = function () {
  * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
+  logWarn('getAllPrebidWinningBids will be deprecated in a future version. Consider Using getAllWinningBids.');
   return auctionManager.getBidsReceived()
     .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 };
