@@ -1,6 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { processImp, processBidResponse, DEFAULT_TMAX as SHARED_DEFAULT_TMAX } from '../libraries/pulsepointUtils/bidderUtils.js';
-import {isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const DEFAULT_CURRENCY = 'USD'; // This will be passed to processBidResponse

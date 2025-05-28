@@ -4,7 +4,6 @@ import { processImp, processBidResponse, DEFAULT_TMAX as SHARED_DEFAULT_TMAX } f
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
-  isArray,
   replaceAuctionPrice,
   triggerPixel,
   logMessage,
