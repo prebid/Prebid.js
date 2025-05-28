@@ -6,90 +6,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import { NATIVE_ID_MAP, NATIVE_PARAMS } from '../libraries/datablocksUtils/bidderUtils.js';
+import bidderUtils from '../libraries/datablocksUtils/bidderUtils.js';
 
 export const storage = getStorageManager({bidderCode: 'datablocks'});
-
-const NATIVE_ID_MAP = {};
-const NATIVE_PARAMS = {
-  title: {
-    id: 1,
-    name: 'title'
-  },
-  icon: {
-    id: 2,
-    type: 1,
-    name: 'img'
-  },
-  image: {
-    id: 3,
-    type: 3,
-    name: 'img'
-  },
-  body: {
-    id: 4,
-    name: 'data',
-    type: 2
-  },
-  sponsoredBy: {
-    id: 5,
-    name: 'data',
-    type: 1
-  },
-  cta: {
-    id: 6,
-    type: 12,
-    name: 'data'
-  },
-  body2: {
-    id: 7,
-    name: 'data',
-    type: 10
-  },
-  rating: {
-    id: 8,
-    name: 'data',
-    type: 3
-  },
-  likes: {
-    id: 9,
-    name: 'data',
-    type: 4
-  },
-  downloads: {
-    id: 10,
-    name: 'data',
-    type: 5
-  },
-  displayUrl: {
-    id: 11,
-    name: 'data',
-    type: 11
-  },
-  price: {
-    id: 12,
-    name: 'data',
-    type: 6
-  },
-  salePrice: {
-    id: 13,
-    name: 'data',
-    type: 7
-  },
-  address: {
-    id: 14,
-    name: 'data',
-    type: 9
-  },
-  phone: {
-    id: 15,
-    name: 'data',
-    type: 8
-  }
-};
-
-Object.keys(NATIVE_PARAMS).forEach((key) => {
-  NATIVE_ID_MAP[NATIVE_PARAMS[key].id] = key;
-});
 
 // DEFINE THE PREBID BIDDER SPEC
 export const spec = {
@@ -265,46 +185,6 @@ export const spec = {
       return [];
     }
 
-    // CONVERT PREBID NATIVE REQUEST OBJ INTO RTB OBJ
-    function createNativeRequest(bid) {
-      const assets = [];
-      if (bid.nativeParams) {
-        Object.keys(bid.nativeParams).forEach((key) => {
-          if (NATIVE_PARAMS[key]) {
-            const {name, type, id} = NATIVE_PARAMS[key];
-            const assetObj = type ? {type} : {};
-            let {len, sizes, required, aspect_ratios: aRatios} = bid.nativeParams[key];
-            if (len) {
-              assetObj.len = len;
-            }
-            if (aRatios && aRatios[0]) {
-              aRatios = aRatios[0];
-              let wmin = aRatios.min_width || 0;
-              let hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
-              assetObj.wmin = wmin;
-              assetObj.hmin = hmin;
-            }
-            if (sizes && sizes.length) {
-              sizes = [].concat(...sizes);
-              assetObj.w = sizes[0];
-              assetObj.h = sizes[1];
-            }
-            const asset = {required: required ? 1 : 0, id};
-            asset[name] = assetObj;
-            assets.push(asset);
-          }
-        });
-      }
-      return {
-        ver: '1.2',
-        request: {
-          assets: assets,
-          context: 1,
-          plcmttype: 1,
-          ver: '1.2'
-        }
-      }
-    }
     let imps = [];
     // ITERATE THE VALID REQUESTS AND GENERATE IMP OBJECT
     validRequests.forEach(bidRequest => {
@@ -342,7 +222,7 @@ export const spec = {
         }
       } else if (deepAccess(bidRequest, `mediaTypes.native`)) {
         // ADD TO THE LIST OF IMP REQUESTS
-        imp.native = createNativeRequest(bidRequest);
+        imp.native = bidderUtils.createNativeRequest(bidRequest.nativeParams, NATIVE_PARAMS);
         imps.push(imp);
       }
     });
@@ -516,37 +396,6 @@ export const spec = {
 
   // PARSE THE RTB RESPONSE AND RETURN FINAL RESULTS
   interpretResponse: function(rtbResponse, bidRequest) {
-    // CONVERT NATIVE RTB RESPONSE INTO PREBID RESPONSE
-    function parseNative(native) {
-      const {assets, link, imptrackers, jstracker} = native;
-      const result = {
-        clickUrl: link.url,
-        clickTrackers: link.clicktrackers || [],
-        impressionTrackers: imptrackers || [],
-        javascriptTrackers: jstracker ? [jstracker] : []
-      };
-
-      (assets || []).forEach((asset) => {
-        const {id, img, data, title} = asset;
-        const key = NATIVE_ID_MAP[id];
-        if (key) {
-          if (!isEmpty(title)) {
-            result.title = title.text
-          } else if (!isEmpty(img)) {
-            result[key] = {
-              url: img.url,
-              height: img.h,
-              width: img.w
-            }
-          } else if (!isEmpty(data)) {
-            result[key] = data.value;
-          }
-        }
-      });
-
-      return result;
-    }
-
     let bids = [];
     let resBids = deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
@@ -560,7 +409,7 @@ export const spec = {
 
         case 'native':
           let nativeResult = JSON.parse(bid.adm);
-          bids.push(Object.assign({}, resultItem, {mediaType: NATIVE, native: parseNative(nativeResult.native)}));
+          bids.push(Object.assign({}, resultItem, {mediaType: NATIVE, native: bidderUtils.parseNative(nativeResult.native, NATIVE_ID_MAP)}));
           break;
 
         default:
