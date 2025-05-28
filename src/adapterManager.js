@@ -27,7 +27,7 @@ import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
-import {find, includes} from './polyfill.js';
+import {find} from './polyfill.js';
 import {
   getAuctionsCounter,
   getBidderRequestsCounter,
@@ -526,8 +526,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
-  if (FEATURES.VIDEO && includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.VIDEO && adapterManager.videoAdapters.includes(bidderCode)) supportedMediaTypes.push('video');
+  if (FEATURES.NATIVE && nativeAdapters.includes(bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
 
@@ -539,10 +539,10 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
       _bidderRegistry[bidderCode] = bidAdapter;
       GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
 
-      if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
+      if (FEATURES.VIDEO && supportedMediaTypes.includes('video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
+      if (FEATURES.NATIVE && supportedMediaTypes.includes('native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {
@@ -564,7 +564,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
       _s2sConfigs.forEach(s2sConfig => {
         if (s2sConfig.bidders && s2sConfig.bidders.length) {
           const s2sBidders = s2sConfig && s2sConfig.bidders;
-          if (!(s2sConfig && includes(s2sBidders, alias))) {
+          if (!(s2sConfig && s2sBidders.includes(alias))) {
             nonS2SAlias.push(bidderCode);
           } else {
             _aliasRegistry[alias] = bidderCode;

@@ -309,7 +309,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
 };
 
 /**
- * @type {{interpretResponse: interpretResponse, code: string, aliases: string[], getUserSyncs: getUserSyncs, buildRequests: buildRequests, onTimeout: onTimeout, onSetTargeting: onSetTargeting, isBidRequestValid: isBidRequestValid, onBidWon: onBidWon}}
+ * @type {{interpretResponse: typeof interpretResponse, code: string, aliases: string[], getUserSyncs: typeof getUserSyncs, buildRequests: typeof buildRequests, isBidRequestValid: typeof isBidRequestValid}}
  */
 export const spec = {
   code: BIDDER_CODE,

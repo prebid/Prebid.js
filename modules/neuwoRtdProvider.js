@@ -156,7 +156,7 @@ export function convertSegment(segment) {
 
 /**
  * map array of objects to segments
- * @param {Array[{ID: string}]} normalizable
+ * @param {Array<{ID: string}>} normalizable
  * @returns array of IAB "segments"
  */
 export function pickSegments(normalizable) {
