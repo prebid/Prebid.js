@@ -620,7 +620,6 @@ describe('Conversant adapter tests', function() {
 
     // add pubcid to every entry
     requests.forEach((unit) => {
-      // Object.assign(unit, {userId: {pubcid: 67890}});
       Object.assign(unit, {userIdAsEids: userId});
     });
     //  construct http post payload
