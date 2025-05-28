@@ -40,7 +40,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests, bidderRequest} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -71,7 +71,7 @@ export const spec = {
         let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
         if (tmpFloor != {}) { code.floor['*'] = tmpFloor; }
       }
-      if (adunitValue.ortb2Imp) {code.ortb2Imp = adunitValue.ortb2Imp}
+      if (adunitValue.ortb2Imp) { code.ortb2Imp = adunitValue.ortb2Imp }
       codes.push(code);
     });
     const payload = {
@@ -89,9 +89,9 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
       if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
-      if (bidderRequest.userIdAsEids) {payload.eids = bidderRequest.userIdAsEids};
+      if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids };
       if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
-      if (bidderRequest.ortb2) {payload.ortb2 = bidderRequest.ortb2}
+      if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2 }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -172,7 +172,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {bid} The bid that won the auction
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
