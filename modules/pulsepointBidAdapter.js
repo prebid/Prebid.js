@@ -1,10 +1,9 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { processImp, processBidResponse, DEFAULT_TMAX as SHARED_DEFAULT_TMAX } from '../libraries/pulsepointUtils/bidderUtils.js';
 import {isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
-const DEFAULT_CURRENCY = 'USD';
-const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'battr', 'deals'];
-const DEFAULT_TMAX = 500;
+const DEFAULT_CURRENCY = 'USD'; // This will be passed to processBidResponse
 
 /**
  * PulsePoint Bid Adapter.
@@ -68,30 +67,8 @@ const converter = ortbConverter({
   },
 
   imp(buildImp, bidRequest, context) {
-    const imp = buildImp(bidRequest, context);
-    // tagid
-    imp.tagid = bidRequest.params.ct.toString();
-    // unknown params
-    const unknownParams = slotUnknownParams(bidRequest);
-    if (imp.ext || unknownParams) {
-      imp.ext = Object.assign({}, imp.ext, unknownParams);
-    }
-    // battr
-    if (bidRequest.params.battr) {
-      ['banner', 'video', 'audio', 'native'].forEach(k => {
-        if (imp[k]) {
-          imp[k].battr = bidRequest.params.battr;
-        }
-      });
-    }
-    // deals
-    if (bidRequest.params.deals && isArray(bidRequest.params.deals)) {
-      imp.pmp = {
-        private_auction: 0,
-        deals: bidRequest.params.deals
-      };
-    }
-    return imp;
+    const PULSEPOINT_KNOWN_PARAMS = ['cp', 'ct', 'cf', 'battr', 'deals'];
+    return processImp(buildImp, bidRequest, context, PULSEPOINT_KNOWN_PARAMS);
   },
 
   request(buildRequest, imps, bidderRequest, context) {
@@ -105,30 +82,13 @@ const converter = ortbConverter({
       });
     }
     // tmax
-    request.tmax = request.tmax || DEFAULT_TMAX;
+    request.tmax = request.tmax || SHARED_DEFAULT_TMAX;
     return request;
   },
 
   bidResponse(buildBidResponse, bid, context) {
-    const bidResponse = buildBidResponse(bid, context);
-    bidResponse.cur = bidResponse.cur || DEFAULT_CURRENCY;
-    return bidResponse;
+    return processBidResponse(buildBidResponse, bid, context, DEFAULT_CURRENCY);
   },
 });
-
-/**
- * Unknown params are captured and sent on ext
- */
-function slotUnknownParams(slot) {
-  const ext = {};
-  const knownParamsMap = {};
-  KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
-  Object.keys(slot.params).forEach(key => {
-    if (!knownParamsMap[key]) {
-      ext[key] = slot.params[key];
-    }
-  });
-  return Object.keys(ext).length > 0 ? { prebid: ext } : null;
-}
 
 registerBidder(spec);
