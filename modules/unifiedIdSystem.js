@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logError } from '../src/utils.js';
+import { logError, isStr } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {UID1_EIDS} from '../libraries/uid1Eids/uid1Eids.js';
@@ -75,7 +75,29 @@ export const unifiedIdSubmodule = {
     };
     return {callback: resp};
   },
-  eids: {...UID1_EIDS}
+  eids: {
+    tdid(values) {
+      const atype = UID1_EIDS.tdid.atype;
+      const source = UID1_EIDS.tdid.source;
+      return {
+        source,
+        inserter: 'adserver.org',
+        matcher: 'adserver.org',
+        mm: 4,
+        uids: values.map(val => {
+          const id = UID1_EIDS.tdid.getValue(val);
+          if (isStr(id)) {
+            const uid = {id, atype};
+            const ext = UID1_EIDS.tdid.getUidExt(val);
+            if (ext) {
+              uid.ext = ext;
+            }
+            return uid;
+          }
+        }).filter(Boolean)
+      };
+    }
+  }
 };
 
 submodule('userId', unifiedIdSubmodule);
