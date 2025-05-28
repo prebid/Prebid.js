@@ -935,6 +935,7 @@ pbjsInstance.getAllWinningBids = function () {
 
 /**
  * Get all of the bids that have won their respective auctions.
+ * @deprecated
  * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
