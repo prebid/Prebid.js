@@ -33,15 +33,13 @@ describe('enrichmentLiftMeasurement', () => {
     const TOTAL_RANDOM_CALLS = TEST_SAMPLE_SIZE * modulesConfig.length;
     const fixedRandoms = Array.from({ length: TOTAL_RANDOM_CALLS }, (_, i) => i / TOTAL_RANDOM_CALLS);
     let callIndex = 0;
-
+    init();
     const mathRandomStub = sinon.stub(Math, 'random').callsFake(() => {
       return fixedRandoms[callIndex++];
     });
     config.setConfig({ enrichmentLiftMeasurement: {
         modules: modulesConfig
     }});
-
-    init();
 
     const results = [];
     for (let i = 0; i < TEST_SAMPLE_SIZE; i++) {
