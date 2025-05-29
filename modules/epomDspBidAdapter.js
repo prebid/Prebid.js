@@ -17,13 +17,12 @@ export const spec = {
   isBidRequestValid(bid) {
     const globalSettings = config.getBidderConfig()[BIDDER_CODE]?.epomSettings || {};
     const endpoint = bid.params?.endpoint || globalSettings.endpoint;
-
     if (!endpoint || typeof endpoint !== 'string') {
       logWarn(`[${BIDDER_CODE}] Invalid endpoint: expected a non-empty string.`);
       return false;
     }
 
-    if (!endpoint.startsWith('https://')) {
+    if (!(endpoint.startsWith('https://') || endpoint.startsWith('http://'))) {
       logWarn(`[${BIDDER_CODE}] Invalid endpoint: must start with "https://".`);
       return false;
     }
@@ -41,13 +40,29 @@ export const spec = {
           logWarn(`[${BIDDER_CODE}] Missing endpoint for bid request.`);
           return null;
         }
+
+        const impArray = Array.isArray(bid.imp) ? bid.imp : [];
+        const defaultSize = bid.mediaTypes?.banner?.sizes?.[0] || bid.sizes?.[0];
+        if (!defaultSize) {
+          logWarn(`[${BIDDER_CODE}] No size found in mediaTypes or bid.sizes.`);
+        }
+
+        impArray.forEach(imp => {
+          if (imp.id && (!imp.banner?.w || !imp.banner?.h) && defaultSize) {
+            imp.banner = {
+              w:defaultSize[0],
+              h: defaultSize[1],
+            };
+          }
+        });
+        const extraData = deepClone(bid);
         const payload = {
-          ...deepClone(bid),
+          ...extraData,
+          id: bid.id,
+          imp: impArray,
           referer: bidderRequest?.refererInfo?.referer,
           gdprConsent: bidderRequest?.gdprConsent,
           uspConsent: bidderRequest?.uspConsent,
-          bidfloor: getBidFloor(bid),
-          sizes: bid.sizes[0] || [],
         };
 
         return {
@@ -59,7 +74,7 @@ export const spec = {
             withCredentials: false,
           },
         };
-      }).filter(request => request !== null);
+      }).filter(req => req !== null);
     } catch (error) {
       logError(`[${BIDDER_CODE}] Error in buildRequests:`, error);
       return [];
@@ -73,8 +88,12 @@ export const spec = {
     if (response && response.seatbid && Array.isArray(response.seatbid)) {
       response.seatbid.forEach(seat => {
         seat.bid.forEach(bid => {
+          if (!bid.adm) {
+            logError(`[${BIDDER_CODE}] Missing 'adm' in bid response`, bid);
+            return;
+          }
           bidResponses.push({
-            requestId: request.data.bidId || bid.impid,
+            requestId: request?.data?.bidId || bid.impid,
             cpm: bid.price,
             nurl: bid.nurl,
             currency: response.cur || 'USD',
