@@ -1067,5 +1067,40 @@ describe('PubMatic adapter', () => {
         });
       });
     }
+
+    describe('CATEGORY IDS', () => {
+      it('should set primaryCatId and secondaryCatIds in meta when bid.cat is present', () => {
+        const copiedResponse = utils.deepClone(response);
+        copiedResponse.body.seatbid[0].bid[0].cat = ['IAB1', 'IAB2', 'IAB3'];
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.have.property('primaryCatId').to.equal('IAB1');
+        expect(bidResponse[0].meta).to.have.property('secondaryCatIds').to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
+      });
+
+      it('should not set primaryCatId and secondaryCatIds in meta when bid.cat is null', () => {
+        const copiedResponse = utils.deepClone(response);
+        copiedResponse.body.seatbid[0].bid[0].cat = null;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
+        expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
+      });
+      
+      it('should not set primaryCatId and secondaryCatIds in meta when bid.cat is undefined', () => {
+        const copiedResponse = utils.deepClone(response);
+        delete copiedResponse.body.seatbid[0].bid[0].cat;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
+        expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
+      });
+    });
   })
 })
