@@ -3,7 +3,7 @@ import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput}
 
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {includes} from '../src/polyfill.js';
+
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
@@ -643,10 +643,10 @@ function interpretResponse(serverResponse, bidRequest) {
   let sizes = parseSizesInput(bidRequest.sizes);
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
-  } else if (product === 5 && includes(sizes, '1x1')) {
+  } else if (product === 5 && sizes.includes('1x1')) {
     sizes = ['1x1'];
   // added logic for in-slot multi-szie
-  } else if ((product === 2 && includes(sizes, '1x1')) || product === 3) {
+  } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
       const [ width, height ] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
