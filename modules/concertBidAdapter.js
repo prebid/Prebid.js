@@ -9,8 +9,7 @@ import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
- * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'concert';
@@ -22,7 +21,6 @@ export const spec = {
    * Determines whether or not the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
     if (!bid.params.partnerId) {
@@ -36,9 +34,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} validBidRequests an array of bids
-   * @param {BidderRequest} bidderRequest
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest - the bidder request object
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     logMessage(validBidRequests);
@@ -55,25 +53,25 @@ export const spec = {
         debug: debugTurnedOn(),
         uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
-        adapterVersion: '1.2.0',
+        adapterVersion: '1.3.0',
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent,
         gppConsent: bidderRequest.gppConsent,
         tdid: getTdid(bidderRequest, validBidRequests),
-      }
+      },
     };
 
     if (!payload.meta.gppConsent && bidderRequest.ortb2?.regs?.gpp) {
       payload.meta.gppConsent = {
         gppString: bidderRequest.ortb2.regs.gpp,
-        applicableSections: bidderRequest.ortb2.regs.gpp_sid
-      }
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid,
+      };
     }
 
-    payload.slots = validBidRequests.map(bidRequest => {
-      collectEid(eids, bidRequest);
-      const adUnitElement = document.getElementById(bidRequest.adUnitCode)
-      const coordinates = getOffset(adUnitElement)
+    payload.slots = validBidRequests.map((bidRequest) => {
+      eids.push(...(bidRequest.userIdAsEids || []));
+      const adUnitElement = document.getElementById(bidRequest.adUnitCode);
+      const coordinates = getOffset(adUnitElement);
 
       let slot = {
         name: bidRequest.adUnitCode,
@@ -86,8 +84,8 @@ export const spec = {
         placementId: bidRequest.params.placementId || '',
         site: bidRequest.params.site || bidderRequest.refererInfo.page,
         ref: bidderRequest.refererInfo.ref,
-        offsetCoordinates: { x: coordinates?.left, y: coordinates?.top }
-      }
+        offsetCoordinates: { x: coordinates?.left, y: coordinates?.top },
+      };
 
       return slot;
     });
@@ -99,7 +97,7 @@ export const spec = {
     return {
       method: 'POST',
       url: `${CONCERT_ENDPOINT}/bids/prebid`,
-      data: JSON.stringify(payload)
+      data: JSON.stringify(payload),
     };
   },
   /**
@@ -120,7 +118,7 @@ export const spec = {
 
     let bidResponses = [];
 
-    bidResponses = serverBody.bids.map(bid => {
+    bidResponses = serverBody.bids.map((bid) => {
       return {
         requestId: bid.bidId,
         cpm: bid.cpm,
@@ -146,7 +144,6 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function(data) {
     logMessage('concert bidder timed out');
@@ -160,13 +157,12 @@ export const spec = {
   onBidWon: function(bid) {
     logMessage('concert bidder won bid');
     logMessage(bid);
-  }
-
-}
+  },
+};
 
 registerBidder(spec);
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Check or generate a UID for the current user.
@@ -176,30 +172,16 @@ function getUid(bidderRequest, validBidRequests) {
     return false;
   }
 
-  /**
-   * check for shareId or pubCommonId before generating a new one
-   * sharedId: @see https://docs.prebid.org/dev-docs/modules/userId.html
-   * pubCid (no longer supported): @see https://docs.prebid.org/dev-docs/modules/pubCommonId.html#adapter-integration
-   */
-  const sharedId =
-    deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    deepAccess(validBidRequests[0], 'userId.pubcid')
-  const pubCid = deepAccess(validBidRequests[0], 'crumbs.pubcid');
+  const { sharedId, pubcId } = getUserIdsFromEids(validBidRequests[0]);
 
   if (sharedId) return sharedId;
-  if (pubCid) return pubCid;
-
-  const LEGACY_CONCERT_UID_KEY = 'c_uid';
-  const CONCERT_UID_KEY = 'vmconcert_uid';
-
-  const legacyUid = storage.getDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
-  let uid = storage.getDataFromLocalStorage(CONCERT_UID_KEY);
-
-  if (legacyUid) {
-    uid = legacyUid;
-    storage.setDataInLocalStorage(CONCERT_UID_KEY, uid);
-    storage.removeDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
+  if (pubcId) return pubcId;
+  if (deepAccess(validBidRequests[0], 'crumbs.pubcid')) {
+    return deepAccess(validBidRequests[0], 'crumbs.pubcid');
   }
+
+  const CONCERT_UID_KEY = 'vmconcert_uid';
+  let uid = storage.getDataFromLocalStorage(CONCERT_UID_KEY);
 
   if (!uid) {
     uid = generateUUID();
@@ -207,6 +189,26 @@ function getUid(bidderRequest, validBidRequests) {
   }
 
   return uid;
+}
+
+function getUserIdsFromEids(bid) {
+  const sourceMapping = {
+    'sharedid.org': 'sharedId',
+    'pubcid.org': 'pubcId',
+    'adserver.org': 'tdid',
+  };
+
+  const defaultUserIds = { sharedId: null, pubcId: null, tdid: null };
+
+  if (!bid?.userIdAsEids) return defaultUserIds;
+
+  return bid.userIdAsEids.reduce((userIds, eid) => {
+    const key = sourceMapping[eid.source];
+    if (key && eid.uids?.[0]?.id) {
+      userIds[key] = eid.uids[0].id;
+    }
+    return userIds;
+  }, defaultUserIds);
 }
 
 /**
@@ -221,7 +223,7 @@ function hasOptedOutOfPersonalization() {
 /**
  * Whether the privacy consent strings allow personalization.
  *
- * @param {BidderRequest} bidderRequest Object which contains any data consent signals
+ * @param {Object} bidderRequest Object which contains any data consent signals
  */
 function consentAllowsPpid(bidderRequest) {
   let uspConsentAllows = true;
@@ -241,29 +243,7 @@ function consentAllowsPpid(bidderRequest) {
    */
   const gdprConsentAllows = hasPurpose1Consent(bidderRequest?.gdprConsent);
 
-  return (uspConsentAllows && gdprConsentAllows);
-}
-
-function collectEid(eids, bid) {
-  if (bid.userId) {
-    const eid = getUserId(bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com', undefined, 3)
-    eids.push(eid)
-  }
-}
-
-function getUserId(id, source, uidExt, atype) {
-  if (id) {
-    const uid = { id, atype };
-
-    if (uidExt) {
-      uid.ext = uidExt;
-    }
-
-    return {
-      source,
-      uids: [ uid ]
-    };
-  }
+  return uspConsentAllows && gdprConsentAllows;
 }
 
 function getOffset(el) {
@@ -282,5 +262,5 @@ function getTdid(bidderRequest, validBidRequests) {
     return null;
   }
 
-  return deepAccess(validBidRequests[0], 'userId.tdid') || null;
+  return getUserIdsFromEids(validBidRequests[0]).tdid;
 }
