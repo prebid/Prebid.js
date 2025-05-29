@@ -4,8 +4,8 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
-import { getGlobal } from '../../../src/prebidGlobal';
-import { getUnixTimestampFromNow, getWindowTop } from 'src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
+import { getUnixTimestampFromNow } from 'src/utils.js';
 import { getWinDimensions } from '../../../src/utils';
 
 describe('adnuntiusBidAdapter', function () {
@@ -45,7 +45,7 @@ describe('adnuntiusBidAdapter', function () {
   const winDimensions = getWinDimensions();
   const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
   const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
-  const prebidVersion = window.$$PREBID_GLOBAL$$.version;
+  const prebidVersion = getGlobal().version;
   const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
@@ -935,7 +935,7 @@ describe('adnuntiusBidAdapter', function () {
       })
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, LOCALHOST_URL);
     });
 
@@ -1053,7 +1053,7 @@ describe('adnuntiusBidAdapter', function () {
           {
             name: 'other',
             segment: ['segment3']
-          }],
+          }]
         }
       };
 
@@ -1224,7 +1224,7 @@ describe('adnuntiusBidAdapter', function () {
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL_SEGMENTS);
     });
   });
@@ -1233,14 +1233,14 @@ describe('adnuntiusBidAdapter', function () {
     it('should send GDPR Consent data if gdprApplies', function () {
       let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: true, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL_CONSENT);
     });
 
     it('should not send GDPR Consent data if gdprApplies equals undefined', function () {
       let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL);
     });
 
@@ -1254,13 +1254,13 @@ describe('adnuntiusBidAdapter', function () {
           {
             name: 'other',
             segment: ['segment3']
-          }],
+          }]
         }
       }
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL_SEGMENTS);
     });
 
@@ -1316,26 +1316,39 @@ describe('adnuntiusBidAdapter', function () {
       ];
       let request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=${usi}`);
 
       const ortb2 = {user: {ext: {eids: [{source: 'a', uids: [{id: '123', atype: 1}]}, {source: 'b', uids: [{id: '456', atype: 3, ext: {some: '1'}}]}]}}};
       request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req, ortb2: ortb2 }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=${usi}&eids=%5B%7B%22source%22%3A%22a%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22123%22%2C%22atype%22%3A1%7D%5D%7D%2C%7B%22source%22%3A%22b%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22456%22%2C%22atype%22%3A3%2C%22ext%22%3A%7B%22some%22%3A%221%22%7D%7D%5D%7D%5D`);
 
       ortb2.user.id = "ortb2userid"
       request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req, ortb2: ortb2 }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
-      expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=ortb2userid`);
+      expect(request[0]).to.have.property('url');
+      expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=ortb2userid&eids=%5B%7B%22source%22%3A%22a%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22123%22%2C%22atype%22%3A1%7D%5D%7D%2C%7B%22source%22%3A%22b%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22456%22%2C%22atype%22%3A3%2C%22ext%22%3A%7B%22some%22%3A%221%22%7D%7D%5D%7D%5D`);
 
       req[0].params.userId = 'different_user_id';
       request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=different_user_id`);
+
+      const eids = [{source: 'pubcid', uids: [{id: '123', atype: 1}]}, {source: 'otherid', uids: [{id: '456', atype: 3, ext: {some: '1'}}]}];
+      req[0].params.userId = 'different_user_id';
+      req[0].params.userIdAsEids = eids;
+      request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=different_user_id&eids=` + encodeURIComponent(JSON.stringify(eids)));
+
+      request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req, ortb2: ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url');
+      expectUrlsEqual(request[0].url, `${ENDPOINT_URL_BASE}&userId=different_user_id&eids=` + encodeURIComponent(JSON.stringify(eids)));
     });
 
     it('should handle no user specified', function () {
@@ -1354,7 +1367,7 @@ describe('adnuntiusBidAdapter', function () {
       ];
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL);
     });
   });
@@ -1363,14 +1376,14 @@ describe('adnuntiusBidAdapter', function () {
     it('should send GDPR Consent data if gdprApplies', function () {
       let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: true, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL_CONSENT);
     });
 
     it('should not send GDPR Consent data if gdprApplies equals undefined', function () {
       let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL);
     });
   });
@@ -1387,7 +1400,7 @@ describe('adnuntiusBidAdapter', function () {
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL_NOCOOKIE + '&advertiserTransparency=true');
     });
   });
@@ -1426,7 +1439,7 @@ describe('adnuntiusBidAdapter', function () {
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL);
       expect(request[0]).to.have.property('data');
       const data = JSON.parse(request[0].data);
@@ -1507,7 +1520,7 @@ describe('adnuntiusBidAdapter', function () {
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, ENDPOINT_URL + '&ds=5');
     });
     it('Should allow a minimum of 0 deals when using bidder config.', function () {
@@ -1520,7 +1533,7 @@ describe('adnuntiusBidAdapter', function () {
 
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
       expect(request.length).to.equal(1);
-      expect(request[0]).to.have.property('url')
+      expect(request[0]).to.have.property('url');
       // The maxDeals value is ignored because it is less than zero
       expectUrlsEqual(request[0].url, ENDPOINT_URL);
     });
