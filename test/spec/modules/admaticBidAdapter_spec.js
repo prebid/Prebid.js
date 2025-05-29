@@ -3,7 +3,7 @@ import { spec } from 'modules/admaticBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 
-const ENDPOINT = 'https://layer.serve.admatic.com.tr/pb';
+const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb';
 
 describe('admaticBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -15,7 +15,7 @@ describe('admaticBidAdapter', () => {
     'bidder': 'admatic',
     'params': {
       'networkId': 10433394,
-      'host': 'layer.serve.admatic.com.tr'
+      'host': 'layer.rtb.admatic.com.tr'
     },
     'ortb2Imp': { 'ext': { 'instl': 1 } },
     'ortb2': { 'badv': ['admatic.com.tr'] },
@@ -250,7 +250,7 @@ describe('admaticBidAdapter', () => {
     'bidder': 'admatic',
     'params': {
       'networkId': 10433394,
-      'host': 'layer.serve.admatic.com.tr'
+      'host': 'layer.rtb.admatic.com.tr'
     },
     'ortb2Imp': { 'ext': { 'instl': 1 } },
     'ortb2': { 'badv': ['admatic.com.tr'] },
@@ -564,7 +564,7 @@ describe('admaticBidAdapter', () => {
       'bidder': 'admatic',
       'params': {
         'networkId': 10433394,
-        'host': 'layer.serve.admatic.com.tr'
+        'host': 'layer.rtb.admatic.com.tr'
       },
       'adUnitCode': 'adunit-code',
       'mediaType': 'banner',
@@ -683,7 +683,10 @@ describe('admaticBidAdapter', () => {
               }]
             }
           ],
-          params: {}
+          params: {
+            networkId: 10433394,
+            host: 'layer.rtb.admatic.com.tr'
+          }
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -724,7 +727,7 @@ describe('admaticBidAdapter', () => {
           'ortb2': { 'badv': ['admatic.com.tr'] },
           'params': {
             'networkId': 10433394,
-            'host': 'layer.serve.admatic.com.tr'
+            'host': 'layer.rtb.admatic.com.tr'
           },
           getFloor: inputParams => {
             if (inputParams.mediaType === VIDEO && inputParams.size[0] === 300 && inputParams.size[1] === 250) {
@@ -766,7 +769,7 @@ describe('admaticBidAdapter', () => {
           'ortb2': { 'badv': ['admatic.com.tr'] },
           'params': {
             'networkId': 10433394,
-            'host': 'layer.serve.admatic.com.tr'
+            'host': 'layer.rtb.admatic.com.tr'
           },
           getFloor: inputParams => {
             if (inputParams.mediaType === NATIVE) {
@@ -802,6 +805,7 @@ describe('admaticBidAdapter', () => {
             'price': 0.01,
             'type': 'banner',
             'bidder': 'admatic',
+            'currency': 'TRY',
             'mime_type': {
               'name': 'backfill',
               'force': false
@@ -816,6 +820,7 @@ describe('admaticBidAdapter', () => {
             'width': 300,
             'height': 250,
             'price': 0.01,
+            'currency': 'TRY',
             'type': 'video',
             'mime_type': {
               'name': 'backfill',
@@ -832,6 +837,7 @@ describe('admaticBidAdapter', () => {
             'width': 1,
             'height': 1,
             'price': 0.01,
+            'currency': 'TRY',
             'type': 'native',
             'mime_type': {
               'name': 'backfill',
@@ -843,6 +849,7 @@ describe('admaticBidAdapter', () => {
             'iurl': 'https://www.admatic.com.tr'
           }
         ],
+        'cur': 'TRY',
         'queryId': 'cdnbh24rlv0hhkpfpln0',
         'status': true
       }};
@@ -853,9 +860,9 @@ describe('admaticBidAdapter', () => {
           cpm: 0.01,
           width: 300,
           height: 250,
-          currency: 'TRY',
           mediaType: 'banner',
           netRevenue: true,
+          currency: 'TRY',
           ad: '<div></div>',
           creativeId: '374',
           meta: {
@@ -873,9 +880,9 @@ describe('admaticBidAdapter', () => {
           cpm: 0.01,
           width: 300,
           height: 250,
-          currency: 'TRY',
           mediaType: 'video',
           netRevenue: true,
+          currency: 'TRY',
           vastXml: '<VAST></VAST>',
           creativeId: '3741',
           meta: {
@@ -893,9 +900,9 @@ describe('admaticBidAdapter', () => {
           cpm: 0.01,
           width: 1,
           height: 1,
-          currency: 'TRY',
           mediaType: 'native',
           netRevenue: true,
+          currency: 'TRY',
           native: {
             'clickUrl': 'https://www.admatic.com.tr',
             'impressionTrackers': ['https://www.admatic.com.tr'],
@@ -1144,7 +1151,8 @@ describe('admaticBidAdapter', () => {
       let bids = { body: {
         data: [],
         'queryId': 'cdnbh24rlv0hhkpfpln0',
-        'status': true
+        'status': true,
+        'cur': 'TRY'
       }};
 
       let result = spec.interpretResponse(bids, {data: request});

@@ -56,7 +56,10 @@
                     params: {
                       cohortStorageKey: "cohort_ids",
                       bidders: ['smartadserver', 'appnexus'],
-                      segtax: 1000
+                      segtax: 1000,
+                      tagConfig: {
+                        clientId: 'testId'
+                      }
                     }
                   }
                 ]
@@ -75,10 +78,14 @@
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
             googletag.cmd.push(function() {
-                pbjs.que.push(function() {
-                    pbjs.setTargetingForGPTAsync();
+                if (pbjs.libLoaded) {
+                    pbjs.que.push(function() {
+                        pbjs.setTargetingForGPTAsync();
+                        googletag.pubads().refresh();
+                    });
+                } else {
                     googletag.pubads().refresh();
-                });
+                }
             });
         }
 

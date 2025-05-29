@@ -82,14 +82,6 @@ userIdAsEids = [
     },
 
     {
-        source: 'parrable.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-
-    {
         source: 'liveramp.com',
         uids: [{
             id: 'some-random-id-value',

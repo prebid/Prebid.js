@@ -3,7 +3,6 @@ import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';
 
 /**
@@ -49,7 +48,6 @@ function makeVideoImp(bid) {
     maxbitrate: video.maxbitrate,
     playbackmethod: video.playbackmethod,
     delivery: video.delivery,
-    placement: video.placement,
     api: video.api,
     w: video.w,
     h: video.h
@@ -58,7 +56,7 @@ function makeVideoImp(bid) {
   return {
     video: videoCopy,
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
@@ -76,7 +74,7 @@ function makeBannerImp(bid) {
       })
     },
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
@@ -276,7 +274,7 @@ export const spec = {
   getUserSyncs(syncOptions, serverResponses) {
     const syncs = []
     if (!hasUserSynced && syncOptions.pixelEnabled) {
-      const responseWithUrl = find(serverResponses, serverResponse =>
+      const responseWithUrl = ((serverResponses) || []).find(serverResponse =>
         deepAccess(serverResponse.body, 'userSync.url')
       );
 

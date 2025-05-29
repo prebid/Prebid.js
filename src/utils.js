@@ -1,11 +1,12 @@
 import {config} from './config.js';
 import {klona} from 'klona/json';
-import {includes} from './polyfill.js';
-import { EVENTS, S2S } from './constants.js';
-import {GreedyPromise} from './utils/promise.js';
-import {getGlobal} from './prebidGlobal.js';
 
-export { default as deepAccess } from 'dlv/index.js';
+import {EVENTS} from './constants.js';
+import {PbPromise} from './utils/promise.js';
+import {getGlobal} from './prebidGlobal.js';
+import { default as deepAccess } from 'dlv/index.js';
+
+export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 
 var tStr = 'String';
@@ -21,6 +22,7 @@ let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
+let windowDimensions;
 
 const pbjsInstance = getGlobal();
 
@@ -33,6 +35,54 @@ function emitEvent(...args) {
   if (eventEmitter != null) {
     eventEmitter(...args);
   }
+}
+
+export const getWinDimensions = (function() {
+  let lastCheckTimestamp;
+  const CHECK_INTERVAL_MS = 20;
+  return () => {
+    if (!windowDimensions || !lastCheckTimestamp || (Date.now() - lastCheckTimestamp > CHECK_INTERVAL_MS)) {
+      internal.resetWinDimensions();
+      lastCheckTimestamp = Date.now();
+    }
+    return windowDimensions;
+  }
+})();
+
+export function resetWinDimensions() {
+  const top = canAccessWindowTop() ? internal.getWindowTop() : internal.getWindowSelf();
+
+  windowDimensions = {
+    screen: {
+      width: top.screen?.width,
+      height: top.screen?.height,
+      availWidth: top.screen?.availWidth,
+      availHeight: top.screen?.availHeight,
+      colorDepth: top.screen?.colorDepth,
+    },
+    innerHeight: top.innerHeight,
+    innerWidth: top.innerWidth,
+    outerWidth: top.outerWidth,
+    outerHeight: top.outerHeight,
+    visualViewport: {
+      height: top.visualViewport?.height,
+      width: top.visualViewport?.width,
+    },
+    document: {
+      documentElement: {
+        clientWidth: top.document?.documentElement?.clientWidth,
+        clientHeight: top.document?.documentElement?.clientHeight,
+        scrollTop: top.document?.documentElement?.scrollTop,
+        scrollLeft: top.document?.documentElement?.scrollLeft,
+      },
+      body: {
+        scrollTop: document.body?.scrollTop,
+        scrollLeft: document.body?.scrollLeft,
+        clientWidth: document.body?.clientWidth,
+        clientHeight: document.body?.clientHeight,
+      },
+    }
+  };
 }
 
 // this allows stubbing of utility functions that are used internally by other utility functions
@@ -53,7 +103,8 @@ export const internal = {
   logInfo,
   parseQS,
   formatQS,
-  deepEqual
+  deepEqual,
+  resetWinDimensions
 };
 
 let prebidInternal = {};
@@ -197,6 +248,10 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
+}
+
+export function getDocument() {
+  return document;
 }
 
 export function canAccessWindowTop() {
@@ -442,7 +497,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  */
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
-  return new GreedyPromise((resolve) => {
+  return new PbPromise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
@@ -471,12 +526,6 @@ export function triggerPixel(url, done, timeout) {
     waitForElementToLoad(img, timeout).then(done);
   }
   img.src = url;
-}
-
-export function callBurl({ source, burl }) {
-  if (source === S2S.SRC && burl) {
-    internal.triggerPixel(burl);
-  }
 }
 
 /**
@@ -611,6 +660,10 @@ export function isApnGetTagDefined() {
   }
 }
 
+export const sortByHighestCpm = (a, b) => {
+  return b.cpm - a.cpm;
+}
+
 /**
  * Fisher–Yates shuffle
  * http://stackoverflow.com/a/6274398
@@ -661,6 +714,21 @@ export function isSafeFrameWindow() {
   return !!(ws.$sf && ws.$sf.ext);
 }
 
+/**
+ * Returns the result of calling the function $sf.ext.geom() if it exists
+ * @see https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf — 5.4 Function $sf.ext.geom
+ * @returns {Object | undefined} geometric information about the container
+ */
+export function getSafeframeGeometry() {
+  try {
+    const ws = getWindowSelf();
+    return (typeof ws.$sf.ext.geom === 'function') ? ws.$sf.ext.geom() : undefined;
+  } catch (e) {
+    logError('Error getting SafeFrame geometry', e);
+    return undefined;
+  }
+}
+
 export function isSafariBrowser() {
   return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
@@ -694,6 +762,33 @@ export function getPerformanceNow() {
 }
 
 /**
+ * Retuns the difference between `timing.domLoading` and `timing.navigationStart`.
+ * This function uses the deprecated `Performance.timing` API and should be removed in future.
+ * It has not been updated yet because it is still used in some modules.
+ * @deprecated
+ * @param {Window} w The window object used to perform the api call. default to window.self
+ * @returns {number}
+ */
+export function getDomLoadingDuration(w) {
+  let domLoadingDuration = -1;
+
+  w = w || getWindowSelf();
+
+  const performance = w.performance;
+
+  if (w.performance?.timing) {
+    if (w.performance.timing.navigationStart > 0) {
+      const val = performance.timing.domLoading - performance.timing.navigationStart;
+      if (val > 0) {
+        domLoadingDuration = val;
+      }
+    }
+  }
+
+  return domLoadingDuration;
+}
+
+/**
  * When the deviceAccess flag config option is false, no cookies should be read or set
  * @returns {boolean}
  */
@@ -705,6 +800,7 @@ export function hasDeviceAccess() {
  * @returns {(boolean|undefined)}
  */
 export function checkCookieSupport() {
+  // eslint-disable-next-line no-restricted-properties
   if (window.navigator.cookieEnabled || !!document.cookie.length) {
     return true;
   }
@@ -779,12 +875,12 @@ export function isValidMediaTypes(mediaTypes) {
 
   const types = Object.keys(mediaTypes);
 
-  if (!types.every(type => includes(SUPPORTED_MEDIA_TYPES, type))) {
+  if (!types.every(type => SUPPORTED_MEDIA_TYPES.includes(type))) {
     return false;
   }
 
   if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
-    return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
+    return SUPPORTED_STREAM_TYPES.includes(mediaTypes.video.context);
   }
 
   return true;
@@ -956,63 +1052,103 @@ export function buildUrl(obj) {
  * @param {boolean} [options.checkTypes=false] - If set, two objects with identical properties but different constructors will *not* be considered equivalent.
  * @returns {boolean} - Returns `true` if the objects are equivalent, `false` otherwise.
  */
-export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
+export function deepEqual(obj1, obj2, { checkTypes = false } = {}) {
+  // Quick reference check
   if (obj1 === obj2) return true;
-  else if (
-    (typeof obj1 === 'object' && obj1 !== null) &&
-    (typeof obj2 === 'object' && obj2 !== null) &&
-    (!checkTypes || (obj1.constructor === obj2.constructor))
+
+  // If either is null or not an object, do a direct equality check
+  if (
+    typeof obj1 !== 'object' || obj1 === null ||
+    typeof obj2 !== 'object' || obj2 === null
   ) {
-    const props1 = Object.keys(obj1);
-    if (props1.length !== Object.keys(obj2).length) return false;
-    for (let prop of props1) {
-      if (obj2.hasOwnProperty(prop)) {
-        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
-          return false;
-        }
-      } else {
+    return false;
+  }
+  // Cache the Array checks
+  const isArr1 = Array.isArray(obj1);
+  const isArr2 = Array.isArray(obj2);
+  // Special case: both are arrays
+  if (isArr1 && isArr2) {
+    if (obj1.length !== obj2.length) return false;
+    for (let i = 0; i < obj1.length; i++) {
+      if (!deepEqual(obj1[i], obj2[i], { checkTypes })) {
         return false;
       }
     }
     return true;
-  } else {
+  } else if (isArr1 || isArr2) {
     return false;
   }
-}
 
-export function mergeDeep(target, ...sources) {
-  if (!sources.length) return target;
-  const source = sources.shift();
+  // If we’re checking types, compare constructors (e.g., plain object vs. Date)
+  if (checkTypes && obj1.constructor !== obj2.constructor) {
+    return false;
+  }
 
-  if (isPlainObject(target) && isPlainObject(source)) {
-    for (const key in source) {
-      if (isPlainObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        mergeDeep(target[key], source[key]);
-      } else if (isArray(source[key])) {
-        if (!target[key]) {
-          Object.assign(target, { [key]: [...source[key]] });
-        } else if (isArray(target[key])) {
-          source[key].forEach(obj => {
-            let addItFlag = 1;
-            for (let i = 0; i < target[key].length; i++) {
-              if (deepEqual(target[key][i], obj)) {
-                addItFlag = 0;
-                break;
-              }
-            }
-            if (addItFlag) {
-              target[key].push(obj);
-            }
-          });
-        }
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
+  // Compare object keys. Cache keys for both to avoid repeated calls.
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+
+  if (keys1.length !== keys2.length) return false;
+
+  for (const key of keys1) {
+    // If `obj2` doesn't have this key or sub-values aren't equal, bail out.
+    if (!Object.prototype.hasOwnProperty.call(obj2, key)) {
+      return false;
+    }
+    if (!deepEqual(obj1[key], obj2[key], { checkTypes })) {
+      return false;
     }
   }
 
-  return mergeDeep(target, ...sources);
+  return true;
+}
+
+export function mergeDeep(target, ...sources) {
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    if (!isPlainObject(source)) {
+      continue;
+    }
+    mergeDeepHelper(target, source);
+  }
+  return target;
+}
+
+function mergeDeepHelper(target, source) {
+  // quick check
+  if (!isPlainObject(target) || !isPlainObject(source)) {
+    return;
+  }
+
+  const keys = Object.keys(source);
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if (key === '__proto__' || key === 'constructor') {
+      continue;
+    }
+    const val = source[key];
+
+    if (isPlainObject(val)) {
+      if (!target[key]) {
+        target[key] = {};
+      }
+      mergeDeepHelper(target[key], val);
+    } else if (Array.isArray(val)) {
+      if (!Array.isArray(target[key])) {
+        target[key] = [...val];
+      } else {
+        // deduplicate
+        val.forEach(obj => {
+          if (!target[key].some(item => deepEqual(item, obj))) {
+            target[key].push(obj);
+          }
+        });
+      }
+    } else {
+      // direct assignment
+      target[key] = val;
+    }
+  }
 }
 
 /**
@@ -1064,6 +1200,14 @@ export function safeJSONParse(data) {
   try {
     return JSON.parse(data);
   } catch (e) {}
+}
+
+export function safeJSONEncode(data) {
+  try {
+    return JSON.stringify(data);
+  } catch (e) {
+    return '';
+  }
 }
 
 /**
@@ -1149,4 +1293,130 @@ export function binarySearch(arr, el, key = (el) => el) {
     left++;
   }
   return left;
+}
+
+/**
+ * Checks if an object has non-serializable properties.
+ * Non-serializable properties are functions and RegExp objects.
+ *
+ * @param {Object} obj - The object to check.
+ * @param {Set} checkedObjects - A set of properties that have already been checked.
+ * @returns {boolean} - Returns true if the object has non-serializable properties, false otherwise.
+ */
+export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
+  for (const key in obj) {
+    const value = obj[key];
+    const type = typeof value;
+
+    if (
+      value === undefined ||
+      type === 'function' ||
+      type === 'symbol' ||
+      value instanceof RegExp ||
+      value instanceof Map ||
+      value instanceof Set ||
+      value instanceof Date ||
+      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+    ) {
+      return true;
+    }
+    if (value !== null && type === 'object' && value.constructor === Object) {
+      if (checkedObjects.has(value)) {
+        // circular reference, means we have a non-serializable property
+        return true;
+      }
+      checkedObjects.add(value);
+      if (hasNonSerializableProperty(value, checkedObjects)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Returns the value of a nested property in an array of objects.
+ *
+ * @param {Array} collection - Array of objects.
+ * @param {String} key - Key of nested property.
+ * @returns {any|undefined} - Value of nested property.
+ */
+export function setOnAny(collection, key) {
+  for (let i = 0, result; i < collection.length; i++) {
+    result = deepAccess(collection[i], key);
+    if (result) {
+      return result;
+    }
+  }
+  return undefined;
+}
+
+export function extractDomainFromHost(pageHost) {
+  let domain = null;
+  try {
+    let domains = /[-\w]+\.([-\w]+|[-\w]{3,}|[-\w]{1,3}\.[-\w]{2})$/i.exec(pageHost);
+    if (domains != null && domains.length > 0) {
+      domain = domains[0];
+      for (let i = 1; i < domains.length; i++) {
+        if (domains[i].length > domain.length) {
+          domain = domains[i];
+        }
+      }
+    }
+  } catch (e) {
+    domain = null;
+  }
+  return domain;
+}
+
+export function triggerNurlWithCpm(bid, cpm) {
+  if (isStr(bid.nurl) && bid.nurl !== '') {
+    bid.nurl = bid.nurl.replace(
+      /\${AUCTION_PRICE}/,
+      cpm
+    );
+    triggerPixel(bid.nurl);
+  }
+}
+
+// To ensure that isGzipCompressionSupported() doesn’t become an overhead, we have used memoization to cache the result after the first execution.
+// This way, even if the function is called multiple times, it will only perform the actual check once and return the cached result in subsequent calls.
+export const isGzipCompressionSupported = (function () {
+  let cachedResult; // Store the result
+
+  return function () {
+    if (cachedResult !== undefined) {
+      return cachedResult; // Return cached result if already computed
+    }
+
+    try {
+      if (typeof window.CompressionStream === 'undefined') {
+        cachedResult = false;
+      } else {
+        (() => new window.CompressionStream('gzip'))();
+        cachedResult = true;
+      }
+    } catch (error) {
+      cachedResult = false;
+    }
+
+    return cachedResult;
+  };
+})();
+
+// Make sure to use isGzipCompressionSupported before calling this function
+export async function compressDataWithGZip(data) {
+  if (typeof data !== 'string') { // TextEncoder (below) expects a string
+    data = JSON.stringify(data);
+  }
+
+  const encoder = new TextEncoder();
+  const encodedData = encoder.encode(data);
+  const compressedStream = new Blob([encodedData])
+    .stream()
+    .pipeThrough(new window.CompressionStream('gzip'));
+
+  const compressedBlob = await new Response(compressedStream).blob();
+  const compressedArrayBuffer = await compressedBlob.arrayBuffer();
+  return new Uint8Array(compressedArrayBuffer);
 }

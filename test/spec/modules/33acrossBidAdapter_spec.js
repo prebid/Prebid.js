@@ -1,9 +1,11 @@
 import { expect } from 'chai';
 
 import * as utils from 'src/utils.js';
+import { internal } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 import { spec } from 'modules/33acrossBidAdapter.js';
+import { resetWinDimensions } from '../../../src/utils';
 
 function validateBuiltServerRequest(builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
@@ -499,12 +501,15 @@ describe('33acrossBidAdapter:', function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').returns(element);
+    sandbox.stub(internal, 'getWindowTop').returns(win);
+    sandbox.stub(internal, 'getWindowSelf').returns(win);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
     bidderRequest = {bidderRequestId: 'r1'};
   });
 
   afterEach(function() {
+    resetWinDimensions();
     sandbox.restore();
   });
   describe('isBidRequestValid:', function() {
@@ -524,27 +529,6 @@ describe('33acrossBidAdapter:', function () {
           };
 
           expect(spec.isBidRequestValid(bid)).to.be.true;
-        });
-      });
-
-      it('returns false for invalid bidder name values', function() {
-        const invalidBidderName = [
-          undefined,
-          '33',
-          '33x',
-          'thirtythree',
-          ''
-        ];
-
-        invalidBidderName.forEach((bidderName) => {
-          const bid = {
-            bidder: bidderName,
-            params: {
-              siteId: 'sample33xGUID123456789'
-            }
-          };
-
-          expect(spec.isBidRequestValid(bid)).to.be.false;
         });
       });
 
@@ -1023,6 +1007,8 @@ describe('33acrossBidAdapter:', function () {
         win.innerHeight = 728;
         win.innerWidth = 727;
 
+        resetWinDimensions();
+
         const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
@@ -1045,6 +1031,7 @@ describe('33acrossBidAdapter:', function () {
         utils.getWindowTop.restore();
         win.document.visibilityState = 'hidden';
         sandbox.stub(utils, 'getWindowTop').returns(win);
+        resetWinDimensions();
 
         const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);
@@ -1539,7 +1526,6 @@ describe('33acrossBidAdapter:', function () {
             .withProduct('instream')
             .build();
 
-          ttxRequest.imp[0].video.plcmt = 1;
           ttxRequest.imp[0].video.startdelay = 0;
 
           const serverRequest = new ServerRequestBuilder()
@@ -1558,45 +1544,17 @@ describe('33acrossBidAdapter:', function () {
           );
 
           const ttxRequest = new TtxRequestBuilder()
-            .withVideo({startdelay: -2, plcmt: 1})
+            .withVideo({startdelay: -2})
             .withProduct('instream')
             .build();
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
-
-          expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
-        });
-
-        it('overrides the placement value', function() {
-          const bidRequests = (
-            new BidRequestsBuilder()
-              .withVideo({
-                plcmt: 2, // Incorrect placement value for an instream video
-                placement: 2, // Placement specified in the DEPRECATED field.
-                context: 'instream'
-              })
-              .build()
-          );
-
-          const ttxRequest = new TtxRequestBuilder()
-            .withVideo()
-            .withProduct('instream')
-            .build();
-
-          ttxRequest.imp[0].video.plcmt = 1;
-          ttxRequest.imp[0].video.placement = 1;
-          ttxRequest.imp[0].video.startdelay = 0;
-
-          const serverRequest = new ServerRequestBuilder()
-            .withData(ttxRequest)
-            .build();
           const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
           expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
         });
 
         context('when the placement is still specified in the DEPRECATED `placement` field', function() {
-          it('overwrites its value and sets it in the recent `plcmt` field as well', function() {
+          it('does not overwrite its value and does not set it in the recent `plcmt` field as well', function() {
             const bidRequests = (
               new BidRequestsBuilder()
                 .withVideo({
@@ -1611,8 +1569,7 @@ describe('33acrossBidAdapter:', function () {
               .withProduct('instream')
               .build();
 
-            ttxRequest.imp[0].video.plcmt = 1;
-            ttxRequest.imp[0].video.placement = 1;
+            ttxRequest.imp[0].video.placement = 2;
             ttxRequest.imp[0].video.startdelay = 0;
 
             const serverRequest = new ServerRequestBuilder()

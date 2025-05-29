@@ -6,6 +6,7 @@ import { EVENTS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 /**
  * hadronAnalyticsAdapter.js - Audigent Hadron Analytics Adapter
@@ -24,12 +25,7 @@ var viewId = utils.generateUUID();
 var partnerId = DEFAULT_PARTNER_ID;
 var eventsToTrack = [];
 
-var w = window;
-var d = document;
-var e = d.documentElement;
-var g = d.getElementsByTagName('body')[0];
-var x = w.innerWidth || e.clientWidth || g.clientWidth;
-var y = w.innerHeight || e.clientHeight || g.clientHeight;
+const { width: x, height: y } = getViewportSize();
 
 var pageView = {
   eventType: 'pageView',
@@ -53,7 +49,7 @@ let analyticsType = 'endpoint';
 
 let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
   track({eventType, args}) {
-    args = args ? JSON.parse(JSON.stringify(args)) : {};
+    args = args ? utils.deepClone(args) : {};
     var data = {};
     if (!eventsToTrack.includes(eventType)) return;
     switch (eventType) {

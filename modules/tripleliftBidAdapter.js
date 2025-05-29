@@ -58,8 +58,8 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest && bidderRequest.fledgeEnabled) {
-      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
+    if (bidderRequest?.paapi?.enabled) {
+      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.paapi.enabled);
     }
 
     if (config.getConfig('coppa') === true) {
@@ -96,7 +96,7 @@ export const tripleliftAdapterSpec = {
       logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
         bids,
-        fledgeAuctionConfigs
+        paapi: fledgeAuctionConfigs
       };
     } else {
       return bids;
@@ -255,7 +255,7 @@ function _getFloor (bid) {
         mediaType: _isVideoBidRequest(bid) ? 'video' : 'banner',
         size: '*'
       });
-      if (typeof floorInfo === 'object' &&
+      if (utils.isPlainObject(floorInfo) &&
       floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }

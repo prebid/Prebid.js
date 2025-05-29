@@ -48,7 +48,6 @@ export const idxIdSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {SubmoduleConfig} config
    * @return {{id: string | undefined } | undefined}
    */
   getId() {

@@ -11,11 +11,11 @@ import {
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -73,8 +73,7 @@ function wrapAd(bid, position) {
               inR: {
                 tg: ${position.domParent},
                 rf: ${position.child}
-              },
-            };
+              }};
           \`;
           var s = parent.document.head.getElementsByTagName("script")[0];
           s.parentNode.insertBefore(w, s);
@@ -145,7 +144,7 @@ export const spec = {
    */
   buildRequests: function (bidRequests, bidderRequest) {
     const tags = bidRequests.map(bidToTag);
-    const userObjBid = find(bidRequests, hasUserInfo);
+    const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
       userObj = { 'coppa': true };
@@ -153,7 +152,7 @@ export const spec = {
 
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
-        .filter((param) => includes(USER_PARAMS, param))
+        .filter((param) => USER_PARAMS.includes(param))
         .forEach((param) => {
           let uparam = convertCamelToUnderscore(param);
           if (
@@ -175,16 +174,16 @@ export const spec = {
         });
     }
 
-    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
     let appDeviceObj;
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
-        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .filter(param => APP_DEVICE_PARAMS.includes(param))
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
-    const appIdObjBid = find(bidRequests, hasAppId);
+    const appIdObjBid = ((bidRequests) || []).find(hasAppId);
     let appIdObj;
     if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {
@@ -192,7 +191,7 @@ export const spec = {
       };
     }
 
-    const memberIdBid = find(bidRequests, hasMemberId);
+    const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
     const schain = bidRequests[0].schain;
 
@@ -288,7 +287,7 @@ export const spec = {
         if (rtbBid) {
           if (
             rtbBid.cpm !== 0 &&
-            includes(this.supportedMediaTypes, rtbBid.ad_type)
+            this.supportedMediaTypes.includes(rtbBid.ad_type)
           ) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
@@ -456,7 +455,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -468,32 +467,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-/* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  let sizes = [];
-  let sizeObj = {};
-
-  if (
-    isArray(requestSizes) &&
-    requestSizes.length === 2 &&
-    !isArray(requestSizes[0])
-  ) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
 }
 
 function hasUserInfo(bid) {
@@ -518,7 +491,7 @@ function hasAppId(bid) {
 }
 
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, (ad) => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
 }
 
 function parseMediaType(rtbBid) {

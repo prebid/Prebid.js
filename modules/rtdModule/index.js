@@ -165,7 +165,6 @@ import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
-import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
@@ -188,10 +187,12 @@ let _dataProviders = [];
 let _userConsent;
 
 /**
- * Register a RTD submodule.
+ * Register a Real-Time Data (RTD) submodule.
  *
- * @param {RtdSubmodule} submodule
- * @returns {function()} a de-registration function that will unregister the module when called.
+ * @param {Object} submodule The RTD submodule to register.
+ * @param {string} submodule.name The name of the RTD submodule.
+ * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
+ * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
@@ -268,7 +269,7 @@ function initSubModules() {
   _userConsent = getConsentData();
   let subModulesByOrder = [];
   _dataProviders.forEach(provider => {
-    const sm = find(registeredSubModules, s => s.name === provider.name);
+    const sm = ((registeredSubModules) || []).find(s => s.name === provider.name);
     const initResponse = sm && sm.init && sm.init(provider, _userConsent);
     if (initResponse) {
       subModulesByOrder.push(Object.assign(sm, {config: provider}));
@@ -311,15 +312,14 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     return exitHook();
   }
 
-  waitTimeout = setTimeout(exitHook, shouldDelayAuction ? _moduleConfig.auctionDelay : 0);
+  const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0;
+  waitTimeout = setTimeout(exitHook, timeout);
 
   relevantSubModules.forEach(sm => {
     const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
     verifiers.push(fpdGuard.verify);
-    sm.getBidRequestData({
-      ...reqBidsConfigObj,
-      ortb2Fragments: fpdGuard.obj
-    }, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
+    reqBidsConfigObj.ortb2Fragments = fpdGuard.obj;
+    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
   function onGetBidRequestDataCallback() {

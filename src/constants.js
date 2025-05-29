@@ -40,12 +40,17 @@ export const EVENTS = {
   AUCTION_DEBUG: 'auctionDebug',
   BID_VIEWABLE: 'bidViewable',
   STALE_RENDER: 'staleRender',
+  EXPIRED_RENDER: 'expiredRender',
   BILLABLE_EVENT: 'billableEvent',
   BID_ACCEPTED: 'bidAccepted',
   RUN_PAAPI_AUCTION: 'paapiRunAuction',
+  PBS_ANALYTICS: 'pbsAnalytics',
   PAAPI_BID: 'paapiBid',
   PAAPI_NO_BID: 'paapiNoBid',
   PAAPI_ERROR: 'paapiError',
+  BEFORE_PBS_HTTP: 'beforePBSHttp',
+  BROWSI_INIT: 'browsiInit',
+  BROWSI_DATA: 'browsiData',
 };
 
 export const AD_RENDER_FAILED_REASON = {
@@ -193,3 +198,5 @@ export const MESSAGES = {
   NATIVE: 'Prebid Native',
   EVENT: 'Prebid Event'
 };
+
+export const PB_LOCATOR = '__pb_locator__';

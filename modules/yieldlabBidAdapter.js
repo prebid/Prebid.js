@@ -1,6 +1,6 @@
 import { _each, deepAccess, isArray, isEmptyStr, isFn, isPlainObject, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { find } from '../src/polyfill.js';
+import { } from '../src/polyfill.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -53,8 +53,7 @@ export const spec = {
     const timestamp = Date.now();
     const query = {
       ts: timestamp,
-      json: true,
-    };
+      json: true};
 
     _each(validBidRequests, function (bid) {
       adslotIds.push(bid.params.adslotId);
@@ -100,7 +99,7 @@ export const spec = {
       if (bidderRequest.gdprConsent) {
         query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true;
         if (query.gdpr) {
-          query.consent = bidderRequest.gdprConsent.consentString;
+          query.gdpr_consent = bidderRequest.gdprConsent.consentString;
         }
       }
 
@@ -174,7 +173,7 @@ export const spec = {
         return;
       }
 
-      const matchedBid = find(serverResponse.body, function (bidResponse) {
+      const matchedBid = ((serverResponse.body) || []).find(function (bidResponse) {
         return bidRequest.params.adslotId == bidResponse.id;
       });
 
@@ -184,7 +183,7 @@ export const spec = {
         const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : '';
         const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : '';
         const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : '';
-        const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : '';
+        const gdprConsent = reqParams.gdpr_consent ? '&gdpr_consent=' + reqParams.gdpr_consent : '';
         const pvId = matchedBid.pvid !== undefined ? '&pvid=' + matchedBid.pvid : '';
         const iabContent = reqParams.iab_content ? '&iab_content=' + reqParams.iab_content : '';
 
@@ -201,7 +200,7 @@ export const spec = {
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
           meta: {
-            advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a',
+            advertiserDomains: [(matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'],
           },
         };
 
@@ -234,11 +233,11 @@ export const spec = {
           const { assets } = native;
           bidResponse.adUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
           bidResponse.mediaType = NATIVE;
-          const nativeIconAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_ICON));
-          const nativeImageAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_MAIN));
+          const nativeIconAssetObj = ((assets) || []).find(isImageAssetOfType(IMG_TYPE_ICON));
+          const nativeImageAssetObj = ((assets) || []).find(isImageAssetOfType(IMG_TYPE_MAIN));
           const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
-          const nativeTitleAsset = find(assets, asset => hasValidProperty(asset, 'title'));
-          const nativeBodyAsset = find(assets, asset => hasValidProperty(asset, 'data'));
+          const nativeTitleAsset = ((assets) || []).find(asset => hasValidProperty(asset, 'title'));
+          const nativeBodyAsset = ((assets) || []).find(asset => hasValidProperty(asset, 'data'));
           bidResponse.native = {
             title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
             body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
@@ -555,7 +554,7 @@ function getBidFloor(bid, sizes) {
     mediaType: mediaType !== undefined && spec.supportedMediaTypes.includes(mediaType) ? mediaType : '*',
     size: sizes.length !== 1 ? '*' : sizes[0].split(DIMENSION_SIGN),
   });
-  if (floor.currency === CURRENCY_CODE) {
+  if (floor?.currency === CURRENCY_CODE) {
     return (floor.floor * 100).toFixed(0);
   }
   return undefined;

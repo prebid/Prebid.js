@@ -7,7 +7,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * Note: Only BANNER and VIDEO are currently supported by the prebid server.
  */
 
-import {logError, triggerPixel} from '../src/utils.js';
+import {getWinDimensions, logError, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
@@ -17,6 +17,7 @@ import {OUTSTREAM} from '../src/video.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
 const BIDDER_CODE = 'vibrantmedia';
@@ -138,8 +139,8 @@ export const spec = {
       gdpr: bidderRequest.gdprConsent,
       usp: bidderRequest.uspConsent,
       window: {
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: getWinDimensions().innerWidth,
+        height: getWinDimensions().innerHeight,
       },
       biddata: transformedBidRequests,
     };

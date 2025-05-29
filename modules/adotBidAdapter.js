@@ -1,11 +1,12 @@
-import {Renderer} from '../src/Renderer.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice} from '../src/utils.js';
-import {find} from '../src/polyfill.js';
-import {config} from '../src/config.js';
-import {OUTSTREAM} from '../src/video.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { Renderer } from '../src/Renderer.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { isArray, isBoolean, isFn, isPlainObject, isStr, logError, replaceAuctionPrice } from '../src/utils.js';
+import { OUTSTREAM } from '../src/video.js';
+import { NATIVE_ASSETS_IDS as NATIVE_ID_MAPPING, NATIVE_ASSETS as NATIVE_PLACEMENTS } from '../libraries/braveUtils/nativeAssets.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -22,6 +23,54 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Video} Video
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
  * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp
+ * @typedef {Object} OpenRtbBid
+ * @typedef {Object} OpenRtbBidResponse
+ * @typedef {Object} OpenRTBBidRequest
+ * @typedef {Object} Regs
+ * @typedef {Object} Ext
+ * @typedef {Object} OpenRtbBanner
+ * @typedef {Object} OpenRtbVideo
+ * @typedef {Object} NativeMedia
+ * @typedef {Object} OpenRtbNativeAssets
+ * @typedef {Object} OpenRtbNative
+ * @typedef {Object} VideoMedia
+ * @typedef {Object} AjaxRequest
+ * @typedef {Object} NativeAssets
+ * @typedef {Object} PrebidJSResponse
+ * @typedef {Object} Format
+ * @typedef {BidRequest} PrebidBidRequest
+ * @typedef {Record<string, BidRequest>} Dictionnary
+ */
+
+/**
+ * @typedef {Object} OpenRtbRequest
+ * @property {string} id - Unique request ID
+ * @property {Array<Imp>} imp - List of impression objects
+ * @property {Site} site - Site information
+ * @property {Device} device - Device information
+ * @property {User} user - User information
+ * @property {object} regs - Regulatory data, including GDPR and COPPA
+ * @property {object} ext - Additional extensions, such as custom data for the bid request
+ * @property {number} at - Auction type, typically first-price or second-price
+ */
+
+/**
+ * @typedef {Object} OpenRtbBid
+ * @property {string} impid - ID of the impression this bid relates to
+ * @property {number} price - Bid price for the impression
+ * @property {string} adid - Ad ID for the bid
+ * @property {number} [crid] - Creative ID, if available
+ * @property {string} [dealid] - Deal ID if the bid is part of a private marketplace deal
+ * @property {object} [ext] - Additional bid-specific extensions, such as media type
+ * @property {string} [adm] - Ad markup if it’s directly included in the bid response
+ * @property {string} [nurl] - Notification URL to be called when the bid wins
+ */
+
+/**
+ * @typedef {Object} OpenRtbBidResponse
+ * @property {string} id - ID of the bid response
+ * @property {Array<{bid: Array<OpenRtbBid>}>} seatbid - Array of seat bids, each containing a list of bids
+ * @property {string} cur - Currency in which bid amounts are expressed
  */
 
 const BIDDER_CODE = 'adot';
@@ -32,15 +81,6 @@ const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidreq
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'protocols'];
 const FIRST_PRICE = 1;
 const IMP_BUILDER = { banner: buildBanner, video: buildVideo, native: buildNative };
-const NATIVE_PLACEMENTS = {
-  title: { id: 1, name: 'title' },
-  icon: { id: 2, type: 1, name: 'img' },
-  image: { id: 3, type: 3, name: 'img' },
-  sponsoredBy: { id: 4, name: 'data', type: 1 },
-  body: { id: 5, name: 'data', type: 2 },
-  cta: { id: 6, type: 12, name: 'data' }
-};
-const NATIVE_ID_MAPPING = { 1: 'title', 2: 'icon', 3: 'image', 4: 'sponsoredBy', 5: 'body', 6: 'cta' };
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://adserver.adotmob.com/video/player.min.js';
 const BID_RESPONSE_NET_REVENUE = true;
 const BID_RESPONSE_TTL = 10;
@@ -109,8 +149,7 @@ function getOpenRTBUserObject(bidderRequest) {
   return {
     ext: {
       consent: bidderRequest.gdprConsent.consentString,
-      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId,
-    },
+      pubProvidedId: bidderRequest.userId && bidderRequest.userId.pubProvidedId},
   };
 }
 
@@ -128,7 +167,6 @@ function getOpenRTBRegsObject(bidderRequest) {
 /**
  * Create and return Ext OpenRtb object
  *
- * @param {BidderRequest} bidderRequest
  * @returns {Ext|null} Formatted Ext OpenRtb object or null
  */
 function getOpenRTBExtObject() {
@@ -197,7 +235,7 @@ function buildVideo(video) {
     mimes: video.mimes,
     minduration: video.minduration,
     maxduration: video.maxduration,
-    placement: video.placement,
+    placement: video.plcmt,
     playbackmethod: video.playbackmethod,
     pos: video.position || 0,
     protocols: video.protocols,
@@ -287,7 +325,7 @@ function buildImpFromAdUnit(adUnit, bidderRequest) {
   if (!mediaType) return null;
 
   const media = IMP_BUILDER[mediaType](mediaTypes[mediaType], bidderRequest, adUnit)
-  const currency = config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
+  const currency = getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
   const bidfloor = getMainFloor(adUnit, media.format, mediaType, currency);
 
   return {
@@ -357,7 +395,7 @@ function buildBidRequest(adUnits, bidderRequest, requestId) {
  * @param {BidderRequest} bidderRequest PrebidJS BidderRequest
  * @param {string} bidderUrl Adot Bidder URL
  * @param {string} requestId Request ID
- * @returns
+ * @returns {AjaxRequest}
  */
 function buildAjaxRequest(adUnits, bidderRequest, bidderUrl, requestId) {
   return {
@@ -370,8 +408,8 @@ function buildAjaxRequest(adUnits, bidderRequest, bidderUrl, requestId) {
 /**
  * Split given PrebidJS Request in Dictionnary
  *
- * @param {Array<PrebidBidRequest>} validBidRequests
- * @returns {Dictionnary<PrebidBidRequest>}
+ * @param {Array<BidRequest>} validBidRequests
+ * @returns {Dictionnary}
  */
 function splitAdUnits(validBidRequests) {
   return validBidRequests.reduce((adUnits, adUnit) => {
@@ -387,7 +425,7 @@ function splitAdUnits(validBidRequests) {
 /**
  * Build Ajax request Array
  *
- * @param {Array<PrebidBidRequest>} validBidRequests
+ * @param {Array<BidRequest>} validBidRequests
  * @param {BidderRequest} bidderRequest
  * @returns {Array<AjaxRequest>}
  */
@@ -517,7 +555,7 @@ function isBidImpInvalid(bid, imp) {
  *
  * @param {OpenRtbBid} bid
  * @param {OpenRtbBidResponse} bidResponse
- * @param {OpenRtbBid} imp
+ * @param {Imp} imp
  * @returns {PrebidJSResponse}
  */
 function buildBidResponse(bid, bidResponse, imp) {
@@ -544,13 +582,13 @@ function buildBidResponse(bid, bidResponse, imp) {
  * Find OpenRtb Imp from request with same id that given bid
  *
  * @param {OpenRtbBid} bid
- * @param {OpenRtbRequest} bidRequest
+ * @param {Object} bidRequest
  * @returns {Imp} OpenRtb Imp
  */
 function getImpfromBid(bid, bidRequest) {
   if (!bidRequest || !bidRequest.imp) return null;
   const imps = bidRequest.imp;
-  return find(imps, (imp) => imp.id === bid.impid);
+  return ((imps) || []).find((imp) => imp.id === bid.impid);
 }
 
 /**
@@ -569,7 +607,7 @@ function isValidResponse(response) {
 /**
  * Return if given request is valid
  *
- * @param {OpenRtbRequest} request
+ * @param {Object} request
  * @returns {boolean}
  */
 function isValidRequest(request) {
@@ -582,7 +620,7 @@ function isValidRequest(request) {
  * Interpret given OpenRtb Response to build PrebidJS Response
  *
  * @param {OpenRtbBidResponse} serverResponse
- * @param {OpenRtbRequest} request
+ * @param {Object} request
  * @returns {PrebidJSResponse}
  */
 function interpretResponse(serverResponse, request) {
@@ -618,15 +656,12 @@ function getFloor(adUnit, size, mediaType, currency) {
 
   const floorResult = adUnit.getFloor({ currency, mediaType, size });
 
-  return floorResult.currency === currency ? floorResult.floor : 0;
+  return floorResult?.currency === currency ? floorResult?.floor : 0;
 }
 
 /**
  * Call getFloor for each format and return the lower floor
  * Return 0 by default
- *
- * interface Format { w: number; h: number }
- *
  * @param {AdUnit} adUnit
  * @param {Array<Format>} formats Media formats
  * @param {string} mediaType

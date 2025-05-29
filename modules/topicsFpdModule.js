@@ -1,10 +1,10 @@
 import {isEmpty, logError, logWarn, mergeDeep, safeJSONParse} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
 import {getCoreStorageManager} from '../src/storageManager.js';
-import {includes} from '../src/polyfill.js';
+
 import {isActivityAllowed} from '../src/activities/rules.js';
 import {ACTIVITY_ENRICH_UFPD} from '../src/activities/activities.js';
 import {activityParams} from '../src/activities/activityParams.js';
@@ -19,38 +19,6 @@ let iframeLoadedURL = [];
 export function reset() {
   LOAD_TOPICS_INITIALISE = false;
   iframeLoadedURL = [];
-}
-
-const bidderIframeList = {
-  maxTopicCaller: 4,
-  bidders: [{
-    bidder: 'pubmatic',
-    iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
-  }, {
-    bidder: 'rtbhouse',
-    iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
-  }, {
-    bidder: 'openx',
-    iframeURL: 'https://pa.openx.net/topics_frame.html'
-  }, {
-    bidder: 'improvedigital',
-    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
-  }, {
-    bidder: 'onetag',
-    iframeURL: 'https://onetag-sys.com/static/topicsapi.html'
-  }, {
-    bidder: 'taboola',
-    iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html'
-  }, {
-    bidder: 'discovery',
-    iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
-  }, {
-    bidder: 'undertone',
-    iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
-  }, {
-    bidder: 'vidazoo',
-    iframeURL: 'https://static.vidazoo.com/topics_api/topics_frame.html'
-  }]
 }
 
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
@@ -124,13 +92,13 @@ export function getTopics(doc = document) {
 
   try {
     if (isTopicsSupported(doc)) {
-      topics = GreedyPromise.resolve(doc.browsingTopics());
+      topics = PbPromise.resolve(doc.browsingTopics());
     }
   } catch (e) {
     logError('Could not call topics API', e);
   }
   if (topics == null) {
-    topics = GreedyPromise.resolve([]);
+    topics = PbPromise.resolve([]);
   }
 
   return topics;
@@ -161,8 +129,8 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
  */
 export function getCachedTopics() {
   let cachedTopicData = [];
-  const topics = config.getConfig('userSync.topics') || bidderIframeList;
-  const bidderList = topics.bidders || [];
+  const topics = config.getConfig('userSync.topics');
+  const bidderList = topics?.bidders || [];
   let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
@@ -190,7 +158,7 @@ export function receiveMessage(evt) {
   if (evt && evt.data) {
     try {
       let data = safeJSONParse(evt.data);
-      if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
+      if (getLoadedIframeURL().includes(evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
         const iframeTopicsData = getTopicsData(domain, topics);
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
@@ -244,7 +212,7 @@ function listenMessagesFromTopicIframe() {
  */
 export function loadTopicsForBidders(doc = document) {
   if (!isTopicsSupported(doc)) return;
-  const topics = config.getConfig('userSync.topics') || bidderIframeList;
+  const topics = config.getConfig('userSync.topics');
 
   if (topics) {
     listenMessagesFromTopicIframe();

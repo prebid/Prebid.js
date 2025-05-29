@@ -72,7 +72,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
-      it('should initialize if gdpr applies and consent is ok', function() {
+      it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function() {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -89,7 +89,14 @@ describe('weboramaRtdProvider', function() {
                   4: true,
                   5: true,
                   6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
                   9: true,
+                  10: true,
+                  11: true,
                 },
               },
               specialFeatureOptins: {
@@ -99,11 +106,100 @@ describe('weboramaRtdProvider', function() {
                 consents: {
                   284: true,
                 },
+                legitimateInterests: {
+                  284: true,
+                },
               }
             },
           },
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
+      });
+      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
+                  9: true,
+                  10: true,
+                  11: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+                legitimateInterests: {
+                  284: false,
+                },
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
+      });
+      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interest purpose id', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                },
+                legitimateInterests: {
+                  2: true,
+                  7: true,
+                  8: true,
+                  9: false,
+                  10: true,
+                  11: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+                legitimateInterests: {
+                  284: true,
+                },
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
       it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function() {
         const moduleConfig = {
@@ -1509,7 +1605,7 @@ describe('weboramaRtdProvider', function() {
           }
         };
         const data = {
-          webo_cs: ['foo', 'bar'],
+          webo_cs: [12, 345],
           webo_audiences: ['baz'],
         };
 
@@ -1620,7 +1716,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -1746,7 +1842,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -1868,7 +1964,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -2013,7 +2109,7 @@ describe('weboramaRtdProvider', function() {
             };
             const data = {
               webo_cs: ['foo', 'bar'],
-              webo_audiences: ['baz'],
+              webo_audiences: [12345],
             };
 
             const entry = {
@@ -2156,7 +2252,7 @@ describe('weboramaRtdProvider', function() {
         };
         const data = {
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         };
 
         const entry = {
@@ -2217,7 +2313,7 @@ describe('weboramaRtdProvider', function() {
         };
         const data = {
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         };
 
         const entry = {
@@ -2289,7 +2385,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         });
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: {
@@ -2312,7 +2408,7 @@ describe('weboramaRtdProvider', function() {
 
       it('should use default profile in case of nothing on local storage', function() {
         const defaultProfile = {
-          webo_audiences: ['baz']
+          webo_audiences: [12345]
         };
         const moduleConfig = {
           params: {
@@ -2377,9 +2473,85 @@ describe('weboramaRtdProvider', function() {
         })
       });
 
+      it('should use default profile in case of something malformed on local storage', function() {
+        const defaultProfile = {
+          webo_audiences: [12345]
+        };
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {
+              accoundId: 12345,
+              setPrebidTargeting: true,
+              defaultProfile: defaultProfile,
+            }
+          }
+        };
+
+        const malformed = {
+          targeting: {
+            webo_audiences: 'must be an array, not a string',
+          },
+        };
+
+        sandbox.stub(storage, 'hasLocalStorage').returns(true);
+        sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+        sandbox.stub(storage, 'getDataFromLocalStorage')
+          .withArgs(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY)
+          .returns(JSON.stringify(malformed));
+
+        const adUnitCode = 'adunit1';
+        const reqBidsConfigObj = {
+          ortb2Fragments: {
+            global: {},
+            bidder: {}
+          },
+          adUnits: [{
+            code: adUnitCode,
+            bids: [{
+              bidder: 'smartadserver'
+            }, {
+              bidder: 'pubmatic'
+            }, {
+              bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
+            }, {
+              bidder: 'other'
+            }]
+          }]
+        };
+        const onDoneSpy = sinon.spy();
+
+        expect(weboramaSubmodule.init(moduleConfig)).to.be.true;
+        weboramaSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy, moduleConfig);
+
+        expect(onDoneSpy.calledOnce).to.be.true;
+
+        const targeting = weboramaSubmodule.getTargetingData([adUnitCode], moduleConfig);
+
+        expect(targeting).to.deep.equal({
+          'adunit1': defaultProfile,
+        });
+
+        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
+        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
+        ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
+          expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
+            user: {
+              ext: {
+                data: defaultProfile
+              },
+            }
+          });
+        })
+      });
+
       it('should use default profile if cant read from local storage', function() {
         const defaultProfile = {
-          webo_audiences: ['baz']
+          webo_audiences: [12345]
         };
         let onDataResponse = {};
         const moduleConfig = {
@@ -2489,7 +2661,7 @@ describe('weboramaRtdProvider', function() {
         };
         const data = {
           webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
+          webo_audiences: [12345],
         };
 
         const entry = {
@@ -2550,7 +2722,7 @@ describe('weboramaRtdProvider', function() {
         expect(targeting).to.deep.equal({
           'adunit1': {
             webo_cs: ['foo', 'bar'],
-            webo_audiences: ['baz'],
+            webo_audiences: [12345],
             webo_foo: ['bar'],
           },
           'adunit2': data,
@@ -2569,7 +2741,7 @@ describe('weboramaRtdProvider', function() {
                 ext: {
                   data: {
                     webo_cs: ['foo', 'bar'],
-                    webo_audiences: ['baz'],
+                    webo_audiences: [12345],
                     webo_bar: ['baz'],
                   }
                 },

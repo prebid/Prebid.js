@@ -115,12 +115,13 @@ describe('Generic analytics', () => {
         handler.throws(new Error());
         events.emit(AUCTION_INIT, {i: 0});
         let recv;
-        handler.reset();
+        handler.resetHistory();
+        handler.resetBehavior();
         handler.callsFake((arg) => {
           recv = arg;
         });
         events.emit(BID_RESPONSE, {i: 1});
-        expect(recv).to.eql([{eventType: BID_RESPONSE, args: {i: 1}}]);
+        sinon.assert.match(recv, [sinon.match({eventType: BID_RESPONSE, args: {i: 1}})])
       });
 
       it('should not cause infinite recursion, if handler triggers more events', () => {

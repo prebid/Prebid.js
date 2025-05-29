@@ -5,6 +5,7 @@ import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspD
  * @typedef {typeof import('../src/constants.js').EVENTS} EVENTS
  */
 import { EVENTS } from '../src/constants.js';
+import { sendBeacon } from '../src/ajax.js';
 
 /** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
 /**
@@ -56,7 +57,7 @@ export const log = getLogger();
  */
 
 /**
- * @typedef {`${number}x${number}`} AdUnitSize
+ * @typedef {string} AdUnitSize
  */
 
 /**
@@ -154,12 +155,12 @@ class TransactionManager {
   }
 
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
-  // eslint-disable-next-line no-dupe-class-members
+
   #clearSendTimeout() {
     return clearTimeout(this.#sendTimeoutId);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
+
   #restartSendTimeout() {
     this.#clearSendTimeout();
 
@@ -375,7 +376,7 @@ function getCachedBid(auctionId, bidId) {
 /**
  * @param {Object} args
  * @param {Object} args.args Event data
- * @param {EVENTS[keyof EVENTS]} args.eventType
+ * @param {string} args.eventType
  */
 function analyticEventHandler({ eventType, args }) {
   if (!locals.cache) {
@@ -629,7 +630,7 @@ function setCachedBidStatus(auctionId, bidId, status) {
  * @param {string} endpoint URL
  */
 function sendReport(report, endpoint) {
-  if (navigator.sendBeacon(endpoint, JSON.stringify(report))) {
+  if (sendBeacon(endpoint, JSON.stringify(report))) {
     log.info(`Analytics report sent to ${endpoint}`, report);
 
     return;

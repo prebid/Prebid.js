@@ -185,28 +185,30 @@ describe('toFetchRequest', () => {
     });
   });
 
-  describe('browsingTopics', () => {
-    Object.entries({
-      'browsingTopics = true': [{browsingTopics: true}, true],
-      'browsingTopics = false': [{browsingTopics: false}, false],
-      'browsingTopics is undef': [{}, false]
-    }).forEach(([t, [opts, shouldBeSet]]) => {
-      describe(`when options has ${t}`, () => {
-        const sandbox = sinon.createSandbox();
-        afterEach(() => {
-          sandbox.restore();
-        });
+  describe('chrome options', () => {
+    ['browsingTopics', 'adAuctionHeaders'].forEach(option => {
+      Object.entries({
+        [`${option} = true`]: [{[option]: true}, true],
+        [`${option} = false`]: [{[option]: false}, false],
+        [`${option} undef`]: [{}, false]
+      }).forEach(([t, [opts, shouldBeSet]]) => {
+        describe(`when options has ${t}`, () => {
+          const sandbox = sinon.createSandbox();
+          afterEach(() => {
+            sandbox.restore();
+          });
 
-        it(`should ${!shouldBeSet ? 'not ' : ''}be set when in a secure context`, () => {
-          sandbox.stub(window, 'isSecureContext').get(() => true);
-          toFetchRequest(EXAMPLE_URL, null, opts);
-          sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: shouldBeSet ? true : undefined});
-        });
-        it(`should not be set when not in a secure context`, () => {
-          sandbox.stub(window, 'isSecureContext').get(() => false);
-          toFetchRequest(EXAMPLE_URL, null, opts);
-          sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: undefined});
-        });
+          it(`should ${!shouldBeSet ? 'not ' : ''}be set when in a secure context`, () => {
+            sandbox.stub(window, 'isSecureContext').get(() => true);
+            toFetchRequest(EXAMPLE_URL, null, opts);
+            sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {[option]: shouldBeSet ? true : undefined});
+          });
+          it(`should not be set when not in a secure context`, () => {
+            sandbox.stub(window, 'isSecureContext').get(() => false);
+            toFetchRequest(EXAMPLE_URL, null, opts);
+            sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {[option]: undefined});
+          });
+        })
       })
     })
   })
@@ -405,24 +407,22 @@ describe('attachCallbacks', () => {
     }).forEach(([cbType, makeResponse]) => {
       it(`do not choke ${cbType} callbacks`, () => {
         const {response} = makeResponse();
-        return new Promise((resolve) => {
-          const result = {success: false, error: false};
-          attachCallbacks(Promise.resolve(response), {
-            success() {
-              result.success = true;
-              throw new Error();
-            },
-            error() {
-              result.error = true;
-              throw new Error();
-            }
+        const result = {success: false, error: false};
+        return attachCallbacks(Promise.resolve(response), {
+          success() {
+            result.success = true;
+            throw new Error();
+          },
+          error() {
+            result.error = true;
+            throw new Error();
+          }
+        }).catch(() => null)
+          .then(() => {
+            Object.entries(result).forEach(([typ, ran]) => {
+              expect(ran).to.be[typ === cbType ? 'true' : 'false'];
+            });
           });
-          setTimeout(() => resolve(result), 20);
-        }).then(result => {
-          Object.entries(result).forEach(([typ, ran]) => {
-            expect(ran).to.be[typ === cbType ? 'true' : 'false']
-          })
-        });
       });
     });
   });

@@ -1,3 +1,7 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {
   createTrackPixelHtml,
   deepAccess,
@@ -7,10 +11,6 @@ import {
   isEmpty,
   logError
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -50,7 +50,7 @@ export const spec = {
     const bidRequests = [];
 
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
-    const cur = getCurrencyType();
+    const cur = getCurrencyType(bidderRequest);
     const dnt = getDNT() ? '1' : '0';
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -90,10 +90,11 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {*} bidderResponse A successful response from the server.
+   * @param {Array} requests
+   * @return {Array} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (bidderResponse, requests) {
+ interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
 
     if (isEmpty(res)) {
@@ -156,11 +157,8 @@ export const spec = {
 
 };
 
-function getCurrencyType() {
-  if (config.getConfig('currency.adServerCurrency')) {
-    return config.getConfig('currency.adServerCurrency');
-  }
-  return 'JPY';
+function getCurrencyType(bidderRequest) {
+  return getCurrencyFromBidderRequest(bidderRequest) || 'JPY';
 }
 
 function getUrlInfo(refererInfo) {

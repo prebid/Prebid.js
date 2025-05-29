@@ -1,10 +1,6 @@
-import {
-  deepAccess,
-  deepClone,
-  deepEqual,
-  delayExecution,
-  mergeDeep
-} from '../../src/utils.js';
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
+import {deepAccess, deepClone, delayExecution, hasNonSerializableProperty, mergeDeep} from '../../src/utils.js';
+import responseResolvers from './responses.js';
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
@@ -22,9 +18,9 @@ Object.assign(BidInterceptor.prototype, {
   },
   serializeConfig(ruleDefs) {
     const isSerializable = (ruleDef, i) => {
-      const serializable = deepEqual(ruleDef, JSON.parse(JSON.stringify(ruleDef)), {checkTypes: true});
+      const serializable = !hasNonSerializableProperty(ruleDef);
       if (!serializable && !deepAccess(ruleDef, 'options.suppressWarnings')) {
-        this.logger.logWarn(`Bid interceptor rule definition #${i + 1} is not serializable and will be lost after a refresh. Rule definition: `, ruleDef);
+        this.logger.logWarn(`Bid interceptor rule definition #${i + 1} contains non-serializable properties and will be lost after a refresh. Rule definition: `, ruleDef);
       }
       return serializable;
     }
@@ -63,10 +59,10 @@ Object.assign(BidInterceptor.prototype, {
    * @typedef {Function} MatchPredicate
    * @param {*} candidate a bid to match, or a portion of it if used inside an ObjectMather.
    * e.g. matcher((bid, bidRequest) => ....) or matcher({property: (property, bidRequest) => ...})
-   * @param {BidRequest} bidRequest the request `candidate` belongs to
+   * @param {Object} bidRequest the request `candidate` belongs to
    * @returns {boolean}
    *
-   * @typedef {{[key]: Scalar|RegExp|MatchPredicate|ObjectMatcher}} ObjectMatcher
+   * @typedef {Object.<string, Scalar|RegExp|MatchPredicate|ObjectMatcher>} ObjectMatcher
    */
 
   /**
@@ -102,11 +98,11 @@ Object.assign(BidInterceptor.prototype, {
   /**
    * @typedef {Function} ReplacerFn
    * @param {*} bid a bid that was intercepted
-   * @param {BidRequest} bidRequest the request `bid` belongs to
+   * @param {Object} bidRequest the request `bid` belongs to
    * @returns {*} the response to mock for `bid`, or a portion of it if used inside an ObjectReplacer.
    * e.g. replacer((bid, bidRequest) => mockResponse) or replacer({property: (bid, bidRequest) => mockProperty})
    *
-   * @typedef {{[key]: ReplacerFn|ObjectReplacer|*}} ObjectReplacer
+   * @typedef {Object.<string, ReplacerFn|ObjectReplacer|*>} ObjectReplacer
    */
 
   /**
@@ -143,9 +139,8 @@ Object.assign(BidInterceptor.prototype, {
     return (bid, ...args) => {
       const response = this.responseDefaults(bid);
       mergeDeep(response, replFn({args: [bid, ...args]}));
-      if (!response.hasOwnProperty('ad') && !response.hasOwnProperty('adUrl')) {
-        response.ad = this.defaultAd(bid, response);
-      }
+      const resolver = responseResolvers[response.mediaType];
+      resolver && resolver(bid, response);
       response.isDebug = true;
       return response;
     }
@@ -169,20 +164,29 @@ Object.assign(BidInterceptor.prototype, {
   },
 
   responseDefaults(bid) {
-    return {
+    const response = {
       requestId: bid.bidId,
       cpm: 3.5764,
       currency: 'EUR',
-      width: 300,
-      height: 250,
       ttl: 360,
       creativeId: 'mock-creative-id',
       netRevenue: false,
       meta: {}
     };
-  },
-  defaultAd(bid, bidResponse) {
-    return `<html><head><style>#ad {width: ${bidResponse.width}px;height: ${bidResponse.height}px;background-color: #f6f6ae;color: #85144b;padding: 5px;text-align: center;display: flex;flex-direction: column;align-items: center;justify-content: center;}#bidder {font-family: monospace;font-weight: normal;}#title {font-size: x-large;font-weight: bold;margin-bottom: 5px;}#body {font-size: large;margin-top: 5px;}</style></head><body><div id="ad"><div id="title">Mock ad: <span id="bidder">${bid.bidder}</span></div><div id="body">${bidResponse.width}x${bidResponse.height}</div></div></body></html>`;
+
+    if (!bid.mediaType) {
+      response.mediaType = Object.keys(bid.mediaTypes ?? {})[0] ?? BANNER;
+    }
+    let size;
+    if (response.mediaType === BANNER) {
+      size = bid.mediaTypes?.banner?.sizes?.[0] ?? [300, 250];
+    } else if (response.mediaType === VIDEO) {
+      size = bid.mediaTypes?.video?.playerSize?.[0] ?? [600, 500];
+    }
+    if (Array.isArray(size)) {
+      ([response.width, response.height] = size);
+    }
+    return response;
   },
   /**
    * Match a candidate bid against all registered rules.
@@ -218,13 +222,13 @@ Object.assign(BidInterceptor.prototype, {
    * Run a set of bids against all registered rules, filter out those that match,
    * and generate mock responses for them.
    *
-   * @param {{}[]} bids?
-   * @param {BidRequest} bidRequest
-   * @param {function(*)} addBid called once for each mock response
-   * @param addPaapiConfig called once for each mock PAAPI config
-   * @param {function()} done called once after all mock responses have been run through `addBid`
-   * @returns {{bids: {}[], bidRequest: {}} remaining bids that did not match any rule (this applies also to
-   * bidRequest.bids)
+   * @param {Object} params
+   * @param {Object[]} [params.bids]
+   * @param {Object} params.bidRequest
+   * @param {function(Object):void} params.addBid called once for each mock response
+   * @param {function(Object):void} [params.addPaapiConfig] called once for each mock PAAPI config
+   * @param {function():void} params.done called once after all mock responses have been run through `addBid`
+   * @returns {{bids: Object[], bidRequest: Object}} remaining bids that did not match any rule (this applies also to bidRequest.bids)
    */
   intercept({bids, bidRequest, addBid, addPaapiConfig, done}) {
     if (bids == null) {

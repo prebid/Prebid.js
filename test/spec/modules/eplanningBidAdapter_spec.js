@@ -8,6 +8,7 @@ import {hook} from '../../../src/hook.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import { makeSlot } from '../integration/faker/googletag.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import { internal, resetWinDimensions } from '../../../src/utils.js';
 
 describe('E-Planning Adapter', function () {
   const adapter = newBidder('spec');
@@ -52,6 +53,68 @@ describe('E-Planning Adapter', function () {
     },
     'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidWithSchain = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+    'schain': {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'directseller.com',
+          sid: '00001',
+          rid: 'BidRequest1',
+          hp: 1,
+          name: 'publisher',
+          domain: 'publisher.com'
+        }
+      ]
+    }
+  };
+  const validBidWithSchainNodes = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID2,
+    'params': {
+      'ci': CI,
+    },
+    'adUnitCode': ADUNIT_CODE2,
+    'sizes': [[300, 250], [300, 600]],
+    'schain': {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'directseller.com',
+          sid: '00001',
+          rid: 'BidRequest1',
+          hp: 1,
+          name: 'publisher',
+          domain: 'publisher.com'
+        },
+        {
+          asi: 'reseller.com',
+          sid: 'aaaaa',
+          rid: 'BidRequest2',
+          hp: 1,
+          name: 'publisher2',
+          domain: 'publisher2.com'
+        },
+        {
+          asi: 'reseller3.com',
+          sid: 'aaaaab',
+          rid: 'BidRequest3',
+          hp: 1,
+          name: 'publisher3',
+          domain: 'publisher3.com'
+        }
+      ]
+    }
   };
   const ML = '1';
   const validBidMappingLinear = {
@@ -563,7 +626,7 @@ describe('E-Planning Adapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [validBid];
     let sandbox;
-    let getWindowSelfStub;
+    let getWindowTopStub;
     let innerWidth;
     beforeEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = {
@@ -572,8 +635,9 @@ describe('E-Planning Adapter', function () {
         }
       };
       sandbox = sinon.sandbox.create();
-      getWindowSelfStub = sandbox.stub(utils, 'getWindowSelf');
-      getWindowSelfStub.returns(createWindow(800));
+      getWindowTopStub = sandbox.stub(internal, 'getWindowTop');
+      getWindowTopStub.returns(createWindow(800));
+      resetWinDimensions();
     });
 
     afterEach(() => {
@@ -585,6 +649,9 @@ describe('E-Planning Adapter', function () {
       const win = {};
       win.self = win;
       win.innerWidth = innerWidth;
+      win.location = {
+        href: 'location'
+      };
       return win;
     };
 
@@ -727,7 +794,18 @@ describe('E-Planning Adapter', function () {
       expect(data.vctx).to.equal(2);
       expect(data.vv).to.equal(3);
     });
-
+    it('should return sch parameter', function () {
+      let bidRequests = [validBidWithSchain], schainExpected, schain;
+      schain = validBidWithSchain.schain;
+      schainExpected = schain.ver + ',' + schain.complete + '!' + schain.nodes.map(node => node.asi + ',' + node.sid + ',' + node.hp + ',' + node.rid + ',' + node.name + ',' + node.domain).join('!');
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.sch).to.deep.equal(schainExpected);
+    });
+    it('should not return sch parameter', function () {
+      let bidRequests = [validBidWithSchainNodes];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.sch).to.equal(undefined);
+    });
     it('should return correct e parameter with linear mapping attribute with more than one adunit', function () {
       let bidRequestsML = [validBidMappingLinear];
       const NEW_CODE = ADUNIT_CODE + '2';
@@ -883,7 +961,8 @@ describe('E-Planning Adapter', function () {
     it('should return the e parameter with a value according to the sizes in order corresponding to the desktop priority list of the ad units', function () {
       let bidRequestsPrioritySizes = [validBidExistingSizesInPriorityListForDesktop];
       // overwrite default innerWdith for tests with a larger one we consider "Desktop" or NOT Mobile
-      getWindowSelfStub.returns(createWindow(1025));
+      getWindowTopStub.returns(createWindow(1025));
+      resetWinDimensions();
       const e = spec.buildRequests(bidRequestsPrioritySizes, bidderRequest).data.e;
       expect(e).to.equal('300x250_0:300x250,300x600,970x250');
     });

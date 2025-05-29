@@ -1,5 +1,5 @@
 import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
-import { find } from '../src/polyfill.js';
+import { } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -28,7 +28,6 @@ const AUDIENCE_IDS = [
   {type: 8, bidKey: 'userId.id5id.uid', source: 'id5-sync.com'},
   {type: 9, bidKey: 'userId.tdid', source: 'adserver.org'},
   {type: 10, bidKey: 'userId.novatiq.snowflake', source: 'novatiq.com'},
-  {type: 11, bidKey: 'userId.parrableId.eid', source: 'parrable.com'},
   {type: 12, bidKey: 'userId.dacId.id', source: 'dac.co.jp'},
   {type: 13, bidKey: 'userId.idl_env', source: 'liveramp.com'},
   {type: 14, bidKey: 'userId.criteoId', source: 'criteo.com'},
@@ -101,7 +100,7 @@ export const spec = {
           const aidParam = { type: audienceId.type, id: bidAudienceId };
           // Set ext
           if (isArray(userIdAsEids)) {
-            const targetEid = find(userIdAsEids, (eid) => eid.source === audienceId.source) || {};
+            const targetEid = ((userIdAsEids) || []).find((eid) => eid.source === audienceId.source) || {};
             if (!isEmpty(deepAccess(targetEid, 'uids.0.ext'))) {
               aidParam.ext = targetEid.uids[0].ext;
             }

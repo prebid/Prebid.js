@@ -3,7 +3,6 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
-  generateUUID,
   getParameterByName,
   isNumber,
   logError,
@@ -13,7 +12,8 @@ import {
   parseGPTSingleSizeArray,
   parseUrl,
   pick,
-  deepEqual
+  deepEqual,
+  generateUUID
 } from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
@@ -21,7 +21,6 @@ import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {getHook} from '../src/hook.js';
-import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
@@ -30,6 +29,8 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+import { timeoutQueue } from '../libraries/timeoutQueue/timeoutQueue.js';
+import {ALL_MEDIATYPES, BANNER} from '../src/mediaTypes.js';
 
 export const FLOOR_SKIPPED_REASON = {
   NOT_FOUND: 'not_found',
@@ -72,7 +73,7 @@ let _floorsConfig = {};
 /**
  * @summary If a auction is to be delayed by an ongoing fetch we hold it here until it can be resumed
  */
-let _delayedAuctions = [];
+const _delayedAuctions = timeoutQueue();
 
 /**
  * @summary Each auction can have differing floors data depending on execution time or per adunit setup
@@ -155,7 +156,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     return {...previousMatch};
   }
   let allPossibleMatches = generatePossibleEnumerations(fieldValues, deepAccess(floorData, 'schema.delimiter') || '|');
-  let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
+  let matchingRule = ((allPossibleMatches) || []).find(hashValue => floorData.values.hasOwnProperty(hashValue));
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
@@ -263,18 +264,24 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
     // pub provided inverse function takes precedence, otherwise do old adjustment stuff
     const inverseFunction = bidderSettings.get(bidRequest.bidder, 'inverseBidAdjustment');
     if (inverseFunction) {
-      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest);
+      const definedParams = Object.fromEntries(
+        Object.entries(requestParams).filter(([key, val]) => val !== '*' && ['mediaType', 'size'].includes(key))
+      );
+      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest, definedParams);
     } else {
       let cpmAdjustment = getBiddersCpmAdjustment(floorInfo.matchingFloor, null, bidRequest);
       floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
     }
   }
 
+  if (floorInfo.floorRuleValue === null) {
+    return null;
+  }
+
   if (floorInfo.matchingFloor) {
     return {
       floor: roundUp(floorInfo.matchingFloor, 4),
-      currency,
-    };
+      currency};
   }
   return {};
 }
@@ -436,17 +443,11 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
  * @summary This is the function which will be called to exit our module and continue the auction.
  */
 export function continueAuction(hookConfig) {
-  // only run if hasExited
   if (!hookConfig.hasExited) {
-    // if this current auction is still fetching, remove it from the _delayedAuctions
-    _delayedAuctions = _delayedAuctions.filter(auctionConfig => auctionConfig.timer !== hookConfig.timer);
-
     // We need to know the auctionId at this time. So we will use the passed in one or generate and set it ourselves
     hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || generateUUID();
-
     // now we do what we need to with adUnits and save the data object to be used for getFloor and enforcement calls
     _floorDataForAuction[hookConfig.reqBidsConfigObj.auctionId] = createFloorsDataForAuction(hookConfig.reqBidsConfigObj.adUnits || getGlobal().adUnits, hookConfig.reqBidsConfigObj.auctionId);
-
     hookConfig.nextFn.apply(hookConfig.context, [hookConfig.reqBidsConfigObj]);
     hookConfig.hasExited = true;
   }
@@ -467,7 +468,7 @@ function isValidRule(key, floor, numFields, delimiter) {
   if (typeof key !== 'string' || key.split(delimiter).length !== numFields) {
     return false;
   }
-  return typeof floor === 'number';
+  return typeof floor === 'number' || floor === null;
 }
 
 function validateRules(floorsData, numFields, delimiter) {
@@ -577,35 +578,21 @@ export const requestBidsHook = timedAuctionHook('priceFloors', function requestB
     reqBidsConfigObj,
     context: this,
     nextFn: fn,
-    haveExited: false,
+    hasExited: false,
     timer: null
   };
 
   // If auction delay > 0 AND we are fetching -> Then wait until it finishes
   if (_floorsConfig.auctionDelay > 0 && fetching) {
-    hookConfig.timer = setTimeout(() => {
+    _delayedAuctions.submit(_floorsConfig.auctionDelay, () => continueAuction(hookConfig), () => {
       logWarn(`${MODULE_NAME}: Fetch attempt did not return in time for auction`);
       _floorsConfig.fetchStatus = 'timeout';
       continueAuction(hookConfig);
-    }, _floorsConfig.auctionDelay);
-    _delayedAuctions.push(hookConfig);
+    });
   } else {
     continueAuction(hookConfig);
   }
 });
-
-/**
- * @summary If an auction was queued to be delayed (waiting for a fetch) then this function will resume
- * those delayed auctions when delay is hit or success return or fail return
- */
-function resumeDelayedAuctions() {
-  _delayedAuctions.forEach(auctionConfig => {
-    // clear the timeout
-    clearTimeout(auctionConfig.timer);
-    continueAuction(auctionConfig);
-  });
-  _delayedAuctions = [];
-}
 
 /**
  * This function handles the ajax response which comes from the user set URL to fetch floors data from
@@ -631,7 +618,7 @@ export function handleFetchResponse(fetchResponse) {
   }
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions();
+  _delayedAuctions.resume();
 }
 
 function handleFetchError(status) {
@@ -640,12 +627,12 @@ function handleFetchError(status) {
   logError(`${MODULE_NAME}: Fetch errored with: `, status);
 
   // if any auctions are waiting for fetch to finish, we need to continue them!
-  resumeDelayedAuctions();
+  _delayedAuctions.resume();
 }
 
 /**
  * This function handles sending and receiving the AJAX call for a floors fetch
- * @param {object} floorsConfig the floors config coming from setConfig
+ * @param {object} floorEndpoint the floors config coming from setConfig
  */
 export function generateAndHandleFetch(floorEndpoint) {
   // if a fetch url is defined and one is not already occuring, fire it!
@@ -816,30 +803,70 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
 
-/**
- * Sets bidfloor and bidfloorcur for ORTB imp objects
- */
-export function setOrtbImpBidFloor(imp, bidRequest, context) {
+function tryGetFloor(bidRequest, {currency = config.getConfig('currency.adServerCurrency') || 'USD', mediaType = '*', size = '*'}, fn) {
   if (typeof bidRequest.getFloor === 'function') {
-    let currency, floor;
+    let floor;
     try {
-      ({currency, floor} = bidRequest.getFloor({
-        currency: context.currency || config.getConfig('currency.adServerCurrency') || 'USD',
-        mediaType: context.mediaType || '*',
-        size: '*'
-      }));
+      floor = bidRequest.getFloor({
+        currency,
+        mediaType,
+        size
+      }) || {};
     } catch (e) {
       logWarn('Cannot compute floor for bid', bidRequest);
       return;
     }
-    floor = parseFloat(floor);
-    if (currency != null && floor != null && !isNaN(floor)) {
-      Object.assign(imp, {
-        bidfloor: floor,
-        bidfloorcur: currency
-      });
+    floor.floor = parseFloat(floor.floor);
+    if (floor.currency != null && floor.floor && !isNaN(floor.floor)) {
+      fn(floor.floor, floor.currency);
     }
   }
+}
+
+/**
+ * Sets bidfloor and bidfloorcur for ORTB imp objects
+ */
+export function setOrtbImpBidFloor(imp, bidRequest, context) {
+  tryGetFloor(bidRequest, {
+    currency: context.currency,
+    mediaType: context.mediaType || '*',
+    size: '*'
+  }, (bidfloor, bidfloorcur) => {
+    Object.assign(imp, {
+      bidfloor,
+      bidfloorcur
+    });
+  })
+}
+
+/**
+ * Set per-mediatype and per-format bidfloor
+ */
+export function setGranularBidfloors(imp, bidRequest, context) {
+  function setIfDifferent(bidfloor, bidfloorcur) {
+    if (bidfloor !== imp.bidfloor || bidfloorcur !== imp.bidfloorcur) {
+      deepSetValue(this, 'ext.bidfloor', bidfloor);
+      deepSetValue(this, 'ext.bidfloorcur', bidfloorcur);
+    }
+  }
+
+  Object.values(ALL_MEDIATYPES)
+    .filter(mediaType => imp[mediaType] != null)
+    .forEach(mediaType => {
+      tryGetFloor(bidRequest, {
+        currency: imp.bidfloorcur || context?.currency,
+        mediaType
+      }, setIfDifferent.bind(imp[mediaType]))
+    });
+  (imp[BANNER]?.format || [])
+    .filter(({w, h}) => w != null && h != null)
+    .forEach(format => {
+      tryGetFloor(bidRequest, {
+        currency: imp.bidfloorcur || context?.currency,
+        mediaType: BANNER,
+        size: [format.w, format.h]
+      }, setIfDifferent.bind(format))
+    })
 }
 
 export function setImpExtPrebidFloors(imp, bidRequest, context) {
@@ -882,5 +909,7 @@ export function setOrtbExtPrebidFloors(ortbRequest, bidderRequest, context) {
 }
 
 registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
+// granular floors should be set after both "normal" bidfloors and mediaypes
+registerOrtbProcessor({type: IMP, name: 'extBidfloor', fn: setGranularBidfloors, priority: -10})
 registerOrtbProcessor({type: IMP, name: 'extPrebidFloors', fn: setImpExtPrebidFloors, dialects: [PBS], priority: -1});
 registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});

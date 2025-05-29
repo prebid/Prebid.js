@@ -4,11 +4,11 @@
 
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.js';
+import {EVENTS} from '../src/constants.js';
 import {isFn, logWarn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
-import {find} from '../src/polyfill.js';
+import adapterManager, {gppDataHandler, uspDataHandler} from '../src/adapterManager.js';
+import {gdprParams} from '../libraries/dfpUtils/dfpUtils.js';
 
 const MODULE_NAME = 'bidViewability';
 const CONFIG_ENABLED = 'enabled';
@@ -22,7 +22,7 @@ export let isBidAdUnitCodeMatchingSlot = (bid, slot) => {
 }
 
 export let getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
-  return find(getGlobal().getAllWinningBids(),
+  return getGlobal().getAllWinningBids().find(
     // supports custom match function from config
     bid => isFn(globalModuleConfig[CONFIG_CUSTOM_MATCH])
       ? globalModuleConfig[CONFIG_CUSTOM_MATCH](bid, slot)
@@ -32,14 +32,7 @@ export let getMatchingWinningBidForGPTSlot = (globalModuleConfig, slot) => {
 
 export let fireViewabilityPixels = (globalModuleConfig, bid) => {
   if (globalModuleConfig[CONFIG_FIRE_PIXELS] === true && bid.hasOwnProperty(BID_VURL_ARRAY)) {
-    let queryParams = {};
-
-    const gdprConsent = gdprDataHandler.getConsentData();
-    if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
-      if (gdprConsent.consentString) { queryParams.gdpr_consent = gdprConsent.consentString; }
-      if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
-    }
+    let queryParams = gdprParams();
 
     const uspConsent = uspDataHandler.getConsentData();
     if (uspConsent) { queryParams.us_privacy = uspConsent; }
@@ -67,7 +60,6 @@ export let logWinningBidNotFound = (slot) => {
 
 export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
   let respectiveBid = getMatchingWinningBidForGPTSlot(globalModuleConfig, slot);
-  let respectiveDeferredAdUnit = getGlobal().adUnits.find(adUnit => adUnit.deferBilling && respectiveBid.adUnitCode === adUnit.code);
 
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
@@ -77,8 +69,8 @@ export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
     // trigger respective bidder's onBidViewable handler
     adapterManager.callBidViewableBidder(respectiveBid.adapterCode || respectiveBid.bidder, respectiveBid);
 
-    if (respectiveDeferredAdUnit) {
-      adapterManager.callBidBillableBidder(respectiveBid);
+    if (respectiveBid.deferBilling) {
+      adapterManager.triggerBilling(respectiveBid);
     }
 
     // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels

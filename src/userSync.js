@@ -3,7 +3,7 @@ import {
   logWarn, isStr, isSafariBrowser
 } from './utils.js';
 import { config } from './config.js';
-import {includes} from './polyfill.js';
+
 import { getCoreStorageManager } from './storageManager.js';
 import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
 import {ACTIVITY_SYNC_USER} from './activities/activities.js';
@@ -25,7 +25,7 @@ export const USERSYNC_DEFAULT_CONFIG = {
   },
   syncsPerBidder: 5,
   syncDelay: 3000,
-  auctionDelay: 0
+  auctionDelay: 500
 };
 
 // Set userSync default values
@@ -257,8 +257,8 @@ export function newUserSync(deps) {
 
       // return true if the bidder is either: not part of the include (ie outside the whitelist) or part of the exclude (ie inside the blacklist)
       const checkForFiltering = {
-        'include': (bidders, bidder) => !includes(bidders, bidder),
-        'exclude': (bidders, bidder) => includes(bidders, bidder)
+        'include': (bidders, bidder) => !bidders.includes(bidder),
+        'exclude': (bidders, bidder) => bidders.includes(bidder)
       }
       return checkForFiltering[filterType](biddersToFilter, bidder);
     }
