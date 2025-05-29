@@ -131,9 +131,8 @@ export function getCookieTimeToUTCString() {
 
 /**
  * format imp ad test ext params
- *
- * @param {Object} bidRequest sigleBidRequest
- * @param {Object} bidderRequest
+ * @param {Object} bidRequest single bid request
+ * @param {Object} bidderRequest bidder request object
  */
 function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
   const { deepAccess } = utils;
@@ -248,11 +247,8 @@ export const buildUTMTagData = (url) => {
  * @return {Object}
  */
 function getParam(validBidRequests, bidderRequest) {
-  const sharedid =
-    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    utils.deepAccess(validBidRequests[0], 'userId.pubcid') ||
-    utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
+  const sharedid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
+  const eids = validBidRequests[0].userIdAsEids;
 
   let isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req

@@ -13,7 +13,6 @@ import {
   deepAccess, checkCookieSupport, deepSetValue, hasDeviceAccess, inIframe, isEmpty,
   logError, logInfo, mergeDeep
 } from '../src/utils.js';
-
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { getStorageManager } from '../src/storageManager.js';

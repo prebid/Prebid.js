@@ -1,7 +1,6 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepClone, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
-import {find} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
@@ -91,7 +90,7 @@ export const spec = {
 
       // Include debug data when available
       if (!isInHostileIframe) {
-        data.forceAdId = (find(window.top.location.hash.split('&'),
+        data.forceAdId = (((window.top.location.hash.split('&')) || []).find(
           val => val.includes('WS_DEBUG_FORCEADID')
         ) || '').split('=')[1];
       }
