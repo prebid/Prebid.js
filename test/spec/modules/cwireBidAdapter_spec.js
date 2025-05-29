@@ -326,21 +326,23 @@ describe('C-WIRE bid adapter', () => {
             consents: 1
           }
         },
-        gdprApplies: true,
+        gdprApplies: false,
         consentString: 'testConsentString'
       };
       let synOptions = {pixelEnabled: true, iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('image');
-      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=testConsentString');    
+      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString');    
     })
 
     it('user-syncs with enabled iframe option', function () {
       let gdprConsent = {
         vendorData: {
           purpose: {
-            consents: 1
+            consents: {
+              1: true
+            }
           }
         },
         gdprApplies: true,
