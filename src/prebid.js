@@ -935,9 +935,11 @@ pbjsInstance.getAllWinningBids = function () {
 
 /**
  * Get all of the bids that have won their respective auctions.
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * @deprecated
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions but failed to win the ad server auction.
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
+  logWarn('getAllPrebidWinningBids may be removed or renamed in a future version. This function returns bids that have won in prebid and have had targeting set but have not (yet?) won in the ad server. It excludes bids that have been rendered.');
   return auctionManager.getBidsReceived()
     .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 };
