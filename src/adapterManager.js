@@ -27,7 +27,7 @@ import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
-import {find, includes} from './polyfill.js';
+import {find} from './polyfill.js';
 import {
   getAuctionsCounter,
   getBidderRequestsCounter,
@@ -80,9 +80,17 @@ var _analyticsRegistry = {};
 
 const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
+function getConfigName(s2sConfig) {
+  // According to our docs, "module" bid (stored impressions)
+  // have params.configName referring to s2sConfig.name,
+  // but for a long while this was checking against s2sConfig.configName.
+  // Keep allowing s2sConfig.configName to avoid the breaking change
+  return s2sConfig.configName ?? s2sConfig.name;
+}
+
 export function s2sActivityParams(s2sConfig) {
   return activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
-    [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
+    [ACTIVITY_PARAM_S2S_NAME]: getConfigName(s2sConfig)
   });
 }
 
@@ -164,7 +172,13 @@ export function _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders = getS2SBid
     return bids;
   } else {
     const serverBidders = getS2SBidders(s2sConfig);
-    return bids.filter((bid) => serverBidders.has(bid.pbsHost ?? bid.bidder))
+    return bids.filter((bid) => {
+      if (!serverBidders.has(bid.bidder)) return false;
+      if (bid.s2sConfigName == null) return true;
+      const configName = getConfigName(s2sConfig);
+      const allowedS2SConfigs = Array.isArray(bid.s2sConfigName) ? bid.s2sConfigName : [bid.s2sConfigName];
+      return allowedS2SConfigs.includes(configName);
+    })
   }
 }
 export const filterBidsForAdUnit = hook('sync', _filterBidsForAdUnit, 'filterBidsForAdUnit');
@@ -175,7 +189,9 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
-    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && b.params?.configName === s2sConfig.configName);
+    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && (
+      b.params?.configName === getConfigName(s2sConfig)
+    ));
     if (s2sBids.length === 1) {
       adUnit.s2sBid = s2sBids[0];
       hasModuleBids = true;
@@ -246,8 +262,8 @@ export function getS2SBidderSet(s2sConfigs) {
  */
 export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SBidderSet} = {}) {
   const serverBidders = getS2SBidders(s2sConfigs);
-  return getBidderCodes(adUnits).reduce((memo, {bidder, pbsHost}) => {
-    const partition = serverBidders.has(pbsHost || bidder) ? PARTITIONS.SERVER : PARTITIONS.CLIENT;
+  return getBidderCodes(adUnits).reduce((memo, bidder) => {
+    const partition = serverBidders.has(bidder) ? PARTITIONS.SERVER : PARTITIONS.CLIENT;
     memo[partition].push(bidder);
     return memo;
   }, {[PARTITIONS.CLIENT]: [], [PARTITIONS.SERVER]: []})
@@ -319,16 +335,13 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
         const metrics = auctionMetrics.fork();
-        const bids = hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics });
-        const pbsHost = bids?.find(bid => bid.pbsHost)?.pbsHost;
         const bidderRequest = addOrtb2({
           bidderCode,
           auctionId,
           bidderRequestId,
           uniquePbsTid,
-          bids,
+          bids: hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics }),
           auctionStart: auctionStart,
-          pbsHost,
           timeout: s2sConfig.timeout,
           src: S2S.SRC,
           refererInfo,
@@ -423,9 +436,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   let counter = 0;
 
   _s2sConfigs.forEach((s2sConfig) => {
-    const uniqueServerBid = uniqueServerBidRequests[counter];
-
-    if (s2sConfig && uniqueServerBid && getS2SBidderSet(s2sConfig).has(uniqueServerBid.pbsHost || uniqueServerBid.bidderCode)) {
+    if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
       // s2s should get the same client side timeout as other client side requests.
       const s2sAjax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
         request: requestCallbacks.request.bind(null, 's2s'),
@@ -433,8 +444,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       } : undefined);
       let adaptersServerSide = s2sConfig.bidders;
       const s2sAdapter = _bidderRegistry[s2sConfig.adapter];
-      let uniquePbsTid = uniqueServerBid.uniquePbsTid;
-      let adUnitsS2SCopy = uniqueServerBid.adUnitsS2SCopy;
+      let uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
+      let adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
 
       let uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
@@ -451,7 +462,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
             }
           });
 
-          const bidders = getBidderCodes(s2sBidRequest.ad_units).filter(({bidder, pbsHost}) => adaptersServerSide.includes(pbsHost) || adaptersServerSide.includes(bidder));
+          const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
           logMessage(`CALLING S2S HEADER BIDDERS ==== ${bidders.length > 0 ? bidders.join(', ') : 'No bidder specified, using "ortb2Imp" definition(s) only'}`);
 
           // fire BID_REQUESTED event for each s2s bidRequest
@@ -512,8 +523,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
-  if (FEATURES.VIDEO && includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.VIDEO && adapterManager.videoAdapters.includes(bidderCode)) supportedMediaTypes.push('video');
+  if (FEATURES.NATIVE && nativeAdapters.includes(bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
 
@@ -525,10 +536,10 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
       _bidderRegistry[bidderCode] = bidAdapter;
       GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
 
-      if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
+      if (FEATURES.VIDEO && supportedMediaTypes.includes('video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
+      if (FEATURES.NATIVE && supportedMediaTypes.includes('native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {
@@ -550,7 +561,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
       _s2sConfigs.forEach(s2sConfig => {
         if (s2sConfig.bidders && s2sConfig.bidders.length) {
           const s2sBidders = s2sConfig && s2sConfig.bidders;
-          if (!(s2sConfig && includes(s2sBidders, alias))) {
+          if (!(s2sConfig && s2sBidders.includes(alias))) {
             nonS2SAlias.push(bidderCode);
           } else {
             _aliasRegistry[alias] = bidderCode;

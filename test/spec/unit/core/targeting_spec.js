@@ -1559,17 +1559,19 @@ describe('targeting tests', function () {
       slots = [
         mockSlot('slot/1', 'div-1'),
         mockSlot('slot/2', 'div-2'),
+        mockSlot('slot/1', 'div-3'),
       ]
     });
 
-    Object.entries({
-      'ad unit path': ['slot/1', 'slot/2'],
-      'element id': ['div-1', 'div-2']
-    }).forEach(([t, adUnitCodes]) => {
-      it(`can find slots by ${t}`, () => {
-        expect(getGPTSlotsForAdUnits(adUnitCodes, null, () => slots)).to.eql(Object.fromEntries(adUnitCodes.map((au, i) => [au, [slots[i]]])));
+      it('can find slots by ad unit path', () => {
+        let paths = ['slot/1', 'slot/2']
+        expect(getGPTSlotsForAdUnits(paths, null, () => slots)).to.eql({[paths[0]]: [slots[0], slots[2]], [paths[1]]: [slots[1]]});
       })
-    });
+
+      it('can find slots by ad element ID', () => {
+        let elementIds = ['div-1', 'div-2']
+        expect(getGPTSlotsForAdUnits(elementIds, null, () => slots)).to.eql({[elementIds[0]]: [slots[0]], [elementIds[1]]: [slots[1]]});
+      })
 
     it('returns empty list on no match', () => {
       expect(getGPTSlotsForAdUnits(['missing', 'slot/2'], null, () => slots)).to.eql({
@@ -1578,9 +1580,23 @@ describe('targeting tests', function () {
       });
     });
 
-    it('can use customSlotMatching', () => {
+    it('can use customSlotMatching resolving to ad unit codes', () => {
       const csm = (slot) => {
         if (slot.getAdUnitPath() === 'slot/1') {
+          return (au) => {
+            return au === 'custom'
+          }
+        }
+      }
+      expect(getGPTSlotsForAdUnits(['div-2', 'custom'], csm, () => slots)).to.eql({
+        'custom': [slots[0], slots[2]],
+        'div-2': [slots[1]]
+      })
+    });
+
+    it('can use customSlotMatching resolving to elementIds', () => {
+      const csm = (slot) => {
+        if (slot.getSlotElementId() === 'div-1') {
           return (au) => {
             return au === 'custom'
           }
