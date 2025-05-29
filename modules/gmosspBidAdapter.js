@@ -90,10 +90,11 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {*} bidderResponse A successful response from the server.
+   * @param {Array} requests
+   * @return {Array} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (bidderResponse, requests) {
+ interpretResponse: function (bidderResponse, requests) {
     const res = bidderResponse.body;
 
     if (isEmpty(res)) {

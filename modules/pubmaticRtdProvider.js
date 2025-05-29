@@ -181,7 +181,7 @@ export const fetchData = async (publisherId, profileId, type) => {
 
       return await response.json();
     } catch (error) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}:`, error);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: ${error}`);
     }
 };
 
@@ -233,8 +233,6 @@ const init = (config, _userConsent) => {
 /**
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
- * @param {Object} config
- * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
     configMergedPromise.then(() => {
