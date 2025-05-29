@@ -27,7 +27,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
-const run = require('gulp-run-command').default;
+
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -86,7 +86,7 @@ function lint(done) {
   if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
     args.push('--quiet')
   }
-  return run(args.join(' '))().then(() => {
+  return shell.task(args.join(' '))().then(() => {
     done();
   }, (err) => {
     done(err);
@@ -550,7 +550,7 @@ gulp.task(viewCoverage);
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
-gulp.task('setup-npmignore', run("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('setup-npmignore', shell.task("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample, setupDist));
 gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
