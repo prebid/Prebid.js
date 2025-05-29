@@ -7,7 +7,7 @@ import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
 import {EVENTS, REJECTION_REASON, STATUS, DEBUG_MODE} from '../constants.js';
 import * as events from '../events.js';
-import {includes} from '../polyfill.js';
+
 import {
   delayExecution,
   isArray,
@@ -605,7 +605,7 @@ function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
 export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
+    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key) && ![undefined, null].includes(bid[key]));
   }
 
   function errorMessage(msg) {

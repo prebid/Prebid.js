@@ -181,7 +181,7 @@ export const fetchData = async (publisherId, profileId, type) => {
 
       return await response.json();
     } catch (error) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}:`, error);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: ${error}`);
     }
 };
 

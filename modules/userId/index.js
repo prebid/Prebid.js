@@ -117,7 +117,6 @@
  * @typedef {{[idKey: string]: () => SubmoduleContainer[]}} SubmodulePriorityMap
  */
 
-import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
@@ -1139,12 +1138,12 @@ function updateSubmodules() {
   // do this to avoid reprocessing submodules
   // TODO: the logic does not match the comment - addedSubmodules is always a copy of submoduleRegistry
   // (if it did it would not be correct - it's not enough to find new modules, as others may have been removed or changed)
-  const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
+  const addedSubmodules = submoduleRegistry.filter(i => !(submodules || []).find(j => j.name === i.name));
 
   submodules.splice(0, submodules.length);
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
+    const submoduleConfig = (configs || []).find(j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
       (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
     return submoduleConfig ? {
@@ -1210,7 +1209,7 @@ export function requestDataDeletion(next, ...args) {
  */
 export function attachIdSystem(submodule) {
   submodule.findRootDomain = findRootDomain;
-  if (!find(submoduleRegistry, i => i.name === submodule.name)) {
+  if (!(submoduleRegistry || []).find(i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid)
     updateSubmodules();

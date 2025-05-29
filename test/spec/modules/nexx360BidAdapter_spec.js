@@ -186,7 +186,8 @@ describe('Nexx360 bid adapter tests', () => {
         style: {
           maxWidth: '400px',
           maxHeight: '350px',
-        }
+        },
+        getBoundingClientRect() { return { width: 200, height: 250 }; }
       });
       sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
       sandbox.stub(STORAGE, 'setDataInLocalStorage');
@@ -334,7 +335,7 @@ describe('Nexx360 bid adapter tests', () => {
             version: requestContent.ext.version,
             source: 'prebid.js',
             pageViewId: requestContent.ext.pageViewId,
-            bidderVersion: '6.0',
+            bidderVersion: '6.1',
             localStorage: { amxId: 'abcdef'}
           },
           cur: [
