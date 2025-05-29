@@ -18,7 +18,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'czechAdId' })
 
 // Returns the id string from either cookie or localstorage
-const readId = () => { 
+const readId = () => {
   const id = storage.getCookie('czaid') || storage.getDataFromLocalStorage('czaid')
   return id && isValidUUID(id) ? id : null
 }
