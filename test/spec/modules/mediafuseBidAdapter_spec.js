@@ -723,7 +723,7 @@ describe('MediaFuseAdapter', function () {
     it('should add gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
