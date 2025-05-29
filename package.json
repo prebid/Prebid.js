@@ -79,7 +79,6 @@
     "gulp-js-escape": "^1.0.1",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
-    "gulp-run-command": "^0.0.10",
     "gulp-shell": "^0.8.0",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-terser": "^2.0.1",
