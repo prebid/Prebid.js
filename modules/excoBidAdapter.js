@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
 import {
   mergeDeep,
   deepAccess,
@@ -45,13 +45,14 @@ export class AdapterHelpers {
 
   createSyncUrl({ consentString, gppString, applicableSections, gdprApplies }, network) {
     try {
-      const url = new URL(window.location.protocol + SYNC_URL);
+      const url = new URL(SYNC_URL);
       const networks = [ '368531133' ];
 
       if (network) {
         networks.push(network);
       }
 
+      url.searchParams.set('pbv', '$prebid.version$');
       url.searchParams.set('network', networks.join(','));
       url.searchParams.set('gdpr', encodeURIComponent((Number(gdprApplies) || 0).toString()));
       url.searchParams.set('gdpr_consent', encodeURIComponent(consentString || ''));
@@ -154,38 +155,6 @@ export class AdapterHelpers {
     return str.replace('[TIMESTAMP]', Date.now());
   }
 
-  percentInViewport(win, element) {
-    if (!element) {
-      return 0;
-    }
-
-    const rect = getBoundingClientRect(element);
-    const viewportHeight = win.innerHeight || win.document.documentElement.clientHeight;
-    const viewportWidth = win.innerWidth || win.document.documentElement.clientWidth;
-
-    // Calculate boundaries of intersection between element and viewport.
-    const visibleRect = {
-      top: Math.max(rect.top, 0),
-      left: Math.max(rect.left, 0),
-      bottom: Math.min(rect.bottom, viewportHeight),
-      right: Math.min(rect.right, viewportWidth)
-    };
-
-    // Compute intersection dimensions.
-    const intersectionWidth = visibleRect.right - visibleRect.left;
-    const intersectionHeight = visibleRect.bottom - visibleRect.top;
-
-    // If no visible area, return 0.
-    if (intersectionWidth <= 0 || intersectionHeight <= 0) {
-      return 0;
-    }
-
-    const intersectionArea = intersectionWidth * intersectionHeight;
-    const elementArea = rect.width * rect.height;
-
-    return (intersectionArea / elementArea) * 100;
-  }
-
   postToAllParentFrames = (message) => {
     window.parent.postMessage(message, '*');
 
@@ -211,11 +180,8 @@ export class AdapterHelpers {
           const frame = document.querySelector(`iframe[src*="${href}"]`);
 
           if (frame) {
-            const viewPercent = this.percentInViewport(window, frame);
-
-            this.sendMessage(EVENTS.PONG, {
-              viewPercent, sid
-            });
+            const viewPercent = percentInView(frame);
+            this.sendMessage(EVENTS.PONG, { viewPercent, sid });
           }
         }
       }

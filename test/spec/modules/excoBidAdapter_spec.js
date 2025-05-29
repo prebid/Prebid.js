@@ -240,38 +240,6 @@ describe('ExcoBidAdapter', function () {
     });
   });
 
-  describe('percentInViewport', function () {
-    const el = {
-      getBoundingClientRect: function () {
-        return {
-          top: 0,
-          left: 0,
-          width: 100,
-          height: 100,
-          bottom: 100,
-          right: 100,
-        };
-      }
-    };
-
-    it('should return true if the ad is in the viewport', function () {
-      const win = {
-        innerWidth: 200,
-        innerHeight: 200,
-        pageXOffset: 0,
-        pageYOffset: 0,
-        document: {
-          documentElement: {
-            clientWidth: 200,
-            clientHeight: 200,
-          },
-        },
-      };
-      const result = helpers.percentInViewport(win, el) > 0;
-      expect(result).to.be.true;
-    });
-  });
-
   describe('getUserSyncs', function () {
     const serverResponses = [BID_SERVER_RESPONSE];
 
