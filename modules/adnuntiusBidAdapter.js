@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {isStr, isEmpty, deepAccess, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone, getWinDimensions} from '../src/utils.js';
+import {isStr, isEmpty, deepAccess, isArray, getUnixTimestampFromNow, convertObjectToArray, getWindowTop, deepClone, getWinDimensions} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
@@ -154,28 +154,35 @@ const storageTool = (function () {
     storage.setDataInLocalStorage(METADATA_KEY, JSON.stringify(metaDataForSaving));
   };
 
-  const getUsi = function (meta, ortb2, bidParams) {
-    // Fetch user id from parameters.
-    for (let i = 0; i < bidParams.length; i++) {
-      const bidParam = bidParams[i];
-      if (bidParam.userId) {
-        return bidParam.userId;
-      }
-    }
-    if (ortb2 && ortb2.user && ortb2.user.id) {
-      return ortb2.user.id
-    }
-    return (meta && meta.usi) ? meta.usi : false
-  }
+  const getFirstValidValueFromArray = function(arr, param) {
+    const example = (arr || []).find((b) => {
+      return deepAccess(b, param);
+    });
+    return example ? deepAccess(example, param) : undefined;
+  };
 
   return {
-    refreshStorage: function (bidderRequest) {
-      const ortb2 = bidderRequest.ortb2 || {};
+    refreshStorage: function (validBidRequests, bidderRequest) {
       const bidParams = (bidderRequest.bids || []).map((b) => {
         return b.params ? b.params : {};
       });
       metaInternal = getMetaDataFromLocalStorage(bidParams).reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
-      metaInternal.usi = getUsi(metaInternal, ortb2, bidParams);
+      const bidParamUserId = getFirstValidValueFromArray(bidParams, 'userId');
+      const ortb2 = bidderRequest.ortb2 || {};
+
+      if (isStr(bidParamUserId)) {
+        metaInternal.usi = bidParamUserId;
+      } else if (isStr(ortb2?.user?.id)) {
+        metaInternal.usi = ortb2.user.id;
+      } else {
+        const unvettedOrtb2Eids = deepAccess(ortb2, 'user.ext.eids');
+        const vettedOrtb2Eids = isArray(unvettedOrtb2Eids) && unvettedOrtb2Eids.length > 0 ? unvettedOrtb2Eids : false;
+
+        if (vettedOrtb2Eids) {
+          metaInternal.eids = vettedOrtb2Eids;
+        }
+      }
+
       if (!metaInternal.usi) {
         delete metaInternal.usi;
       }
@@ -190,8 +197,8 @@ const storageTool = (function () {
     },
     getUrlRelatedData: function () {
       // getting the URL information is theoretically not network-specific
-      const { usi, voidAuIdsArray } = metaInternal;
-      return { usi, voidAuIdsArray };
+      const { usi, voidAuIdsArray, eids } = metaInternal;
+      return { usi, voidAuIdsArray, eids };
     },
     getPayloadRelatedData: function (network) {
       // getting the payload data should be network-specific
@@ -280,6 +287,7 @@ export const spec = {
     queryParamsAndValues.push('format=prebid')
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
+    queryParamsAndValues.push('pbv=' + window.$$PREBID_GLOBAL$$.version);
     if (gdprApplies !== undefined) {
       const flag = gdprApplies ? '1' : '0'
       queryParamsAndValues.push('consentString=' + consentString);
@@ -301,12 +309,13 @@ export const spec = {
       queryParamsAndValues.push('so=' + searchParams.get('script-override'));
     }
 
-    storageTool.refreshStorage(bidderRequest);
+    storageTool.refreshStorage(validBidRequests, bidderRequest);
 
     const urlRelatedMetaData = storageTool.getUrlRelatedData();
     targetingTool.addSegmentsToUrlData(validBidRequests, bidderRequest, urlRelatedMetaData);
     if (urlRelatedMetaData.segments.length > 0) queryParamsAndValues.push('segments=' + urlRelatedMetaData.segments.join(','));
     if (urlRelatedMetaData.usi) queryParamsAndValues.push('userId=' + urlRelatedMetaData.usi);
+    if (isArray(urlRelatedMetaData.eids) && urlRelatedMetaData.eids.length > 0) queryParamsAndValues.push('eids=' + encodeURIComponent(JSON.stringify(urlRelatedMetaData.eids)));
 
     const bidderConfig = config.getConfig();
     if (bidderConfig.useCookie === false) queryParamsAndValues.push('noCookies=true');
@@ -323,7 +332,7 @@ export const spec = {
         continue;
       }
 
-      let network = bid.params.network || 'network';
+      const network = bid.params.network || 'network';
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
