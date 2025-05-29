@@ -29,6 +29,7 @@
   "browserslist": [
     "> 0.25%",
     "not IE 11",
+    "not dead",
     "not op_mini all"
   ],
   "keywords": [
