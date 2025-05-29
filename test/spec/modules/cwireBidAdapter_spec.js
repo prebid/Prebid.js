@@ -86,7 +86,8 @@ describe('C-WIRE bid adapter', () => {
       const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         offsetWidth: 200,
-        offsetHeight: 250
+        offsetHeight: 250,
+        getBoundingClientRect() { return { width: 200, height: 250 }; }
       });
     });
     it('width and height should be set', function () {
@@ -115,7 +116,8 @@ describe('C-WIRE bid adapter', () => {
         style: {
           maxWidth: '400px',
           maxHeight: '350px',
-        }
+        },
+        getBoundingClientRect() { return { width: 0, height: 0 }; }
       });
     });
     it('css maxWidth should be set', function () {
@@ -231,7 +233,9 @@ describe('C-WIRE bid adapter', () => {
   describe('buildRequests maps flattens params for legacy compat', function () {
     before(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({});
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+        getBoundingClientRect() { return { width: 0, height: 0 }; }
+      });
     });
     it('pageId flattened', function () {
       let bidRequest = deepClone(bidRequests[0]);
@@ -306,7 +310,9 @@ describe('C-WIRE bid adapter', () => {
           purpose: {
             consents: 1
           }
-        }};
+        },
+        consentString: 'testConsentString'
+      };
       const userSyncs = spec.getUserSyncs({}, {}, gdprConsent, {});
 
       expect(userSyncs).to.be.empty
@@ -318,12 +324,14 @@ describe('C-WIRE bid adapter', () => {
           purpose: {
             consents: 1
           }
-        }};
+        },
+        consentString: 'testConsentString'
+      };
       let synOptions = {pixelEnabled: true, iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('image');
-      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID');
+      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=testConsentString');    
     })
 
     it('user-syncs with enabled iframe option', function () {
@@ -332,12 +340,14 @@ describe('C-WIRE bid adapter', () => {
           purpose: {
             consents: 1
           }
-        }};
+        },
+        consentString: 'abc123'
+      };
       let synOptions = {iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('iframe');
-      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID');
+      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123');    
     })
   })
 });

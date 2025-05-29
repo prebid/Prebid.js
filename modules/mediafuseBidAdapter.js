@@ -20,7 +20,6 @@ import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
@@ -116,7 +115,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     const tags = bidRequests.map(bidToTag);
-    const userObjBid = find(bidRequests, hasUserInfo);
+    const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
       userObj = { 'coppa': true };
@@ -142,7 +141,7 @@ export const spec = {
         });
     }
 
-    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
     let appDeviceObj;
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
@@ -151,7 +150,7 @@ export const spec = {
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
-    const appIdObjBid = find(bidRequests, hasAppId);
+    const appIdObjBid = ((bidRequests) || []).find(hasAppId);
     let appIdObj;
     if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {
@@ -171,7 +170,7 @@ export const spec = {
         logError('MediaFuse Debug Auction Cookie Error:\n\n' + e);
       }
     } else {
-      const debugBidRequest = find(bidRequests, hasDebug);
+      const debugBidRequest = ((bidRequests) || []).find(hasDebug);
       if (debugBidRequest && debugBidRequest.debug) {
         debugObj = debugBidRequest.debug;
       }
@@ -185,10 +184,10 @@ export const spec = {
         });
     }
 
-    const memberIdBid = find(bidRequests, hasMemberId);
+    const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
     const schain = bidRequests[0].schain;
-    const omidSupport = find(bidRequests, hasOmidSupport);
+    const omidSupport = ((bidRequests) || []).find(hasOmidSupport);
 
     const payload = {
       tags: [...tags],
@@ -260,7 +259,7 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    const hasAdPodBid = find(bidRequests, hasAdPod);
+    const hasAdPodBid = ((bidRequests) || []).find(hasAdPod);
     if (hasAdPodBid) {
       bidRequests.filter(hasAdPod).forEach(adPodBid => {
         const adPodTags = createAdPodRequest(tags, adPodBid);
@@ -558,8 +557,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       complete: 0,
       nodes: [{
         bsid: rtbBid.buyer_member_id.toString()
-      }],
-    };
+      }]};
 
     return dchain;
   }
@@ -600,7 +598,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         bid.vastXml = rtbBid.rtb.video.content;
 
         if (rtbBid.renderer_url) {
-          const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
+          const videoBid = ((bidderRequest.bids) || []).find(bid => bid.bidId === serverBid.uuid);
           const rendererOptions = deepAccess(videoBid, 'renderer.options');
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
@@ -971,7 +969,7 @@ function setVideoProperty(tag, key, value) {
 }
 
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
 }
 
 function buildNativeRequest(params) {

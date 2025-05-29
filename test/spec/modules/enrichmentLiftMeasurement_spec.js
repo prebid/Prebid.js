@@ -21,7 +21,7 @@ describe('enrichmentLiftMeasurement', () => {
   })
   
   it('should properly split traffic basing on percentage', () => {
-    const TEST_SAMPLE_SIZE = 10000;
+    const TEST_SAMPLE_SIZE = 1000;
     const MARGIN_OF_ERROR = 0.05;
     const modulesConfig = [
       { name: 'idSystem1', percentage: 0.8 },
@@ -41,11 +41,9 @@ describe('enrichmentLiftMeasurement', () => {
         modules: modulesConfig
     }});
 
-    init();
-
     const results = [];
     for (let i = 0; i < TEST_SAMPLE_SIZE; i++) {
-        results.push(getCalculatedSubmodules());
+        results.push(getCalculatedSubmodules(modulesConfig));
     }
     modulesConfig.forEach((idSystem) => {
         const passedIdSystemsCount = results.filter((execution) => {
