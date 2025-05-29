@@ -44,10 +44,8 @@ function newPluginsArray(browserstack) {
     plugins.push('karma-browserstack-launcher');
   }
   plugins.push('karma-firefox-launcher');
-  plugins.push('karma-opera-launcher');
   plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
-  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
