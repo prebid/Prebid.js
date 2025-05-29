@@ -11,6 +11,7 @@ import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'pubmatic';
@@ -693,9 +694,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} validBidRequests - an array of bids
-   * @param {Object} bidderRequest
-   * @return {Object} Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest - bidder request object
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const { page, ref } = bidderRequest?.refererInfo || {};
