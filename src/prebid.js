@@ -30,7 +30,7 @@ import {auctionManager} from './auctionManager.js';
 import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
-import {includes} from './polyfill.js';
+
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
@@ -584,7 +584,7 @@ pbjsInstance.requestBids = (function() {
     }
     if (adUnitCodes && adUnitCodes.length) {
       // if specific adUnitCodes supplied filter adUnits for those codes
-      adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
+      adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
     } else {
       // otherwise derive adUnitCodes from adUnits
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
@@ -671,7 +671,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
       // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
-      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+      const bidderEligible = adUnitMediaTypes.some(type => bidderMediaTypes.includes(type));
       if (!bidderEligible) {
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
@@ -935,9 +935,11 @@ pbjsInstance.getAllWinningBids = function () {
 
 /**
  * Get all of the bids that have won their respective auctions.
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * @deprecated
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions but failed to win the ad server auction.
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
+  logWarn('getAllPrebidWinningBids may be removed or renamed in a future version. This function returns bids that have won in prebid and have had targeting set but have not (yet?) won in the ad server. It excludes bids that have been rendered.');
   return auctionManager.getBidsReceived()
     .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 };
