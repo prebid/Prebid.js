@@ -444,7 +444,7 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
         // The value of the UNIQUIFIER is likely to be the div-id,
         // but, if div-id is randomized / unavailable, may be something else like the media size)
-        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || deepAccess(au, 'ortb2Imp.ext.data.pbadslot', au.code),
+        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || au.code,
         mediaTypes: Object.keys(au.mediaTypes),
         sizes: au.sizes.map(size => size.join('x')),
         bids: [],

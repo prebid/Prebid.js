@@ -20,7 +20,6 @@ import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
-import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gdpr.js';
@@ -109,25 +108,8 @@ config.setDefaults({
  * @return {boolean}
  */
 function updateConfigDefaults(s2sConfig) {
-  if (s2sConfig.defaultVendor) {
-    let vendor = s2sConfig.defaultVendor;
-    let optionKeys = Object.keys(s2sConfig);
-    if (S2S_VENDORS[vendor]) {
-      // vendor keys will be set if either: the key was not specified by user
-      // or if the user did not set their own distinct value (ie using the system default) to override the vendor
-      Object.keys(S2S_VENDORS[vendor]).forEach((vendorKey) => {
-        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !includes(optionKeys, vendorKey)) {
-          s2sConfig[vendorKey] = S2S_VENDORS[vendor][vendorKey];
-        }
-      });
-    } else {
-      logError('Incorrect or unavailable prebid server default vendor option: ' + vendor);
-      return false;
-    }
-  } else {
-    if (s2sConfig.adapter == null) {
-      s2sConfig.adapter = 'prebidServer';
-    }
+  if (!s2sConfig.defaultVendor && s2sConfig.adapter == null) {
+    s2sConfig.adapter = 'prebidServer';
   }
   return true;
 }
@@ -199,7 +181,7 @@ export function validateConfig(options) {
  */
 function setS2sConfig(options) {
   options = validateConfig(options);
-  if (options?.length) {
+  if (options.length) {
     _s2sConfigs = options;
   }
 }
@@ -403,10 +385,9 @@ export function PrebidServer() {
     let { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
-      const s2sConfig = s2sBidRequest.s2sConfig;
-      if (s2sConfig?.syncEndpoint && getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent)) {
-        const s2sAliases = (s2sConfig.extPrebid?.aliases) ?? {};
-        let syncBidders = (s2sConfig.syncBidders ?? s2sConfig.bidders)
+      if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
+        const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
+        let syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 

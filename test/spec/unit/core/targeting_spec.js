@@ -944,8 +944,9 @@ describe('targeting tests', function () {
         config.resetConfig();
       });
 
-      it('should merge custom targeting from all bids by default', function () {
+      it('should merge custom targeting from all bids when allBidsCustomTargeting: true', function () {
         // Default behavior - no specific configuration
+        config.setConfig({targetingControls: {allBidsCustomTargeting: true}});
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // Custom key values from both bids should be combined to maintain existing functionality
@@ -953,7 +954,7 @@ describe('targeting tests', function () {
         expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner,loser');
       });
 
-      it('should only use custom targeting from winning bid when allBidsCustomTargeting=false', function () {
+      it('should use custom targeting from winning bid when allBidsCustomTargeting=false', function () {
         // Set allBidsCustomTargeting to false
         config.setConfig({
           targetingControls: {
@@ -961,6 +962,15 @@ describe('targeting tests', function () {
           }
         });
 
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Only the winning bid's custom key value should be used
+        expect(targeting['/123456/header-bid-tag-0']).to.have.property('foobar');
+        expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner');
+      });
+
+      it('should use custom targeting from winning bid when allBidsCustomTargeting is not set', function () {
+        // allBidsCustomTargeting defaults to false
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // Only the winning bid's custom key value should be used

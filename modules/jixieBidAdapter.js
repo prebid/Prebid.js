@@ -189,7 +189,7 @@ export const spec = {
 
     let bids = [];
     validBidRequests.forEach(function(one) {
-      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
+      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', '');
       let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,
