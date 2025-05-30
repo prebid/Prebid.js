@@ -37,6 +37,7 @@ import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
+import {pbYield} from './utils/yield.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {
@@ -1064,8 +1065,8 @@ function quePush(command) {
   }
 }
 
-function processQueue(queue) {
-  queue.forEach(function (cmd) {
+async function processQueue(queue) {
+  for (const cmd of queue) {
     if (typeof cmd.called === 'undefined') {
       try {
         cmd.call();
@@ -1074,19 +1075,21 @@ function processQueue(queue) {
         logError('Error processing command :', 'prebid.js', e);
       }
     }
-  });
+    await pbYield();
+  }
 }
 
 /**
  * @alias module:pbjs.processQueue
  */
-pbjsInstance.processQueue = delayIfPrerendering(() => getGlobal().delayPrerendering, function () {
+
+pbjsInstance.processQueue = delayIfPrerendering(() => getGlobal().delayPrerendering, async function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.processQueue', arguments);
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
-  processQueue(pbjsInstance.que);
-  processQueue(pbjsInstance.cmd);
+  await processQueue(pbjsInstance.que);
+  await processQueue(pbjsInstance.cmd);
 });
 
 /**
