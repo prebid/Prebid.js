@@ -160,6 +160,10 @@ export function setUpTreatment(config) {
 
 export const eids = {
   ...UID1_EIDS,
+  tdid: {
+    ...UID1_EIDS.tdid,
+    matcher: LI_PROVIDER_DOMAIN
+  },
   ...UID2_EIDS,
   'lipb': {
     getValue: function(data) {
