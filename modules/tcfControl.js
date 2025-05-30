@@ -32,6 +32,7 @@ import {
   ACTIVITY_TRANSMIT_PRECISE_GEO,
   ACTIVITY_TRANSMIT_UFPD
 } from '../src/activities/activities.js';
+import {processRequestOptions} from '../src/ajax.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -347,6 +348,7 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
+      processRequestOptions.after(checkIfCredentialsAllowed);
     }
     if (ACTIVE_RULES.purpose[2] != null) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
@@ -367,8 +369,25 @@ export function setEnforcementConfig(config) {
   }
 }
 
+export function checkIfCredentialsAllowed(next, options = {}, moduleType, moduleName) {
+  if (!options.withCredentials || (moduleType && moduleName)) {
+    next(options);
+    return;
+  }
+  const consentData = gdprDataHandler.getConsentData();
+  const rule = ACTIVE_RULES.purpose[1];
+  const ruleOptions = CONFIGURABLE_RULES[rule.purpose];
+  const {purpose} = getConsent(consentData, ruleOptions.type, ruleOptions.id, null);
+  if (!purpose) {
+    options.withCredentials = false;
+    logWarn(${RULE_NAME} denied '${ACTIVITY_ACCESS_REQUEST_CREDENTIALS}'');
+  }
+  next(options);
+}
+
 export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
+  processRequestOptions.getHooks({hooks: checkIfCredentialsAllowed}).remove();
   hooksAdded = false;
 }
 

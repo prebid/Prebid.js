@@ -1,5 +1,9 @@
+import { ACTIVITY_ACCESS_REQUEST_CREDENTIALS } from './activities/activities.js';
+import { activityParams } from './activities/activityParams.js';
+import { isActivityAllowed } from './activities/rules.js';
 import {config} from './config.js';
-import {buildUrl, logError, parseUrl} from './utils.js';
+import { hook } from './hook.js';
+import {buildUrl, hasDeviceAccess, logError, parseUrl} from './utils.js';
 
 export const dep = {
   fetch: window.fetch.bind(window),
@@ -23,6 +27,13 @@ export const dep = {
 const GET = 'GET';
 const POST = 'POST';
 const CTYPE = 'Content-Type';
+
+export const processRequestOptions = hook('async', function(options = {}, moduleType, moduleName) {
+  if (options.withCredentials) {
+    options.withCredentials = (moduleType && moduleName) ? isActivityAllowed(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, activityParams(moduleType, moduleName)) : hasDeviceAccess();
+  }
+  return options;
+}, 'processRequestOptions');
 
 /**
  * transform legacy `ajax` parameters into a fetch request.
@@ -70,13 +81,16 @@ export function toFetchRequest(url, data, options = {}) {
  *
  * @returns {function(*, {}?): Promise<Response>}
  */
-export function fetcherFactory(timeout = 3000, {request, done} = {}) {
+export function fetcherFactory(timeout = 3000, {request, done} = {}, moduleType, moduleName) {
   let fetcher = (resource, options) => {
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
       to = dep.timeout(timeout, resource);
       options = Object.assign({signal: to.signal}, options);
     }
+
+    processRequestOptions(options, moduleType, moduleName);
+
     let pm = dep.fetch(resource, options);
     if (to?.done != null) pm = pm.finally(to.done);
     return pm;
@@ -145,8 +159,8 @@ export function attachCallbacks(fetchPm, callback) {
     );
 }
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
-  const fetcher = fetcherFactory(timeout, {request, done});
+export function ajaxBuilder(timeout = 3000, {request, done} = {}, moduleType, moduleName) {
+  const fetcher = fetcherFactory(timeout, {request, done}, moduleType, moduleName);
   return function (url, callback, data, options = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
   };
