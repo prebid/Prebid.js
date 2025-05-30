@@ -225,7 +225,7 @@ export const spec = {
       if (type) {
         syncs.push({
           type: type,
-          url: `https://ib.adnxs.com/getuid?${URL_COOKIESYNC}?uid=${uid}&xandrId=$UID`
+          url: `https://ib.adnxs.com/getuid?${URL_COOKIESYNC}?uid=${uid}&xandrId=$UID&gdpr_consent=${gdprConsent.consentString}&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`,
         })
       }
     }

@@ -980,8 +980,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         banner: {
           topframe,
           format: bannerImps.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
-        },
-      };
+        }};
 
       for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
         // We add sid and externalID in imp.ext therefore, remove from banner.format[].ext
@@ -1179,6 +1178,16 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     const sua = {...fpd.device.sua};
     if (!isEmpty(sua)) {
       deepSetValue(r, 'device.sua', sua);
+    }
+
+    const ip = fpd.device.ip;
+    if (ip) {
+      deepSetValue(r, 'device.ip', ip);
+    }
+
+    const ipv6 = fpd.device.ipv6;
+    if (ipv6) {
+      deepSetValue(r, 'device.ipv6', ipv6);
     }
   }
 

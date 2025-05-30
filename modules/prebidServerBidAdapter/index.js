@@ -19,7 +19,7 @@ import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
-import {includes} from '../../src/polyfill.js';
+
 import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
@@ -116,7 +116,7 @@ function updateConfigDefaults(s2sConfig) {
       // vendor keys will be set if either: the key was not specified by user
       // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(S2S_VENDORS[vendor]).forEach((vendorKey) => {
-        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !includes(optionKeys, vendorKey)) {
+        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !optionKeys.includes(vendorKey)) {
           s2sConfig[vendorKey] = S2S_VENDORS[vendor][vendorKey];
         }
       });
@@ -326,7 +326,7 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
- * @param {number} timeout: maximum time to wait for rendering in milliseconds
+ * @param {number} timeout maximum time to wait for rendering in milliseconds
  */
 function doBidderSync(type, url, bidder, done, timeout) {
   if (!url) {
@@ -528,7 +528,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
           } catch (error) {
             logError(error);
           }
-          if (!result || (result.status && includes(result.status, 'Error'))) {
+          if (!result || (result.status && result.status.includes('Error'))) {
             logError('error parsing response: ', result ? result.status : 'not valid JSON');
             onResponse(false, requestedBidders);
           } else {

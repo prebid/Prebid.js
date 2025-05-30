@@ -21,7 +21,6 @@ import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
 import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {getHook} from '../src/hook.js';
-import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
@@ -157,7 +156,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     return {...previousMatch};
   }
   let allPossibleMatches = generatePossibleEnumerations(fieldValues, deepAccess(floorData, 'schema.delimiter') || '|');
-  let matchingRule = find(allPossibleMatches, hashValue => floorData.values.hasOwnProperty(hashValue));
+  let matchingRule = ((allPossibleMatches) || []).find(hashValue => floorData.values.hasOwnProperty(hashValue));
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
@@ -282,8 +281,7 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
   if (floorInfo.matchingFloor) {
     return {
       floor: roundUp(floorInfo.matchingFloor, 4),
-      currency,
-    };
+      currency};
   }
   return {};
 }
@@ -634,7 +632,7 @@ function handleFetchError(status) {
 
 /**
  * This function handles sending and receiving the AJAX call for a floors fetch
- * @param {object} floorsConfig the floors config coming from setConfig
+ * @param {object} floorEndpoint the floors config coming from setConfig
  */
 export function generateAndHandleFetch(floorEndpoint) {
   // if a fetch url is defined and one is not already occuring, fire it!
