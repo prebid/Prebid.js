@@ -58,7 +58,17 @@ describe('adnuntiusBidAdapter', function () {
     const e = utils.parseUrl(expected);
     expect(a.protocol + '://' + a.host + a.pathname).to.equal(e.protocol + '://' + e.host + e.pathname);
     const sortEntries = obj => Object.entries(obj).sort();
-    expect(sortEntries(a.search)).to.deep.equal(sortEntries(e.search));
+    const sortedExpectations = sortEntries(a.search);
+    const sortedActuals = sortEntries(e.search);
+    for (let i = 0; i < sortedExpectations.length; i++) {
+      const expectation = sortedExpectations[i];
+      const actual = sortedActuals[i];
+
+      const expectationAsString = expectation[0] + ":" + expectation[1];
+      const actualAsString = actual[0] + ":" + actual[1];
+      expect(expectationAsString).to.equal(actualAsString);
+    }
+    expect(sortedExpectations.length).to.equal(sortedActuals.length);
   }
 
   const adapter = newBidder(spec);
