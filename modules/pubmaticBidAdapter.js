@@ -489,6 +489,11 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   if (isNonEmptyArray(bid.adomain)) {
     res.meta.clickUrl = res.meta.brandId = bid.adomain[0];
   }
+
+  if (bid.cat && isNonEmptyArray(bid.cat)) {
+    res.meta.secondaryCatIds = bid.cat;
+    res.meta.primaryCatId = bid.cat[0];
+  }
 }
 
 const addExtenstionParams = (req) => {
