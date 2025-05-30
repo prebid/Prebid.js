@@ -432,12 +432,15 @@ function getBids(type) {
 
   return responses
     .map(bid => bid.adUnitCode)
-    .filter(uniques).map(adUnitCode => responses
+    .filter(uniques)
+    .map(adUnitCode => responses
       .filter(bid => bid.auctionId === currentAuctionId && bid.adUnitCode === adUnitCode))
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
+      const arr = bids.slice();
+      arr.bids = arr; // backwards compatibility
       return {
-        [bids[0].adUnitCode]: { bids }
+        [bids[0].adUnitCode]: arr
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -464,7 +467,9 @@ pbjsInstance.getNoBids = function () {
 pbjsInstance.getNoBidsForAdUnitCode = function (adUnitCode) {
   logInfo('Invoking $$PREBID_GLOBAL$$.getNoBidsForAdUnitCode', arguments);
   const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
-  return { bids };
+  const arr = bids.slice();
+  arr.bids = arr;
+  return arr;
 };
 
 /**
@@ -488,7 +493,9 @@ pbjsInstance.getBidResponses = function () {
 pbjsInstance.getBidResponsesForAdUnitCode = function (adUnitCode) {
   logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', arguments);
   const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-  return { bids };
+  const arr = bids.slice();
+  arr.bids = arr;
+  return arr;
 };
 
 /**
