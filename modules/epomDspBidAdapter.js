@@ -50,7 +50,7 @@ export const spec = {
         impArray.forEach(imp => {
           if (imp.id && (!imp.banner?.w || !imp.banner?.h) && defaultSize) {
             imp.banner = {
-              w:defaultSize[0],
+              w: defaultSize[0],
               h: defaultSize[1],
             };
           }
@@ -145,31 +145,5 @@ export const spec = {
   },
 };
 
-function getBidFloor(bid) {
-  let floor = parseFloat(getBidIdParameter('bidfloor', bid.params)) || null;
-  let floorcur = getBidIdParameter('bidfloorcur', bid.params) || 'USD';
-
-  if (!floor && isFn(bid.getFloor)) {
-    try {
-      const floorObj = bid.getFloor({
-        currency: floorcur,
-        mediaType: '*',
-        size: '*'
-      });
-
-      if (
-        isPlainObject(floorObj) &&
-        !isNaN(parseFloat(floorObj.floor)) &&
-        floorObj.currency === floorcur
-      ) {
-        floor = parseFloat(floorObj.floor);
-      }
-    } catch (e) {
-      logError('Error retrieving floor price:', e);
-    }
-  }
-
-  return floor || 0;
-}
 
 registerBidder(spec);
