@@ -782,7 +782,7 @@ export const getDSP = () => {
  * This function returns a function to get the primary category id from bid response meta
  * @returns {function}
  */
-export const getPrimaryCatId = () => { 
+export const getPrimaryCatId = () => {
   return (bid) => {
     const catId = bid?.meta?.primaryCatId;
     if (Array.isArray(catId)) {
