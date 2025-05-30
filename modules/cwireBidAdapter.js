@@ -86,6 +86,20 @@ function getRefGroups() {
   return []
 }
 
+function getBidFloor(bid) {
+ if (typeof bidRequest.getFloor !== 'function') {
+  return {};
+  }
+
+  let floor = bid.getFloor({
+    currency: 'CHF',
+    mediaType: '*',
+    size: '*'
+  });
+
+  return floor;
+}
+
 /**
  * Reads the CWID from local storage.
  */
@@ -181,6 +195,16 @@ export const spec = {
     // process bid requests
     let processed = validBidRequests
       .map(bid => slotDimensions(bid))
+      .map(bid => {
+        const bidFloor = getBidFloor(bid);
+        return {
+          ...bid,
+          params: {
+            ...bid.params,
+            floor: bidFloor,
+          }
+        }
+      })
       // Flattens the pageId, domainId and placement Id for backwards compatibility.
       .map((bid) => ({...bid, pageId: bid.params?.pageId, domainId: bid.params?.domainId, placementId: bid.params?.placementId}));
 
