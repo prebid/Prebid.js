@@ -784,8 +784,12 @@ export const getDSP = () => {
  */
 export const getPrimaryCatId = () => {
   return (bid) => {
-    return (bid.meta && bid.meta.primaryCatId) ? bid.meta.primaryCatId : '';
-  }
+    const catId = bid?.meta?.primaryCatId;
+    if (Array.isArray(catId)) {
+      return catId[0] || '';
+    }
+    return catId || '';
+  };
 }
 
 // factory for key value objs
