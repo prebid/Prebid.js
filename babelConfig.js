@@ -16,9 +16,8 @@ module.exports = function (options = {}) {
         useLocal('@babel/preset-env'),
         {
           'useBuiltIns': 'entry',
-          'corejs': '3.13.0',
-          // a lot of tests use sinon.stub & others that stopped working on ES6 modules with webpack 5
-          'modules': options.test ? 'commonjs' : 'auto',
+          'corejs': '3.36.1',
+          'modules': false,
         }
       ]
     ],
