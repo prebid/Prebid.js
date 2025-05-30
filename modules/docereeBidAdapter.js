@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { triggerPixel } from '../src/utils.js';
+import { triggerPixel, scheduleBackgroundTask } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
@@ -81,7 +81,9 @@ export const spec = {
         bidId: td.bidId,
         timeout: td.timeout,
       })));
-      triggerPixel(TRACKING_END_POINT + '/v1/hbTimeout?adp=prebidjs&data=' + encodedBuf);
+      scheduleBackgroundTask(() => {
+        triggerPixel(TRACKING_END_POINT + '/v1/hbTimeout?adp=prebidjs&data=' + encodedBuf);
+      });
     })
   },
   onBidWon: function (bidWon) {
@@ -97,7 +99,9 @@ export const spec = {
       status: bidWon.status,
       hb_pb: bidWon.adserverTargeting && bidWon.adserverTargeting.hb_pb,
     })));
-    triggerPixel(TRACKING_END_POINT + '/v1/hbBidWon?adp=prebidjs&data=' + encodedBuf);
+    scheduleBackgroundTask(() => {
+      triggerPixel(TRACKING_END_POINT + '/v1/hbBidWon?adp=prebidjs&data=' + encodedBuf);
+    });
   }
 };
 

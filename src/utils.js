@@ -1378,3 +1378,21 @@ export function triggerNurlWithCpm(bid, cpm) {
     triggerPixel(bid.nurl);
   }
 }
+
+/**
+ * Schedule a background priority task if the browser supports it.
+ * Falls back to a microtask when the Scheduler API is unavailable.
+ *
+ * @param {function(): any} fn the task to schedule
+ * @returns {Promise<any>} A promise resolved when the task runs
+ */
+export function scheduleBackgroundTask(fn) {
+  const sched = window.scheduler;
+  if (sched?.postTask) {
+    return sched.postTask(fn, {priority: 'background'});
+  }
+  if (sched?.yield) {
+    return sched.yield().then(fn);
+  }
+  return Promise.resolve().then(fn);
+}
