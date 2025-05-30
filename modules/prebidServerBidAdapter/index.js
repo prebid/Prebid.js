@@ -515,10 +515,10 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
   events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
   logInfo('BidRequest: ' + requestData);
   if (request && requestData.requestJson && requestData.endpointUrl) {
-    const callAjax = (payload, customHeaders) => {
+    const callAjax = (payload, endpointUrl) => {
       const networkDone = s2sBidRequest.metrics.startTiming('net');
       ajax(
-        requestData.endpointUrl,
+        endpointUrl,
         {
           success: function (response) {
             networkDone();
@@ -550,7 +550,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
           contentType: 'text/plain',
           withCredentials: true,
           browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
-          customHeaders
+          customHeaders: requestData.customHeaders
         }
       );
     }
@@ -563,11 +563,12 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
 
     if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
       compressDataWithGZip(requestData.requestJson).then(compressedPayload => {
-        requestData.customHeaders['Content-Encoding'] = 'gzip';
-        callAjax(compressedPayload, requestData.customHeaders);
+        const url = new URL(requestData.endpointUrl);
+        url.searchParams.set('gzip', '1');
+        callAjax(compressedPayload, url.href);
       });
     } else {
-      callAjax(requestData.requestJson, requestData.customHeaders);
+      callAjax(requestData.requestJson, requestData.endpointUrl);
     }
   } else {
     logError('PBS request not made.  Check endpoints.');
