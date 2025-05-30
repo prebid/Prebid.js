@@ -384,15 +384,69 @@ function findFloorValueFromBidderRequests(auction, code) {
     .flatMap(request => request.bids || [])
     .filter(bid => bid.adUnitCode === code);
   
-  // Look for floor data in any of these bids
-  const bidWithFloor = bidsFromRequests.find(bid => bid.getFloor());
-  if (bidWithFloor?.getFloor()?.floor) {
-    const floorValue = bidWithFloor.getFloor().floor;
-    logInfo(CONSTANTS.LOG_PRE_FIX, `Found floor value ${floorValue} from bidder request for ad unit: ${code}`);
-    return floorValue;
+  if (bidsFromRequests.length === 0) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `No bids found for ad unit: ${code}`);
+    return 0;
   }
   
-  logInfo(CONSTANTS.LOG_PRE_FIX, `No floor data found in bidder requests for ad unit: ${code}`);
+  const bidWithGetFloor = bidsFromRequests.find(bid => bid.getFloor);
+  if (!bidWithGetFloor) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `No bid with getFloor method found for ad unit: ${code}`);
+    return 0;
+  }
+  
+  // Try to get the ad unit from the auction
+  const adUnit = auction.adUnits?.find(unit => unit.code === code);
+  let sizes = [];
+  
+  // Try to get sizes from the ad unit
+  if (adUnit) {
+    if (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes) {
+      sizes = adUnit.mediaTypes.banner.sizes;
+    } else if (adUnit.sizes) {
+      sizes = adUnit.sizes;
+    }
+  }
+  
+  // If no sizes found in the ad unit, try to get from the bid
+  if (sizes.length === 0) {
+    if (bidWithGetFloor.mediaTypes && bidWithGetFloor.mediaTypes.banner && bidWithGetFloor.mediaTypes.banner.sizes) {
+      sizes = bidWithGetFloor.mediaTypes.banner.sizes;
+    } else if (bidWithGetFloor.sizes) {
+      sizes = bidWithGetFloor.sizes;
+    }
+  }
+  
+  // If still no sizes, use a default size
+  if (sizes.length === 0) {
+    sizes = [['*', '*']]; // Use wildcard size
+    logInfo(CONSTANTS.LOG_PRE_FIX, `No sizes found, using wildcard size for ad unit: ${code}`);
+  }
+  
+  // Try to get floor values for each size
+  let minFloor = -1;
+  sizes.forEach(size => {
+    const floorInfo = bidWithGetFloor.getFloor({ 
+      currency: 'USD', // Default currency
+      mediaType: 'banner', // Default media type
+      size 
+    });
+    
+    if (floorInfo && floorInfo.floor && !isNaN(parseFloat(floorInfo.floor))) {
+      const floorValue = parseFloat(floorInfo.floor);
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Floor value for size ${size}: ${floorValue}`);
+      
+      // Update minimum floor value
+      minFloor = minFloor === -1 ? floorValue : Math.min(minFloor, floorValue);
+    }
+  });
+  
+  if (minFloor !== -1) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `Calculated minimum floor value ${minFloor} for ad unit: ${code}`);
+    return minFloor;
+  }
+  
+  logInfo(CONSTANTS.LOG_PRE_FIX, `No floor data found for ad unit: ${code}`);
   return 0;
 }
 
@@ -454,23 +508,6 @@ function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit
   return { bidStatus, baseValue, multiplier };
 }
 
-// Set targeting keys for an ad unit
-function setTargetingForAdUnit(hasRtdFloorAppliedBid, acc, code, bidStatus, baseValue, multiplier) {
-  const floorValue = baseValue * multiplier;
-  
-  // Initialize acc[code] if it doesn't exist
-  if (!acc[code]) {
-    acc[code] = {};
-  }
-  
-  // Only set pm_ym_flrs key to match test expectations
-  acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = hasRtdFloorAppliedBid ? 1 : 0;
-  acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = floorValue;
-  acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
-  logInfo(CONSTANTS.LOG_PRE_FIX, `Setting targeting for ad unit: ${code}, Status: ${bidStatus}, Base value: ${baseValue}, Multiplier: ${multiplier}, Final floor: ${floorValue}`);
-  
-  return floorValue;
-}
 
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   // Access the profile configs stored globally
@@ -521,7 +558,7 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
       
       // Set all targeting keys
       acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 1;
-      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = baseValue * multiplier;
+      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = parseFloat((baseValue * multiplier).toFixed(2));
       acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
     } else {
       // For non-RTD floor applied cases, only set pm_ym_flrs to 0
@@ -534,18 +571,6 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   return targeting;
 };
 
-/** @type {RtdSubmodule} */
-// Export internal functions for testing
-export {
-  setTargetingForAdUnit,
-  findWinningBid,
-  findRejectedFloorBid,
-  findBidsForAdUnit,
-  findRejectedBidsForAdUnit,
-  determineBidStatusAndValues,
-  findBidWithFloor,
-  findFloorValueFromBidderRequests
-};
 
 export const pubmaticSubmodule = {
   /**
