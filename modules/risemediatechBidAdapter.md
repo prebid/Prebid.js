@@ -26,7 +26,7 @@ RisemediaTech supports Display & Video(Instream) currently.
                     params: {
                         placementId: 1452398,
                         publisherId: p-1489231,   
-                        floorPrice: 0.5,        
+                        bidfloor: 0.5,        
                         currency: 'USD',
                         domain: 'exampleDomain.com',
                         pageUrl: 'https://exampleDomain.com/ad'

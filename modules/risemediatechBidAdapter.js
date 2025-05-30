@@ -20,7 +20,10 @@ const converter = ortbConverter({
     logInfo('Building impression object for bidRequest:', bidRequest);
     const imp = buildImp(bidRequest, context);
     const { mediaTypes } = bidRequest;
-
+    if (bid.params && bid.params.bidfloor) {
+      logInfo('Setting bid floor for impression:', bid.params.bidfloor);
+      imp.bidfloor = bid.params.bidfloor;
+    }
     if (mediaTypes[BANNER]) {
       logInfo('Adding banner media type to impression:', mediaTypes[BANNER]);
       imp.banner = { format: mediaTypes[BANNER].sizes.map(([w, h]) => ({ w, h })) };
@@ -72,11 +75,11 @@ const converter = ortbConverter({
 const isBidRequestValid = (bid) => {
   logInfo('Validating bid request:', bid);
 
-  // Validate params
-  if (!bid.params || !bid.params.publisherId) {
-    logWarn('Invalid bid request: Missing required params (publisherId or adSlot).');
-    return false;
-  }
+  // // Validate params
+  // if (!bid.params || !bid.params.publisherId) {
+  //   logWarn('Invalid bid request: Missing required params (publisherId or adSlot).');
+  //   return false;
+  // }
 
   const { mediaTypes } = bid;
 
@@ -153,7 +156,7 @@ const interpretResponse = (serverResponse, request) => {
         }
       }
 
-      //Set media type based on bid.mtype
+      // Set media type based on bid.mtype
       if (bid.mtype == null) {
         logWarn('Bid response does not contain media type for bidId: ', bid.id);
         bidResponse.meta.mediaType = BANNER;
@@ -170,7 +173,7 @@ const interpretResponse = (serverResponse, request) => {
           break;
       }
 
-      //set dealId if present
+      // set dealId if present
       if (bid.dealid) {
         bidResponse.dealId = bid.dealid;
       }
@@ -212,7 +215,9 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
     url += `&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections.join(',')}`;
   }
 
-  return [{ type, url }];
+  // return [{ type, url }];
+  logInfo('User syncs are not implemented in this adapter.');
+  return null;
 };
 
 export const spec = {
