@@ -1362,6 +1362,85 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
+    it('should forward dealId', function() {
+      let lwResponse = {
+        ads: [
+          {
+            id: '28e5ddf4-3c01-11e8-86a7-0a44794250d4',
+            callerId: 'site_outsider_0',
+            tag: '<span>ad</span>',
+            width: 300,
+            height: 250,
+            cpmBid: 2.565917,
+            bidId: '32e50fad901ae89',
+            auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
+            creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+            ttl: 120,
+            meta: { dealId: "deal id", bidder: "bidder" }
+          }
+        ],
+        currency: 'USD'
+      };
+
+      let expectedResponse = [{
+        requestId: '32e50fad901ae89',
+        cpm: 2.565917,
+        width: 300,
+        height: 250,
+        ad: '<span>ad</span>',
+        ttl: 120,
+        creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+        netRevenue: true,
+        currency: 'USD',
+        dealId: 'deal id',
+        meta: { dealId: "deal id", bidder: "bidder" }
+      }];
+
+      let bids = spec.interpretResponse({body: lwResponse});
+
+      expect(bids).to.deep.equal(expectedResponse);
+    })
+
+    it('should forward bidderCode', function() {
+      let lwResponse = {
+        ads: [
+          {
+            id: '28e5ddf4-3c01-11e8-86a7-0a44794250d4',
+            callerId: 'site_outsider_0',
+            tag: '<span>ad</span>',
+            width: 300,
+            height: 250,
+            cpmBid: 2.565917,
+            bidId: '32e50fad901ae89',
+            auctionId: '13e674db-d4d8-4e19-9d28-ff38177db8bf',
+            creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+            ttl: 120,
+            meta: { bidder: "bidder" },
+            fwb: 1
+          }
+        ],
+        currency: 'USD'
+      };
+
+      let expectedResponse = [{
+        requestId: '32e50fad901ae89',
+        cpm: 2.565917,
+        width: 300,
+        height: 250,
+        ad: '<span>ad</span>',
+        ttl: 120,
+        creativeId: '52cbd598-2715-4c43-a06f-229fc170f945:427077',
+        netRevenue: true,
+        currency: 'USD',
+        meta: { bidder: "bidder" },
+        bidderCode: "bidder"
+      }];
+
+      let bids = spec.interpretResponse({body: lwResponse});
+
+      expect(bids).to.deep.equal(expectedResponse);
+    })
+
     it('should handle single native success response', function() {
       let lwResponse = {
         ads: [
