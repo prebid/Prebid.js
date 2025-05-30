@@ -6,7 +6,7 @@
  */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { logError, logWarn, getBidIdParameter, isFn, isPlainObject, deepClone } from '../src/utils.js';
+import { logError, logWarn, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'epom_dsp';
@@ -144,6 +144,5 @@ export const spec = {
     return syncs;
   },
 };
-
 
 registerBidder(spec);
