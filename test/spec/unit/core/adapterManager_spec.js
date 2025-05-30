@@ -18,7 +18,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { setSizeConfig } from 'modules/sizeMapping.js';
-import {find, includes} from 'src/polyfill.js';
+import {find} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
@@ -227,7 +227,7 @@ describe('adapterManager tests', function () {
 
     it('should give bidders access to bidder-specific config', function(done) {
       let mockBidders = ['rubicon', 'appnexus', 'pubmatic'];
-      let bidderRequest = getBidRequests().filter(bidRequest => includes(mockBidders, bidRequest.bidderCode));
+      let bidderRequest = getBidRequests().filter(bidRequest => mockBidders.includes(bidRequest.bidderCode));
       let adUnits = getAdUnits();
 
       let bidders = {};
@@ -729,7 +729,7 @@ describe('adapterManager tests', function () {
 
       it('should fire for s2s requests', function () {
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus'], bid.bidder));
+          adUnit.bids = adUnit.bids.filter(bid => ['appnexus'].includes(bid.bidder));
           return adUnit;
         })
         let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
@@ -741,7 +741,7 @@ describe('adapterManager tests', function () {
       it('should fire for simultaneous s2s and client requests', function () {
         adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-          adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus'], bid.bidder));
+          adUnit.bids = adUnit.bids.filter(bid => ['adequant', 'appnexus'].includes(bid.bidder));
           return adUnit;
         })
         let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
@@ -1119,7 +1119,7 @@ describe('adapterManager tests', function () {
 
       it('should fire for s2s requests', function () {
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'pubmatic'], bid.bidder));
+          adUnit.bids = adUnit.bids.filter(bid => ['appnexus', 'pubmatic'].includes(bid.bidder));
           return adUnit;
         })
         let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
@@ -1130,7 +1130,7 @@ describe('adapterManager tests', function () {
 
       it('should have one tid for ALL s2s bidRequests', function () {
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-          adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'pubmatic'], bid.bidder));
+          adUnit.bids = adUnit.bids.filter(bid => ['appnexus', 'pubmatic'].includes(bid.bidder));
           return adUnit;
         })
         let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
@@ -1146,7 +1146,7 @@ describe('adapterManager tests', function () {
       it('should fire for simultaneous s2s and client requests', function () {
         adapterManager.bidderRegistry['adequant'] = adequantAdapterMock;
         let adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-          adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus', 'pubmatic'], bid.bidder));
+          adUnit.bids = adUnit.bids.filter(bid => ['adequant', 'appnexus', 'pubmatic'].includes(bid.bidder));
           return adUnit;
         })
         let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
@@ -1168,7 +1168,7 @@ describe('adapterManager tests', function () {
       // copy adUnits
       // return JSON.parse(JSON.stringify(getAdUnits()));
       return utils.deepClone(getAdUnits()).map(adUnit => {
-        adUnit.bids = adUnit.bids.filter(bid => includes(['adequant', 'appnexus', 'rubicon'], bid.bidder));
+        adUnit.bids = adUnit.bids.filter(bid => ['adequant', 'appnexus', 'rubicon'].includes(bid.bidder));
         return adUnit;
       })
     }
@@ -1351,8 +1351,7 @@ describe('adapterManager tests', function () {
       // copy adUnits
       return utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => {
-          return includes(['adequant', 'appnexus', 'pubmatic', 'rubicon'],
-            bid.bidder);
+          return ['adequant', 'appnexus', 'pubmatic', 'rubicon'].includes(bid.bidder);
         });
         return adUnit;
       })
@@ -1768,7 +1767,7 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       resetAdUnitCounters();
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
-        adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
+        adUnit.bids = adUnit.bids.filter(bid => ['appnexus', 'rubicon'].includes(bid.bidder));
         return adUnit;
       })
       twinAdUnits = getTwinAdUnits();
