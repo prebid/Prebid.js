@@ -1,4 +1,3 @@
-import {arrayFrom, find} from '../src/polyfill.js';
 import {
   cleanObj,
   deepAccess,
@@ -11,6 +10,7 @@ import {
   isFn,
   isInteger,
   isNumber,
+  isPlainObject,
   isStr,
   logError,
   logWarn,
@@ -72,7 +72,7 @@ const ORTB_VIDEO_PARAMS = {
   skipmin: value => isInteger(value),
   skipafter: value => isInteger(value),
   sequence: value => isInteger(value),
-  battr: value => Array.isArray(value) && value.every(v => arrayFrom({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  battr: value => Array.isArray(value) && value.every(v => Array.from({ length: 17 }, (_, i) => i + 1).includes(v)),
   maxextended: value => isInteger(value),
   minbitrate: value => isInteger(value),
   maxbitrate: value => isInteger(value),
@@ -81,8 +81,7 @@ const ORTB_VIDEO_PARAMS = {
   playbackend: value => [1, 2, 3].indexOf(value) !== -1,
   delivery: value => [1, 2, 3].indexOf(value) !== -1,
   pos: value => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
-};
+  api: value => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)};
 
 /**
  * Returns the OpenRtb deviceType id detected from User Agent
@@ -139,7 +138,7 @@ function getFloor(bid, mediaType, size = '*') {
     size
   })
 
-  return (!isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
+  return (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === DEFAULT_CURRENCY) ? floor.floor : false
 }
 
 /**
@@ -304,7 +303,7 @@ function createNativeImp(bid) {
 
   for (let key in nativeParams) {
     if (nativeParams.hasOwnProperty(key)) {
-      const internalNativeAsset = find(NATIVE_ASSETS_MAPPING, ref => ref.name === key);
+      const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.name === key);
       if (!internalNativeAsset) {
         logWarn(`${BIDDER_CODE}: the asset "${key}" has not been found in Prebid assets map. Skipped for request.`);
         continue;
@@ -539,7 +538,7 @@ function nativeBidResponseHandler(bid) {
     }
 
     if (asset.data) {
-      const internalNativeAsset = find(NATIVE_ASSETS_MAPPING, ref => ref.id === asset.id);
+      const internalNativeAsset = ((NATIVE_ASSETS_MAPPING) || []).find(ref => ref.id === asset.id);
       if (internalNativeAsset) {
         native[internalNativeAsset.name] = asset.data.value;
       }

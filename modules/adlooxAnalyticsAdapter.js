@@ -10,7 +10,6 @@ import {loadExternalScript} from '../src/adloader.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {AUCTION_COMPLETED} from '../src/auction.js';
 import {EVENTS} from '../src/constants.js';
-import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {
   deepAccess,
@@ -65,7 +64,7 @@ MACRO['pageurl'] = function(b, c) {
   return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
 MACRO['gpid'] = function(b, c) {
-  const adUnit = find(auctionManager.getAdUnits(), a => b.adUnitCode === a.code);
+  const adUnit = ((auctionManager.getAdUnits()) || []).find(a => b.adUnitCode === a.code);
   return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
 MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
@@ -80,8 +79,6 @@ const PARAMS_DEFAULT = {
   'id7': function(b) { return b.size },
   'id11': '$ADLOOX_WEBSITE'
 };
-
-const NOOP = function() {};
 
 let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
@@ -107,6 +104,10 @@ analyticsAdapter.enableAnalytics = function(config) {
   }
   if (!(config.options.js === undefined || isStr(config.options.js))) {
     logError(MODULE, 'invalid js options value');
+    return;
+  }
+  if (isStr(config.options.js) && !/\.adlooxtracking\.(com|ru)$/.test(parseUrl(config.options.js, { 'noDecodeWholeURL': true }).host)) {
+    logError(MODULE, "invalid js options value, must be a sub-domain of 'adlooxtracking.com'");
     return;
   }
   if (!(config.options.toselector === undefined || isFn(config.options.toselector))) {
@@ -221,20 +222,24 @@ analyticsAdapter.url = function(url, args, bid) {
   return url + a2qs(args);
 }
 
+const preloaded = {};
 analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
-  analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = NOOP;
+
+  const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
+  const href = `${uri.protocol}://${uri.host}${uri.pathname}`;
+  if (preloaded[href]) return;
 
   logMessage(MODULE, 'preloading verification JS');
 
-  const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
-
   const link = document.createElement('link');
-  link.setAttribute('href', `${uri.protocol}://${uri.host}${uri.pathname}`);
+  link.setAttribute('href', href);
   link.setAttribute('rel', 'preload');
   link.setAttribute('as', 'script');
   // TODO fix rules violation
   insertElement(link);
+
+  preloaded[href] = true;
 }
 
 analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {

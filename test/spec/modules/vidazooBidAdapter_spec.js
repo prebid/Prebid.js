@@ -98,6 +98,36 @@ const VIDEO_BID = {
   }
 }
 
+const ORTB2_DEVICE = {
+  sua: {
+    'source': 2,
+    'platform': {
+      'brand': 'Android',
+      'version': ['8', '0', '0']
+    },
+    'browsers': [
+      {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+      {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+      {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+    ],
+    'mobile': 1,
+    'model': 'SM-G955U',
+    'bitness': '64',
+    'architecture': ''
+  },
+  w: 980,
+  h: 1720,
+  dnt: 0,
+  ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+  language: 'en',
+  devicetype: 1,
+  make: 'Apple',
+  model: 'iPhone 12 Pro Max',
+  os: 'iOS',
+  osv: '17.4',
+  ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+};
+
 const BIDDER_REQUEST = {
   'gdprConsent': {
     'consentString': 'consent_string',
@@ -133,24 +163,7 @@ const BIDDER_REQUEST = {
       'gpp_sid': [7],
       'coppa': 0
     },
-    'device': {
-      'sua': {
-        'source': 2,
-        'platform': {
-          'brand': 'Android',
-          'version': ['8', '0', '0']
-        },
-        'browsers': [
-          {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
-          {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
-          {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
-        ],
-        'mobile': 1,
-        'model': 'SM-G955U',
-        'bitness': '64',
-        'architecture': ''
-      }
-    },
+    device: ORTB2_DEVICE,
     user: {
       data: [
         {
@@ -218,6 +231,9 @@ const REQUEST = {
 };
 
 describe('VidazooBidAdapter', function () {
+  before(() => config.resetConfig());
+  after(() => config.resetConfig());
+
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
@@ -346,6 +362,7 @@ describe('VidazooBidAdapter', function () {
           },
           contentLang: 'en',
           coppa: 0,
+          device: ORTB2_DEVICE,
           contentData: [{
             'name': 'example.com',
             'ext': {
@@ -430,6 +447,7 @@ describe('VidazooBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          device: ORTB2_DEVICE,
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           cb: 1000,
@@ -523,6 +541,7 @@ describe('VidazooBidAdapter', function () {
           'bitness': '64',
           'architecture': ''
         },
+        device: ORTB2_DEVICE,
         url: 'https%3A%2F%2Fwww.greatsite.com',
         referrer: 'https://www.somereferrer.com',
         cb: 1000,
@@ -633,7 +652,7 @@ describe('VidazooBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -641,7 +660,7 @@ describe('VidazooBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
       }]);
     });
 
@@ -649,10 +668,21 @@ describe('VidazooBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.cootlogix.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.cootlogix.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=0',
         'type': 'image'
       }]);
-    })
+    });
+
+    it('should have valid user sync with coppa 1 on response', function () {
+      config.setConfig({
+        coppa: 1
+      });
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      expect(result).to.deep.equal([{
+        type: 'iframe',
+        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=&coppa=1'
+      }]);
+    });
   });
 
   describe('interpret response', function () {

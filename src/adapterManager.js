@@ -1,7 +1,6 @@
 /** @module adaptermanger */
 
 import {
-  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -21,17 +20,20 @@ import {
   mergeDeep,
   shuffle,
   timestamp,
+  uniques,
 } from './utils.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
 import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
-import {find, includes} from './polyfill.js';
+import {find} from './polyfill.js';
 import {
+  getAuctionsCounter,
   getBidderRequestsCounter,
   getBidderWinsCounter,
   getRequestsCounter,
+  incrementAuctionsCounter,
   incrementBidderRequestsCounter,
   incrementBidderWinsCounter,
   incrementRequestsCounter
@@ -47,6 +49,7 @@ import {isActivityAllowed} from './activities/rules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
 import {redactor} from './activities/redactor.js';
+import {EVENT_TYPE_IMPRESSION, parseEventTrackers, TRACKER_METHOD_IMG} from './eventTrackers.js';
 
 export {gdprDataHandler, gppDataHandler, uspDataHandler, coppaDataHandler} from './consentHandler.js';
 
@@ -77,9 +80,17 @@ var _analyticsRegistry = {};
 
 const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
+function getConfigName(s2sConfig) {
+  // According to our docs, "module" bid (stored impressions)
+  // have params.configName referring to s2sConfig.name,
+  // but for a long while this was checking against s2sConfig.configName.
+  // Keep allowing s2sConfig.configName to avoid the breaking change
+  return s2sConfig.configName ?? s2sConfig.name;
+}
+
 export function s2sActivityParams(s2sConfig) {
   return activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
-    [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
+    [ACTIVITY_PARAM_S2S_NAME]: getConfigName(s2sConfig)
   });
 }
 
@@ -128,12 +139,13 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
           adUnitId: adUnit.adUnitId,
-          sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
+          sizes: mediaTypes?.banner?.sizes || mediaTypes?.video?.playerSize || [],
           bidId: bid.bid_id || getUniqueIdentifierStr(),
           bidderRequestId,
           auctionId,
           src,
           metrics,
+          auctionsCount: getAuctionsCounter(adUnit.code),
           bidRequestsCount: getRequestsCounter(adUnit.code),
           bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
           bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
@@ -160,7 +172,13 @@ export function _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders = getS2SBid
     return bids;
   } else {
     const serverBidders = getS2SBidders(s2sConfig);
-    return bids.filter((bid) => serverBidders.has(bid.bidder))
+    return bids.filter((bid) => {
+      if (!serverBidders.has(bid.bidder)) return false;
+      if (bid.s2sConfigName == null) return true;
+      const configName = getConfigName(s2sConfig);
+      const allowedS2SConfigs = Array.isArray(bid.s2sConfigName) ? bid.s2sConfigName : [bid.s2sConfigName];
+      return allowedS2SConfigs.includes(configName);
+    })
   }
 }
 export const filterBidsForAdUnit = hook('sync', _filterBidsForAdUnit, 'filterBidsForAdUnit');
@@ -171,7 +189,9 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
-    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && b.params?.configName === s2sConfig.configName);
+    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && (
+      b.params?.configName === getConfigName(s2sConfig)
+    ));
     if (s2sBids.length === 1) {
       adUnit.s2sBid = s2sBids[0];
       hasModuleBids = true;
@@ -261,6 +281,10 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   if (FEATURES.NATIVE) {
     decorateAdUnitsWithNativeParams(adUnits);
   }
+  adUnits
+    .map(adUnit => adUnit.code)
+    .filter(uniques)
+    .forEach(incrementAuctionsCounter);
 
   adUnits.forEach(au => {
     if (!isPlainObject(au.mediaTypes)) {
@@ -499,8 +523,8 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
-  if (FEATURES.VIDEO && includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.VIDEO && adapterManager.videoAdapters.includes(bidderCode)) supportedMediaTypes.push('video');
+  if (FEATURES.NATIVE && nativeAdapters.includes(bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
 
@@ -512,10 +536,10 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
       _bidderRegistry[bidderCode] = bidAdapter;
       GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
 
-      if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
+      if (FEATURES.VIDEO && supportedMediaTypes.includes('video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
-      if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
+      if (FEATURES.NATIVE && supportedMediaTypes.includes('native')) {
         nativeAdapters.push(bidderCode);
       }
     } else {
@@ -537,7 +561,7 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
       _s2sConfigs.forEach(s2sConfig => {
         if (s2sConfig.bidders && s2sConfig.bidders.length) {
           const s2sBidders = s2sConfig && s2sConfig.bidders;
-          if (!(s2sConfig && includes(s2sBidders, alias))) {
+          if (!(s2sConfig && s2sBidders.includes(alias))) {
             nonS2SAlias.push(bidderCode);
           } else {
             _aliasRegistry[alias] = bidderCode;
@@ -682,9 +706,8 @@ adapterManager.triggerBilling = (() => {
   return (bid) => {
     if (!BILLED.has(bid)) {
       BILLED.add(bid);
-      if (bid.source === S2S.SRC && bid.burl) {
-        internal.triggerPixel(bid.burl);
-      }
+      (parseEventTrackers(bid.eventtrackers)[EVENT_TYPE_IMPRESSION]?.[TRACKER_METHOD_IMG] || [])
+        .forEach((url) => internal.triggerPixel(url));
       tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
     }
   }

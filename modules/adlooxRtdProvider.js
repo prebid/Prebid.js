@@ -6,10 +6,9 @@
  * @module modules/adlooxRtdProvider
  * @requires module:modules/realTimeData
  * @requires module:modules/adlooxAnalyticsAdapter
- * @optional module:modules/intersectionRtdProvider
+ * @see module:modules/intersectionRtdProvider (optional)
  */
 
-/* eslint standard/no-callback-literal: "off" */
 /* eslint prebid/validate-imports: "off" */
 
 import {auctionManager} from '../src/auctionManager.js';

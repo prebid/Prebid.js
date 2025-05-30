@@ -1,8 +1,9 @@
 import { assert, expect } from 'chai';
 import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { config } from '../../../src/config';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { BANNER, NATIVE } from '../../../src/mediaTypes';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Yandex adapter', function () {
   describe('isBidRequestValid', function () {
@@ -41,6 +42,55 @@ describe('Yandex adapter', function () {
   });
 
   describe('buildRequests', function () {
+    let mockBidRequests;
+    let mockBidderRequest;
+
+    beforeEach(function () {
+      mockBidRequests = [{
+        bidId: 'bid123',
+        params: {
+          placementId: 'R-I-123456-2',
+        }
+      }];
+      mockBidderRequest = {
+        ortb2: {
+          device: {
+            language: 'fr'
+          },
+          site: {
+            ext: {
+              data: {
+                documentLang: 'en'
+              }
+            }
+          }
+        }
+      };
+    });
+
+    it('should set site.content.language from document language if it is not set', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.site.content.language).to.equal('en');
+    });
+
+    it('should preserve existing site.content.language if it is set', function () {
+      mockBidderRequest.ortb2.site.content = {language: 'es'};
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.site.content.language).to.equal('es');
+    });
+
+    it('should do nothing when document language does not exist', function () {
+      delete mockBidderRequest.ortb2.site.ext.data.documentLang;
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.site?.content?.language).to.be.undefined;
+    });
+
+    it('should return displaymanager', function () {
+      const requests = spec.buildRequests(mockBidRequests, mockBidderRequest);
+      expect(requests[0].data.imp[0].displaymanager).to.equal('Prebid.js');
+      expect(requests[0].data.imp[0].displaymanagerver).to.not.be.undefined;
+    });
+
     /** @type {import('../../../src/auction').BidderRequest} */
     const bidderRequest = {
       ortb2: {
@@ -108,8 +158,8 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('bs.yandex.ru');
-      expect(parsedRequestUrl.pathname).to.equal('/prebid/123');
+      expect(parsedRequestUrl.hostname).to.equal('yandex.ru');
+      expect(parsedRequestUrl.pathname).to.equal('/ads/prebid/123');
 
       expect(query['imp-id']).to.equal('1');
       expect(query['target-ref']).to.equal('ya.ru');
@@ -125,19 +175,21 @@ describe('Yandex adapter', function () {
     });
 
     it('should send currency if defined', function () {
-      config.setConfig({
-        currency: {
-          adServerCurrency: 'USD'
-        }
+      setCurrencyConfig({
+        adServerCurrency: 'USD'
       });
 
       const bannerRequest = getBidRequest();
-      const requests = spec.buildRequests([bannerRequest], bidderRequest);
-      const { url } = requests[0];
-      const parsedRequestUrl = utils.parseUrl(url);
-      const { search: query } = parsedRequestUrl
 
-      expect(query['ssp-cur']).to.equal('USD');
+      return addFPDToBidderRequest(bidderRequest).then(res => {
+        const requests = spec.buildRequests([bannerRequest], res);
+        const { url } = requests[0];
+        const parsedRequestUrl = utils.parseUrl(url);
+        const { search: query } = parsedRequestUrl
+
+        expect(query['ssp-cur']).to.equal('USD');
+        setCurrencyConfig({});
+      });
     });
 
     it('should send eids and ortb2 user data if defined', function() {
@@ -223,6 +275,68 @@ describe('Yandex adapter', function () {
           { w: 300, h: 250 },
           { w: 300, h: 600 },
         ]);
+      });
+    });
+
+    describe('video', function() {
+      function getVideoBidRequest(extra) {
+        const bannerRequest = getBidRequest(extra);
+        const requests = spec.buildRequests([bannerRequest], bidderRequest);
+
+        return requests[0].data.imp[0].video;
+      }
+
+      it('should map basic video parameters', function() {
+        const bidRequest = getVideoBidRequest({
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              mimes: ['video/mp4'],
+              minduration: 5,
+              maxduration: 30,
+              protocols: [2, 3],
+              playbackmethod: [1],
+              w: 640,
+              h: 480,
+              startdelay: 0,
+              placement: 1,
+              skip: 1,
+              skipafter: 5,
+              minbitrate: 300,
+              maxbitrate: 1500,
+              delivery: [2],
+              api: [2],
+              linearity: 1,
+              battr: [1, 2, 3],
+              sizes: [[640, 480], [800, 600]]
+            }
+          }
+        });
+
+        expect(bidRequest).to.deep.equal({
+          context: 'instream',
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [2, 3],
+          playbackmethod: [1],
+          w: 640,
+          h: 480,
+          startdelay: 0,
+          placement: 1,
+          skip: 1,
+          skipafter: 5,
+          minbitrate: 300,
+          maxbitrate: 1500,
+          delivery: [2],
+          api: [2],
+          linearity: 1,
+          battr: [1, 2, 3],
+          format: [
+            {w: 640, h: 480},
+            {w: 800, h: 600}
+          ]
+        });
       });
     });
 
@@ -431,6 +545,58 @@ describe('Yandex adapter', function () {
       expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD');
 
       expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
+    });
+
+    describe('video', function() {
+      const videoBidRequest = {
+        bidRequest: {
+          mediaType: 'video',
+          bidId: 'videoBid1',
+          adUnitCode: 'videoAdUnit'
+        }
+      };
+
+      const sampleVideoResponse = {
+        body: {
+          seatbid: [{
+            bid: [{
+              impid: 'videoBid1',
+              price: 1.50,
+              adm: '<VAST version="3.0"></VAST>',
+              w: 640,
+              h: 480,
+              adomain: ['advertiser.com'],
+              cid: 'campaign123',
+              crid: 'creative456',
+              nurl: 'https://tracker.example.com/win?price=${AUCTION_PRICE}'
+            }]
+          }],
+          cur: 'USD'
+        }
+      };
+
+      it('should handle valid video response', function() {
+        const result = spec.interpretResponse(sampleVideoResponse, videoBidRequest);
+
+        expect(result).to.have.lengthOf(1);
+        const bid = result[0];
+
+        expect(bid).to.deep.include({
+          requestId: 'videoBid1',
+          cpm: 1.50,
+          width: 640,
+          height: 480,
+          vastXml: '<VAST version="3.0"></VAST>',
+          mediaType: 'video',
+          currency: 'USD',
+          ttl: 180,
+          meta: {
+            advertiserDomains: ['advertiser.com']
+          }
+        });
+
+        expect(bid.nurl).to.equal('https://tracker.example.com/win?price=1.5');
+      });
     });
 
     describe('native', () => {

@@ -3,7 +3,6 @@ import { auctionManager } from '../src/auctionManager.js';
 import { config } from '../src/config.js';
 import { TARGETING_KEYS } from '../src/constants.js';
 import { getHook } from '../src/hook.js';
-import { find } from '../src/polyfill.js';
 import {
   deepAccess,
   deepSetValue,
@@ -76,21 +75,25 @@ export const appendGptSlots = adUnits => {
     return acc;
   }, {});
 
+  const adUnitPaths = {};
+
   window.googletag.pubads().getSlots().forEach(slot => {
-    const matchingAdUnitCode = find(Object.keys(adUnitMap), customGptSlotMatching
+    const matchingAdUnitCode = Object.keys(adUnitMap).find(customGptSlotMatching
       ? customGptSlotMatching(slot)
       : isAdUnitCodeMatchingSlot(slot));
 
     if (matchingAdUnitCode) {
+      const path = adUnitPaths[matchingAdUnitCode] = slot.getAdUnitPath();
       const adserver = {
         name: 'gam',
-        adslot: sanitizeSlotPath(slot.getAdUnitPath())
+        adslot: sanitizeSlotPath(path)
       };
       adUnitMap[matchingAdUnitCode].forEach((adUnit) => {
         deepSetValue(adUnit, 'ortb2Imp.ext.data.adserver', Object.assign({}, adUnit.ortb2Imp?.ext?.data?.adserver, adserver));
       });
     }
   });
+  return adUnitPaths;
 };
 
 const sanitizeSlotPath = (path) => {
@@ -103,7 +106,7 @@ const sanitizeSlotPath = (path) => {
   return path;
 }
 
-const defaultPreAuction = (adUnit, adServerAdSlot) => {
+const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
   const context = adUnit.ortb2Imp.ext.data;
 
   // use pbadslot if supplied
@@ -117,7 +120,7 @@ const defaultPreAuction = (adUnit, adServerAdSlot) => {
   }
 
   // find all GPT slots with this name
-  var gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adServerAdSlot);
+  var gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adUnitPath);
 
   if (gptSlots.length === 0) {
     return; // should never happen
@@ -167,7 +170,7 @@ function warnDeprecation(adUnit) {
 }
 
 export const makeBidRequestsHook = (fn, adUnits, ...args) => {
-  appendGptSlots(adUnits);
+  const adUnitPaths = appendGptSlots(adUnits);
   const { useDefaultPreAuction, customPreAuction } = _currentConfig;
   adUnits.forEach(adUnit => {
     // init the ortb2Imp if not done yet
@@ -190,9 +193,9 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
       let adserverSlot = deepAccess(context, 'data.adserver.adslot');
       let result;
       if (customPreAuction) {
-        result = customPreAuction(adUnit, adserverSlot);
+        result = customPreAuction(adUnit, adserverSlot, adUnitPaths?.[adUnit.code]);
       } else if (useDefaultPreAuction) {
-        result = defaultPreAuction(adUnit, adserverSlot);
+        result = defaultPreAuction(adUnit, adserverSlot, adUnitPaths?.[adUnit.code]);
       }
       if (result) {
         context.gpid = context.data.pbadslot = result;

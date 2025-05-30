@@ -134,7 +134,7 @@ describe('AdsInteractiveBidAdapter', function () {
     it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys(
+      expect(data).to.include.all.keys(
         'deviceWidth',
         'deviceHeight',
         'device',
@@ -146,7 +146,11 @@ describe('AdsInteractiveBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp',
+        'battr'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');

@@ -13,7 +13,7 @@
  */
 
 import {isValidPriceConfig} from './cpmBucketManager.js';
-import {arrayFrom as from, find, includes} from './polyfill.js';
+import {find} from './polyfill.js';
 import {
   deepAccess,
   deepClone,
@@ -179,7 +179,7 @@ function attachProperties(config, useDefaultValues = true) {
     }
 
     for (let k of Object.keys(val)) {
-      if (k !== 'secondaryBidders' && k !== 'suppressStaleRender') {
+      if (k !== 'secondaryBidders' && k !== 'suppressStaleRender' && k !== 'suppressExpiredRender') {
         logWarn(`Auction Options given an incorrect param: ${k}`)
         return false
       }
@@ -191,7 +191,7 @@ function attachProperties(config, useDefaultValues = true) {
           logWarn(`Auction Options ${k} must be only string`);
           return false
         }
-      } else if (k === 'suppressStaleRender') {
+      } else if (k === 'suppressStaleRender' || k === 'suppressExpiredRender') {
         if (!isBoolean(val[k])) {
           logWarn(`Auction Options ${k} must be of type boolean`);
           return false;
@@ -259,25 +259,20 @@ export function newConfig() {
    */
   function _getConfig() {
     if (currBidder && bidderConfig && isPlainObject(bidderConfig[currBidder])) {
-      let currBidderConfig = bidderConfig[currBidder];
-      const configTopicSet = new Set(Object.keys(config).concat(Object.keys(currBidderConfig)));
-
-      return from(configTopicSet).reduce((memo, topic) => {
-        if (typeof currBidderConfig[topic] === 'undefined') {
-          memo[topic] = config[topic];
-        } else if (typeof config[topic] === 'undefined') {
-          memo[topic] = currBidderConfig[topic];
-        } else {
-          if (isPlainObject(currBidderConfig[topic])) {
-            memo[topic] = mergeDeep({}, config[topic], currBidderConfig[topic]);
-          } else {
-            memo[topic] = currBidderConfig[topic];
-          }
-        }
-        return memo;
-      }, {});
+      const curr = bidderConfig[currBidder];
+      const topics = new Set([...Object.keys(config), ...Object.keys(curr)]);
+      const merged = {};
+      for (const topic of topics) {
+        const base = config[topic];
+        const override = curr[topic];
+        merged[topic] = override === undefined ? base
+          : base === undefined ? override
+          : isPlainObject(override) ? mergeDeep({}, base, override)
+          : override;
+      }
+      return merged;
     }
-    return Object.assign({}, config);
+    return { ...config };
   }
 
   function _getRestrictedConfig() {
@@ -426,7 +421,6 @@ export function newConfig() {
       if (topic === ALL_TOPICS) {
         callback(getConfig());
       } else {
-        // eslint-disable-next-line standard/no-callback-literal
         callback({[topic]: getConfig(topic)});
       }
     }
@@ -445,7 +439,7 @@ export function newConfig() {
 
     // call subscribers of a specific topic, passing only that configuration
     listeners
-      .filter(listener => includes(TOPICS, listener.topic))
+      .filter(listener => TOPICS.includes(listener.topic))
       .forEach(listener => {
         listener.callback({ [listener.topic]: options[listener.topic] });
       });

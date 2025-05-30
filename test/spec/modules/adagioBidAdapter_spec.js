@@ -1042,6 +1042,98 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.regs.dsa).to.be.undefined;
       });
     })
+
+    describe('with ORTB2', function() {
+      it('should add ortb2 device data to the request', function() {
+        const ortb2 = {
+          device: {
+            w: 980,
+            h: 1720,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+            language: 'en',
+            devicetype: 1,
+            make: 'Apple',
+            model: 'iPhone 12 Pro Max',
+            os: 'iOS',
+            osv: '17.4',
+            ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
+          },
+        };
+
+        const bid01 = new BidRequestBuilder().withParams().build();
+        const bidderRequest = new BidderRequestBuilder({ortb2}).build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        const expectedData = {
+          ...ortb2.device,
+          language: navigator[navigator.language ? 'language' : 'userLanguage'],
+          js: 1,
+          geo: {},
+          userAgent: navigator.userAgent,
+        };
+
+        expect(requests[0].data.device).to.deep.equal(expectedData);
+      });
+    });
+
+    describe('with `rwdd` and `instl` signals', function() {
+      const tests = [
+        {
+          n: 'Should set signals in bidRequest if value is 1',
+          ortb2Imp: {
+            rwdd: 1,
+            instl: '1'
+          },
+          expected: {
+            rwdd: 1,
+            instl: 1
+          }
+        },
+        {
+          n: 'Should not set signals in bidRequest if value is 0',
+          ortb2Imp: {
+            rwdd: 0,
+            instl: '0'
+          },
+          expected: {
+            rwdd: undefined,
+            instl: undefined
+          }
+        },
+        {
+          n: 'Should not set if rwdd and instl are missformated',
+          ortb2Imp: {
+            rwdd: 'a',
+            ext: { instl: 1 }
+          },
+          expected: {
+            rwdd: undefined,
+            instl: undefined
+          }
+        },
+        {
+          n: 'Should not set rwdd and instl in bidRequest if undefined',
+          ortb2Imp: {},
+          expected: {
+            rwdd: undefined,
+            instl: undefined
+          }
+        }
+      ]
+
+      tests.forEach((t) => {
+        it(t.n, function() {
+          const bid01 = new BidRequestBuilder().withParams().build();
+          bid01.ortb2Imp = t.ortb2Imp;
+          const bidderRequest = new BidderRequestBuilder().build();
+          const requests = spec.buildRequests([bid01], bidderRequest);
+          const expected = t.expected;
+          expect(requests[0].data.adUnits[0].rwdd).to.equal(expected.rwdd);
+          expect(requests[0].data.adUnits[0].instl).to.equal(expected.instl);
+        });
+      })
+    })
   });
 
   describe('interpretResponse()', function() {

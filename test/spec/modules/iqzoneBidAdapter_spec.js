@@ -145,7 +145,11 @@ describe('IQZoneBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp',
+        'battr'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -473,7 +477,6 @@ describe('IQZoneBidAdapter', function () {
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
-
   describe('getUserSyncs', function() {
     it('Should return array of objects with proper sync config , include GDPR', function() {
       const syncData = spec.getUserSyncs({}, {}, {
@@ -485,7 +488,7 @@ describe('IQZoneBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.smartssp.iqzone.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0].url).to.equal('https://cs.iqzone.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {
@@ -496,7 +499,7 @@ describe('IQZoneBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.smartssp.iqzone.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0].url).to.equal('https://cs.iqzone.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {}, {
@@ -508,7 +511,7 @@ describe('IQZoneBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.smartssp.iqzone.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
+      expect(syncData[0].url).to.equal('https://cs.iqzone.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
     });
   });
 });

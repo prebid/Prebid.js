@@ -8,6 +8,7 @@ import {
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   startAuctionHook,
+  addUserIdsHook,
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
@@ -17,7 +18,7 @@ import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getPrebidInternal} from 'src/utils.js';
+import {deepAccess, getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
@@ -27,6 +28,7 @@ import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
+import {startAuction} from 'src/prebid';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
@@ -35,6 +37,9 @@ import {allConsent, GDPR_GVLIDS, gdprDataHandler} from '../../../src/consentHand
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
+import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { addIdData } from '../../../modules/userId/index.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -137,7 +142,7 @@ describe('User ID', function () {
   function runBidsHook(...args) {
     startDelay = delay();
 
-    const result = startAuctionHook(...args, {delay: startDelay});
+    const result = startAuctionHook(...args, {mkDelay: startDelay});
     return new Promise((resolve) => setTimeout(() => resolve(result)));
   }
 
@@ -150,7 +155,7 @@ describe('User ID', function () {
 
   function initModule(config) {
     callbackDelay = delay();
-    return init(config, {delay: callbackDelay});
+    return init(config, {mkDelay: callbackDelay});
   }
 
   before(function () {
@@ -161,10 +166,6 @@ describe('User ID', function () {
   });
 
   beforeEach(function () {
-    // TODO: this whole suite needs to be redesigned; it is passing by accident
-    // some tests do not pass if consent data is available
-    // (there are functions here with signature `getId(config, storedId)`, but storedId is actually consentData)
-    // also, this file is ginormous; do we really need to test *all* id systems as one?
     resetConsentData();
     sandbox = sinon.sandbox.create();
     consentData = null;
@@ -175,6 +176,8 @@ describe('User ID', function () {
   afterEach(() => {
     sandbox.restore();
     config.resetConfig();
+    startAuction.getHooks({hook: startAuctionHook}).remove();
+    startAuction.getHooks({hook: addUserIdsHook}).remove();
   });
 
   after(() => {
@@ -452,14 +455,54 @@ describe('User ID', function () {
             {'mockId2v1': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 1})}}),
           createMockIdSubmodule('mockId2v2', null, null,
             {'mockId2v2': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 2})}}),
+          createMockIdSubmodule('mockId2v3', null, null, {
+            'mockId2v3'(ids) {
+              return {
+                source: 'mock2source',
+                inserter: 'ins',
+                ext: {v: 2},
+                uids: ids.map(id => ({id, atype: 2}))
+              }
+            }
+          }),
+          createMockIdSubmodule('mockId2v4', null, null, {
+            'mockId2v4'(ids) {
+              return ids.map(id => ({
+                uids: [{id, atype: 0}],
+                source: 'mock2source',
+                inserter: 'ins',
+                ext: {v: 2}
+              }))
+            }
+          })
         ]);
       });
 
-      it('should group UIDs by source and ext', () => {
+      it('should filter out non-string uid returned by generator functions', () => {
+        const eids = createEidsArray({
+          mockId2v3: [null, 'id1', 123],
+        });
+        expect(eids[0].uids).to.eql([
+          {
+            atype: 2,
+            id: 'id1'
+          }
+        ]);
+      });
+
+      it('should filter out entire EID if none of the uids are strings', () => {
+        const eids = createEidsArray({
+          mockId2v3: [null],
+        });
+        expect(eids).to.eql([]);
+      })
+
+      it('should group UIDs by everything except uid', () => {
         const eids = createEidsArray({
           mockId1: ['mock-1-1', 'mock-1-2'],
           mockId2v1: ['mock-2-1', 'mock-2-2'],
-          mockId2v2: ['mock-2-1', 'mock-2-2']
+          mockId2v2: ['mock-2-1', 'mock-2-2'],
+          mockId2v3: ['mock-2-1', 'mock-2-2']
         });
         expect(eids).to.eql([
           {
@@ -506,10 +549,50 @@ describe('User ID', function () {
                 atype: 2,
               }
             ]
+          },
+          {
+            source: 'mock2source',
+            inserter: 'ins',
+            ext: {v: 2},
+            uids: [
+              {
+                id: 'mock-2-1',
+                atype: 2,
+              },
+              {
+                id: 'mock-2-2',
+                atype: 2,
+              }
+            ]
           }
         ])
       });
 
+      it('should group matching EIDs regardless of entry order', () => {
+        const eids = createEidsArray({
+          mockId2v3: ['id1', 'id2'],
+          mockId2v4: ['id3']
+        });
+        expect(eids).to.eql([{
+          source: 'mock2source',
+          inserter: 'ins',
+          uids: [
+            {
+              id: 'id1',
+              atype: 2,
+            },
+            {
+              id: 'id2',
+              atype: 2
+            },
+            {
+              id: 'id3',
+              atype: 0
+            }
+          ],
+          ext: {v: 2}
+        }])
+      })
       it('when merging with pubCommonId, should not alter its eids', () => {
         const uid = {
           pubProvidedId: [
@@ -700,6 +783,27 @@ describe('User ID', function () {
         done();
       });
     });
+
+    it('pbjs.getUserIdsAsEids should pass config to eid function', async function () {
+      const eidFn = sinon.stub();
+      init(config);
+      setSubmoduleRegistry([createMockIdSubmodule('mockId', null, null, {
+        mockId: eidFn
+      })]);
+      const moduleConfig = {
+        name: 'mockId',
+        value: {mockId: 'mockIdValue'},
+        some: 'config'
+      };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [moduleConfig]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+      sinon.assert.calledWith(eidFn, ['mockIdValue'], moduleConfig);
+    })
 
     it('pbjs.getUserIdsAsEids should prioritize user ids according to config available to core', () => {
       init(config);
@@ -1576,6 +1680,7 @@ describe('User ID', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
         config.resetConfig();
         sandbox.restore();
+        coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       });
 
       it('delays auction if auctionDelay is set, timing out at auction delay', function () {
@@ -2045,7 +2150,7 @@ describe('User ID', function () {
               'mid': value['MOCKID']
             };
           },
-          getId: function (config, storedId) {
+          getId: function (config, consentData, storedId) {
             if (storedId) return {};
             return {id: {'MOCKID': '1234'}};
           }
@@ -2422,6 +2527,62 @@ describe('User ID', function () {
           })
         })
       })
+    });
+
+    describe('submodules not added', () => {
+      const eid = {
+        source: 'example.com',
+        uids: [{id: '1234', atype: 3}]
+      };
+      let adUnits;
+      let startAuctionStub;
+      function saHook(fn, ...args) {
+        return startAuctionStub(...args);
+      }
+      beforeEach(() => {
+        adUnits = [{code: 'au1', bids: [{bidder: 'sampleBidder'}]}];
+        startAuctionStub = sinon.stub();
+        startAuction.before(saHook);
+        config.resetConfig();
+      });
+      afterEach(() => {
+        startAuction.getHooks({hook: saHook}).remove();
+      })
+
+      it('addUserIdsHook', function (done) {
+        addUserIdsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userIdAsEids.0.source');
+              expect(bid).to.have.deep.nested.property('userIdAsEids.0.uids.0.id');
+              expect(bid.userIdAsEids[0].source).to.equal('example.com');
+              expect(bid.userIdAsEids[0].uids[0].id).to.equal('1234');
+            });
+          });
+          done();
+        }, {
+          adUnits,
+          ortb2Fragments: {
+            global: {user: {ext: {eids: [eid]}}},
+            bidder: {}
+          }
+        });
+      });
+
+      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', async () => {
+        init(config);
+        expect(startAuction.getHooks({hook: startAuctionHook}).length).equal(0);
+        expect(startAuction.getHooks({hook: addUserIdsHook}).length).equal(1);
+        addUserIdsHook(sinon.stub(), {
+          adUnits,
+          ortb2Fragments: {
+            global: {
+              user: {ext: {eids: [eid]}}
+            }
+          }
+        });
+        expect(adUnits[0].bids[0].userIdAsEids[0]).to.eql(eid);
+      });
     });
   });
 
@@ -2800,27 +2961,135 @@ describe('User ID', function () {
       });
     })
 
-    it('should exclude bidder-unrestricted IDs that conflict for some bidders', () => {
-      config.setConfig({
-        userSync: {
-          idPriority: {
-            mockId1: ['mockId1Module', 'mockId3Module'],
-          },
-          userIds: [
-            { name: 'mockId1Module', bidders: ['bidderA'] },
-            { name: 'mockId3Module' },
-          ]
+    describe('conflicting bidder filters', () => {
+      beforeEach(() => {
+        idValues.mockId2 = ['mockId1'];
+        idValues.mockId3 = ['mockId1'];
+        idValues.mockId4 = ['mockId1'];
+        setSubmoduleRegistry([
+          mockIdSubmodule('mockId1'),
+          mockIdSubmodule('mockId2', 'mockId1'),
+          mockIdSubmodule('mockId3', 'mockId1'),
+          mockIdSubmodule('mockId4', 'mockId1')
+        ]);
+      })
+
+      function bidderEids(bidderEidMap) {
+        return Object.fromEntries(
+          Object.entries(bidderEidMap).map(([bidder, eidMap]) => [bidder, {
+            user: {
+              ext: {
+                eids: eidsFrom(eidMap)
+              }
+            }
+          }])
+        )
+      }
+      describe('primary provider is restricted', () => {
+        function setup() {
+          config.setConfig({
+            userSync: {
+              idPriority: {
+                mockId1: ['mockId1Module', 'mockId2Module', 'mockId3Module', 'mockId4Module'],
+              },
+              userIds: [
+                { name: 'mockId1Module', bidders: ['bidderA'] },
+                { name: 'mockId2Module', bidders: ['bidderA', 'bidderB'] },
+                { name: 'mockId3Module', bidders: ['bidderC'] },
+                { name: 'mockId4Module' }
+              ]
+            }
+          });
         }
+
+        it('should restrict ID if it comes from restricted modules', async () => {
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId1Module'
+            },
+            bidderB: {
+              mockId1: 'mockId2Module'
+            },
+            bidderC: {
+              mockId1: 'mockId3Module'
+            }
+          }))
+        });
+        it('should use secondary module restrictions if ID comes from it', async () => {
+          idValues.mockId1 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId2Module'
+            },
+            bidderB: {
+              mockId1: 'mockId2Module'
+            },
+            bidderC: {
+              mockId1: 'mockId3Module'
+            }
+          }));
+        });
+        it('shoud not restrict if ID comes from unrestricted module', async () => {
+          idValues.mockId1 = [];
+          idValues.mockId2 = [];
+          idValues.mockId3 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global.user.ext.eids).to.eql(eidsFrom({
+            mockId1: 'mockId4Module'
+          }));
+          expect(bidder).to.eql({});
+        });
       });
-      return enrich().then(({global, bidder}) => {
-        expect(global.user.ext.eids).to.eql(eidsFrom({
-          mockId2: 'mockId3Module',
-          mockId3: 'mockId3Module',
-          mockId4: 'mockId3Module'
-        }));
-        expect(bidder).to.eql({});
-      });
-    });
+      describe('secondary provider is restricted', () => {
+        function setup() {
+          config.setConfig({
+            userSync: {
+              idPriority: {
+                mockId1: ['mockId1Module', 'mockId2Module', 'mockId3Module', 'mockId4Module'],
+              },
+              userIds: [
+                { name: 'mockId1Module' },
+                { name: 'mockId2Module', bidders: ['bidderA'] },
+                { name: 'mockId3Module', bidders: ['bidderA', 'bidderB'] },
+                { name: 'mockId4Module', bidders: ['bidderC'] },
+              ]
+            }
+          });
+        }
+        it('should not restrict if primary id is available', async () => {
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global.user.ext.eids).to.eql(eidsFrom({
+            mockId1: 'mockId1Module'
+          }));
+          expect(bidder).to.eql({});
+        });
+        it('should use secondary modules\' restrictions if they provide the ID', async () => {
+          idValues.mockId1 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId2Module'
+            },
+            bidderB: {
+              mockId1: 'mockId3Module'
+            },
+            bidderC: {
+              mockId1: 'mockId4Module'
+            }
+          }))
+        });
+      })
+    })
 
     it('should provide bidder-specific IDs, even when they conflict across bidders', () => {
       config.setConfig({
@@ -2841,7 +3110,7 @@ describe('User ID', function () {
             mockId1: 'mockId1Module'
           },
           bidderB: {
-            mockId1: 'mockId1Module',
+            mockId1: 'mockId3Module',
             mockId2: 'mockId3Module',
             mockId3: 'mockId3Module',
             mockId4: 'mockId3Module'
@@ -2880,6 +3149,75 @@ describe('User ID', function () {
         expect(bidder.bidderB.user.ext.eids).to.eql(eidsFrom({
           mockId1: 'mockId1Module'
         }));
+      });
+    })
+
+    it('adUnits and ortbFragments should not contain ids from a submodule that was disabled by activityControls', () => {
+      const UNALLOWED_MODULE = 'mockId3';
+      const ALLOWED_MODULE = 'mockId1';
+      const UNALLOWED_MODULE_FULLNAME = UNALLOWED_MODULE + 'Module';
+      const ALLOWED_MODULE_FULLNAME = ALLOWED_MODULE + 'Module';
+      const bidders = ['bidderA', 'bidderB'];
+
+      idValues = {
+        [ALLOWED_MODULE]: [ALLOWED_MODULE],
+        [UNALLOWED_MODULE]: [UNALLOWED_MODULE],
+      };
+      init(config);
+
+      setSubmoduleRegistry([
+        mockIdSubmodule(ALLOWED_MODULE),
+        mockIdSubmodule(UNALLOWED_MODULE),
+      ]);
+
+      const unregisterRule = registerActivityControl(ACTIVITY_ENRICH_EIDS, 'ruleName', ({componentName, init}) => {
+        if (componentName === 'mockId3Module' && init === false) { return ({ allow: false, reason: "disabled" }); }
+      });
+
+      config.setConfig({
+        userSync: {
+          userIds: [
+            { name: ALLOWED_MODULE_FULLNAME, bidders },
+            { name: UNALLOWED_MODULE_FULLNAME, bidders },
+          ]
+        }
+      });
+
+      return getGlobal().getUserIdsAsync().then(() => {
+        const adUnits = [{
+          bids: [
+            { bidder: 'bidderA' },
+            { bidder: 'bidderB' },
+          ]
+        }];
+        const ortb2Fragments = {
+          global: {
+            user: {}
+          },
+          bidder: {
+            bidderA: {
+              user: {}
+            },
+            bidderB: {
+              user: {}
+            }
+          }
+        };
+        addIdData({ adUnits, ortb2Fragments });
+        
+        adUnits[0].bids.forEach(({userId}) => {
+          const userIdModules = Object.keys(userId);
+          expect(userIdModules).to.include(ALLOWED_MODULE);
+          expect(userIdModules).to.not.include(UNALLOWED_MODULE);
+        });
+
+        bidders.forEach((bidderName) => {
+          const userIdModules = ortb2Fragments.bidder[bidderName].user.ext.eids.map(eid => eid.source);
+          expect(userIdModules).to.include(ALLOWED_MODULE + '.com');
+          expect(userIdModules).to.not.include(UNALLOWED_MODULE + '.com');
+        });
+
+        unregisterRule();
       });
     })
   });

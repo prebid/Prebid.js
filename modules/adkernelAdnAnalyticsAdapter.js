@@ -339,7 +339,7 @@ export function getUmtSource(pageUrl, referrer) {
  * Expiring queue implementation. Fires callback on elapsed timeout since last update or creation.
  * @param callback
  * @param ttl
- * @constructor
+ * @class
  */
 export function ExpiringQueue(callback, ttl) {
   let queue = [];

@@ -56,7 +56,9 @@ describe('mediago:BidAdapterTests', function () {
             content: {
               keywords: 'video, source=streaming'
             },
-
+            publisher: {
+              domain: 'mediago.io'
+            },
           },
           user: {
             ext: {
@@ -87,38 +89,6 @@ describe('mediago:BidAdapterTests', function () {
           }
         }
       }
-    },
-    userId: {
-      tdid: 'sample-userid',
-      uid2: { id: 'sample-uid2-value' },
-      criteoId: 'sample-criteo-userid',
-      netId: 'sample-netId-userid',
-      idl_env: 'sample-idl-userid',
-      pubProvidedId: [
-        {
-          source: 'puburl.com',
-          uids: [
-            {
-              id: 'pubid2',
-              atype: 1,
-              ext: {
-                stype: 'ppuid'
-              }
-            }
-          ]
-        },
-        {
-          source: 'puburl2.com',
-          uids: [
-            {
-              id: 'pubid2'
-            },
-            {
-              id: 'pubid2-123'
-            }
-          ]
-        }
-      ]
     },
     userIdAsEids: [
       {
@@ -158,7 +128,8 @@ describe('mediago:BidAdapterTests', function () {
       spec.isBidRequestValid({
         bidder: 'mediago',
         params: {
-          token: ['85a6b01e41ac36d49744fad726e3655d']
+          token: ['85a6b01e41ac36d49744fad726e3655d'],
+          publisher: ['test_publisher']
         }
       })
     ).to.equal(true);

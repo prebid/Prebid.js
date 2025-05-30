@@ -4,24 +4,36 @@ import {
   buildPlacementProcessingFunction,
   buildRequestsBase,
   interpretResponseBuilder,
-  isBidRequestValid
+  isBidRequestValid,
+  getUserSyncs
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'smarthub';
+const SYNC_URL = 'https://us.shb-sync.com'
 const ALIASES = [
-  {code: 'markapp', skipPbsAliasing: true},
-  {code: 'jdpmedia', skipPbsAliasing: true},
-  {code: 'tredio', skipPbsAliasing: true},
-  {code: 'felixads', skipPbsAliasing: true},
-  {code: 'vimayx', skipPbsAliasing: true},
+  {code: 'attekmi'},
+  {code: 'markapp'},
+  {code: 'jdpmedia'},
+  {code: 'tredio'},
+  {code: 'felixads'},
+  {code: 'vimayx'},
+  {code: 'artechnology'},
+  {code: 'adinify'},
+  {code: 'addigi'},
+  {code: 'jambojar'},
 ];
 const BASE_URLS = {
-  smarthub: 'https://prebid.smart-hub.io/pbjs',
-  markapp: 'https://markapp-prebid.smart-hub.io/pbjs',
-  jdpmedia: 'https://jdpmedia-prebid.smart-hub.io/pbjs',
-  tredio: 'https://tredio-prebid.smart-hub.io/pbjs',
-  felixads: 'https://felixads-prebid.smart-hub.io/pbjs',
-  vimayx: 'https://vimayx-prebid.smart-hub.io/pbjs',
+  attekmi: 'https://prebid.attekmi.com/pbjs',
+  smarthub: 'https://prebid.attekmi.com/pbjs',
+  markapp: 'https://markapp-prebid.attekmi.com/pbjs',
+  jdpmedia: 'https://jdpmedia-prebid.attekmi.com/pbjs',
+  tredio: 'https://tredio-prebid.attekmi.com/pbjs',
+  felixads: 'https://felixads-prebid.attekmi.com/pbjs',
+  vimayx: 'https://vimayx-prebid.attekmi.com/pbjs',
+  artechnology: 'https://artechnology-prebid.attekmi.com/pbjs',
+  adinify: 'https://adinify-prebid.attekmi.com/pbjs',
+  addigi: 'https://addigi-prebid.attekmi.com/pbjs',
+  jambojar: 'https://jambojar-prebid.attekmi.com/pbjs',
 };
 
 const _getUrl = (partnerName) => {
@@ -76,7 +88,8 @@ export const spec = {
     addtlBidValidation(bid) {
       return bid.hasOwnProperty('netRevenue')
     }
-  })
+  }),
+  getUserSyncs: getUserSyncs(SYNC_URL)
 };
 
 registerBidder(spec);

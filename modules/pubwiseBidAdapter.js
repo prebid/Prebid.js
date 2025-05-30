@@ -1,5 +1,5 @@
 
-import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError } from '../src/utils.js';
+import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -181,8 +181,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -290,7 +291,8 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {ServerResponse} response A successful response from the server.
+   * @param {Object} request
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (response, request) {
@@ -667,7 +669,7 @@ function _addFloorFromFloorModule(impObj, bid) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
         let floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
-        if (typeof floorInfo === 'object' && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
+        if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
           let mediaTypeFloor = parseFloat(floorInfo.floor);
           bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
         }
@@ -863,19 +865,19 @@ function _logMessage(textValue, objectValue) {
   logMessage(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logInfo(textValue, objectValue) {
   objectValue = objectValue || '';
   logInfo(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logWarn(textValue, objectValue) {
   objectValue = objectValue || '';
   logWarn(LOG_PREFIX + textValue, objectValue);
 }
 
-// eslint-disable-next-line no-unused-vars
+
 function _logError(textValue, objectValue) {
   objectValue = objectValue || '';
   logError(LOG_PREFIX + textValue, objectValue);
@@ -947,9 +949,9 @@ function _getEndpointURL(bid) {
 /**
  *
  * @param {object} key
- * @param {object}} value
+ * @param {object} value
  * @param {object} datatype
- * @returns
+ * @returns {*}
  */
 function _checkParamDataType(key, value, datatype) {
   var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;

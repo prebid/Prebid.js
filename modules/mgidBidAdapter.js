@@ -14,7 +14,8 @@ import {
   isNumber,
   isBoolean,
   extractDomainFromHost,
-  isInteger, deepSetValue, getBidIdParameter, setOnAny
+  isInteger, deepSetValue, getBidIdParameter, setOnAny,
+  getWinDimensions
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -22,6 +23,7 @@ import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getUserSyncs } from '../libraries/mgidUtils/mgidUtils.js'
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -158,7 +160,7 @@ export const spec = {
     if (isStr(muid) && muid.length > 0) {
       url += '?muid=' + muid;
     }
-    const cur = setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || config.getConfig('currency.adServerCurrency') || DEFAULT_CUR;
+    const cur = setOnAny(validBidRequests, 'params.currency') || setOnAny(validBidRequests, 'params.cur') || getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CUR;
     const secure = window.location.protocol === 'https:' ? 1 : 0;
     let imp = [];
     validBidRequests.forEach(bid => {
@@ -652,8 +654,8 @@ function pageInfo() {
     location: l,
     referrer: r || '',
     masked: m,
-    wWidth: w.innerWidth,
-    wHeight: w.innerHeight,
+    wWidth: getWinDimensions().innerWidth,
+    wHeight: getWinDimensions().innerHeight,
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };

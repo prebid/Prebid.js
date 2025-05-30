@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, parseSizesInput} from '../src/utils.js';
+import {deepAccess, isPlainObject, parseSizesInput} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
@@ -40,8 +40,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0 || !bidderRequest || !bidderRequest.bids) {
@@ -247,7 +248,7 @@ function _getFloor (bid, sizes, currency) {
         mediaType: 'banner',
         size: size
       });
-      if (typeof floorInfo === 'object' && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
+      if (isPlainObject(floorInfo) && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }
     } catch (err) {}

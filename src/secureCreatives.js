@@ -6,9 +6,16 @@
 import {getAllAssetsMessage, getAssetMessage} from './native.js';
 import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
-import {find, includes} from './polyfill.js';
-import {deferRendering, getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender} from './adRendering.js';
-import {getCreativeRendererSource} from './creativeRenderers.js';
+import {find} from './polyfill.js';
+import {
+  deferRendering,
+  getBidToRender,
+  handleCreativeEvent,
+  handleNativeMessage,
+  handleRender,
+  markWinner
+} from './adRendering.js';
+import {getCreativeRendererSource, PUC_MIN_VERSION} from './creativeRenderers.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
@@ -82,7 +89,8 @@ function handleRenderRequest(reply, message, bidResponse) {
     renderFn(adData) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getCreativeRendererSource(bidResponse)
+        renderer: getCreativeRendererSource(bidResponse),
+        rendererVersion: PUC_MIN_VERSION
       }, adData));
     },
     resizeFn: getResizer(message.adId, bidResponse),
@@ -102,7 +110,6 @@ function handleNativeRequest(reply, data, adObject) {
     logError(`Cannot find ad for x-origin event request: '${data.adId}'`);
     return;
   }
-
   switch (data.action) {
     case 'assetRequest':
       deferRendering(adObject, () => reply(getAssetMessage(data, adObject)));
@@ -111,7 +118,8 @@ function handleNativeRequest(reply, data, adObject) {
       deferRendering(adObject, () => reply(getAllAssetsMessage(data, adObject)));
       break;
     default:
-      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)})
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(data.adId, adObject)});
+      markWinner(adObject);
   }
 }
 
@@ -127,7 +135,10 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
-export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+  // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
+  // be handled within it.
+  if (instl) return;
   function getDimension(value) {
     return value ? value + 'px' : '100%';
   }
@@ -163,7 +174,7 @@ export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
   function getDfpElementId(adId) {
     const slot = find(window.googletag.pubads().getSlots(), slot => {
       return find(slot.getTargetingKeys(), key => {
-        return includes(slot.getTargeting(key), adId);
+        return slot.getTargeting(key).includes(adId);
       });
     });
     return slot ? slot.getSlotElementId() : null;

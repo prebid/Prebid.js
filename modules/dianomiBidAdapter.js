@@ -10,11 +10,13 @@ import {
   parseSizesInput,
   deepSetValue,
   formatQS,
-  setOnAny
+  setOnAny,
+  getWinDimensions
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
 
 const { getConfig } = config;
@@ -100,8 +102,9 @@ export const spec = {
     }
 
     const device = getConfig('device') || {};
-    device.w = device.w || window.innerWidth;
-    device.h = device.h || window.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+    device.w = device.w || innerWidth;
+    device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
 
     const paramsEndpoint = setOnAny(validBidRequests, 'params.endpoint');
@@ -115,7 +118,7 @@ export const spec = {
       setOnAny(validBidRequests, 'params.priceType') ||
       'net';
     const tid = bidderRequest.ortb2?.source?.tid;
-    const currency = getConfig('currency.adServerCurrency');
+    const currency = getCurrencyFromBidderRequest(bidderRequest);
     const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const schain = setOnAny(validBidRequests, 'schain');
@@ -128,8 +131,8 @@ export const spec = {
           currency: currency || 'USD',
         })
         : {};
-      const bidfloor = floorInfo.floor;
-      const bidfloorcur = floorInfo.currency;
+      const bidfloor = floorInfo?.floor;
+      const bidfloorcur = floorInfo?.currency;
       const { smartadId } = bid.params;
 
       const imp = {

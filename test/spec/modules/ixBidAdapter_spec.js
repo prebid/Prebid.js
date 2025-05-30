@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
+import * as ajaxLib from 'src/ajax.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
@@ -615,7 +616,8 @@ describe('IndexexchangeAdapter', function () {
               dspid: 50,
               pricelevel: '_100',
               advbrandid: 303325,
-              advbrand: 'OECTA'
+              advbrand: 'OECTA',
+              ibv: true
             },
             adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
           }
@@ -2088,7 +2090,11 @@ describe('IndexexchangeAdapter', function () {
     it('request should be made to IX endpoint with POST method and siteId in query param', function () {
       expect(requestMethod).to.equal('POST');
       expect(requestUrl).to.equal(IX_SECURE_ENDPOINT + '?s=' + DEFAULT_BANNER_VALID_BID[0].params.siteId);
-      expect(request.option.contentType).to.equal('text/plain')
+    });
+
+    it('request made to IX endpoint with POST method should have correct options fields set', function () {
+      expect(request.options.contentType).to.equal('text/plain')
+      expect(request.options.withCredentials).to.equal(true)
     });
 
     it('auction type should be set correctly', function () {
@@ -3603,6 +3609,9 @@ describe('IndexexchangeAdapter', function () {
             brandId: 303325,
             brandName: 'OECTA',
             advertiserDomains: ['www.abc.com']
+          },
+          ext: {
+            ibv: true
           }
         }
       ];
@@ -3714,6 +3723,9 @@ describe('IndexexchangeAdapter', function () {
             brandId: 303325,
             brandName: 'OECTA',
             advertiserDomains: ['www.abc.com']
+          },
+          ext: {
+            ibv: true
           }
         }
       ];
@@ -3770,6 +3782,9 @@ describe('IndexexchangeAdapter', function () {
             brandId: 303325,
             brandName: 'OECTA',
             advertiserDomains: ['www.abc.com']
+          },
+          ext: {
+            ibv: true
           }
         }
       ];
@@ -5003,6 +5018,7 @@ describe('IndexexchangeAdapter', function () {
       expect(result['b8c6b5d5-76a1-4a90-b635-0c7eae1bfaa7'].ixImps.length).to.equal(1);
     });
   });
+
   describe('apply floors test', function () {
     it('video test', function() {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
@@ -5367,6 +5383,7 @@ describe('IndexexchangeAdapter', function () {
       expect(removeSiteIDs(request)).to.deep.equal(expected);
     });
   });
+
   describe('addDeviceInfo', () => {
     it('should add device to request when device already exists', () => {
       let r = {
@@ -5378,11 +5395,81 @@ describe('IndexexchangeAdapter', function () {
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
     });
+
     it('should add device to request when device doesnt exist', () => {
       let r = {}
       r = addDeviceInfo(r);
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
+    });
+
+    it('should add device.ip if available in fpd', () => {
+      const ortb2 = {
+        device: {
+          ip: '192.168.1.1',
+          ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+        }};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.equal('192.168.1.1')
+      expect(payload.device.ipv6).to.equal('2001:0db8:85a3:0000:0000:8a2e:0370:7334')
+    });
+
+    it('should not add device.ip if neither ip nor ipv6 exists', () => {
+      const ortb2 = {device: {}};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.be.undefined;
+      expect(payload.device.ip6).to.be.undefined;
+    });
+  });
+
+  describe('fetch requests', function () {
+    let ajaxStub;
+
+    beforeEach(function () {
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
+        return sinon.spy(function (url, callback, data, options) {
+          callback.success('OK');
+        });
+      });
+    });
+
+    afterEach(function () {
+      ajaxStub.restore();
+    });
+
+    it('should send the correct headers in the actual fetch call', function (done) {
+      const requests = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const request = requests[0];
+      const ajax = ajaxLib.ajaxBuilder();
+
+      ajax(
+        request.url,
+        {
+          success: () => {
+            try {
+              sinon.assert.calledOnce(ajaxStub);
+              const ajaxCall = ajaxStub.returnValues[0];
+              sinon.assert.calledOnce(ajaxCall);
+              const [calledUrl, callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
+
+              expect(calledUrl).to.equal(request.url);
+              expect(calledData).to.equal(request.data);
+
+              expect(calledOptions.contentType).to.equal('text/plain');
+              expect(calledOptions.withCredentials).to.be.true;
+
+              done();
+            } catch (err) {
+              done(err);
+            }
+          },
+          error: (err) => done(err || new Error('Ajax request failed')),
+        },
+        request.data,
+        request.options
+      );
     });
   });
 });

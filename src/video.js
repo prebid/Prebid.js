@@ -1,4 +1,4 @@
-import {deepAccess, isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
+import {isArrayOfNums, isInteger, isNumber, isPlainObject, isStr, logError, logWarn} from './utils.js';
 import {config} from '../src/config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
@@ -107,9 +107,9 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam) {
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
-  const videoMediaType = deepAccess(index.getMediaTypes(bid), 'video');
-  const context = videoMediaType && deepAccess(videoMediaType, 'context');
-  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+  const videoMediaType = index.getMediaTypes(bid)?.video;
+  const context = videoMediaType && videoMediaType?.context;
+  const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
   const adUnit = index.getAdUnit(bid);
 
   // if context not defined assume default 'instream' for video bids
@@ -120,10 +120,12 @@ export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
 export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
-    if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
+    const { url, useLocal } = config.getConfig('cache') || {};
+    if ((!url && !useLocal) && bid.vastXml && !bid.vastUrl) {
       logError(`
         This bid contains only vastXml and will not work when a prebid cache url is not specified.
-        Try enabling prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
+        Try enabling either prebid cache with $$PREBID_GLOBAL$$.setConfig({ cache: {url: "..."} });
+        or local cache with $$PREBID_GLOBAL$$.setConfig({ cache: { useLocal: true }});
       `);
       return false;
     }
