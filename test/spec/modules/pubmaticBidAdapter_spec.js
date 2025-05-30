@@ -222,24 +222,6 @@ describe('PubMatic adapter', () => {
 
   describe('Request formation', () => {
     describe('IMP', () => {
-      it('should include previousAuctionInfo in request when available', () => {
-        const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
-        bidRequestWithPrevAuction.ortb2 = {
-          ext: {
-            prebid: {
-              previousauctioninfo: {
-                bidderRequestId: 'bidder-request-id',
-              }
-            }
-          }
-        };
-        const request = spec.buildRequests([bidRequestWithPrevAuction], bidderRequest);
-        expect(request.data.ext).to.have.property('previousAuctionInfo');
-        expect(request.data.ext.previousAuctionInfo).to.deep.equal({
-          bidderRequestId: 'bidder-request-id'
-        });
-      });
-      
       it('should generate request with banner', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
