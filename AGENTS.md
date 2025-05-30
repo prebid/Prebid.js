@@ -3,7 +3,7 @@
 This file contains instructions for the Codex agent and its friends when working on tasks in this repository.
 
 ## Programmatic checks
-- Before committing code changes, run `gulp lint` and `gulp test`.
+- Before committing code changes, run `gulp lint` and run tests on the files you have changed.
 - npm test can take a very long time to run, don't time it out too soon. Wait at least 15 minutes or poll it to see if it is still generating output.
 - npx gulp test can take a long time too. if it seems like it is hanging on bundling, keep waiting a few more minutes.
 - If additional tests are added, ensure they pass in the environment.
@@ -34,9 +34,9 @@ Testing
 -------
 - When you modify or add source or test files, run only the affected unit tests.
 - Use `gulp test --file <spec_file.js>` for each changed spec file.
-- Do not run the full `gulp test` suite unless your change affects many files.
+- Do not run the full `gulp test` suite unless your change affects many files. gulp test can take a very long time.
 - Karma tests can also be chunked with `TEST_CHUNKS` if needed.
-- Run all the tests at the end when you are confident in your pr.
+- Only run all the tests at the end when you are confident in your pr. Only run all the tests if you are impacting code outside of /modules.
 
 Build Behavior
 --------------
