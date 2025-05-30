@@ -31,6 +31,14 @@
     "device": null,
     "os": "Windows"
   },
+  "bs_opera_latest_windows_11": {
+    "base": "BrowserStack",
+    "os_version": "11",
+    "browser": "opera",
+    "browser_version": "latest",
+    "device": null,
+    "os": "Windows"
+  },
   "bs_safari_latest_mac": {
     "base": "BrowserStack",
     "os_version": "Sonoma",
