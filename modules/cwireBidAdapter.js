@@ -254,7 +254,7 @@ export const spec = {
       if (type) {
         syncs.push({
           type: type,
-          url: 'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=' + gdprConsent.consentString,
+          url: `https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${gdprConsent.consentString}`,
         })
       }
     }
