@@ -20,9 +20,9 @@ const converter = ortbConverter({
     logInfo('Building impression object for bidRequest:', bidRequest);
     const imp = buildImp(bidRequest, context);
     const { mediaTypes } = bidRequest;
-    if (bid.params && bid.params.bidfloor) {
-      logInfo('Setting bid floor for impression:', bid.params.bidfloor);
-      imp.bidfloor = bid.params.bidfloor;
+    if (bidRequest.params && bidRequest.params.bidfloor) {
+      logInfo('Setting bid floor for impression:', bidRequest.params.bidfloor);
+      imp.bidfloor = bidRequest.params.bidfloor;
     }
     if (mediaTypes[BANNER]) {
       logInfo('Adding banner media type to impression:', mediaTypes[BANNER]);
@@ -167,6 +167,7 @@ const interpretResponse = (serverResponse, request) => {
           break;
         case 2:
           bidResponse.meta.mediaType = VIDEO;
+          bidResponse.vastXml = bid.adm;
           break;
         default:
           logWarn('Unknown media type: ', bid.mtype, ' for bidId: ', bid.id);
