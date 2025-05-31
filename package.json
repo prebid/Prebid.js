@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.16.5",
+    "@babel/plugin-transform-runtime": "^7.27.4",
     "@babel/register": "^7.24.6",
     "@eslint/compat": "^1.2.7",
     "@wdio/browserstack-service": "^9.0.5",
@@ -128,7 +129,6 @@
   },
   "dependencies": {
     "@babel/core": "^7.25.2",
-    "@babel/plugin-transform-runtime": "^7.18.9",
     "@babel/preset-env": "^7.16.8",
     "@babel/runtime": "^7.18.9",
     "core-js": "^3.13.0",
