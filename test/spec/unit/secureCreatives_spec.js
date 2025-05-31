@@ -589,5 +589,23 @@ describe('secureCreatives', () => {
       });
       sinon.assert.notCalled(document.getElementById);
     })
+
+    it('should apply anchor styling', () => {
+      const div = {style: {}};
+      const iframe = {style: {}};
+      document.getElementById.returns({querySelector: sinon.stub()
+        .onFirstCall().returns(div)
+        .onSecondCall().returns(iframe)});
+      resizeRemoteCreative({
+        adId: 'adId',
+        adUnitCode: 'au1',
+        width: 320,
+        height: 50,
+        anchor: true
+      });
+      expect(div.style.textAlign).to.eql('center');
+      expect(div.style.width).to.eql('100%');
+      expect(iframe.style.width).to.eql('320px');
+    })
   })
 });
