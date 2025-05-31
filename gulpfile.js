@@ -440,7 +440,8 @@ function testCoverage(done) {
     watch: false,
     file: argv.file,
     env: {
-      NODE_OPTIONS: '--max-old-space-size=8096'
+      NODE_OPTIONS: '--max-old-space-size=8096',
+      TEST_CHUNKS: '1'
     }
   }, done);
 }
