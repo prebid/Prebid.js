@@ -424,8 +424,9 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     deepSetValue(data, 'regs.coppa', 1);
   }
 
-  if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-    deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain && hasValidSupplyChainParams(schain)) {
+    deepSetValue(data, 'source.ext.schain', schain);
   }
 
   // TODO: getConfig('fpd.context') should not have worked even with legacy FPD support - 'fpd' gets translated

@@ -203,7 +203,8 @@ function generateUrl(bid, bidderRequest) {
     }, bid.params);
     delete params.adCode;
 
-    url += `${getUrlParams(params, bid.schain)}`;
+    const schain = bid?.ortb2?.source?.ext?.schain;
+    url += `${getUrlParams(params, schain)}`;
 
     url += (`&transactionId=${bid.ortb2Imp?.ext?.tid}`);
 

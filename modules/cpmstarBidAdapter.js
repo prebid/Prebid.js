@@ -71,8 +71,8 @@ export const spec = {
       url.searchParams.set('requestid', bidRequest.bidId);
       url.searchParams.set('referer', referer);
 
-      if (bidRequest.schain && bidRequest.schain.nodes) {
-        var schain = bidRequest.schain;
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain && schain.nodes) {
         var schainString = '';
         schainString += schain.ver + ',' + schain.complete;
         for (var i2 = 0; i2 < schain.nodes.length; i2++) {

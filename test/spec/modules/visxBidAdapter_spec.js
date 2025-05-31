@@ -597,7 +597,7 @@ describe('VisxAdapter', function () {
 
     it('if schain is present payload must have schain param', function () {
       const schainBidRequests = [
-        Object.assign({schain: schainObject}, bidRequests[0]),
+        Object.assign({ortb2: {source: {ext: {schain: schainObject}}}}, bidRequests[0]),
         bidRequests[1],
         bidRequests[2]
       ];

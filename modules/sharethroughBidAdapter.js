@@ -57,7 +57,7 @@ export const sharethroughAdapterSpec = {
         ext: {
           version: '$prebid.version$',
           str: VERSION,
-          schain: bidRequests[0].schain,
+          schain: bidRequests[0]?.ortb2?.source?.ext?.schain,
         },
       },
       bcat: deepAccess(bidderRequest.ortb2, 'bcat') || bidRequests[0].params.bcat || [],

@@ -540,7 +540,13 @@ describe('TheMediaGrid Adapter', function () {
       };
       const bidRequestsWithSChain = bidRequests.map((bid) => {
         return Object.assign({
-          schain: schain
+          ortb2: {
+            source: {
+              ext: {
+                schain: schain
+              }
+            }
+          }
         }, bid);
       });
       const [request] = spec.buildRequests(bidRequestsWithSChain, bidderRequest);

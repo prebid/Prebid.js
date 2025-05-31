@@ -133,8 +133,9 @@ export const spec = {
       }
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = JSON.stringify(validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = JSON.stringify(schain);
     }
 
     const eids = deepAccess(validBidRequests[0], 'userIdAsEids');

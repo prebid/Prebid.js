@@ -267,21 +267,27 @@ describe('SonobiBidAdapter', function () {
       sandbox.restore();
     });
     let bidRequest = [{
-      'schain': {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'indirectseller.com',
-            'sid': '00001',
-            'hp': 1
-          },
-          {
-            'asi': 'indirectseller-2.com',
-            'sid': '00002',
-            'hp': 0
-          },
-        ]
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
+              'ver': '1.0',
+              'complete': 1,
+              'nodes': [
+                {
+                  'asi': 'indirectseller.com',
+                  'sid': '00001',
+                  'hp': 1
+                },
+                {
+                  'asi': 'indirectseller-2.com',
+                  'sid': '00002',
+                  'hp': 0
+                },
+              ]
+            }
+          }
+        }
       },
       'bidder': 'sonobi',
       'params': {
@@ -565,7 +571,7 @@ describe('SonobiBidAdapter', function () {
 
     it('should return a properly formatted request with schain defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(JSON.parse(decodeURIComponent(bidRequests.data.schain))).to.deep.equal(bidRequest[0].schain)
+      expect(JSON.parse(decodeURIComponent(bidRequests.data.schain))).to.deep.equal(bidRequest[0].ortb2.source.ext.schain)
     });
 
     it('should return a properly formatted request with eids as a JSON-encoded set of eids', function () {

@@ -250,7 +250,9 @@ describe('bridgeuppBidAdapter_spec', function () {
       const ortb2 = {
         source: {
           pchain: 'sonarads',
-          schain: expectedSchain
+          ext: {
+            schain: expectedSchain
+          }
         }
       };
       const bidRequests = [
@@ -269,7 +271,7 @@ describe('bridgeuppBidAdapter_spec', function () {
         },
       ];
       const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest({...bidderRequest, ortb2})).data;
-      expect(ortbRequest.source.schain).to.deep.equal(expectedSchain);
+      expect(ortbRequest.source.ext.schain).to.deep.equal(expectedSchain);
       expect(ortbRequest.source.pchain).to.equal('sonarads');
     });
 

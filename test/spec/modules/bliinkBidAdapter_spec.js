@@ -809,7 +809,10 @@ const testsBuildRequests = [
       fn: spec.buildRequests(
         [
           {
-            schain: {
+            ortb2: {
+              source: {
+                ext: {
+                  schain: {
               ver: '1.0',
               complete: 1,
               nodes: [
@@ -819,6 +822,9 @@ const testsBuildRequests = [
                   hp: 1,
                 },
               ],
+                  }
+                }
+              }
             },
           },
         ],

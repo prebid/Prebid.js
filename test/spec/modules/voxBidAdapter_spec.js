@@ -212,10 +212,16 @@ describe('VOX Adapter', function() {
     it('should set schain if not specified', function () {
       const requests = validBidRequests.map(bid => ({
         ...bid,
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       }))

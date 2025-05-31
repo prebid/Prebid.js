@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {spec, internal as r2b2, internal} from 'modules/r2b2BidAdapter.js';
 import * as utils from '../../../src/utils';
-import 'modules/schain.js';
 import 'modules/userId/index.js';
 
 function encodePlacementIds (ids) {
@@ -91,9 +90,9 @@ describe('R2B2 adapter', function () {
           }
         },
         site: {},
-        device: {}
+        device: {},
+        source: {ext: {schain: schain}}
       },
-      schain
     }, {
       bidder: 'r2b2',
       params: {
@@ -128,9 +127,9 @@ describe('R2B2 adapter', function () {
           }
         },
         site: {},
-        device: {}
+        device: {},
+        source: {ext: {schain: schain}}
       },
-      schain
     }];
     bidderRequest = {
       bidderCode: 'r2b2',
@@ -150,7 +149,8 @@ describe('R2B2 adapter', function () {
           }
         },
         site: {},
-        device: {}
+        device: {},
+        source: {ext: {schain: schain}}
       },
       gdprConsent: {
         consentString: 'consent-string',

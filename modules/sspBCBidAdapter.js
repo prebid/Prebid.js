@@ -628,7 +628,7 @@ const spec = {
     const ref = bidderRequest.refererInfo.ref;
     const { source = {}, regs = {} } = ortb2 || {};
 
-    source.schain = setOnAny(validBidRequests, 'schain');
+    source.schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
     const payload = {
       id: bidderRequest.bidderRequestId,

@@ -372,7 +372,10 @@ describe('ConnectAd Adapter', function () {
 
       it('should populate schain', function () {
         const bidRequest = Object.assign({}, bidRequests[0], {
-          schain: {
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
             ver: '1.0',
             complete: 1,
             nodes: [
@@ -382,6 +385,9 @@ describe('ConnectAd Adapter', function () {
                 'hp': 1
               }
             ]
+                }
+              }
+            }
           }
         });
 

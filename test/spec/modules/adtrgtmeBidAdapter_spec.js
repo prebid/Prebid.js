@@ -266,7 +266,7 @@ describe('Adtrgtme Bid Adapter:', () => {
           hp: 1
         }]
       };
-      bidRequest.schain = globalSchain;
+      bidRequest.ortb2 = { source: { ext: { schain: globalSchain } } };
       const data = spec.buildRequests(validBR, bidderRequest)[0].data;
       const schain = data.source.ext.schain;
       expect(schain.nodes.length).to.equal(1);

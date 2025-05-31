@@ -93,8 +93,9 @@ export const spec = {
 
       data.params = request.params;
 
-      if (request.schain) {
-        data.schain = request.schain;
+      const schain = request?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        data.schain = schain;
       }
 
       const searchParams = new URLSearchParams({

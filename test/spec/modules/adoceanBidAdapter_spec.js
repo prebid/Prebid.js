@@ -84,7 +84,10 @@ describe('AdoceanAdapter', function () {
       }
     ];
     const schainExample = {
-      'schain': {
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
         ver: '1.0',
         complete: 1,
         nodes: [
@@ -95,6 +98,9 @@ describe('AdoceanAdapter', function () {
             hp: 1
           }
         ]
+            }
+          }
+        }
       }
     };
 
