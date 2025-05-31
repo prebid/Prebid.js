@@ -13,7 +13,6 @@
  */
 
 import {isValidPriceConfig} from './cpmBucketManager.js';
-import {find} from './polyfill.js';
 import {
   deepAccess,
   deepClone,
@@ -151,7 +150,7 @@ function attachProperties(config, useDefaultValues = true) {
   return config;
 
   function hasGranularity(val) {
-    return find(Object.keys(GRANULARITY_OPTIONS), option => val === GRANULARITY_OPTIONS[option]);
+    return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
   }
 
   function validatePriceGranularity(val) {

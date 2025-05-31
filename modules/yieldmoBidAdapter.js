@@ -17,7 +17,6 @@ import {
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
-import {find} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -326,7 +325,7 @@ function createNewBannerBid(response) {
  * @param bidRequest server request
  */
 function createNewVideoBid(response, bidRequest) {
-  const imp = find((deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
+  const imp = (deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
 
   let result = {
     dealId: response.dealid,
