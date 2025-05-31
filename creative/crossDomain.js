@@ -82,8 +82,7 @@ export function renderer(win) {
         const renderer = mkFrame(win.document, {
           width: 0,
           height: 0,
-          style: 'display: none',
-          srcdoc: `<script>${data.renderer}</script>`
+          style: 'display: none'
         });
         renderer.onload = guard(function () {
           const W = renderer.contentWindow;
@@ -94,6 +93,7 @@ export function renderer(win) {
             onError
           );
         });
+        renderer.srcdoc = `<script>${data.renderer}</script>`;
         win.document.body.appendChild(renderer);
       }
     }
