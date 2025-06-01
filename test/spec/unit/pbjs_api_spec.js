@@ -15,7 +15,6 @@ import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import {resetAuctionState} from 'src/auction.js';
 import {registerBidder} from 'src/adapters/bidderFactory.js';
-import {find} from 'src/polyfill.js';
 import * as pbjsModule from 'src/prebid.js';
 import $$PREBID_GLOBAL$$, {startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
@@ -3704,7 +3703,7 @@ describe('Unit: Prebid Module', function () {
         winningBid = targeting.getWinningBids(adUnitCode)[0];
         auction.getAuctionId = function() { return winningBid.auctionId };
         sandbox.stub(events, 'emit');
-        markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
+        markedBid = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids.find(
           bid => bid.adId === winningBid.adId);
       })
 
@@ -3756,7 +3755,7 @@ describe('Unit: Prebid Module', function () {
 
       it('try and mark the bid object, but fail because we supplied the wrong adId', function () {
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
-        const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
+        const markedBid = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids.find(
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.not.equal(BID_STATUS.RENDERED);
