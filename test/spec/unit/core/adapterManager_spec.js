@@ -18,7 +18,6 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { setSizeConfig } from 'modules/sizeMapping.js';
-import {find} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
@@ -517,7 +516,7 @@ describe('adapterManager tests', function () {
 
     it('should call spec\'s onBidderError callback when callBidderError is called', function () {
       const bidRequests = getBidRequests();
-      const bidderRequest = find(bidRequests, bidRequest => bidRequest.bidderCode === bidder);
+      const bidderRequest = bidRequests.find(bidRequest => bidRequest.bidderCode === bidder);
       const xhrErrorMock = {
         status: 500,
         statusText: 'Internal Server Error'
@@ -2332,14 +2331,14 @@ describe('adapterManager tests', function () {
         );
 
         expect(bidRequests.length).to.equal(2);
-        let rubiconBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'rubicon');
+        let rubiconBidRequests = bidRequests.find(bidRequest => bidRequest.bidderCode === 'rubicon');
         expect(rubiconBidRequests.bids.length).to.equal(1);
-        expect(rubiconBidRequests.bids[0].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).mediaTypes);
+        expect(rubiconBidRequests.bids[0].mediaTypes).to.deep.equal(adUnits.find(adUnit => adUnit.code === rubiconBidRequests.bids[0].adUnitCode).mediaTypes);
 
-        let appnexusBidRequests = find(bidRequests, bidRequest => bidRequest.bidderCode === 'appnexus');
+        let appnexusBidRequests = bidRequests.find(bidRequest => bidRequest.bidderCode === 'appnexus');
         expect(appnexusBidRequests.bids.length).to.equal(2);
-        expect(appnexusBidRequests.bids[0].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).mediaTypes);
-        expect(appnexusBidRequests.bids[1].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).mediaTypes);
+        expect(appnexusBidRequests.bids[0].mediaTypes).to.deep.equal(adUnits.find(adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).mediaTypes);
+        expect(appnexusBidRequests.bids[1].mediaTypes).to.deep.equal(adUnits.find(adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).mediaTypes);
       });
 
       it('should not filter native bids', function () {
