@@ -8,12 +8,12 @@ export const BIDDER_CODE = 'adplus';
 export const ADPLUS_ENDPOINT = 'https://ssp.ad-plus.com.tr/server/headerBidding';
 export const DGID_CODE = 'adplus_dg_id';
 export const SESSION_CODE = 'adplus_s_id';
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const COOKIE_EXP = 1000 * 60 * 60 * 24; // 1 day
 // #endregion
 
 // #region Helpers
-export function isValidUuid (uuid) {
+export function isValidUuid(uuid) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     uuid
   );
@@ -105,12 +105,12 @@ function createBidRequest(bid) {
   } = bid.params;
 
   return {
-    method: 'GET',
+    method: 'POST',
     url: ADPLUS_ENDPOINT,
     data: utils.cleanObj({
       bidId: bid.bidId,
-      inventoryId,
-      adUnitId,
+      inventoryId: parseInt(inventoryId),
+      adUnitId: parseInt(adUnitId),
       adUnitWidth: bid.mediaTypes[BANNER].sizes[0][0],
       adUnitHeight: bid.mediaTypes[BANNER].sizes[0][1],
       extraData,
@@ -131,6 +131,8 @@ function createBidRequest(bid) {
       pageUrl: window.location.href,
       domain: window.location.hostname,
       referrer: window.location.referrer,
+      adplusUid: bid?.userId?.adplusId,
+      eids: bid?.userIdAsEids,
     }),
   };
 }
