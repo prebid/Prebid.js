@@ -1,3 +1,4 @@
+import sinon from 'sinon';
 import {_internal as videoCache} from 'src/videoCache.js';
 
 /**

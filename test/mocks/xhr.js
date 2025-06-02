@@ -1,3 +1,4 @@
+import sinon from 'sinon';
 import {getUniqueIdentifierStr} from '../../src/utils.js';
 import {GreedyPromise} from 'libraries/greedy/greedyPromise.js';
 import {fakeXhr} from 'nise';

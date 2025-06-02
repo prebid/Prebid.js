@@ -1,3 +1,4 @@
+import sinon from 'sinon';
 import {_internal, setDebounceDelay} from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 before(() => {
