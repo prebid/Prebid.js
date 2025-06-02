@@ -112,59 +112,62 @@ export const sharethroughAdapterSpec = {
         const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid') || deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
         if (gpid) impression.ext.gpid = gpid;
 
-        const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
+        // Disabling Outstream request temporarily
+        const bannerRequest = deepAccess(bidReq, 'mediaTypes.banner');
+        // const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
         if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
           mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
         }
 
-        if (videoRequest) {
-          // default playerSize, only change this if we know width and height are properly defined in the request
-          let [w, h] = [640, 360];
-          if (
-            videoRequest.playerSize &&
-            videoRequest.playerSize[0] &&
-            videoRequest.playerSize[0][0] &&
-            videoRequest.playerSize[0][1]
-          ) {
-            [w, h] = videoRequest.playerSize[0];
-          }
+        // if (videoRequest) {
+        //   // default playerSize, only change this if we know width and height are properly defined in the request
+        //   let [w, h] = [640, 360];
+        //   if (
+        //     videoRequest.playerSize &&
+        //     videoRequest.playerSize[0] &&
+        //     videoRequest.playerSize[0][0] &&
+        //     videoRequest.playerSize[0][1]
+        //   ) {
+        //     [w, h] = videoRequest.playerSize[0];
+        //   }
 
-          /**
-           * Applies a specified property to an impression object if it is present in the video request
-           * @param {string} prop A property to apply to the impression object
-           * @param {object} vidReq A video request object from which to extract the property
-           * @param {object} imp A video impression object to which to apply the property
-           */
-          const applyVideoProperty = (prop, vidReq, imp) => {
-            const propIsTypeArray = ['api', 'battr', 'mimes', 'playbackmethod', 'protocols'].includes(prop);
-            if (propIsTypeArray) {
-              const notAssignable = (!Array.isArray(vidReq[prop]) || vidReq[prop].length === 0) && vidReq[prop];
-              if (notAssignable) {
-                logWarn(`${IDENTIFIER_PREFIX} Invalid video request property: "${prop}" must be an array with at least 1 entry.  Value supplied: "${vidReq[prop]}".  This will not be added to the bid request.`);
-                return;
-              }
-            }
-            if (vidReq[prop]) {
-              imp.video[prop] = vidReq[prop];
-            }
-          };
+        //   /**
+        //    * Applies a specified property to an impression object if it is present in the video request
+        //    * @param {string} prop A property to apply to the impression object
+        //    * @param {object} vidReq A video request object from which to extract the property
+        //    * @param {object} imp A video impression object to which to apply the property
+        //    */
+        //   const applyVideoProperty = (prop, vidReq, imp) => {
+        //     const propIsTypeArray = ['api', 'battr', 'mimes', 'playbackmethod', 'protocols'].includes(prop);
+        //     if (propIsTypeArray) {
+        //       const notAssignable = (!Array.isArray(vidReq[prop]) || vidReq[prop].length === 0) && vidReq[prop];
+        //       if (notAssignable) {
+        //         logWarn(`${IDENTIFIER_PREFIX} Invalid video request property: "${prop}" must be an array with at least 1 entry.  Value supplied: "${vidReq[prop]}".  This will not be added to the bid request.`);
+        //         return;
+        //       }
+        //     }
+        //     if (vidReq[prop]) {
+        //       imp.video[prop] = vidReq[prop];
+        //     }
+        //   };
 
-          impression.video = {
-            pos: nullish(videoRequest.pos, 0),
-            topframe: inIframe() ? 0 : 1,
-            w,
-            h,
-          };
+        //   impression.video = {
+        //     pos: nullish(videoRequest.pos, 0),
+        //     topframe: inIframe() ? 0 : 1,
+        //     w,
+        //     h,
+        //   };
 
-          const propertiesToConsider = [
-            'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
-          ]
+        //   const propertiesToConsider = [
+        //     'api', 'battr', 'companionad', 'companiontype', 'delivery', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement', 'playbackmethod', 'plcmt', 'protocols', 'skip', 'skipafter', 'skipmin', 'startdelay'
+        //   ]
 
-          propertiesToConsider.forEach(propertyToConsider => {
-            applyVideoProperty(propertyToConsider, videoRequest, impression);
-          });
-        } else {
+        //   propertiesToConsider.forEach(propertyToConsider => {
+        //     applyVideoProperty(propertyToConsider, videoRequest, impression);
+        //   });
+        // } else {
+        if (bannerRequest) {
           impression.banner = {
             pos: deepAccess(bidReq, 'mediaTypes.banner.pos', 0),
             topframe: inIframe() ? 0 : 1,

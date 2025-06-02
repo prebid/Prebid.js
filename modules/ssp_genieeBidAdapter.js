@@ -15,6 +15,7 @@ import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
+export const USER_SYNC_ENDPOINT = 'https://cs.gssprt.jp/yie/ld/mcs';
 // export const ENDPOINT_USERSYNC = '';
 const SUPPORTED_MEDIA_TYPES = [ BANNER ];
 const DEFAULT_CURRENCY = 'JPY';
@@ -414,15 +415,36 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
+      return syncs;
+    }
 
-    // if we need user sync, we add this part after preparing the endpoint
-    /* if (syncOptions.pixelEnabled) {
+    serverResponses.forEach((serverResponse) => {
+      if (!serverResponse || !serverResponse.body) {
+        return;
+    }
+
+    const values = Object.values(serverResponse.body);
+    if (!values.length || !values[0]) {
+      return;
+    }
+
+    const bid = values[0];
+    const decodedAdm = decodeURIComponent(bid.adm)
+    // admの中にはhttps:\/\/cs.gssprt.jp\/yie\/ld\/mcs?ver=1&dspid=lamp&format=gif&vid=1\"のような文字列があるので、ここからクエリを抜き出す
+    const reg = new RegExp('https:\\\\/\\\\/cs.gssprt.jp\\\\/yie\\\\/ld\\\\/mcs\\?([^\\\\"]+)\\\\"', 'g');
+    const csQuery = Array.from(decodedAdm.matchAll(reg), (match) => match[1]);
+    if (!csQuery.length) {
+      return;
+    }
+
+    csQuery.forEach((query) => {
       syncs.push({
-        type: 'image',
-        url: ENDPOINT_USERSYNC
+        type: syncOptions.pixelEnabled ? 'image' : 'iframe',
+        url: USER_SYNC_ENDPOINT + '?' + query
       });
-    } */
-
+    });
+  });
     return syncs;
   },
   onTimeout: function (timeoutData) {},

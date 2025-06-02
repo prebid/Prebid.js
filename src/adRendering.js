@@ -272,6 +272,12 @@ export function renderAdDirect(doc, adId, options) {
   const messageHandler = creativeMessageHandler({resizeFn});
   function renderFn(adData) {
     if (adData.ad) {
+      if (
+        adData.ad.includes("display-renderer/sdk.js") ||
+        adData.ad.includes("native-to-display/sdk.js")
+      ) {
+        doc.write(`<script> window.MS_SDK_RENDER = null; </script>`);
+      }
       doc.write(adData.ad);
       doc.close();
       emitAdRenderSucceeded({doc, bid, id: bid.adId});

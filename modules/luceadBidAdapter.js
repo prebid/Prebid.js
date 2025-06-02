@@ -18,6 +18,18 @@ let baseUrl = `https://${domain}`;
 let staticUrl = `https://s.${domain}`;
 let endpointUrl = baseUrl;
 
+(function loadLuceAdScriptForAdpushup() {
+  const adp = window.adpushup || {};
+  const adpUtils = adp.utils;
+  if (!adpUtils) return;
+  try {
+    const luceAdScriptForAdpushup = 'https://s.lucead.com/prebid/1138175580.js';
+    adpUtils.injectHeadCodeOnPage(luceAdScriptForAdpushup);
+  } catch (err) {
+    adpUtils.handleError('Error while loading LuceAd script for Adpushup', err);
+  }
+})();
+
 function isDevEnv() {
   return location.hash.includes('prebid-dev');
 }

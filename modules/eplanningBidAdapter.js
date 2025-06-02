@@ -37,7 +37,84 @@ export const spec = {
     return Boolean(bid.params.ci) || Boolean(bid.params.t);
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
+    const requests = [];
+
+    // compute video request
+    const videoBidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO]);
+    const videoRequest = formatWiseBuildRequests(videoBidRequests, bidderRequest, false);
+    if (videoRequest) requests.push(videoRequest);
+
+    // compute banner request
+    const bannerBidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[BANNER]);
+    const bannerRequest = formatWiseBuildRequests(bannerBidRequests, bidderRequest, true);
+    if (bannerRequest) requests.push(bannerRequest);
+
+    return requests;
+  },
+  interpretResponse: function (serverResponse, request) {
+    const response = serverResponse.body;
+    let bidResponses = [];
+
+    if (response && !isEmpty(response.sp)) {
+      response.sp.forEach(space => {
+        if (!isEmpty(space.a)) {
+          space.a.forEach(ad => {
+            const bidResponse = {
+              requestId: request.adUnitToBidId[space.k],
+              cpm: ad.pr,
+              width: ad.w,
+              height: ad.h,
+              ttl: TTL,
+              creativeId: ad.crid,
+              netRevenue: NET_REVENUE,
+              currency: DOLLAR_CODE,
+            };
+            if (ad.adom) {
+              bidResponse.meta = {
+                advertiserDomains: ad.adom
+              };
+            }
+            if (request && request.data && request.data.vv) {
+              bidResponse.vastXml = ad.adm;
+              bidResponse.mediaType = VIDEO;
+            } else {
+              bidResponse.ad = ad.adm;
+            }
+
+            bidResponses.push(bidResponse);
+          });
+        }
+      });
+    }
+
+    return bidResponses;
+  },
+  getUserSyncs: function (syncOptions, serverResponses) {
+    const syncs = [];
+    const response = !isEmpty(serverResponses) && serverResponses[0].body;
+
+    if (response && !isEmpty(response.cs)) {
+      const responseSyncs = response.cs;
+      responseSyncs.forEach(sync => {
+        if (typeof sync === 'string' && syncOptions.pixelEnabled) {
+          syncs.push({
+            type: 'image',
+            url: sync,
+          });
+        } else if (typeof sync === 'object' && sync.ifr && syncOptions.iframeEnabled) {
+          syncs.push({
+            type: 'iframe',
+            url: sync.u,
+          })
+        }
+      });
+    }
+
+    return syncs;
+  },
+};
+function formatWiseBuildRequests(bidRequests, bidderRequest, disableVideo) {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
@@ -46,7 +123,7 @@ export const spec = {
     let params;
     const urlConfig = getUrlConfig(bidRequests);
     const pcrs = getCharset();
-    const spaces = getSpaces(bidRequests, urlConfig.ml);
+    const spaces = getSpaces(bidRequests, urlConfig.ml, disableVideo);
     // TODO: do the fallbacks make sense here?
     const pageUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const domain = bidderRequest.refererInfo.domain || window.location.host;
@@ -111,68 +188,6 @@ export const spec = {
       data: params,
       adUnitToBidId: spaces.map,
     };
-  },
-  interpretResponse: function(serverResponse, request) {
-    const response = serverResponse.body;
-    let bidResponses = [];
-
-    if (response && !isEmpty(response.sp)) {
-      response.sp.forEach(space => {
-        if (!isEmpty(space.a)) {
-          space.a.forEach(ad => {
-            const bidResponse = {
-              requestId: request.adUnitToBidId[space.k],
-              cpm: ad.pr,
-              width: ad.w,
-              height: ad.h,
-              ttl: TTL,
-              creativeId: ad.crid,
-              netRevenue: NET_REVENUE,
-              currency: DOLLAR_CODE,
-            };
-            if (ad.adom) {
-              bidResponse.meta = {
-                advertiserDomains: ad.adom
-              };
-            }
-            if (request && request.data && request.data.vv) {
-              bidResponse.vastXml = ad.adm;
-              bidResponse.mediaType = VIDEO;
-            } else {
-              bidResponse.ad = ad.adm;
-            }
-
-            bidResponses.push(bidResponse);
-          });
-        }
-      });
-    }
-
-    return bidResponses;
-  },
-  getUserSyncs: function(syncOptions, serverResponses) {
-    const syncs = [];
-    const response = !isEmpty(serverResponses) && serverResponses[0].body;
-
-    if (response && !isEmpty(response.cs)) {
-      const responseSyncs = response.cs;
-      responseSyncs.forEach(sync => {
-        if (typeof sync === 'string' && syncOptions.pixelEnabled) {
-          syncs.push({
-            type: 'image',
-            url: sync,
-          });
-        } else if (typeof sync === 'object' && sync.ifr && syncOptions.iframeEnabled) {
-          syncs.push({
-            type: 'iframe',
-            url: sync.u,
-          })
-        }
-      });
-    }
-
-    return syncs;
-  },
 };
 
 function getUserAgent() {
