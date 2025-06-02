@@ -3,7 +3,6 @@ import {
   getBidRequest,
   getParameterByName,
   isArray,
-  isFn,
   isNumber,
   isPlainObject,
   logError
@@ -16,6 +15,7 @@ import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
+import {addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -469,27 +469,6 @@ function bidToTag(bid) {
   return tag;
 }
 
-function hasUserInfo(bid) {
-  return !!bid.params.user;
-}
-
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
-}
-
-function hasAppDeviceInfo(bid) {
-  if (bid.params) {
-    return !!bid.params.app
-  }
-}
-
-function hasAppId(bid) {
-  if (bid.params && bid.params.app) {
-    return !!bid.params.app.id
-  }
-  return !!bid.params.app
-}
-
 function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
 }
@@ -502,31 +481,9 @@ function parseMediaType(rtbBid) {
   return BANNER;
 }
 
-function addUserId(eids, id, source, rti) {
-  if (id) {
-    if (rti) {
-      eids.push({ source, id, rti_partner: rti });
-    } else {
-      eids.push({ source, id });
-    }
-  }
-  return eids;
+function hasMemberId(bid) {
+  return !!parseInt(bid.params.member, 10);
 }
 
-function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return (bid.params.reserve) ? bid.params.reserve : null;
-  }
-
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
-}
 
 registerBidder(spec);
