@@ -27,7 +27,6 @@ import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
-import {find} from './polyfill.js';
 import {
   getAuctionsCounter,
   getBidderRequestsCounter,
@@ -367,8 +366,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
       adUnitsS2SCopy.forEach((adUnitCopy) => {
         let validBids = adUnitCopy.bids.filter((adUnitBid) =>
-          find(bidRequests, request =>
-            find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id)));
+          bidRequests.find(request =>
+            request.bids.find((reqBid) => reqBid.bidId === adUnitBid.bid_id)));
         adUnitCopy.bids = validBids;
       });
 

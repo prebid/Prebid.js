@@ -224,16 +224,16 @@ describe('PubMatic adapter', () => {
     describe('IMP', () => {
       it('should include previousAuctionInfo in request when available', () => {
         const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
-        bidRequestWithPrevAuction.ortb2 = {
-          ext: {
-            prebid: {
-              previousauctioninfo: {
-                bidderRequestId: 'bidder-request-id',
-              }
-            }
-          }
+        const bidderRequestWithPrevAuction = utils.deepClone(bidderRequest);
+        
+        bidderRequestWithPrevAuction.ortb2 = bidderRequestWithPrevAuction.ortb2 || {};
+        bidderRequestWithPrevAuction.ortb2.ext = bidderRequestWithPrevAuction.ortb2.ext || {};
+        bidderRequestWithPrevAuction.ortb2.ext.prebid = bidderRequestWithPrevAuction.ortb2.ext.prebid || {};
+        bidderRequestWithPrevAuction.ortb2.ext.prebid.previousauctioninfo = {
+          bidderRequestId: 'bidder-request-id'
         };
-        const request = spec.buildRequests([bidRequestWithPrevAuction], bidderRequest);
+        
+        const request = spec.buildRequests([bidRequestWithPrevAuction], bidderRequestWithPrevAuction);
         expect(request.data.ext).to.have.property('previousAuctionInfo');
         expect(request.data.ext.previousAuctionInfo).to.deep.equal({
           bidderRequestId: 'bidder-request-id'
