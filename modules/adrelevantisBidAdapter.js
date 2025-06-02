@@ -19,6 +19,8 @@ import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+import {transformSizes} from '../libraries/sizeUtils/tranformSize.js';
+import {hasUserInfo, hasAppDeviceInfo, hasAppId} from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -490,46 +492,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-/* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  let sizes = [];
-  let sizeObj = {};
-
-  if (isArray(requestSizes) && requestSizes.length === 2 &&
-    !isArray(requestSizes[0])) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
-}
-
-function hasUserInfo(bid) {
-  return !!bid.params.user;
-}
-
-function hasAppDeviceInfo(bid) {
-  if (bid.params) {
-    return !!bid.params.app
-  }
-}
-
-function hasAppId(bid) {
-  if (bid.params && bid.params.app) {
-    return !!bid.params.app.id
-  }
-  return !!bid.params.app
 }
 
 function getRtbBid(tag) {

@@ -105,6 +105,9 @@ const converter = ortbConverter({
     const marketPlaceEnabled = bidderRequest?.bidderCode
       ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (marketPlaceEnabled) updateRequestExt(request, bidderRequest);
+    if (bidderRequest?.ortb2?.ext?.prebid?.previousauctioninfo) {
+      deepSetValue(request, 'ext.previousAuctionInfo', bidderRequest.ortb2.ext.prebid.previousauctioninfo);
+    }
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -488,6 +491,11 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
 
   if (isNonEmptyArray(bid.adomain)) {
     res.meta.clickUrl = res.meta.brandId = bid.adomain[0];
+  }
+
+  if (bid.cat && isNonEmptyArray(bid.cat)) {
+    res.meta.secondaryCatIds = bid.cat;
+    res.meta.primaryCatId = bid.cat[0];
   }
 }
 

@@ -222,6 +222,24 @@ describe('PubMatic adapter', () => {
 
   describe('Request formation', () => {
     describe('IMP', () => {
+      it('should include previousAuctionInfo in request when available', () => {
+        const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
+        const bidderRequestWithPrevAuction = utils.deepClone(bidderRequest);
+        
+        bidderRequestWithPrevAuction.ortb2 = bidderRequestWithPrevAuction.ortb2 || {};
+        bidderRequestWithPrevAuction.ortb2.ext = bidderRequestWithPrevAuction.ortb2.ext || {};
+        bidderRequestWithPrevAuction.ortb2.ext.prebid = bidderRequestWithPrevAuction.ortb2.ext.prebid || {};
+        bidderRequestWithPrevAuction.ortb2.ext.prebid.previousauctioninfo = {
+          bidderRequestId: 'bidder-request-id'
+        };
+        
+        const request = spec.buildRequests([bidRequestWithPrevAuction], bidderRequestWithPrevAuction);
+        expect(request.data.ext).to.have.property('previousAuctionInfo');
+        expect(request.data.ext.previousAuctionInfo).to.deep.equal({
+          bidderRequestId: 'bidder-request-id'
+        });
+      });
+      
       it('should generate request with banner', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -1067,5 +1085,40 @@ describe('PubMatic adapter', () => {
         });
       });
     }
+
+    describe('CATEGORY IDS', () => {
+      it('should set primaryCatId and secondaryCatIds in meta when bid.cat is present', () => {
+        const copiedResponse = utils.deepClone(response);
+        copiedResponse.body.seatbid[0].bid[0].cat = ['IAB1', 'IAB2', 'IAB3'];
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.have.property('primaryCatId').to.equal('IAB1');
+        expect(bidResponse[0].meta).to.have.property('secondaryCatIds').to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
+      });
+
+      it('should not set primaryCatId and secondaryCatIds in meta when bid.cat is null', () => {
+        const copiedResponse = utils.deepClone(response);
+        copiedResponse.body.seatbid[0].bid[0].cat = null;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
+        expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
+      });
+      
+      it('should not set primaryCatId and secondaryCatIds in meta when bid.cat is undefined', () => {
+        const copiedResponse = utils.deepClone(response);
+        delete copiedResponse.body.seatbid[0].bid[0].cat;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
+        expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
+      });
+    });
   })
 })
