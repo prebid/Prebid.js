@@ -5,7 +5,7 @@ var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
 var gutil = require('plugin-error');
-var fancy-log = require('fancy-log');
+var fancyLog = require('fancy-log');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
@@ -319,9 +319,9 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  fancy-log.log('Concatenating files:\n', entries);
-  fancy-log.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  fancy-log.log('Generating bundle:', outputFileName);
+  fancyLog.log('Concatenating files:\n', entries);
+  fancyLog.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  fancyLog.log('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
   return wrap(gulp.src(entries))
