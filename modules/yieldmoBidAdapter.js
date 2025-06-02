@@ -258,7 +258,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid');
   const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
@@ -479,7 +479,7 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
   const size = extractPlayerSize(bidRequest);

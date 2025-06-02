@@ -29,6 +29,7 @@
   "browserslist": [
     "> 0.25%",
     "not IE 11",
+    "not dead",
     "not op_mini all"
   ],
   "keywords": [
@@ -95,7 +96,6 @@
     "karma-coverage-istanbul-reporter": "^3.0.3",
     "karma-es5-shim": "^0.0.4",
     "karma-firefox-launcher": "^2.1.0",
-    "karma-ie-launcher": "^1.0.0",
     "karma-mocha": "^2.0.1",
     "karma-mocha-reporter": "^2.2.5",
     "karma-opera-launcher": "^1.0.0",

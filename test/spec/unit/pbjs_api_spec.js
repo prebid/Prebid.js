@@ -983,7 +983,11 @@ describe('Unit: Prebid Module', function () {
     it('should return expected bid responses when not passed an adunitCode', function () {
       auctionManager.getLastAuctionId = () => 654321;
       var result = $$PREBID_GLOBAL$$.getBidResponses();
-      var compare = getBidResponsesFromAPI();
+      var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, {bids}]) => {
+        const arr = bids.slice();
+        arr.bids = arr;
+        return [code, arr];
+      }));
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 
@@ -998,7 +1002,7 @@ describe('Unit: Prebid Module', function () {
       const adUnitCode = '/19968336/header-bid-tag-0';
       const result = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
       const bids = getBidResponses().filter(bid => bid.adUnitCode === adUnitCode);
-      const compare = { bids: bids };
+      const compare = (() => { const arr = bids.slice(); arr.bids = arr; return arr; })();
       assert.deepEqual(result, compare, 'expected id responses for ad unit code are returned');
     });
   });

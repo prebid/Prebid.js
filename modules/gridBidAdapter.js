@@ -145,7 +145,7 @@ export const spec = {
         }
 
         if (ortb2Imp.ext) {
-          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.pbadslot?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
+          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
           if (ortb2Imp.ext.data) {
             impObj.ext.data = ortb2Imp.ext.data;
           }
