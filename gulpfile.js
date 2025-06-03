@@ -193,7 +193,7 @@ function buildCreative(mode = 'production') {
     opts.devtool = 'inline-source-map'
   }
   return function() {
-    return gulp.src(['**/*'])
+    return gulp.src(['creative/**/*'])
       .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
       .pipe(gulp.dest('build/creative'))
   }
