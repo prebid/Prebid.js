@@ -995,37 +995,84 @@ if (FEATURES.VIDEO) {
 }
 
 /**
- * Get Prebid config options
- * @param {Object} options
+ * Retrieve configuration values from the Prebid configuration object.
+ *
+ * @function getConfig
+ * @memberof pbjs
+ * @param {...(string|function)} args - One or more configuration paths (dot‑notation) and/or a callback to receive the value.
+ * @returns {*} The requested configuration value(s).
  * @alias module:pbjs.getConfig
  */
 pbjsInstance.getConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.getConfig', arguments);
   return config.getAnyConfig.apply(config, arguments);
 };
+
+/**
+ * Read configuration value(s) synchronously, without firing callbacks.
+ *
+ * @function readConfig
+ * @memberof pbjs
+ * @param {...string} paths - One or more configuration paths.
+ * @returns {*} The configuration value(s).
+ * @alias module:pbjs.readConfig
+ */
 pbjsInstance.readConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.readConfig', arguments);
   return config.readAnyConfig.apply(config, arguments);
 };
+
+/**
+ * Merge a partial configuration object into the global Prebid configuration.
+ *
+ * @function mergeConfig
+ * @memberof pbjs
+ * @param {Object} newConfig - Partial configuration object to merge.
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeConfig
+ */
 pbjsInstance.mergeConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.mergeConfig', arguments);
   return config.mergeConfig.apply(config, arguments);
 };
+
+/**
+ * Merge bidder‑specific configuration into the global Prebid configuration.
+ *
+ * @function mergeBidderConfig
+ * @memberof pbjs
+ * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeBidderConfig
+ */
 pbjsInstance.mergeBidderConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.mergeBidderConfig', arguments);
   return config.mergeBidderConfig.apply(config, arguments);
 };
 
 /**
- * Set Prebid config options.
+ * Set global Prebid configuration.
  * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
  *
- * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
+ * @function setConfig
+ * @memberof pbjs
+ * @param {Object} options - Global Prebid configuration object. Must be pure JSON; JavaScript functions are not allowed.
+ * @returns {Object} The updated configuration object.
+ * @alias module:pbjs.setConfig
  */
 pbjsInstance.setConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.setConfig', arguments);
   return config.setConfig.apply(config, arguments);
 };
+/**
+ * Merge bidder‑specific configuration into the global Prebid configuration.
+ *
+ * @function mergeBidderConfig
+ * @memberof pbjs
+ * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeBidderConfig
+ */
 pbjsInstance.setBidderConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.setBidderConfig', arguments);
   return config.setBidderConfig.apply(config, arguments);
