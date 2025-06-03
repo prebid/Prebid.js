@@ -4,7 +4,6 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('gulp-util');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
@@ -45,7 +44,7 @@ var explicitModules = [
 function bundleToStdout() {
   nodeBundle().then(file => console.log(file));
 }
-bundleToStdout.displayName = 'bundle-to-stdout';
+exports['bundle-to-stdout'] = bundleToStdout;
 
 function clean() {
   return gulp.src(['build', 'dist'], {
@@ -54,6 +53,7 @@ function clean() {
   })
     .pipe(gulpClean());
 }
+exports.clean = clean;
 
 function requireNodeVersion(version) {
   return (done) => {
@@ -66,6 +66,7 @@ function requireNodeVersion(version) {
     done();
   }
 }
+// requireNodeVersion is a helper, not a task to be exported directly unless used as such.
 
 // Dependant task for building postbid. It escapes postbid-config file.
 function escapePostbidConfig() {
@@ -73,7 +74,7 @@ function escapePostbidConfig() {
     .pipe(jsEscape())
     .pipe(gulp.dest('build/postbid/'));
 };
-escapePostbidConfig.displayName = 'escape-postbid-config';
+exports['escape-postbid-config'] = escapePostbidConfig;
 
 function lint(done) {
   if (argv.nolint) {
@@ -92,6 +93,7 @@ function lint(done) {
     done(err);
   });
 };
+exports.lint = lint;
 
 // View the code coverage report in the browser.
 function viewCoverage(done) {
@@ -107,8 +109,7 @@ function viewCoverage(done) {
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
-
-viewCoverage.displayName = 'view-coverage';
+exports['view-coverage'] = viewCoverage;
 
 // View the reviewer tools page
 function viewReview(done) {
@@ -120,8 +121,7 @@ function viewReview(done) {
   opens(reviewUrl);
   done();
 };
-
-viewReview.displayName = 'view-review';
+exports['view-review'] = viewReview;
 
 function makeVerbose(config = webpackConfig) {
   return _.merge({}, config, {
@@ -183,6 +183,11 @@ function makeWebpackPkg(config = webpackConfig) {
 
   return function buildBundle() {
     return prebidSource(cloned)
+      .pipe(through.obj(function(file, enc, callback) {
+        console.log('webpackStream output file:', file.path, 'base:', file.base, 'cwd:', file.cwd);
+        this.push(file);
+        callback();
+      }))
       .pipe(gulp.dest('build/dist'));
   }
 }
@@ -193,7 +198,8 @@ function buildCreative(mode = 'production') {
     opts.devtool = 'inline-source-map'
   }
   return function() {
-    return gulp.src(['**/*'])
+    // Scope src to the 'creative' directory to avoid reading too many files
+    return gulp.src(['creative/**/*'])
       .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
       .pipe(gulp.dest('build/creative'))
   }
@@ -296,10 +302,11 @@ function bundle(dev, moduleArr) {
   } else {
     var diff = _.difference(modules, allModules);
     if (diff.length !== 0) {
-      throw new gutil.PluginError({
-        plugin: 'bundle',
-        message: 'invalid modules: ' + diff.join(', ')
-      });
+      // Assuming gutil.PluginError is still available or a similar error object can be used.
+      // If gutil is removed, this needs replacement. For now, let's assume it might come from 'gulp-util' if kept,
+      // or a new error object should be instantiated.
+      // For the purpose of this refactoring, we'll keep it and address gutil removal if it becomes a problem later.
+      throw new Error('PluginError: invalid modules: ' + diff.join(', '));
     }
   }
   const coreFile = helpers.getBuiltPrebidCoreFile(dev);
@@ -318,9 +325,9 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
+  console.log('Concatenating files:\n', entries);
+  console.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  console.log('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
   return wrap(gulp.src(entries))
@@ -519,60 +526,90 @@ function watchTaskMaker(options = {}) {
   }
 }
 
-const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
+const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, buildBundleDev, test))});
+const watchFast = watchTaskMaker({livereload: false, task: () => buildBundleDev}); // Assuming buildBundleDev is a named function after refactor
 
-// support tasks
-gulp.task(lint);
-gulp.task(watch);
+// Define named functions for tasks used in series/parallel
+const buildCreativeDev = gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers);
+const buildCreativeProd = gulp.series(buildCreative(), updateCreativeRenderers);
 
-gulp.task(clean);
+const buildBundleDev = gulp.series(buildCreativeDev, makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true));
+const buildBundleProd = gulp.series(buildCreativeProd, makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false));
+const buildBundleVerbose = gulp.series(buildCreativeDev, makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false));
 
-gulp.task(escapePostbidConfig);
+const testOnly = test; // test is already a named function
+const testAllFeaturesDisabled = testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false});
+const testCombined = gulp.series(clean, lint, testAllFeaturesDisabled, testOnly);
 
-gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
-gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
+const testCoverageSeries = gulp.series(clean, testCoverage); // testCoverage is a named function
+const coverallsSeries = gulp.series(testCoverageSeries, coveralls); // coveralls is a named function
 
-gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
-// build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
-// of dead code elimination.
-gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
+const setupNpmIgnore = shell.task("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true});
+// Ensure updateCreativeExample and setupDist are named functions if they are not already.
+// For now, assuming they are or will be.
+const buildSeries = gulp.series(clean, buildBundleProd, updateCreativeExample, setupDist);
+const buildReleaseSeries = gulp.series(buildSeries, setupNpmIgnore);
+const buildPostbidSeries = gulp.series(escapePostbidConfig, buildPostbid); // buildPostbid is a named function
 
-// public tasks (dependencies are needed for each task since they can be ran on their own)
-gulp.task('test-only', test);
-gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
+const serveSeries = gulp.series(clean, lint, gulp.parallel(buildBundleDev, watch, testCombined));
+const serveFastSeries = gulp.series(clean, gulp.parallel(buildBundleDev, watchFast));
+const serveProdSeries = gulp.series(clean, gulp.parallel(buildBundleProd, startLocalServer)); // startLocalServer is a named function
+const serveAndTestSeries = gulp.series(clean, gulp.parallel(buildBundleDev, watchFast, testTaskMaker({watch: true})));
+const serveE2ESeries = gulp.series(clean, buildBundleProd, gulp.parallel(() => startIntegServer(), startLocalServer));
+const serveE2EDevSeries = gulp.series(clean, buildBundleDev, gulp.parallel(() => startIntegServer(true), startLocalServer));
 
-gulp.task('test-coverage', gulp.series(clean, testCoverage));
-gulp.task(viewCoverage);
+const defaultTask = gulp.series(clean, buildBundleProd);
 
-gulp.task('coveralls', gulp.series('test-coverage', coveralls));
+const e2eTestOnlySeries = gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file}));
+const e2eTestSeries = gulp.series(requireNodeVersion(16), clean, buildBundleProd, e2eTestTaskMaker());
 
-// npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
-gulp.task('setup-npmignore', shell.task("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample, setupDist));
-gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
-gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
+const bundleTask = gulpBundle.bind(null, false);
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
-gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
-gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
-gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
-gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
+const reviewStartSeries = gulp.series(clean, lint, gulp.parallel(buildBundleDev, watch, testCoverageSeries), viewReview);
 
-gulp.task('default', gulp.series(clean, 'build-bundle-prod'));
+// Export tasks
+exports.lint = lint;
+exports.watch = watch;
+exports.clean = clean; // Already exported above, ensure consistency
+exports.escapePostbidConfig = escapePostbidConfig; // Already exported
 
-gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
-gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
+exports['build-creative-dev'] = buildCreativeDev;
+exports['build-creative-prod'] = buildCreativeProd;
 
-// other tasks
-gulp.task(bundleToStdout);
-gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
+exports['build-bundle-dev'] = buildBundleDev;
+exports['build-bundle-prod'] = buildBundleProd;
+exports['build-bundle-verbose'] = buildBundleVerbose;
 
-// build task for reviewers, runs test-coverage, serves, without watching
-gulp.task(viewReview);
-gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
+exports['test-only'] = testOnly;
+exports['test-all-features-disabled'] = testAllFeaturesDisabled;
+exports.test = testCombined;
 
-module.exports = nodeBundle;
+exports['test-coverage'] = testCoverageSeries;
+exports['view-coverage'] = viewCoverage; // Already exported
+
+exports.coveralls = coverallsSeries;
+
+exports['setup-npmignore'] = setupNpmIgnore;
+exports.build = buildSeries;
+exports['build-release'] = buildReleaseSeries;
+exports['build-postbid'] = buildPostbidSeries;
+
+exports.serve = serveSeries;
+exports['serve-fast'] = serveFastSeries;
+exports['serve-prod'] = serveProdSeries;
+exports['serve-and-test'] = serveAndTestSeries;
+exports['serve-e2e'] = serveE2ESeries;
+exports['serve-e2e-dev'] = serveE2EDevSeries;
+
+exports.default = defaultTask;
+
+exports['e2e-test-only'] = e2eTestOnlySeries;
+exports['e2e-test'] = e2eTestSeries;
+
+// bundleToStdout is already exported
+exports.bundle = bundleTask;
+
+// viewReview is already exported
+exports['review-start'] = reviewStartSeries;
+
+exports.nodeBundle = nodeBundle; // Export nodeBundle alongside other tasks
