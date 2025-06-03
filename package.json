@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "9.45.0-pre",
+  "version": "9.47.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.public.js",
   "exports": {
@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.16.5",
+    "@babel/plugin-transform-runtime": "^7.27.4",
     "@babel/register": "^7.24.6",
     "@eslint/compat": "^1.2.7",
     "@wdio/browserstack-service": "^9.0.5",
@@ -79,7 +80,6 @@
     "gulp-js-escape": "^1.0.1",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
-    "gulp-run-command": "^0.0.10",
     "gulp-shell": "^0.8.0",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-terser": "^2.0.1",
@@ -129,7 +129,6 @@
   },
   "dependencies": {
     "@babel/core": "^7.25.2",
-    "@babel/plugin-transform-runtime": "^7.18.9",
     "@babel/preset-env": "^7.16.8",
     "@babel/runtime": "^7.18.9",
     "core-js": "^3.13.0",

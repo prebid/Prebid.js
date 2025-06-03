@@ -1,6 +1,6 @@
 import { deepAccess, generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
 import { config } from '../../src/config.js';
-import { find, includes } from '../../src/polyfill.js';
+import { find } from '../../src/polyfill.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
@@ -115,12 +115,12 @@ export function getVideoTargetingParams(bid, VIDEO_TARGETING) {
   const result = {};
   const excludeProps = ['playerSize', 'context', 'w', 'h'];
   Object.keys(Object(bid.mediaTypes.video))
-    .filter(key => !includes(excludeProps, key))
+    .filter(key => !excludeProps.includes(key))
     .forEach(key => {
       result[ key ] = bid.mediaTypes.video[ key ];
     });
   Object.keys(Object(bid.params.video))
-    .filter(key => includes(VIDEO_TARGETING, key))
+    .filter(key => VIDEO_TARGETING.includes(key))
     .forEach(key => {
       result[ key ] = bid.params.video[ key ];
     });
