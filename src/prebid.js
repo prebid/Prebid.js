@@ -30,7 +30,6 @@ import {auctionManager} from './auctionManager.js';
 import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
-import {includes} from './polyfill.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
@@ -581,7 +580,7 @@ pbjsInstance.requestBids = (function() {
     }
     if (adUnitCodes && adUnitCodes.length) {
       // if specific adUnitCodes supplied filter adUnits for those codes
-      adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
+      adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
     } else {
       // otherwise derive adUnitCodes from adUnits
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
@@ -668,7 +667,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
       // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
-      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+      const bidderEligible = adUnitMediaTypes.some(type => bidderMediaTypes.includes(type));
       if (!bidderEligible) {
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
@@ -881,7 +880,7 @@ config.getConfig('aliasRegistry', config => {
  * The bid response object returned by an external bidder adapter during the auction.
  * @typedef {Object} AdapterBidResponse
  * @property {string} pbAg Auto granularity price bucket; CPM <= 5 ? increment = 0.05 : CPM > 5 && CPM <= 10 ? increment = 0.10 : CPM > 10 && CPM <= 20 ? increment = 0.50 : CPM > 20 ? priceCap = 20.00.  Example: `"0.80"`.
- * @property {string} pbCg Custom price bucket.  For example setup, see {@link setPriceGranularity}.  Example: `"0.84"`.
+ * @property {string} pbCg Custom price bucket.  For example setup, see `setConfig({ priceGranularity: ... })`.  Example: `"0.84"`.
  * @property {string} pbDg Dense granularity price bucket; CPM <= 3 ? increment = 0.01 : CPM > 3 && CPM <= 8 ? increment = 0.05 : CPM > 8 && CPM <= 20 ? increment = 0.50 : CPM > 20? priceCap = 20.00.  Example: `"0.84"`.
  * @property {string} pbLg Low granularity price bucket; $0.50 increment, capped at $5, floored to two decimal places.  Example: `"0.50"`.
  * @property {string} pbMg Medium granularity price bucket; $0.10 increment, capped at $20, floored to two decimal places.  Example: `"0.80"`.
@@ -923,10 +922,12 @@ pbjsInstance.getAllWinningBids = function () {
 
 /**
  * Get all of the bids that have won their respective auctions.
- * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions.
+ * @deprecated
+ * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions but failed to win the ad server auction.
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.getAllPrebidWinningBids', arguments);
+  logWarn('getAllPrebidWinningBids may be removed or renamed in a future version. This function returns bids that have won in prebid and have had targeting set but have not (yet?) won in the ad server. It excludes bids that have been rendered.');
   return auctionManager.getBidsReceived()
     .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 };
@@ -981,37 +982,79 @@ if (FEATURES.VIDEO) {
 }
 
 /**
- * Get Prebid config options
- * @param {Object} options
+ * Retrieve configuration values from the Prebid configuration object.
+ *
+ * @function getConfig
+ * @param {...(string|function)} args - One or more configuration paths (dot‑notation) and/or a callback to receive the value.
+ * @returns {*} The requested configuration value(s).
  * @alias module:pbjs.getConfig
  */
 pbjsInstance.getConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.getConfig', arguments);
   return config.getAnyConfig.apply(config, arguments);
 };
+
+/**
+ * Read configuration value(s) synchronously, without firing callbacks.
+ *
+ * @function readConfig
+ * @param {...string} paths - One or more configuration paths.
+ * @returns {*} The configuration value(s).
+ * @alias module:pbjs.readConfig
+ */
 pbjsInstance.readConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.readConfig', arguments);
   return config.readAnyConfig.apply(config, arguments);
 };
+
+/**
+ * Merge a partial configuration object into the global Prebid configuration.
+ *
+ * @function mergeConfig
+ * @param {Object} newConfig - Partial configuration object to merge.
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeConfig
+ */
 pbjsInstance.mergeConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.mergeConfig', arguments);
   return config.mergeConfig.apply(config, arguments);
 };
+
+/**
+ * Merge bidder‑specific configuration into the global Prebid configuration.
+ *
+ * @function mergeBidderConfig
+ * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeBidderConfig
+ */
 pbjsInstance.mergeBidderConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.mergeBidderConfig', arguments);
   return config.mergeBidderConfig.apply(config, arguments);
 };
 
 /**
- * Set Prebid config options.
+ * Set global Prebid configuration.
  * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
  *
- * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
+ * @function setConfig
+ * @param {Object} options - Global Prebid configuration object. Must be pure JSON; JavaScript functions are not allowed.
+ * @returns {Object} The updated configuration object.
+ * @alias module:pbjs.setConfig
  */
 pbjsInstance.setConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.setConfig', arguments);
   return config.setConfig.apply(config, arguments);
 };
+
+/**
+ * Merge bidder‑specific configuration into the global Prebid configuration.
+ *
+ * @function mergeBidderConfig
+ * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeBidderConfig
+ */
 pbjsInstance.setBidderConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.setBidderConfig', arguments);
   return config.setBidderConfig.apply(config, arguments);

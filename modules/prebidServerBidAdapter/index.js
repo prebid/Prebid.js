@@ -19,7 +19,6 @@ import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
-import {includes} from '../../src/polyfill.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gdpr.js';
@@ -308,7 +307,7 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
- * @param {number} timeout: maximum time to wait for rendering in milliseconds
+ * @param {number} timeout maximum time to wait for rendering in milliseconds
  */
 function doBidderSync(type, url, bidder, done, timeout) {
   if (!url) {
@@ -510,7 +509,7 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
           } catch (error) {
             logError(error);
           }
-          if (!result || (result.status && includes(result.status, 'Error'))) {
+          if (!result || (result.status && result.status.includes('Error'))) {
             logError('error parsing response: ', result ? result.status : 'not valid JSON');
             onResponse(false, requestedBidders);
           } else {
