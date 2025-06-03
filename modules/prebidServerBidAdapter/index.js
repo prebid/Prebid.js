@@ -19,7 +19,6 @@ import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
-import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gdpr.js';
