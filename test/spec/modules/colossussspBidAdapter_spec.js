@@ -28,18 +28,18 @@ describe('ColossussspAdapter', function () {
       source: {
         ext: {
           schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '0',
-          hp: 1,
-          rid: 'bidrequestid',
-          // name: 'alladsallthetime',
-          domain: 'example.com'
-        }
-      ]
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '0',
+                hp: 1,
+                rid: 'bidrequestid',
+                // name: 'alladsallthetime',
+                domain: 'example.com'
+              }
+            ]
           }
         }
       }

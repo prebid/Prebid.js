@@ -318,7 +318,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     );
 
     const merged = mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]);
-    moveUserEidsToExt(merged);
     moveSchainToExt(merged, bidderOrtb2[bidderRequest.bidderCode]);
     const fpd = Object.freeze(redact.ortb2(merged));
     bidderRequest.ortb2 = fpd;

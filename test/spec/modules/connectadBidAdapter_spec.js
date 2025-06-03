@@ -376,15 +376,15 @@ describe('ConnectAd Adapter', function () {
             source: {
               ext: {
                 schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                'asi': 'reseller1.com',
-                'sid': 'absc1',
-                'hp': 1
-              }
-            ]
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [
+                    {
+                      'asi': 'reseller1.com',
+                      'sid': 'absc1',
+                      'hp': 1
+                    }
+                  ]
                 }
               }
             }

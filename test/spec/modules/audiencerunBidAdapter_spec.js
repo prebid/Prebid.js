@@ -243,16 +243,16 @@ describe('AudienceRun bid adapter tests', function () {
         source: {
           ext: {
             schain: {
-        ver: '1.0',
-        complete: 1,
-        nodes: [
-          {
-            asi: 'directseller.com',
-            sid: '00001',
-            rid: 'BidRequest1',
-            hp: 1,
-          },
-        ],
+              ver: '1.0',
+              complete: 1,
+              nodes: [
+                {
+                  asi: 'directseller.com',
+                  sid: '00001',
+                  rid: 'BidRequest1',
+                  hp: 1,
+                },
+              ],
             }
           }
         }

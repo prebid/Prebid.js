@@ -813,15 +813,15 @@ const testsBuildRequests = [
               source: {
                 ext: {
                   schain: {
-              ver: '1.0',
-              complete: 1,
-              nodes: [
-                {
-                  asi: 'ssp.test',
-                  sid: '00001',
-                  hp: 1,
-                },
-              ],
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [
+                      {
+                        asi: 'ssp.test',
+                        sid: '00001',
+                        hp: 1,
+                      },
+                    ],
                   }
                 }
               }
