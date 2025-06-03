@@ -408,7 +408,10 @@ function runWebdriver({file}) {
       wdioConf
     ];
   }
-  return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
+  return execa(wdioCmd, wdioOpts, {
+    stdio: 'inherit',
+    env: Object.assign({}, process.env, {FORCE_COLOR: '1'})
+  });
 }
 
 function runKarma(options, done) {
