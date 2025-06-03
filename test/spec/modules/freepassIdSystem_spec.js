@@ -26,7 +26,7 @@ describe('FreePass ID System', function () {
     it('should have eids configuration', function () {
       expect(freepassIdSubmodule.eids).to.be.an('object');
       expect(freepassIdSubmodule.eids.freepassId).to.be.an('object');
-      expect(freepassIdSubmodule.eids.freepassId.source).to.equal('freepass-login.com');
+      expect(freepassIdSubmodule.eids.freepassId.source).to.equal('freepass.jp');
       expect(freepassIdSubmodule.eids.freepassId.atype).to.equal(1);
     });
   });
@@ -177,7 +177,7 @@ describe('FreePass ID System', function () {
     const eidConfig = freepassIdSubmodule.eids.freepassId;
 
     it('should have correct source and atype', function () {
-      expect(eidConfig.source).to.equal('freepass-login.com');
+      expect(eidConfig.source).to.equal('freepass.jp');
       expect(eidConfig.atype).to.equal(1);
     });
 

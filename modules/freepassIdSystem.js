@@ -6,7 +6,7 @@ const MODULE_NAME = 'freepassId';
 const FREEPASS_EIDS = {
   'freepassId': {
     atype: 1,
-    source: "freepass-login.com",
+    source: "freepass.jp",
     getValue: function(data) {
       if (data.freepassId) {
         return data.freepassId;

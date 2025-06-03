@@ -14,7 +14,7 @@ describe('FreePass adapter', function () {
     const bid = {
       bidder: 'freepass',
       userIdAsEids: [{
-        source: 'freepass-login.com',
+        source: 'freepass.jp',
         uids: [{
           id: 'commonIdValue',
           ext: {
@@ -52,7 +52,7 @@ describe('FreePass adapter', function () {
       bidRequests = [{
         'bidder': 'freepass',
         'userIdAsEids': [{
-          source: 'freepass-login.com',
+          source: 'freepass.jp',
           uids: [{
             id: 'commonIdValue',
             ext: {
@@ -171,7 +171,7 @@ describe('FreePass adapter', function () {
         'bidId': '28ffdf2a952532',
         'bidder': 'freepass',
         'userIdAsEids': [{
-          source: 'freepass-login.com',
+          source: 'freepass.jp',
           uids: [{
             id: 'commonIdValue',
             ext: {
