@@ -38,6 +38,7 @@ export const spec = {
       let npi = params.npi || '';
       let dgid = params.dgid || '';
       let test = false;
+      let testDk = '';
 
       if (params.testNPI) {
         npi = params.testNPI;
@@ -46,6 +47,11 @@ export const spec = {
 
       if (params.testDGID) {
         dgid = params.testDGID;
+        test = true;
+      }
+
+       if (params.testDk) {
+        testDk = params.testDk;
         test = true;
       }
 
@@ -70,7 +76,8 @@ export const spec = {
         version: 4,
         coppa: config.getConfig('coppa') == true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined,
-        test
+        test,
+        testDk
       }
 
       if (
