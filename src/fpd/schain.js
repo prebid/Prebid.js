@@ -60,14 +60,14 @@ function applySchainToPath(fragments, path, schainConfig) {
  * @param {Object} fpd - The first-party data object
  * @returns {Object} - The updated FPD object
  */
-export function moveSchainToExt(fpd) {
+export function moveSchainToExt(fpd, bidderOrtb2) {
   if (!fpd?.source?.schain) return fpd;
 
   // Ensure source.ext exists
   fpd.source.ext = fpd.source.ext || {};
 
   // Move schain to the new location and remove from original
-  fpd.source.ext.schain = fpd.source.schain;
+  fpd.source.ext.schain = bidderOrtb2?.source?.schain || fpd.source.schain;
   delete fpd.source.schain;
 
   return fpd;
