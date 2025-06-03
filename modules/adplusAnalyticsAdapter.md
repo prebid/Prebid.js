@@ -4,13 +4,13 @@ Module Name: AdPlus Analytics Adapter
 
 Module Type: Analytics Adapter
 
-Maintainer: adplus.destek@yaani.com.tr
+Maintainer: adplusdestek@turkcell.com.tr
 
 ---
 
 # Description
 
-Analytics adapter for AdPlus platform. Contact [adplus.destek@yaani.com.tr]() if you have any questions about integration.
+Analytics adapter for AdPlus platform. Contact [adplusdestek@turkcell.com.tr]() if you have any questions about integration.
 
 ---
 

@@ -1,6 +1,6 @@
 ## AdPlus User ID Submodule
 
-For assistance setting up your module please contact us at dijitalreklam@turkcell.com.tr.
+For assistance setting up your module please contact us at adplusdestek@turkcell.com.tr.
 
 ### Prebid Params
 
