@@ -1,4 +1,3 @@
-import { } from '../../src/polyfill.js';
 import { vastXmlEditorFactory } from '../../libraries/video/shared/vastXmlEditor.js';
 import { generateUUID } from '../../src/utils.js';
 
