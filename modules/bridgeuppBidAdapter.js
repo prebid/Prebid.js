@@ -1,4 +1,4 @@
-import {deepSetValue, isFn, logWarn} from '../src/utils.js';
+import {deepSetValue, isFn, logWarn, scheduleBackgroundTask} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
@@ -38,16 +38,18 @@ function reportEvents(eventType, eventData) {
     eventPayload: eventData
   });
 
-  fetch(`${SERVER_PATH_US1_EVENTS}`, {
-    body: payload,
-    keepalive: true,
-    credentials: 'include',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  }).catch((_e) => {
-    // ignore errors for now
+  scheduleBackgroundTask(() => {
+    fetch(`${SERVER_PATH_US1_EVENTS}`, {
+      body: payload,
+      keepalive: true,
+      credentials: 'include',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).catch((_e) => {
+      // ignore errors for now
+    });
   });
 }
 
@@ -245,7 +247,7 @@ export const spec = {
    * @param {TimedOutBid[]} timeoutData - Array of timeout details.
    */
   onTimeout: (timeoutData) => {
-    reportEvents('onTimeout', timeoutData);
+    scheduleBackgroundTask(() => reportEvents('onTimeout', timeoutData));
   },
 
   /**
@@ -254,7 +256,7 @@ export const spec = {
    * @param {Bid} bid - The bid object
    */
   onSetTargeting: (bid) => {
-    reportEvents('onSetTargeting', bid);
+    scheduleBackgroundTask(() => reportEvents('onSetTargeting', bid));
   },
 
   /**
@@ -263,7 +265,7 @@ export const spec = {
    * @param {Bid} bid - The bid that successfully rendered.
    */
   onAdRenderSucceeded: (bid) => {
-    reportEvents('onAdRenderSucceeded', bid);
+    scheduleBackgroundTask(() => reportEvents('onAdRenderSucceeded', bid));
   },
 
   /**
@@ -272,7 +274,7 @@ export const spec = {
    * @param {Object} errorData - Details about the error.
    */
   onBidderError: (errorData) => {
-    reportEvents('onBidderError', errorData);
+    scheduleBackgroundTask(() => reportEvents('onBidderError', errorData));
   },
 
   /**
@@ -281,7 +283,7 @@ export const spec = {
    * @param {Bid} bid - The bid that won the auction.
    */
   onBidWon: (bid) => {
-    reportEvents('onBidWon', bid);
+    scheduleBackgroundTask(() => reportEvents('onBidWon', bid));
   }
 
 };
