@@ -42,8 +42,8 @@ export const dmdIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function getId
    * @param {SubmoduleConfig} [config]
-   * @param {ConsentData}
-   * @param {Object} cacheIdObj - existing id, if any consentData]
+   * @param {ConsentData} consentData
+   * @param {Object} cacheIdObj - existing id, if any
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData, cacheIdObj) {
