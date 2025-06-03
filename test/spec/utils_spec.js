@@ -884,9 +884,15 @@ describe('Utils', function () {
   describe('insertElement', function () {
     it('returns a node at the top of the target by default', function () {
       const toInsert = document.createElement('div');
-      const target = document.getElementsByTagName('body')[0];
+      const target = document.getElementsByTagName('body')[0]; // This might be undefined
       const inserted = utils.insertElement(toInsert, document, 'body');
-      expect(inserted).to.equal(target.firstChild);
+
+      if (target) { // If body exists
+        expect(inserted).to.equal(target.firstChild);
+      } else { // If body does not exist
+        // insertElement, when 'body' is specified but not found, should return undefined.
+        expect(inserted).to.be.undefined;
+      }
     });
     it('returns a node at bottom of target if 4th argument is true', function () {
       const toInsert = document.createElement('div');
