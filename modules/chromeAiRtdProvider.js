@@ -38,7 +38,6 @@ const isLanguageInLocalStorage = (url) => {
 
   const currentUrl = url || getCurrentUrl();
   const storedLanguageJson = storage.getDataFromLocalStorage(CONSTANTS.STORAGE_KEY);
-
   if (storedLanguageJson) {
     try {
       const languageObject = JSON.parse(storedLanguageJson);
@@ -60,7 +59,7 @@ const isLanguageInLocalStorage = (url) => {
  * @param {string} url - The URL to associate with this language
  * @returns {boolean} - Whether the operation was successful
  */
-const storeDetectedLanguage = (language, confidence, url) => {
+export const storeDetectedLanguage = (language, confidence, url) => {
   try {
     if (!language) {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid language to store`);
@@ -75,7 +74,6 @@ const storeDetectedLanguage = (language, confidence, url) => {
     // Get existing language object or create a new one
     let languageObject = {};
     const storedLanguageJson = storage.getDataFromLocalStorage(CONSTANTS.STORAGE_KEY);
-
     if (storedLanguageJson) {
       languageObject = JSON.parse(storedLanguageJson);
     }
@@ -102,7 +100,7 @@ const storeDetectedLanguage = (language, confidence, url) => {
  * @param {string} text - The text to detect language for
  * @returns {Promise<Object|null>} - Object with detected language and confidence or null if detection fails
  */
-const detectLanguage = async (text) => {
+export const detectLanguage = async (text) => {
   try {
     // Check if language detection API is available
     if (!('LanguageDetector' in self)) {
@@ -186,10 +184,7 @@ const init = async (config, userConsent) => {
   }
 
   // Detect language using Chrome AI
-  // console.time('ChromeAI Language detection');
   const detectionResult = await detectLanguage(pageText);
-  // console.timeEnd('ChromeAI Language detection');
-
   if (!detectionResult) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to detect language, aborting`);
     return false;
@@ -227,7 +222,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting detected language from localStorage:`, storedLanguage);
 
     // Add language information to bid request
-    mergeDeep(reqBidsConfigObj.ortb2Fragments.global, {
+    mergeDeep(reqBidsConfigObj.ortb2, {
       site: {
         content: {
           language: storedLanguage.language
