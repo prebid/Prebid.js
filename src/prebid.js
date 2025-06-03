@@ -985,7 +985,6 @@ if (FEATURES.VIDEO) {
  * Retrieve configuration values from the Prebid configuration object.
  *
  * @function getConfig
- * @param {...(string|function)} args - One or more configuration paths (dot‑notation) and/or a callback to receive the value.
  * @returns {*} The requested configuration value(s).
  * @alias module:pbjs.getConfig
  */
@@ -998,7 +997,6 @@ pbjsInstance.getConfig = function () {
  * Read configuration value(s) synchronously, without firing callbacks.
  *
  * @function readConfig
- * @param {...string} paths - One or more configuration paths.
  * @returns {*} The configuration value(s).
  * @alias module:pbjs.readConfig
  */
@@ -1011,7 +1009,6 @@ pbjsInstance.readConfig = function () {
  * Merge a partial configuration object into the global Prebid configuration.
  *
  * @function mergeConfig
- * @param {Object} newConfig - Partial configuration object to merge.
  * @returns {Object} The resulting merged configuration.
  * @alias module:pbjs.mergeConfig
  */
@@ -1024,7 +1021,6 @@ pbjsInstance.mergeConfig = function () {
  * Merge bidder‑specific configuration into the global Prebid configuration.
  *
  * @function mergeBidderConfig
- * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
  * @returns {Object} The resulting merged configuration.
  * @alias module:pbjs.mergeBidderConfig
  */
@@ -1038,7 +1034,6 @@ pbjsInstance.mergeBidderConfig = function () {
  * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
  *
  * @function setConfig
- * @param {Object} options - Global Prebid configuration object. Must be pure JSON; JavaScript functions are not allowed.
  * @returns {Object} The updated configuration object.
  * @alias module:pbjs.setConfig
  */
@@ -1051,7 +1046,6 @@ pbjsInstance.setConfig = function () {
  * Merge bidder‑specific configuration into the global Prebid configuration.
  *
  * @function mergeBidderConfig
- * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
  * @returns {Object} The resulting merged configuration.
  * @alias module:pbjs.mergeBidderConfig
  */
