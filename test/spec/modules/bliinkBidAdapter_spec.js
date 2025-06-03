@@ -1103,8 +1103,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
     const metaElement = document.createElement('meta');
     metaElement.name = 'keywords';
     metaElement.content = 'Bliink, Saber, Prebid';
-    configStub = sinon.stub(config, 'getConfig');
-    configStub.withArgs('coppa').returns(true);
+    configStub = sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
     querySelectorStub = sinon.stub(document, 'querySelector').returns(metaElement);
   });
 
