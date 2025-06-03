@@ -1,6 +1,5 @@
 import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
-import { find } from 'src/polyfill.js';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
@@ -724,7 +723,7 @@ describe('onetag', function () {
         let dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
         if (dataItem.meta.mediaType === VIDEO) {
-          const { context } = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
+          const { context } = requestData.bids.find((item) => item.bidId === dataItem.requestId);
           if (context === INSTREAM) {
             expect(dataItem).to.include.all.keys('videoCacheKey', 'vastUrl');
             expect(dataItem.vastUrl).to.be.a('string');
