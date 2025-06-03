@@ -4,6 +4,7 @@ import {isStr, isEmpty, deepAccess, isArray, getUnixTimestampFromNow, convertObj
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {toLegacyResponse, toOrtbNativeRequest} from '../src/native.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
@@ -174,13 +175,12 @@ const storageTool = (function () {
         metaInternal.usi = bidParamUserId;
       } else if (isStr(ortb2?.user?.id)) {
         metaInternal.usi = ortb2.user.id;
-      } else {
-        const unvettedOrtb2Eids = deepAccess(ortb2, 'user.ext.eids');
-        const vettedOrtb2Eids = isArray(unvettedOrtb2Eids) && unvettedOrtb2Eids.length > 0 ? unvettedOrtb2Eids : false;
+      }
 
-        if (vettedOrtb2Eids) {
-          metaInternal.eids = vettedOrtb2Eids;
-        }
+      const unvettedOrtb2Eids = getFirstValidValueFromArray(bidParams, 'userIdAsEids') || deepAccess(ortb2, 'user.ext.eids');
+      const vettedOrtb2Eids = isArray(unvettedOrtb2Eids) && unvettedOrtb2Eids.length > 0 ? unvettedOrtb2Eids : false;
+      if (vettedOrtb2Eids) {
+        metaInternal.eids = vettedOrtb2Eids;
       }
 
       if (!metaInternal.usi) {
@@ -287,7 +287,7 @@ export const spec = {
     queryParamsAndValues.push('format=prebid')
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
-    queryParamsAndValues.push('pbv=' + window.$$PREBID_GLOBAL$$.version);
+    queryParamsAndValues.push('pbv=' + getGlobal().version);
     if (gdprApplies !== undefined) {
       const flag = gdprApplies ? '1' : '0'
       queryParamsAndValues.push('consentString=' + consentString);

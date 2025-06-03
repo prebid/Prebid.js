@@ -11,6 +11,7 @@ import { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
 
 const BIDDER_CODE = 'pubmatic';
@@ -104,6 +105,9 @@ const converter = ortbConverter({
     const marketPlaceEnabled = bidderRequest?.bidderCode
       ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (marketPlaceEnabled) updateRequestExt(request, bidderRequest);
+    if (bidderRequest?.ortb2?.ext?.prebid?.previousauctioninfo) {
+      deepSetValue(request, 'ext.previousAuctionInfo', bidderRequest.ortb2.ext.prebid.previousauctioninfo);
+    }
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -488,6 +492,11 @@ const updateResponseWithCustomFields = (res, bid, ctx) => {
   if (isNonEmptyArray(bid.adomain)) {
     res.meta.clickUrl = res.meta.brandId = bid.adomain[0];
   }
+
+  if (bid.cat && isNonEmptyArray(bid.cat)) {
+    res.meta.secondaryCatIds = bid.cat;
+    res.meta.primaryCatId = bid.cat[0];
+  }
 }
 
 const addExtenstionParams = (req) => {
@@ -688,9 +697,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} validBidRequests - an array of bids
-   * @param {Object} bidderRequest
-   * @return {Object} Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest - bidder request object
+   * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const { page, ref } = bidderRequest?.refererInfo || {};
