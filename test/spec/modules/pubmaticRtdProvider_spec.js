@@ -235,12 +235,12 @@ describe('Pubmatic RTD Provider', () => {
             expect(getUtm()).to.be.oneOf(['0', '1']);
         });
 
-        // it('should extract bidder correctly', () => {
-        //     expect(getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
-        //     expect(getBidder({})).to.be.undefined;
-        //     expect(getBidder(null)).to.be.undefined;
-        //     expect(getBidder(undefined)).to.be.undefined;
-        // });
+        it('should extract bidder correctly', () => {
+            expect(getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
+            expect(getBidder({})).to.be.undefined;
+            expect(getBidder(null)).to.be.undefined;
+            expect(getBidder(undefined)).to.be.undefined;
+        });
     });
 
     describe('getFloorsConfig', () => {
