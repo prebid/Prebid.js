@@ -32,7 +32,7 @@ export const DEFAULT_PROCESSORS = {
           ortbRequest.tmax = timeout;
         }
       }
-    },
+    }
   },
   [IMP]: {
     fpd: {
