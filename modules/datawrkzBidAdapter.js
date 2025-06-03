@@ -45,7 +45,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {BidRequest[]} validBidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param {*} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -413,12 +414,12 @@ function buildBannerResponse(bidRequest, bidResponse) {
     let placementCode = '';
 
     if (bidRequest) {
-      let bidResponse = createBid(1);
+      let bidResponse = createBid();
       placementCode = bidRequest.placementCode;
       bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
-        let bid = createBid(2);
+        let bid = createBid();
         bid.requestId = bidRequest.bidId;
         bid.bidderCode = bidRequest.bidder;
         bidResponses.push(bid);
@@ -454,12 +455,12 @@ function buildNativeResponse(bidRequest, response) {
     let placementCode = '';
 
     if (bidRequest) {
-      let bidResponse = createBid(1);
+      let bidResponse = createBid();
       placementCode = bidRequest.placementCode;
       bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
-        let bid = createBid(2);
+        let bid = createBid();
         bid.requestId = bidRequest.bidId;
         bid.bidderCode = bidRequest.bidder;
         bidResponses.push(bid);
@@ -503,12 +504,12 @@ function buildVideoResponse(bidRequest, response) {
     let placementCode = '';
 
     if (bidRequest) {
-      let bidResponse = createBid(1);
+      let bidResponse = createBid();
       placementCode = bidRequest.placementCode;
       bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
-        let bid = createBid(2);
+        let bid = createBid();
         bid.requestId = bidRequest.bidId;
         bid.bidderCode = bidRequest.bidder;
         bidResponses.push(bid);

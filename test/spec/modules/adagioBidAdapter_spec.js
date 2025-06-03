@@ -999,7 +999,8 @@ describe('Adagio bid adapter', () => {
         const bid01 = new BidRequestBuilder().withParams().build();
         bid01.ortb2Imp = {
           ext: {
-            data: { pbadslot: gpid }
+            data: {},
+            gpid,
           }
         };
         const bidderRequest = new BidderRequestBuilder().build();
@@ -1442,8 +1443,6 @@ describe('Adagio bid adapter', () => {
 
       const bidRequestNative = utils.deepClone(bidRequest)
       bidRequestNative.nativeParams = {
-        sendTargetingKeys: false,
-
         clickUrl: {
           required: true,
         },

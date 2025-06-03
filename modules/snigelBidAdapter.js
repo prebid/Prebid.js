@@ -72,7 +72,6 @@ export const spec = {
             id: r.adUnitCode,
             tid: r.transactionId,
             gpid: deepAccess(r, 'ortb2Imp.ext.gpid'),
-            pbadslot: deepAccess(r, 'ortb2Imp.ext.data.pbadslot') || deepAccess(r, 'ortb2Imp.ext.gpid'),
             name: r.params.placement,
             counter: getPlacementCounter(r.params.placement),
             sizes: r.sizes,

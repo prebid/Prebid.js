@@ -124,7 +124,7 @@ export const spec = {
         tid: bid.ortb2Imp?.ext?.tid
       });
 
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
       if (gpid) {
         placement.gpid = gpid;
       }

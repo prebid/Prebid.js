@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { spec } from 'modules/kargoBidAdapter.js';
 import { config } from 'src/config.js';
+import { getStorageManager } from 'src/storageManager.js';
 const utils = require('src/utils');
+const STORAGE = getStorageManager({bidderCode: 'kargo'});
 
 describe('kargo adapter tests', function() {
   let bid, outstreamBid, testBids, sandbox, clock, frozenNow = new Date(), oldBidderSettings;
@@ -784,18 +786,15 @@ describe('kargo adapter tests', function() {
         expect(payload.imp[3].native).to.deep.equal(nativeImp);
       });
 
-      it('pulls gpid from ortb2Imp.ext.gpid then ortb2Imp.ext.data.pbadslot', function () {
+      it('pulls gpid from ortb2Imp.ext.gpid', function () {
         const gpidGpid = 'ortb2Imp.ext.gpid-gpid';
-        const gpidPbadslot = 'ortb2Imp.ext.data.pbadslot-gpid'
         const testBids = [
           {
             ...minimumBidParams,
             ortb2Imp: {
               ext: {
                 gpid: gpidGpid,
-                data: {
-                  pbadslot: gpidPbadslot
-                }
+                data: {}
               }
             }
           },
@@ -812,9 +811,7 @@ describe('kargo adapter tests', function() {
             ...minimumBidParams,
             ortb2Imp: {
               ext: {
-                data: {
-                  pbadslot: gpidPbadslot
-                }
+                data: {}
               }
             }
           },
@@ -838,8 +835,6 @@ describe('kargo adapter tests', function() {
         expect(payload.imp[0].fpd).to.deep.equal({ gpid: gpidGpid });
         // Only ext.gpid
         expect(payload.imp[1].fpd).to.deep.equal({ gpid: gpidGpid });
-        // Only ext.data.pbadslot
-        expect(payload.imp[2].fpd).to.deep.equal({ gpid: gpidPbadslot });
         // Neither present
         expect(payload.imp[3].fpd).to.be.undefined;
         expect(payload.imp[4].fpd).to.be.undefined;
@@ -1001,9 +996,9 @@ describe('kargo adapter tests', function() {
       });
 
       it('retrieves CRB from cookies if localstorage is not functional', function() {
-        // Note: this does not cause localStorage to throw an error in Firefox so in that browser this
-        // test is not 100% true to its name
-        sandbox.stub(localStorage, 'getItem').throws();
+        // Safari does not allow stubbing localStorage methods directly.
+        // Stub the storage manager instead so all browsers behave consistently.
+        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
         setCrb('valid', 'invalid');
 
         const payload = getPayloadFromTestBids(testBids, bidderRequest);
@@ -1269,7 +1264,7 @@ describe('kargo adapter tests', function() {
       });
 
       it('fails gracefully if there is no localStorage', function() {
-        sandbox.stub(localStorage, 'getItem').throws();
+        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
         let payload = getPayloadFromTestBids(testBids);
         expect(payload.user).to.deep.equal({
           crbIDs: {},
@@ -1589,7 +1584,7 @@ describe('kargo adapter tests', function() {
       });
 
       it('fails gracefully without localStorage', function() {
-        sandbox.stub(localStorage, 'getItem').throws();
+        sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
         let payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.be.undefined;
       });

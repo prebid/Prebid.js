@@ -6,7 +6,7 @@
  * @module modules/adlooxRtdProvider
  * @requires module:modules/realTimeData
  * @requires module:modules/adlooxAnalyticsAdapter
- * @optional module:modules/intersectionRtdProvider
+ * @see module:modules/intersectionRtdProvider (optional)
  */
 
 /* eslint prebid/validate-imports: "off" */
@@ -116,7 +116,6 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     's': _map(adUnits, function(unit) {
       // gptPreAuction runs *after* RTD so pbadslot may not be populated... (╯°□°)╯ ┻━┻
       const gpid = deepAccess(unit, 'ortb2Imp.ext.gpid') ||
-                   deepAccess(unit, 'ortb2Imp.ext.data.pbadslot') ||
                    getGptSlotInfoForAdUnitCode(unit.code).gptSlot ||
                    unit.code;
       const ref = [ gpid ];

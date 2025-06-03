@@ -859,7 +859,7 @@ describe('S2S Adapter', function () {
           it('should be set to 0.75 * requestTimeout, if lower than maxTimeout', () => {
             adapter.callBids({...REQUEST, requestBidsTimeout: maxTimeout / 2}, BID_REQUESTS, addBidResponse, done, ajax);
             const req = JSON.parse(server.requests[0].requestBody);
-            expect(req.tmax).to.eql(maxTimeout / 2 * 0.75);
+            expect(req.tmax).to.eql(Math.floor(maxTimeout / 2 * 0.75));
           })
         })
       })
@@ -2839,76 +2839,6 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.bcat).to.deep.equal(bcat);
     });
 
-    describe('pbAdSlot config', function () {
-      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext\" is undefined', function () {
-        const consentConfig = { s2sConfig: CONFIG };
-        config.setConfig(consentConfig);
-        const bidRequest = utils.deepClone(REQUEST);
-
-        adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-
-        expect(parsedRequestBody.imp).to.be.a('array');
-        expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
-      });
-
-      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is undefined', function () {
-        const consentConfig = { s2sConfig: CONFIG };
-        config.setConfig(consentConfig);
-        const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].ortb2Imp = {};
-
-        adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-
-        expect(parsedRequestBody.imp).to.be.a('array');
-        expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
-      });
-
-      it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" is empty string', function () {
-        const consentConfig = { s2sConfig: CONFIG };
-        config.setConfig(consentConfig);
-        const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].ortb2Imp = {
-          ext: {
-            data: {
-              pbadslot: ''
-            }
-          }
-        };
-
-        adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-
-        expect(parsedRequestBody.imp).to.be.a('array');
-        expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.not.have.deep.nested.property('ext.data.pbadslot');
-      });
-
-      it('should send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext.data.pbadslot\" value is a non-empty string', function () {
-        const consentConfig = { s2sConfig: CONFIG };
-        config.setConfig(consentConfig);
-        const bidRequest = utils.deepClone(REQUEST);
-        bidRequest.ad_units[0].ortb2Imp = {
-          ext: {
-            data: {
-              pbadslot: '/a/b/c'
-            }
-          }
-        };
-
-        adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-        const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
-
-        expect(parsedRequestBody.imp).to.be.a('array');
-        expect(parsedRequestBody.imp[0]).to.be.a('object');
-        expect(parsedRequestBody.imp[0]).to.have.deep.nested.property('ext.data.pbadslot');
-        expect(parsedRequestBody.imp[0].ext.data.pbadslot).to.equal('/a/b/c');
-      });
-    });
-
     describe('GAM ad unit config', function () {
       it('should not send \"imp.ext.data.adserver.adslot\" if \"ortb2Imp.ext\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
@@ -3158,9 +3088,6 @@ describe('S2S Adapter', function () {
       expect(addBidResponse.firstCall.args[0]).to.equal('div-gpt-ad-1460505748561-0');
 
       expect(addBidResponse.firstCall.args[1]).to.have.property('requestId', '123');
-
-      expect(addBidResponse.firstCall.args[1])
-        .to.have.property('statusMessage', 'Bid available');
     });
 
     it('should have dealId in bidObject', function () {
@@ -3277,7 +3204,6 @@ describe('S2S Adapter', function () {
 
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('statusMessage', 'Bid available');
       expect(response).to.have.property('bidderCode', 'appnexus');
       expect(response).to.have.property('requestId', '123');
       expect(response).to.have.property('cpm', 0.5);
@@ -3391,7 +3317,6 @@ describe('S2S Adapter', function () {
 
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
         expect(response).to.have.property('mediaType', 'video');
         expect(response).to.have.property('bidderCode', 'appnexus');
@@ -3425,7 +3350,6 @@ describe('S2S Adapter', function () {
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
 
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('videoCacheKey', 'abcd1234');
         expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=abcd1234');
       });
@@ -3492,7 +3416,6 @@ describe('S2S Adapter', function () {
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
 
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('videoCacheKey', 'a5ad3993');
         expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
       }
@@ -3572,7 +3495,6 @@ describe('S2S Adapter', function () {
 
         sinon.assert.calledOnce(addBidResponse);
         const response = addBidResponse.firstCall.args[1];
-        expect(response).to.have.property('statusMessage', 'Bid available');
         expect(response).to.have.property('adm').deep.equal(RESPONSE_OPENRTB_NATIVE.seatbid[0].bid[0].adm);
         expect(response).to.have.property('mediaType', 'native');
         expect(response).to.have.property('bidderCode', 'appnexus');

@@ -4,7 +4,8 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('gulp-util');
+var gutil = require('plugin-error');
+var fancyLog = require('fancy-log');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
@@ -17,7 +18,6 @@ var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var gulpif = require('gulp-if');
-var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
@@ -27,7 +27,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
-const run = require('gulp-run-command').default;
+
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -86,7 +86,7 @@ function lint(done) {
   if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
     args.push('--quiet')
   }
-  return run(args.join(' '))().then(() => {
+  return shell.task(args.join(' '))().then(() => {
     done();
   }, (err) => {
     done(err);
@@ -193,7 +193,7 @@ function buildCreative(mode = 'production') {
     opts.devtool = 'inline-source-map'
   }
   return function() {
-    return gulp.src(['**/*'])
+    return gulp.src(['creative/**/*'])
       .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
       .pipe(gulp.dest('build/creative'))
   }
@@ -229,7 +229,8 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+  const sm = dev || argv.sourceMaps;
+  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist'), {sourcemaps: sm ? '.' : false}));
 }
 
 function nodeBundle(modules, dev = false) {
@@ -318,15 +319,13 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
+  fancyLog('Concatenating files:\n', entries);
+  fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
+  fancyLog('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  return wrap(gulp.src(entries))
-    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
-    .pipe(concat(outputFileName))
-    .pipe(gulpif(sm, sourcemaps.write('.')));
+  return wrap(gulp.src(entries, {sourcemaps: sm}))
+    .pipe(concat(outputFileName));
 }
 
 function setupDist() {
@@ -408,15 +407,22 @@ function runWebdriver({file}) {
       wdioConf
     ];
   }
-  return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
+  return execa(wdioCmd, wdioOpts, {
+    stdio: 'inherit',
+    env: Object.assign({}, process.env, {FORCE_COLOR: '1'})
+  });
 }
 
 function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
+  const env = Object.assign({}, options.env, process.env);
+  if (!env.TEST_CHUNKS) {
+    env.TEST_CHUNKS = '4';
+  }
   const child = fork('./karmaRunner.js', null, {
-    env: Object.assign({}, options.env, process.env)
+    env
   });
   child.on('exit', (exitCode) => {
     if (exitCode) {
@@ -547,7 +553,7 @@ gulp.task(viewCoverage);
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
-gulp.task('setup-npmignore', run("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('setup-npmignore', shell.task("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
 gulp.task('build', gulp.series('update-browserslist', clean, 'build-bundle-prod', updateCreativeExample, setupDist));
 gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));

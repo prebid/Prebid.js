@@ -3,7 +3,6 @@
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
@@ -185,7 +184,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const { context, adUnitCode } = find(requestData.bids, (item) =>
+      const { context, adUnitCode } = ((requestData.bids) || []).find((item) =>
         item.bidId === bid.requestId &&
         item.type === VIDEO
       );
@@ -209,8 +208,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      paapi: fledgeAuctionConfigs,
-    }
+      paapi: fledgeAuctionConfigs}
   } else {
     return bids;
   }
@@ -361,7 +359,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
   this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');

@@ -17,7 +17,6 @@ import {
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
-import {find, includes} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -96,8 +95,7 @@ export const spec = {
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
           gpp_sid:
-            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
-        }),
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || []}),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
       if (topicsData) {
@@ -258,7 +256,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid');
   const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
@@ -327,7 +325,7 @@ function createNewBannerBid(response) {
  * @param bidRequest server request
  */
 function createNewVideoBid(response, bidRequest) {
-  const imp = find((deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
+  const imp = (deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
 
   let result = {
     dealId: response.dealid,
@@ -479,7 +477,7 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
   const size = extractPlayerSize(bidRequest);
@@ -500,12 +498,12 @@ function openRtbImpression(bidRequest) {
 
   const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   Object.keys(mediaTypesParams)
-    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
     .forEach(param => imp.video[param] = mediaTypesParams[param]);
 
   const videoParams = deepAccess(bidRequest, 'params.video', {});
   Object.keys(videoParams)
-    .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
+    .filter(param => OPENRTB_VIDEO_BIDPARAMS.includes(param))
     .forEach(param => imp.video[param] = videoParams[param]);
 
   if (imp.video.skippable) {
@@ -577,7 +575,7 @@ function openRtbSite(bidRequest, bidderRequest) {
   const siteParams = deepAccess(bidRequest, 'params.site');
   if (siteParams) {
     Object.keys(siteParams)
-      .filter(param => includes(OPENRTB_VIDEO_SITEPARAMS, param))
+      .filter(param => OPENRTB_VIDEO_SITEPARAMS.includes(param))
       .forEach(param => result[param] = siteParams[param]);
   }
   return result;
