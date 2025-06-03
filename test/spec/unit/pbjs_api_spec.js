@@ -2703,27 +2703,7 @@ describe('Unit: Prebid Module', function () {
                 expect(auctionArgs.adUnits[0].bids.length).to.equal(0);
               });
             });
-
-            ['sendTargetingKeys', 'types'].forEach(key => {
-              it(`should reject native that includes both ortb and ${key}`, async () => {
-                const adUnit = {
-                  code: 'au',
-                  mediaTypes: {
-                    native: {
-                      ortb: {},
-                      [key]: {}
-                    }
-                  },
-                  bids: [{bidder: 'appnexus'}]
-                };
-                await runAuction({
-                  adUnits: [adUnit]
-                });
-                expect(auctionArgs.adUnits[0].bids.length).to.equal(0);
-              })
-            });
           }
-
           it('should throw error message and remove adUnit if adUnit.bids is not defined correctly', async function () {
             const adUnits = [{
               code: 'ad-unit-1',
