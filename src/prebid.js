@@ -1064,6 +1064,7 @@ pbjsInstance.setConfig = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.setConfig', arguments);
   return config.setConfig.apply(config, arguments);
 };
+
 /**
  * Merge bidder‑specific configuration into the global Prebid configuration.
  *
