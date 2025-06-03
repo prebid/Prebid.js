@@ -859,7 +859,7 @@ describe('S2S Adapter', function () {
           it('should be set to 0.75 * requestTimeout, if lower than maxTimeout', () => {
             adapter.callBids({...REQUEST, requestBidsTimeout: maxTimeout / 2}, BID_REQUESTS, addBidResponse, done, ajax);
             const req = JSON.parse(server.requests[0].requestBody);
-            expect(req.tmax).to.eql(maxTimeout / 2 * 0.75);
+            expect(req.tmax).to.eql(Math.floor(maxTimeout / 2 * 0.75));
           })
         })
       })
