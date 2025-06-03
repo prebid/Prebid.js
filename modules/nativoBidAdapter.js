@@ -53,7 +53,7 @@ export function BidDataMap() {
   /**
    * Add a refence to the index by key value
    * @param {String} key - The key to store the index reference
-   * @param {Integer} index - The index value of the bidData
+   * @param {number} index - The index value of the bidData
    */
   function addKeyReference(key, index) {
     if (!referenceMap.hasOwnProperty(key)) {
@@ -64,7 +64,7 @@ export function BidDataMap() {
   /**
    * Adds a bid to the map
    * @param {Object} bid - Bid data
-   * @param {Array/String} keys - Keys to reference the index value
+   * @param {(Array|string)} keys - Keys to reference the index value
    */
   function addBidData(bid, keys) {
     const index = bids.length
@@ -129,7 +129,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {Object} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -721,7 +721,7 @@ function appendQSParamString(str, key, value) {
 
 /**
  * Convert an object to query string parameters
- * @param {Object} obj - Object to convert
+ * @param {Object[]} arr - Object to convert
  * @returns
  */
 function arrayToQS(arr) {

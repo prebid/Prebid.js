@@ -2,7 +2,7 @@ import {deepAccess, deepClone, isArray, logError, logInfo, mergeDeep, isEmpty, i
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {includes} from '../src/polyfill.js';
+
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {config} from '../src/config.js';
 import { interpretNativeBid, OPENRTB } from '../libraries/precisoUtils/bidNativeUtils.js';
@@ -31,7 +31,7 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
-    return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
+    return !!(REGIONS.includes(bid.params.region) && bid.params.publisherId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
@@ -214,7 +214,7 @@ function applyFloor(slot) {
   const floors = [];
   if (typeof slot.getFloor === 'function') {
     Object.keys(slot.mediaTypes).forEach(type => {
-      if (includes(SUPPORTED_MEDIA_TYPES, type)) {
+      if (SUPPORTED_MEDIA_TYPES.includes(type)) {
         floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' })?.floor);
       }
     });

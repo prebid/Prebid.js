@@ -1,5 +1,5 @@
 import { config } from '../../src/config.js';
-import { find } from '../../src/polyfill.js';
+import { } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
 import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
@@ -271,7 +271,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const { adUnitCode, requestId, auctionId } = bidIdentifiers;
     const bidAdId = bidIdentifiers.adId;
     const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
-    return find(bids, bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
+    return ((bids) || []).find(bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }
 }
 
