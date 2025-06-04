@@ -5,10 +5,7 @@ import {
   cleanObj,
   deepAccess,
   deepSetValue,
-  generateUUID,
   getWindowSelf,
-  getWindowTop,
-  canAccessWindowTop,
   getDNT,
   logInfo,
   triggerPixel,
@@ -22,22 +19,6 @@ import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingC
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
-
-export const _VALUAD = (function() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-
-  w.VALUAD = w.VALUAD || {};
-  w.VALUAD.pageviewId = w.VALUAD.pageviewId || generateUUID();
-  w.VALUAD.sessionId = w.VALUAD.sessionId || generateUUID();
-  w.VALUAD.sessionStartTime = w.VALUAD.sessionStartTime || Date.now();
-  w.VALUAD.pageLoadTime = w.VALUAD.pageLoadTime || window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart;
-  w.VALUAD.userActivity = w.VALUAD.userActivity || {
-    lastActivityTime: Date.now(),
-    pageviewCount: (w.VALUAD.userActivity?.pageviewCount || 0) + 1
-  };
-
-  return w.VALUAD;
-})();
 
 // Helper functions to enrich data
 function getDevice() {
@@ -82,17 +63,6 @@ function getSite(bidderRequest) {
   }
 
   return siteInfo;
-}
-
-function getSession() {
-  return {
-    id: _VALUAD.sessionId,
-    startTime: _VALUAD.sessionStartTime,
-    lastActivityTime: _VALUAD.userActivity.lastActivityTime,
-    pageviewCount: _VALUAD.userActivity.pageviewCount,
-    pageLoadTime: _VALUAD.pageLoadTime || 0,
-    new: _VALUAD.userActivity.pageviewCount === 1
-  };
 }
 
 // Add detailed ad unit position detection
@@ -163,7 +133,6 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
     const device = getDevice();
     const site = getSite(bidderRequest);
-    const session = getSession();
 
     const gdpr = getGdprConsent(bidderRequest);
     const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
@@ -189,8 +158,6 @@ const converter = ortbConverter({
 
     const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
     deepSetValue(request, 'site.ext.data.valuad_rtd', {
-      pageviewId: _VALUAD.pageviewId,
-      session: session,
       features: {
         page_dimensions: `${document.documentElement.scrollWidth}x${document.documentElement.scrollHeight}`,
         viewport_dimensions: `${windowWidth}x${windowHeight}`,
@@ -241,19 +208,13 @@ const converter = ortbConverter({
     // Add additional impression data
     const positionData = detectAdUnitPosition(bid.adUnitCode);
     if (positionData) {
-      deepSetValue(imp, 'ext.data.adg_rtd.adunit_position', positionData.position);
+      deepSetValue(imp, 'ext.data.position', positionData);
       deepSetValue(imp, 'ext.data.viewability', positionData.viewportVisibility);
     }
 
     // GPT information
     const gptInfo = getGptSlotInfoForAdUnitCode(bid.adUnitCode);
     if (gptInfo) {
-      deepSetValue(imp, 'ext.data.adserver', {
-        name: 'gam',
-        adslot: gptInfo.gptSlot
-      });
-      deepSetValue(imp, 'ext.data.pbadslot', gptInfo.gptSlot);
-
       // If not already set, add gpid
       if (!imp.ext.gpid && gptInfo.gptSlot) {
         deepSetValue(imp, 'ext.gpid', gptInfo.gptSlot);
@@ -327,19 +288,7 @@ function isBidRequestValid(bid = {}) {
 }
 
 function buildRequests(validBidRequests = [], bidderRequest = {}) {
-  // Add bid-level metadata for our server to use
-  validBidRequests = validBidRequests.map(req => {
-    req.valuadMeta = {
-      pageviewId: _VALUAD.pageviewId,
-      adUnitPosition: detectAdUnitPosition(req.adUnitCode)
-    };
-    return req;
-  });
-
   const data = converter.toORTB({ validBidRequests, bidderRequest });
-
-  // Update session data
-  _VALUAD.userActivity.lastActivityTime = Date.now();
 
   return [{
     method: 'POST',
@@ -351,11 +300,6 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
 function interpretResponse(response, request) {
   // Restore original call, remove logging and safe navigation
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
-
-  // Restore original server-side data processing
-  if (response.body && response.body.ext && response.body.ext.valuad) {
-    _VALUAD.serverData = response.body.ext.valuad;
-  }
 
   return bidResponses;
 }
