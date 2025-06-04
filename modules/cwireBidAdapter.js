@@ -92,7 +92,7 @@ function getBidFloor(bid) {
   }
 
   let floor = bid.getFloor({
-    currency: 'CHF',
+    currency: 'USD',
     mediaType: '*',
     size: '*'
   });
