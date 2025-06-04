@@ -15,11 +15,12 @@ import {
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+import {transformSizes} from '../libraries/sizeUtils/tranformSize.js';
+import {hasUserInfo, hasAppDeviceInfo, hasAppId} from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -79,7 +80,7 @@ export const spec = {
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
 
     const tags = bidRequests.map(bidToTag);
-    const userObjBid = find(bidRequests, hasUserInfo);
+    const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj;
     if (config.getConfig('coppa') === true) {
       userObj = {'coppa': true};
@@ -87,20 +88,20 @@ export const spec = {
     if (userObjBid) {
       userObj = {};
       Object.keys(userObjBid.params.user)
-        .filter(param => includes(USER_PARAMS, param))
+        .filter(param => USER_PARAMS.includes(param))
         .forEach(param => userObj[param] = userObjBid.params.user[param]);
     }
 
-    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
     let appDeviceObj;
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
-        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .filter(param => APP_DEVICE_PARAMS.includes(param))
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
-    const appIdObjBid = find(bidRequests, hasAppId);
+    const appIdObjBid = ((bidRequests) || []).find(hasAppId);
     let appIdObj;
     if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {
@@ -175,7 +176,7 @@ export const spec = {
       serverResponse.tags.forEach(serverBid => {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
-          if (rtbBid.cpm !== 0 && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          if (rtbBid.cpm !== 0 && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -319,7 +320,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         bid.vastXml = rtbBid.rtb.video.content;
 
         if (rtbBid.renderer_url) {
-          const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
+          const videoBid = ((bidderRequest.bids) || []).find(bid => bid.bidId === serverBid.uuid);
           const rendererOptions = deepAccess(videoBid, 'renderer.options');
           bid.renderer = newRenderer(bid.adUnitCode, rtbBid, rendererOptions);
         }
@@ -370,8 +371,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       bid['native'].image = {
         url: nativeAd.main_img.url,
         height: nativeAd.main_img.height,
-        width: nativeAd.main_img.width,
-      };
+        width: nativeAd.main_img.width};
     }
     if (nativeAd.icon) {
       bid['native'].icon = {
@@ -476,7 +476,7 @@ function bidToTag(bid) {
     tag.video = {};
     // place any valid video params on the tag
     Object.keys(bid.params.video)
-      .filter(param => includes(VIDEO_TARGETING, param))
+      .filter(param => VIDEO_TARGETING.includes(param))
       .forEach(param => tag.video[param] = bid.params.video[param]);
   }
 
@@ -494,48 +494,8 @@ function bidToTag(bid) {
   return tag;
 }
 
-/* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  let sizes = [];
-  let sizeObj = {};
-
-  if (isArray(requestSizes) && requestSizes.length === 2 &&
-    !isArray(requestSizes[0])) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
-}
-
-function hasUserInfo(bid) {
-  return !!bid.params.user;
-}
-
-function hasAppDeviceInfo(bid) {
-  if (bid.params) {
-    return !!bid.params.app
-  }
-}
-
-function hasAppId(bid) {
-  if (bid.params && bid.params.app) {
-    return !!bid.params.app.id
-  }
-  return !!bid.params.app
-}
-
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
 }
 
 function buildNativeRequest(params) {

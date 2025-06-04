@@ -13,7 +13,6 @@ import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import { deepAccess, logError, logWarn } from '../src/utils.js'
-import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
 /**
@@ -55,7 +54,7 @@ export const jwplayerSubmodule = {
 
 config.getConfig('realTimeData', ({realTimeData}) => {
   const providers = realTimeData.dataProviders;
-  const jwplayerProvider = providers && find(providers, pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
+  const jwplayerProvider = providers && ((providers) || []).find(pr => pr.name && pr.name.toLowerCase() === SUBMODULE_NAME);
   const params = jwplayerProvider && jwplayerProvider.params;
   if (!params) {
     return;
@@ -268,7 +267,7 @@ export function getVatFromPlayer(playerDivId, mediaID) {
     return null;
   }
 
-  const item = mediaID ? find(player.getPlaylist(), item => item.mediaid === mediaID) : player.getPlaylistItem();
+  const item = mediaID ? ((player.getPlaylist()) || []).find(item => item.mediaid === mediaID) : player.getPlaylistItem();
   if (!item) {
     return null;
   }

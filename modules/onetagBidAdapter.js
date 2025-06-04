@@ -3,7 +3,6 @@
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess, getWinDimensions } from '../src/utils.js';
@@ -186,7 +185,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const { context, adUnitCode } = find(requestData.bids, (item) =>
+      const { context, adUnitCode } = ((requestData.bids) || []).find((item) =>
         item.bidId === bid.requestId &&
         item.type === VIDEO
       );
@@ -210,8 +209,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      paapi: fledgeAuctionConfigs,
-    }
+      paapi: fledgeAuctionConfigs}
   } else {
     return bids;
   }

@@ -1444,8 +1444,6 @@ describe('Adagio bid adapter', () => {
 
       const bidRequestNative = utils.deepClone(bidRequest)
       bidRequestNative.nativeParams = {
-        sendTargetingKeys: false,
-
         clickUrl: {
           required: true,
         },

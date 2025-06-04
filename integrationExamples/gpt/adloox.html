@@ -5,7 +5,7 @@
 
         <script async src="http://localhost:9999/build/dev/prebid.js"></script>
         <!-- <script async src="https://storage.googleapis.com/adloox-ads-js-test/prebid.js"></script> -->
-        <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+        <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
 
         <script>
             // set to 10s (rather than 100ms) only to assist development as 'Local Overrides' stalls for >1s :-/
@@ -109,8 +109,12 @@
 
                 googletag.cmd.push(function() {
                     const adUnitCodes = adUnits.map(adUnit => adUnit.code);
-                    pbjs.setTargetingForGPTAsync(adUnitCodes);
-                    googletag.pubads().refresh();
+                    if (pbjs.libLoaded) {
+                        pbjs.setTargetingForGPTAsync(adUnitCodes);
+                        googletag.pubads().refresh();
+                    } else {
+                        googletag.pubads().refresh();
+                    }
                 });
 
                 var videoBids = bids[videoAdUnit.code];
