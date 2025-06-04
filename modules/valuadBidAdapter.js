@@ -20,51 +20,6 @@ const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
-// Helper functions to enrich data
-function getDevice() {
-  const language = navigator.language ? 'language' : 'userLanguage';
-  const deviceInfo = {
-    userAgent: navigator.userAgent,
-    language: navigator[language],
-    dnt: getDNT() ? 1 : 0,
-    js: 1,
-    geo: {}
-  };
-
-  const { innerWidth: windowWidth, innerHeight: windowHeight, screen } = getWinDimensions();
-  // Get screen dimensions
-  if (window.screen) {
-    deviceInfo.w = screen.width;
-    deviceInfo.h = screen.height;
-  }
-
-  // Get viewport dimensions
-  deviceInfo.ext = {
-    vpw: windowWidth,
-    vph: windowHeight
-  };
-
-  return deviceInfo;
-}
-
-function getSite(bidderRequest) {
-  const { refererInfo } = bidderRequest;
-  const siteInfo = {
-    domain: parseDomain(refererInfo.topmostLocation) || '',
-    page: refererInfo.topmostLocation || '',
-    referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
-    top: refererInfo.reachedTop
-  };
-
-  // Add page metadata if available
-  const meta = document.querySelector('meta[name="keywords"]');
-  if (meta && meta.content) {
-    siteInfo.keywords = meta.content;
-  }
-
-  return siteInfo;
-}
-
 // Add detailed ad unit position detection
 function detectAdUnitPosition(adUnitCode) {
   const element = document.getElementById(adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(adUnitCode)?.divId);
@@ -131,18 +86,12 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const device = getDevice();
-    const site = getSite(bidderRequest);
 
     const gdpr = getGdprConsent(bidderRequest);
     const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
     const coppa = config.getConfig('coppa') === true ? 1 : 0;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
-
-    // Ensure we have required extensions
-    deepSetValue(request, 'device', {...request.device, ...device});
-    deepSetValue(request, 'site', {...request.site, ...site});
 
     deepSetValue(request, 'regs', {
       gdpr: gdpr.consentRequired || 0,
@@ -156,15 +105,8 @@ const converter = ortbConverter({
       }
     });
 
-    const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
-    deepSetValue(request, 'site.ext.data.valuad_rtd', {
-      features: {
-        page_dimensions: `${document.documentElement.scrollWidth}x${document.documentElement.scrollHeight}`,
-        viewport_dimensions: `${windowWidth}x${windowHeight}`,
-        user_timestamp: Math.floor(Date.now() / 1000),
-        dom_loading: window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart
-      }
-    });
+    deepSetValue(request, 'device.js', 1);
+    deepSetValue(request, 'device.geo', {});
 
     // Add bid parameters
     if (bidderRequest && bidderRequest.bids && bidderRequest.bids.length) {
@@ -210,15 +152,6 @@ const converter = ortbConverter({
     if (positionData) {
       deepSetValue(imp, 'ext.data.position', positionData);
       deepSetValue(imp, 'ext.data.viewability', positionData.viewportVisibility);
-    }
-
-    // GPT information
-    const gptInfo = getGptSlotInfoForAdUnitCode(bid.adUnitCode);
-    if (gptInfo) {
-      // If not already set, add gpid
-      if (!imp.ext.gpid && gptInfo.gptSlot) {
-        deepSetValue(imp, 'ext.gpid', gptInfo.gptSlot);
-      }
     }
 
     // Handle price floors
