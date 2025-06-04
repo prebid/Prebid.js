@@ -1100,6 +1100,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
   let configStub;
 
   beforeEach(() => {
+    window.bliinkBid = {};
     const metaElement = document.createElement('meta');
     metaElement.name = 'keywords';
     metaElement.content = 'Bliink, Saber, Prebid';
