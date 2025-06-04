@@ -108,7 +108,7 @@ export const getBrowserType = () => {
 export const getOs = () => getOS().toString();
 export const getDeviceType = () => fetchDeviceType().toString();
 export const getCountry = () => _country;
-export const getBidder = (a) => a?.bidder;
+export const getBidder = (request) => request?.bidder;
 export const getUtm = () => {
   const url = new URL(window.location?.href);
   const urlParams = new URLSearchParams(url?.search);
