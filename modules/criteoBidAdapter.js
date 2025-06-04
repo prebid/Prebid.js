@@ -372,15 +372,7 @@ export const spec = {
     const data = CONVERTER.toORTB({bidderRequest, bidRequests, context});
 
     if (data) {
-      return {
-        method: 'POST',
-        url,
-        data,
-        bidRequests,
-        options: {
-          endpointCompression: true
-        }
-      };
+      return { method: 'POST', url, data, bidRequests };
     }
   },
 
