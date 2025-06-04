@@ -1,5 +1,15 @@
 import { deepAccess } from '../../src/utils.js';
 
+const GDE_SCRIPT_URL = 'https://ocdn.eu/adp/static/embedgde/latest/bundle.min.js';
+const GDE_PARAM_PREFIX = 'gde_';
+const REQUIRED_GDE_PARAMS = [
+  'gde_subdomena',
+  'gde_id',
+  'gde_stparam',
+  'gde_fastid',
+  'gde_inscreen'
+];
+
 export function parseNativeResponse(ad) {
   if (!(ad.data?.fields && ad.data?.meta)) {
     return false;
@@ -31,7 +41,7 @@ export function parseNativeResponse(ad) {
   };
 
   nativeResponse.impressionTrackers = [emsLink, imp, impression, impression1, Thirdpartyimpressiontracker, Thirdpartyimpressiontracker2].filter(Boolean);
-  nativeResponse.javascriptTrackers = [impressionJs1].map(url => url ? `<script async src=${url}></script>` : null).filter(Boolean);
+  nativeResponse.javascriptTrackers = [impressionJs1, getGdeScriptUrl(ad.data.fields)].map(url => url ? `<script async src=${url}></script>` : null).filter(Boolean);
   nativeResponse.clickTrackers = [Thirdpartyclicktracker, thirdPartyClickTracker2].filter(Boolean);
 
   if (dsaurl) {
@@ -39,4 +49,16 @@ export function parseNativeResponse(ad) {
   }
 
   return nativeResponse
+}
+
+const getGdeScriptUrl = (adDataFields) => {
+  if (REQUIRED_GDE_PARAMS.every(param => adDataFields[param])) {
+    const params = new URLSearchParams();
+    Object.entries(adDataFields)
+      .filter(([key]) => key.startsWith(GDE_PARAM_PREFIX))
+      .forEach(([key, value]) => params.append(key, value));
+
+    return `${GDE_SCRIPT_URL}?${params.toString()}`;
+  }
+  return null;
 }
