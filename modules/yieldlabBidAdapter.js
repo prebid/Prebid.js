@@ -449,7 +449,7 @@ function getContentObject(bid) {
  * Creates a string for iab_content object by
  * 1. flatten the iab content object
  * 2. encoding the values
- * 3. joining array of defined keys ('keyword', 'cat') into one value seperated with '|'
+ * 3. joining array of defined keys ('keyword', 'cat') into one value separated with '|'
  * 4. encoding the whole string
  * @param {Object} iabContent
  * @returns {String}
