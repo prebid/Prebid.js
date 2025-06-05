@@ -1265,6 +1265,8 @@ describe('kargo adapter tests', function() {
 
       it('fails gracefully if there is no localStorage', function() {
         sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
+        localStorage.removeItem('krg_crb');
+        document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
         let payload = getPayloadFromTestBids(testBids);
         expect(payload.user).to.deep.equal({
           crbIDs: {},
@@ -1585,6 +1587,8 @@ describe('kargo adapter tests', function() {
 
       it('fails gracefully without localStorage', function() {
         sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
+        localStorage.removeItem('krg_crb');
+        document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
         let payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.be.undefined;
       });
