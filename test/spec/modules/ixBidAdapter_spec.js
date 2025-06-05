@@ -3391,7 +3391,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
@@ -4811,7 +4810,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
@@ -5395,11 +5393,32 @@ describe('IndexexchangeAdapter', function () {
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
     });
+
     it('should add device to request when device doesnt exist', () => {
       let r = {}
       r = addDeviceInfo(r);
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
+    });
+
+    it('should add device.ip if available in fpd', () => {
+      const ortb2 = {
+        device: {
+          ip: '192.168.1.1',
+          ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+        }};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.equal('192.168.1.1')
+      expect(payload.device.ipv6).to.equal('2001:0db8:85a3:0000:0000:8a2e:0370:7334')
+    });
+
+    it('should not add device.ip if neither ip nor ipv6 exists', () => {
+      const ortb2 = {device: {}};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.be.undefined;
+      expect(payload.device.ip6).to.be.undefined;
     });
   });
 

@@ -209,7 +209,7 @@ export const spec = {
         sdc: sellerDefinedContext
       };
 
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
       if (gpid) {
         payload.gpid = gpid;
       }

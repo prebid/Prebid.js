@@ -22,9 +22,8 @@ window.OneKey.queue = window.OneKey.queue || [];
  * https://docs.prebid.org/dev-docs/add-rtd-submodule.html#getbidrequestdata
  *
  * @param {Object} reqBidsConfigObj
- * @param {function} callback
+ * @param {function} done
  * @param {Object} rtdConfig
- * @param {Object} userConsent
  */
 const getTransmissionInBidRequest = (reqBidsConfigObj, done, rtdConfig) => {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;

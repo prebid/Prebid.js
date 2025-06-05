@@ -13,11 +13,11 @@ import {
   isPlainObject,
   isStr,
   mergeDeep,
-  parseGPTSingleSizeArrayToRtbSize
+  parseGPTSingleSizeArrayToRtbSize,
+  triggerPixel
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {getBidFloor} from '../libraries/adkernelUtils/adkernelUtils.js'
@@ -38,7 +38,7 @@ const VIDEO_FPD = ['battr', 'pos'];
 const NATIVE_FPD = ['battr', 'api'];
 const BANNER_PARAMS = ['pos'];
 const BANNER_FPD = ['btype', 'battr', 'pos', 'api'];
-const VERSION = '1.7';
+const VERSION = '1.8';
 const SYNC_IFRAME = 1;
 const SYNC_IMAGE = 2;
 const SYNC_TYPES = {
@@ -164,7 +164,7 @@ export const spec = {
       .reduce((a, b) => a.concat(b), []);
 
     return rtbBids.map(rtbBid => {
-      let imp = find(rtbRequest.imp, imp => imp.id === rtbBid.impid);
+      let imp = ((rtbRequest.imp) || []).find(imp => imp.id === rtbBid.impid);
       let prBid = {
         requestId: rtbBid.impid,
         cpm: rtbBid.price,
@@ -183,7 +183,14 @@ export const spec = {
         prBid.ad = formatAdMarkup(rtbBid);
       } else if (rtbBid.mtype === MEDIA_TYPES.VIDEO) {
         prBid.mediaType = VIDEO;
-        prBid.vastUrl = rtbBid.nurl;
+        if (rtbBid.adm) {
+          prBid.vastXml = rtbBid.adm;
+          if (rtbBid.nurl) {
+            prBid.nurl = rtbBid.nurl;
+          }
+        } else {
+          prBid.vastUrl = rtbBid.nurl;
+        }
         prBid.width = imp.video.w;
         prBid.height = imp.video.h;
       } else if (rtbBid.mtype === MEDIA_TYPES.NATIVE) {
@@ -231,6 +238,16 @@ export const spec = {
       .map(rsp => rsp.body.ext.adk_usersync)
       .reduce((a, b) => a.concat(b), [])
       .map(({url, type}) => ({type: SYNC_TYPES[type], url: url}));
+  },
+
+  /**
+   * Handle bid win
+   * @param bid {Bid}
+   */
+  onBidWon: function (bid) {
+    if (bid.nurl) {
+      triggerPixel(bid.nurl);
+    }
   }
 };
 

@@ -36,7 +36,7 @@
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {Object} storedId - existing id, if any
- * @returns {IdResponse|function(callback:function)} A response object that contains id and/or callback.
+ * @returns {IdResponse|function} A response object that contains id and/or callback.
  */
 
 /**
@@ -82,7 +82,7 @@
  * @property {(string|undefined)} pid - placement id url param value
  * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
  * @property {(string|undefined)} ajaxTimeout - the number of milliseconds a resolution request can take before automatically being terminated
- * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
+ * @property {(Array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
@@ -117,7 +117,6 @@
  * @typedef {{[idKey: string]: () => SubmoduleContainer[]}} SubmodulePriorityMap
  */
 
-import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
@@ -142,7 +141,8 @@ import {
   isPlainObject,
   logError,
   logInfo,
-  logWarn
+  logWarn,
+  deepEqual,
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, PbPromise, delay} from '../../src/utils/promise.js';
@@ -856,8 +856,8 @@ function retryOnCancel(initParams) {
  * return a promise that resolves to the same value as `getUserIds()` when the refresh is complete.
  * If a refresh is already in progress, it will be canceled (rejecting promises returned by previous calls to `refreshUserIds`).
  *
- * @param submoduleNames? submodules to refresh. If omitted, refresh all submodules.
- * @param callback? called when the refresh is complete
+ * @param {string[]} [submoduleNames] submodules to refresh. If omitted, refresh all submodules.
+ * @param {Function} [callback] called when the refresh is complete
  */
 function refreshUserIds({submoduleNames} = {}, callback) {
   return retryOnCancel({refresh: true, submoduleNames})
@@ -1127,35 +1127,54 @@ function updateEIDConfig(submodules) {
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
+export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
+  const {autoRefresh, retainConfig} = options;
+  return registry
+    .reduce((acc, submodule) => {
+      const {name, aliasName} = submodule;
+      const matchesName = (query) => [name, aliasName].some(value => value?.toLowerCase() === query.toLowerCase());
+      const submoduleConfig = configs.find((configItem) => matchesName(configItem.name));
+
+      if (!submoduleConfig) {
+        if (!retainConfig) return acc;
+        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
+        return previousSubmodule ? [...acc, previousSubmodule] : acc;
+      }
+
+      const newSubmoduleContainer = {
+        submodule,
+        config: {
+          ...submoduleConfig,
+          name: submodule.name
+        },
+        callback: undefined,
+        idObj: undefined,
+        storageMgr: getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: submoduleConfig.name})
+      };
+
+      if (autoRefresh) {
+        const previousSubmodule = prevSubmodules.find(prevSubmodules => matchesName(prevSubmodules.config.name));
+        newSubmoduleContainer.refreshIds = !previousSubmodule || !deepEqual(newSubmoduleContainer.config, previousSubmodule.config);
+      }
+
+      return [...acc, newSubmoduleContainer];
+    }, []);
+}
+
 /**
  * update submodules by validating against existing configs and storage types
  */
-function updateSubmodules() {
+function updateSubmodules(options = {}) {
   updateEIDConfig(submoduleRegistry);
   const configs = getValidSubmoduleConfigs(configRegistry);
   if (!configs.length) {
     return;
   }
-  // do this to avoid reprocessing submodules
-  // TODO: the logic does not match the comment - addedSubmodules is always a copy of submoduleRegistry
-  // (if it did it would not be correct - it's not enough to find new modules, as others may have been removed or changed)
-  const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
 
+  const updatedContainers = generateSubmoduleContainers(options, configs);
   submodules.splice(0, submodules.length);
-  // find submodule and the matching configuration, if found create and append a SubmoduleContainer
-  addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
-      (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
-    if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
-    return submoduleConfig ? {
-      submodule: i,
-      config: submoduleConfig,
-      callback: undefined,
-      idObj: undefined,
-      storageMgr: getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: submoduleConfig.name}),
-    } : null;
-  }).filter(submodule => submodule !== null)
-    .forEach((sm) => submodules.push(sm));
+  submodules.push(...updatedContainers);
+
 
   if (submodules.length) {
     if (!addedStartAuctionHook()) {
@@ -1210,7 +1229,7 @@ export function requestDataDeletion(next, ...args) {
  */
 export function attachIdSystem(submodule) {
   submodule.findRootDomain = findRootDomain;
-  if (!find(submoduleRegistry, i => i.name === submodule.name)) {
+  if (!(submoduleRegistry || []).find(i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid)
     updateSubmodules();
@@ -1251,12 +1270,17 @@ export function init(config, {mkDelay = delay} = {}) {
     if (userSync) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
+        const {autoRefresh = false, retainConfig = true} = userSync;
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
-        updateSubmodules();
+        updateSubmodules({retainConfig, autoRefresh});
         updateIdPriority(userSync.idPriority, submoduleRegistry);
         initIdSystem({ready: true});
+        const submodulesToRefresh = submodules.filter(item => item.refreshIds);
+        if (submodulesToRefresh.length) {
+          refreshUserIds({submoduleNames: submodulesToRefresh.map(item => item.name)});
+        }
       }
     }
   });
