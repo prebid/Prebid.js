@@ -85,8 +85,8 @@ export function isViewabilityMeasurable(element) {
  * @param {Object} size - Size object with width and height
  * @returns {number|string} Viewability percentage or 0 if not visible
  */
-export function getViewability(element, topWin, { w, h } = {}) {
+export function getViewability(element, topWin, size) {
   return topWin.document.visibilityState === 'visible'
-    ? percentInView(element, { w, h })
+    ? percentInView(element, size)
     : 0;
 }

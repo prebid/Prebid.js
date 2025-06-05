@@ -669,7 +669,7 @@ function _getMinSize(sizes) {
  * Measures viewability for an element and adds it to the imp object at the ext level
  * @param {Object} imp - The impression object
  * @param {string} adUnitCode - The ad unit code for element identification
- * @param {Object} size - Size object with width and height properties
+ * @param {Object} sizes - Sizes object with width and height properties
  */
 export const addViewabilityToImp = (imp, adUnitCode, sizes) => {
   let elementSize = { w: 0, h: 0 };
