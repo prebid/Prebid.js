@@ -130,7 +130,7 @@ describe('Chrome AI RTD Provider', () => {
   describe('getBidRequestData function', () => {
     it('should call the callback function', () => {
       const callback = sinon.stub();
-      chromeAiSubmodule.getBidRequestData({}, callback);
+      chromeAiSubmodule.getBidRequestData({ortb2Fragments: {global: {}}}, callback);
       expect(callback.calledOnce).to.be.true;
     });
 
@@ -139,7 +139,7 @@ describe('Chrome AI RTD Provider', () => {
       const data = { [testUrl]: { language: 'en', confidence: 0.99 } };
       storageStub.getDataFromLocalStorage.returns(JSON.stringify(data));
       
-      const req = { ortb2: {} };
+      const req = { ortb2Fragments: { global: {} } };
       const callback = sinon.stub();
       
       chromeAiSubmodule.getBidRequestData(req, callback);
@@ -159,8 +159,18 @@ describe('Chrome AI RTD Provider', () => {
       confStub.restore();
     });
     it('should skip detection if ortb2.site.content.language exists (bid request)', async () => {
-      // Simulate ortb2.site.content.language in reqBidsConfigObj
-      const reqBidsConfigObj = { ortb2: { site: { content: { language: 'fr' } } } };
+      // Simulate ortb2Fragments.global.site.content.language in reqBidsConfigObj
+      const reqBidsConfigObj = { 
+        ortb2Fragments: { 
+          global: { 
+            site: { 
+              content: { 
+                language: 'fr' 
+              } 
+            } 
+          } 
+        } 
+      };
       const cb = sinon.stub();
       chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, cb);
       expect(cb.calledOnce).to.be.true;
