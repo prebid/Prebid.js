@@ -9,8 +9,6 @@ let events = require('src/events');
 
 describe('ConcertAnalyticsAdapter', function() {
   let sandbox;
-  let xhr;
-  let requests;
   let clock;
   let timestamp = 1896134400;
   let auctionId = '9f894496-10fe-4652-863d-623462bf82b8';
@@ -18,16 +16,11 @@ describe('ConcertAnalyticsAdapter', function() {
 
   before(function () {
     sandbox = sinon.createSandbox();
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-
-    xhr.onCreate = function (request) {
-      requests.push(request);
-    };
-    clock = sandbox.useFakeTimers(1896134400);
+    clock = sinon.useFakeTimers(1896134400);
   });
 
   after(function () {
+    clock.restore();
     sandbox.restore();
   });
 

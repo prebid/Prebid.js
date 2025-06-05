@@ -6,18 +6,17 @@ import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
-  let fakeServer;
   let bidderRequest;
   let clock;
 
   beforeEach(() => {
     bidderRequest = buildBidderRequest();
-    sandbox = sinon.sandbox.create();
-    fakeServer = sandbox.useFakeServer();
-    clock = sandbox.useFakeTimers();
+    sandbox = sinon.createSandbox();
+    clock = sinon.useFakeTimers();
   });
 
   afterEach(() => {
+    clock.restore();
     sandbox.restore();
   });
 
