@@ -87,7 +87,7 @@ function getRefGroups() {
 }
 
 function getBidFloor(bid) {
- if (typeof bidRequest.getFloor !== 'function') {
+ if (typeof bid.getFloor !== 'function') {
   return {};
   }
 
