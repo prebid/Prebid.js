@@ -13,11 +13,53 @@ const CONSTANTS = Object.freeze({
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider: ',
   STORAGE_KEY: 'chromeAi_detected_language',
-  MIN_TEXT_LENGTH: 20
+  MIN_TEXT_LENGTH: 20,
+  DEFAULT_CONFIG: {
+    languageDetector: {
+      enabled: true
+    }
+  }
 });
 
 // Get storage manager for this module
 const storage = getCoreStorageManager(CONSTANTS.SUBMODULE_NAME);
+
+// Module-level configuration
+let moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+
+/**
+ * Merge default config with user config
+ * @param {Object} userConfig - User configuration
+ * @returns {Object} - Merged configuration
+ */
+const mergeConfig = (userConfig) => {
+  // Start with a deep copy of default config
+  const config = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+  
+  // If no user config, return defaults
+  if (!userConfig) {
+    return config;
+  }
+  
+  // If user provided languageDetector config, merge it
+  if (userConfig.languageDetector) {
+    config.languageDetector = {
+      ...config.languageDetector,
+      ...userConfig.languageDetector
+    };
+  }
+  
+  return config;
+};
+
+/**
+ * Set module config
+ * @param {Object} config - Configuration from Prebid.js
+ */
+const mergeModuleConfig = (config) => {
+  moduleConfig = mergeConfig(config?.params);
+  return moduleConfig;
+};
 
 /**
  * Get the current URL
@@ -154,13 +196,16 @@ export const detectLanguage = async (text) => {
 
 /**
  * Initialize the ChromeAI RTD Module.
- * @param {Object} config
- * @param {Object} userConsent
- * @returns {boolean}
+ * @param {Object} config - Module configuration
+ * @param {Object} userConsent - User consent data
+ * @returns {boolean} - Whether initialization was successful
  */
 const init = async (config, userConsent) => {
   logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
-
+  
+  // merge module configuration
+  moduleConfig = mergeModuleConfig(config);
+  
   // Check if language is already set in ortb2
   const ortb2 = conf.getAnyConfig('ortb2');
   if (ortb2?.site?.content?.language) {
@@ -202,11 +247,18 @@ const init = async (config, userConsent) => {
 
 /**
  * Add language data to bid request
- * @param {Object} reqBidsConfigObj
- * @param {function} callback
+ * @param {Object} reqBidsConfigObj - Request bids configuration object
+ * @param {function} callback - Callback function
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, reqBidsConfigObj);
+  
+  // Check if language detection is explicitly disabled
+  if (moduleConfig.languageDetector && moduleConfig.languageDetector.enabled === false) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection is disabled in config`);
+    callback();
+    return;
+  }
 
   // Check if language is already set in ortb2
   // First check reqBidsConfigObj (which has priority for the current auction)
@@ -244,8 +296,20 @@ export const chromeAiSubmodule = {
    * @type {string}
    */
   name: CONSTANTS.SUBMODULE_NAME,
+  
+  /**
+   * Initialize the module
+   * @param {Object} config - Module configuration
+   * @param {Object} userConsent - User consent data
+   */
   init,
-  getBidRequestData,
+  
+  /**
+   * Add language data to bid request
+   * @param {Object} reqBidsConfigObj - Request bids configuration object
+   * @param {function} callback - Callback function
+   */
+  getBidRequestData
 };
 
 export const registerSubModule = () => {

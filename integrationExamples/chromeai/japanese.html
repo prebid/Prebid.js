@@ -59,7 +59,9 @@
                                name: "chromeAi",
                                waitForIt: true,
                                params: {
-                                   publisherId: "Azzi", // please contact PubMatic to get a publisherId for yourself
+                                   languageDetector: {
+                                        enabled: false
+                                   }
                                },
                            },
                        ],
