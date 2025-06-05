@@ -56,7 +56,7 @@ const configWithNoAuctionInit = {
 
 describe('LiveIntent Analytics Adapter ', () => {
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
     sandbox.stub(utils, 'generateUUID').returns(instanceId);

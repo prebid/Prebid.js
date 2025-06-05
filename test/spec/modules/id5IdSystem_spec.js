@@ -852,7 +852,7 @@ describe('ID5 ID System', function () {
     describe('when legacy cookies are set', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(id5System.storage, 'getCookie');
       });
       afterEach(() => {
@@ -900,7 +900,7 @@ describe('ID5 ID System', function () {
   describe('Local storage', () => {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(id5System.storage, 'localStorageIsEnabled');
     });
     afterEach(() => {
@@ -933,7 +933,7 @@ describe('ID5 ID System', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       sinon.stub(events, 'getEvents').returns([]);
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME);

@@ -39,7 +39,7 @@ describe('paapi module', () => {
   let sandbox;
   before(reset);
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();

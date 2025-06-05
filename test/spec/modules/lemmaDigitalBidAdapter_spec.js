@@ -254,7 +254,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.device).to.equal(undefined);
       });
       it('Set content from config, set site.content', function () {
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -294,7 +294,7 @@ describe('lemmaDigitalBidAdapter', function () {
             },
           }
         }];
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -571,7 +571,7 @@ describe('lemmaDigitalBidAdapter', function () {
       let sandbox, utilsMock, newVideoRequest;
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.spy(utils, 'logWarn');
         newVideoRequest = utils.deepClone(videoBidRequests);
       });
@@ -603,7 +603,7 @@ describe('lemmaDigitalBidAdapter', function () {
       const syncurl_iframe = 'https://sync.lemmadigital.com/js/usersync.html?pid=1001';
       let sandbox;
       beforeEach(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
       });
       afterEach(function () {
         sandbox.restore();

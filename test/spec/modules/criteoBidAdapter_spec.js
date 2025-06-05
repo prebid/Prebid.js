@@ -26,7 +26,7 @@ describe('The Criteo bidding adapter', function () {
     localStorage.removeItem('criteo_fast_bid');
     utilsMock = sinon.mock(utils);
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     ajaxStub = sandbox.stub(ajax, 'ajax');
   });
 

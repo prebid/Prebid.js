@@ -242,7 +242,7 @@ describe('Pubmatic RTD Provider', () => {
         let logErrorStub;
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+            sandbox = sinon.createSandbox();
             logErrorStub = sandbox.stub(utils, 'logError');
             floorsData = {
                 "currency": "USD",

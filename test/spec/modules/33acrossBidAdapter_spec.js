@@ -498,7 +498,7 @@ describe('33acrossBidAdapter:', function () {
         .withBanner()
         .build()
     );
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').returns(element);
     sandbox.stub(internal, 'getWindowTop').returns(win);

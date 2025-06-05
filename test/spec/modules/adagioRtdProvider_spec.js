@@ -39,7 +39,7 @@ describe('Adagio Rtd Provider', function () {
   let clock;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
   });
 
