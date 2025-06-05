@@ -23,6 +23,7 @@ import {
 import {registerActivityControl} from '../src/activities/rules.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
+  ACTIVITY_ACCESS_REQUEST_CREDENTIALS,
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_ENRICH_UFPD,
   ACTIVITY_FETCH_BIDS,
