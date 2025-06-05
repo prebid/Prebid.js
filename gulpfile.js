@@ -4,7 +4,8 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('gulp-util');
+var gutil = require('plugin-error');
+var fancyLog = require('fancy-log');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
@@ -17,7 +18,6 @@ var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
 var gulpif = require('gulp-if');
-var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
@@ -193,7 +193,7 @@ function buildCreative(mode = 'production') {
     opts.devtool = 'inline-source-map'
   }
   return function() {
-    return gulp.src(['**/*'])
+    return gulp.src(['creative/**/*'])
       .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
       .pipe(gulp.dest('build/creative'))
   }
@@ -229,7 +229,8 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+  const sm = dev || argv.sourceMaps;
+  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist'), {sourcemaps: sm ? '.' : false}));
 }
 
 function nodeBundle(modules, dev = false) {
@@ -318,15 +319,13 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
+  fancyLog('Concatenating files:\n', entries);
+  fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
+  fancyLog('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  return wrap(gulp.src(entries))
-    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
-    .pipe(concat(outputFileName))
-    .pipe(gulpif(sm, sourcemaps.write('.')));
+  return wrap(gulp.src(entries, {sourcemaps: sm}))
+    .pipe(concat(outputFileName));
 }
 
 function setupDist() {
@@ -408,7 +407,10 @@ function runWebdriver({file}) {
       wdioConf
     ];
   }
-  return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
+  return execa(wdioCmd, wdioOpts, {
+    stdio: 'inherit',
+    env: Object.assign({}, process.env, {FORCE_COLOR: '1'})
+  });
 }
 
 function runKarma(options, done) {
@@ -440,7 +442,8 @@ function testCoverage(done) {
     watch: false,
     file: argv.file,
     env: {
-      NODE_OPTIONS: '--max-old-space-size=8096'
+      NODE_OPTIONS: '--max-old-space-size=8096',
+      TEST_CHUNKS: '1'
     }
   }, done);
 }
