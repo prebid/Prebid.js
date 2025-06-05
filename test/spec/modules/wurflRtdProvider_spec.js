@@ -4,6 +4,7 @@ import {
   lowEntropyData,
   wurflSubmodule,
   makeOrtb2DeviceType,
+  toNumber,
 } from 'modules/wurflRtdProvider';
 import * as ajaxModule from 'src/ajax';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
@@ -52,7 +53,8 @@ describe('wurflRtdProvider', function () {
       pixel_density: 443,
       pointing_method: 'touchscreen',
       resolution_height: 1920,
-      resolution_width: 1080
+      resolution_width: 1080,
+      wurfl_id: 'lg_nexus5_ver1',
     };
 
     // expected analytics values
@@ -100,6 +102,7 @@ describe('wurflRtdProvider', function () {
       const expectedURL = new URL(altHost);
       expectedURL.searchParams.set('debug', true);
       expectedURL.searchParams.set('mode', 'prebid');
+      expectedURL.searchParams.set('wurfl_id', true);
 
       const callback = () => {
         const v = {
@@ -114,8 +117,8 @@ describe('wurflRtdProvider', function () {
               h: 1920,
               w: 1080,
               ppi: 443,
-              pxratio: '3.0',
-              js: true,
+              pxratio: 3.0,
+              js: 1,
               ext: {
                 wurfl: {
                   advertised_browser: 'Chrome Mobile',
@@ -147,7 +150,8 @@ describe('wurflRtdProvider', function () {
                   pixel_density: 443,
                   pointing_method: 'touchscreen',
                   resolution_height: 1920,
-                  resolution_width: 1080
+                  resolution_width: 1080,
+                  wurfl_id: 'lg_nexus5_ver1',
                 },
               },
             },
@@ -163,8 +167,8 @@ describe('wurflRtdProvider', function () {
               h: 1920,
               w: 1080,
               ppi: 443,
-              pxratio: '3.0',
-              js: true,
+              pxratio: 3.0,
+              js: 1,
               ext: {
                 wurfl: {
                   advertised_device_os: 'Android',
@@ -187,7 +191,8 @@ describe('wurflRtdProvider', function () {
                   model_name: 'Nexus 5',
                   pixel_density: 443,
                   resolution_height: 1920,
-                  resolution_width: 1080
+                  resolution_width: 1080,
+                  wurfl_id: 'lg_nexus5_ver1',
                 },
               },
             },
@@ -203,6 +208,7 @@ describe('wurflRtdProvider', function () {
                   is_mobile: !0,
                   model_name: 'Nexus 5',
                   brand_name: 'Google',
+                  wurfl_id: 'lg_nexus5_ver1',
                 },
               },
             },
@@ -448,6 +454,36 @@ describe('wurflRtdProvider', function () {
       const wurflData = {};
       const result = makeOrtb2DeviceType(wurflData);
       expect(result).to.be.undefined;
+    });
+  });
+
+  describe('toNumber', function () {
+    it('converts valid numbers', function () {
+      expect(toNumber(42)).to.equal(42);
+      expect(toNumber(3.14)).to.equal(3.14);
+      expect(toNumber('100')).to.equal(100);
+      expect(toNumber('3.14')).to.equal(3.14);
+      expect(toNumber('  50  ')).to.equal(50);
+    });
+
+    it('converts booleans correctly', function () {
+      expect(toNumber(true)).to.equal(1);
+      expect(toNumber(false)).to.equal(0);
+    });
+
+    it('handles special cases', function () {
+      expect(toNumber(null)).to.be.undefined;
+      expect(toNumber('')).to.be.undefined;
+    });
+
+    it('returns undefined for non-numeric values', function () {
+      expect(toNumber('abc')).to.be.undefined;
+      expect(toNumber(undefined)).to.be.undefined;
+      expect(toNumber(NaN)).to.be.undefined;
+      expect(toNumber({})).to.be.undefined;
+      expect(toNumber([1, 2, 3])).to.be.undefined;
+      // WURFL.js cannot return [] so it is safe to not handle and return undefined
+      expect(toNumber([])).to.equal(0);
     });
   });
 });

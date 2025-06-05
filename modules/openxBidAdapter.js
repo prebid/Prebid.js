@@ -161,14 +161,14 @@ function isBidRequestValid(bidRequest) {
   return !!(bidRequest.params.unit && hasDelDomainOrPlatform);
 }
 
-function buildRequests(bids, bidderRequest) {
-  let videoBids = bids.filter(bid => isVideoBid(bid));
-  let bannerAndNativeBids = bids.filter(bid => isBannerBid(bid) || isNativeBid(bid))
+function buildRequests(bidRequests, bidderRequest) {
+  let videoRequests = bidRequests.filter(bidRequest => isVideoBidRequest(bidRequest));
+  let bannerAndNativeRequests = bidRequests.filter(bidRequest => isBannerBidRequest(bidRequest) || isNativeBidRequest(bidRequest))
     // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
     .map(bid => ({...bid, mediaTypes: {...bid.mediaTypes, video: undefined}}));
 
-  let requests = bannerAndNativeBids.length ? [createRequest(bannerAndNativeBids, bidderRequest, null)] : [];
-  videoBids.forEach(bid => {
+  let requests = bannerAndNativeRequests.length ? [createRequest(bannerAndNativeRequests, bidderRequest, null)] : [];
+  videoRequests.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
   return requests;
@@ -182,17 +182,17 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function isVideoBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.video');
+function isVideoBidRequest(bidRequest) {
+  return utils.deepAccess(bidRequest, 'mediaTypes.video');
 }
 
-function isNativeBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.native');
+function isNativeBidRequest(bidRequest) {
+  return utils.deepAccess(bidRequest, 'mediaTypes.native');
 }
 
-function isBannerBid(bid) {
-  const isNotVideoOrNativeBid = !isVideoBid(bid) && !isNativeBid(bid)
-  return utils.deepAccess(bid, 'mediaTypes.banner') || isNotVideoOrNativeBid;
+function isBannerBidRequest(bidRequest) {
+  const isNotVideoOrNativeBid = !isVideoBidRequest(bidRequest) && !isNativeBidRequest(bidRequest)
+  return utils.deepAccess(bidRequest, 'mediaTypes.banner') || isNotVideoOrNativeBid;
 }
 
 function interpretResponse(resp, req) {

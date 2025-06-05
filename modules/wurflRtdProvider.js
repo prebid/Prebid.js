@@ -65,7 +65,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
   }
 
   url.searchParams.set('mode', 'prebid')
-  logger.logMessage('url', url.toString());
+  url.searchParams.set('wurfl_id', 'true')
 
   try {
     loadExternalScript(url.toString(), MODULE_TYPE_RTD, MODULE_NAME, () => {
@@ -120,6 +120,9 @@ function enrichBidderRequests(reqBidsConfigObj, bidders, wjsResponse) {
  */
 export const bidderData = (wurflData, caps, filter) => {
   const data = {};
+  if ('wurfl_id' in wurflData) {
+    data['wurfl_id'] = wurflData.wurfl_id;
+  }
   caps.forEach((cap, index) => {
     if (!filter.includes(index)) {
       return;
@@ -152,6 +155,9 @@ export const lowEntropyData = (wurflData, lowEntropyCaps) => {
   if ('brand_name' in wurflData) {
     data['brand_name'] = wurflData.brand_name;
   }
+  if ('wurfl_id' in wurflData) {
+    data['wurfl_id'] = wurflData.wurfl_id;
+  }
   return data;
 }
 /**
@@ -179,8 +185,8 @@ export const enrichBidderRequest = (reqBidsConfigObj, bidderCode, wurflData) => 
     enrichOrtb2DeviceData('h', wurflData.resolution_height, device, ortb2data);
     enrichOrtb2DeviceData('w', wurflData.resolution_width, device, ortb2data);
     enrichOrtb2DeviceData('ppi', wurflData.pixel_density, device, ortb2data);
-    enrichOrtb2DeviceData('pxratio', wurflData.density_class, device, ortb2data);
-    enrichOrtb2DeviceData('js', wurflData.ajax_support_javascript, device, ortb2data);
+    enrichOrtb2DeviceData('pxratio', toNumber(wurflData.density_class), device, ortb2data);
+    enrichOrtb2DeviceData('js', toNumber(wurflData.ajax_support_javascript), device, ortb2data);
   }
   ortb2data.device.ext['wurfl'] = wurflData
   mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: ortb2data });
@@ -237,6 +243,20 @@ function enrichOrtb2DeviceData(key, value, device, ortb2data) {
     return;
   }
   ortb2data.device[key] = value;
+}
+
+/**
+ * toNumber converts a given value to a number.
+ * Returns `undefined` if the conversion results in `NaN`.
+ * @param {any} value - The value to convert to a number.
+ * @returns {number|undefined} The converted number, or `undefined` if the conversion fails.
+ */
+export function toNumber(value) {
+  if (value === '' || value === null) {
+    return undefined;
+  }
+  const num = Number(value);
+  return Number.isNaN(num) ? undefined : num;
 }
 
 /**

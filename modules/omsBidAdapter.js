@@ -13,7 +13,7 @@ import {
   formatQS,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {percentInView} from '../libraries/percentInView/percentInView.js';
 import {getUserSyncParams} from '../libraries/userSyncUtils/userSyncUtils.js';
@@ -27,7 +27,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['brightcom', 'bcmssp'],
   gvlid: 883,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
@@ -39,7 +39,7 @@ export const spec = {
 function buildRequests(bidReqs, bidderRequest) {
   try {
     const impressions = bidReqs.map(bid => {
-      let bidSizes = bid?.mediaTypes?.banner?.sizes || bid.sizes;
+      let bidSizes = bid?.mediaTypes?.banner?.sizes || bid?.mediaTypes?.video?.playerSize || bid.sizes;
       bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
       bidSizes = bidSizes.filter(size => isArray(size));
       const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
@@ -63,6 +63,12 @@ function buildRequests(bidReqs, bidderRequest) {
         },
         tagid: String(bid.adUnitCode)
       };
+
+      if (bid?.mediaTypes?.video) {
+        imp.video = {
+          ...bid.mediaTypes.video,
+        }
+      }
 
       const bidFloor = _getBidFloor(bid);
 
@@ -158,7 +164,7 @@ function interpretResponse(serverResponse) {
   try {
     if (id && seatbid && seatbid.length > 0 && seatbid[0].bid && seatbid[0].bid.length > 0) {
       response = seatbid[0].bid.map(bid => {
-        return {
+        const bidResponse = {
           requestId: bid.impid,
           cpm: parseFloat(bid.price),
           width: parseInt(bid.w),
@@ -166,13 +172,20 @@ function interpretResponse(serverResponse) {
           creativeId: bid.crid || bid.id,
           currency: 'USD',
           netRevenue: true,
-          mediaType: BANNER,
           ad: _getAdMarkup(bid),
           ttl: 300,
           meta: {
             advertiserDomains: bid?.adomain || []
           }
         };
+
+        if (bid.mtype === 2) {
+          bidResponse.mediaType = VIDEO;
+        } else {
+          bidResponse.mediaType = BANNER;
+        }
+
+        return bidResponse;
       });
     }
   } catch (e) {
@@ -256,7 +269,7 @@ function _isViewabilityMeasurable(element) {
 }
 
 function _getViewability(element, topWin, {w, h} = {}) {
-  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, topWin, {w, h}) : 0;
+  return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, {w, h}) : 0;
 }
 
 function _extractGpidData(bid) {

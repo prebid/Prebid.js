@@ -2,7 +2,9 @@
  * Adapter to send bids to Undertone
  */
 
-import {deepAccess, parseUrl, extractDomainFromHost} from '../src/utils.js';
+import {deepAccess, parseUrl, extractDomainFromHost, getWinDimensions} from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -37,23 +39,13 @@ function getGdprQueryParams(gdprConsent) {
 }
 
 function getBannerCoords(id) {
-  let element = document.getElementById(id);
-  let left = -1;
-  let top = -1;
+  const element = document.getElementById(id);
   if (element) {
-    left = element.offsetLeft;
-    top = element.offsetTop;
-
-    let parent = element.offsetParent;
-    if (parent) {
-      left += parent.offsetLeft;
-      top += parent.offsetTop;
-    }
-
-    return [left, top];
-  } else {
-    return null;
+    const {left, top} = getBoundingClientRect(element);
+    const viewport = getViewportCoordinates();
+    return [Math.round(left + (viewport.left || 0)), Math.round(top + (viewport.top || 0))];
   }
+  return null;
 }
 
 export const spec = {
@@ -67,8 +59,9 @@ export const spec = {
     }
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    const windowDimensions = getWinDimensions();
+    const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
+    const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
     const pageSizeArray = vw == 0 || vh == 0 ? null : [vw, vh];
     const commons = {
       'adapterVersion': '$prebid.version$',

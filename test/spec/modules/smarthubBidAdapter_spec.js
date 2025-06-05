@@ -159,7 +159,11 @@ describe('SmartHubBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp',
+        'battr'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -413,6 +417,44 @@ describe('SmartHubBidAdapter', function () {
       };
       let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    it('Should return array of objects with GDPR values', function() {
+      const syncData = spec.getUserSyncs({}, {}, {
+        consentString: 'ALL',
+        gdprApplies: true,
+      }, {});
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+    });
+    it('Should return array of objects with CCPA values', function() {
+      const syncData = spec.getUserSyncs({}, {}, {}, {
+        consentString: '1---'
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+    });
+    it('Should return array of objects with GPP values', function() {
+      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+        gppString: 'ab12345',
+        applicableSections: [8]
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gpp=ab12345&gpp_sid=8&coppa=0')
     });
   });
 });

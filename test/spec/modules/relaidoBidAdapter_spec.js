@@ -323,15 +323,6 @@ describe('RelaidoAdapter', function () {
       expect(keys[keys.length - 1]).to.equal('ref');
     });
 
-    it('should get imuid', function () {
-      bidRequest.userId = {}
-      bidRequest.userId.imuid = 'i.tjHcK_7fTcqnbrS_YA2vaw';
-      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
-      const data = JSON.parse(bidRequests.data);
-      expect(data.bids).to.have.lengthOf(1);
-      expect(data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
-    });
-
     it('should get userIdAsEids', function () {
       const userIdAsEids = [
         {

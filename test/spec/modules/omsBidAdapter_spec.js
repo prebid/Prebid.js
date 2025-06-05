@@ -3,6 +3,7 @@ import * as utils from 'src/utils.js';
 import {spec} from 'modules/omsBidAdapter';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from '../../../src/config';
+import { internal, resetWinDimensions } from '../../../src/utils';
 
 const URL = 'https://rt.marphezis.com/hb';
 
@@ -36,7 +37,9 @@ describe('omsBidAdapter', function () {
       document: {
         visibilityState: 'visible'
       },
-
+      location: {
+        href: "http:/location"
+      },
       innerWidth: 800,
       innerHeight: 600
     };
@@ -128,6 +131,45 @@ describe('omsBidAdapter', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+    });
+
+    it('sets the proper video object when ad unit media type is video', function () {
+      const bidRequests = [
+        {
+          'bidder': 'oms',
+          'params': {
+            'publisherId': 1234567
+          },
+          'adUnitCode': 'adunit-code',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream',
+              'playerSize': [640, 480]
+            }
+          },
+          'bidId': '5fb26ac22bde4',
+          'bidderRequestId': '4bf93aeb730cb9',
+          'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
+          'schain': {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [
+              {
+                'asi': 'exchange1.com',
+                'sid': '1234',
+                'hp': 1,
+                'rid': 'bid-request-1',
+                'name': 'publisher',
+                'domain': 'publisher.com'
+              }
+            ]
+          },
+        }
+      ]
+      const request = spec.buildRequests(bidRequests);
+      const payload = JSON.parse(request.data);
+      expect(payload.imp[0].video.context).to.equal('instream');
+      expect(payload.imp[0].video.playerSize).to.deep.equal([640, 480]);
     });
 
     it('accepts a single array as a size', function () {
@@ -289,6 +331,8 @@ describe('omsBidAdapter', function () {
 
     context('when element is partially in view', function () {
       it('returns percentage', function () {
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 800, height: 800});
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -298,6 +342,8 @@ describe('omsBidAdapter', function () {
 
     context('when width or height of the element is zero', function () {
       it('try to use alternative values', function () {
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
+        getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 0, height: 0});
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
@@ -374,6 +420,45 @@ describe('omsBidAdapter', function () {
           'advertiserDomains': ['example.com']
         }
       }];
+
+      let result = spec.interpretResponse(response);
+      expect(result[0]).to.deep.equal(expectedResponse[0]);
+    });
+
+    it('should get the correct bid response for video bids', function () {
+      let expectedResponse = [{
+        'requestId': '283a9f4cd2415d',
+        'cpm': 0.35743275,
+        'width': 300,
+        'height': 250,
+        'creativeId': '376874781',
+        'currency': 'USD',
+        'netRevenue': true,
+        'mediaType': 'video',
+        'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
+        'ttl': 300,
+        'meta': {
+          'advertiserDomains': ['example.com']
+        }
+      }];
+      const response = {
+        body: {
+          'id': '37386aade21a71',
+          'seatbid': [{
+            'bid': [{
+              'id': '376874781',
+              'impid': '283a9f4cd2415d',
+              'price': 0.35743275,
+              'nurl': '<!-- NURL -->',
+              'adm': '<!-- Creative -->',
+              'w': 300,
+              'h': 250,
+              'adomain': ['example.com'],
+              'mtype': 2
+            }]
+          }]
+        }
+      };
 
       let result = spec.interpretResponse(response);
       expect(result[0]).to.deep.equal(expectedResponse[0]);

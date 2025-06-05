@@ -62,8 +62,9 @@ export var spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests.length === 0) {
@@ -450,8 +451,8 @@ export var spec = {
         dnt: utils.getDNT() ? 1 : 0,
         ua: navigator.userAgent,
         language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-        w: (window.screen.width || window.innerWidth),
-        h: (window.screen.height || window.innerHeigh),
+        w: (utils.getWinDimensions().screen.width || utils.getWinDimensions().innerWidth),
+        h: (utils.getWinDimensions().screen.height || utils.getWinDimensions().innerHeight),
         geo: {
           country: params.country,
           lat: params.latitude,

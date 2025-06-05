@@ -4,7 +4,8 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('gulp-util');
+var gutil = require('plugin-error');
+var fancyLog = require('fancy-log');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
@@ -16,9 +17,7 @@ var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
 var gulpif = require('gulp-if');
-var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
@@ -28,6 +27,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -48,7 +48,7 @@ function bundleToStdout() {
 bundleToStdout.displayName = 'bundle-to-stdout';
 
 function clean() {
-  return gulp.src(['build'], {
+  return gulp.src(['build', 'dist'], {
     read: false,
     allowEmpty: true
   })
@@ -79,23 +79,18 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const isFixed = function (file) {
-    return file.eslint != null && file.eslint.fixed;
+  const args = ['eslint'];
+  if (!argv.nolintfix) {
+    args.push('--fix');
   }
-  return gulp.src([
-    'src/**/*.js',
-    'modules/**/*.js',
-    'libraries/**/*.js',
-    'creative/**/*.js',
-    'test/**/*.js',
-    'plugins/**/*.js',
-    '!plugins/**/node_modules/**',
-    './*.js'
-  ], { base: './' })
-    .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
-    .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError())
-    .pipe(gulpif(isFixed, gulp.dest('./')));
+  if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
+    args.push('--quiet')
+  }
+  return shell.task(args.join(' '))().then(() => {
+    done();
+  }, (err) => {
+    done(err);
+  });
 };
 
 // View the code coverage report in the browser.
@@ -198,7 +193,7 @@ function buildCreative(mode = 'production') {
     opts.devtool = 'inline-source-map'
   }
   return function() {
-    return gulp.src(['**/*'])
+    return gulp.src(['creative/**/*'])
       .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
       .pipe(gulp.dest('build/creative'))
   }
@@ -234,7 +229,8 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+  const sm = dev || argv.sourceMaps;
+  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist'), {sourcemaps: sm ? '.' : false}));
 }
 
 function nodeBundle(modules, dev = false) {
@@ -323,15 +319,23 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
+  fancyLog('Concatenating files:\n', entries);
+  fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
+  fancyLog('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  return wrap(gulp.src(entries))
-    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
-    .pipe(concat(outputFileName))
-    .pipe(gulpif(sm, sourcemaps.write('.')));
+  return wrap(gulp.src(entries, {sourcemaps: sm}))
+    .pipe(concat(outputFileName));
+}
+
+function setupDist() {
+  return gulp.src(['build/dist/**/*'])
+    .pipe(rename(function (path) {
+      if (path.dirname === '.' && path.basename === 'prebid') {
+        path.dirname = 'not-for-prod';
+      }
+    }))
+    .pipe(gulp.dest('dist'))
 }
 
 // Run the unit tests.
@@ -403,15 +407,22 @@ function runWebdriver({file}) {
       wdioConf
     ];
   }
-  return execa(wdioCmd, wdioOpts, { stdio: 'inherit' });
+  return execa(wdioCmd, wdioOpts, {
+    stdio: 'inherit',
+    env: Object.assign({}, process.env, {FORCE_COLOR: '1'})
+  });
 }
 
 function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
+  const env = Object.assign({}, options.env, process.env);
+  if (!env.TEST_CHUNKS) {
+    env.TEST_CHUNKS = '4';
+  }
   const child = fork('./karmaRunner.js', null, {
-    env: Object.assign({}, options.env, process.env)
+    env
   });
   child.on('exit', (exitCode) => {
     if (exitCode) {
@@ -431,7 +442,8 @@ function testCoverage(done) {
     watch: false,
     file: argv.file,
     env: {
-      NODE_OPTIONS: '--max-old-space-size=8096'
+      NODE_OPTIONS: '--max-old-space-size=8096',
+      TEST_CHUNKS: '1'
     }
   }, done);
 }
@@ -528,7 +540,7 @@ gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(s
 gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
-gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
@@ -540,7 +552,10 @@ gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+// npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
+gulp.task('setup-npmignore', shell.task("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample, setupDist));
+gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));

@@ -529,6 +529,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
     sandbox = sinon.sandbox.create();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
+    config.setConfig({ pageUrl: 'https://www.config.domain.com/index.html' })
   });
 
   afterEach(function () {
@@ -624,8 +625,8 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           shortname: 'name'
         }
       });
-      expect(auctionSucceeded.domain).to.eql('test-zeta-ssp.net');
-      expect(auctionSucceeded.page).to.eql('test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html');
+      expect(auctionSucceeded.domain).to.eql('config.domain.com');
+      expect(auctionSucceeded.page).to.eql('https://www.config.domain.com/index.html');
       expect(auctionSucceeded.bid).to.be.deep.equal({
         adUnitCode: '/19968336/header-bid-tag-0',
         adId: '5759bb3ef7be1e8',

@@ -7,6 +7,7 @@ import { getDevice, getScreenSize } from '../libraries/fpdUtils/deviceInfo.js';
 import { getBidFloor } from '../libraries/currencyUtils/floor.js';
 import { transformSizes, normalAdSize } from '../libraries/sizeUtils/tranformSize.js';
 import { getHLen } from '../libraries/navigatorData/navigatorData.js';
+import { cookieSync } from '../libraries/cookieSync/cookieSync.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -130,9 +131,8 @@ export function getCookieTimeToUTCString() {
 
 /**
  * format imp ad test ext params
- *
- * @param validBidRequest sigleBidRequest
- * @param bidderRequest
+ * @param {Object} bidRequest single bid request
+ * @param {Object} bidderRequest bidder request object
  */
 function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
   const { deepAccess } = utils;
@@ -172,7 +172,7 @@ function getItems(validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
-    // eslint-disable-next-line no-debugger
+
     let mediaTypes = getKv(req, 'mediaTypes');
 
     const bidFloor = getBidFloor(req);
@@ -247,11 +247,8 @@ export const buildUTMTagData = (url) => {
  * @return {Object}
  */
 function getParam(validBidRequests, bidderRequest) {
-  const sharedid =
-    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    utils.deepAccess(validBidRequests[0], 'userId.pubcid') ||
-    utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
+  const sharedid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
+  const eids = validBidRequests[0].userIdAsEids;
 
   let isMobile = getDevice() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
@@ -484,47 +481,12 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
-    const origin = encodeURIComponent(location.origin || `https://${location.host}`);
-    let syncParamUrl = `dm=${origin}`;
-
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      window.addEventListener('message', function handler(event) {
-        if (!event.data || event.origin != THIRD_PARTY_COOKIE_ORIGIN) {
-          return;
-        }
-
-        this.removeEventListener('message', handler);
-
-        event.stopImmediatePropagation();
-
-        const response = event.data;
-        if (!response.optout && response.mguid) {
-          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCookieTimeToUTCString());
-        }
-      }, true);
-      return [
-        {
-          type: 'iframe',
-          url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
-        }
-      ];
-    }
+    return cookieSync(syncOptions, gdprConsent, uspConsent, BIDDER_CODE, THIRD_PARTY_COOKIE_ORIGIN, COOKY_SYNC_IFRAME_URL, getCookieTimeToUTCString());
   },
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function (data) {
     utils.logError('DiscoveryDSP adapter timed out for the auction.');
@@ -533,7 +495,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which  will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
     if (bid['nurl']) {
