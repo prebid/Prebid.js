@@ -25,12 +25,12 @@
                bids: [{
                        bidder: 'pubmatic',
                        params: {
-                           publisherId: '103207',
-                           adUnit: 'dcomHomeTop-728x90'
+                           publisherId: '103207222',
+                           adUnit: 'TestAdUnit'
                        },
                    },
                    {bidder: "appnexus",
-                   params: {placementId: '8801674'}
+                   params: {placementId: '8801672114'}
                      }
    
                ]
@@ -60,7 +60,11 @@
                                waitForIt: true,
                                params: {
                                    languageDetector: {
-                                        enabled: false
+                                        enabled: true
+                                   },
+                                   summarizer:{
+                                    enabled: false,
+                                    length: 190
                                    }
                                },
                            },
@@ -68,12 +72,6 @@
                    },
                });
                pbjs.addAdUnits(adUnits);
-               pbjs.enableAnalytics({
-                   provider: 'pubmatic',
-                   options: {
-                       "publisherId": 103207 // please contact PubMatic to get a publisherId for yourself
-                   }
-               });
                pbjs.requestBids({
                    bidsBackHandler: sendAdserverRequest,
                    timeout: PREBID_TIMEOUT
@@ -99,7 +97,7 @@
    
        <script>
            googletag.cmd.push(function () {
-               googletag.defineSlot('/19968336/header-bid-tag-0', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+               googletag.defineSlot('/199622228336/test-adunit', [[728, 90], [300, 250]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
    
                googletag.pubads().enableSingleRequest();
                googletag.enableServices();

@@ -269,8 +269,8 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
 
   // Check if language is already set in ortb2
   // First check reqBidsConfigObj (which has priority for the current auction)
-  if (reqBidsConfigObj?.ortb2?.site?.content?.language) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language already set in reqBidsConfigObj.ortb2.site.content.language: ${reqBidsConfigObj.ortb2.site.content.language}. Using existing value.`);
+  if (reqBidsConfigObj?.ortb2Fragments?.global?.site?.content?.language) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language already set in reqBidsConfigObj.ortb2Fragments.global.site.content.language: ${reqBidsConfigObj.ortb2Fragments.global.site.content.language}. Using existing value.`);
     callback();
     return;
   }
@@ -281,7 +281,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting detected language from localStorage:`, storedLanguage);
 
     // Add language information to bid request
-    mergeDeep(reqBidsConfigObj.ortb2, {
+    mergeDeep(reqBidsConfigObj.ortb2Fragments.global, {
       site: {
         content: {
           language: storedLanguage.language
