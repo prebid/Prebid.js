@@ -102,6 +102,7 @@
     "mocha": "^10.7.3",
     "morgan": "^1.10.0",
     "neostandard": "^0.12.1",
+    "nise": "^6.1.1",
     "node-html-parser": "^6.1.5",
     "opn": "^5.4.0",
     "plugin-error": "^2.0.1",
