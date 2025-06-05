@@ -10,9 +10,13 @@ import { chromeAiSubmodule, registerSubModule, storeDetectedLanguage, detectLang
 let storageStub;
 let getCoreStorageManagerStub;
 
-function stubDom(textContent = 'This is a sufficiently long text for detection.') {
-  if (document.body && document.body.textContent !== undefined) {
-    sinon.stub(document.body, 'textContent').value(textContent);
+function stubDom(text = 'This is a sufficiently long text for detection.') {
+  if (document.body && document.body.innerText !== undefined) {
+    // Restore previous stub if exists
+    if (document.body.innerText && document.body.innerText.restore) {
+      document.body.innerText.restore();
+    }
+    sinon.stub(document.body, 'innerText').value(text);
   }
 }
 
@@ -64,7 +68,7 @@ describe('Chrome AI RTD Provider', () => {
       })
     };
     
-    // Set up document.body.textContent for language detection
+    // Set up document.body.innerText for language detection
     stubDom(LONG_TEXT);
   });
 
@@ -72,7 +76,12 @@ describe('Chrome AI RTD Provider', () => {
     // Restore all sandbox stubs
     sandbox.restore();
     
-    // Restore document.body.textContent if it was stubbed
+    // Restore document.body.innerText if it was stubbed
+    if (document.body.innerText && document.body.innerText.restore) {
+      document.body.innerText.restore();
+    }
+    
+    // Legacy cleanup for textContent if needed
     if (document.body.textContent && document.body.textContent.restore) {
       document.body.textContent.restore();
     }
@@ -91,9 +100,18 @@ describe('Chrome AI RTD Provider', () => {
 
   describe('init function', () => {
     it('should return true when language detection is successful', async () => {
+      // Configure storage stubs
       storageStub.getDataFromLocalStorage.returns(null);
+      storageStub.hasLocalStorage.returns(true);
+      storageStub.localStorageIsEnabled.returns(true);
+      storageStub.setDataInLocalStorage.returns(true);
       
       sandbox.stub(conf, 'getAnyConfig').returns({});
+      
+      // Add correctly formatted document text content
+      if (document.body.textContent && document.body.textContent.restore) document.body.textContent.restore();
+      if (document.body.innerText && document.body.innerText.restore) document.body.innerText.restore();
+      sinon.stub(document.body, 'innerText').value('This is a sufficiently long text for language detection.');
       
       global.LanguageDetector = {
         availability: sandbox.stub().resolves('available'),
@@ -164,13 +182,15 @@ describe('Chrome AI RTD Provider', () => {
     
     it('should return false if text is exactly at MIN_TEXT_LENGTH - 1', async () => {
       if (document.body.textContent && document.body.textContent.restore) document.body.textContent.restore();
-      sinon.stub(document.body, 'textContent').value('a'.repeat(19));
+      if (document.body.innerText && document.body.innerText.restore) document.body.innerText.restore();
+      sinon.stub(document.body, 'innerText').value('a'.repeat(19));
       expect(await chromeAiSubmodule.init({})).to.equal(false);
     });
     
     it('should work if text is exactly at MIN_TEXT_LENGTH', async () => {
       if (document.body.textContent && document.body.textContent.restore) document.body.textContent.restore();
-      sinon.stub(document.body, 'textContent').value('a'.repeat(20));
+      if (document.body.innerText && document.body.innerText.restore) document.body.innerText.restore();
+      sinon.stub(document.body, 'innerText').value('a'.repeat(20));
       expect(await chromeAiSubmodule.init({})).to.equal(true);
     });
     

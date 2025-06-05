@@ -16,7 +16,8 @@ const CONSTANTS = Object.freeze({
   MIN_TEXT_LENGTH: 20,
   DEFAULT_CONFIG: {
     languageDetector: {
-      enabled: true
+      enabled: true,
+      confidence: 0.8
     }
   }
 });
@@ -28,36 +29,19 @@ const storage = getCoreStorageManager(CONSTANTS.SUBMODULE_NAME);
 let moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
 
 /**
- * Merge default config with user config
- * @param {Object} userConfig - User configuration
- * @returns {Object} - Merged configuration
- */
-const mergeConfig = (userConfig) => {
-  // Start with a deep copy of default config
-  const config = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
-  
-  // If no user config, return defaults
-  if (!userConfig) {
-    return config;
-  }
-  
-  // If user provided languageDetector config, merge it
-  if (userConfig.languageDetector) {
-    config.languageDetector = {
-      ...config.languageDetector,
-      ...userConfig.languageDetector
-    };
-  }
-  
-  return config;
-};
-
-/**
  * Set module config
  * @param {Object} config - Configuration from Prebid.js
  */
 const mergeModuleConfig = (config) => {
-  moduleConfig = mergeConfig(config?.params);
+  // Create a deep copy of the default config
+  moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+  
+  // If params are provided, merge them with the default config
+  if (config?.params) {
+    mergeDeep(moduleConfig, config.params);
+  }
+  
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} Module config set:`, moduleConfig);
   return moduleConfig;
 };
 
@@ -184,6 +168,14 @@ export const detectLanguage = async (text) => {
 
     const topResult = results[0];
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Detected language: ${topResult.detectedLanguage} (confidence: ${topResult.confidence})`);
+    
+    // Check if confidence is below the threshold
+    const confidenceThreshold = moduleConfig.languageDetector.confidence;
+    if (topResult.confidence < confidenceThreshold) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection confidence (${topResult.confidence}) is below threshold (${confidenceThreshold}), skipping`);
+      return null;
+    }
+    
     return {
       language: topResult.detectedLanguage,
       confidence: topResult.confidence
@@ -195,17 +187,10 @@ export const detectLanguage = async (text) => {
 };
 
 /**
- * Initialize the ChromeAI RTD Module.
- * @param {Object} config - Module configuration
- * @param {Object} userConsent - User consent data
- * @returns {boolean} - Whether initialization was successful
+ * Performs language detection and stores the result
+ * @returns {Promise<boolean>} - Whether language detection was successful
  */
-const init = async (config, userConsent) => {
-  logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
-  
-  // merge module configuration
-  moduleConfig = mergeModuleConfig(config);
-  
+const initLanguageDetector = async () => {
   // Check if language is already set in ortb2
   const ortb2 = conf.getAnyConfig('ortb2');
   if (ortb2?.site?.content?.language) {
@@ -222,7 +207,7 @@ const init = async (config, userConsent) => {
   }
 
   // Get page text content
-  const pageText = document.body.textContent;
+  const pageText = document.body.innerText;
   if (!pageText || pageText.length < CONSTANTS.MIN_TEXT_LENGTH) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content to detect language`);
     return false;
@@ -236,12 +221,34 @@ const init = async (config, userConsent) => {
   }
 
   // Store language in localStorage
-  storeDetectedLanguage(
+  const stored = storeDetectedLanguage(
     detectionResult.language,
     detectionResult.confidence,
     getCurrentUrl()
   );
+  
+  // Return the result of the storage operation
+  return stored;
+};
 
+/**
+ * Initialize the ChromeAI RTD Module.
+ * @param {Object} config - Module configuration
+ * @param {Object} userConsent - User consent data
+ * @returns {boolean} - Whether initialization was successful
+ */
+const init = async (config, userConsent) => {
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
+  
+  // Set module configuration
+  moduleConfig = mergeModuleConfig(config);
+  
+  // Only run language detection if enabled (default is true)
+  if (!moduleConfig.languageDetector || moduleConfig.languageDetector.enabled !== false) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection is enabled`);
+    return await initLanguageDetector();
+  }
+  
   return true;
 };
 
@@ -291,24 +298,8 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
 
 /** @type {RtdSubmodule} */
 export const chromeAiSubmodule = {
-  /**
-   * used to link submodule with realTimeData
-   * @type {string}
-   */
   name: CONSTANTS.SUBMODULE_NAME,
-  
-  /**
-   * Initialize the module
-   * @param {Object} config - Module configuration
-   * @param {Object} userConsent - User consent data
-   */
   init,
-  
-  /**
-   * Add language data to bid request
-   * @param {Object} reqBidsConfigObj - Request bids configuration object
-   * @param {function} callback - Callback function
-   */
   getBidRequestData
 };
 
