@@ -5,7 +5,7 @@ const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
-const gutil = require('gulp-util');
+const gutil = require('plugin-error');
 const submodules = require('./modules/.submodules.json').parentModules;
 
 const MODULE_PATH = './modules';

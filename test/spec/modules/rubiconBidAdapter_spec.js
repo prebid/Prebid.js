@@ -11,7 +11,6 @@ import {
 } from 'modules/rubiconBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {find} from 'src/polyfill.js';
 import 'modules/schain.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
@@ -48,7 +47,7 @@ describe('the rubicon adapter', function () {
    * @return {sizeMapConverted}
    */
   function getSizeIdForBid(sizesMapConverted, bid) {
-    return find(sizesMapConverted, item => (item.width === bid.width && item.height === bid.height));
+    return sizesMapConverted.find(item => (item.width === bid.width && item.height === bid.height));
   }
 
   /**
@@ -57,7 +56,7 @@ describe('the rubicon adapter', function () {
    * @return {Object}
    */
   function getResponseAdBySize(ads, size) {
-    return find(ads, item => item.size_id === size.sizeId);
+    return ads.find(item => item.size_id === size.sizeId);
   }
 
   /**
@@ -66,7 +65,7 @@ describe('the rubicon adapter', function () {
    * @return {BidRequest}
    */
   function getBidRequestBySize(bidRequests, size) {
-    return find(bidRequests, item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
+    return bidRequests.find(item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
   }
 
   /**
@@ -2092,6 +2091,39 @@ describe('the rubicon adapter', function () {
 
             // make sure high entropy keys are not present
             let highEntropyHints = ['m_ch_full_ver', 'm_ch_arch', 'm_ch_bitness', 'm_ch_platform_ver'];
+            highEntropyHints.forEach((hint) => { expect(data.get(hint)).to.be.null; });
+          });
+          it('should ignore invalid browser hints (missing version)', function () {
+            let bidRequestSua = utils.deepClone(bidderRequest);
+            bidRequestSua.bids[0].ortb2 = { device: { sua: {
+              'browsers': [
+                {
+                  'brand': 'Not A(Brand',
+                  // 'version': ['8'], // missing version
+                },
+              ],
+            } } };
+
+            // How should fastlane query be constructed with default SUA
+            let expectedValues = {
+              m_ch_ua: `"Not A(Brand"|v="undefined"`,
+            }
+
+            // Build Fastlane call
+            let [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
+            let data = new URLSearchParams(request.data);
+
+            // Loop through expected values and if they do not match push an error
+            const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              return accum;
+            }, []);
+
+            // should be no errors
+            expect(errors).to.deep.equal([]);
+
+            // make sure high entropy keys are not present
+            let highEntropyHints = ['m_ch_full_ver'];
             highEntropyHints.forEach((hint) => { expect(data.get(hint)).to.be.null; });
           });
         });

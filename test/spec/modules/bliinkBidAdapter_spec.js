@@ -1096,15 +1096,25 @@ describe('BLIINK Adapter getUserSyncs', function () {
 });
 
 describe('BLIINK Adapter keywords & coppa true', function () {
-  it('Should build request with keyword and coppa true if exist', () => {
+  let querySelectorStub;
+  let configStub;
+
+  beforeEach(() => {
+    window.bliinkBid = {};
     const metaElement = document.createElement('meta');
     metaElement.name = 'keywords';
     metaElement.content = 'Bliink, Saber, Prebid';
-    sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+    configStub = sinon.stub(config, 'getConfig');
+    configStub.withArgs('coppa').returns(true);
+    querySelectorStub = sinon.stub(document, 'querySelector').returns(metaElement);
+  });
 
-    const querySelectorStub = sinon
-      .stub(document, 'querySelector')
-      .returns(metaElement);
+  afterEach(() => {
+    querySelectorStub.restore();
+    configStub.restore();
+  });
+
+  it('Should build request with keyword and coppa true if exist', () => {
     expect(
       spec.buildRequests(
         [],
@@ -1147,8 +1157,6 @@ describe('BLIINK Adapter keywords & coppa true', function () {
         ],
       },
     });
-    querySelectorStub.restore();
-    config.getConfig.restore();
   });
 });
 

@@ -1,5 +1,4 @@
 import { config } from '../../src/config.js';
-import { } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
 import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';

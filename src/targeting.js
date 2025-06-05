@@ -15,7 +15,6 @@ import * as events from './events.js';
 import { hook } from './hook.js';
 import { ADPOD } from './mediaTypes.js';
 import { NATIVE_TARGETING_KEYS } from './native.js';
-import {find} from './polyfill.js';
 import {
   deepAccess,
   deepClone,
@@ -254,7 +253,7 @@ export function newTargeting(auctionManager) {
         // check if key is in default keys, if not, it's custom, we won't remove it.
         const isCustom = defaultKeys.filter(defaultKey => key.indexOf(defaultKeyring[defaultKey]) === 0).length === 0;
         // check if key explicitly allowed, if not, we'll remove it.
-        const found = isCustom || find(allowedKeys, allowedKey => {
+        const found = isCustom || allowedKeys.find(allowedKey => {
           const allowedKeyName = defaultKeyring[allowedKey];
           // we're looking to see if the key exactly starts with one of our default keys.
           // (which hopefully means it's not custom)

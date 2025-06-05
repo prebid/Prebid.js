@@ -24,10 +24,12 @@ describe('adnuntiusBidAdapter', function () {
       }
     };
     storage = getStorageManager({ bidderCode: 'adnuntius' });
+    resetExpectedUrls();
   });
 
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
+    resetExpectedUrls();
   });
 
   afterEach(function () {
@@ -35,30 +37,54 @@ describe('adnuntiusBidAdapter', function () {
     config.setBidderConfig({ bidders: [] });
     localStorage.removeItem('adn.metaData');
     sandbox.restore();
+    resetExpectedUrls();
   });
 
   after(() => {
     getGlobal().bidderSettings = {};
+    resetExpectedUrls();
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const winDimensions = getWinDimensions();
-  const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
-  const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
   const prebidVersion = getGlobal().version;
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
-  const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
-  const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
-  const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
-  const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+
+  let screen;
+  let viewport;
+  let ENDPOINT_URL_BASE;
+  let ENDPOINT_URL;
+  let LOCALHOST_URL;
+  let ENDPOINT_URL_NOCOOKIE;
+  let ENDPOINT_URL_SEGMENTS;
+  let ENDPOINT_URL_CONSENT;
+
+  function resetExpectedUrls() {
+    const winDimensions = getWinDimensions();
+    screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
+    viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
+    ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
+    ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
+    LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+    ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
+    ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
+    ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+  }
 
   function expectUrlsEqual(actual, expected) {
     const a = utils.parseUrl(actual);
     const e = utils.parseUrl(expected);
     expect(a.protocol + '://' + a.host + a.pathname).to.equal(e.protocol + '://' + e.host + e.pathname);
     const sortEntries = obj => Object.entries(obj).sort();
-    expect(sortEntries(a.search)).to.deep.equal(sortEntries(e.search));
+    const sortedExpectations = sortEntries(a.search);
+    const sortedActuals = sortEntries(e.search);
+    for (let i = 0; i < sortedExpectations.length; i++) {
+      const expectation = sortedExpectations[i];
+      const actual = sortedActuals[i];
+
+      const expectationAsString = expectation[0] + ":" + expectation[1];
+      const actualAsString = actual[0] + ":" + actual[1];
+      expect(expectationAsString).to.equal(actualAsString);
+    }
+    expect(sortedExpectations.length).to.equal(sortedActuals.length);
   }
 
   const adapter = newBidder(spec);

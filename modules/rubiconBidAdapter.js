@@ -1031,7 +1031,7 @@ function applyFPD(bidRequest, mediaType, data) {
           const [ua, fullVer] = browsers.reduce((accum, browserData) => {
             accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
             // only set fullVer if long enough
-            if (browserData.version.length > 1) {
+            if (browserData?.version?.length > 1) {
               accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
             }
             return accum;

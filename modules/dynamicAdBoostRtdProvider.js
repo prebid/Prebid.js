@@ -7,7 +7,7 @@
 import { submodule } from '../src/hook.js'
 import { loadExternalScript } from '../src/adloader.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { deepAccess, deepSetValue, isEmptyStr } from '../src/utils.js';
+import { deepAccess, deepSetValue } from '../src/utils.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
@@ -29,7 +29,7 @@ let dabStartTime;
 // Array of div IDs to track
 let dynamicAdBoostAdUnits = {};
 
-function init(config, userConsent) {
+function init() {
   dabStartDate = new Date();
   dabStartTime = dabStartDate.getTime();
   if (!CLIENT_SUPPORTS_IO) {
@@ -37,47 +37,30 @@ function init(config, userConsent) {
   }
   // Create an Intersection Observer instance
   observer = new IntersectionObserver(dabHandleIntersection, dabOptions);
-  if (config.params.keyId) {
-    let keyId = config.params.keyId;
-    if (keyId && !isEmptyStr(keyId)) {
-      let dabDivIdsToTrack = config.params.adUnits;
-      let dabInterval = setInterval(function() {
-        // Observe each div by its ID
-        dabDivIdsToTrack.forEach(divId => {
-          let div = document.getElementById(divId);
-          if (div) {
-            observer.observe(div);
-          }
-        });
+  let keyId = 'rtd-' + window.location.hostname;
 
-        let dabDateNow = new Date();
-        let dabTimeNow = dabDateNow.getTime();
-        let dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
-        let elapsedThreshold = 30;
-        if (config.params.threshold) {
-          elapsedThreshold = config.params.threshold;
-        }
-        if (dabElapsedSeconds >= elapsedThreshold) {
-          clearInterval(dabInterval); // Stop
-          loadLmScript(keyId);
-        }
-      }, 1000);
+  let dabInterval = setInterval(function() {
+    let dabDateNow = new Date();
+    let dabTimeNow = dabDateNow.getTime();
+    let dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
+    let elapsedThreshold = 0;
 
-      return true;
+    if (dabElapsedSeconds >= elapsedThreshold) {
+      clearInterval(dabInterval); // Stop
+      loadLmScript(keyId);
     }
-  }
-  return false;
+  }, 1000);
+
+  return true;
 }
 
 function loadLmScript(keyId) {
-  let viewableAdUnits = Object.keys(dynamicAdBoostAdUnits);
-  let viewableAdUnitsCSV = viewableAdUnits.join(',');
-  const scriptUrl = `${SCRIPT_URL}/${keyId}.js?viewableAdUnits=${viewableAdUnitsCSV}`;
+  const scriptUrl = `${SCRIPT_URL}/${keyId}.js`;
   loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME);
   observer.disconnect();
 }
 
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+function getBidRequestData(reqBidsConfigObj, callback) {
   const reqAdUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
   if (Array.isArray(reqAdUnits)) {
