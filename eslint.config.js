@@ -235,7 +235,6 @@ module.exports = [
       'camelcase': 'off',
       'no-array-constructor': 'off',
       'import-x/no-duplicates': 'off',
-      'import-x/no-absolute-path': 'off',
       'no-loss-of-precision': 'off',
       'no-redeclare': 'off',
       'no-global-assign': 'off',
