@@ -6,7 +6,6 @@ import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
-  let fakeServer;
   let bidderRequest;
   let clock;
 
@@ -18,6 +17,7 @@ describe('stroeerCore bid adapter', function () {
   });
 
   afterEach(() => {
+    clock.restore();
     sandbox.restore();
   });
 

@@ -21,6 +21,7 @@ describe('ConcertAnalyticsAdapter', function() {
   });
 
   after(function () {
+    clock.restore();
     sandbox.restore();
   });
 
