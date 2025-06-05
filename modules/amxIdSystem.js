@@ -48,14 +48,14 @@ function handleSyncResponse(client, response, params, callback) {
   }
 
   if (response.u == null || response.u.length === 0) {
-    callback(null);
+    callback(undefined);
     return;
   }
 
   client(response.u, {
     error(e) {
       logError(`${NAME} failed on ${response.u}`, e);
-      callback(null);
+      callback(undefined);
     },
     success(complete) {
       if (complete != null && complete.length > 0) {
@@ -67,7 +67,7 @@ function handleSyncResponse(client, response, params, callback) {
       }
 
       logError(`${NAME} invalid value`, complete);
-      callback(null);
+      callback(undefined);
     },
   }, params, AJAX_OPTIONS);
 }
@@ -130,7 +130,7 @@ export const amxIdSubmodule = {
         {
           error(e) {
             logError(`${NAME} failed to load`, e);
-            done(null);
+            done(undefined);
           },
           success(responseText) {
             if (responseText != null && responseText.length > 0) {
@@ -143,7 +143,7 @@ export const amxIdSubmodule = {
               }
             }
 
-            done(null);
+            done(undefined);
           },
         },
         params,
