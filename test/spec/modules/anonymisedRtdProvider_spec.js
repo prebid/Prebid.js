@@ -1,6 +1,6 @@
 import {config} from 'src/config.js';
 import {getRealTimeData, anonymisedRtdSubmodule, storage} from 'modules/anonymisedRtdProvider.js';
-import { loadExternalScript } from '../../../src/adloader.js';
+import { loadExternalScriptStub as loadExternalScript } from 'test/mocks/adloaderStub.js';
 
 describe('anonymisedRtdProvider', function() {
   let getDataFromLocalStorageStub;
@@ -25,6 +25,7 @@ describe('anonymisedRtdProvider', function() {
   beforeEach(function() {
     config.resetConfig();
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
+    loadExternalScript.resetHistory();
   });
 
   afterEach(function () {
