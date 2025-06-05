@@ -1056,7 +1056,7 @@ describe('VisxAdapter', function () {
     let documentStub;
 
     before(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs('visx-adunit-code-1').returns({
         id: 'visx-adunit-code-1'

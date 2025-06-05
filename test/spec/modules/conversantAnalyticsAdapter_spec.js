@@ -37,7 +37,7 @@ describe('Conversant analytics adapter tests', function() {
 
   beforeEach(function () {
     requests = server.requests;
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'getEvents').returns([]); // need to stub this otherwise unwanted events seem to get fired during testing
     const getGlobalStub = {
       version: PREBID_VERSION,

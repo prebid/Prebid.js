@@ -4411,7 +4411,7 @@ describe('IndexexchangeAdapter', function () {
 
   describe('Features', () => {
     let localStorageValues = {};
-    let sandbox = sinon.sandbox.create();
+    let sandbox = sinon.createSandbox();
     let setDataInLocalStorageStub;
     let getDataFromLocalStorageStub;
     let removeDataFromLocalStorageStub;
@@ -4429,7 +4429,7 @@ describe('IndexexchangeAdapter', function () {
 
     beforeEach(() => {
       localStorageValues = {};
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage').callsFake((key, value) => localStorageValues[key] = value);
       getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => localStorageValues[key]);
       removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage').callsFake((key) => delete localStorageValues[key]);

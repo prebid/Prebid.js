@@ -290,7 +290,7 @@ describe('pubmatic analytics adapter', function () {
 
   beforeEach(function () {
     setUADefault();
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     requests = server.requests;
 

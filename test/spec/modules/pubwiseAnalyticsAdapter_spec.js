@@ -34,7 +34,7 @@ describe('PubWise Prebid Analytics', function () {
   };
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
     sandbox.stub(events, 'getEvents').returns([]);
 

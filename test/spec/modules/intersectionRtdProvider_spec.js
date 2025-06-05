@@ -28,7 +28,7 @@ describe('Intersection RTD Provider', function () {
   const rtdConfig = {realTimeData: {auctionDelay: 200, dataProviders: [providerConfig]}}
   describe('IntersectionObserver not supported', function() {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function() {
       sandbox.restore();
@@ -41,7 +41,7 @@ describe('Intersection RTD Provider', function () {
   });
   describe('IntersectionObserver supported', function() {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       placeholder = createDiv();
       append();
       const __config = {};
