@@ -20,13 +20,12 @@ const aliasEP = {
   'stellormedia': 'https://ghb.ads.stellormedia.com/v2/auction/',
 };
 
-const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
+const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent', ortb2: { source: { ext: { schain: { ver: 1 } } } } };
 const DISPLAY_REQUEST = {
   'bidder': 'adtelligent',
   'params': {
     'aid': 12345
   },
-  'schain': { ver: 1 },
   'userId': { criteo: 2 },
   'mediaTypes': { 'banner': { 'sizes': [300, 250] } },
   'bidderRequestId': '7101db09af0db2',
