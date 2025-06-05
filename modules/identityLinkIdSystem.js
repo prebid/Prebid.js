@@ -159,8 +159,8 @@ export function getEnvelopeFromStorage() {
     try {
       return window.atob(rawEnvelope.replace(/-/g, '+').replace(/_/g, '/'));
     } catch (e2) {
-      return undefined;
       utils.logError('identityLink: invalid envelope format');
+      return undefined;
     }
   }
 }
