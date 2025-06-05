@@ -5,98 +5,19 @@ import {
   cleanObj,
   deepAccess,
   deepSetValue,
-  generateUUID,
-  getWindowSelf,
-  getWindowTop,
-  canAccessWindowTop,
-  getDNT,
   logInfo,
   triggerPixel,
   getWinDimensions,
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
-import { parseDomain } from '../src/refererDetection.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
-export const _VALUAD = (function() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-
-  w.VALUAD = w.VALUAD || {};
-  w.VALUAD.pageviewId = w.VALUAD.pageviewId || generateUUID();
-  w.VALUAD.sessionId = w.VALUAD.sessionId || generateUUID();
-  w.VALUAD.sessionStartTime = w.VALUAD.sessionStartTime || Date.now();
-  w.VALUAD.pageLoadTime = w.VALUAD.pageLoadTime || window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart;
-  w.VALUAD.userActivity = w.VALUAD.userActivity || {
-    lastActivityTime: Date.now(),
-    pageviewCount: (w.VALUAD.userActivity?.pageviewCount || 0) + 1
-  };
-
-  return w.VALUAD;
-})();
-
-// Helper functions to enrich data
-function getDevice() {
-  const language = navigator.language ? 'language' : 'userLanguage';
-  const deviceInfo = {
-    userAgent: navigator.userAgent,
-    language: navigator[language],
-    dnt: getDNT() ? 1 : 0,
-    js: 1,
-    geo: {}
-  };
-
-  const { innerWidth: windowWidth, innerHeight: windowHeight, screen } = getWinDimensions();
-  // Get screen dimensions
-  if (window.screen) {
-    deviceInfo.w = screen.width;
-    deviceInfo.h = screen.height;
-  }
-
-  // Get viewport dimensions
-  deviceInfo.ext = {
-    vpw: windowWidth,
-    vph: windowHeight
-  };
-
-  return deviceInfo;
-}
-
-function getSite(bidderRequest) {
-  const { refererInfo } = bidderRequest;
-  const siteInfo = {
-    domain: parseDomain(refererInfo.topmostLocation) || '',
-    page: refererInfo.topmostLocation || '',
-    referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
-    top: refererInfo.reachedTop
-  };
-
-  // Add page metadata if available
-  const meta = document.querySelector('meta[name="keywords"]');
-  if (meta && meta.content) {
-    siteInfo.keywords = meta.content;
-  }
-
-  return siteInfo;
-}
-
-function getSession() {
-  return {
-    id: _VALUAD.sessionId,
-    startTime: _VALUAD.sessionStartTime,
-    lastActivityTime: _VALUAD.userActivity.lastActivityTime,
-    pageviewCount: _VALUAD.userActivity.pageviewCount,
-    pageLoadTime: _VALUAD.pageLoadTime || 0,
-    new: _VALUAD.userActivity.pageviewCount === 1
-  };
-}
-
-// Add detailed ad unit position detection
-function detectAdUnitPosition(adUnitCode) {
+function detectAdUnitPosition(adUnitCode, adSize) {
   const element = document.getElementById(adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(adUnitCode)?.divId);
   if (!element) return null;
 
@@ -106,17 +27,14 @@ function detectAdUnitPosition(adUnitCode) {
   const pageHeight = docElement.scrollHeight;
 
   return {
-    x: Math.round(rect.left + window.pageXOffset),
-    y: Math.round(rect.top + window.pageYOffset),
-    w: Math.round(rect.width),
-    h: Math.round(rect.height),
+    unitSize: `${rect.width}x${rect.height}`,
     position: `${Math.round(rect.left + window.pageXOffset)}x${Math.round(rect.top + window.pageYOffset)}`,
-    viewportVisibility: calculateVisibility(rect),
-    pageSize: `${pageWidth}x${pageHeight}`
+    viewportVisibility: calculateVisibility(rect, adSize),
+    pageSize: `${pageWidth}x${pageHeight}`,
   };
 }
 
-function calculateVisibility(rect) {
+function calculateVisibility(rect, adSize) {
   const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
 
   // Element is not in viewport
@@ -125,8 +43,14 @@ function calculateVisibility(rect) {
   }
 
   // Calculate visible area
-  const visibleHeight = Math.min(rect.bottom, windowHeight) - Math.max(rect.top, 0);
-  const visibleWidth = Math.min(rect.right, windowWidth) - Math.max(rect.left, 0);
+  let visibleHeight = Math.min(rect.bottom, windowHeight) - Math.max(rect.top, 0);
+  let visibleWidth = Math.min(rect.right, windowWidth) - Math.max(rect.left, 0);
+
+  if (visibleHeight == 0 && visibleWidth == 0) {
+    visibleHeight = Math.min(rect.top + adSize[1], windowHeight) - Math.max(rect.top, 0);
+    visibleWidth = Math.min(rect.left + adSize[0], windowWidth) - Math.max(rect.left, 0);
+  }
+
   const visibleArea = visibleHeight * visibleWidth;
   const totalArea = rect.height * rect.width;
 
@@ -161,19 +85,12 @@ const converter = ortbConverter({
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const device = getDevice();
-    const site = getSite(bidderRequest);
-    const session = getSession();
 
     const gdpr = getGdprConsent(bidderRequest);
     const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
     const coppa = config.getConfig('coppa') === true ? 1 : 0;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
-
-    // Ensure we have required extensions
-    deepSetValue(request, 'device', {...request.device, ...device});
-    deepSetValue(request, 'site', {...request.site, ...site});
 
     deepSetValue(request, 'regs', {
       gdpr: gdpr.consentRequired || 0,
@@ -187,17 +104,8 @@ const converter = ortbConverter({
       }
     });
 
-    const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
-    deepSetValue(request, 'site.ext.data.valuad_rtd', {
-      pageviewId: _VALUAD.pageviewId,
-      session: session,
-      features: {
-        page_dimensions: `${document.documentElement.scrollWidth}x${document.documentElement.scrollHeight}`,
-        viewport_dimensions: `${windowWidth}x${windowHeight}`,
-        user_timestamp: Math.floor(Date.now() / 1000),
-        dom_loading: window.performance?.timing?.domContentLoadedEventEnd - window.performance?.timing?.navigationStart
-      }
-    });
+    deepSetValue(request, 'device.js', 1);
+    deepSetValue(request, 'device.geo', {});
 
     // Add bid parameters
     if (bidderRequest && bidderRequest.bids && bidderRequest.bids.length) {
@@ -238,32 +146,25 @@ const converter = ortbConverter({
   imp(buildImp, bid, context) {
     const imp = buildImp(bid, context);
 
-    // Add additional impression data
-    const positionData = detectAdUnitPosition(bid.adUnitCode);
-    if (positionData) {
-      deepSetValue(imp, 'ext.data.adg_rtd.adunit_position', positionData.position);
-      deepSetValue(imp, 'ext.data.viewability', positionData.viewportVisibility);
+    const mediaType = Object.keys(bid.mediaTypes)[0];
+    let adSize;
+
+    if (mediaType === BANNER) {
+      adSize = bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0];
     }
 
-    // GPT information
-    const gptInfo = getGptSlotInfoForAdUnitCode(bid.adUnitCode);
-    if (gptInfo) {
-      deepSetValue(imp, 'ext.data.adserver', {
-        name: 'gam',
-        adslot: gptInfo.gptSlot
-      });
-      deepSetValue(imp, 'ext.data.pbadslot', gptInfo.gptSlot);
+    if (!adSize) { adSize = [0, 0]; }
 
-      // If not already set, add gpid
-      if (!imp.ext.gpid && gptInfo.gptSlot) {
-        deepSetValue(imp, 'ext.gpid', gptInfo.gptSlot);
-      }
+    // Add additional impression data
+    const positionData = detectAdUnitPosition(bid.adUnitCode, adSize);
+    if (positionData) {
+      deepSetValue(imp, 'ext.data.position', positionData);
+      deepSetValue(imp, 'ext.data.viewability', positionData.viewportVisibility);
     }
 
     // Handle price floors
     if (typeof bid.getFloor === 'function') {
       try {
-        const mediaType = Object.keys(bid.mediaTypes)[0];
         let size;
 
         if (mediaType === BANNER) {
@@ -327,19 +228,7 @@ function isBidRequestValid(bid = {}) {
 }
 
 function buildRequests(validBidRequests = [], bidderRequest = {}) {
-  // Add bid-level metadata for our server to use
-  validBidRequests = validBidRequests.map(req => {
-    req.valuadMeta = {
-      pageviewId: _VALUAD.pageviewId,
-      adUnitPosition: detectAdUnitPosition(req.adUnitCode)
-    };
-    return req;
-  });
-
   const data = converter.toORTB({ validBidRequests, bidderRequest });
-
-  // Update session data
-  _VALUAD.userActivity.lastActivityTime = Date.now();
 
   return [{
     method: 'POST',
@@ -351,11 +240,6 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
 function interpretResponse(response, request) {
   // Restore original call, remove logging and safe navigation
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
-
-  // Restore original server-side data processing
-  if (response.body && response.body.ext && response.body.ext.valuad) {
-    _VALUAD.serverData = response.body.ext.valuad;
-  }
 
   return bidResponses;
 }
