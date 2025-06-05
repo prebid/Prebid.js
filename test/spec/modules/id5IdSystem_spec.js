@@ -20,6 +20,13 @@ import {PbPromise} from '../../../src/utils/promise.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
 describe('ID5 ID System', function () {
+  let logInfoStub;
+  before(function () {
+    logInfoStub = sinon.stub(utils, 'logInfo');
+  });
+  after(function () {
+    logInfoStub.restore();
+  });  
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';

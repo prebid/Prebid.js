@@ -181,7 +181,7 @@ const adverxoUtils = {
     bidRequests.forEach(bidRequest => {
       const adUnit = {
         host: bidRequest.params.host,
-        id: bidRequest.params.adUnitId,
+        id: Number(bidRequest.params.adUnitId),
         auth: bidRequest.params.auth,
       };
 
@@ -229,8 +229,8 @@ export const spec = {
       return false;
     }
 
-    if (!bid.params.adUnitId || typeof bid.params.adUnitId !== 'number') {
-      utils.logWarn('Adverxo Bid Adapter: adUnitId bid param is required and must be a number');
+    if (!bid.params.adUnitId || isNaN(Number(bid.params.adUnitId)) || bid.params.adUnitId <= 0) {
+      utils.logWarn('Adverxo Bid Adapter: adUnitId bid param is required and must be a positive number');
       return false;
     }
 
