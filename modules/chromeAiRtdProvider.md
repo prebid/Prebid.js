@@ -16,6 +16,14 @@ Language detection is just one use case of Chrome AI capabilities. This module i
 
 ## Integration
 
+### Build Setup
+
+To include the Chrome AI RTD Provider in your Prebid.js build, use the following command:
+
+```bash
+gulp build --modules=chromeAiRtdProvider
+```
+
 ### Basic Integration
 
 Add the Chrome AI RTD Provider to your Prebid.js configuration:
