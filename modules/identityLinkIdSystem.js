@@ -150,7 +150,18 @@ function setEnvelopeSource(src) {
 
 export function getEnvelopeFromStorage() {
   let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
-  return rawEnvelope ? window.atob(rawEnvelope) : undefined;
+  if (!rawEnvelope) {
+    return undefined;
+  }
+  try {
+    return window.atob(rawEnvelope);
+  } catch (e) {
+    try {
+      return window.atob(rawEnvelope.replace(/-/g, '+').replace(/_/g, '/'));
+    } catch (e2) {
+      return undefined;
+    }
+  }
 }
 
 submodule('userId', identityLinkSubmodule);
