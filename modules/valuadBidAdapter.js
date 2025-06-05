@@ -5,23 +5,19 @@ import {
   cleanObj,
   deepAccess,
   deepSetValue,
-  getWindowSelf,
-  getDNT,
   logInfo,
   triggerPixel,
   getWinDimensions,
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
-import { parseDomain } from '../src/refererDetection.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
-// Add detailed ad unit position detection
-function detectAdUnitPosition(adUnitCode) {
+function detectAdUnitPosition(adUnitCode, adSize) {
   const element = document.getElementById(adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(adUnitCode)?.divId);
   if (!element) return null;
 
@@ -31,17 +27,14 @@ function detectAdUnitPosition(adUnitCode) {
   const pageHeight = docElement.scrollHeight;
 
   return {
-    x: Math.round(rect.left + window.pageXOffset),
-    y: Math.round(rect.top + window.pageYOffset),
-    w: Math.round(rect.width),
-    h: Math.round(rect.height),
+    unitSize: `${rect.width}x${rect.height}`,
     position: `${Math.round(rect.left + window.pageXOffset)}x${Math.round(rect.top + window.pageYOffset)}`,
-    viewportVisibility: calculateVisibility(rect),
-    pageSize: `${pageWidth}x${pageHeight}`
+    viewportVisibility: calculateVisibility(rect, adSize),
+    pageSize: `${pageWidth}x${pageHeight}`,
   };
 }
 
-function calculateVisibility(rect) {
+function calculateVisibility(rect, adSize) {
   const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
 
   // Element is not in viewport
@@ -50,8 +43,14 @@ function calculateVisibility(rect) {
   }
 
   // Calculate visible area
-  const visibleHeight = Math.min(rect.bottom, windowHeight) - Math.max(rect.top, 0);
-  const visibleWidth = Math.min(rect.right, windowWidth) - Math.max(rect.left, 0);
+  let visibleHeight = Math.min(rect.bottom, windowHeight) - Math.max(rect.top, 0);
+  let visibleWidth = Math.min(rect.right, windowWidth) - Math.max(rect.left, 0);
+
+  if (visibleHeight == 0 && visibleWidth == 0) {
+    visibleHeight = Math.min(rect.top + adSize[1], windowHeight) - Math.max(rect.top, 0);
+    visibleWidth = Math.min(rect.left + adSize[0], windowWidth) - Math.max(rect.left, 0);
+  }
+
   const visibleArea = visibleHeight * visibleWidth;
   const totalArea = rect.height * rect.width;
 
@@ -147,8 +146,17 @@ const converter = ortbConverter({
   imp(buildImp, bid, context) {
     const imp = buildImp(bid, context);
 
+    const mediaType = Object.keys(bid.mediaTypes)[0];
+    let adSize;
+
+    if (mediaType === BANNER) {
+      adSize = bid.mediaTypes.banner.sizes && bid.mediaTypes.banner.sizes[0];
+    }
+
+    if (!adSize) { adSize = [0, 0]; }
+
     // Add additional impression data
-    const positionData = detectAdUnitPosition(bid.adUnitCode);
+    const positionData = detectAdUnitPosition(bid.adUnitCode, adSize);
     if (positionData) {
       deepSetValue(imp, 'ext.data.position', positionData);
       deepSetValue(imp, 'ext.data.viewability', positionData.viewportVisibility);
@@ -157,7 +165,6 @@ const converter = ortbConverter({
     // Handle price floors
     if (typeof bid.getFloor === 'function') {
       try {
-        const mediaType = Object.keys(bid.mediaTypes)[0];
         let size;
 
         if (mediaType === BANNER) {

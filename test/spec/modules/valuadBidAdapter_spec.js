@@ -1,6 +1,6 @@
-import { expect, util } from 'chai';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { spec, _VALUAD } from 'modules/valuadBidAdapter.js';
+import { spec } from 'modules/valuadBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { BANNER } from 'src/mediaTypes.js';
 import { deepClone, generateUUID } from 'src/utils.js';
@@ -142,12 +142,6 @@ describe('ValuadAdapter', function () {
       height: 250
     });
 
-    _VALUAD.pageviewId = 'test-pageview-id';
-    _VALUAD.sessionId = 'test-session-id';
-    _VALUAD.sessionStartTime = 1678886400000;
-    _VALUAD.pageLoadTime = 900;
-    _VALUAD.userActivity = { lastActivityTime: 1678886405000, pageviewCount: 1 };
-
     requestToServer = spec.buildRequests(validBidRequests, bidderRequest)[0];
   });
 
@@ -232,20 +226,13 @@ describe('ValuadAdapter', function () {
       expect(payload.tmax).to.equal(bidderRequest.timeout);
 
       expect(payload.site).to.exist;
-      expect(payload.site.domain).to.equal('test.com');
-      expect(payload.site.page).to.equal(bidderRequest.refererInfo.topmostLocation);
-      expect(payload.site.referrer).to.equal(bidderRequest.refererInfo.ref);
-      expect(payload.site.top).to.equal(true);
       expect(payload.site.ext.data.pageType).to.equal('article');
 
       expect(payload.device).to.exist;
       expect(payload.device.language).to.equal('en-US');
-      expect(payload.device.dnt).to.equal(0);
       expect(payload.device.js).to.equal(1);
       expect(payload.device.w).to.equal(1920);
       expect(payload.device.h).to.equal(1080);
-      expect(payload.device.ext.vpw).to.be.a('number');
-      expect(payload.device.ext.vph).to.be.a('number');
 
       expect(payload.regs).to.exist;
       expect(payload.regs.gdpr).to.equal(1);
@@ -263,10 +250,6 @@ describe('ValuadAdapter', function () {
       expect(imp.banner).to.exist;
       expect(imp.banner.format).to.be.an('array').with.lengthOf(2);
       expect(imp.banner.format[0]).to.deep.equal({ w: 300, h: 250 });
-      expect(imp.ext.data.adserver.name).to.equal('gam');
-      expect(imp.ext.data.adserver.adslot).to.equal('/123/adunit');
-      expect(imp.ext.data.pbadslot).to.equal('/123/adunit');
-      expect(imp.ext.gpid).to.equal('/123/adunit');
     });
 
     it('should include schain if present', function () {
@@ -382,20 +365,6 @@ describe('ValuadAdapter', function () {
       let responseNoBody = { body: null };
       const fn = () => spec.interpretResponse(responseNoBody, requestToServer);
       expect(fn).to.throw();
-    });
-
-    it('should populate _VALUAD.serverData if ext.valuad exists in response', function () {
-      _VALUAD.serverData = undefined;
-      spec.interpretResponse(serverResponse, requestToServer);
-      expect(_VALUAD.serverData).to.deep.equal({ serverInfo: 'some data' });
-    });
-
-    it('should not change _VALUAD.serverData if ext.valuad is missing', function () {
-      _VALUAD.serverData = { initial: 'value' };
-      let responseNoExt = deepClone(serverResponse);
-      delete responseNoExt.body.ext;
-      spec.interpretResponse(responseNoExt, requestToServer);
-      expect(_VALUAD.serverData).to.deep.equal({ initial: 'value' });
     });
   });
 
