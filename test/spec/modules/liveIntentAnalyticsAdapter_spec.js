@@ -69,8 +69,8 @@ describe('LiveIntent Analytics Adapter ', () => {
   });
   afterEach(function () {
     liAnalytics.disableAnalytics();
-    sandbox.restore();
-    clock.restore();
+    sandbox?.restore();
+    clock?.restore();
     window.liTreatmentRate = undefined
     window.liModuleEnabled = undefined
   });
