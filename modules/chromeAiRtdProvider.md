@@ -4,6 +4,8 @@
 
 The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that enhances bidding by automatically detecting the page language using the Chrome AI Language Detection API. This information is added to the OpenRTB bid request objects, allowing bid adapters to optimize bids based on content language.
 
+Language detection is just one use case of Chrome AI capabilities. This module is designed with a modular architecture to support additional Chrome AI APIs as they become available. Future extensions will include support for features such as content summarization, when Chrome makes these APIs accessible.
+
 ## Features
 
 - Automatic language detection using Chrome AI API
@@ -84,9 +86,7 @@ pbjs.setConfig({
 
 ## Browser Compatibility
 
-- Chrome: 120+
-- Edge: 120+ (Chromium-based)
-- Other Chromium-based browsers: 120+
+- Chrome: 138(Beta)+
 - Firefox, Safari: Not supported (lacks Chrome AI API)
 
 ## Example Use Cases
