@@ -4,7 +4,7 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('plugin-error');
+var PluginError = require('plugin-error');
 var fancyLog = require('fancy-log');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
@@ -297,10 +297,7 @@ function bundle(dev, moduleArr) {
   } else {
     var diff = _.difference(modules, allModules);
     if (diff.length !== 0) {
-      throw new gutil.PluginError({
-        plugin: 'bundle',
-        message: 'invalid modules: ' + diff.join(', ')
-      });
+      throw new PluginError('bundle', 'invalid modules: ' + diff.join(', ') + '. Check your modules list.');
     }
   }
   const coreFile = helpers.getBuiltPrebidCoreFile(dev);
