@@ -2,8 +2,9 @@ import concertAnalytics from 'modules/concertAnalyticsAdapter.js';
 import { expect } from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
+import { server } from 'test/mocks/xhr.js';
 
-const sinon = require('sinon');
+import sinon from 'sinon';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 
@@ -16,7 +17,7 @@ describe('ConcertAnalyticsAdapter', function() {
 
   before(function () {
     sandbox = sinon.createSandbox();
-    clock = sinon.useFakeTimers(1896134400);
+    clock = sandbox.useFakeTimers(1896134400);
   });
 
   after(function () {
