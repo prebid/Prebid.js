@@ -35,12 +35,12 @@ let moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
 const mergeModuleConfig = (config) => {
   // Create a deep copy of the default config
   moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
-  
+
   // If params are provided, merge them with the default config
   if (config?.params) {
     mergeDeep(moduleConfig, config.params);
   }
-  
+
   logMessage(`${CONSTANTS.LOG_PRE_FIX} Module config set:`, moduleConfig);
   return moduleConfig;
 };
@@ -168,14 +168,14 @@ export const detectLanguage = async (text) => {
 
     const topResult = results[0];
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Detected language: ${topResult.detectedLanguage} (confidence: ${topResult.confidence})`);
-    
+
     // Check if confidence is below the threshold
     const confidenceThreshold = moduleConfig.languageDetector.confidence;
     if (topResult.confidence < confidenceThreshold) {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection confidence (${topResult.confidence}) is below threshold (${confidenceThreshold}), skipping`);
       return null;
     }
-    
+
     return {
       language: topResult.detectedLanguage,
       confidence: topResult.confidence
@@ -207,6 +207,7 @@ const initLanguageDetector = async () => {
   }
 
   // Get page text content
+  // eslint-disable-next-line no-restricted-properties
   const pageText = document.body.innerText;
   if (!pageText || pageText.length < CONSTANTS.MIN_TEXT_LENGTH) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content to detect language`);
@@ -226,7 +227,7 @@ const initLanguageDetector = async () => {
     detectionResult.confidence,
     getCurrentUrl()
   );
-  
+
   // Return the result of the storage operation
   return stored;
 };
@@ -239,16 +240,16 @@ const initLanguageDetector = async () => {
  */
 const init = async (config, userConsent) => {
   logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
-  
+
   // Set module configuration
   moduleConfig = mergeModuleConfig(config);
-  
+
   // Only run language detection if enabled (default is true)
   if (!moduleConfig.languageDetector || moduleConfig.languageDetector.enabled !== false) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection is enabled`);
     return await initLanguageDetector();
   }
-  
+
   return true;
 };
 
@@ -259,7 +260,7 @@ const init = async (config, userConsent) => {
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, reqBidsConfigObj);
-  
+
   // Check if language detection is explicitly disabled
   if (moduleConfig.languageDetector && moduleConfig.languageDetector.enabled === false) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection is disabled in config`);
