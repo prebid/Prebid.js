@@ -635,7 +635,7 @@ function handleFetchError(status) {
  * @param {object} floorEndpoint the floors config coming from setConfig
  */
 export function generateAndHandleFetch(floorEndpoint) {
-  // if a fetch url is defined and one is not already occuring, fire it!
+  // if a fetch url is defined and one is not already occurring, fire it!
   if (floorEndpoint.url && !fetching) {
     // default to GET and we only support GET for now
     let requestMethod = floorEndpoint.method || 'GET';
@@ -646,7 +646,7 @@ export function generateAndHandleFetch(floorEndpoint) {
       fetching = true;
     }
   } else if (fetching) {
-    logWarn(`${MODULE_NAME}: A fetch is already occuring. Skipping.`);
+    logWarn(`${MODULE_NAME}: A fetch is already occurring. Skipping.`);
   }
 }
 
