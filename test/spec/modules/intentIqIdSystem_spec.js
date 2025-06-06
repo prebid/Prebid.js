@@ -302,19 +302,89 @@ describe('IntentIQ tests', function () {
   });
 
   it('should use the provided gamParameterName from configParams', function () {
-    let callBackSpy = sinon.spy();
     let mockGamObject = mockGAM();
     let customParamName = 'custom_gam_param';
 
     defaultConfigParams.params.gamObjectReference = mockGamObject;
     defaultConfigParams.params.gamParameterName = customParamName;
 
-    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
+    intentIqIdSubmodule.getId(defaultConfigParams)
     mockGamObject.cmd.forEach(cb => cb());
     let targetingKeys = mockGamObject.pubads().getTargetingKeys();
 
     expect(targetingKeys).to.include(customParamName);
+  });
+
+  it('should call setPublisherProvidedId if shouldSetPPID=true', function () {
+    const ppidSpy = sinon.spy();
+    const gam = {
+      cmd: [],
+      pubads: function () {
+        return {
+          setTargeting: sinon.spy(),
+          setPublisherProvidedId: ppidSpy
+        };
+      }
+    };
+    defaultConfigParams.params.gamObjectReference = gam;
+    defaultConfigParams.params.shouldSetPPID = true;
+
+    intentIqIdSubmodule.getId(defaultConfigParams).callback(() => {});
+
+    const request = server.requests[0];
+    request.respond(200, responseHeader, JSON.stringify({
+        data: {
+          eids: [
+            {
+              source: 'intentiq.com',
+              uids: [
+                {
+                  id: 'test_id',
+                  ext: { stype: 'ppuid' }
+                }
+              ]
+            }
+          ]
+        }
+      })
+    );
+
+    gam.cmd.forEach(cb => cb());
+
+    expect(request.url).to.contain('at=39');
+    expect(ppidSpy.calledOnce).to.be.true;
+    expect(ppidSpy.firstCall.args[0]).to.equal('test_id');
+  });
+
+  it('should NOT call setPublisherProvidedId if shouldSetPPID=false', function () {
+    const ppidSpy = sinon.spy();
+    const gam = {
+      cmd: [],
+      pubads: () => ({
+        setTargeting: sinon.spy(),
+        setPublisherProvidedId: ppidSpy
+      })
+    };
+    defaultConfigParams.params.gamObjectReference = gam;
+    defaultConfigParams.params.shouldSetPPID = false;
+    intentIqIdSubmodule.getId(defaultConfigParams).callback(() => {});
+
+    const request = server.requests[0];
+    request.respond(200, responseHeader, JSON.stringify({
+      data: {
+        eids: [{
+          source: 'intentiq.com',
+          uids: [{
+            id: 'test_id',
+            ext: { stype: 'ppuid' }
+          }]
+        }]
+      }
+    }));
+
+    gam.cmd.forEach(cb => cb());
+    expect(request.url).to.contain('at=39');
+    expect(ppidSpy.called).to.be.false;
   });
 
   it('should not throw Uncaught TypeError when IntentIQ endpoint returns empty response', function () {
