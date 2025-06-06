@@ -3205,7 +3205,7 @@ describe('User ID', function () {
           }
         };
         addIdData({ adUnits, ortb2Fragments });
-        
+
         adUnits[0].bids.forEach(({userId}) => {
           const userIdModules = Object.keys(userId);
           expect(userIdModules).to.include(ALLOWED_MODULE);

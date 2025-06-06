@@ -941,10 +941,10 @@ describe('OguryBidAdapter', () => {
 
       const bid = { nurl: 'http://url.co/win' };
 
-      expect(ortbConverterProps.bidResponse(buildBidResponseSpy, utils.deepClone(bid), {})).to.deep.equal({ 
+      expect(ortbConverterProps.bidResponse(buildBidResponseSpy, utils.deepClone(bid), {})).to.deep.equal({
         ...bidResponse,
         currency: 'USD',
-        nurl: bid.nurl 
+        nurl: bid.nurl
       });
 
       sinon.assert.calledWith(buildBidResponseSpy, {}, {});

@@ -80,7 +80,6 @@
     "gulp-js-escape": "^1.0.1",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
-    "gulp-shell": "^0.8.0",
     "is-docker": "^2.2.1",
     "istanbul": "^0.4.5",
     "karma": "^6.3.2",
