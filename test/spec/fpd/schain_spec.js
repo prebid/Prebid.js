@@ -34,6 +34,72 @@ describe('Supply Chain fpd', function() {
 
 
   describe('schainPrecedence', function() {
+    describe('preserves existing schain values', function() {
+      it('should preserve existing global.source.schain', function() {
+        const existingSchain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{ asi: 'existing.com', sid: '99999', hp: 1 }]
+        };
+        
+        const input = {
+          global: {
+            source: {
+              schain: existingSchain
+            }
+          }
+        };
+        
+        const schainConfig = {
+          config: SAMPLE_SCHAIN
+        };
+        
+        configGetConfigStub.returns(schainConfig);
+        configGetBidderConfigStub.returns(null);
+        
+        const result = schainPrecedence(input);
+        
+        expect(result.global.source.schain).to.deep.equal(existingSchain);
+        expect(result.global.source.schain).to.not.deep.equal(SAMPLE_SCHAIN);
+        expect(logInfoStub.calledWith('Preserving existing global.source.schain from ortb2')).to.be.true;
+      });
+      
+      it('should preserve existing bidder-specific schain', function() {
+        const existingBidderSchain = {
+          ver: '3.0',
+          complete: 1,
+          nodes: [{ asi: 'existingbidder.com', sid: '88888', hp: 1 }]
+        };
+        
+        const input = {
+          bidder: {
+            'bidderA': {
+              source: {
+                schain: existingBidderSchain
+              }
+            }
+          }
+        };
+        
+        const bidderConfigs = {
+          'bidderA': {
+            schain: {
+              config: SAMPLE_SCHAIN
+            }
+          }
+        };
+        
+        configGetConfigStub.returns(null);
+        configGetBidderConfigStub.returns(bidderConfigs);
+        
+        const result = schainPrecedence(input);
+        
+        expect(result.bidder.bidderA.source.schain).to.deep.equal(existingBidderSchain);
+        expect(result.bidder.bidderA.source.schain).to.not.deep.equal(SAMPLE_SCHAIN);
+        expect(logInfoStub.calledWith('Preserving existing schain for bidder bidderA from ortb2')).to.be.true;
+      });
+    });
+    
     describe('handles edge cases', function() {
       it('should handle edge cases and no-op scenarios', function() {
         expect(schainPrecedence(null)).to.be.null;
