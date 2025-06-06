@@ -702,7 +702,7 @@ describe('The Criteo bidding adapter', function () {
       const ortbRequest = request.data;
       expect(ortbRequest.id).to.equal('def');
     });
- 
+
     it('should properly transmit source.tid if available', async function () {
       const bidderRequest = {
         ortb2: {
