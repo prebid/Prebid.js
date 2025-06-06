@@ -138,24 +138,24 @@ describe('adlineRtd Module', () => {
 
   describe('setAgeConsentConfig', () => {
     it('should merge config with provided ageConsent', () => {
-      const mergeStub = sandbox.stub(configModule.config, 'mergeConfig');
+      const mergeStub = sandbox.stub(utils, 'mergeDeep');
       const consent = { id: 'cid', status: 'granted', decisionDate: '2024-05-01', dob: '1999-01-01' };
+      const config = { ortb2Fragments: { global: {} } };
 
-      setAgeConsentConfig(consent);
+      setAgeConsentConfig(config, consent);
       expect(mergeStub.calledOnce).to.be.true;
       const expectedArg = {
-        ortb2: {
-          user: { ext: { age_consent: consent } }
-        }
+        user: { ext: { age_consent: consent } }
       };
-      expect(mergeStub.calledWith(expectedArg)).to.be.true;
+      expect(mergeStub.calledWith(config.ortb2Fragments.global, expectedArg)).to.be.true;
     });
 
-    it('should log error if mergeConfig throws', () => {
-      sandbox.stub(configModule.config, 'mergeConfig').throws(new Error('merge fail'));
+    it('should log error if mergeDeep throws', () => {
+      sandbox.stub(utils, 'mergeDeep').throws(new Error('merge fail'));
       const logStub = sandbox.stub(utils, 'logError');
+      const config = { ortb2Fragments: { global: {} } };
 
-      setAgeConsentConfig({ status: 'x' });
+      setAgeConsentConfig(config, { status: 'x' });
       expect(logStub.calledOnce).to.be.true;
     });
   });
@@ -179,7 +179,7 @@ describe('adlineRtd Module', () => {
       expect(adlineSubmodule.init()).to.be.true;
     });
 
-    it('should log info if init fails', () => {
+    it('should log warn if init fails', () => {
       const winStub = sandbox.stub(utils, 'getWindowTop').returns({});
       const storage = {
         hasLocalStorage: () => false,
@@ -192,7 +192,7 @@ describe('adlineRtd Module', () => {
       expect(logStub.calledOnce).to.be.true;
     });
 
-    it('should call setAgeConsentConfig onAuctionInit if valid', () => {
+    it('should call setAgeConsentConfig in getBidRequestData if valid', (done) => {
       const consent = { id: 'abc', status: 'granted', decisionDate: 'today', dob: '2000-01-01' };
       const cleanStub = sandbox.stub(utils, 'cleanObj').returns(consent);
       sandbox.stub(utils, 'getWindowTop').returns({
@@ -200,13 +200,16 @@ describe('adlineRtd Module', () => {
           getAgeConsent: () => consent
         }
       });
-      const setStub = sandbox.stub(configModule.config, 'mergeConfig');
+      const setStub = sandbox.stub(utils, 'mergeDeep');
 
-      adlineSubmodule.onAuctionInitEvent();
-      expect(setStub.calledOnce).to.be.true;
+      const reqBidsConfigObj = { ortb2Fragments: { global: {} } };
+      adlineSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+        expect(setStub.calledOnce).to.be.true;
+        done();
+      });
     });
 
-    it('should log error in onAuctionInit if something fails', () => {
+    it('should log error in getBidRequestData if something fails', (done) => {
       sandbox.stub(utils, 'getWindowTop').returns({
         AdlCmp: {
           getAgeConsent: () => {
@@ -216,8 +219,11 @@ describe('adlineRtd Module', () => {
       });
       const logStub = sandbox.stub(utils, 'logError');
 
-      adlineSubmodule.onAuctionInitEvent();
-      expect(logStub.calledOnce).to.be.true;
+      const reqBidsConfigObj = { ortb2Fragments: { global: {} } };
+      adlineSubmodule.getBidRequestData(reqBidsConfigObj, () => {
+        expect(logStub.calledOnce).to.be.true;
+        done();
+      });
     });
   });
 });

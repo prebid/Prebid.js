@@ -1,8 +1,7 @@
 import { submodule } from '../src/hook.js';
-import { cleanObj, getWindowTop, isFn, logError, logInfo, logWarn } from '../src/utils.js';
+import { cleanObj, getWindowTop, isFn, logError, logInfo, logWarn, mergeDeep } from '../src/utils.js';
 import { getStorageManager } from "../src/storageManager.js";
 import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
-import { config as sourceConfig } from '../src/config.js';
 
 const MODULE_NAME = 'adlineRtd';
 const LOCAL_STORAGE_KEY = 'ageConsent';
@@ -56,14 +55,12 @@ export function getAgeConsent(windowTop, storage) {
   return consentFromStorage ? cleanObj(consentFromStorage) : null;
 }
 
-export function setAgeConsentConfig(ageConsent) {
+export function setAgeConsentConfig(config, ageConsent) {
   try {
     const newConfig = {
-      ortb2: {
-        user: { ext: { age_consent: ageConsent } }
-      }
+      user: { ext: { age_consent: ageConsent } }
     };
-    sourceConfig.mergeConfig(newConfig);
+    mergeDeep(config.ortb2Fragments.global, newConfig);
   } catch (e) {
     logError('Failed to merge ageConsent config', e);
   }
@@ -86,24 +83,25 @@ function init() {
   return false;
 }
 
-function onAuctionInit() {
+function alterBidRequests(reqBidsConfigObj, callback) {
   const windowTop = getWindowTop();
   const storage = createStorage();
 
   try {
     const ageConsent = getAgeConsent(windowTop, storage);
     if (ageConsent) {
-      setAgeConsentConfig(ageConsent);
+      setAgeConsentConfig(reqBidsConfigObj, ageConsent);
     }
   } catch (error) {
     logError('Error in adlineRtdProvider onAuctionInit', error);
   }
+  callback();
 }
 
 export const adlineSubmodule = {
   name: MODULE_NAME,
   init,
-  onAuctionInitEvent: onAuctionInit
+  getBidRequestData: alterBidRequests
 };
 
 submodule('realTimeData', adlineSubmodule);
