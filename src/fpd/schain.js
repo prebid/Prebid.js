@@ -17,8 +17,12 @@ export function schainPrecedence(ortb2Fragments) {
   // config's schain will have more precedence over ortb2.source.schain
   const globalSchainConfig = config.getConfig('schain');
   if (globalSchainConfig && globalSchainConfig.config) {
-    logInfo('Applying global schain config with precedence');
-    applySchainToPath(ortb2Fragments, 'global.source', globalSchainConfig.config);
+    if (!ortb2Fragments?.global?.source?.schain) {
+      logInfo('Applying global schain config with precedence');
+      applySchainToPath(ortb2Fragments, 'global.source', globalSchainConfig.config);
+    } else {
+      logInfo('Preserving existing global.source.schain from ortb2');
+    }
   }
 
   // Apply bidder-specific schain configs
@@ -28,8 +32,15 @@ export function schainPrecedence(ortb2Fragments) {
   Object.entries(bidderConfigs)
     .filter(([_, cfg]) => cfg.schain)
     .forEach(([bidderCode, cfg]) => {
-      logInfo(`Applying bidder schain config for ${bidderCode}`);
-      applySchainToPath(ortb2Fragments, `bidder.${bidderCode}.source`, cfg.schain?.config);
+      const bidderPath = `bidder.${bidderCode}.source`;
+      const hasSchain = ortb2Fragments?.bidder?.[bidderCode]?.source?.schain;
+
+      if (!hasSchain) {
+        logInfo(`Applying bidder schain config for ${bidderCode}`);
+        applySchainToPath(ortb2Fragments, bidderPath, cfg.schain?.config);
+      } else {
+        logInfo(`Preserving existing schain for bidder ${bidderCode} from ortb2`);
+      }
     });
 
   return ortb2Fragments;
