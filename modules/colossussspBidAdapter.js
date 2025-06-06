@@ -91,6 +91,11 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   request.data.siteObj = firstPartyData.site;
   request.data.appObj = firstPartyData.app;
 
+  if (bidderRequest.gdprConsent) {
+    request.data.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
+    request.data.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+  }
+
   return request;
 };
 
