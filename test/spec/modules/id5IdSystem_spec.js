@@ -26,7 +26,7 @@ describe('ID5 ID System', function () {
   });
   after(function () {
     logInfoStub.restore();
-  });  
+  });
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';

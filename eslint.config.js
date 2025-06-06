@@ -240,7 +240,7 @@ module.exports = [
       'default-case-last': 'off',
       '@stylistic/no-mixed-spaces-and-tabs': 'off',
       '@stylistic/no-tabs': 'off',
-      '@stylistic/no-trailing-spaces': 'off'
+      '@stylistic/no-trailing-spaces': 'error'
     }
   })
 ]
