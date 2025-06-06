@@ -2,7 +2,6 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {find} from 'src/polyfill.js';
 import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
@@ -53,22 +52,33 @@ describe('stroeerCore bid adapter', function () {
   }
 
   // Vendor user ids and associated data
-  const userIds = Object.freeze({
-    criteoId: 'criteo-user-id',
-    digitrustid: {
-      data: {
-        id: 'encrypted-user-id==',
-        keyv: 4,
-        privacy: {optout: false},
-        producer: 'ABC',
-        version: 2
-      }
+  const eids = Object.freeze([
+    {
+      source: 'pubcid.org',
+      uids: [
+        {
+          atype: 1,
+          id: '0dc6b760-0000-4716-9999-f92afdf2afb9',
+        },
+        {
+          atype: 3,
+          id: '8263836331',
+        }
+      ],
     },
-    lipb: {
-      lipbid: 'T7JiRRvsRAmh88',
-      segments: ['999']
+    {
+      source: 'criteo.com',
+      uids: [
+        {
+          atype: 2,
+          id: 'WpgEVV9zekZDVmglMkJQQ09vN05JbWg',
+          ext: {
+            other: 'stuff'
+          }
+        }
+      ],
     }
-  });
+  ]);
 
   const buildBidderRequest = () => ({
     bidderRequestId: 'bidder-request-id-123',
@@ -91,7 +101,7 @@ describe('stroeerCore bid adapter', function () {
       params: {
         sid: 'NDA='
       },
-      userId: userIds
+      userIdAsEids: eids
     }, {
       bidId: 'bid2',
       bidder: 'stroeerCore',
@@ -104,7 +114,7 @@ describe('stroeerCore bid adapter', function () {
       params: {
         sid: 'ODA='
       },
-      userId: userIds
+      userIdAsEids: eids
     }],
   });
 
@@ -140,7 +150,7 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         },
-        getElementById: id => find(placementElements, el => el.id === id)
+        getElementById: id => placementElements.find(el => el.id === id)
       }
     };
 
@@ -425,7 +435,7 @@ describe('stroeerCore bid adapter', function () {
             }
           }],
           'user': {
-            'euids': userIds
+            'eids': eids
           }
         };
 
@@ -452,7 +462,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'NDA='
             },
-            userId: userIds
+            userIdAsEids: eids
           }];
 
           const expectedBids = [{
@@ -489,7 +499,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ODA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           const bannerBid1 = {
@@ -504,7 +514,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'NDA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           const bannerBid2 = {
@@ -519,7 +529,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ABC=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           bidderRequest.bids = [bannerBid1, videoBid, bannerBid2];
@@ -585,7 +595,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ODA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           bidderRequest.bids = [multiFormatBid];
@@ -680,10 +690,10 @@ describe('stroeerCore bid adapter', function () {
 
         it('should be able to build without third party user id data', () => {
           const bidReq = buildBidderRequest();
-          bidReq.bids.forEach(bid => delete bid.userId);
+          bidReq.bids.forEach(bid => delete bid.userIdAsEids);
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
-          assert.notProperty(serverRequestInfo, 'uids');
+          assert.notProperty(serverRequestInfo.data, 'user');
         });
 
         it('should add schain if available', () => {
