@@ -110,7 +110,7 @@ const campaignsToFilter = new Set()
 
 // Prebid adapter referrence doc: https://docs.prebid.org/dev-docs/bidder-adaptor.html
 
-// Validity checks for optionsl paramters
+// Validity checks for optional parameters
 const validParameter = {
   url: (value) => typeof value === 'string',
   placementId: (value) => {
@@ -141,7 +141,7 @@ export const spec = {
       const value = bid.params[key]
       const validityCheck = validParameter[key]
 
-      // We don't have a test for this so it's not a paramter we care about
+      // We don't have a test for this so it's not a parameter we care about
       if (!validityCheck) return false
 
       // Return if the check is not passed
@@ -280,7 +280,7 @@ export const spec = {
       // Convert Set to Array (IE 11 Safe)
       const placements = []
       placementIds.forEach((value) => placements.push(value))
-      // Append to query string paramters
+      // Append to query string parameters
       params.unshift({ key: 'ntv_ptd', value: placements.join(',') })
     }
 
