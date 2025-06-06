@@ -1,7 +1,7 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
-import { loadExternalScript } from 'src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
@@ -138,20 +138,20 @@ describe('FTRACK ID System', () => {
 
     it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
       ftrackIdSubmodule.getId(configMock, null, null).callback(() => {});
-      expect(loadExternalScript.called).to.be.ok;
-      expect(loadExternalScript.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
-      loadExternalScript.resetHistory();
+      expect(loadExternalScriptStub.called).to.be.ok;
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
+      loadExternalScriptStub.resetHistory();
 
       ftrackIdSubmodule.decode('value', configMock);
-      expect(loadExternalScript.called).to.not.be.ok;
-      expect(loadExternalScript.args).to.deep.equal([]);
-      loadExternalScript.resetHistory();
+      expect(loadExternalScriptStub.called).to.not.be.ok;
+      expect(loadExternalScriptStub.args).to.deep.equal([]);
+      loadExternalScriptStub.resetHistory();
 
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
-      expect(loadExternalScript.called).to.not.be.ok;
-      expect(loadExternalScript.args).to.deep.equal([]);
+      expect(loadExternalScriptStub.called).to.not.be.ok;
+      expect(loadExternalScriptStub.args).to.deep.equal([]);
 
-      loadExternalScript.restore();
+      loadExternalScriptStub.restore();
     });
 
     describe(`should use the "ids" setting in the config:`, () => {
