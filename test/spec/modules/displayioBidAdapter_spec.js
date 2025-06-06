@@ -1,5 +1,5 @@
 import {spec} from 'modules/displayioBidAdapter.js'
-import {BANNER} from '/src/mediaTypes'
+import {BANNER} from '../../../src/mediaTypes.js'
 
 describe('Displayio adapter', function () {
   const BIDDER = 'displayio'
