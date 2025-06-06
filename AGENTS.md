@@ -3,6 +3,7 @@
 This file contains instructions for the Codex agent and its friends when working on tasks in this repository.
 
 ## Programmatic checks
+- if you don't have an eslint cache, establish one early with `npx eslint '**/*.{js,ts,tsx}' --cache --cache-strategy content`. eslint can easily take two minutes to run.
 - Before committing code changes, run `gulp lint` and run tests on the files you have changed.
 - npm test can take a very long time to run, don't time it out too soon. Wait at least 15 minutes or poll it to see if it is still generating output.
 - npx gulp test can take a long time too. if it seems like it is hanging on bundling, keep waiting a few more minutes.
@@ -35,6 +36,7 @@ This file contains instructions for the Codex agent and its friends when working
 - Use `gulp test --file <spec_file.js>` for each changed spec file.
 - Do not run the full `gulp test` suite unless your change affects many files. gulp test can take a very long time.
 - Karma tests can also be chunked with `TEST_CHUNKS` if needed.
+- try just linting the changed files if linting seems to hang
 
 ## Build Behavior
 - Avoid running Babel over the entire project for incremental test runs.
