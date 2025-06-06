@@ -69,13 +69,13 @@ describe('C-WIRE bid adapter', () => {
   describe('buildRequests with given creative', function () {
     let utilsStub;
 
-    before(function () {
+    beforeEach(function () {
       utilsStub = stub(utils, 'getParameterByName').callsFake(function () {
         return 'str-str'
       });
     });
 
-    after(function () {
+    afterEach(function () {
       utilsStub.restore();
     });
 
@@ -91,7 +91,7 @@ describe('C-WIRE bid adapter', () => {
   })
 
   describe('buildRequests reads adUnit offsetWidth and offsetHeight', function () {
-    before(function () {
+    beforeEach(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         offsetWidth: 200,
@@ -114,12 +114,12 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.slots[0].cwExt.style.maxHeight).to.not.exist;
       expect(payload.slots[0].cwExt.style.maxWidth).to.not.exist;
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   });
   describe('buildRequests reads style attributes', function () {
-    before(function () {
+    beforeEach(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         style: {
@@ -142,13 +142,13 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.slots[0].cwExt.style.maxWidth).to.eq('400px');
       !expect(payload.slots[0].cwExt.style.maxHeight).to.eq('350px');
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   });
 
   describe('buildRequests reads feature flags', function () {
-    before(function () {
+    beforeEach(function () {
       sandbox.stub(utils, 'getParameterByName').callsFake(function () {
         return 'feature1,feature2'
       });
@@ -165,13 +165,13 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.featureFlags).to.exist;
       expect(payload.featureFlags).to.include.members(['feature1', 'feature2']);
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   });
 
   describe('buildRequests reads cwgroups flag', function () {
-    before(function () {
+    beforeEach(function () {
       sandbox.stub(utils, 'getParameterByName').callsFake(function () {
         return 'group1,group2'
       });
@@ -188,13 +188,13 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.refgroups).to.exist;
       expect(payload.refgroups).to.include.members(['group1', 'group2']);
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
 
   describe('buildRequests reads debug flag', function () {
-    before(function () {
+    beforeEach(function () {
       sandbox.stub(utils, 'getParameterByName').callsFake(function () {
         return 'true'
       });
@@ -211,7 +211,7 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.debug).to.exist;
       expect(payload.debug).to.equal(true);
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
@@ -234,13 +234,13 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.cwid).to.exist;
       expect(payload.cwid).to.equal('taerfagerg');
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
 
   describe('buildRequests maps flattens params for legacy compat', function () {
-    before(function () {
+    beforeEach(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         getBoundingClientRect() { return { width: 0, height: 0 }; }
@@ -256,7 +256,7 @@ describe('C-WIRE bid adapter', () => {
 
       expect(payload.slots[0].pageId).to.exist;
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
