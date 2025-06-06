@@ -17,7 +17,6 @@ describe('The Criteo bidding adapter', function () {
   let sandbox, ajaxStub, logWarnStub;
 
   beforeEach(function () {
-    sinon.restore();
     $$PREBID_GLOBAL$$.bidderSettings = {
       criteo: {
         storageAllowed: true
@@ -119,7 +118,8 @@ describe('The Criteo bidding adapter', function () {
       version: '$prebid.version$'.replace(/\./g, '_'),
     };
 
-    let randomStub,
+    let sandbox,
+      randomStub,
       getConfigStub,
       getRefererInfoStub,
       cookiesAreEnabledStub,
@@ -132,43 +132,34 @@ describe('The Criteo bidding adapter', function () {
       triggerPixelStub;
 
     beforeEach(function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
+      sandbox = sinon.createSandbox();
+      getConfigStub = sandbox.stub(config, 'getConfig');
       getConfigStub.withArgs('criteo.fastBidVersion').returns('none');
 
-      randomStub = sinon.stub(Math, 'random');
+      randomStub = sandbox.stub(Math, 'random');
       randomStub.returns(123456);
 
-      getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
+      getRefererInfoStub = sandbox.stub(refererDetection, 'getRefererInfo');
       getRefererInfoStub.returns({
         domain: 'www.abc.com'
       });
 
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+      cookiesAreEnabledStub = sandbox.stub(storage, 'cookiesAreEnabled');
       cookiesAreEnabledStub.returns(true);
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(true);
 
-      getCookieStub = sinon.stub(storage, 'getCookie');
-      setCookieStub = sinon.stub(storage, 'setCookie');
-      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-      removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+      getCookieStub = sandbox.stub(storage, 'getCookie');
+      setCookieStub = sandbox.stub(storage, 'setCookie');
+      getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
+      setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage');
+      removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage');
 
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+      triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
     });
 
     afterEach(function () {
-      randomStub?.restore();
-      getConfigStub?.restore();
-      getRefererInfoStub?.restore();
-      cookiesAreEnabledStub?.restore();
-      localStorageIsEnabledStub?.restore();
-      getCookieStub?.restore();
-      setCookieStub?.restore();
-      getDataFromLocalStorageStub?.restore();
-      setDataInLocalStorageStub?.restore();
-      removeDataFromLocalStorageStub?.restore();
-      triggerPixelStub?.restore();
+      sandbox?.restore();
     });
 
     it('should not trigger sync if publisher did not enable iframe based syncs', function () {
@@ -675,24 +666,26 @@ describe('The Criteo bidding adapter', function () {
       },
     };
 
-    let localStorageIsEnabledStub;
+    let sandbox, localStorageIsEnabledStub;
 
     before(() => {
       hook.ready();
     });
 
     this.beforeEach(function () {
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      sandbox = sinon.createSandbox();
+      localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(true);
     });
 
     afterEach(function () {
-      localStorageIsEnabledStub?.restore();
+      sandbox?.restore();
       config.resetConfig();
     });
 
     it('should properly build a request using random uuid as auction id', async function () {
-      const generateUUIDStub = sinon.stub(utils, 'generateUUID');
+      sandbox = sinon.createSandbox();
+      const generateUUIDStub = sandbox.stub(utils, 'generateUUID');
       generateUUIDStub.returns('def');
       const bidderRequest = {};
       const bidRequests = [
@@ -710,7 +703,7 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.id).to.equal('def');
-      generateUUIDStub?.restore();
+      sandbox?.restore();
     });
 
     it('should properly transmit source.tid if available', async function () {
