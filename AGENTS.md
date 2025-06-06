@@ -4,7 +4,7 @@ This file contains instructions for the Codex agent and its friends when working
 
 ## Programmatic checks
 - if you don't have an eslint cache, establish one early with `npx eslint '**/*.{js,ts,tsx}' --cache --cache-strategy content`. eslint can easily take two minutes to run.
-- Before committing code changes, run `gulp lint` and run tests on the files you have changed.
+- Before committing code changes, run lint and run tests on the files you have changed.
 - npm test can take a very long time to run, don't time it out too soon. Wait at least 15 minutes or poll it to see if it is still generating output.
 - npx gulp test can take a long time too. if it seems like it is hanging on bundling, keep waiting a few more minutes.
 - If additional tests are added, ensure they pass in the environment.
