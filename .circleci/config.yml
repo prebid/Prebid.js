@@ -82,7 +82,9 @@ workflows:
   commit:
     jobs:
       - lint
-      - build
+      - build:
+          requires:
+            lint
       - e2etest:
           requires:
             - build
