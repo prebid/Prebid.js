@@ -33,9 +33,9 @@ describe('The Criteo bidding adapter', function () {
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     global.Criteo = undefined;
-    logWarnStub.restore();
-    sandbox.restore();
-    ajaxStub.restore();
+    logWarnStub?.restore();
+    sandbox?.restore();
+    ajaxStub?.restore();
   });
 
   describe('getUserSyncs in pixel mode', function () {
