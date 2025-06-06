@@ -6,9 +6,8 @@ import { getGlobal } from 'src/prebidGlobal.js';
 import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
+import {server} from 'test/mocks/xhr.js';
 import 'src/prebid.js';
-
-let server;
 
 let configMock = {
   name: 'ftrack',
@@ -316,23 +315,17 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should not be making requests to retrieve a new ID, it should just be decoding a response`, () => {
-      server = sinon.createFakeServer();
       ftrackIdSubmodule.decode('value', configMock);
 
       expect(server.requests).to.have.length(0);
-
-      server.restore();
     })
   });
 
   describe(`extendId() method`, () => {
     it(`should not be making requests to retrieve a new ID, it should just be adding additional data to the id object`, () => {
-      server = sinon.createFakeServer();
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
 
       expect(server.requests).to.have.length(0);
-
-      server.restore();
     });
 
     it(`should return cacheIdObj`, () => {
