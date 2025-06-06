@@ -707,7 +707,7 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.id).to.equal('def');
-      generateUUIDStub.restore();
+      generateUUIDStub?.restore();
     });
 
     it('should properly transmit source.tid if available', async function () {
