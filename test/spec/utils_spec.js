@@ -5,6 +5,7 @@ import * as utils from 'src/utils.js';
 import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 import { getWinDimensions, internal } from '../../src/utils.js';
+import { config } from 'src/config.js';
 
 var assert = require('assert');
 
@@ -1457,5 +1458,113 @@ describe('getWinDimensions', () => {
     clock.tick(18);
     getWinDimensions();
     sinon.assert.calledTwice(resetWinDimensionsSpy);
+  });
+});
+
+describe('additional utils coverage', () => {
+  describe('canAccessWindowTop error handling', () => {
+    it('returns false when getWindowTop throws', () => {
+      const stub = sinon.stub(internal, 'getWindowTop').throws(new Error('nope'));
+      expect(utils.canAccessWindowTop()).to.be.false;
+      stub.restore();
+    });
+  });
+
+  describe('debugTurnedOn', () => {
+    let cfg;
+    afterEach(() => cfg.restore());
+
+    it('returns true when debug config enabled', () => {
+      cfg = sinon.stub(config, 'getConfig').withArgs('debug').returns(true);
+      expect(utils.debugTurnedOn()).to.be.true;
+    });
+
+    it('returns false when debug config disabled', () => {
+      cfg = sinon.stub(config, 'getConfig').withArgs('debug').returns(false);
+      expect(utils.debugTurnedOn()).to.be.false;
+    });
+  });
+
+  describe('triggerPixel', () => {
+    let waitStub, ImageBackup;
+    beforeEach(() => {
+      waitStub = sinon.stub(utils, 'waitForElementToLoad').resolves();
+      ImageBackup = window.Image;
+      window.Image = class FakeImage {
+        addEventListener() {}
+        removeEventListener() {}
+      };
+    });
+    afterEach(() => {
+      window.Image = ImageBackup;
+      waitStub.restore();
+    });
+
+    it('calls waitForElementToLoad and done when callback provided', () => {
+      const done = sinon.spy();
+      utils.triggerPixel('https://example.com/pixel', done, 50);
+      sinon.assert.calledOnce(waitStub);
+      expect(waitStub.firstCall.args[1]).to.equal(50);
+      return waitStub.firstCall.returnValue.then(() => {
+        sinon.assert.calledOnce(done);
+      });
+    });
+
+    it('does not call waitForElementToLoad without callback', () => {
+      utils.triggerPixel('https://example.com/pixel');
+      sinon.assert.notCalled(waitStub);
+    });
+  });
+
+  describe('insertHtmlIntoIframe', () => {
+    let createStub, insertStub;
+    beforeEach(() => {
+      const doc = {open: sinon.spy(), write: sinon.spy(), close: sinon.spy()};
+      createStub = sinon.stub(utils, 'createInvisibleIframe').returns({contentWindow: {document: doc}});
+      insertStub = sinon.stub(internal, 'insertElement');
+    });
+    afterEach(() => {
+      createStub.restore();
+      insertStub.restore();
+    });
+
+    it('returns early when html is empty', () => {
+      utils.insertHtmlIntoIframe('');
+      sinon.assert.notCalled(createStub);
+      sinon.assert.notCalled(insertStub);
+    });
+
+    it('creates iframe and writes html', () => {
+      const html = '<p>hi</p>';
+      utils.insertHtmlIntoIframe(html);
+      sinon.assert.calledOnce(createStub);
+      sinon.assert.calledOnce(insertStub);
+      const doc = createStub.firstCall.returnValue.contentWindow.document;
+      sinon.assert.calledWith(doc.write, html);
+    });
+  });
+
+  describe('insertUserSyncIframe', () => {
+    let htmlStub, insertStub, waitStub;
+    beforeEach(() => {
+      htmlStub = sinon.stub(internal, 'createTrackPixelIframeHtml').returns('<iframe></iframe>');
+      insertStub = sinon.stub(internal, 'insertElement');
+      waitStub = sinon.stub(utils, 'waitForElementToLoad').resolves();
+    });
+    afterEach(() => {
+      htmlStub.restore();
+      insertStub.restore();
+      waitStub.restore();
+    });
+
+    it('inserts iframe and resolves callback', () => {
+      const done = sinon.spy();
+      utils.insertUserSyncIframe('https://example.com', done, 20);
+      sinon.assert.calledOnce(insertStub);
+      sinon.assert.calledWith(waitStub, sinon.match.object, 20);
+      return waitStub.firstCall.returnValue.then(() => {
+        sinon.assert.calledOnce(done);
+      });
+    });
   });
 });
