@@ -64,7 +64,7 @@ describe('Supply Chain fpd', function() {
         expect(logInfoStub.calledWith('Preserving existing global.source.schain from ortb2')).to.be.true;
       });
       
-      it('should preserve existing bidder-specific schain', function() {
+      it('should preserve existing bidder-specific schain ', function() {
         const existingBidderSchain = {
           ver: '3.0',
           complete: 1,
