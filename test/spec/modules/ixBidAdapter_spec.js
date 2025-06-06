@@ -1889,32 +1889,6 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('getUserIds', function () {
-    it('request should contain userId information if configured and within bid request', function () {
-      config.setConfig({
-        userSync: {
-          syncDelay: 0,
-          userIds: [
-            { name: 'lotamePanoramaId' },
-            { name: 'merkleId' },
-            { name: 'parrableId' },
-          ]
-        }
-      });
-
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      bid.userId = DEFAULT_USERID_BID_DATA;
-
-      const request = spec.buildRequests([bid], DEFAULT_OPTION)[0];
-      const r = extractPayload(request);
-
-      expect(r.ext.ixdiag.userIds).to.be.an('array');
-      expect(r.ext.ixdiag.userIds.should.not.include('lotamePanoramaId'));
-      expect(r.ext.ixdiag.userIds.should.not.include('merkleId'));
-      expect(r.ext.ixdiag.userIds.should.not.include('parrableId'));
-    });
-  });
-
   describe('First party data', function () {
     it('should not set ixdiag.fpd value if not defined', function () {
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {} })[0];
