@@ -8,10 +8,7 @@ const FREEPASS_EIDS = {
     atype: 1,
     source: "freepass.jp",
     getValue: function(data) {
-      if (data.freepassId) {
-        return data.freepassId;
-      }
-      return data.userId;
+      return data.freepassId;
     },
     getUidExt: function(data) {
       const ext = {};

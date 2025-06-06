@@ -187,12 +187,6 @@ describe('FreePass ID System', function () {
         const value = eidConfig.getValue(data);
         expect(value).to.equal('freepass456');
       });
-
-      it('should return userId when freepassId not available', function () {
-        const data = { userId: 'user123' };
-        const value = eidConfig.getValue(data);
-        expect(value).to.equal('user123');
-      });
     });
 
     describe('getUidExt', function () {
