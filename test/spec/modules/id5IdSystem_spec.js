@@ -1277,6 +1277,7 @@ describe('ID5 ID System', function () {
         let logErrorSpy;
 
         beforeEach(function () {
+          utils.logError.restore?.();
           logErrorSpy = sinon.spy(utils, 'logError');
         });
         afterEach(function () {

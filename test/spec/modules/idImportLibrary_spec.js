@@ -28,6 +28,8 @@ describe('IdImportLibrary Tests', function () {
   });
 
   beforeEach(function () {
+    utils.logInfo.restore?.();
+    utils.logError.restore?.();
     sinon.stub(utils, 'logInfo');
     sinon.stub(utils, 'logError');
   });
