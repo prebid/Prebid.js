@@ -684,28 +684,25 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly build a request using random uuid as auction id', async function () {
-      sandbox = sinon.createSandbox();
+    // Re‐use the sandbox from beforeEach instead of creating a new one
       const generateUUIDStub = sandbox.stub(utils, 'generateUUID');
       generateUUIDStub.returns('def');
-      const bidderRequest = {};
-      const bidRequests = [
-        {
-          bidder: 'criteo',
-          adUnitCode: 'bid-123',
-          mediaTypes: {
-            banner: {
-              sizes: [[728, 90]]
-            }
-          },
-          params: {}
+
+      const minimalBidderRequest = {};
+      const bidRequests = [{
+        bidder: 'criteo',
+        adUnitCode: 'bid-123',
+        mediaTypes: {
+          banner: { sizes: [[728, 90]] }
         },
-      ];
-      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+        params: {}
+      }];
+
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(minimalBidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.id).to.equal('def');
-      sandbox?.restore();
     });
-
+ 
     it('should properly transmit source.tid if available', async function () {
       const bidderRequest = {
         ortb2: {
