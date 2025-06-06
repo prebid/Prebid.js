@@ -58,36 +58,6 @@ jobs:
     <<: *environment
     steps: *unit_test_steps
 
-  ig.yml
-+19
--0
-
-@@ -36,40 +36,59 @@ aliases:
-      name: BrowserStack End to end testing
-      command: gulp e2e-test
-
-  - &unit_test_steps
-    - checkout
-    - restore_cache: *restore_dep_cache
-    - run: npm ci
-    - save_cache: *save_dep_cache
-    - run: *install
-    - run: *run_unit_test
-
-  - &endtoend_test_steps
-    - checkout
-    - restore_cache: *restore_dep_cache
-    - run: npm install
-    - save_cache: *save_dep_cache
-    - run: *install
-    - run: *run_endtoend_test
-
-version: 2
-jobs:
-  build:
-    <<: *environment
-    steps: *unit_test_steps
-
   lint:
     <<: *environment
     steps:
