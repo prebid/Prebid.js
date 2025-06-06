@@ -155,17 +155,17 @@ describe('The Criteo bidding adapter', function () {
     });
 
     afterEach(function () {
-      randomStub.restore();
-      getConfigStub.restore();
-      getRefererInfoStub.restore();
-      cookiesAreEnabledStub.restore();
-      localStorageIsEnabledStub.restore();
-      getCookieStub.restore();
-      setCookieStub.restore();
-      getDataFromLocalStorageStub.restore();
-      setDataInLocalStorageStub.restore();
-      removeDataFromLocalStorageStub.restore();
-      triggerPixelStub.restore();
+      randomStub?.restore();
+      getConfigStub?.restore();
+      getRefererInfoStub?.restore();
+      cookiesAreEnabledStub?.restore();
+      localStorageIsEnabledStub?.restore();
+      getCookieStub?.restore();
+      setCookieStub?.restore();
+      getDataFromLocalStorageStub?.restore();
+      setDataInLocalStorageStub?.restore();
+      removeDataFromLocalStorageStub?.restore();
+      triggerPixelStub?.restore();
     });
 
     it('should not trigger sync if publisher did not enable iframe based syncs', function () {
