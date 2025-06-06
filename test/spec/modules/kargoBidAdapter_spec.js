@@ -512,39 +512,57 @@ describe('kargo adapter tests', function() {
         schain: {}
       }, {
         ...minimumBidParams,
-        schain: {
-          complete: 1,
-          nodes: [{
-            asi: 'test-page.com',
-            hp: 1,
-            rid: '57bdd953-6e57-4d5b-9351-ed67ca238890',
-            sid: '8190248274'
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                complete: 1,
+                nodes: [{
+                  asi: 'test-page.com',
+                  hp: 1,
+                  rid: '57bdd953-6e57-4d5b-9351-ed67ca238890',
+                  sid: '8190248274'
+                }]
+              }
+            }
+          }
         }
       }]);
       expect(payload.schain).to.be.undefined;
 
       payload = getPayloadFromTestBids([{
         ...minimumBidParams,
-        schain: {
-          complete: 1,
-          nodes: [{
-            asi: 'test-page.com',
-            hp: 1,
-            rid: '57bdd953-6e57-4d5b-9351-ed67ca238890',
-            sid: '8190248274'
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                complete: 1,
+                nodes: [{
+                  asi: 'test-page.com',
+                  hp: 1,
+                  rid: '57bdd953-6e57-4d5b-9351-ed67ca238890',
+                  sid: '8190248274'
+                }]
+              }
+            }
+          }
         }
       }, {
         ...minimumBidParams,
-        schain: {
-          complete: 1,
-          nodes: [{
-            asi: 'test-page-2.com',
-            hp: 1,
-            rid: 'other-rid',
-            sid: 'other-sid'
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                complete: 1,
+                nodes: [{
+                  asi: 'test-page-2.com',
+                  hp: 1,
+                  rid: 'other-rid',
+                  sid: 'other-sid'
+                }]
+              }
+            }
+          }
         }
       }]);
       expect(payload.schain).to.deep.equal({

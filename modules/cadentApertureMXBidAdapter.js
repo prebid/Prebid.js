@@ -185,10 +185,11 @@ export const cadentAdapter = {
     return cadentData;
   },
   getSupplyChain: (bidderRequest, cadentData) => {
-    if (bidderRequest.bids[0] && bidderRequest.bids[0].schain) {
+    const schain = bidderRequest.bids[0]?.ortb2?.source?.ext?.schain;
+    if (bidderRequest.bids[0] && schain) {
       cadentData.source = {
         ext: {
-          schain: bidderRequest.bids[0].schain
+          schain: schain
         }
       };
     }

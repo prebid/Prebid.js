@@ -12,7 +12,6 @@ import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 import 'modules/tcfControl.js';
 import 'modules/gppControl_usnat.js';
-import 'modules/schain.js';
 
 describe('BT Bid Adapter', () => {
   const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';

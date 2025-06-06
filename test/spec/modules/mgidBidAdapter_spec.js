@@ -398,11 +398,14 @@ describe('Mgid bid adapter', function () {
           sizes: [[300, 250]]
         }
       };
-      bid.schain = ['schain1', 'schain2'];
+      bid.ortb2 = bid.ortb2 || {};
+      bid.ortb2.source = bid.ortb2.source || {};
+      bid.ortb2.source.ext = bid.ortb2.source.ext || {};
+      bid.ortb2.source.ext.schain = ['schain1', 'schain2'];
       let bidRequests = [bid];
       const request = spec.buildRequests(bidRequests);
       const data = JSON.parse(request.data);
-      expect(data.source).to.deep.equal({ext: {schain: bid.schain}});
+      expect(data.source).to.deep.equal({ext: {schain: bid.ortb2.source.ext.schain}});
     });
     it('should handle userId', function () {
       let bid = Object.assign({}, abid);

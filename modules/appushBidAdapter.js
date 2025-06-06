@@ -27,7 +27,7 @@ function isBidResponseValid(bid) {
 
 function getPlacementReqData(bid) {
   const { params, bidId, mediaTypes } = bid;
-  const schain = bid.schain || {};
+  const schain = bid?.ortb2?.source?.ext?.schain || {};
   const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
 

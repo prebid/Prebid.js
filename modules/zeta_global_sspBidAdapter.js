@@ -178,11 +178,12 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    // schain
-    if (validBidRequests[0].schain) {
+    // schain - check for schain in the new location
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
       payload.source = {
         ext: {
-          schain: validBidRequests[0].schain
+          schain: schain
         }
       }
     }

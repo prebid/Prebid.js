@@ -357,7 +357,7 @@ export const spec = {
       domain: window.location.host,
       // TODO: is 'page' the right value here?
       page: bidderRequest.refererInfo.page,
-      schain: validRequests[0].schain || {},
+      schain: validRequests[0]?.ortb2?.source?.ext?.schain || {},
       ext: {
         p_domain: bidderRequest.refererInfo.domain,
         rt: bidderRequest.refererInfo.reachedTop,

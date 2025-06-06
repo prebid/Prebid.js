@@ -85,8 +85,9 @@ export const spec = {
         }
       }
 
-      if (i.schain) {
-        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
+      const schain = i?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(schain));
       }
 
       // TODO: is 'page' the right value here?

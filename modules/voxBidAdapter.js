@@ -27,7 +27,7 @@ function buildBidRequests(validBidRequests, bidderRequest) {
     const params = bid.params;
     const bidRequest = {
       floorInfo,
-      schain: bid.schain,
+      schain: bid?.ortb2?.source?.ext?.schain,
       userId: bid.userId,
       bidId: bid.bidId,
       // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
