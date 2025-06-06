@@ -175,7 +175,7 @@ describe('videojsProvider', function () {
       expect(video.mimes).to.include(VPAID_MIME_TYPE);
     });
     //
-    // We can't determine what type of outstream play is occuring
+    // We can't determine what type of outstream play is occurring
     // if the src is absent so we should not set placement
     it('should not set placement when src is absent', function() {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
