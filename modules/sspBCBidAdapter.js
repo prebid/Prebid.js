@@ -306,7 +306,7 @@ const getHighestFloor = (slot) => {
 const getCurrency = (bidderRequest) => getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
 /**
- * Get value for first occurence of key within the collection
+ * Get value for first occurrence of key within the collection
  */
 const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || deepAccess(next, key), false);
 
