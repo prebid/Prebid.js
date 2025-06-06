@@ -141,6 +141,10 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
   }
 
+  if (deepAccess(adapterRequest, 'ortb2.user.ext.age_consent')) {
+    tag.AgeConsent = adapterRequest.ortb2.user.ext.age_consent;
+  }
+
   // end publisher env
   const bids = [];
 
