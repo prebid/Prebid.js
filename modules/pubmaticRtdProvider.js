@@ -513,9 +513,9 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   // Access the profile configs stored globally
   const profileConfigs = getProfileConfigs();
 
-  // Return empty object if profileConfigs is undefined or adServerTargeting is explicitly set to false
-  if (!profileConfigs || profileConfigs?.plugins?.dynamicFloors?.adServerTargeting === false) {
-    logInfo(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled or profileConfigs is undefined`);
+  // Return empty object if profileConfigs is undefined or pmTargetingkeys is explicitly set to false
+  if (!profileConfigs || profileConfigs?.plugins?.dynamicFloors?.pmTargetingkeys === false) {
+    logInfo(`${CONSTANTS.LOG_PRE_FIX} pmTargetingkeys is disabled or profileConfigs is undefined`);
     return {};
   }
 

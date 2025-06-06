@@ -658,10 +658,10 @@ describe('Pubmatic RTD Provider', () => {
             expect(result).to.deep.equal({});
             // We expect logInfoStub to be called because we log a message when profileConfigs is undefined
             expect(logInfoStub.called).to.be.true;
-            expect(logInfoStub.calledWith(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled or profileConfigs is undefined`)).to.be.true;
+            expect(logInfoStub.calledWith(`${CONSTANTS.LOG_PRE_FIX} pmTargetingkeys is disabled or profileConfigs is undefined`)).to.be.true;
         });
 
-        it('should return empty object when adServerTargeting is explicitly set to false', () => {
+        it('should return empty object when pmTargetingkeys is explicitly set to false', () => {
             const adUnitCodes = ['ad-unit-1'];
             const config = {};
             const userConsent = {};
@@ -676,11 +676,11 @@ describe('Pubmatic RTD Provider', () => {
                 }]
             };
 
-            // Set up profile configs with adServerTargeting: false
+            // Set up profile configs with pmTargetingkeys: false
             setProfileConfigs({
                 plugins: {
                     dynamicFloors: {
-                        adServerTargeting: false,
+                        pmTargetingkeys: false,
                         enabled: true,
                         config: {}
                     }
@@ -690,7 +690,7 @@ describe('Pubmatic RTD Provider', () => {
             const result = getTargetingData(adUnitCodes, config, userConsent, auction);
             
             expect(result).to.deep.equal({});
-            expect(logInfoStub.calledWith(`${CONSTANTS.LOG_PRE_FIX} adServerTargeting is disabled or profileConfigs is undefined`)).to.be.true;
+            expect(logInfoStub.calledWith(`${CONSTANTS.LOG_PRE_FIX} pmTargetingkeys is disabled or profileConfigs is undefined`)).to.be.true;
         });
 
         it('should return pm_ym_flrs: 0 when RTD floor is not applied', () => {
@@ -712,7 +712,7 @@ describe('Pubmatic RTD Provider', () => {
             setProfileConfigs({
                 plugins: {
                     dynamicFloors: {
-                        adServerTargeting: true,
+                        pmTargetingkeys: true,
                         enabled: true,
                         config: {}
                     }
@@ -747,7 +747,7 @@ describe('Pubmatic RTD Provider', () => {
             setProfileConfigs({
                 plugins: {
                     dynamicFloors: {
-                        adServerTargeting: true,
+                        pmTargetingkeys: true,
                         enabled: true,
                         config: {}
                     }
@@ -815,7 +815,7 @@ describe('Pubmatic RTD Provider', () => {
             setProfileConfigs({
                 plugins: {
                     dynamicFloors: {
-                        adServerTargeting: true,
+                        pmTargetingkeys: true,
                         enabled: true,
                         config: {}
                     }
