@@ -37,6 +37,7 @@ This file contains instructions for the Codex agent and its friends when working
 - Do not run the full `gulp test` suite unless your change affects many files. gulp test can take a very long time.
 - Karma tests can also be chunked with `TEST_CHUNKS` if needed.
 - try just linting the changed files if linting seems to hang
+- call tests with the `--nolint` option if you've already linted your changes
 
 ## Build Behavior
 - Avoid running Babel over the entire project for incremental test runs.
