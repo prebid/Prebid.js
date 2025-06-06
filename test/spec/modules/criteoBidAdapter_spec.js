@@ -684,7 +684,7 @@ describe('The Criteo bidding adapter', function () {
     });
 
     afterEach(function () {
-      localStorageIsEnabledStub.restore();
+      localStorageIsEnabledStub?.restore();
       config.resetConfig();
     });
 
