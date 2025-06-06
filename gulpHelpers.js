@@ -5,7 +5,7 @@ const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
 const through = require('through2');
 const _ = require('lodash');
-const gutil = require('gulp-util');
+const PluginError = require('plugin-error');
 const submodules = require('./modules/.submodules.json').parentModules;
 
 const MODULE_PATH = './modules';
@@ -52,10 +52,7 @@ module.exports = {
         );
       }
     } catch (e) {
-      throw new gutil.PluginError({
-        plugin: 'modules',
-        message: 'failed reading: ' + argv.modules
-      });
+      throw new PluginError('modules', 'failed reading: ' + argv.modules + '. Ensure the file exists and contains valid JSON.');
     }
 
     // we need to forcefuly include the parentModule if the subModule is present in modules list and parentModule is not present in modules list

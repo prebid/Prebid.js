@@ -161,7 +161,7 @@ describe('onomagicBidAdapter', function() {
 
     context('when element is partially in view', function() {
       it('returns percentage', function() {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 800, height: 800 });
         const request = spec.buildRequests(bidRequests);
@@ -172,7 +172,7 @@ describe('onomagicBidAdapter', function() {
 
     context('when width or height of the element is zero', function() {
       it('try to use alternative values', function() {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];

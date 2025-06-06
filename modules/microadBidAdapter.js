@@ -1,5 +1,4 @@
 import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
-import { } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';

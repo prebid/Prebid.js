@@ -558,7 +558,7 @@ describe('pubmatic analytics adapter', function () {
           userId: mockUserIds
         }]
       }]);
-      
+
       sandbox.stub($$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
         if (key === 'userSync') return mockUserSync;
         return null;

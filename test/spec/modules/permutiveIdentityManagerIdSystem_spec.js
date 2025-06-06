@@ -54,24 +54,27 @@ describe('permutiveIdentityManagerIdSystem', () => {
 
     it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
       const cleanup = setWindowPermutive()
-      const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 50}})
-      expect(result).not.to.be.undefined
-      expect(result.id).to.be.undefined
-      expect(result.callback).not.to.be.undefined
-      const expected = {
-        'id5id': {
-          'uid': '0',
-          'linkType': 0,
-          'ext': {
-            'abTestingControlGroup': false,
+      try {
+        const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 50}})
+        expect(result).not.to.be.undefined
+        expect(result.id).to.be.undefined
+        expect(result.callback).not.to.be.undefined
+        const expected = {
+          'id5id': {
+            'uid': '0',
             'linkType': 0,
-            'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+            'ext': {
+              'abTestingControlGroup': false,
+              'linkType': 0,
+              'pba': 'EVqgf9vY0fSrsrqJZMOm+Q=='
+            }
           }
         }
+        const r = await new Promise(result.callback)
+        expect(r).to.deep.equal(expected)
+      } finally {
+        cleanup()
       }
-      const r = await new Promise(result.callback)
-      expect(r).to.deep.equal(expected)
-      cleanup()
     })
   })
 })
