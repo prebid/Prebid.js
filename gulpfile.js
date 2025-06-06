@@ -4,7 +4,7 @@
 var _ = require('lodash');
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-var gutil = require('plugin-error');
+var PluginError = require('plugin-error');
 var fancyLog = require('fancy-log');
 var connect = require('gulp-connect');
 var webpack = require('webpack');
@@ -16,17 +16,20 @@ const standaloneDebuggingConfig = require('./webpack.debugging.js');
 var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
-var shell = require('gulp-shell');
+const execaCmd = require('execa');
 var gulpif = require('gulp-if');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
-const execa = require('execa');
 const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+
+function execaTask(cmd) {
+  return () => execaCmd.shell(cmd, {stdio: 'inherit'});
+}
 
 
 var prebid = require('./package.json');
@@ -86,7 +89,7 @@ function lint(done) {
   if (!(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true)) {
     args.push('--quiet')
   }
-  return shell.task(args.join(' '))().then(() => {
+  return execaTask(args.join(' '))().then(() => {
     done();
   }, (err) => {
     done(err);
@@ -297,10 +300,7 @@ function bundle(dev, moduleArr) {
   } else {
     var diff = _.difference(modules, allModules);
     if (diff.length !== 0) {
-      throw new gutil.PluginError({
-        plugin: 'bundle',
-        message: 'invalid modules: ' + diff.join(', ')
-      });
+      throw new PluginError('bundle', 'invalid modules: ' + diff.join(', ') + '. Check your modules list.');
     }
   }
   const coreFile = helpers.getBuiltPrebidCoreFile(dev);
@@ -407,7 +407,7 @@ function runWebdriver({file}) {
       wdioConf
     ];
   }
-  return execa(wdioCmd, wdioOpts, {
+  return execaCmd(wdioCmd, wdioOpts, {
     stdio: 'inherit',
     env: Object.assign({}, process.env, {FORCE_COLOR: '1'})
   });
@@ -450,9 +450,7 @@ function testCoverage(done) {
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
-  return gulp.src('gulpfile.js', { read: false }) // You have to give it a file, but you don't
-    // have to read it.
-    .pipe(shell('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js'));
+  return execaTask('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js')();
 }
 
 // This task creates postbid.js. Postbid setup is different from prebid.js
@@ -553,7 +551,7 @@ gulp.task(viewCoverage);
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
-gulp.task('setup-npmignore', shell.task("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
+gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore"));
 gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample, setupDist));
 gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));

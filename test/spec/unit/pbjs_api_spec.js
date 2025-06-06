@@ -1005,7 +1005,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('setTargetingForGPTAsync', function () {
     let logErrorSpy;
-    let targeting; 
+    let targeting;
 
     beforeEach(function () {
       logErrorSpy = sinon.spy(utils, 'logError');
@@ -1022,7 +1022,7 @@ describe('Unit: Prebid Module', function () {
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
-      
+
       slots.forEach(function(slot) {
         targeting = {};
         slot.getTargetingKeys().map(function (key) {

@@ -30,7 +30,7 @@ describe('Pubmatic RTD Provider', () => {
             };
         });
     });
-    
+
     afterEach(() => {
         sandbox.restore();
     });
@@ -517,7 +517,7 @@ describe('Pubmatic RTD Provider', () => {
               }
             }
         }
-      
+
         const hookConfig = {
             reqBidsConfigObj,
             context: this,
@@ -530,18 +530,18 @@ describe('Pubmatic RTD Provider', () => {
             callback = sinon.spy();
             continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
             logErrorStub = sandbox.stub(utils, 'logError');
-    
+
             global.configMergedPromise = Promise.resolve();
         });
-    
+
         afterEach(() => {
             sandbox.restore(); // Restore all stubs/spies
         });
-    
+
         it('should call continueAuction with correct hookConfig', async function () {
             configMerged();
             await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
-    
+
             expect(continueAuctionStub.called).to.be.true;
             expect(continueAuctionStub.firstCall.args[0]).to.have.property('reqBidsConfigObj', reqBidsConfigObj);
             expect(continueAuctionStub.firstCall.args[0]).to.have.property('haveExited', false);
@@ -551,18 +551,18 @@ describe('Pubmatic RTD Provider', () => {
         //     configMerged();
         //     global._country = 'US';
         //     pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
-    
+
         //     expect(reqBidsConfigObj.ortb2Fragments.bidder).to.have.property('pubmatic');
         //     // expect(reqBidsConfigObj.ortb2Fragments.bidder.pubmatic.user.ext.ctr).to.equal('US');
         // });
-    
+
         it('should call callback once after execution', async function () {
             configMerged();
             await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
-    
+
             expect(callback.called).to.be.true;
         });
-    });        
+    });
 
     describe('withTimeout', function () {
         it('should resolve with the original promise value if it resolves before the timeout', async function () {
@@ -598,12 +598,12 @@ describe('Pubmatic RTD Provider', () => {
 
             const promise = new Promise((resolve) => setTimeout(() => resolve('success'), 50));
             const resultPromise = withTimeout(promise, 100);
-            
+
             clock.tick(50);
             await resultPromise;
-            
+
             expect(clearTimeoutSpy.called).to.be.true;
-            
+
             clearTimeoutSpy.restore();
             clock.restore();
         });
