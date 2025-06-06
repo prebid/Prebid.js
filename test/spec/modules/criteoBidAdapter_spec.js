@@ -33,7 +33,13 @@ describe('The Criteo bidding adapter', function () {
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     global.Criteo = undefined;
-    sandbox?.restore();
+    try {
+      sandbox?.restore();
+    } catch (e) {
+      // sinon sandbox restore may fail if a stubbed object went undefined
+      // catch and ignore to avoid breaking unrelated tests
+      // finding the bad stub is proving to be extremely difficult
+    }
   });
 
   describe('getUserSyncs in pixel mode', function () {
