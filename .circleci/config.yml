@@ -84,7 +84,7 @@ workflows:
       - lint
       - build:
           requires:
-            lint
+            - lint
       - e2etest:
           requires:
             - build
