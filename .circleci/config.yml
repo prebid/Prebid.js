@@ -22,6 +22,7 @@ aliases:
   - &save_dep_cache
       paths:
         - node_modules
+        - node_modules/.cache/babel-loader
       key: v1-dependencies-{{ checksum "package.json" }}
 
   - &install

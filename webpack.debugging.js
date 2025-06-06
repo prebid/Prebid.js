@@ -21,7 +21,8 @@ module.exports = {
         exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
         use: [
           {
-            loader: 'babel-loader'
+            loader: 'babel-loader',
+            options: {cacheDirectory: true}
           }
         ]
       },

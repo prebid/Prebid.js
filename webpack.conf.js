@@ -78,7 +78,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
+            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions(), {cacheDirectory: true}),
           }
         ]
       },
@@ -88,7 +88,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: babelConfig
+            options: Object.assign({}, babelConfig, {cacheDirectory: true})
           }
         ],
       }
