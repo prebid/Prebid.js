@@ -13,7 +13,7 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'adtrgtme';
-const BIDDER_VERSION = '1.0.6';
+const BIDDER_VERSION = '1.0.7';
 const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
 const PREBIDJS_VERSION = '$prebid.version$';
 const DEFAULT_TTL = 300;
@@ -76,10 +76,8 @@ function createORTB(bR, bid) {
       ip,
     },
     regs: {
-      ext: {
-        us_privacy: usPrivacy,
-        gdpr,
-      },
+      gdpr,
+      us_privacy: usPrivacy,
     },
     source: {
       ext: {
@@ -92,8 +90,8 @@ function createORTB(bR, bid) {
     },
     user: {
       ...user,
+      consent: consentString,
       ext: {
-        consent: consentString,
         ...(user?.ext || {}),
       },
     },

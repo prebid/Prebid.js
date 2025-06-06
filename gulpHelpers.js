@@ -1,5 +1,5 @@
 // this will have all of a copy of the normal fs methods as well
-const fs = require('fs.extra');
+const fs = require('fs-extra');
 const path = require('path');
 const argv = require('yargs').argv;
 const MANIFEST = 'package.json';
