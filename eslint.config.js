@@ -233,7 +233,6 @@ module.exports = [
       'no-unused-vars': 'off',
       'import/extensions': 'off',
       'camelcase': 'off',
-      'no-array-constructor': 'off',
       'import-x/no-duplicates': 'off',
       'no-loss-of-precision': 'off',
       'no-redeclare': 'off',
