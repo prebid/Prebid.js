@@ -3,11 +3,12 @@ import {newBidder} from '../../../src/adapters/bidderFactory';
 import {BID_ENDPOINT, spec, storage} from '../../../modules/cwireBidAdapter';
 import {deepClone, logInfo} from '../../../src/utils';
 import * as utils from 'src/utils.js';
-import {sandbox, stub} from 'sinon';
+import sinon, {stub} from 'sinon';
 import {config} from '../../../src/config';
 
 describe('C-WIRE bid adapter', () => {
   config.setConfig({debug: true});
+  let sandbox;
   const adapter = newBidder(spec);
   let bidRequests = [
     {
@@ -42,6 +43,14 @@ describe('C-WIRE bid adapter', () => {
       }]
     }
   }
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
