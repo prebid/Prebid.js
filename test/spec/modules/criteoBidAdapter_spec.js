@@ -14,7 +14,7 @@ import 'modules/schain.js';
 import {hook} from '../../../src/hook';
 
 describe('The Criteo bidding adapter', function () {
-  let utilsMock, sandbox, ajaxStub;
+  let sandbox, ajaxStub, logWarnStub;
 
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -24,16 +24,15 @@ describe('The Criteo bidding adapter', function () {
     };
     // Remove FastBid to avoid side effects
     localStorage.removeItem('criteo_fast_bid');
-    utilsMock = sinon.mock(utils);
-
     sandbox = sinon.createSandbox();
+    logWarnStub = sandbox.stub(utils, 'logWarn');
     ajaxStub = sandbox.stub(ajax, 'ajax');
   });
 
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     global.Criteo = undefined;
-    utilsMock.restore();
+    logWarnStub.restore();
     sandbox.restore();
     ajaxStub.restore();
   });
@@ -2518,15 +2517,12 @@ describe('The Criteo bidding adapter', function () {
           }
         ];
 
-        utilsMock.expects('logWarn')
-          .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
-          .exactly(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
         for (const nativeParams of nativeParamsWithSendTargetingKeys) {
           let transformedBidRequests = {...bidRequests};
           transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
           spec.buildRequests(transformedBidRequests, await addFPDToBidderRequest(bidderRequest));
         }
-        utilsMock.verify();
+        expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').callCount).to.equal(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
       });
     }
 
@@ -2807,9 +2803,8 @@ describe('The Criteo bidding adapter', function () {
         }
       ];
 
-      utilsMock.expects('logWarn').withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').never();
       const request = spec.buildRequests(bidRequestsWithSendId, await addFPDToBidderRequest(bidderRequest));
-      utilsMock.verify();
+      expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').notCalled).to.be.true;
     });
 
     it('should warn only once if sendId is not provided on required fields for native bidRequest', async () => {
@@ -2907,15 +2902,12 @@ describe('The Criteo bidding adapter', function () {
         }
       ];
 
-      utilsMock.expects('logWarn')
-        .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
-        .exactly(nativeParamsWithoutSendId.length * bidRequests.length);
       for (const nativeParams of nativeParamsWithoutSendId) {
         let transformedBidRequests = {...bidRequests};
         transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
         spec.buildRequests(transformedBidRequests, await addFPDToBidderRequest(bidderRequest));
       }
-      utilsMock.verify();
+      expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').callCount).to.equal(nativeParamsWithoutSendId.length * bidRequests.length);
     });
   });
 });
