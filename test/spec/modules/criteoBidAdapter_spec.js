@@ -17,6 +17,7 @@ describe('The Criteo bidding adapter', function () {
   let sandbox, ajaxStub, logWarnStub;
 
   beforeEach(function () {
+    sinon.restore();
     $$PREBID_GLOBAL$$.bidderSettings = {
       criteo: {
         storageAllowed: true
