@@ -39,6 +39,9 @@ describe('The Criteo bidding adapter', function () {
       // sinon sandbox restore may fail if a stubbed object went undefined
       // catch and ignore to avoid breaking unrelated tests
       // finding the bad stub is proving to be extremely difficult
+      /* eslint-disable no-console */
+      console.error('sandbox restore error:', e);
+      /* eslint-enable no-console */
     }
   });
 
