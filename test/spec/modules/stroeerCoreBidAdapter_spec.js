@@ -8,16 +8,21 @@ describe('stroeerCore bid adapter', function () {
   let sandbox;
   let bidderRequest;
   let clock;
+  let fakeServer;
 
   beforeEach(() => {
     bidderRequest = buildBidderRequest();
     sandbox = sinon.createSandbox();
-    fakeServer = sandbox.useFakeServer();
+    fakeServer = sinon.createFakeServer();
     clock = sandbox.useFakeTimers();
   });
 
   afterEach(() => {
     clock.restore();
+    if (fakeServer) {
+      fakeServer.restore();
+      fakeServer = null;
+    }
     sandbox.restore();
   });
 
