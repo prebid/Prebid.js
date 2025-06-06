@@ -51,6 +51,25 @@ describe('Intersection RTD Provider', function () {
       sandbox.stub(_config, 'setConfig').callsFake(function (obj) {
         utils.mergeDeep(__config, obj);
       });
+      sandbox.stub(window, 'IntersectionObserver').callsFake(function (cb) {
+        return {
+          observe(el) {
+            cb([
+              {
+                target: el,
+                intersectionRatio: 1,
+                isIntersecting: true,
+                time: Date.now(),
+                boundingClientRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0},
+                intersectionRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0},
+                rootRect: {left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0}
+              }
+            ]);
+          },
+          unobserve() {},
+          disconnect() {}
+        };
+      });
     });
     afterEach(function() {
       sandbox.restore();
