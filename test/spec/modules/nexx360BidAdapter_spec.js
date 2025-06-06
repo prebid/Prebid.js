@@ -32,7 +32,7 @@ describe('Nexx360 bid adapter tests', () => {
       }],
     },
   };
-    
+
 
   describe('isBidRequestValid()', () => {
     let bannerBid;
@@ -227,7 +227,7 @@ describe('Nexx360 bid adapter tests', () => {
               sizes: [[728, 90], [970, 250]]
             }
           },
-          
+
           adUnitCode: 'div-2-abcd',
           transactionId: '6196885d-4e76-40dc-a09c-906ed232626b',
           sizes: [[728, 90], [970, 250]],
@@ -524,7 +524,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       };
-      
+
       const output = spec.interpretResponse(response);
       const expectedOutput = [{
         requestId: '263cba3b8bfb72',
@@ -576,7 +576,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       };
-      
+
       const output = spec.interpretResponse(response);
       const expectedOutut = [{
         requestId: '4ce809b61a3928',
@@ -632,7 +632,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       };
-      
+
       const output = spec.interpretResponse(response);
       const expectOutput = [{
         requestId: '23e11d845514bb',
@@ -693,7 +693,7 @@ describe('Nexx360 bid adapter tests', () => {
           },
         },
       }];
-      expect(output).to.eql(expectOutput);      
+      expect(output).to.eql(expectOutput);
     });
   });
 
