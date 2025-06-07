@@ -1,25 +1,95 @@
-import { baseImpressionVerifier, PB_PREFIX } from 'modules/videoModule/videoImpressionVerifier.js';
+import { baseImpressionVerifier, videoImpressionVerifier, PB_PREFIX, UUID_MARKER } from 'modules/videoModule/videoImpressionVerifier.js';
 
+let trackerStore;
 let trackerMock;
-trackerMock = {
-  store: sinon.spy(),
-  remove: sinon.spy()
+
+function initTracker() {
+  trackerStore = {};
+  trackerMock = {
+    store: sinon.spy((key, value) => { trackerStore[key] = value; }),
+    remove: sinon.spy((key) => {
+      const val = trackerStore[key];
+      if (val) {
+        delete trackerStore[key];
+      }
+      return val;
+    })
+  };
 }
 
 describe('Base Impression Verifier', function() {
+  beforeEach(function () {
+    initTracker();
+  });
   describe('trackBid', function () {
     it('should generate uuid', function () {
       const baseVerifier = baseImpressionVerifier(trackerMock);
       const uuid = baseVerifier.trackBid({});
       expect(uuid.substring(0, 3)).to.equal(PB_PREFIX);
       expect(uuid.length).to.be.lessThan(16);
+      expect(trackerMock.store.calledOnce).to.be.true;
     });
   });
 
   describe('getBidIdentifiers', function () {
     it('should match ad id to uuid', function () {
-
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const bid = { adId: 'a1', adUnitCode: 'u1', requestId: 'r1', auctionId: 'auc1' };
+      const uuid = baseVerifier.trackBid(bid);
+      const result = baseVerifier.getBidIdentifiers(uuid);
+      expect(result).to.deep.equal(bid);
+      expect(trackerMock.remove.calledWith(uuid)).to.be.true;
     });
+
+    it('should match uuid in ad tag url', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const bid = { adId: 'a2', adUnitCode: 'u2', requestId: 'r2', auctionId: 'auc2' };
+      const uuid = baseVerifier.trackBid(bid);
+      const url = `http://test.com?${UUID_MARKER}=${uuid}`;
+      const result = baseVerifier.getBidIdentifiers(null, url);
+      expect(result).to.deep.equal(bid);
+    });
+
+    it('should match uuid from wrapper ids', function () {
+      const baseVerifier = baseImpressionVerifier(trackerMock);
+      const bid = { adId: 'a3', adUnitCode: 'u3', requestId: 'r3', auctionId: 'auc3' };
+      const uuid = baseVerifier.trackBid(bid);
+      const wrapperIds = { [uuid]: true };
+      const result = baseVerifier.getBidIdentifiers(null, null, wrapperIds);
+      expect(result).to.deep.equal(bid);
+    });
+  });
+});
+
+describe('videoImpressionVerifier', function () {
+  beforeEach(function () {
+    initTracker();
+  });
+
+  it('appends uuid to vastUrl', function () {
+    const vastXmlEditor = { getVastXmlWithTracking: sinon.spy() };
+    const verifier = videoImpressionVerifier(vastXmlEditor, trackerMock);
+    const bid = { vastUrl: 'http://example.com/ad' };
+    const uuid = verifier.trackBid(bid);
+    expect(bid.vastUrl).to.contain(`${UUID_MARKER}=${uuid}`);
+    expect(uuid.substring(0, 3)).to.equal(PB_PREFIX);
+  });
+
+  it('adds tracking to vastXml when provided', function () {
+    const vastXmlEditor = { getVastXmlWithTracking: sinon.stub().returns('newXml') };
+    const verifier = videoImpressionVerifier(vastXmlEditor, trackerMock);
+    const bid = { vastXml: '<VAST></VAST>' };
+    const uuid = verifier.trackBid(bid);
+    expect(vastXmlEditor.getVastXmlWithTracking.calledWith('<VAST></VAST>', uuid)).to.be.true;
+    expect(bid.vastXml).to.equal('newXml');
+  });
+
+  it('returns nothing when no vast data is supplied', function () {
+    const vastXmlEditor = { getVastXmlWithTracking: sinon.spy() };
+    const verifier = videoImpressionVerifier(vastXmlEditor, trackerMock);
+    const bid = {};
+    const uuid = verifier.trackBid(bid);
+    expect(uuid).to.equal(undefined);
   });
 });
 
