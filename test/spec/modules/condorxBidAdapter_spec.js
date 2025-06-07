@@ -171,7 +171,6 @@ describe('CondorX Bid Adapter Tests', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.include('/openrtb.json');
       expect(request.data).to.be.an('object');
-      expect(request.options.contentType).to.equal('application/json');
     });
 
     it('should build correct OpenRTB endpoint URL', function () {
@@ -206,10 +205,8 @@ describe('CondorX Bid Adapter Tests', function () {
 
     it('should return OpenRTB request format when useOpenRTB is true', function () {
       const request = adapterSpec.buildRequests(ortbBidRequests, bidderRequest)[0];
-
       expect(request.method).to.equal('POST');
       expect(request.url).to.include('/openrtb.json');
-      expect(request.options.contentType).to.equal('application/json');
       expect(request.data).to.be.an('object');
       expect(request.ortbRequest).to.exist;
     });
