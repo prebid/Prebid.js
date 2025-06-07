@@ -181,7 +181,7 @@ describe('adRendering', () => {
       it('invokes resizeFn with w/h from rendering data', () => {
         getRenderingDataStub.returns({width: 123, height: 321});
         doRender({renderFn, resizeFn, bidResponse});
-        sinon.assert.calledWith(resizeFn, 123, 321);
+        sinon.assert.calledWith(resizeFn, 123, 321, undefined);
       });
 
       it('does not invoke resizeFn if rendering data has no w/h', () => {
