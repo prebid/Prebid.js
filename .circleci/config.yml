@@ -30,7 +30,7 @@ aliases:
 
   - &run_unit_test
       name: BrowserStack testing
-      command: gulp test --browserstack --nolintfix
+      command: gulp test --browserstack --nolintfix --nolint
 
   - &run_endtoend_test
       name: BrowserStack End to end testing
