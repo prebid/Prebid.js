@@ -200,9 +200,7 @@ export const bidderSpec = {
         method: ORTB_REQUEST_METHOD,
         data: ortbRequest,
         bids: validBidRequests,
-        options: {
-          contentType: 'application/json'
-        },
+        options: {},
         ortbRequest // Store for response processing
       }];
     }
