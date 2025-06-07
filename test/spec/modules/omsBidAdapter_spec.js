@@ -73,7 +73,7 @@ describe('omsBidAdapter', function () {
       },
     }];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);

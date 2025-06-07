@@ -348,7 +348,7 @@ describe('AdTrueBidAdapter', function () {
         }
       });
       it('should include coppa flag in bid request if coppa is set to true', () => {
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         sandbox.stub(config, 'getConfig').callsFake(key => {
           const config = {
             'coppa': true
@@ -361,7 +361,7 @@ describe('AdTrueBidAdapter', function () {
         sandbox.restore();
       });
       it('should NOT include coppa flag in bid request if coppa is set to false', () => {
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         sandbox.stub(config, 'getConfig').callsFake(key => {
           const config = {
             'coppa': false
@@ -407,7 +407,7 @@ describe('AdTrueBidAdapter', function () {
   describe('getUserSyncs', function () {
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       sandbox.restore();

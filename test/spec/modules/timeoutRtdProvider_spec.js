@@ -76,7 +76,7 @@ describe('getConnectionSpeed', () => {
 describe('Timeout modifier calculations', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
@@ -207,7 +207,7 @@ describe('Timeout modifier calculations', () => {
 describe('Timeout RTD submodule', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {

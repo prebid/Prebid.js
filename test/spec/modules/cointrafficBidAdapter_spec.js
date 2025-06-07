@@ -97,7 +97,8 @@ describe('cointrafficBidAdapter', function () {
     });
 
     it('throws an error if currency provided in params is not allowed', function () {
-      const utilsMock = sinon.mock(utils).expects('logError').twice()
+      const utilsMock = sinon.mock(utils)
+      utilsMock.expects('logError').twice()
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'currency.bidderCurrencyDefault.cointraffic' ? 'BTC' : 'EUR'
       );

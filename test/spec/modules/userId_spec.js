@@ -167,7 +167,7 @@ describe('User ID', function () {
 
   beforeEach(function () {
     resetConsentData();
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     consentData = null;
     mockGdprConsent(sandbox, () => consentData);
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);

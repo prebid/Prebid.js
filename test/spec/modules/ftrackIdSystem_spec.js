@@ -1,14 +1,13 @@
 import { ftrackIdSubmodule } from 'modules/ftrackIdSystem.js';
 import * as utils from 'src/utils.js';
 import { uspDataHandler } from 'src/adapterManager.js';
-import { loadExternalScript } from 'src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import {attachIdSystem, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
+import {server} from 'test/mocks/xhr.js';
 import 'src/prebid.js';
-
-let server;
 
 let configMock = {
   name: 'ftrack',
@@ -139,20 +138,20 @@ describe('FTRACK ID System', () => {
 
     it(`should be the only method that gets a new ID aka hits the D9 endpoint`, () => {
       ftrackIdSubmodule.getId(configMock, null, null).callback(() => {});
-      expect(loadExternalScript.called).to.be.ok;
-      expect(loadExternalScript.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
-      loadExternalScript.resetHistory();
+      expect(loadExternalScriptStub.called).to.be.ok;
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal('https://d9.flashtalking.com/d9core');
+      loadExternalScriptStub.resetHistory();
 
       ftrackIdSubmodule.decode('value', configMock);
-      expect(loadExternalScript.called).to.not.be.ok;
-      expect(loadExternalScript.args).to.deep.equal([]);
-      loadExternalScript.resetHistory();
+      expect(loadExternalScriptStub.called).to.not.be.ok;
+      expect(loadExternalScriptStub.args).to.deep.equal([]);
+      loadExternalScriptStub.resetHistory();
 
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
-      expect(loadExternalScript.called).to.not.be.ok;
-      expect(loadExternalScript.args).to.deep.equal([]);
+      expect(loadExternalScriptStub.called).to.not.be.ok;
+      expect(loadExternalScriptStub.args).to.deep.equal([]);
 
-      loadExternalScript.restore();
+      loadExternalScriptStub.restore();
     });
 
     describe(`should use the "ids" setting in the config:`, () => {
@@ -316,23 +315,17 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should not be making requests to retrieve a new ID, it should just be decoding a response`, () => {
-      server = sinon.createFakeServer();
       ftrackIdSubmodule.decode('value', configMock);
 
       expect(server.requests).to.have.length(0);
-
-      server.restore();
     })
   });
 
   describe(`extendId() method`, () => {
     it(`should not be making requests to retrieve a new ID, it should just be adding additional data to the id object`, () => {
-      server = sinon.createFakeServer();
       ftrackIdSubmodule.extendId(configMock, null, {cache: {id: ''}});
 
       expect(server.requests).to.have.length(0);
-
-      server.restore();
     });
 
     it(`should return cacheIdObj`, () => {

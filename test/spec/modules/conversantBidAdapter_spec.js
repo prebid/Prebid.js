@@ -686,7 +686,7 @@ describe('Conversant adapter tests', function() {
     const cnvrResponse = {ext: {psyncs: [syncurl_image], fsyncs: [syncurl_iframe]}};
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function() {
       sandbox.restore();

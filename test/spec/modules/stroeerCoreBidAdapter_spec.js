@@ -3,21 +3,27 @@ import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import sinon from 'sinon';
+import { fakeServer as niseFakeServer } from 'nise';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
-  let fakeServer;
   let bidderRequest;
   let clock;
+  let fakeServer;
 
   beforeEach(() => {
     bidderRequest = buildBidderRequest();
-    sandbox = sinon.sandbox.create();
-    fakeServer = sandbox.useFakeServer();
+    sandbox = sinon.createSandbox();
+    fakeServer = niseFakeServer.create();
     clock = sandbox.useFakeTimers();
   });
 
   afterEach(() => {
+    clock.restore();
+    if (fakeServer) {
+      fakeServer.restore();
+      fakeServer = null;
+    }
     sandbox.restore();
   });
 

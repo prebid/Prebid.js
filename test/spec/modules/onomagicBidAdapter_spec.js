@@ -55,7 +55,7 @@ describe('onomagicBidAdapter', function() {
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e'
     }];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);

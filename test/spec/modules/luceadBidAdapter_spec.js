@@ -46,7 +46,7 @@ describe('Lucead Adapter', () => {
     ];
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
 
     it('should trigger impression pixel', function () {

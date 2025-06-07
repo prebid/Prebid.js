@@ -27,7 +27,7 @@ describe('RelaidoAdapter', function () {
     mockGpt.disable();
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     bidRequest = {
       bidder: 'relaido',
       params: {

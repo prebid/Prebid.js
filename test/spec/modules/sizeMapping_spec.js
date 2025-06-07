@@ -49,7 +49,7 @@ describe('sizeMapping', function () {
   beforeEach(function () {
     setSizeConfig(sizeConfig);
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     matchMediaOverride = {matches: false};
 

@@ -486,7 +486,9 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        cmpStub.restore();
+        if (window.__tcfapi) {
+          cmpStub.restore();
+        }
         utils.logError.restore();
         utils.logWarn.restore();
         resetConsentData();

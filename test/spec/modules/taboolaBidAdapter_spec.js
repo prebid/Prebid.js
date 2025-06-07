@@ -12,7 +12,7 @@ describe('Taboola Adapter', function () {
   const TBLA_ID_COOKIE_KEY = 'tbla_id';
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     hasLocalStorage = sandbox.stub(userData.storageManager, 'hasLocalStorage');
     cookiesAreEnabled = sandbox.stub(userData.storageManager, 'cookiesAreEnabled');
     getCookie = sandbox.stub(userData.storageManager, 'getCookie');

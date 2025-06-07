@@ -358,7 +358,7 @@ describe('magnite analytics adapter', function () {
     setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
     removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage')
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     localStorageIsEnabledStub.returns(true);
 
