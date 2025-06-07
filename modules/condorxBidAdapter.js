@@ -140,11 +140,15 @@ function isValidAdSize([width, height]) {
   return width > 0 && height > 0;
 }
 
+function getAdSize(bidRequest) {
+  const validSize = getValidAdSize(bidRequest);
+  return validSize || [300, 250]; // Default fallback size
+}
+
 function getBidFloor(bidRequest) {
   if (bidRequest.params && bidRequest.params.bidfloor && !isNaN(bidRequest.params.bidfloor)) {
     return parseFloat(bidRequest.params.bidfloor);
   }
-  console.log("Reem: "+JSON.stringify(bidRequest));
   if (typeof bidRequest.getFloor === 'function') {
     try {
       const floorInfo = bidRequest.getFloor({
