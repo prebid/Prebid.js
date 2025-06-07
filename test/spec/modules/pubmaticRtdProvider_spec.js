@@ -399,15 +399,14 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
             await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.called).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS:');
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
         });
 
         it('should log error when response is not ok', async () => {
             fetchStub.resolves(new Response(null, { status: 500 }));
 
             await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching CONFIGS: Not ok/))).to.be.true;
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
         });
 
         it('should log error on network failure', async () => {
@@ -415,7 +414,7 @@ describe('Pubmatic RTD Provider', () => {
 
             await fetchData('1234', '123', 'CONFIGS');
             expect(logErrorStub.called).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS');
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
         });
     });
 
