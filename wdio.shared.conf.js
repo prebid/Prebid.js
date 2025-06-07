@@ -1,3 +1,12 @@
+const path = require('path');
+const fs = require('fs');
+
+if (!process.env.BABEL_CACHE_PATH) {
+  const cacheFile = path.resolve(__dirname, '.cache', 'babel-register.json');
+  fs.mkdirSync(path.dirname(cacheFile), {recursive: true});
+  process.env.BABEL_CACHE_PATH = cacheFile;
+}
+
 exports.config = {
   specs: [
     './test/spec/e2e/**/*.spec.js',
