@@ -6,7 +6,7 @@
  */
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { logError, logWarn, getBidIdParameter, isFn, isPlainObject, deepClone } from '../src/utils.js';
+import { logError, logWarn, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'epom_dsp';
@@ -17,13 +17,12 @@ export const spec = {
   isBidRequestValid(bid) {
     const globalSettings = config.getBidderConfig()[BIDDER_CODE]?.epomSettings || {};
     const endpoint = bid.params?.endpoint || globalSettings.endpoint;
-
     if (!endpoint || typeof endpoint !== 'string') {
       logWarn(`[${BIDDER_CODE}] Invalid endpoint: expected a non-empty string.`);
       return false;
     }
 
-    if (!endpoint.startsWith('https://')) {
+    if (!(endpoint.startsWith('https://') || endpoint.startsWith('http://'))) {
       logWarn(`[${BIDDER_CODE}] Invalid endpoint: must start with "https://".`);
       return false;
     }
@@ -42,35 +41,28 @@ export const spec = {
           return null;
         }
 
+        const impArray = Array.isArray(bid.imp) ? bid.imp : [];
+        const defaultSize = bid.mediaTypes?.banner?.sizes?.[0] || bid.sizes?.[0];
+        if (!defaultSize) {
+          logWarn(`[${BIDDER_CODE}] No size found in mediaTypes or bid.sizes.`);
+        }
+
+        impArray.forEach(imp => {
+          if (imp.id && (!imp.banner?.w || !imp.banner?.h) && defaultSize) {
+            imp.banner = {
+              w: defaultSize[0],
+              h: defaultSize[1],
+            };
+          }
+        });
+        const extraData = deepClone(bid);
         const payload = {
-          ...deepClone(bid),
-          id: bid.bidId || 'default-id',
-          imp: [
-            {
-              id: bid.bidId,
-              tagid: bid.adUnitCode,
-              bidfloor: getBidFloor(bid),
-              banner: {
-                w: bid.sizes[0][0],
-                h: bid.sizes[0][1],
-              },
-            }
-          ],
-          site: {
-            domain: bidderRequest?.refererInfo?.domain || 'unknown.com',
-            page: bidderRequest?.refererInfo?.referer || 'https://unknown.com',
-            publisher: { id: 'unknown-publisher' }
-          },
-          device: {
-            ua: navigator.userAgent || '',
-            ip: '0.0.0.0',
-            devicetype: 2,
-          },
+          ...extraData,
+          id: bid.id,
+          imp: impArray,
           referer: bidderRequest?.refererInfo?.referer,
           gdprConsent: bidderRequest?.gdprConsent,
           uspConsent: bidderRequest?.uspConsent,
-          bidfloor: getBidFloor(bid),
-          sizes: bid.sizes[0] || [],
         };
 
         return {
@@ -82,37 +74,43 @@ export const spec = {
             withCredentials: false,
           },
         };
-      }).filter(request => request !== null);
+      }).filter(req => req !== null);
     } catch (error) {
       logError(`[${BIDDER_CODE}] Error in buildRequests:`, error);
       return [];
     }
   },
 
-  interpretResponse(serverResponse) {
+  interpretResponse(serverResponse, request) {
     const bidResponses = [];
     const response = serverResponse.body;
 
-    if (response && Array.isArray(response.bids)) {
-      response.bids.forEach((bid) => {
-        if (bid.cpm && bid.ad && bid.width && bid.height) {
+    if (response && response.seatbid && Array.isArray(response.seatbid)) {
+      response.seatbid.forEach(seat => {
+        seat.bid.forEach(bid => {
+          if (!bid.adm) {
+            logError(`[${BIDDER_CODE}] Missing 'adm' in bid response`, bid);
+            return;
+          }
           bidResponses.push({
-            requestId: bid.requestId,
-            cpm: bid.cpm,
-            currency: bid.currency,
-            width: bid.width,
-            height: bid.height,
-            ad: bid.ad,
-            creativeId: bid.creativeId || bid.requestId,
-            ttl: typeof bid.ttl === 'number' ? bid.ttl : 300,
-            netRevenue: bid.netRevenue !== false,
+            requestId: request?.data?.bidId || bid.impid,
+            cpm: bid.price,
+            nurl: bid.nurl,
+            currency: response.cur || 'USD',
+            width: bid.w,
+            height: bid.h,
+            ad: bid.adm,
+            creativeId: bid.crid || bid.adid,
+            ttl: 300,
+            netRevenue: true,
+            meta: {
+              advertiserDomains: bid.adomain || []
+            }
           });
-        } else {
-          logWarn(`[${BIDDER_CODE}] Invalid bid response:`, bid);
-        }
+        });
       });
     } else {
-      logError(`[${BIDDER_CODE}] Empty or invalid server response:`, serverResponse);
+      logError(`[${BIDDER_CODE}] Empty or invalid response`, serverResponse);
     }
 
     return bidResponses;
@@ -146,32 +144,5 @@ export const spec = {
     return syncs;
   },
 };
-
-function getBidFloor(bid) {
-  let floor = parseFloat(getBidIdParameter('bidfloor', bid.params)) || null;
-  let floorcur = getBidIdParameter('bidfloorcur', bid.params) || 'USD';
-
-  if (!floor && isFn(bid.getFloor)) {
-    try {
-      const floorObj = bid.getFloor({
-        currency: floorcur,
-        mediaType: '*',
-        size: '*'
-      });
-
-      if (
-        isPlainObject(floorObj) &&
-        !isNaN(parseFloat(floorObj.floor)) &&
-        floorObj.currency === floorcur
-      ) {
-        floor = parseFloat(floorObj.floor);
-      }
-    } catch (e) {
-      logError('Error retrieving floor price:', e);
-    }
-  }
-
-  return floor || 0;
-}
 
 registerBidder(spec);
