@@ -24,7 +24,7 @@ describe('GreedyPromise', () => {
     let makePromise, pendingFailure, pendingSuccess;
 
     Object.entries({
-       
+
       'resolver that throws': (P) => new P(() => { throw 'error' }),
       'resolver that resolves multiple times': (P) => new P((resolve) => { resolve('first'); resolve('second'); }),
       'resolver that rejects multiple times': (P) => new P((resolve, reject) => { reject('first'); reject('second') }),
@@ -74,7 +74,7 @@ describe('GreedyPromise', () => {
           .finally(() => pendingSuccess.then(() => { fval = 'finally' }))
           .catch((err) => `${err} ${fval}`)
       },
-       
+
       '.finally that throws': (P) => makePromise(P, 'value').finally(() => { throw 'error' }),
       'chained .finally that rejects': (P) => makePromise(P, 'value').finally(() => P.reject('error')),
       'scalar Promise.resolve': (P) => P.resolve('scalar'),

@@ -193,9 +193,9 @@ describe('IntentIQ tests', function () {
       }
     });
     const currentBrowserLowerCase = detectBrowser();
-    
+
     if (currentBrowserLowerCase === usedBrowser) {
-      const at20request = server.requests[0];   
+      const at20request = server.requests[0];
       expect(at20request.url).to.contain(`&source=${PREBID}`);
       expect(at20request.url).to.contain(`at=20`);
     }
@@ -205,10 +205,10 @@ describe('IntentIQ tests', function () {
   it('should send at=39 request and send source in it', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-  
+
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
-  
+
     expect(request.url).to.contain(`&source=${PREBID}`);
   });
 
@@ -436,7 +436,7 @@ describe('IntentIQ tests', function () {
       browserBlackList: 'chrome'
       }
     });
-    
+
     const at20request = server.requests[0];
     expect(at20request.url).to.contain(`&spd=${encodedSpd}`);
     expect(at20request.url).to.contain(`at=20`);
@@ -452,12 +452,12 @@ describe('IntentIQ tests', function () {
       browserBlackList: 'chrome'
       }
     });
-    
-    const at20request = server.requests[0];   
+
+    const at20request = server.requests[0];
     expect(at20request.url).to.contain(`&spd=${encodedSpd}`);
     expect(at20request.url).to.contain(`at=20`);
   });
-  
+
   it('should send spd from firstPartyData in localStorage in at=39 request', function () {
     const spdValue = { foo: 'bar', value: 42 };
     const encodedSpd = encodeURIComponent(JSON.stringify(spdValue));
@@ -466,10 +466,10 @@ describe('IntentIQ tests', function () {
 
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-  
+
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
-    
+
     expect(request.url).to.contain(`&spd=${encodedSpd}`);
     expect(request.url).to.contain(`at=39`);
   });
@@ -481,7 +481,7 @@ describe('IntentIQ tests', function () {
 
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-  
+
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
 
@@ -493,19 +493,19 @@ describe('IntentIQ tests', function () {
     const spdValue = { foo: 'bar', value: 42 };
     let callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
-  
+
     submoduleCallback(callBackSpy);
     const request = server.requests[0];
-  
+
     request.respond(
       200,
       responseHeader,
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true, spd: spdValue })
     );
-  
+
     const storedLs = readData(FIRST_PARTY_KEY, ['html5', 'cookie'], storage);
     const parsedLs = JSON.parse(storedLs);
-    
+
     expect(storedLs).to.not.be.null;
     expect(callBackSpy.calledOnce).to.be.true;
     expect(parsedLs).to.have.property('spd');
@@ -576,7 +576,7 @@ describe('IntentIQ tests', function () {
         gdprString: null,
         gppString: null,
         uspString: null
-      };     
+      };
 
       storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage)
       const callBackSpy = sinon.spy()
@@ -597,7 +597,7 @@ describe('IntentIQ tests', function () {
         gdprString: null,
         gppString: null,
         uspString: null
-      };     
+      };
 
       storeData(FIRST_PARTY_KEY, JSON.stringify(FPD), allowedStorage, storage)
       const returnedObject = intentIqIdSubmodule.getId({...allConfigParams, params: {...allConfigParams.params, partner: newPartnerId}});
@@ -1032,7 +1032,7 @@ describe('IntentIQ tests', function () {
 
   it('should store first party data under the silo key when siloEnabled is true', function () {
     const configParams = { params: {...allConfigParams.params, siloEnabled: true} };
-    
+
     intentIqIdSubmodule.getId(configParams);
     const expectedKey = FIRST_PARTY_KEY + '_p_' + configParams.params.partner;
     const storedData = localStorage.getItem(expectedKey);
@@ -1121,10 +1121,10 @@ describe('IntentIQ tests', function () {
         }]
       }
     };
-  
+
     intentIqIdSubmodule.getId(configParams);
     const syncRequest = server.requests[0];
-  
+
     expect(syncRequest.url).to.include('general=Lee');
   });
   it('should send additionalParams in VR request', function () {
@@ -1143,10 +1143,10 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
     const vrRequest = server.requests[0];
-  
+
     expect(vrRequest.url).to.include('general=Lee');
   });
-  
+
   it('should not send additionalParams in case it is not an array', function () {
     const configParams = {
       params: {
@@ -1163,10 +1163,10 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
     const vrRequest = server.requests[0];
-  
+
     expect(vrRequest.url).not.to.include('general=');
   });
-  
+
   it('should not send additionalParams in case request url is too long', function () {
     const longValue = 'x'.repeat(5000000); // simulate long parameter
     const configParams = {
@@ -1184,7 +1184,7 @@ describe('IntentIQ tests', function () {
     let submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
     const vrRequest = server.requests[0];
-  
+
     expect(vrRequest.url).not.to.include('general=');
   });
 
@@ -1197,10 +1197,10 @@ describe('IntentIQ tests', function () {
         groupChanged: groupChangedSpy
       }
     };
-  
+
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-  
+
     const request = server.requests[0];
     request.respond(
       200,
@@ -1211,7 +1211,7 @@ describe('IntentIQ tests', function () {
         data: { eids: [] }
       })
     );
-  
+
     expect(callBackSpy.calledOnce).to.be.true;
     expect(groupChangedSpy.calledWith(WITHOUT_IIQ)).to.be.true;
   });
@@ -1225,10 +1225,10 @@ describe('IntentIQ tests', function () {
         groupChanged: groupChangedSpy
       }
     };
-  
+
     const submoduleCallback = intentIqIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-  
+
     const request = server.requests[0];
     request.respond(
       200,
@@ -1239,8 +1239,8 @@ describe('IntentIQ tests', function () {
         data: { eids: [] }
       })
     );
-  
+
     expect(callBackSpy.calledOnce).to.be.true;
     expect(groupChangedSpy.calledWith(WITH_IIQ)).to.be.true;
-  });  
+  });
 });

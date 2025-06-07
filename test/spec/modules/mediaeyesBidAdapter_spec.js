@@ -152,7 +152,7 @@ describe('mediaeyes adapter', function () {
             let request = spec.buildRequests(newRequest);
             let data = JSON.parse(request[0].data);
             data = data.imp[0];
-            expect(data.bidfloor).to.equal(0); 
+            expect(data.bidfloor).to.equal(0);
         });
 
         it('floormodule if currency is not matched', function () {
