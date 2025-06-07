@@ -1,5 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
- 
+
 import { assert } from 'chai';
 import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
