@@ -86,8 +86,9 @@ export const spec = {
           })
         }
 
-        if (bid.schain) {
-          schain = schain || bid.schain
+        const bidSchain = bid?.ortb2?.source?.ext?.schain;
+        if (bidSchain) {
+          schain = schain || bidSchain
         }
         iv = iv || getBidIdParameter('iv', bid.params)
 

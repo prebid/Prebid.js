@@ -284,11 +284,17 @@ describe('Dianomi adapter', () => {
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          schain: {
-            validation: 'strict',
-            config: {
-              ver: '1.0',
-            },
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                  },
+                }
+              }
+            }
           },
         },
       ];

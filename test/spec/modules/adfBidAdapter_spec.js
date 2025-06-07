@@ -330,10 +330,16 @@ describe('Adf adapter', function () {
       let validBidRequests = [{
         bidId: 'bidId',
         params: {},
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       }];

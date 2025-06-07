@@ -21,6 +21,7 @@ const DEFAULT_CUR = 'USD';
 const ALIASES = [
   { code: 'emx_digital', gvlid: 183 },
   { code: 'cadent', gvlid: 183 },
+  { code: 'emxdigital', gvlid: 183 },
 ];
 
 const EIDS_SUPPORTED = [
@@ -184,10 +185,11 @@ export const cadentAdapter = {
     return cadentData;
   },
   getSupplyChain: (bidderRequest, cadentData) => {
-    if (bidderRequest.bids[0] && bidderRequest.bids[0].schain) {
+    const schain = bidderRequest.bids[0]?.ortb2?.source?.ext?.schain;
+    if (bidderRequest.bids[0] && schain) {
       cadentData.source = {
         ext: {
-          schain: bidderRequest.bids[0].schain
+          schain: schain
         }
       };
     }
@@ -277,8 +279,7 @@ export const spec = {
       // adding gpid support
       let gpid =
         deepAccess(bid, 'ortb2Imp.ext.gpid') ||
-        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot') ||
-        deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+        deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot')
 
       if (gpid) {
         data.ext = { gpid: gpid.toString() };

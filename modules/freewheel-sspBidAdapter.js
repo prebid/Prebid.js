@@ -399,7 +399,7 @@ export const spec = {
       }
 
       // Add schain object
-      var schain = currentBidRequest.schain;
+      var schain = currentBidRequest?.ortb2?.source?.ext?.schain;
       if (schain) {
         try {
           requestParams.schain = JSON.stringify(schain);

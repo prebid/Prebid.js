@@ -154,7 +154,7 @@ function _filterSid(sid) {
 
 function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
-  let { schain } = bidRequests[0];
+  const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
   const globalFpd = _getGlobalFpd(bidderRequest);
 
   data.imp = bidRequests.map(function(bidRequest, index) {

@@ -55,7 +55,7 @@ export const spec = {
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
-      schain: anyBid.schain
+      schain: anyBid?.ortb2?.source?.ext?.schain
     };
 
     const eids = anyBid.userIdAsEids;

@@ -617,8 +617,9 @@ export const spec = {
     }
 
     // if SupplyChain is supplied and contains all required fields
-    if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-      data.rp_schain = spec.serializeSupplyChain(bidRequest.schain);
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
+    if (schain && hasValidSupplyChainParams(schain)) {
+      data.rp_schain = spec.serializeSupplyChain(schain);
     }
 
     return data;

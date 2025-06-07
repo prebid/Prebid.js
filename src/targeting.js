@@ -8,7 +8,6 @@ import {
   EVENTS,
   JSON_MAPPING,
   NATIVE_KEYS,
-  STATUS,
   TARGETING_KEYS
 } from './constants.js';
 import * as events from './events.js';
@@ -53,9 +52,6 @@ const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 
 const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].includes(bid.status)) || !bid.status);
 
 export let filters = {
-  isActualBid(bid) {
-    return bid.getStatusCode() === STATUS.GOOD
-  },
   isBidNotExpired,
   isUnusedBid
 };
@@ -337,7 +333,7 @@ export function newTargeting(auctionManager) {
   }
 
   function getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes) {
-    const useAllBidsCustomTargeting = config.getConfig('targetingControls.allBidsCustomTargeting') !== false;
+    const useAllBidsCustomTargeting = config.getConfig('targetingControls.allBidsCustomTargeting') === true;
 
     const targeting = getWinningBidTargeting(bidsSorted, adUnitCodes)
       .concat(getBidderTargeting(bidsSorted))

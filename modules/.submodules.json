@@ -59,7 +59,7 @@
     ],
     "adpod": [
       "freeWheelAdserverVideo",
-      "dfpAdpod"
+      "gamAdpod"
     ],
     "rtdModule": [
       "1plusXRtdProvider",
@@ -70,7 +70,6 @@
       "adlooxRtdProvider",
       "adnuntiusRtdProvider",
       "airgridRtdProvider",
-      "akamaiDapRtdProvider",
       "arcspanRtdProvider",
       "azerionedgeRtdProvider",
       "blueconicRtdProvider",

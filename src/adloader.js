@@ -14,7 +14,6 @@ const _approvedLoadExternalJSList = [
   'aaxBlockmeter',
   'adagio',
   'adloox',
-  'akamaidap',
   'arcspan',
   'airgrid',
   'browsi',

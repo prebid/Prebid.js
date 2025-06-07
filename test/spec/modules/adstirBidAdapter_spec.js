@@ -279,7 +279,7 @@ describe('AdstirAdapter', function () {
       };
       const serializedSchain = '1.0,1!exchange1.example,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.example!exchange2.example,abcd,1,bid-request-2,intermediary,intermediary.example';
 
-      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { schain })], bidderRequest);
+      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { ortb2: { source: { ext: { schain } } } })], bidderRequest);
       const d = JSON.parse(request.data);
       expect(d.schain).to.deep.equal(serializedSchain);
     });
@@ -305,7 +305,7 @@ describe('AdstirAdapter', function () {
       };
       const serializedSchain = '1.0,1!exchange1.example,1234%21abcd,1,,,!,,,,,!exchange2.example,abcd,1,,,';
 
-      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { schain })], bidderRequest);
+      const [ request ] = spec.buildRequests([utils.mergeDeep(utils.deepClone(validBidRequests[0]), { ortb2: { source: { ext: { schain } } } })], bidderRequest);
       const d = JSON.parse(request.data);
       expect(d.schain).to.deep.equal(serializedSchain);
     });

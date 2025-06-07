@@ -395,7 +395,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](https:/
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not dead; not Opera Mini; not IE11.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

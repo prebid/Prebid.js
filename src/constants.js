@@ -186,7 +186,6 @@ export const NATIVE_IMAGE_TYPES = {
 export const NATIVE_KEYS_THAT_ARE_NOT_ASSETS = [
   'privacyIcon',
   'clickUrl',
-  'sendTargetingKeys',
   'adTemplate',
   'rendererUrl',
   'type'

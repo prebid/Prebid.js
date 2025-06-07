@@ -187,7 +187,6 @@ function parseNativeResponse(ad) {
   const { dsaurl, height, width, adclick } = ad.data.meta;
   const link = adclick + (url || Thirdpartyclicktracker);
   const nativeResponse = {
-    sendTargetingKeys: false,
     title: title || Headline || '',
     image: {
       url: image || Image || '',

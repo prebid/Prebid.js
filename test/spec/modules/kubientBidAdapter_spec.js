@@ -30,18 +30,24 @@ describe('KubientAdapter', function () {
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
-    schain: {
-      ver: '1.1',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '0',
-          hp: 1,
-          rid: 'bidrequestid',
-          domain: 'example.com'
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.1',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '0',
+                hp: 1,
+                rid: 'bidrequestid',
+                domain: 'example.com'
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   };
   let bidVideo = {
@@ -67,18 +73,24 @@ describe('KubientAdapter', function () {
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e61',
-    schain: {
-      ver: '1.1',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '0',
-          hp: 1,
-          rid: 'bidrequestid',
-          domain: 'example.com'
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.1',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '0',
+                hp: 1,
+                rid: 'bidrequestid',
+                domain: 'example.com'
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   };
   let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';

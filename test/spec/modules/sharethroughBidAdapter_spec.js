@@ -191,17 +191,23 @@ describe('sharethrough adapter spec', function () {
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
           },
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'directseller.com',
-                sid: '00001',
-                rid: 'BidRequest1',
-                hp: 1,
-              },
-            ],
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [
+                    {
+                      asi: 'directseller.com',
+                      sid: '00001',
+                      rid: 'BidRequest1',
+                      hp: 1,
+                    },
+                  ],
+                }
+              }
+            }
           },
           getFloor: () => ({ currency: 'USD', floor: 42 }),
         },
@@ -321,7 +327,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.source.tid).to.equal(bidderRequest.ortb2.source.tid);
             expect(openRtbReq.source.ext.version).not.to.be.undefined;
             expect(openRtbReq.source.ext.str).not.to.be.undefined;
-            expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+            expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
 
             expect(openRtbReq.bcat).to.deep.equal(bidRequests[0].params.bcat);
             expect(openRtbReq.badv).to.deep.equal(bidRequests[0].params.badv);
@@ -504,13 +510,6 @@ describe('sharethrough adapter spec', function () {
 
           expect(requests[0].data.imp[0].ext.gpid).to.equal('universal-id');
           expect(requests[1].data.imp[0].ext).to.be.empty;
-        });
-
-        it('should include gpid when pbadslot is provided without universal id', () => {
-          delete bidRequests[0].ortb2Imp.ext.gpid;
-          const requests = spec.buildRequests(bidRequests, bidderRequest);
-
-          expect(requests[0].data.imp[0].ext.gpid).to.equal('pbadslot-id');
         });
       });
 

@@ -116,7 +116,13 @@ const DISPLAY_REQUEST_WITH_SCHAIN = [{
       tid: 'trans_abcd1234',
     }
   },
-  schain: SCHAIN,
+  ortb2: {
+    source: {
+      ext: {
+        schain: SCHAIN
+      }
+    }
+  },
 }];
 
 const BID_RESPONSE_DISPLAY = {
@@ -232,7 +238,6 @@ const NATIVE_REQUEST = [{
   ],
   mediaTypes: {
     native: {
-      sendTargetingKeys: false,
       title: {
         required: true,
         len: 140

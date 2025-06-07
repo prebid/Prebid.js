@@ -57,8 +57,9 @@ export const spec = {
     };
 
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(openrtbRequest, 'source.ext.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(openrtbRequest, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params

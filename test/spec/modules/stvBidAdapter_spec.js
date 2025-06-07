@@ -60,17 +60,23 @@ describe('stvAdapter', function() {
         'bidderRequestId': '22edbae2733bf61',
         'auctionId': '1d1a030790a475',
         'adUnitCode': 'testDiv1',
-        'schain': {
-          'ver': '1.0',
-          'complete': 0,
-          'nodes': [
-            {
-              'asi': 'reseller.com',
-              'sid': 'aaaaa',
-              'rid': 'BidRequest4',
-              'hp': 1
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                'ver': '1.0',
+                'complete': 0,
+                'nodes': [
+                  {
+                    'asi': 'reseller.com',
+                    'sid': 'aaaaa',
+                    'rid': 'BidRequest4',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         },
         'userIdAsEids': [
           {

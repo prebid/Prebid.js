@@ -30,8 +30,6 @@ import {auctionManager} from './auctionManager.js';
 import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
-
-import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
@@ -39,6 +37,7 @@ import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
+import {schainPrecedence} from './fpd/schain.js';
 import {allConsent} from './consentHandler.js';
 import {
   insertLocatorFrame,
@@ -221,23 +220,12 @@ function validateNativeMediaType(adUnit) {
     delete validatedAdUnit.mediaTypes.native;
     return validatedAdUnit;
   }
-  function checkDeprecated(onDeprecated) {
-    for (const key of ['sendTargetingKeys', 'types']) {
-      if (native.hasOwnProperty(key)) {
-        const res = onDeprecated(key);
-        if (res) return res;
-      }
-    }
-  }
   const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
     if (native.ortb.assets?.some(asset => !isNumber(asset.id) || asset.id < 0 || asset.id % 1 !== 0)) {
       return err('native asset ID must be a nonnegative integer');
-    }
-    if (checkDeprecated(key => err(`ORTB native requests cannot specify "${key}"`))) {
-      return validatedAdUnit;
     }
     const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
     const nativeKeys = Object.keys(native);
@@ -246,8 +234,6 @@ function validateNativeMediaType(adUnit) {
       logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
       intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
     }
-  } else {
-    checkDeprecated(key => `mediaTypes.native.${key} is deprecated, consider using native ORTB instead`, adUnit);
   }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
@@ -383,14 +369,15 @@ pbjsInstance.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
  * @param adunitCode {string} adUnitCode to get the bid responses for
  * @alias module:pbjs.getHighestUnusedBidResponseForAdUnitCode
- * @returns {Object}  returnObj return bid
+ * @returns {Object|null}  returnObj return bid or null if no suitable bid exists
  */
 pbjsInstance.getHighestUnusedBidResponseForAdUnitCode = function (adunitCode) {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode', arguments);
   if (adunitCode) {
     const bid = auctionManager.getAllBidsForAdUnitCode(adunitCode)
       .filter(isBidUsable)
 
-    return bid.length ? bid.reduce(getHighestCpm) : {}
+    return bid.length ? bid.reduce(getHighestCpm) : null
   } else {
     logMessage('Need to call getHighestUnusedBidResponseForAdUnitCode with adunitCode');
   }
@@ -403,6 +390,7 @@ pbjsInstance.getHighestUnusedBidResponseForAdUnitCode = function (adunitCode) {
  * @returns {Object}  returnObj return bids
  */
 pbjsInstance.getAdserverTargetingForAdUnitCode = function (adUnitCode) {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCode', arguments);
   return pbjsInstance.getAdserverTargeting(adUnitCode)[adUnitCode];
 };
 
@@ -431,12 +419,15 @@ function getBids(type) {
 
   return responses
     .map(bid => bid.adUnitCode)
-    .filter(uniques).map(adUnitCode => responses
+    .filter(uniques)
+    .map(adUnitCode => responses
       .filter(bid => bid.auctionId === currentAuctionId && bid.adUnitCode === adUnitCode))
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
+      const arr = bids.slice();
+      arr.bids = arr; // backwards compatibility
       return {
-        [bids[0].adUnitCode]: { bids }
+        [bids[0].adUnitCode]: arr
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -461,8 +452,11 @@ pbjsInstance.getNoBids = function () {
  */
 
 pbjsInstance.getNoBidsForAdUnitCode = function (adUnitCode) {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getNoBidsForAdUnitCode', arguments);
   const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
-  return { bids };
+  const arr = bids.slice();
+  arr.bids = arr;
+  return arr;
 };
 
 /**
@@ -484,8 +478,11 @@ pbjsInstance.getBidResponses = function () {
  */
 
 pbjsInstance.getBidResponsesForAdUnitCode = function (adUnitCode) {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode', arguments);
   const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-  return { bids };
+  const arr = bids.slice();
+  arr.bids = arr;
+  return arr;
 };
 
 /**
@@ -509,7 +506,7 @@ pbjsInstance.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
  * @alias module:pbjs.setTargetingForAst
  */
 pbjsInstance.setTargetingForAst = function (adUnitCodes) {
-  logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAn', arguments);
+  logInfo('Invoking $$PREBID_GLOBAL$$.setTargetingForAst', arguments);
   if (!targeting.isApntagDefined()) {
     logError('window.apntag is not defined on the page');
     return;
@@ -590,10 +587,13 @@ pbjsInstance.requestBids = (function() {
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
     }
     adUnitCodes = adUnitCodes.filter(uniques);
-    const ortb2Fragments = {
+    let ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
     }
+    // Apply schain precedence rules before enrichment
+    ortb2Fragments = schainPrecedence(ortb2Fragments);
+
     return enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
       return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
@@ -829,17 +829,6 @@ pbjsInstance.registerAnalyticsAdapter = function (options) {
 };
 
 /**
- * Wrapper to bidfactory.createBid()
- * @param  {string} statusCode [description]
- * @alias module:pbjs.createBid
- * @return {Object} bidResponse [description]
- */
-pbjsInstance.createBid = function (statusCode) {
-  logInfo('Invoking $$PREBID_GLOBAL$$.createBid', arguments);
-  return createBid(statusCode);
-};
-
-/**
  * Enable sending analytics data to the analytics provider of your
  * choice.
  *
@@ -867,6 +856,7 @@ const enableAnalyticsCb = hook('async', function (config) {
 }, 'enableAnalyticsCb');
 
 pbjsInstance.enableAnalytics = function (config) {
+  logInfo('Invoking $$PREBID_GLOBAL$$.enableAnalytics', arguments);
   enableAnalyticsCallbacks.push(enableAnalyticsCb.bind(this, config));
 };
 
@@ -930,6 +920,7 @@ config.getConfig('aliasRegistry', config => {
  * @return {Array<AdapterBidResponse>} A list of bids that have been rendered.
  */
 pbjsInstance.getAllWinningBids = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getAllWinningBids', arguments);
   return auctionManager.getAllWinningBids();
 };
 
@@ -939,6 +930,7 @@ pbjsInstance.getAllWinningBids = function () {
  * @return {Array<AdapterBidResponse>} A list of bids that have won their respective auctions but failed to win the ad server auction.
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getAllPrebidWinningBids', arguments);
   logWarn('getAllPrebidWinningBids may be removed or renamed in a future version. This function returns bids that have won in prebid and have had targeting set but have not (yet?) won in the ad server. It excludes bids that have been rendered.');
   return auctionManager.getBidsReceived()
     .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
@@ -952,10 +944,12 @@ pbjsInstance.getAllPrebidWinningBids = function () {
  * @return {Array} array containing highest cpm bid object(s)
  */
 pbjsInstance.getHighestCpmBids = function (adUnitCode) {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getHighestCpmBids', arguments);
   return targeting.getWinningBids(adUnitCode);
 };
 
 pbjsInstance.clearAllAuctions = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.clearAllAuctions', arguments);
   auctionManager.clearAllAuctions();
 };
 
@@ -971,6 +965,7 @@ if (FEATURES.VIDEO) {
    * @alias module:pbjs.markWinningBidAsUsed
    */
   pbjsInstance.markWinningBidAsUsed = function ({adId, adUnitCode, analytics = false, events = false}) {
+    logInfo('Invoking $$PREBID_GLOBAL$$.markWinningBidAsUsed', arguments);
     let bids;
     if (adUnitCode && adId == null) {
       bids = targeting.getWinningBids(adUnitCode);
@@ -991,23 +986,77 @@ if (FEATURES.VIDEO) {
 }
 
 /**
- * Get Prebid config options
- * @param {Object} options
+ * Retrieve configuration values from the Prebid configuration object.
+ *
+ * @function getConfig
+ * @returns {*} The requested configuration value(s).
  * @alias module:pbjs.getConfig
  */
-pbjsInstance.getConfig = config.getAnyConfig;
-pbjsInstance.readConfig = config.readAnyConfig;
-pbjsInstance.mergeConfig = config.mergeConfig;
-pbjsInstance.mergeBidderConfig = config.mergeBidderConfig;
+pbjsInstance.getConfig = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.getConfig', arguments);
+  return config.getAnyConfig.apply(config, arguments);
+};
 
 /**
- * Set Prebid config options.
+ * Read configuration value(s) synchronously, without firing callbacks.
+ *
+ * @function readConfig
+ * @returns {*} The configuration value(s).
+ * @alias module:pbjs.readConfig
+ */
+pbjsInstance.readConfig = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.readConfig', arguments);
+  return config.readAnyConfig.apply(config, arguments);
+};
+
+/**
+ * Merge a partial configuration object into the global Prebid configuration.
+ *
+ * @function mergeConfig
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeConfig
+ */
+pbjsInstance.mergeConfig = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.mergeConfig', arguments);
+  return config.mergeConfig.apply(config, arguments);
+};
+
+/**
+ * Merge bidder‑specific configuration into the global Prebid configuration.
+ *
+ * @function mergeBidderConfig
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeBidderConfig
+ */
+pbjsInstance.mergeBidderConfig = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.mergeBidderConfig', arguments);
+  return config.mergeBidderConfig.apply(config, arguments);
+};
+
+/**
+ * Set global Prebid configuration.
  * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
  *
- * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
+ * @function setConfig
+ * @returns {Object} The updated configuration object.
+ * @alias module:pbjs.setConfig
  */
-pbjsInstance.setConfig = config.setConfig;
-pbjsInstance.setBidderConfig = config.setBidderConfig;
+pbjsInstance.setConfig = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.setConfig', arguments);
+  return config.setConfig.apply(config, arguments);
+};
+
+/**
+ * Merge bidder‑specific configuration into the global Prebid configuration.
+ *
+ * @function mergeBidderConfig
+ * @returns {Object} The resulting merged configuration.
+ * @alias module:pbjs.mergeBidderConfig
+ */
+pbjsInstance.setBidderConfig = function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.setBidderConfig', arguments);
+  return config.setBidderConfig.apply(config, arguments);
+};
 
 pbjsInstance.que.push(() => listenMessagesFromCreative());
 
@@ -1060,6 +1109,7 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 pbjsInstance.processQueue = delayIfPrerendering(() => getGlobal().delayPrerendering, function () {
+  logInfo('Invoking $$PREBID_GLOBAL$$.processQueue', arguments);
   pbjsInstance.que.push = pbjsInstance.cmd.push = quePush;
   insertLocatorFrame();
   hook.ready();
@@ -1071,6 +1121,7 @@ pbjsInstance.processQueue = delayIfPrerendering(() => getGlobal().delayPrerender
  * @alias module:pbjs.triggerBilling
  */
 pbjsInstance.triggerBilling = ({adId, adUnitCode}) => {
+  logInfo('Invoking $$PREBID_GLOBAL$$.triggerBilling', {adId, adUnitCode});
   auctionManager.getAllWinningBids()
     .filter((bid) => bid.adId === adId || (adId == null && bid.adUnitCode === adUnitCode))
     .forEach((bid) => {

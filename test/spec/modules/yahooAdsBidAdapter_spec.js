@@ -424,7 +424,10 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         complete: 1,
         nodes: []
       };
-      bidRequest.schain = globalSchain;
+      bidRequest.ortb2 = bidRequest.ortb2 || {};
+      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
+      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
+      bidRequest.ortb2.source.ext.schain = globalSchain;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       const schain = data.source.ext.schain;
       expect(schain).to.be.undefined;
@@ -442,7 +445,10 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           hp: 1
         }]
       };
-      bidRequest.schain = globalSchain;
+      bidRequest.ortb2 = bidRequest.ortb2 || {};
+      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
+      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
+      bidRequest.ortb2.source.ext.schain = globalSchain;
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       const schain = data.source.ext.schain;
       expect(schain.nodes.length).to.equal(1);

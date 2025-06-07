@@ -168,10 +168,11 @@ function RhythmOneBidAdapter() {
         }
       }
     };
-    if (BRs[0].schain) {
+    const schain = BRs[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
       bid.source = {
         'ext': {
-          'schain': BRs[0].schain
+          'schain': schain
         }
       }
     }

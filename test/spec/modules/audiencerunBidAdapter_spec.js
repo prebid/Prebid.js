@@ -239,17 +239,23 @@ describe('AudienceRun bid adapter tests', function () {
 
     it('should add schain object if available', function() {
       const bid = Object.assign({}, bidRequest)
-      bid.schain = {
-        ver: '1.0',
-        complete: 1,
-        nodes: [
-          {
-            asi: 'directseller.com',
-            sid: '00001',
-            rid: 'BidRequest1',
-            hp: 1,
-          },
-        ],
+      bid.ortb2 = {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [
+                {
+                  asi: 'directseller.com',
+                  sid: '00001',
+                  rid: 'BidRequest1',
+                  hp: 1,
+                },
+              ],
+            }
+          }
+        }
       };
 
       const request = spec.buildRequests([bid]);

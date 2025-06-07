@@ -41,7 +41,7 @@ export const spec = {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     let url;
     let params;
     const urlConfig = getUrlConfig(bidRequests);

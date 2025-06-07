@@ -48,7 +48,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
     request.auctionId = req.ortb2?.source?.tid;
     request.transactionId = req.ortb2Imp?.ext?.tid;
     request.sizes = parseSizesInput(getAdUnitSizes(req));
-    request.schain = req.schain;
+    request.schain = bidderRequest?.ortb2?.source?.ext?.schain;
     request.location = {
       page: refererInfo.page,
       location: refererInfo.location,

@@ -415,8 +415,11 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
 
 /**
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
+ * PBJS 10: Adding a deprecation warning
  */
 function initAdpodHooks() {
+  logWarn('DEPRECATION NOTICE: Prebid.js is not aware of any transactions requiring the ADPOD video mediatype context. Please open a github issue if you are relying on it as support for it may be removed in a future version.');
+
   setupBeforeHookFnOnce(getHook('callPrebidCache'), callPrebidCacheHook);
   setupBeforeHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
   setupBeforeHookFnOnce(checkVideoBidSetup, checkVideoBidSetupHook);

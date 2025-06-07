@@ -84,6 +84,7 @@ function createORTB(bR, bid) {
         hb: 1,
         bidderver: BIDDER_VERSION,
         prebidjsver: PREBIDJS_VERSION,
+        ...(bid?.ortb2?.source?.ext?.schain && { schain: bid?.ortb2?.source?.ext?.schain }),
       },
       fd: 1,
     },
@@ -96,9 +97,8 @@ function createORTB(bR, bid) {
     },
   };
 
-  if (bid?.schain) {
-    oR.source.schain = bid.schain;
-    oR.source.schain.nodes[0].rid = oR.id;
+  if (bid?.ortb2?.source?.ext?.schain) {
+    oR.source.ext.schain.nodes[0].rid = oR.id;
   }
 
   return oR;

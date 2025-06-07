@@ -618,12 +618,13 @@ describe('Adagio bid adapter', () => {
       };
 
       it('should add the schain if available at bidder level', function() {
-        const bid01 = new BidRequestBuilder({ schain }).withParams().build();
+        const bid01 = new BidRequestBuilder({ ortb2: { source: { ext: { schain } } } }).withParams().build();
         const bidderRequest = new BidderRequestBuilder().build();
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+        expect(requests[0].data.schain).to.exist;
         expect(requests[0].data.schain).to.deep.equal(schain);
       });
 
@@ -999,7 +1000,8 @@ describe('Adagio bid adapter', () => {
         const bid01 = new BidRequestBuilder().withParams().build();
         bid01.ortb2Imp = {
           ext: {
-            data: { pbadslot: gpid }
+            data: {},
+            gpid,
           }
         };
         const bidderRequest = new BidderRequestBuilder().build();
@@ -1442,8 +1444,6 @@ describe('Adagio bid adapter', () => {
 
       const bidRequestNative = utils.deepClone(bidRequest)
       bidRequestNative.nativeParams = {
-        sendTargetingKeys: false,
-
         clickUrl: {
           required: true,
         },

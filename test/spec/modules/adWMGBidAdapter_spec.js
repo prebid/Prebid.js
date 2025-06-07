@@ -23,11 +23,6 @@ describe('adWMGBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when bidder is not set to "adWMG"', function() {
-      bid.bidder = 'bidder';
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
     it('should return false when \'publisherId\' param are not set', function() {
       delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.equal(false);

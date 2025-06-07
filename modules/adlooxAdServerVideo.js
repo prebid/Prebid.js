@@ -49,7 +49,7 @@ export function buildVideoUrl(options, callback) {
     return false;
   }
 
-  // same logic used in modules/dfpAdServerVideo.js
+  // same logic used in modules/gamAdServerVideo.js
   options.bid = options.bid || targeting.getWinningBids(options.adUnit.code)[0];
 
   deepSetValue(options.bid, 'ext.adloox.video.adserver', true);

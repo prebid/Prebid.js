@@ -304,7 +304,7 @@ describe('YieldmoAdapter', function () {
           complete: 1,
           nodes: [{asi: 'indirectseller.com', sid: '00001', hp: 1}],
         };
-        const data = buildAndGetData([mockBannerBid({schain})]);
+        const data = buildAndGetData([mockBannerBid({ortb2: {source: {ext: {schain}}}})]);
         expect(data.schain).equal(JSON.stringify(schain));
       });
 
@@ -388,7 +388,7 @@ describe('YieldmoAdapter', function () {
       it('should add gpid to the banner bid request', function () {
         let bidArray = [mockBannerBid({
           ortb2Imp: {
-            ext: { data: { pbadslot: '/6355419/Travel/Europe/France/Paris' } },
+            ext: { gpid: '/6355419/Travel/Europe/France/Paris' },
           }
         })];
         let placementInfo = buildAndGetPlacementInfo(bidArray);
@@ -631,14 +631,14 @@ describe('YieldmoAdapter', function () {
             hp: 1
           }],
         };
-        expect(buildAndGetData([mockVideoBid({schain})]).schain).to.deep.equal(schain);
+        expect(buildAndGetData([mockVideoBid({ortb2: {source: {ext: {schain}}}})]).schain).to.deep.equal(schain);
       });
 
       it('should add gpid to the video request', function () {
         const ortb2Imp = {
-          ext: { data: { pbadslot: '/6355419/Travel/Europe/France/Paris' } },
+          ext: { gpid: '/6355419/Travel/Europe/France/Paris' },
         };
-        expect(buildAndGetData([mockVideoBid({ortb2Imp})]).imp[0].ext.gpid).to.be.equal(ortb2Imp.ext.data.pbadslot);
+        expect(buildAndGetData([mockVideoBid({ortb2Imp})]).imp[0].ext.gpid).to.be.equal(ortb2Imp.ext.gpid);
       });
 
       it('should pass consent in video bid along with eids', () => {

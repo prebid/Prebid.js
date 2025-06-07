@@ -8,7 +8,7 @@ const END_POINT_METHOD = 'POST';
 
 // called first
 function isBidRequestValid(bid) {
-  return !(bid.bidder !== BIDDER_CODE || !bid.params || !bid.params.key);
+  return !(!bid.params || !bid.params.key);
 }
 
 function getUrl(url) {

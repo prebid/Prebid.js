@@ -82,8 +82,9 @@ export const spec = {
       data.ccpa = bidderRequest.uspConsent;
     }
 
-    if (bidderRequest && bidderRequest.schain) {
-      data.schain = bidderRequest.schain;
+    const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      data.schain = schain;
     }
 
     if (config.getConfig('coppa')) {

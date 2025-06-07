@@ -713,7 +713,12 @@ describe('stroeerCore bid adapter', function () {
           });
 
           const bidReq = buildBidderRequest();
-          bidReq.bids.forEach(bid => bid.schain = schain);
+          bidReq.bids.forEach(bid => {
+            bid.ortb2 = bid.ortb2 || {};
+            bid.ortb2.source = bid.ortb2.source || {};
+            bid.ortb2.source.ext = bid.ortb2.source.ext || {};
+            bid.ortb2.source.ext.schain = schain;
+          });
 
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.deepEqual(serverRequestInfo.data.schain, schain);

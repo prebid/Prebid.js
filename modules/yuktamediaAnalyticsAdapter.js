@@ -2,7 +2,7 @@ import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizes
 import {ajax, fetch} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { EVENTS, STATUS } from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
@@ -140,7 +140,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
               events.auctions[args.auctionId] = { bids: {} };
             } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
               let bidResponse = events.auctions[args.auctionId]['bids'][args.requestId];
-              bidResponse.isBid = args.getStatusCode() === STATUS.GOOD;
+              bidResponse.isBid = true;
               bidResponse.cpm = args.cpm;
               bidResponse.currency = args.currency;
               bidResponse.netRevenue = args.netRevenue;

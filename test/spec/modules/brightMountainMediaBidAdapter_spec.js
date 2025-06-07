@@ -26,17 +26,23 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         floor: 0.5,
       }
     },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'directseller.com',
-          sid: '00001',
-          rid: 'BidRequest1',
-          hp: 1
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'directseller.com',
+                sid: '00001',
+                rid: 'BidRequest1',
+                hp: 1
+              }
+            ]
+          }
         }
-      ]
+      }
     },
     userIdAsEids: [
       {

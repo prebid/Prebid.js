@@ -483,7 +483,7 @@ export var spec = {
       return {
         pchain: params.pchain,
         ext: {
-          schain: request.schain
+          schain: request?.ortb2?.source?.ext?.schain
         },
       };
     }

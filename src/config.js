@@ -554,6 +554,6 @@ export function newConfig() {
 
 /**
  * Set a `cache.url` if we should use prebid-cache to store video bids before adding bids to the auction.
- * This must be set if you want to use the dfpAdServerVideo module.
+ * This must be set if you want to use the gamAdServerVideo module.
  */
 export const config = newConfig();
