@@ -70,7 +70,7 @@ jobs:
             - eslint-cache-{{ checksum "package-lock.json" }}-{{ checksum "eslint.config.js" }}-{{ checksum ".gitignore" }}
       - run:
           name: 'Run ESLint'
-          command: npx eslint '**/*.{js,ts,tsx}' --cache --cache-strategy content
+          command: echo 'linting ...' && npx eslint '**/*.{js,ts,tsx}' --cache --cache-strategy content
       - save_cache:
           key: eslint-cache-{{ checksum "package-lock.json" }}-{{ checksum "eslint.config.js" }}-{{ checksum ".gitignore" }}
           paths:
