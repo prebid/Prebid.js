@@ -80,7 +80,7 @@ describe('Missena Adapter', function () {
       user: {
         ext: { consent: CONSENT_STRING },
       },
-      device: {        
+      device: {
         w: screen.width,
         h: screen.height,
         ext: { cdep: COOKIE_DEPRECATION_LABEL },

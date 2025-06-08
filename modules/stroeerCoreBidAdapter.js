@@ -58,11 +58,11 @@ export const spec = {
       schain: anyBid.schain
     };
 
-    const userIds = anyBid.userId;
+    const eids = anyBid.userIdAsEids;
 
-    if (!isEmpty(userIds)) {
+    if (!isEmpty(eids)) {
       basePayload.user = {
-        euids: userIds
+        eids: eids
       };
     }
 
