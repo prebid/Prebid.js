@@ -2,79 +2,35 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
-  cleanObj,
   deepAccess,
   deepSetValue,
   logInfo,
   triggerPixel,
-  getWinDimensions,
+  getWindowSelf,
+  getWindowTop
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { config } from '../src/config.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getBoundingBox, percentInView } from '../libraries/percentInView/percentInView.js';
 
 const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
-function detectAdUnitPosition(adUnitCode, adSize) {
-  const element = document.getElementById(adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(adUnitCode)?.divId);
-  if (!element) return null;
-
-  const rect = getBoundingClientRect(element);
-  const docElement = document.documentElement;
-  const pageWidth = docElement.clientWidth;
-  const pageHeight = docElement.scrollHeight;
-
-  return {
-    unitSize: `${rect.width}x${rect.height}`,
-    position: `${Math.round(rect.left + window.pageXOffset)}x${Math.round(rect.top + window.pageYOffset)}`,
-    viewportVisibility: calculateVisibility(rect, adSize),
-    pageSize: `${pageWidth}x${pageHeight}`,
-  };
+function _isIframe() {
+  try {
+    return getWindowSelf() !== getWindowTop();
+  } catch (e) {
+    return true;
+  }
 }
 
-function calculateVisibility(rect, adSize) {
-  const { innerWidth: windowWidth, innerHeight: windowHeight } = getWinDimensions();
-
-  // Element is not in viewport
-  if (rect.bottom < 0 || rect.right < 0 || rect.top > windowHeight || rect.left > windowWidth) {
-    return 0;
-  }
-
-  // Calculate visible area
-  let visibleHeight = Math.min(rect.bottom, windowHeight) - Math.max(rect.top, 0);
-  let visibleWidth = Math.min(rect.right, windowWidth) - Math.max(rect.left, 0);
-
-  if (visibleHeight == 0 && visibleWidth == 0) {
-    visibleHeight = Math.min(rect.top + adSize[1], windowHeight) - Math.max(rect.top, 0);
-    visibleWidth = Math.min(rect.left + adSize[0], windowWidth) - Math.max(rect.left, 0);
-  }
-
-  const visibleArea = visibleHeight * visibleWidth;
-  const totalArea = rect.height * rect.width;
-
-  return totalArea > 0 ? visibleArea / totalArea : 0;
+function _isViewabilityMeasurable(element) {
+  return !_isIframe() && element !== null;
 }
 
-function getGdprConsent(bidderRequest) {
-  if (!deepAccess(bidderRequest, 'gdprConsent')) {
-    return false;
-  }
-
-  const {
-    apiVersion,
-    gdprApplies,
-    consentString,
-    allowAuctionWithoutConsent
-  } = bidderRequest.gdprConsent;
-
-  return cleanObj({
-    apiVersion,
-    consentString,
-    consentRequired: gdprApplies ? 1 : 0,
-    allowAuctionWithoutConsent: allowAuctionWithoutConsent ? 1 : 0
-  });
+function _getViewability(element, topWin, { w, h } = {}) {
+  return topWin.document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
 }
 
 // Enhanced ORTBConverter with additional data
@@ -86,14 +42,14 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    const gdpr = getGdprConsent(bidderRequest);
+    const gdpr = deepAccess(bidderRequest, 'gdprConsent') || {};
     const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
     const coppa = config.getConfig('coppa') === true ? 1 : 0;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
 
     deepSetValue(request, 'regs', {
-      gdpr: gdpr.consentRequired || 0,
+      gdpr: gdpr.gdprApplies ? 1 : 0,
       coppa: coppa,
       us_privacy: uspConsent,
       ext: {
@@ -155,12 +111,16 @@ const converter = ortbConverter({
 
     if (!adSize) { adSize = [0, 0]; }
 
-    // Add additional impression data
-    const positionData = detectAdUnitPosition(bid.adUnitCode, adSize);
-    if (positionData) {
-      deepSetValue(imp, 'ext.data.position', positionData);
-      deepSetValue(imp, 'ext.data.viewability', positionData.viewportVisibility);
-    }
+    const size = {w: adSize[0], h: adSize[1]};
+
+    const element = document.getElementById(bid.adUnitCode) || document.getElementById(getGptSlotInfoForAdUnitCode(bid.adUnitCode)?.divId);
+    const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), size) : 0;
+
+    const rect = getBoundingBox(element, size);
+    const position = `${Math.round(rect.left + window.pageXOffset)}x${Math.round(rect.top + window.pageYOffset)}`;
+
+    deepSetValue(imp, 'ext.data.viewability', viewabilityAmount);
+    deepSetValue(imp, 'ext.data.position', position);
 
     // Handle price floors
     if (typeof bid.getFloor === 'function') {
