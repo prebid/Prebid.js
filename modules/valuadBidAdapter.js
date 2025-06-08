@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {
-  cleanObj,
   deepAccess,
   deepSetValue,
   logInfo,
@@ -26,27 +25,10 @@ function _isIframe() {
   }
 }
 
-function getGdprConsent(bidderRequest) {
-  if (!deepAccess(bidderRequest, 'gdprConsent')) {
-    return false;
-  }
 function _isViewabilityMeasurable(element) {
   return !_isIframe() && element !== null;
 }
 
-  const {
-    apiVersion,
-    gdprApplies,
-    consentString,
-    allowAuctionWithoutConsent
-  } = bidderRequest.gdprConsent;
-
-  return cleanObj({
-    apiVersion,
-    consentString,
-    consentRequired: gdprApplies ? 1 : 0,
-    allowAuctionWithoutConsent: allowAuctionWithoutConsent ? 1 : 0
-  });
 function _getViewability(element, topWin, { w, h } = {}) {
   return topWin.document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
 }
@@ -60,14 +42,14 @@ const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
-    const gdpr = getGdprConsent(bidderRequest);
+    const gdpr = deepAccess(bidderRequest, 'gdprConsent') || {};
     const uspConsent = deepAccess(bidderRequest, 'uspConsent') || '';
     const coppa = config.getConfig('coppa') === true ? 1 : 0;
     const { gpp, gpp_sid: gppSid } = deepAccess(bidderRequest, 'ortb2.regs', {});
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
 
     deepSetValue(request, 'regs', {
-      gdpr: gdpr.consentRequired || 0,
+      gdpr: gdpr.gdprApplies ? 1 : 0,
       coppa: coppa,
       us_privacy: uspConsent,
       ext: {
