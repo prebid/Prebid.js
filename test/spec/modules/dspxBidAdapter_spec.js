@@ -154,7 +154,7 @@ describe('dspxAdapter', function () {
             }
           }
         ]
-      },{
+      }, {
           source: "domain.com",
           uids: [{
             id: "1234",
