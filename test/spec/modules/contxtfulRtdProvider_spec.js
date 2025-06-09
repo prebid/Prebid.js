@@ -7,7 +7,7 @@ import * as events from '../../../src/events';
 import * as utils from 'src/utils.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js'
 import Sinon from 'sinon';
-import { deepClone } from '../../../src/utils.js';
+import { deepClone, getWinDimensions } from '../../../src/utils.js';
 
 const MODULE_NAME = 'contxtful';
 
@@ -72,29 +72,29 @@ describe('contxtfulRtdProvider', function () {
     loadExternalScriptTag = document.createElement('script');
     loadExternalScriptStub.callsFake((_url, _moduleName) => loadExternalScriptTag);
 
-    RX_API_MOCK.receptivity.reset();
+    RX_API_MOCK.receptivity.resetHistory();
     RX_API_MOCK.receptivity.callsFake(() => RX_FROM_API);
 
-    RX_API_MOCK.receptivityBatched.reset();
+    RX_API_MOCK.receptivityBatched.resetHistory();
     RX_API_MOCK.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
 
-    RX_API_MOCK_WITH_BUNDLE.receptivity.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivity.resetHistory();
     RX_API_MOCK_WITH_BUNDLE.receptivity.callsFake(() => RX_FROM_API);
 
-    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.reset();
+    RX_API_MOCK_WITH_BUNDLE.receptivityBatched.resetHistory();
     RX_API_MOCK_WITH_BUNDLE.receptivityBatched.callsFake((bidders) => bidders.reduce((accumulator, bidder) => { accumulator[bidder] = RX_FROM_API; return accumulator; }, {}));
 
-    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.reset();
+    RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.resetHistory();
     RX_API_MOCK_WITH_BUNDLE.getOrtb2Fragment.callsFake((bidders, reqBidsConfigObj) => {
       let bidderObj = bidders.reduce((accumulator, bidder) => { accumulator[bidder] = { user: { data: [{ name: MODULE_NAME, value: RX_FROM_API }] } }; return accumulator; }, {});
       return { global: { user: { site: { id: 'globalsiteId' } } }, bidder: bidderObj }
     }
     );
 
-    RX_CONNECTOR_MOCK.fetchConfig.reset();
+    RX_CONNECTOR_MOCK.fetchConfig.resetHistory();
     RX_CONNECTOR_MOCK.fetchConfig.callsFake((tagId) => new Promise((resolve, reject) => resolve({ tag_id: tagId })));
 
-    RX_CONNECTOR_MOCK.rxApiBuilder.reset();
+    RX_CONNECTOR_MOCK.rxApiBuilder.resetHistory();
     RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK)));
 
     eventsEmitSpy = sandbox.spy(events, ['emit']);
@@ -668,8 +668,7 @@ describe('contxtfulRtdProvider', function () {
 
         // Cannot change the window size from JS
         // So we take the current size as expectation
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+        const { innerHeight: height, innerWidth: width } = getWinDimensions()
 
         let reqBidsConfigObj = {
           ortb2Fragments: {
@@ -1020,7 +1019,7 @@ describe('contxtfulRtdProvider', function () {
 
   describe('when rxConnector contains getOrtb2Fragment function', () => {
     it('should just take whatever it contains and merge to the fragment', function (done) {
-      RX_CONNECTOR_MOCK.rxApiBuilder.reset();
+      RX_CONNECTOR_MOCK.rxApiBuilder.resetHistory();
       RX_CONNECTOR_MOCK.rxApiBuilder.callsFake((_config) => new Promise((resolve, reject) => resolve(RX_API_MOCK_WITH_BUNDLE)));
 
       let config = buildInitConfig(VERSION, CUSTOMER);

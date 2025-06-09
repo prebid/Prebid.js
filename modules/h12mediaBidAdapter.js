@@ -1,6 +1,7 @@
-import { inIframe, logError, logMessage, deepAccess } from '../src/utils.js';
+import { inIframe, logError, logMessage, deepAccess, getWinDimensions } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 const BIDDER_CODE = 'h12media';
 const DEFAULT_URL = 'https://bidder.h12-media.com/prebid/';
 const DEFAULT_CURRENCY = 'USD';
@@ -209,8 +210,7 @@ function isVisible(element) {
 
 function getClientDimensions() {
   try {
-    const t = window.top.innerWidth || window.top.document.documentElement.clientWidth || window.top.document.body.clientWidth;
-    const e = window.top.innerHeight || window.top.document.documentElement.clientHeight || window.top.document.body.clientHeight;
+    const { width: t, height: e } = getViewportSize();
     return [Math.round(t), Math.round(e)];
   } catch (i) {
     return [0, 0];
@@ -219,8 +219,10 @@ function getClientDimensions() {
 
 function getDocumentDimensions() {
   try {
-    const D = window.top.document;
-    return [D.body.offsetWidth, Math.max(D.body.scrollHeight, D.documentElement.scrollHeight, D.body.offsetHeight, D.documentElement.offsetHeight, D.body.clientHeight, D.documentElement.clientHeight)]
+    const {document: {documentElement, body}} = getWinDimensions();
+    const width = body.clientWidth;
+    const height = Math.max(body.scrollHeight, body.offsetHeight, documentElement.clientHeight, documentElement.scrollHeight, documentElement.offsetHeight);
+    return [width, height];
   } catch (t) {
     return [-1, -1]
   }

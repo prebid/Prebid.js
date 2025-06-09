@@ -19,7 +19,6 @@ import {
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
@@ -621,8 +620,8 @@ function getBidRequest(id, impressions, validBidRequests) {
     return;
   }
   const bidRequest = {
-    ...find(validBidRequests, bid => bid.bidId === id),
-    ...find(impressions, imp => imp.id === id)
+    ...validBidRequests.find(bid => bid.bidId === id),
+    ...impressions.find(imp => imp.id === id)
   }
 
   return bidRequest;
@@ -835,7 +834,7 @@ function addRequestedFeatureToggles(r, requestedFeatureToggles) {
 /**
  * enrichRequest adds userSync configs, source, and referer info to request and ixDiag objects.
  *
- * @param  {object} r                Base reuqest object.
+ * @param  {object} r                Base request object.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
  * @param  {Array}  impressions      A list of impressions to be added to the request.
  * @param  {Array}  validBidRequests A list of valid bid request config objects.
@@ -879,9 +878,9 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 }
 
 /**
- * applyRegulations applies regulation info such as GDPR and GPP to the reqeust obejct.
+ * applyRegulations applies regulation info such as GDPR and GPP to the request object.
  *
- * @param  {object}  r                Base reuqest object.
+ * @param  {object}  r                Base request object.
  * @param  {object}  bidderRequest    An object containing other info like gdprConsent.
  * @return {object}                   Object enriched with regulation info describing the request to the server.
  */
@@ -980,8 +979,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         banner: {
           topframe,
           format: bannerImps.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
-        },
-      };
+        }};
 
       for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
         // We add sid and externalID in imp.ext therefore, remove from banner.format[].ext
@@ -1179,6 +1177,16 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     const sua = {...fpd.device.sua};
     if (!isEmpty(sua)) {
       deepSetValue(r, 'device.sua', sua);
+    }
+
+    const ip = fpd.device.ip;
+    if (ip) {
+      deepSetValue(r, 'device.ip', ip);
+    }
+
+    const ipv6 = fpd.device.ipv6;
+    if (ipv6) {
+      deepSetValue(r, 'device.ipv6', ipv6);
     }
   }
 

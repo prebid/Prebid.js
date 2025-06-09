@@ -1,4 +1,4 @@
-import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
+import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
@@ -51,8 +51,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
@@ -74,8 +75,8 @@ export const spec = {
       devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: getHLen(),
-      viewportHeight: topWindow.visualViewport?.height,
-      viewportWidth: topWindow.visualViewport?.width,
+      viewportHeight: getWinDimensions().visualViewport.height,
+      viewportWidth: getWinDimensions().visualViewport.width,
       hardwareConcurrency: getHC(),
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',

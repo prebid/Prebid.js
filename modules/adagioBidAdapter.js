@@ -21,7 +21,6 @@ import { Renderer } from '../src/Renderer.js';
 import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { find } from '../src/polyfill.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
@@ -643,6 +642,15 @@ export const spec = {
         bidRequest.gpid = gpid;
       }
 
+      let instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      if (instl !== undefined) {
+        bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
+      }
+      let rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      if (rwdd !== undefined) {
+        bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
+      }
+
       // features are added by the adagioRtdProvider.
       const rawFeatures = {
         ...deepAccess(bidRequest, 'ortb2.site.ext.data.adg_rtd.features', {}),
@@ -668,6 +676,8 @@ export const spec = {
         nativeParams: bidRequest.nativeParams,
         score: bidRequest.score,
         transactionId: bidRequest.transactionId,
+        instl: bidRequest.instl,
+        rwdd: bidRequest.rwdd,
       }
 
       return adUnit;
@@ -746,7 +756,7 @@ export const spec = {
         }
         if (response.bids) {
           response.bids.forEach(bidObj => {
-            const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
+            const bidReq = bidRequest.data.adUnits.find(bid => bid.bidId === bidObj.requestId);
 
             if (bidReq) {
               // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response

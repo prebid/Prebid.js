@@ -1,7 +1,6 @@
-import { buildUrl, deepAccess, deepSetValue, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 const GVL_ID = 136;
@@ -59,11 +58,11 @@ export const spec = {
       schain: anyBid.schain
     };
 
-    const userIds = anyBid.userId;
+    const eids = anyBid.userIdAsEids;
 
-    if (!isEmpty(userIds)) {
+    if (!isEmpty(eids)) {
       basePayload.user = {
-        euids: userIds
+        eids: eids
       };
     }
 
@@ -118,8 +117,7 @@ export const spec = {
           meta: {
             advertiserDomains: bidResponse.adomain,
             dsa: bidResponse.dsa,
-            campaignType: bidResponse.campaignType,
-          },
+            campaignType: bidResponse.campaignType},
           mediaType,
         };
 
@@ -165,7 +163,7 @@ const elementInView = (elementId) => {
 
   const visibleInWindow = (el, win) => {
     const rect = getBoundingClientRect(el);
-    const inView = (rect.top + rect.height >= 0) && (rect.top <= win.innerHeight);
+    const inView = (rect.top + rect.height >= 0) && (rect.top <= getWinDimensions().innerHeight);
 
     if (win !== win.parent) {
       return inView && visibleInWindow(win.frameElement, win.parent);
@@ -265,7 +263,7 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
     return {...floor, size};
   });
 
-  const floorWithCurrency = find([defaultFloor].concat(sizeFloors), floor => floor.currency);
+  const floorWithCurrency = (([defaultFloor].concat(sizeFloors)) || []).find(floor => floor.currency);
 
   if (!floorWithCurrency) {
     return undefined;

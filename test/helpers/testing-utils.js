@@ -1,4 +1,4 @@
- 
+
 const {expect} = require('chai');
 const DEFAULT_TIMEOUT = 2000;
 const utils = {
