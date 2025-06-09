@@ -37,7 +37,7 @@ This file contains instructions for the Codex agent and its friends when working
 - Do not run the full `gulp test` suite unless your change affects many files. gulp test can take a very long time.
 - Karma tests can also be chunked with `TEST_CHUNKS` if needed.
 - Try just linting the changed files if linting seems to hang
-- Call tests with the `--nolint` option if you've already linted your changes. eg to test criteo bid adapter changes you could run `npx gulp test -nolint --file test/spec/modules/criteoBidAdapter_spec.js`
+- Call tests with the `--nolint` option if you've already linted your changes. eg to test criteo bid adapter changes you could run `npx gulp test --nolint --file test/spec/modules/criteoBidAdapter_spec.js`
 
 ## Build Behavior
 - Avoid running Babel over the entire project for incremental test runs.
