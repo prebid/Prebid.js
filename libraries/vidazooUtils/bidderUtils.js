@@ -218,7 +218,7 @@ export function getVidazooSessionId(storage) {
   return getStorageItem(storage, SESSION_ID_KEY) || '';
 }
 
-export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, getUniqueRequestData) {
+export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, getUniqueRequestData, useFirstPartyData) {
   const {
     params,
     bidId,
@@ -239,7 +239,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const uniqueDealId = getUniqueDealId(storage, hashUrl);
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
-
+  const firstPartyData = useFirstPartyData ? getAndSetFirstPartyData(storage) : null;
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
@@ -260,6 +260,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
       bidFloor = floorInfo.floor;
     }
   }
+
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
@@ -292,7 +293,11 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderWinsCount: bidderWinsCount,
     bidderTimeout: bidderTimeout,
     device,
-    ...uniqueRequestData
+    ...uniqueRequestData,
+    ...(firstPartyData && {
+      iiqpcid: firstPartyData.pcid,
+      iiqpcidDate: firstPartyData.pcidDate
+    })
   };
 
   appendUserIdsToRequestPayload(data, userId);
@@ -432,12 +437,12 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
   }
 }
 
-export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
+export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest, useFirstPartyData = false) {
   function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     const {params} = bid;
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
-    const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
+    const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData, useFirstPartyData);
     const dto = {
       method: 'POST', url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`, data: data
     };
@@ -500,3 +505,30 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     return requests;
   }
 }
+
+export function getAndSetFirstPartyData(storageRef) {
+  if (!storageRef.hasLocalStorage()) {
+    return;
+  }
+  let fdata = tryParseJSON(storageRef.getDataFromLocalStorage('_iiq_fdata'));
+  if (!fdata) {
+    fdata = createFirstPartyData();
+    storageRef.setDataInLocalStorage('_iiq_fdata', JSON.stringify(fdata));
+  }
+  return fdata;
+}
+
+export function createFirstPartyData() {
+  return {
+    pcid: getFirstPartyUUID(), pcidDate: Date.now(),
+  };
+}
+
+function getFirstPartyUUID() {
+  let d = new Date().getTime();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (d + Math.random() * 16) % 16 | 0;
+    d = Math.floor(d / 16);
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+};
