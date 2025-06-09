@@ -57,19 +57,25 @@ describe('omsBidAdapter', function () {
       'bidId': '5fb26ac22bde4',
       'bidderRequestId': '4bf93aeb730cb9',
       'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
-      'schain': {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'exchange1.com',
-            'sid': '1234',
-            'hp': 1,
-            'rid': 'bid-request-1',
-            'name': 'publisher',
-            'domain': 'publisher.com'
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
+              'ver': '1.0',
+              'complete': 1,
+              'nodes': [
+                {
+                  'asi': 'exchange1.com',
+                  'sid': '1234',
+                  'hp': 1,
+                  'rid': 'bid-request-1',
+                  'name': 'publisher',
+                  'domain': 'publisher.com'
+                }
+              ]
+            }
           }
-        ]
+        }
       },
     }];
 
@@ -150,19 +156,25 @@ describe('omsBidAdapter', function () {
           'bidId': '5fb26ac22bde4',
           'bidderRequestId': '4bf93aeb730cb9',
           'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
-          'schain': {
-            'ver': '1.0',
-            'complete': 1,
-            'nodes': [
-              {
-                'asi': 'exchange1.com',
-                'sid': '1234',
-                'hp': 1,
-                'rid': 'bid-request-1',
-                'name': 'publisher',
-                'domain': 'publisher.com'
+          'ortb2': {
+            'source': {
+              'ext': {
+                'schain': {
+                  'ver': '1.0',
+                  'complete': 1,
+                  'nodes': [
+                    {
+                      'asi': 'exchange1.com',
+                      'sid': '1234',
+                      'hp': 1,
+                      'rid': 'bid-request-1',
+                      'name': 'publisher',
+                      'domain': 'publisher.com'
+                    }
+                  ]
+                }
               }
-            ]
+            }
           },
         }
       ]
@@ -331,7 +343,7 @@ describe('omsBidAdapter', function () {
 
     context('when element is partially in view', function () {
       it('returns percentage', function () {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 800, height: 800});
         const request = spec.buildRequests(bidRequests);

@@ -59,7 +59,7 @@ describe('lemmaDigitalBidAdapter', function () {
         [300, 250],
         [300, 600]
       ],
-      schain: schainConfig
+      ortb2: { source: { ext: { schain: schainConfig } } }
     }];
     videoBidRequests = [{
       code: 'video1',
@@ -84,7 +84,7 @@ describe('lemmaDigitalBidAdapter', function () {
           maxduration: 30
         }
       },
-      schain: schainConfig
+      ortb2: { source: { ext: { schain: schainConfig } } }
     }];
     bidResponses = {
       'body': {
@@ -227,7 +227,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal('1'); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
 
       it('Set sizes from mediaTypes object', function () {
@@ -245,7 +245,7 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       it('Check device, source object not present', function () {
         let newBannerRequest = utils.deepClone(bidRequests);
-        delete newBannerRequest[0].schain;
+        delete newBannerRequest[0].ortb2;
         let request = spec.buildRequests(newBannerRequest);
         let data = JSON.parse(request.data);
         delete data.device;
@@ -461,7 +461,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0]['video']['maxduration']).to.equal(videoBidRequests[0].params.video['maxduration']);
         expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
         expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
-        expect(data.source.ext.schain).to.deep.equal(videoBidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(videoBidRequests[0].ortb2.source.ext.schain);
       });
       describe('setting imp.floor using floorModule', function () {
         /*

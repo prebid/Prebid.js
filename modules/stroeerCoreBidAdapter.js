@@ -55,14 +55,14 @@ export const spec = {
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
-      schain: anyBid.schain
+      schain: anyBid?.ortb2?.source?.ext?.schain
     };
 
-    const userIds = anyBid.userId;
+    const eids = anyBid.userIdAsEids;
 
-    if (!isEmpty(userIds)) {
+    if (!isEmpty(eids)) {
       basePayload.user = {
-        euids: userIds
+        eids: eids
       };
     }
 

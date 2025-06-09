@@ -225,12 +225,18 @@ describe('nextMillenniumBidAdapterTests', () => {
         title: 'schain is validBidReequest',
         bidderRequest: {},
         validBidRequests: [{
-          schain: {
-            validation: 'strict',
-            config: {
-              ver: '1.0',
-              complete: 1,
-              nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  validation: 'strict',
+                  config: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [{asi: 'test.test', sid: '00001', hp: 1}],
+                  },
+                },
+              },
             },
           },
         }],

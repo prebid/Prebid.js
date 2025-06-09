@@ -58,7 +58,7 @@ export const spec = {
         uspConsent: deepAccess(bidderRequest, 'uspConsent'),
         coppa: getConfig('coppa'),
         eids: deepAccess(bidRequests, '0.userIdAsEids'),
-        schain: deepAccess(bidRequests, '0.schain'),
+        schain: deepAccess(bidRequests, '0.ortb2.source.ext.schain'),
         page: getPage(bidderRequest),
         topframe: inIframe() === true ? 0 : 1,
         device: {

@@ -304,7 +304,7 @@ describe('YieldmoAdapter', function () {
           complete: 1,
           nodes: [{asi: 'indirectseller.com', sid: '00001', hp: 1}],
         };
-        const data = buildAndGetData([mockBannerBid({schain})]);
+        const data = buildAndGetData([mockBannerBid({ortb2: {source: {ext: {schain}}}})]);
         expect(data.schain).equal(JSON.stringify(schain));
       });
 
@@ -332,7 +332,7 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should not exceed max url length', () => {
-        const longString = new Array(8000).join('a');
+        const longString = Array(8000).join('a');
         const localWindow = utils.getWindowTop();
 
         const originalTitle = localWindow.document.title;
@@ -356,7 +356,7 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should only shortcut properties rather then completely remove it', () => {
-        const longString = new Array(8000).join('a');
+        const longString = Array(8000).join('a');
         const localWindow = utils.getWindowTop();
 
         const originalTitle = localWindow.document.title;
@@ -631,7 +631,7 @@ describe('YieldmoAdapter', function () {
             hp: 1
           }],
         };
-        expect(buildAndGetData([mockVideoBid({schain})]).schain).to.deep.equal(schain);
+        expect(buildAndGetData([mockVideoBid({ortb2: {source: {ext: {schain}}}})]).schain).to.deep.equal(schain);
       });
 
       it('should add gpid to the video request', function () {

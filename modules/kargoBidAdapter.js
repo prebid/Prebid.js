@@ -104,9 +104,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.site = { cat: firstBidRequest.ortb2.site.cat };
   }
 
-  // Add schain
-  if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
-    krakenParams.schain = firstBidRequest.schain
+  // Add schain - check for schain in the new location
+  const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
+  if (schain && schain.nodes) {
+    krakenParams.schain = schain
   }
 
   // Add user data object if available

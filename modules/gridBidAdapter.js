@@ -115,7 +115,7 @@ export const spec = {
         bidderRequestId = bid.bidderRequestId;
       }
       if (!schain) {
-        schain = bid.schain;
+        schain = bid?.ortb2?.source?.ext?.schain;
       }
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
@@ -184,8 +184,10 @@ export const spec = {
               wrapper_version: '$prebid.version$'
             }
           };
-          if (bid.schain) {
-            reqSource.ext.schain = bid.schain;
+          // Check for schain in the new location
+          const schain = bid?.ortb2?.source?.ext?.schain;
+          if (schain) {
+            reqSource.ext.schain = schain;
           }
           const request = {
             id: bid.bidderRequestId && bid.bidderRequestId.toString(),

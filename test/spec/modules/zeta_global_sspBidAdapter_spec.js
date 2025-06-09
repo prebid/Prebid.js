@@ -126,12 +126,16 @@ describe('Zeta Ssp Bid Adapter', function () {
       gdprApplies: 1,
       consentString: 'consentString'
     },
-    schain: schain,
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,
     timeout: 500,
     ortb2: {
+      source: {
+        ext: {
+          schain: schain
+        }
+      },
       bcat: ['CAT1'],
       badv: ['test1.com'],
       site: {
@@ -191,7 +195,13 @@ describe('Zeta Ssp Bid Adapter', function () {
       gdprApplies: 1,
       consentString: 'consentString'
     },
-    schain: schain,
+    ortb2: {
+      source: {
+        ext: {
+          schain: schain
+        }
+      }
+    },
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,

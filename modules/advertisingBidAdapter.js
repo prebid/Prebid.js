@@ -60,7 +60,7 @@ export const spec = {
       openRtbBidRequest.tmax = tmax;
     }
 
-    const schain = validBidReqs[0].schain;
+    const schain = validBidReqs[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
       openRtbBidRequest.source = { ext: { schain } };
     }

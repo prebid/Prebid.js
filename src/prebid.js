@@ -37,6 +37,7 @@ import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
+import {schainPrecedence} from './fpd/schain.js';
 import {allConsent} from './consentHandler.js';
 import {
   insertLocatorFrame,
@@ -586,10 +587,13 @@ pbjsInstance.requestBids = (function() {
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
     }
     adUnitCodes = adUnitCodes.filter(uniques);
-    const ortb2Fragments = {
+    let ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
     }
+    // Apply schain precedence rules before enrichment
+    ortb2Fragments = schainPrecedence(ortb2Fragments);
+
     return enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
       return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
@@ -985,7 +989,6 @@ if (FEATURES.VIDEO) {
  * Retrieve configuration values from the Prebid configuration object.
  *
  * @function getConfig
- * @param {...(string|function)} args - One or more configuration paths (dot‑notation) and/or a callback to receive the value.
  * @returns {*} The requested configuration value(s).
  * @alias module:pbjs.getConfig
  */
@@ -998,7 +1001,6 @@ pbjsInstance.getConfig = function () {
  * Read configuration value(s) synchronously, without firing callbacks.
  *
  * @function readConfig
- * @param {...string} paths - One or more configuration paths.
  * @returns {*} The configuration value(s).
  * @alias module:pbjs.readConfig
  */
@@ -1011,7 +1013,6 @@ pbjsInstance.readConfig = function () {
  * Merge a partial configuration object into the global Prebid configuration.
  *
  * @function mergeConfig
- * @param {Object} newConfig - Partial configuration object to merge.
  * @returns {Object} The resulting merged configuration.
  * @alias module:pbjs.mergeConfig
  */
@@ -1024,7 +1025,6 @@ pbjsInstance.mergeConfig = function () {
  * Merge bidder‑specific configuration into the global Prebid configuration.
  *
  * @function mergeBidderConfig
- * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
  * @returns {Object} The resulting merged configuration.
  * @alias module:pbjs.mergeBidderConfig
  */
@@ -1038,7 +1038,6 @@ pbjsInstance.mergeBidderConfig = function () {
  * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
  *
  * @function setConfig
- * @param {Object} options - Global Prebid configuration object. Must be pure JSON; JavaScript functions are not allowed.
  * @returns {Object} The updated configuration object.
  * @alias module:pbjs.setConfig
  */
@@ -1051,7 +1050,6 @@ pbjsInstance.setConfig = function () {
  * Merge bidder‑specific configuration into the global Prebid configuration.
  *
  * @function mergeBidderConfig
- * @param {Object<string, Object>} bidderConfig - Map of bidder codes to configuration overrides.
  * @returns {Object} The resulting merged configuration.
  * @alias module:pbjs.mergeBidderConfig
  */

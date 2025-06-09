@@ -149,8 +149,9 @@ export const spec = {
       }
 
       // schain
-      if (bidRequest.schain) {
-        payload.schain = bidRequest.schain;
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        payload.schain = schain;
       }
 
       // fill userId params

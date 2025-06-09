@@ -132,8 +132,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
-    payload.schain = validBidRequests[0].schain;
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain;
+  if (validBidRequests && validBidRequests.length !== 0 && schain && isSchainValid(schain)) {
+    payload.schain = schain;
   }
   try {
     if (storage.hasLocalStorage()) {
