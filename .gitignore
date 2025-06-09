@@ -83,3 +83,6 @@ typings/
 
 # MacOS system files
 .DS_Store
+
+# Webpack cache
+.cache/

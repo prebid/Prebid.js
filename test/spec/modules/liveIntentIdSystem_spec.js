@@ -1179,5 +1179,19 @@ describe('LiveIntentId', function() {
         }]
       });
     });
+
+    it('tdid sets matcher for liveintent', function() {
+      const userId = {
+        tdid: 'some-tdid'
+      };
+
+      const newEids = createEidsArray(userId);
+
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.include({
+        source: 'adserver.org',
+        matcher: 'liveintent.com'
+      });
+    });
   })
 })

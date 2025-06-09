@@ -27,7 +27,6 @@ import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
-import {find} from './polyfill.js';
 import {
   getAuctionsCounter,
   getBidderRequestsCounter,
@@ -309,13 +308,24 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const ortb2 = ortb2Fragments.global || {};
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
+  function moveUserEidsToExt(o) {
+    const eids = o.user?.eids;
+    if (Array.isArray(eids) && eids.length) {
+      o.user.ext = o.user.ext || {};
+      o.user.ext.eids = [...(o.user.ext.eids || []), ...eids];
+      delete o.user.eids;
+    }
+  }
+
   function addOrtb2(bidderRequest, s2sActivityParams) {
     const redact = dep.redact(
       s2sActivityParams != null
         ? s2sActivityParams
         : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
     );
-    const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
+    const merged = mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]);
+    moveUserEidsToExt(merged);
+    const fpd = Object.freeze(redact.ortb2(merged));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {
       bid.ortb2 = fpd;
@@ -356,8 +366,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
       adUnitsS2SCopy.forEach((adUnitCopy) => {
         let validBids = adUnitCopy.bids.filter((adUnitBid) =>
-          find(bidRequests, request =>
-            find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id)));
+          bidRequests.find(request =>
+            request.bids.find((reqBid) => reqBid.bidId === adUnitBid.bid_id)));
         adUnitCopy.bids = validBids;
       });
 
