@@ -255,7 +255,7 @@ describe('ColossussspAdapter', function () {
   });
 
   describe('buildRequests with user ids', function () {
-    var clonedBid = JSON.parse(JSON.stringify(bid));
+    let clonedBid = JSON.parse(JSON.stringify(bid));
     clonedBid.userId = {}
     clonedBid.userId.idl_env = 'idl_env123';
     clonedBid.userId.tdid = 'tdid123';

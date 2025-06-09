@@ -259,7 +259,7 @@ describe('lemmaDigitalBidAdapter', function () {
           'id': 'alpha-numeric-id'
         };
         sandbox.stub(config, 'getConfig').callsFake((key) => {
-          var config = {
+          let config = {
             content: content
           };
           return config[key];
@@ -299,7 +299,7 @@ describe('lemmaDigitalBidAdapter', function () {
           'id': 'alpha-numeric-id'
         };
         sandbox.stub(config, 'getConfig').callsFake((key) => {
-          var config = {
+          let config = {
             content: content
           };
           return config[key];

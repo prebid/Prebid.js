@@ -38,7 +38,7 @@ export const spec = {
     const serverRequests = [];
     const bidderRequestReferer = bidderRequest?.refererInfo?.page || '';
     let ENDPOINT;
-    for (var i = 0, len = bidRequests.length; i < len; i++) {
+    for (let i = 0, len = bidRequests.length; i < len; i++) {
       const gaxObjParams = bidRequests[i];
       ENDPOINT = getAdUrlByRegion(gaxObjParams);
       serverRequests.push({

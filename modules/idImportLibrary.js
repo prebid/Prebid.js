@@ -93,7 +93,7 @@ function addInputElementsElementListner() {
   _logInfo('Adding input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
-  for (var i = 0; i < inputs.length; i++) {
+  for (let i = 0; i < inputs.length; i++) {
     _logInfo(`Original Value in Input = ${inputs[i].value}`);
     inputs[i].addEventListener('change', event => processInputChange(event));
     inputs[i].addEventListener('blur', event => processInputChange(event));
@@ -117,7 +117,7 @@ function removeInputElementsElementListner() {
   _logInfo('Removing input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
-  for (var i = 0; i < inputs.length; i++) {
+  for (let i = 0; i < inputs.length; i++) {
     inputs[i].removeEventListener('change', event => processInputChange(event));
     inputs[i].removeEventListener('blur', event => processInputChange(event));
   }
@@ -135,7 +135,7 @@ function processInputChange(event) {
 }
 
 function debounce(func, wait, immediate) {
-  var timeout;
+  let timeout;
   return function () {
     const context = this;
     const args = arguments;
@@ -143,7 +143,7 @@ function debounce(func, wait, immediate) {
       timeout = null;
       if (!immediate) func.apply(context, args);
     };
-    var callNow = immediate && !timeout;
+    let callNow = immediate && !timeout;
     clearTimeout(timeout);
     if (callNow) {
       func.apply(context, args);

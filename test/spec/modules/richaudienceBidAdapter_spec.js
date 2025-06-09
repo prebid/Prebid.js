@@ -8,7 +8,7 @@ import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 
 describe('Richaudience adapter tests', function () {
-  var DEFAULT_PARAMS_NEW_SIZES = [{
+  let DEFAULT_PARAMS_NEW_SIZES = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
@@ -35,7 +35,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_NEW_DSA = [{
+  let DEFAULT_PARAMS_NEW_DSA = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
@@ -82,7 +82,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_NEW_SIZES_GPID = [{
+  let DEFAULT_PARAMS_NEW_SIZES_GPID = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     ortb2Imp: {
@@ -113,7 +113,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_VIDEO_TIMEOUT = [{
+  let DEFAULT_PARAMS_VIDEO_TIMEOUT = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
@@ -137,7 +137,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }]
 
-  var DEFAULT_PARAMS_VIDEO_IN = [{
+  let DEFAULT_PARAMS_VIDEO_IN = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
@@ -160,7 +160,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_VIDEO_OUT = [{
+  let DEFAULT_PARAMS_VIDEO_OUT = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
@@ -183,7 +183,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_BANNER_OUTSTREAM = [{
+  let DEFAULT_PARAMS_BANNER_OUTSTREAM = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     mediaTypes: {
@@ -204,7 +204,7 @@ describe('Richaudience adapter tests', function () {
     user: {}
   }];
 
-  var DEFAULT_PARAMS_APP = [{
+  let DEFAULT_PARAMS_APP = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     sizes: [
@@ -226,7 +226,7 @@ describe('Richaudience adapter tests', function () {
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6'
   }];
 
-  var DEFAULT_PARAMS_WO_OPTIONAL = [{
+  let DEFAULT_PARAMS_WO_OPTIONAL = [{
     adUnitCode: 'test-div',
     bidId: '2c7c8e9c900244',
     sizes: [
@@ -246,7 +246,7 @@ describe('Richaudience adapter tests', function () {
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6'
   }];
 
-  var BID_PARAMS_EIDS = [{
+  let BID_PARAMS_EIDS = [{
     'bidder': 'richaudience',
     'params': {
       'pid': 'IHOhChZNuI',
@@ -265,7 +265,7 @@ describe('Richaudience adapter tests', function () {
     ],
   }]
 
-  var id5 = {
+  let id5 = {
     'source': 'id5-sync.com',
     'uids': [
       {
@@ -280,7 +280,7 @@ describe('Richaudience adapter tests', function () {
     ]
   }
 
-  var first_id = {
+  let first_id = {
     'source': 'first-id.fr',
     'uids': [
       {
@@ -293,7 +293,7 @@ describe('Richaudience adapter tests', function () {
     ]
   }
 
-  var three_party_provided = {
+  let three_party_provided = {
     'source': '3rdpartyprovided.com',
     'uids': [
       {
@@ -306,7 +306,7 @@ describe('Richaudience adapter tests', function () {
     ]
   }
 
-  var BID_RESPONSE = {
+  let BID_RESPONSE = {
     body: {
       cpm: 1.50,
       adm: '<!-- script -->',
@@ -322,7 +322,7 @@ describe('Richaudience adapter tests', function () {
     }
   };
 
-  var BID_RESPONSE_VIDEO = {
+  let BID_RESPONSE_VIDEO = {
     body: {
       cpm: 1.50,
       media_type: 'video',
@@ -338,7 +338,7 @@ describe('Richaudience adapter tests', function () {
     }
   };
 
-  var DEFAULT_PARAMS_GDPR = {
+  let DEFAULT_PARAMS_GDPR = {
     gdprConsent: {
       consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
       gdprApplies: true
@@ -538,51 +538,51 @@ describe('Richaudience adapter tests', function () {
     });
 
     it('Verify build return empty users', function () {
-      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
+      let request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
+      let requestContent = JSON.parse(request[0].data);
 
       expect(requestContent.eids).to.deep.equal([]);
     })
 
     it('Verify build return all users', function () {
       BID_PARAMS_EIDS[0].userIdAsEids = [id5, three_party_provided, first_id]
-      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
+      let request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
+      let requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([id5, three_party_provided, first_id]);
     })
 
     it('Verify build return first-id.fr users', function () {
       BID_PARAMS_EIDS[0].userIdAsEids = [first_id]
-      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
+      let request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
+      let requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([first_id]);
     })
 
     it('Verify build return first-id.fr users', function () {
       BID_PARAMS_EIDS[0].userIdAsEids = [first_id]
-      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
+      let request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
+      let requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([first_id]);
     })
 
     it('Verify build return users []', function () {
       BID_PARAMS_EIDS[0].userIdAsEids = []
-      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
+      let request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
+      let requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([]);
     })
 
     it('Verify build return users null', function () {
       BID_PARAMS_EIDS[0].userIdAsEids = null
-      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
+      let request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
+      let requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([]);
     })
 
     it('Verify build return users {}', function () {
       BID_PARAMS_EIDS[0].userIdAsEids = null
-      var request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
-      var requestContent = JSON.parse(request[0].data);
+      let request = spec.buildRequests(BID_PARAMS_EIDS, DEFAULT_PARAMS_GDPR);
+      let requestContent = JSON.parse(request[0].data);
       expect(requestContent.eids).to.deep.equal([]);
     })
   });
@@ -900,7 +900,7 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -941,7 +941,7 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'exclude'}}}
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: true
       }, [BID_RESPONSE], {
         consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
@@ -982,7 +982,7 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: true
       }, [BID_RESPONSE], {
@@ -1021,7 +1021,7 @@ describe('Richaudience adapter tests', function () {
         'userSync': {filterSettings: {image: {bidders: '*', filter: 'exclude'}}}
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: false,
         pixelEnabled: true
       }, [BID_RESPONSE], {
@@ -1062,7 +1062,7 @@ describe('Richaudience adapter tests', function () {
         }
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
       }, [BID_RESPONSE], {
@@ -1114,7 +1114,7 @@ describe('Richaudience adapter tests', function () {
         }
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
       }, [BID_RESPONSE], {
@@ -1165,7 +1165,7 @@ describe('Richaudience adapter tests', function () {
         }
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
       }, [BID_RESPONSE], {
@@ -1217,7 +1217,7 @@ describe('Richaudience adapter tests', function () {
         }
       })
 
-      var syncs = spec.getUserSyncs({
+      let syncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true
       }, [BID_RESPONSE], {

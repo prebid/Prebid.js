@@ -15,12 +15,12 @@ export const spec = {
     return !!(bid && bid.params && bid.params.pubId && bid.params.sectionId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var bidRequests = [];
+    let bidRequests = [];
 
-    for (var i = 0; i < validBidRequests.length; i++) {
-      var bid = validBidRequests[i];
+    for (let i = 0; i < validBidRequests.length; i++) {
+      let bid = validBidRequests[i];
 
-      var trionUrlParams = buildTrionUrlParams(bid, bidderRequest);
+      let trionUrlParams = buildTrionUrlParams(bid, bidderRequest);
 
       bidRequests.push({
         method: 'GET',
@@ -33,16 +33,16 @@ export const spec = {
   },
 
   interpretResponse: function (trionResponseObj, request) {
-    var bid = {};
-    var bidResponses = [];
-    var bidRequest = request.bidRequest;
-    var responseBody = trionResponseObj ? trionResponseObj.body : {};
+    let bid = {};
+    let bidResponses = [];
+    let bidRequest = request.bidRequest;
+    let responseBody = trionResponseObj ? trionResponseObj.body : {};
 
     if (responseBody && responseBody.bidId && bidRequest) {
-      var result = responseBody.result;
+      let result = responseBody.result;
 
       if (result && result.cpm && result.placeBid && result.ad) {
-        var cpm = parseInt(result.cpm, 10) / 100;
+        let cpm = parseInt(result.cpm, 10) / 100;
 
         bid.requestId = bidRequest.bidId;
         bid.cpm = cpm;
@@ -76,12 +76,12 @@ export const spec = {
 registerBidder(spec);
 
 function getSyncUrl(gdprConsent, usPrivacy) {
-  var unParsedPubAndSection = getStorageData(BASE_KEY + 'lps') || ':';
-  var pubSectionArray = unParsedPubAndSection.split(':') || [];
-  var pubId = pubSectionArray[0] || -1;
-  var sectionId = pubSectionArray[1] || -1;
-  var url = getPublisherUrl();
-  var consentParams = '';
+  let unParsedPubAndSection = getStorageData(BASE_KEY + 'lps') || ':';
+  let pubSectionArray = unParsedPubAndSection.split(':') || [];
+  let pubId = pubSectionArray[0] || -1;
+  let sectionId = pubSectionArray[1] || -1;
+  let url = getPublisherUrl();
+  let consentParams = '';
   if (gdprConsent) {
     if (gdprConsent.consentString) {
       consentParams += '&gc=' + encodeURIComponent(gdprConsent.consentString);
@@ -95,7 +95,7 @@ function getSyncUrl(gdprConsent, usPrivacy) {
 }
 
 function getPublisherUrl() {
-  var url = '';
+  let url = '';
   try {
     if (window.top == window) {
       url = window.location.href;
@@ -112,16 +112,16 @@ function getPublisherUrl() {
 }
 
 function buildTrionUrlParams(bid, bidderRequest) {
-  var pubId = getBidIdParameter('pubId', bid.params);
-  var sectionId = getBidIdParameter('sectionId', bid.params);
-  var url = getPublisherUrl();
-  var bidSizes = getBidSizesFromBidRequest(bid);
-  var sizes = parseSizesInput(bidSizes).join(',');
-  var isAutomated = (navigator && navigator.webdriver) ? '1' : '0';
-  var isHidden = (document.hidden) ? '1' : '0';
-  var visibilityState = encodeURIComponent(document.visibilityState);
+  let pubId = getBidIdParameter('pubId', bid.params);
+  let sectionId = getBidIdParameter('sectionId', bid.params);
+  let url = getPublisherUrl();
+  let bidSizes = getBidSizesFromBidRequest(bid);
+  let sizes = parseSizesInput(bidSizes).join(',');
+  let isAutomated = (navigator && navigator.webdriver) ? '1' : '0';
+  let isHidden = (document.hidden) ? '1' : '0';
+  let visibilityState = encodeURIComponent(document.visibilityState);
 
-  var intT = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
+  let intT = window.TR_INT_T && window.TR_INT_T != -1 ? window.TR_INT_T : null;
   if (!intT) {
     intT = getStorageData(BASE_KEY + 'int_t');
   }
@@ -129,7 +129,7 @@ function buildTrionUrlParams(bid, bidderRequest) {
     setStorageData(BASE_KEY + 'int_t', intT);
   }
   setStorageData(BASE_KEY + 'lps', pubId + ':' + sectionId);
-  var trionUrl = '';
+  let trionUrl = '';
 
   trionUrl = tryAppendQueryString(trionUrl, 'bidId', bid.bidId);
   trionUrl = tryAppendQueryString(trionUrl, 'pubId', pubId);
@@ -148,7 +148,7 @@ function buildTrionUrlParams(bid, bidderRequest) {
   trionUrl = tryAppendQueryString(trionUrl, 'tr_hd', isHidden);
   trionUrl = tryAppendQueryString(trionUrl, 'tr_vs', visibilityState);
   if (bidderRequest && bidderRequest.gdprConsent) {
-    var gdpr = bidderRequest.gdprConsent;
+    let gdpr = bidderRequest.gdprConsent;
     if (gdpr) {
       if (gdpr.consentString) {
         trionUrl = tryAppendQueryString(trionUrl, 'gdprc', encodeURIComponent(gdpr.consentString));
@@ -180,7 +180,7 @@ function handlePostMessage() {
 }
 
 export function getStorageData(key) {
-  var item = null;
+  let item = null;
   try {
     if (storage.hasLocalStorage()) {
       item = storage.getDataFromLocalStorage(key);
@@ -200,11 +200,11 @@ export function setStorageData(key, item) {
 }
 
 export function acceptPostMessage(e) {
-  var message = e.data || '';
+  let message = e.data || '';
   if (!message.indexOf || !message.split || message.indexOf(BASE_KEY + 'userId') !== 0) {
     return;
   }
-  var intT = message.split(BASE_KEY + 'userId=')[1];
+  let intT = message.split(BASE_KEY + 'userId=')[1];
   if (intT) {
     setStorageData(BASE_KEY + 'int_t', intT);
   }

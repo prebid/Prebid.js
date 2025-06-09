@@ -27,17 +27,17 @@ function RhythmOneBidAdapter() {
   };
 
   function frameImp(BRs, bidderRequest) {
-    var impList = [];
-    var isSecure = 0;
+    let impList = [];
+    let isSecure = 0;
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
       // clever trick to get the protocol
-      var el = document.createElement('a');
+      let el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
       isSecure = (el.protocol == 'https:') ? 1 : 0;
     }
-    for (var i = 0; i < BRs.length; i++) {
+    for (let i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
-      var impObj = {};
+      let impObj = {};
       impObj.id = BRs[i].adUnitCode;
       impObj.bidfloor = 0;
       impObj.secure = isSecure;
@@ -88,15 +88,15 @@ function RhythmOneBidAdapter() {
 
   function frameBanner(adUnit) {
     // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
-    var sizeList = adUnit.sizes;
+    let sizeList = adUnit.sizes;
     if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
       sizeList = adUnit.mediaTypes.banner.sizes;
     }
-    var sizeStringList = parseSizesInput(sizeList);
-    var format = [];
+    let sizeStringList = parseSizesInput(sizeList);
+    let format = [];
     sizeStringList.forEach(function(size) {
       if (size) {
-        var dimensionList = getValidSizeSet(size.split('x'));
+        let dimensionList = getValidSizeSet(size.split('x'));
         if (dimensionList) {
           format.push({
             'w': dimensionList[0],
@@ -115,13 +115,13 @@ function RhythmOneBidAdapter() {
   }
 
   function frameVideo(bid) {
-    var size = [];
+    let size = [];
     if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
-      var dimensionSet = bid.mediaTypes.video.playerSize;
+      let dimensionSet = bid.mediaTypes.video.playerSize;
       if (isArray(bid.mediaTypes.video.playerSize[0])) {
         dimensionSet = bid.mediaTypes.video.playerSize[0];
       }
-      var validSize = getValidSizeSet(dimensionSet)
+      let validSize = getValidSizeSet(dimensionSet)
       if (validSize) {
         size = validSize;
       }
@@ -192,19 +192,19 @@ function RhythmOneBidAdapter() {
       return [];
     }
 
-    var rmpUrl = getFirstParam('endpoint', BRs) || 'https://tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
-    var defaultZone = getFirstParam('zone', BRs) || '1r';
-    var defaultPath = getFirstParam('path', BRs) || 'mvo';
+    let rmpUrl = getFirstParam('endpoint', BRs) || 'https://tag.1rx.io/rmp/{placementId}/0/{path}?z={zone}';
+    let defaultZone = getFirstParam('zone', BRs) || '1r';
+    let defaultPath = getFirstParam('path', BRs) || 'mvo';
 
     rmpUrl = rmpUrl.replace(/\{placementId\}/i, fallbackPlacementId);
     rmpUrl = rmpUrl.replace(/\{zone\}/i, defaultZone);
     rmpUrl = rmpUrl.replace(/\{path\}/i, defaultPath);
 
-    var fat = /(^v|(\.0)+$)/gi;
-    var prebidVersion = '$prebid.version$';
+    let fat = /(^v|(\.0)+$)/gi;
+    let prebidVersion = '$prebid.version$';
     rmpUrl += '&hbv=' + prebidVersion.replace(fat, '') + ',' + version.replace(fat, '');
 
-    var bidRequest = frameBid(BRs, bidderRequest);
+    let bidRequest = frameBid(BRs, bidderRequest);
     if (!bidRequest.imp.length) {
       return {};
     }

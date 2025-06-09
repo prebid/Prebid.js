@@ -114,7 +114,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     logMessage('  - apiHostname: ' + rtdConfig.params.apiHostname);
     logMessage('  - apiVersion:  ' + rtdConfig.params.apiVersion);
     dapRetryTokenize = 0;
-    var jsonData = null;
+    let jsonData = null;
     if (rtdConfig && isPlainObject(rtdConfig.params)) {
       if (rtdConfig.params.segtax == 710) {
         let encMembership = dapUtils.dapGetEncryptedMembershipFromLocalStorage();

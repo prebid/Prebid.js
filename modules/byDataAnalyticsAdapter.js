@@ -22,10 +22,10 @@ const MODULE_CODE = 'bydata';
 const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 let initOptions = {}
-var payload = {}
-var winPayload = {}
-var isDataSend = window.asc_data || false
-var bdNbTo = { 'to': [], 'nb': [] }
+let payload = {}
+let winPayload = {}
+let isDataSend = window.asc_data || false
+let bdNbTo = { 'to': [], 'nb': [] }
 
 /* method used for testing parameters */
 function isKeyInUrl(name) {
@@ -37,7 +37,7 @@ function isKeyInUrl(name) {
 
 /* return ad unit full path wrt custom ad unit code */
 function getAdunitName(code) {
-  var name = code;
+  let name = code;
   for (const [key, value] of Object.entries(adunitsMap)) {
     if (key === code) { name = value; }
   }
@@ -124,7 +124,7 @@ ascAdapter.enableAnalytics = function (config) {
 ascAdapter.initConfig = function (config) {
   let isCorrectOption = true;
   initOptions = {};
-  var rndNum = Math.floor(Math.random() * 10000 + 1);
+  let rndNum = Math.floor(Math.random() * 10000 + 1);
   initOptions.options = deepClone(config.options);
   initOptions.clientId = initOptions.options.clientId || null;
   initOptions.logFrequency = initOptions.options.logFrequency;
@@ -144,7 +144,7 @@ ascAdapter.getBidWonData = function(t) {
   winPayload['aid'] = auctionId
   winPayload['as'] = '';
   winPayload['auctionData'] = [];
-  var data = {}
+  let data = {}
   data['au'] = aun
   data['auc'] = adUnitCode
   data['aus'] = size
@@ -166,8 +166,8 @@ ascAdapter.getBidWonData = function(t) {
 }
 
 ascAdapter.getVisitorData = function (data = {}) {
-  var ua = data.uid ? data : {};
-  var module = {
+  let ua = data.uid ? data : {};
+  let module = {
     options: [],
     header: [window.navigator.platform, window.navigator.userAgent, window.navigator.appVersion, window.navigator.vendor, window.opera],
     dataos: [
@@ -192,9 +192,9 @@ ascAdapter.getVisitorData = function (data = {}) {
       { name: 'BlackBerry', value: 'CLDC', version: 'CLDC' },
       { name: 'Mozilla', value: 'Mozilla', version: 'Mozilla' }
     ],
-    init: function () { var agent = this.header.join(' '); var os = this.matchItem(agent, this.dataos); var browser = this.matchItem(agent, this.databrowser); return { os: os, browser: browser }; },
+    init: function () { let agent = this.header.join(' '); let os = this.matchItem(agent, this.dataos); let browser = this.matchItem(agent, this.databrowser); return { os: os, browser: browser }; },
     matchItem: function (string, data) {
-      var i = 0; var j = 0; var regex; var regexv; var match; var matches; var version;
+      let i = 0; let j = 0; let regex; let regexv; let match; let matches; let version;
       for (i = 0; i < data.length; i += 1) {
         regex = new RegExp(data[i].value, 'i');
         match = regex.test(string);
@@ -227,11 +227,11 @@ ascAdapter.getVisitorData = function (data = {}) {
 
   function generateUid() {
     try {
-      var buffer = new Uint8Array(16);
+      let buffer = new Uint8Array(16);
       crypto.getRandomValues(buffer);
       buffer[6] = (buffer[6] & ~176) | 64;
       buffer[8] = (buffer[8] & ~64) | 128;
-      var hex = Array.prototype.map.call(new Uint8Array(buffer), function (x) {
+      let hex = Array.prototype.map.call(new Uint8Array(buffer), function (x) {
         return ('00' + x.toString(16)).slice(-2);
       }).join('');
       return hex.slice(0, 5) + '-' + hex.slice(5, 9) + '-' + hex.slice(9, 13) + '-' + hex.slice(13, 18);
@@ -240,25 +240,25 @@ ascAdapter.getVisitorData = function (data = {}) {
     }
   }
   function base64url(source) {
-    var encodedSource = Base64.stringify(source);
+    let encodedSource = Base64.stringify(source);
     encodedSource = encodedSource.replace(/=+$/, '');
     encodedSource = encodedSource.replace(/\+/g, '-');
     encodedSource = encodedSource.replace(/\//g, '_');
     return encodedSource;
   }
   function getJWToken(data) {
-    var header = {
+    let header = {
       'alg': 'HS256',
       'typ': 'JWT'
     };
-    var stringifiedHeader = enc.parse(JSON.stringify(header));
-    var encodedHeader = base64url(stringifiedHeader);
-    var stringifiedData = enc.parse(JSON.stringify(data));
-    var encodedData = base64url(stringifiedData);
-    var token = encodedHeader + '.' + encodedData;
-    var signature = hmacSHA512(token, secretKey);
+    let stringifiedHeader = enc.parse(JSON.stringify(header));
+    let encodedHeader = base64url(stringifiedHeader);
+    let stringifiedData = enc.parse(JSON.stringify(data));
+    let encodedData = base64url(stringifiedData);
+    let token = encodedHeader + '.' + encodedData;
+    let signature = hmacSHA512(token, secretKey);
     signature = base64url(signature);
-    var signedToken = token + '.' + signature;
+    let signedToken = token + '.' + signature;
     return signedToken;
   }
   function detectWidth() {
@@ -267,19 +267,19 @@ ascAdapter.getVisitorData = function (data = {}) {
     return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
   }
   function giveDeviceTypeOnScreenSize() {
-    var _dWidth = detectWidth();
+    let _dWidth = detectWidth();
     return _dWidth > 1024 ? 'Desktop' : (_dWidth <= 1024 && _dWidth >= 768) ? 'Tablet' : 'Mobile';
   }
 
   const { clientId } = initOptions;
-  var userId = storage.getDataFromLocalStorage('userId');
+  let userId = storage.getDataFromLocalStorage('userId');
   if (!userId) {
     userId = generateUid();
     storage.setDataInLocalStorage('userId', userId);
   }
-  var screenSize = { width: window.screen.width, height: window.screen.height };
-  var deviceType = giveDeviceTypeOnScreenSize();
-  var e = module.init();
+  let screenSize = { width: window.screen.width, height: window.screen.height };
+  let deviceType = giveDeviceTypeOnScreenSize();
+  let e = module.init();
   if (!ua['uid']) {
     ua['uid'] = userId;
     ua['cid'] = clientId;
@@ -292,7 +292,7 @@ ascAdapter.getVisitorData = function (data = {}) {
     ua['de'] = deviceType;
     ua['tz'] = window.Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
-  var signedToken = getJWToken(ua);
+  let signedToken = getJWToken(ua);
   payload['visitor_data'] = signedToken;
   winPayload['visitor_data'] = signedToken;
   return signedToken;
@@ -304,17 +304,17 @@ ascAdapter.dataProcess = function (t) {
   payload['aid'] = t.auctionId;
   payload['as'] = t.timestamp;
   payload['auctionData'] = [];
-  var bidderRequestsData = []; var bidsReceivedData = [];
+  let bidderRequestsData = []; let bidsReceivedData = [];
   t.bidderRequests && t.bidderRequests.forEach(bidReq => {
-    var pObj = {}; pObj['bids'] = [];
+    let pObj = {}; pObj['bids'] = [];
     bidReq.bids.forEach(bid => {
-      var data = {};
+      let data = {};
       data['adUnitCode'] = bid.adUnitCode;
       data['sizes'] = bid.sizes;
       data['bidder'] = bid.bidder;
       data['bidId'] = bid.bidId;
       data['mediaTypes'] = [];
-      var mt = bid.mediaTypes.banner ? 'display' : 'video';
+      let mt = bid.mediaTypes.banner ? 'display' : 'video';
       data['mediaTypes'].push(mt);
       pObj['bids'].push(data);
     })
@@ -325,11 +325,11 @@ ascAdapter.dataProcess = function (t) {
     bidsReceivedData.push({ requestId, bidder, width, height, cpm, currency, timeToRespond, adUnitCode });
   });
   bidderRequestsData.length > 0 && bidderRequestsData.forEach(bdObj => {
-    var bdsArray = bdObj['bids'];
+    let bdsArray = bdObj['bids'];
     bdsArray.forEach(bid => {
       const { adUnitCode, sizes, bidder, bidId, mediaTypes } = bid;
       sizes.forEach(size => {
-        var sstr = size[0] + 'x' + size[1]
+        let sstr = size[0] + 'x' + size[1]
         payload['auctionData'].push({ au: getAdunitName(adUnitCode), auc: adUnitCode, aus: sstr, mt: mediaTypes[0], bidadv: bidder, bid: bidId, inb: 0, ito: 0, ipwb: 0, iwb: 0 });
       });
     });
@@ -345,7 +345,7 @@ ascAdapter.dataProcess = function (t) {
     })
   });
 
-  var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
+  let prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
   prebidWinningBids && prebidWinningBids.length > 0 && prebidWinningBids.forEach(pbbid => {
     payload['auctionData'] && payload['auctionData'].forEach(rwData => {
       if (rwData['bid'] === pbbid.requestId && rwData['brs'] === pbbid.size) {
@@ -354,7 +354,7 @@ ascAdapter.dataProcess = function (t) {
     });
   })
 
-  var winningBids = auctionManager.getAllWinningBids();
+  let winningBids = auctionManager.getAllWinningBids();
   winningBids && winningBids.length > 0 && winningBids.forEach(wBid => {
     payload['auctionData'] && payload['auctionData'].forEach(rwData => {
       if (rwData['bid'] === wBid.requestId && rwData['brs'] === wBid.size) {
@@ -375,7 +375,7 @@ ascAdapter.dataProcess = function (t) {
 }
 
 ascAdapter.sendPayload = function (data) {
-  var obj = { 'records': [{ 'value': data }] };
+  let obj = { 'records': [{ 'value': data }] };
   let strJSON = JSON.stringify(obj);
   sendDataOnKf(strJSON);
 }

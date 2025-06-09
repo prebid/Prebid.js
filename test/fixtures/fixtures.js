@@ -4,7 +4,7 @@ import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
 function convertTargetingsFromOldToNew(targetings) {
-  var mapOfOldToNew = {
+  let mapOfOldToNew = {
     'hb_bidder': TARGETING_KEYS.BIDDER,
     'hb_adid': TARGETING_KEYS.AD_ID,
     'hb_pb': TARGETING_KEYS.PRICE_BUCKET,
@@ -13,12 +13,12 @@ function convertTargetingsFromOldToNew(targetings) {
     'hb_source': TARGETING_KEYS.SOURCE,
     'hb_format': TARGETING_KEYS.FORMAT
   };
-  var newTargetings = {};
+  let newTargetings = {};
   utils._each(targetings, function(value, currentKey) {
-    var replaced = false;
+    let replaced = false;
     utils._each(mapOfOldToNew, function(newKey, oldKey) {
       if (currentKey.indexOf(oldKey) === 0 && oldKey !== newKey) {
-        var updatedKey = currentKey.replace(oldKey, newKey);
+        let updatedKey = currentKey.replace(oldKey, newKey);
         newTargetings[updatedKey] = targetings[currentKey];
         replaced = true;
       }

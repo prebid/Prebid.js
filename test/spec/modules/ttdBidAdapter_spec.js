@@ -267,7 +267,7 @@ describe('ttdBidAdapter', function () {
         ...baseBidderRequest,
         timeout: null
       };
-      var requestBody = testBuildRequests(baseBannerBidRequests, requestWithoutTimeout).data;
+      let requestBody = testBuildRequests(baseBannerBidRequests, requestWithoutTimeout).data;
       expect(requestBody.tmax).to.be.equal(400);
 
       const requestWithTimeout = {

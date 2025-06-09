@@ -8,7 +8,7 @@ import * as activities from '../../../src/activities/rules.js';
 import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
 import { CONF_DEFAULT_FULL_BODY_SCAN, CONF_DEFAULT_INPUT_SCAN } from '../../../modules/idImportLibrary.js';
 
-var expect = require('chai').expect;
+let expect = require('chai').expect;
 
 const mockMutationObserver = {
   observe: () => {
@@ -194,7 +194,7 @@ describe('IdImportLibrary Tests', function () {
     });
     it('results with config inputscan with listner', function () {
       let config = { url: 'testUrl', 'inputscan': true, 'debounce': 0 }
-      var input = document.createElement('input');
+      let input = document.createElement('input');
       input.setAttribute('type', 'text');
       document.body.appendChild(input);
       idImportlibrary.setConfig(config);

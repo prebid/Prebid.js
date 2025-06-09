@@ -204,12 +204,12 @@ function getDomainFromUrl(url) {
 }
 
 function getDevicePlatform() {
-  var deviceType = 3;
+  let deviceType = 3;
   try {
-    var ua = navigator.userAgent;
+    let ua = navigator.userAgent;
     if (ua && isStr(ua) && ua.trim() != '') {
       ua = ua.toLowerCase().trim();
-      var isMobileRegExp = new RegExp('(mobi|tablet|ios).*');
+      let isMobileRegExp = new RegExp('(mobi|tablet|ios).*');
       if (ua.match(isMobileRegExp)) {
         deviceType = 2;
       } else {
@@ -388,7 +388,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid, e) {
 }
 
 function getSizesForAdUnit(adUnit) {
-  var bid = Object.values(adUnit.bids).filter((bid) => !!bid.bidResponse && bid.bidResponse.mediaType === 'native')[0];
+  let bid = Object.values(adUnit.bids).filter((bid) => !!bid.bidResponse && bid.bidResponse.mediaType === 'native')[0];
   if (!!bid || (bid === undefined && adUnit.dimensions.length === 0)) {
     return ['1x1'];
   } else {
@@ -399,7 +399,7 @@ function getSizesForAdUnit(adUnit) {
 }
 
 function getAdUnitAdFormats(adUnit) {
-  var af = adUnit ? Object.keys(adUnit.mediaTypes || {}).map(format => MEDIATYPE[format.toUpperCase()]) : [];
+  let af = adUnit ? Object.keys(adUnit.mediaTypes || {}).map(format => MEDIATYPE[format.toUpperCase()]) : [];
   return af;
 }
 
@@ -408,7 +408,7 @@ function getAdUnit(adUnits, adUnitId) {
 }
 
 function getTgId() {
-  var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
+  let testGroupId = parseInt(config.getConfig('testGroupId') || 0);
   if (testGroupId <= 15 && testGroupId >= 0) {
     return testGroupId;
   }

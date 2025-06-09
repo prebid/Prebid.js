@@ -559,7 +559,7 @@ describe('adgrid bid adapter tests', () => {
       expect(syncs).to.eql(expectedSyncs);
     });
     it('Verifies user sync with no bid response', () => {
-      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      let syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
       expect(syncs).to.eql([]);
     });
     it('Verifies user sync with no bid body response', () => {

@@ -326,7 +326,7 @@ describe('Adkernel adapter', function () {
       cur: 'USD'
     };
 
-  var sandbox;
+  let sandbox;
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });

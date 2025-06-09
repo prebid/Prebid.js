@@ -51,7 +51,7 @@ export const spec = {
     };
 
     const envParam = bidRequests[0].params.env;
-    var subDomain = DEFAULT_SUBDOMAIN;
+    let subDomain = DEFAULT_SUBDOMAIN;
     if (envParam === 'preprod') {
       subDomain = PREPROD_SUBDOMAIN;
     }
@@ -81,7 +81,7 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, request) {
     const bidResponses = [];
-    var bidRequests = {};
+    let bidRequests = {};
 
     try {
       bidRequests = JSON.parse(request.data).bids;

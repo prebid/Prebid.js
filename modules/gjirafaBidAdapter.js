@@ -100,7 +100,7 @@ export const spec = {
   interpretResponse: function (serverResponse) {
     const responses = serverResponse.body;
     const bidResponses = [];
-    for (var i = 0; i < responses.length; i++) {
+    for (let i = 0; i < responses.length; i++) {
       const bidResponse = {
         requestId: responses[i].BidId,
         cpm: responses[i].CPM,

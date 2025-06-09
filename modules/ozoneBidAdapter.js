@@ -228,12 +228,12 @@ export const spec = {
     ozoneRequest.device = bidderRequest?.ortb2?.device || {}; // 20240925 rupesh changed this
     let placementIdOverrideFromGetParam = this.getPlacementIdOverrideFromGetParam(); // null or string
     let schain = null;
-    var auctionId = deepAccess(validBidRequests, '0.ortb2.source.tid');
+    let auctionId = deepAccess(validBidRequests, '0.ortb2.source.tid');
     if (auctionId === '0') {
       auctionId = null;
     }
     let tosendtags = validBidRequests.map(ozoneBidRequest => {
-      var obj = {};
+      let obj = {};
       let placementId = placementIdOverrideFromGetParam || this.getPlacementId(ozoneBidRequest); // prefer to use a valid override param, else the bidRequest placement Id
       obj.id = ozoneBidRequest.bidId; // this causes an error if we change it to something else, even if you update the bidRequest object: "WARNING: Bidder ozone made bid for unknown request ID: mb7953.859498327448. Ignoring."
       obj.tagid = placementId;
@@ -451,7 +451,7 @@ export const spec = {
       if (auctionId) {
         deepSetValue(ozoneRequest, 'source.tid', auctionId);
       }
-      var ret = {
+      let ret = {
         method: 'POST',
         url: this.getAuctionUrl(),
         data: JSON.stringify(ozoneRequest),
@@ -677,13 +677,13 @@ export const spec = {
     return config.getConfig(whitelabelledSearch);
   },
   removeSingleBidderMultipleBids(seatbid) {
-    var ret = [];
+    let ret = [];
     for (let i = 0; i < seatbid.length; i++) {
       let sb = seatbid[i];
-      var retSeatbid = {'seat': sb.seat, 'bid': []};
-      var bidIds = [];
+      let retSeatbid = {'seat': sb.seat, 'bid': []};
+      let bidIds = [];
       for (let j = 0; j < sb.bid.length; j++) {
-        var candidate = sb.bid[j];
+        let candidate = sb.bid[j];
         if (contains(bidIds, candidate.impid)) {
           continue; // we've already fully assessed this impid, found the highest bid from this seat for it
         }
@@ -706,7 +706,7 @@ export const spec = {
     }
     let { gppString = '', applicableSections = [] } = gppConsent;
     if (optionsType.iframeEnabled) {
-      var arrQueryString = [];
+      let arrQueryString = [];
       if (config.getConfig('debug')) {
         arrQueryString.push('pbjs_debug=true');
       }
@@ -724,7 +724,7 @@ export const spec = {
       arrQueryString.push('siteId=' + this.cookieSyncBag.siteId);
       arrQueryString.push('cb=' + Date.now());
       arrQueryString.push('bidder=' + this.propertyBag.whitelabel.bidder);
-      var strQueryString = arrQueryString.join('&');
+      let strQueryString = arrQueryString.join('&');
       if (strQueryString.length > 0) {
         strQueryString = '?' + strQueryString;
       }

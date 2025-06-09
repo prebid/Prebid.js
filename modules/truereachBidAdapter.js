@@ -83,7 +83,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
 
-    var gdprParams = '';
+    let gdprParams = '';
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;

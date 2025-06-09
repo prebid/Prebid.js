@@ -80,7 +80,7 @@ function _getDomainFromURL(url) {
 }
 
 let platform = (function getPlatform() {
-  var ua = navigator.userAgent;
+  let ua = navigator.userAgent;
   if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
     return 'Android'
   }
@@ -91,9 +91,9 @@ let platform = (function getPlatform() {
 })();
 
 function _generateGUID() {
-  var d = new Date().getTime();
-  var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    var r = (d + Math.random() * 16) % 16 | 0;
+  let d = new Date().getTime();
+  let guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    let r = (d + Math.random() * 16) % 16 | 0;
     d = Math.floor(d / 16);
     return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   })
@@ -115,8 +115,8 @@ function _parseAdSlot(bid) {
   if (bid.hasOwnProperty('mediaTypes') &&
     bid.mediaTypes.hasOwnProperty(BANNER) &&
     bid.mediaTypes.banner.hasOwnProperty('sizes')) {
-    var i = 0;
-    var sizeArray = [];
+    let i = 0;
+    let sizeArray = [];
     for (; i < bid.mediaTypes.banner.sizes.length; i++) {
       if (bid.mediaTypes.banner.sizes[i].length === 2) { // sizes[i].length will not be 2 in case where size is set as fluid, we want to skip that entry
         sizeArray.push(bid.mediaTypes.banner.sizes[i]);
@@ -147,7 +147,7 @@ function _getLanguage() {
 }
 
 function _createOrtbTemplate(conf) {
-  var guid;
+  let guid;
   if (storage.getDataFromLocalStorage('adtrue_user_id') == null) {
     storage.setDataInLocalStorage('adtrue_user_id', _generateGUID())
   }
@@ -189,8 +189,8 @@ function _createOrtbTemplate(conf) {
 }
 
 function _checkParamDataType(key, value, datatype) {
-  var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
-  var functionToExecute;
+  let errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
+  let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
       functionToExecute = isBoolean;
@@ -215,7 +215,7 @@ function _checkParamDataType(key, value, datatype) {
 function _parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
-    var adm = '';
+    let adm = '';
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
@@ -274,9 +274,9 @@ function _parseNativeResponse(bid, newBid) {
 }
 
 function _createBannerRequest(bid) {
-  var sizes = bid.mediaTypes.banner.sizes;
-  var format = [];
-  var bannerObj;
+  let sizes = bid.mediaTypes.banner.sizes;
+  let format = [];
+  let bannerObj;
   if (sizes !== UNDEFINED && isArray(sizes)) {
     bannerObj = {};
     if (!bid.params.width && !bid.params.height) {
@@ -315,12 +315,12 @@ function _createBannerRequest(bid) {
 }
 
 function _createVideoRequest(bid) {
-  var videoData = bid.params.video;
-  var videoObj;
+  let videoData = bid.params.video;
+  let videoObj;
 
   if (videoData !== UNDEFINED) {
     videoObj = {};
-    for (var key in VIDEO_CUSTOM_PARAMS) {
+    for (let key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
         videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
       }
@@ -346,8 +346,8 @@ function _createVideoRequest(bid) {
 }
 
 function _checkMediaType(adm, newBid) {
-  var admStr = '';
-  var videoRegex = new RegExp(/VAST\s+version/);
+  let admStr = '';
+  let videoRegex = new RegExp(/VAST\s+version/);
   newBid.mediaType = BANNER;
   if (videoRegex.test(adm)) {
     newBid.mediaType = VIDEO;
@@ -364,12 +364,12 @@ function _checkMediaType(adm, newBid) {
 }
 
 function _createImpressionObject(bid, conf) {
-  var impObj = {};
-  var bannerObj;
-  var videoObj;
-  var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
-  var mediaTypes = '';
-  var format = [];
+  let impObj = {};
+  let bannerObj;
+  let videoObj;
+  let sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
+  let mediaTypes = '';
+  let format = [];
 
   impObj = {
     id: bid.bidId,
@@ -478,7 +478,7 @@ export const spec = {
       }
       bid.params.currency = bidCurrency;
 
-      var impObj = _createImpressionObject(bid, conf);
+      let impObj = _createImpressionObject(bid, conf);
       if (impObj) {
         payload.imp.push(impObj);
       }
@@ -541,7 +541,7 @@ export const spec = {
   },
   interpretResponse: function (serverResponses, bidderRequest) {
     const bidResponses = [];
-    var respCur = ADTRUE_CURRENCY;
+    let respCur = ADTRUE_CURRENCY;
     let parsedRequest = JSON.parse(bidderRequest.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {

@@ -187,15 +187,15 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    var refererInfo;
+    let refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
     }
-    var conf = _initConf(refererInfo);
-    var payload = _createOrtbTemplate(conf);
-    var bidCurrency = '';
-    var bid;
-    var blockedIabCategories = [];
+    let conf = _initConf(refererInfo);
+    let payload = _createOrtbTemplate(conf);
+    let bidCurrency = '';
+    let bid;
+    let blockedIabCategories = [];
 
     validBidRequests.forEach(originalBid => {
       bid = deepClone(originalBid);
@@ -211,7 +211,7 @@ export const spec = {
         blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
 
-      var impObj = _createImpressionObject(bid, conf);
+      let impObj = _createImpressionObject(bid, conf);
       if (impObj) {
         payload.imp.push(impObj);
       }
@@ -275,7 +275,7 @@ export const spec = {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    var options = {contentType: 'text/plain'};
+    let options = {contentType: 'text/plain'};
 
     _logInfo('buildRequests payload', payload);
     _logInfo('buildRequests bidderRequest', bidderRequest);
@@ -297,7 +297,7 @@ export const spec = {
    */
   interpretResponse: function (response, request) {
     const bidResponses = [];
-    var respCur = DEFAULT_CURRENCY;
+    let respCur = DEFAULT_CURRENCY;
     _logInfo('interpretResponse request', request);
     let parsedRequest = request.data; // not currently stringified
     // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
@@ -384,12 +384,12 @@ function _checkMediaType(bid, newBid) {
     newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {
     _logInfo('bid.ext.bidtype does not exist, checking alternatively for mediaType');
-    var adm = bid.adm;
-    var videoRegex = new RegExp(/VAST\s+version/);
+    let adm = bid.adm;
+    let videoRegex = new RegExp(/VAST\s+version/);
 
     if (adm.indexOf('"ver":') >= 0) {
       try {
-        var admJSON = '';
+        let admJSON = '';
         admJSON = JSON.parse(adm.replace(/\\/g, ''));
         if (admJSON && admJSON.assets) {
           newBid.mediaType = NATIVE;
@@ -408,7 +408,7 @@ function _checkMediaType(bid, newBid) {
 function _parseNativeResponse(bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
-    var adm = '';
+    let adm = '';
     try {
       adm = JSON.parse(bid.adm.replace(/\\/g, ''));
     } catch (ex) {
@@ -473,7 +473,7 @@ function _getDomainFromURL(url) {
 }
 
 function _handleCustomParams(params, conf) {
-  var key, value, entry;
+  let key, value, entry;
   for (key in CUSTOM_PARAMS) {
     if (CUSTOM_PARAMS.hasOwnProperty(key)) {
       value = params[key];
@@ -526,11 +526,11 @@ function _createOrtbTemplate(conf) {
 }
 
 function _createImpressionObject(bid, conf) {
-  var impObj = {};
-  var bannerObj;
-  var videoObj;
-  var nativeObj = {};
-  var mediaTypes = '';
+  let impObj = {};
+  let bannerObj;
+  let videoObj;
+  let nativeObj = {};
+  let mediaTypes = '';
 
   impObj = {
     id: bid.bidId,
@@ -613,8 +613,8 @@ function _parseAdSlot(bid) {
   if (bid.hasOwnProperty('mediaTypes')) {
     if (bid.mediaTypes.hasOwnProperty(BANNER) &&
         bid.mediaTypes.banner.hasOwnProperty('sizes')) { // if its a banner, has mediaTypes and sizes
-      var i = 0;
-      var sizeArray = [];
+      let i = 0;
+      let sizeArray = [];
       for (;i < bid.mediaTypes.banner.sizes.length; i++) {
         if (bid.mediaTypes.banner.sizes[i].length === 2) { // sizes[i].length will not be 2 in case where size is set as fluid, we want to skip that entry
           sizeArray.push(bid.mediaTypes.banner.sizes[i]);
@@ -649,7 +649,7 @@ function _initConf(refererInfo) {
 }
 
 function _commonNativeRequestObject(nativeAsset, params) {
-  var key = nativeAsset.KEY;
+  let key = nativeAsset.KEY;
   return {
     id: nativeAsset.ID,
     required: params[key].required ? 1 : 0,
@@ -687,10 +687,10 @@ function _addFloorFromFloorModule(impObj, bid) {
 }
 
 function _createNativeRequest(params) {
-  var nativeRequestObject = {
+  let nativeRequestObject = {
     assets: []
   };
-  for (var key in params) {
+  for (let key in params) {
     if (params.hasOwnProperty(key)) {
       var assetObj = {};
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
@@ -797,11 +797,11 @@ function _createNativeRequest(params) {
 
   // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
   // if any of these are missing from the request then request will not be sent
-  var requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
-  var presentrequiredAssetCount = 0;
+  let requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
+  let presentrequiredAssetCount = 0;
   NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
-    var lengthOfExistingAssets = nativeRequestObject.assets.length;
-    for (var i = 0; i < lengthOfExistingAssets; i++) {
+    let lengthOfExistingAssets = nativeRequestObject.assets.length;
+    for (let i = 0; i < lengthOfExistingAssets; i++) {
       if (ele.id == nativeRequestObject.assets[i].id) {
         presentrequiredAssetCount++;
         break;
@@ -817,9 +817,9 @@ function _createNativeRequest(params) {
 }
 
 function _createBannerRequest(bid) {
-  var sizes = bid.mediaTypes.banner.sizes;
-  var format = [];
-  var bannerObj;
+  let sizes = bid.mediaTypes.banner.sizes;
+  let format = [];
+  let bannerObj;
   if (sizes !== UNDEFINED && isArray(sizes)) {
     bannerObj = {};
     if (!bid.params.width && !bid.params.height) {
@@ -891,13 +891,13 @@ function _checkVideoPlacement(videoData, adUnitCode) {
 }
 
 function _createVideoRequest(bid) {
-  var videoData = mergeDeep(deepAccess(bid.mediaTypes, 'video'), bid.params.video);
-  var videoObj;
+  let videoData = mergeDeep(deepAccess(bid.mediaTypes, 'video'), bid.params.video);
+  let videoObj;
 
   if (videoData !== UNDEFINED) {
     videoObj = {};
     _checkVideoPlacement(videoData, bid.adUnitCode);
-    for (var key in VIDEO_CUSTOM_PARAMS) {
+    for (let key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
         videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
       }
@@ -954,8 +954,8 @@ function _getEndpointURL(bid) {
  * @returns {*}
  */
 function _checkParamDataType(key, value, datatype) {
-  var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
-  var functionToExecute;
+  let errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
+  let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
       functionToExecute = isBoolean;

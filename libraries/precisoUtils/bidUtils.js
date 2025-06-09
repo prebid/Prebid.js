@@ -7,7 +7,7 @@ import { interpretNativeBid } from './bidNativeUtils.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-  var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  let city = Intl.DateTimeFormat().resolvedOptions().timeZone;
   let req = {
     id: validBidRequests[0].auctionId,
     imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),

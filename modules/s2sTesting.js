@@ -11,7 +11,7 @@ s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bid
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
 s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
-  var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
+  let sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
 
   adUnits.forEach((adUnit) => {
     // if any adUnit bidders specify a bidSource, include them
@@ -48,7 +48,7 @@ s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
 s2sTesting.calculateBidSources = function(s2sConfig = {}) {
   // calculate bid source (server/client) for each s2s bidder
 
-  var bidderControl = s2sConfig.bidderControl || {};
+  let bidderControl = s2sConfig.bidderControl || {};
   (s2sConfig.bidders || []).forEach((bidder) => {
     s2sTesting.bidSource[bidder] = s2sTesting.getSource(bidderControl[bidder] && bidderControl[bidder].bidSource) || SERVER; // default to server
   });
@@ -61,16 +61,16 @@ s2sTesting.calculateBidSources = function(s2sConfig = {}) {
  * @return the chosen source ("server" or "client"), or undefined if none chosen
  */
 s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
-  var srcIncWeight = {}; // store incremental weights of each source
-  var totWeight = 0;
+  let srcIncWeight = {}; // store incremental weights of each source
+  let totWeight = 0;
   bidSources.forEach((source) => {
     totWeight += (sourceWeights[source] || 0);
     srcIncWeight[source] = totWeight;
   });
   if (!totWeight) return; // bail if no source weights
   // choose a source randomly based on weights
-  var rndWeight = s2sTesting.globalRand * totWeight;
-  for (var i = 0; i < bidSources.length; i++) {
+  let rndWeight = s2sTesting.globalRand * totWeight;
+  for (let i = 0; i < bidSources.length; i++) {
     let source = bidSources[i];
     // choose the first source with an incremental weight > random weight
     if (rndWeight < srcIncWeight[source]) return source;

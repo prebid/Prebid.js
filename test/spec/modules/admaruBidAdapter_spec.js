@@ -114,7 +114,7 @@ describe('Admaru Adapter', function () {
     ];
 
     it('handles nobid responses', () => {
-      var request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests);
       let response = '';
 
       let result = spec.interpretResponse(response, request[0]);

@@ -86,7 +86,7 @@ pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 pbjsInstance.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
-  var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
+  let adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
     .reduce(flatten)
     .filter(uniques);
 
@@ -372,7 +372,7 @@ pbjsInstance.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 
   // call to retrieve bids array
   if (adunitCode) {
-    var res = pbjsInstance.getAdserverTargetingForAdUnitCode(adunitCode);
+    let res = pbjsInstance.getAdserverTargetingForAdUnitCode(adunitCode);
     return transformAdServerTargetingObj(res);
   } else {
     logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
@@ -718,7 +718,7 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
   fn.call(this, reqBidsConfigObj);
 
   function runAll(queue) {
-    var queued;
+    let queued;
     while ((queued = queue.shift())) {
       queued();
     }

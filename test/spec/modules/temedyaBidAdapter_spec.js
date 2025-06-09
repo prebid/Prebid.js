@@ -5,10 +5,10 @@ import * as utils from 'src/utils.js';
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
 
 export const _getUrlVars = function(url) {
-  var hash;
-  var myJson = {};
-  var hashes = url.slice(url.indexOf('?') + 1).split('&');
-  for (var i = 0; i < hashes.length; i++) {
+  let hash;
+  let myJson = {};
+  let hashes = url.slice(url.indexOf('?') + 1).split('&');
+  for (let i = 0; i < hashes.length; i++) {
     hash = hashes[i].split('=');
     myJson[hash[0]] = hash[1];
   }

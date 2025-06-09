@@ -120,7 +120,7 @@ const defaultPreAuction = (adUnit, adServerAdSlot, adUnitPath) => {
   }
 
   // find all GPT slots with this name
-  var gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adUnitPath);
+  let gptSlots = window.googletag.pubads().getSlots().filter(slot => slot.getAdUnitPath() === adUnitPath);
 
   if (gptSlots.length === 0) {
     return; // should never happen

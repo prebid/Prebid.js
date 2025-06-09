@@ -65,7 +65,7 @@ function detectDevice() {
 }
 
 function detectOsAndBrowser() {
-  var module = {
+  let module = {
     options: [],
     header: [navigator.platform, navigator.userAgent, navigator.appVersion, navigator.vendor, window.opera],
     dataos: [
@@ -198,9 +198,9 @@ function detectOsAndBrowser() {
       }
     ],
     init: function () {
-      var agent = this.header.join(' ');
-      var os = this.matchItem(agent, this.dataos);
-      var browser = this.matchItem(agent, this.databrowser);
+      let agent = this.header.join(' ');
+      let os = this.matchItem(agent, this.dataos);
+      let browser = this.matchItem(agent, this.databrowser);
 
       return {
         os: os,
@@ -232,9 +232,9 @@ function detectOsAndBrowser() {
     },
 
     matchItem: function (string, data) {
-      var i = 0;
-      var j = 0;
-      var regex, regexv, match, matches, version;
+      let i = 0;
+      let j = 0;
+      let regex, regexv, match, matches, version;
 
       for (i = 0; i < data.length; i += 1) {
         regex = new RegExp(data[i].value, 'i');
@@ -273,9 +273,9 @@ function detectOsAndBrowser() {
     }
   };
 
-  var e = module.init();
+  let e = module.init();
 
-  var result = {};
+  let result = {};
   result.os = e.os.name + ' ' + e.os.version;
   result.browser = e.browser.name + ' ' + e.browser.version;
   return result;

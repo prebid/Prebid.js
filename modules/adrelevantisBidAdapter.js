@@ -249,7 +249,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * @param {string} elementId element id
  */
 function hidedfpContainer(elementId) {
-  var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
+  let el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
   if (el[0]) {
     el[0].style.setProperty('display', 'none');
   }

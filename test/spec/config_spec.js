@@ -133,7 +133,7 @@ describe('config API', function () {
   it('sets multiple config properties', function () {
     setConfig({ foo: 'bar' });
     setConfig({ biz: 'buz' });
-    var config = getConfig();
+    let config = getConfig();
     expect(config.foo).to.equal('bar');
     expect(config.biz).to.equal('buz');
   });

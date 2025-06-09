@@ -183,7 +183,7 @@ const onAdRenderFailed = (args) => {
   sendEvent(SERVER_EVENTS.AD_RENDER_FAILED, data)
 }
 
-var ooloAdapter = Object.assign(
+let ooloAdapter = Object.assign(
   adapter({ analyticsType }), {
     track({ eventType, args }) {
       // wait for server configuration before processing the events
@@ -478,9 +478,9 @@ function getTopWindowReferrer() {
 }
 
 function generatePageViewId(min = 10000, max = 90000) {
-  var randomNumber = Math.floor((Math.random() * max) + min)
-  var currentdate = new Date()
-  var currentTime = {
+  let randomNumber = Math.floor((Math.random() * max) + min)
+  let currentdate = new Date()
+  let currentTime = {
     getDate: currentdate.getDate(),
     getMonth: currentdate.getMonth(),
     getFullYear: currentdate.getFullYear(),

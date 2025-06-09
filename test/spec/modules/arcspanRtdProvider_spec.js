@@ -55,7 +55,7 @@ describe('arcspanRtdProvider', function () {
         },
       });
 
-      var reqBidsConfigObj = {};
+      let reqBidsConfigObj = {};
       reqBidsConfigObj.ortb2Fragments = {};
       reqBidsConfigObj.ortb2Fragments.global = {};
       arcspanSubmodule.getBidRequestData(reqBidsConfigObj, function () {
@@ -101,7 +101,7 @@ describe('arcspanRtdProvider', function () {
         newcodes: { text: ['483', '533'] },
       });
 
-      var reqBidsConfigObj = {};
+      let reqBidsConfigObj = {};
       reqBidsConfigObj.ortb2Fragments = {};
       reqBidsConfigObj.ortb2Fragments.global = {};
       arcspanSubmodule.getBidRequestData(reqBidsConfigObj, function () {

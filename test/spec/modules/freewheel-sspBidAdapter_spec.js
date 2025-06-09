@@ -491,7 +491,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     let formattedAd = '<div id="freewheelssp_prebid_target"></div><script type=\'text/javascript\'>(function() {  var st = document.createElement(\'script\'); st.type = \'text/javascript\'; st.async = true;  st.src = \'http://cdn.stickyadstv.com/prime-time/floorad.min.js\';  st.onload = function(){    var vastLoader = new window.com.stickyadstv.vast.VastLoader();    var vast = vastLoader.getVast();    var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();    vast.setXmlString(topWindow.freeheelssp_cache["adunit-code"]);    vastLoader.parseAds(vast, {      onSuccess: function() {var config = {  preloadedVast:vast,  ASLoader:new window.com.stickyadstv.tools.ASLoader(277225, \'floorad\'),domId:"adunit-code"};window.com.stickyadstv.floorad.start(config); }    });  };  document.head.appendChild(st);})();</script>';
 
     it('should get correct bid response', () => {
-      var request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests);
 
       let expectedResponse = [
         {
@@ -518,7 +518,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should get correct bid response with formated ad', () => {
-      var request = spec.buildRequests(formattedBidRequests);
+      let request = spec.buildRequests(formattedBidRequests);
 
       let expectedResponse = [
         {
@@ -545,7 +545,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('handles nobid responses', () => {
-      var request = spec.buildRequests(formattedBidRequests);
+      let request = spec.buildRequests(formattedBidRequests);
       let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'></VAST>';
 
       let result = spec.interpretResponse(response, request[0]);
@@ -661,7 +661,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     let formattedAd = '<div id="freewheelssp_prebid_target"></div><script type=\'text/javascript\'>(function() {  var st = document.createElement(\'script\'); st.type = \'text/javascript\'; st.async = true;  st.src = \'http://cdn.stickyadstv.com/prime-time/floorad.min.js\';  st.onload = function(){    var vastLoader = new window.com.stickyadstv.vast.VastLoader();    var vast = vastLoader.getVast();    var topWindow = (function(){var res=window; try{while(top != res){if(res.parent.location.href.length)res=res.parent;}}catch(e){}return res;})();    vast.setXmlString(topWindow.freeheelssp_cache["adunit-code"]);    vastLoader.parseAds(vast, {      onSuccess: function() {var config = {  preloadedVast:vast,  ASLoader:new window.com.stickyadstv.tools.ASLoader(277225, \'floorad\'),domId:"adunit-code"};window.com.stickyadstv.floorad.start(config); }    });  };  document.head.appendChild(st);})();</script>';
 
     it('should get correct bid response', () => {
-      var request = spec.buildRequests(bidRequests);
+      let request = spec.buildRequests(bidRequests);
 
       let expectedResponse = [
         {
@@ -693,7 +693,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should get correct bid response with formated ad', () => {
-      var request = spec.buildRequests(formattedBidRequests);
+      let request = spec.buildRequests(formattedBidRequests);
 
       let expectedResponse = [
         {
@@ -722,7 +722,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('handles nobid responses', () => {
-      var request = spec.buildRequests(formattedBidRequests);
+      let request = spec.buildRequests(formattedBidRequests);
       let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'></VAST>';
 
       let result = spec.interpretResponse(response, request[0]);

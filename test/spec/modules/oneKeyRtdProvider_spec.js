@@ -35,7 +35,7 @@ const defaultRtdConfig = {
 };
 
 describe('oneKeyDataSubmodule', () => {
-  var bidsConfig;
+  let bidsConfig;
   beforeEach(() => {
     // Fresh bidsConfig because it can be altered
     // during the tests.

@@ -129,7 +129,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
   function _enable(config) {
     provider = config?.provider;
-    var _this = this;
+    let _this = this;
 
     if (typeof config === 'object' && typeof config.options === 'object') {
       sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);

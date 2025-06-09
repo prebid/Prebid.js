@@ -51,7 +51,7 @@ describe('Hadron analytics adapter', () => {
     events.emit(EVENTS.AUCTION_END, auction);
     assert(server.requests.length > 0)
     const body = JSON.parse(server.requests[0].requestBody);
-    var eventTypes = [];
+    let eventTypes = [];
     body.events.forEach(e => eventTypes.push(e.eventType));
     assert(eventTypes.length > 0)
     assert(eventTypes.indexOf(EVENTS.AUCTION_END) > -1);

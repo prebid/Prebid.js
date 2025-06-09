@@ -22,7 +22,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     let sizesCheck = !!bid.sizes
     let paramSizesCheck = !!bid.params.sizes
-    var sizeConfirmed = false
+    let sizeConfirmed = false
     if (sizesCheck) {
       if (bid.sizes.length < 1) {
         return false

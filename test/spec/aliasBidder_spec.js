@@ -1,15 +1,15 @@
 import { pbjsTestOnly } from 'test/helpers/pbjs-test-only.js';
 
 describe('Publisher API _ Alias Bidder', function () {
-  var assert = require('chai').assert;
-  var expect = require('chai').expect;
-  var should = require('chai').should();
-  var prebid = require('../../src/prebid');
+  let assert = require('chai').assert;
+  let expect = require('chai').expect;
+  let should = require('chai').should();
+  let prebid = require('../../src/prebid');
 
   before(function () {
-    var topSlotCode = '/19968336/header-bid-tag1';
-    var topSlotSizes = [[728, 90], [970, 90]];
-    var adUnit = {
+    let topSlotCode = '/19968336/header-bid-tag1';
+    let topSlotSizes = [[728, 90], [970, 90]];
+    let adUnit = {
       code: topSlotCode,
       sizes: topSlotSizes,
       bids: [

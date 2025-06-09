@@ -35,14 +35,14 @@ describe('The smartx adapter', function () {
   };
 
   describe('isBidRequestValid', function () {
-    var bid;
+    let bid;
 
     beforeEach(function () {
       bid = getValidBidObject();
     });
 
     it('should fail validation if the bid isn\'t defined or not an object', function () {
-      var result = spec.isBidRequestValid();
+      let result = spec.isBidRequestValid();
 
       expect(result).to.equal(false);
 
@@ -138,7 +138,7 @@ describe('The smartx adapter', function () {
   });
 
   describe('buildRequests', function () {
-    var bid,
+    let bid,
       bidRequestObj;
 
     beforeEach(function () {
@@ -151,7 +151,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should build a very basic request', function () {
-      var request = spec.buildRequests([bid], bidRequestObj)[0];
+      let request = spec.buildRequests([bid], bidRequestObj)[0];
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://bid.sxp.smartclip.net/bid/1000');
       expect(request.bidRequest).to.equal(bidRequestObj);
@@ -201,7 +201,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should change request parameters based on options sent', function () {
-      var request = spec.buildRequests([bid], bidRequestObj)[0];
+      let request = spec.buildRequests([bid], bidRequestObj)[0];
 
       expect(request.data.imp[0].video.ext).to.deep.equal({
         sdk_name: 'Prebid 1+'
@@ -258,7 +258,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should pass GDPR params', function () {
-      var request;
+      let request;
 
       bidRequestObj.gdprConsent = {
         gdprApplies: true,
@@ -273,7 +273,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should pass emq params', function () {
-      var request;
+      let request;
 
       bid.params.user = {
         data: [{
@@ -299,7 +299,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should pass crumbs params', function () {
-      var request;
+      let request;
 
       bid.crumbs = {
         pubcid: 'pubcid_1'
@@ -313,7 +313,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should pass linearity params', function () {
-      var request;
+      let request;
 
       bid.params.linearity = 3
 
@@ -323,7 +323,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should pass min and max duration params', function () {
-      var request;
+      let request;
 
       bid.params.minduration = 3
       bid.params.maxduration = 15
@@ -335,7 +335,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should pass schain param', function () {
-      var request;
+      let request;
 
       bid.schain = {
         complete: 1,
@@ -367,7 +367,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should pass sitekey param', function () {
-      var request;
+      let request;
 
       bid.params.sitekey = 'foo'
 
@@ -378,7 +378,7 @@ describe('The smartx adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    var serverResponse, bidderRequestObj;
+    let serverResponse, bidderRequestObj;
 
     beforeEach(function () {
       bidderRequestObj = {
@@ -458,7 +458,7 @@ describe('The smartx adapter', function () {
     });
 
     it('should return an array of bid responses', function () {
-      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+      let responses = spec.interpretResponse(serverResponse, bidderRequestObj);
       expect(responses).to.be.an('array').with.length(2);
       expect(bidderRequestObj).to.be.an('Object');
       expect(bidderRequestObj.bidRequest.bids).to.be.an('array').with.length(2);
@@ -486,7 +486,7 @@ describe('The smartx adapter', function () {
   });
 
   describe('oustreamRender', function () {
-    var serverResponse, bidderRequestObj;
+    let serverResponse, bidderRequestObj;
 
     beforeEach(function () {
       bidderRequestObj = {
@@ -537,13 +537,13 @@ describe('The smartx adapter', function () {
     });
 
     it('should attempt to insert the script without outstream config options set', function () {
-      var scriptTag;
+      let scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
         appendChild: sinon.stub().callsFake(function (script) {
           scriptTag = script
         })
       });
-      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+      let responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
       responses[0].renderer.render(responses[0]);
 
@@ -553,13 +553,13 @@ describe('The smartx adapter', function () {
     });
 
     it('should attempt to insert the script with outstream config options set', function () {
-      var scriptTag;
+      let scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
         appendChild: sinon.stub().callsFake(function (script) {
           scriptTag = script
         })
       });
-      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+      let responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
       bidderRequestObj.bidRequest.bids[0].params.outstream_options.startOpen = 'true';
       bidderRequestObj.bidRequest.bids[0].params.outstream_options.endingScreen = 'true';
@@ -581,13 +581,13 @@ describe('The smartx adapter', function () {
     });
 
     it('should attempt to insert the script without defined slot', function () {
-      var scriptTag;
+      let scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
         appendChild: sinon.stub().callsFake(function (script) {
           scriptTag = script
         })
       });
-      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+      let responses = spec.interpretResponse(serverResponse, bidderRequestObj);
 
       delete bidderRequestObj.bidRequest.bids[0].params.outstream_options.slot;
 
@@ -600,7 +600,7 @@ describe('The smartx adapter', function () {
   });
 
   describe('price floor module', function () {
-    var bid,
+    let bid,
       bidRequestObj;
 
     beforeEach(function () {

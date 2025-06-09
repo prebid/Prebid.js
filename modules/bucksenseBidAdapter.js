@@ -44,17 +44,17 @@ export const spec = {
     let requests = [];
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
-      var bid = validBidRequests[i];
-      var params = {};
-      for (var key in bid.params) {
+      let bid = validBidRequests[i];
+      let params = {};
+      for (let key in bid.params) {
         if (bid.params.hasOwnProperty(key)) {
           params[key] = encodeURI(bid.params[key]);
         }
       }
       delete bid.params;
-      var sizes = bid.sizes;
+      let sizes = bid.sizes;
       delete bid.sizes;
-      var sendData = {
+      let sendData = {
         'pub_id': location.host,
         'pl_id': '' + params.placementId,
         'secure': (location.protocol === 'https:') ? 1 : 0,
@@ -85,18 +85,18 @@ export const spec = {
 
     const bidResponses = [];
     if (serverResponse.body) {
-      var oResponse = serverResponse.body;
+      let oResponse = serverResponse.body;
 
-      var sRequestID = oResponse.requestId || '';
-      var nCPM = oResponse.cpm || 0;
-      var nWidth = oResponse.width || 0;
-      var nHeight = oResponse.height || 0;
-      var nTTL = oResponse.ttl || 0;
-      var sCreativeID = oResponse.creativeId || 0;
-      var sCurrency = oResponse.currency || 'USD';
-      var bNetRevenue = oResponse.netRevenue || true;
-      var sAd = oResponse.ad || '';
-      var sAdomains = oResponse.adomains || [];
+      let sRequestID = oResponse.requestId || '';
+      let nCPM = oResponse.cpm || 0;
+      let nWidth = oResponse.width || 0;
+      let nHeight = oResponse.height || 0;
+      let nTTL = oResponse.ttl || 0;
+      let sCreativeID = oResponse.creativeId || 0;
+      let sCurrency = oResponse.currency || 'USD';
+      let bNetRevenue = oResponse.netRevenue || true;
+      let sAd = oResponse.ad || '';
+      let sAdomains = oResponse.adomains || [];
 
       if (request && sRequestID.length == 0) {
         logInfo(WHO + ' interpretResponse() - use RequestID from Placments');

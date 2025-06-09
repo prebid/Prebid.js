@@ -103,7 +103,7 @@ function createDispatcher(timeoutDuration) {
   return function (auctionInstance, bidListArr, afterBidAdded, killQueue) {
     const context = this;
 
-    var callbackFn = function () {
+    let callbackFn = function () {
       firePrebidCacheCall.call(context, auctionInstance, bidListArr, afterBidAdded);
     };
 

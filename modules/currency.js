@@ -274,8 +274,8 @@ function processBidResponseQueue() {
 }
 
 function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
-  var conversionRate = null;
-  var rates;
+  let conversionRate = null;
+  let rates;
   let cacheKey = `${fromCurrency}->${toCurrency}`;
   if (cacheKey in conversionCache) {
     conversionRate = conversionCache[cacheKey];
@@ -309,19 +309,19 @@ function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
       logInfo('getCurrencyConversion using reciprocal ' + fromCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
     } else {
       // first defined currency base used as intermediary
-      var anyBaseCurrency = Object.keys(currencyRates.conversions)[0];
+      let anyBaseCurrency = Object.keys(currencyRates.conversions)[0];
 
       if (!(fromCurrency in currencyRates.conversions[anyBaseCurrency])) {
         // bid should fail, currency is not supported
         throw new Error('Specified fromCurrency \'' + fromCurrency + '\' not found in the currency rates file');
       }
-      var toIntermediateConversionRate = 1 / currencyRates.conversions[anyBaseCurrency][fromCurrency];
+      let toIntermediateConversionRate = 1 / currencyRates.conversions[anyBaseCurrency][fromCurrency];
 
       if (!(toCurrency in currencyRates.conversions[anyBaseCurrency])) {
         // bid should fail, currency is not supported
         throw new Error('Specified adServerCurrency in config \'' + toCurrency + '\' not found in the currency rates file');
       }
-      var fromIntermediateConversionRate = currencyRates.conversions[anyBaseCurrency][toCurrency];
+      let fromIntermediateConversionRate = currencyRates.conversions[anyBaseCurrency][toCurrency];
 
       conversionRate = roundFloat(toIntermediateConversionRate * fromIntermediateConversionRate, CURRENCY_RATE_PRECISION);
       logInfo('getCurrencyConversion using intermediate ' + fromCurrency + ' thru ' + anyBaseCurrency + ' to ' + toCurrency + ' conversionRate ' + conversionRate);
@@ -335,7 +335,7 @@ function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
 }
 
 function roundFloat(num, dec) {
-  var d = 1;
+  let d = 1;
   for (let i = 0; i < dec; i++) {
     d += '0';
   }

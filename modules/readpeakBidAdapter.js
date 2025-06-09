@@ -242,7 +242,7 @@ function dataAsset(id, params, type, defaultLen) {
 }
 
 function bannerImpression(slot) {
-  var sizes = slot.mediaTypes.banner.sizes || slot.sizes;
+  let sizes = slot.mediaTypes.banner.sizes || slot.sizes;
   return {
     format: sizes.map((s) => ({ w: s[0], h: s[1] })),
     w: sizes[0][0],

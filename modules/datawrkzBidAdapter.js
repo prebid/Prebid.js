@@ -75,7 +75,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, request) {
-    var bidResponses = [];
+    let bidResponses = [];
     let bidRequest = request.bidRequest
     let bidResponse = serverResponse.body;
 
@@ -115,7 +115,7 @@ function buildBannerRequest(bidRequest, bidderRequest) {
     }
   }
 
-  var deals = [];
+  let deals = [];
   if (bidRequest.params.deals && bidRequest.params.deals.length > 0) {
     deals = bidRequest.params.deals;
   }
@@ -181,7 +181,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
     request: request
   };
 
-  var deals = [];
+  let deals = [];
   if (bidRequest.params.deals && bidRequest.params.deals.length > 0) {
     deals = bidRequest.params.deals;
   }
@@ -235,8 +235,8 @@ function buildVideoRequest(bidRequest, bidderRequest) {
   let context = deepAccess(bidRequest, 'mediaTypes.video.context');
   if (context == 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES;
 
-  var imp = [];
-  var deals = [];
+  let imp = [];
+  let deals = [];
   if (bidRequest.params.deals && bidRequest.params.deals.length > 0) {
     deals = bidRequest.params.deals;
   }
@@ -265,8 +265,8 @@ function buildVideoRequest(bidRequest, bidderRequest) {
 
 /* Convert video player size to bid request compatible format */
 function getVideoAdUnitSize(bidRequest) {
-  var adH = 0;
-  var adW = 0;
+  let adH = 0;
+  let adW = 0;
   let playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   if (isArray(playerSize)) {
     if (playerSize.length === 2 && typeof playerSize[0] === 'number' && typeof playerSize[1] === 'number') {
@@ -340,7 +340,7 @@ function generateNativeImgObj(obj, type, id) {
   let adH = 0;
   let bidSizes = obj.sizes;
 
-  var typeId;
+  let typeId;
   if (type == 'icon') typeId = 1;
   else if (type == 'image') typeId = 3;
 
@@ -382,7 +382,7 @@ function generateNativeTitleObj(obj, id) {
 
 /* Generate data asset object */
 function generateNativeDataObj(obj, type, id) {
-  var typeId;
+  let typeId;
   switch (type) {
     case 'sponsored': typeId = 1;
       break;
@@ -528,13 +528,13 @@ function buildVideoResponse(bidRequest, response) {
       bidResponse.ttl = 300;
       bidResponse.netRevenue = true;
       bidResponse.currency = 'USD';
-      var ext = bidderBid.ext;
-      var vastUrl = '';
+      let ext = bidderBid.ext;
+      let vastUrl = '';
       if (ext) {
         vastUrl = ext.vast_url;
       }
-      var adUnitCode = bidRequest.adUnitCode;
-      var sizeObj = getVideoAdUnitSize(bidRequest);
+      let adUnitCode = bidRequest.adUnitCode;
+      let sizeObj = getVideoAdUnitSize(bidRequest);
 
       bidResponse.height = sizeObj.adH;
       bidResponse.width = sizeObj.adW;
@@ -584,10 +584,10 @@ function outstreamRender(bid) {
 
 /* Set targeting params used for instream video that is required to generate cache url  */
 function setTargeting(query) {
-  var targeting = {};
-  var hash;
-  var hashes = query.slice(query.indexOf('?') + 1).split('&');
-  for (var i = 0; i < hashes.length; i++) {
+  let targeting = {};
+  let hash;
+  let hashes = query.slice(query.indexOf('?') + 1).split('&');
+  for (let i = 0; i < hashes.length; i++) {
     hash = hashes[i].split('=');
     targeting['hb_' + hash[0]] = hash[1];
   }
@@ -596,7 +596,7 @@ function setTargeting(query) {
 
 /* Get image type with respect to the id */
 function getAssetImageType(id, assets) {
-  for (var i = 0; i < assets.length; i++) {
+  for (let i = 0; i < assets.length; i++) {
     if (assets[i].id == id) {
       if (assets[i].img.type == 1) { return 'icon'; } else if (assets[i].img.type == 3) { return 'image'; }
     }
@@ -606,7 +606,7 @@ function getAssetImageType(id, assets) {
 
 /* Get type of data asset with respect to the id */
 function getAssetDataType(id, assets) {
-  for (var i = 0; i < assets.length; i++) {
+  for (let i = 0; i < assets.length; i++) {
     if (assets[i].id == id) {
       if (assets[i].data.type == 1) { return 'sponsored'; } else if (assets[i].data.type == 2) { return 'desc'; } else if (assets[i].data.type == 12) { return 'cta'; }
     }

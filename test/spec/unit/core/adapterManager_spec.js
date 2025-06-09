@@ -32,7 +32,7 @@ import {
   TRACKER_METHOD_IMG,
   TRACKER_METHOD_JS
 } from '../../../../src/eventTrackers.js';
-var events = require('../../../../src/events');
+let events = require('../../../../src/events');
 
 const CONFIG = {
   enabled: true,
@@ -54,30 +54,30 @@ const CONFIG2 = {
   accountId: 'def'
 }
 
-var prebidServerAdapterMock = {
+let prebidServerAdapterMock = {
   bidder: 'prebidServer',
   callBids: sinon.stub()
 };
-var adequantAdapterMock = {
+let adequantAdapterMock = {
   bidder: 'adequant',
   callBids: sinon.stub()
 };
-var appnexusAdapterMock = {
+let appnexusAdapterMock = {
   bidder: 'appnexus',
   callBids: sinon.stub()
 };
 
-var rubiconAdapterMock = {
+let rubiconAdapterMock = {
   bidder: 'rubicon',
   callBids: sinon.stub()
 };
 
-var pubmaticAdapterMock = {
+let pubmaticAdapterMock = {
   bidder: 'rubicon',
   callBids: sinon.stub()
 };
 
-var badAdapterMock = {
+let badAdapterMock = {
   bidder: 'badBidder',
   callBids: sinon.stub().throws(Error('some fake error'))
 };
@@ -332,8 +332,8 @@ describe('adapterManager tests', function () {
   });
 
   describe('callTimedOutBidders', function () {
-    var criteoSpec = { onTimeout: sinon.stub() }
-    var criteoAdapter = {
+    let criteoSpec = { onTimeout: sinon.stub() }
+    let criteoAdapter = {
       bidder: 'criteo',
       getSpec: function() { return criteoSpec; }
     }
@@ -1267,7 +1267,7 @@ describe('adapterManager tests', function () {
 
     it('does not call server adapter for bidders that go to client', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
-      var adUnits = getTestAdUnits();
+      let adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
       adUnits[0].bids[1].finalSource = s2sTesting.CLIENT;
       adUnits[1].bids[0].finalSource = s2sTesting.CLIENT;
@@ -1286,7 +1286,7 @@ describe('adapterManager tests', function () {
 
     it('does not call client adapters for bidders that go to server', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
-      var adUnits = getTestAdUnits();
+      let adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.SERVER;
       adUnits[0].bids[1].finalSource = s2sTesting.SERVER;
       adUnits[1].bids[0].finalSource = s2sTesting.SERVER;
@@ -1305,7 +1305,7 @@ describe('adapterManager tests', function () {
 
     it('calls client and server adapters for bidders that go to both', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
-      var adUnits = getTestAdUnits();
+      let adUnits = getTestAdUnits();
       // adUnits[0].bids[0].finalSource = s2sTesting.BOTH;
       // adUnits[0].bids[1].finalSource = s2sTesting.BOTH;
       // adUnits[1].bids[0].finalSource = s2sTesting.BOTH;
@@ -1324,7 +1324,7 @@ describe('adapterManager tests', function () {
 
     it('makes mixed client/server adapter calls for mixed bidder sources', function () {
       stubGetSourceBidderMap.returns({[s2sTesting.CLIENT]: ['appnexus', 'adequant'], [s2sTesting.SERVER]: []});
-      var adUnits = getTestAdUnits();
+      let adUnits = getTestAdUnits();
       adUnits[0].bids[0].finalSource = s2sTesting.CLIENT;
       adUnits[0].bids[1].finalSource = s2sTesting.CLIENT;
       adUnits[1].bids[0].finalSource = s2sTesting.SERVER;

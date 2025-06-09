@@ -374,7 +374,7 @@ function createEndpoint(customEndpoint, domainId, placementIds) {
   }
 
   if (placementIds.length > 0) {
-    for (var i = 0; i < placementIds.length; i++) {
+    for (let i = 0; i < placementIds.length; i++) {
       const id = extractFromPlacement(placementIds[i]);
       if (id != null) {
         return extractEndpointFromId(id);
@@ -396,9 +396,9 @@ function extractEndpointFromId(domainId) {
 function extractFromPlacement(placementId) {
   if (placementId == null) { return null; }
 
-  var pattern = /_ivbs([0-9]+)/g;
+  let pattern = /_ivbs([0-9]+)/g;
 
-  var match = pattern.exec(placementId);
+  let match = pattern.exec(placementId);
   if (match != null && match[1] != null) {
     return parseInt(match[1]);
   }
@@ -407,7 +407,7 @@ function extractFromPlacement(placementId) {
 }
 
 function addMeta(bidModelMeta) {
-  var meta = {};
+  let meta = {};
   if (bidModelMeta != null) {
     for (let i = 0; i < CONSTANTS.META_TAXONOMY.length; i++) {
       if (bidModelMeta.hasOwnProperty(CONSTANTS.META_TAXONOMY[i])) {
@@ -644,7 +644,7 @@ function readGdprConsent(gdprConsent, usConsent) {
 }
 
 function setAllPurposesAndLegitimateInterests(value) {
-  var index;
+  let index;
   for (index = 0; index < invibes.purposes.length; ++index) {
     invibes.purposes[index] = value;
   }

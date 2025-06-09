@@ -60,7 +60,7 @@ export const spec = {
     return responses;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var user = validBidRequests.map(bid => buildUser(bid));
+    let user = validBidRequests.map(bid => buildUser(bid));
     clean(user);
     const openRtbBidRequest = {
       id: generateUUID(),

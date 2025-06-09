@@ -69,7 +69,7 @@ export const ftrackIdSubmodule = {
     // -- if string, assign value as is.
     // -- if array, convert to string then assign value.
     // -- If neither type, assign value as empty string
-    for (var key in value) {
+    for (let key in value) {
       let keyValue = value[key];
       if (Array.isArray(keyValue)) {
         keyValue = keyValue.join('|');

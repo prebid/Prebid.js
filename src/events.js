@@ -49,7 +49,7 @@ const _public = (function () {
     let idPath = idPaths[eventString];
     let key = eventPayload[idPath];
     let event = _handlers[eventString] || { que: [] };
-    var eventKeys = Object.keys(event);
+    let eventKeys = Object.keys(event);
 
     let callbacks = [];
 

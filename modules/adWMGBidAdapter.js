@@ -231,8 +231,8 @@ export const spec = {
         }
         ],
         init: function () {
-          var agent = this.header.join(' ');
-          var os = this.matchItem(agent, this.dataos);
+          let agent = this.header.join(' ');
+          let os = this.matchItem(agent, this.dataos);
           return {
             os
           };
@@ -262,9 +262,9 @@ export const spec = {
         },
 
         matchItem: function (string, data) {
-          var i = 0;
-          var j = 0;
-          var regex, regexv, match, matches, version;
+          let i = 0;
+          let j = 0;
+          let regex, regexv, match, matches, version;
 
           for (i = 0; i < data.length; i += 1) {
             regex = new RegExp(data[i].value, 'i');
@@ -303,7 +303,7 @@ export const spec = {
         }
       };
 
-      var e = module.init();
+      let e = module.init();
 
       return {
         os: e.os.name || '',

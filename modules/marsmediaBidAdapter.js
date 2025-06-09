@@ -28,18 +28,18 @@ function MarsmediaAdapter() {
   };
 
   function frameImp(BRs, bidderRequest) {
-    var impList = [];
-    var isSecure = 0;
+    let impList = [];
+    let isSecure = 0;
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
       // clever trick to get the protocol
       // TODO: this should probably use parseUrl
-      var el = document.createElement('a');
+      let el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
       isSecure = (el.protocol == 'https:') ? 1 : 0;
     }
-    for (var i = 0; i < BRs.length; i++) {
+    for (let i = 0; i < BRs.length; i++) {
       slotsToBids[BRs[i].adUnitCode] = BRs[i];
-      var impObj = {};
+      let impObj = {};
       impObj.id = BRs[i].adUnitCode;
       impObj.secure = isSecure;
 
@@ -63,13 +63,13 @@ function MarsmediaAdapter() {
   }
 
   function frameSite(bidderRequest) {
-    var site = {
+    let site = {
       domain: '',
       page: '',
       ref: ''
     }
     if (bidderRequest && bidderRequest.refererInfo) {
-      var ri = bidderRequest.refererInfo;
+      let ri = bidderRequest.refererInfo;
       // TODO: is 'ref' the right value here?
       site.ref = ri.ref;
 
@@ -79,7 +79,7 @@ function MarsmediaAdapter() {
         // clever trick to get the domain
         // TODO: does this logic make sense? why should domain be set to the lowermost frame's?
         // TODO: this should probably use parseUrl
-        var el = document.createElement('a');
+        let el = document.createElement('a');
         el.href = ri.stack[0];
         site.domain = el.hostname;
       }
@@ -107,15 +107,15 @@ function MarsmediaAdapter() {
 
   function frameBanner(adUnit) {
     // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
-    var sizeList = adUnit.sizes;
+    let sizeList = adUnit.sizes;
     if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
       sizeList = adUnit.mediaTypes.banner.sizes;
     }
-    var sizeStringList = parseSizesInput(sizeList);
-    var format = [];
+    let sizeStringList = parseSizesInput(sizeList);
+    let format = [];
     sizeStringList.forEach(function(size) {
       if (size) {
-        var dimensionList = getValidSizeSet(size.split('x'));
+        let dimensionList = getValidSizeSet(size.split('x'));
         if (dimensionList) {
           format.push({
             'w': dimensionList[0],
@@ -134,13 +134,13 @@ function MarsmediaAdapter() {
   }
 
   function frameVideo(bid) {
-    var size = [];
+    let size = [];
     if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
-      var dimensionSet = bid.mediaTypes.video.playerSize;
+      let dimensionSet = bid.mediaTypes.video.playerSize;
       if (isArray(bid.mediaTypes.video.playerSize[0])) {
         dimensionSet = bid.mediaTypes.video.playerSize[0];
       }
-      var validSize = getValidSizeSet(dimensionSet)
+      let validSize = getValidSizeSet(dimensionSet)
       if (validSize) {
         size = validSize;
       }
@@ -234,13 +234,13 @@ function MarsmediaAdapter() {
       return [];
     }
 
-    var uri = 'https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
+    let uri = 'https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=' + fallbackZoneId;
 
-    var fat = /(^v|(\.0)+$)/gi;
-    var prebidVersion = '$prebid.version$';
+    let fat = /(^v|(\.0)+$)/gi;
+    let prebidVersion = '$prebid.version$';
     uri += '&hbv=' + prebidVersion.replace(fat, '') + ',' + version.replace(fat, '');
 
-    var bidRequest = frameBid(BRs, bidderRequest);
+    let bidRequest = frameBid(BRs, bidderRequest);
     if (!bidRequest.imp.length) {
       return {};
     }

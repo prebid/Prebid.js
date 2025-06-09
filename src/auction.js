@@ -646,9 +646,9 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   const mediaTypes = index.getMediaTypes(bid);
   const bidMediaType = mediaTypes && mediaTypes[bidObjectMediaType];
 
-  var mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
+  let mediaTypeRenderer = bidMediaType && bidMediaType.renderer;
 
-  var renderer = null;
+  let renderer = null;
 
   // the renderer for the mediaType takes precendence
   if (mediaTypeRenderer && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
@@ -863,7 +863,7 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
     return {};
   }
   const bidRequest = index.getBidRequest(custBidObj);
-  var keyValues = {};
+  let keyValues = {};
 
   // 1) set the keys from "standard" setting or from prebid defaults
   // initialize default if not set
@@ -885,12 +885,12 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
 }
 
 function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
-  var targeting = bidderSettings[JSON_MAPPING.ADSERVER_TARGETING];
+  let targeting = bidderSettings[JSON_MAPPING.ADSERVER_TARGETING];
   custBidObj.size = custBidObj.getSize();
 
   (targeting || []).forEach(function (kvPair) {
-    var key = kvPair.key;
-    var value = kvPair.val;
+    let key = kvPair.key;
+    let value = kvPair.val;
 
     if (keyValues[key]) {
       logWarn('The key: ' + key + ' is being overwritten');

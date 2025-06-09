@@ -238,18 +238,18 @@ describe('Prisma bid adapter tests', function () {
     expect(won).to.equal(true);
   });
   it('Verifies user sync without cookie in bid response', function () {
-    var syncs = spec.getUserSyncs({}, [DISPLAY_BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    let syncs = spec.getUserSyncs({}, [DISPLAY_BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with cookies in bid response', function () {
     DISPLAY_BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
-    var syncs = spec.getUserSyncs({}, [DISPLAY_BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
+    let syncs = spec.getUserSyncs({}, [DISPLAY_BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
     expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');
   });
   it('Verifies user sync with no bid response', function() {
-    var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    let syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with no bid body response', function() {

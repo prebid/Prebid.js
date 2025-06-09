@@ -604,7 +604,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should send rp_maxbids to AE if rubicon multibid config exists', function () {
-          var multibidRequest = utils.deepClone(bidderRequest);
+          let multibidRequest = utils.deepClone(bidderRequest);
           multibidRequest.bidLimit = 5;
 
           let [request] = spec.buildRequests(multibidRequest.bids, multibidRequest);
@@ -614,7 +614,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should not send p_pos to AE if not params.position specified', function () {
-          var noposRequest = utils.deepClone(bidderRequest);
+          let noposRequest = utils.deepClone(bidderRequest);
           delete noposRequest.bids[0].params.position;
 
           let [request] = spec.buildRequests(noposRequest.bids, noposRequest);
@@ -625,7 +625,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should not send p_pos to AE if not mediaTypes.banner.pos is invalid', function () {
-          var bidRequest = utils.deepClone(bidderRequest);
+          let bidRequest = utils.deepClone(bidderRequest);
           bidRequest.bids[0].mediaTypes = {
             banner: {
               pos: 5
@@ -641,7 +641,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should send p_pos to AE if mediaTypes.banner.pos is valid', function () {
-          var bidRequest = utils.deepClone(bidderRequest);
+          let bidRequest = utils.deepClone(bidderRequest);
           bidRequest.bids[0].mediaTypes = {
             banner: {
               pos: 1
@@ -657,7 +657,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should not send p_pos to AE if not params.position is invalid', function () {
-          var badposRequest = utils.deepClone(bidderRequest);
+          let badposRequest = utils.deepClone(bidderRequest);
           badposRequest.bids[0].params.position = 'bad';
 
           let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
@@ -670,7 +670,7 @@ describe('the rubicon adapter', function () {
         it('should correctly send p_pos in sra fashion', function() {
           config.setConfig({rubicon: {singleRequest: true}});
           // first one is atf
-          var sraPosRequest = utils.deepClone(bidderRequest);
+          let sraPosRequest = utils.deepClone(bidderRequest);
 
           // second is not present
           const bidCopy = utils.deepClone(sraPosRequest.bids[0]);
@@ -699,7 +699,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should correctly send cdep signal when requested', () => {
-          var badposRequest = utils.deepClone(bidderRequest);
+          let badposRequest = utils.deepClone(bidderRequest);
           badposRequest.bids[0].ortb2 = {device: {ext: {cdep: 3}}};
 
           let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
@@ -838,7 +838,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', function () {
-          var sizesBidderRequest = utils.deepClone(bidderRequest);
+          let sizesBidderRequest = utils.deepClone(bidderRequest);
           sizesBidderRequest.bids[0].params.sizes = [55, 57, 59, 801];
 
           let [request] = spec.buildRequests(sizesBidderRequest.bids, sizesBidderRequest);
@@ -849,7 +849,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should not validate bid request if no valid sizes', function () {
-          var sizesBidderRequest = utils.deepClone(bidderRequest);
+          let sizesBidderRequest = utils.deepClone(bidderRequest);
           sizesBidderRequest.bids[0].sizes = [[621, 250], [300, 251]];
 
           let result = spec.isBidRequestValid(sizesBidderRequest.bids[0]);
@@ -858,7 +858,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should not validate bid request if no account id is present', function () {
-          var noAccountBidderRequest = utils.deepClone(bidderRequest);
+          let noAccountBidderRequest = utils.deepClone(bidderRequest);
           delete noAccountBidderRequest.bids[0].params.accountId;
 
           let result = spec.isBidRequestValid(noAccountBidderRequest.bids[0]);
@@ -867,7 +867,7 @@ describe('the rubicon adapter', function () {
         });
 
         it('should allow a floor override', function () {
-          var floorBidderRequest = utils.deepClone(bidderRequest);
+          let floorBidderRequest = utils.deepClone(bidderRequest);
           floorBidderRequest.bids[0].params.floor = 2;
 
           let [request] = spec.buildRequests(floorBidderRequest.bids, floorBidderRequest);
@@ -3196,7 +3196,7 @@ describe('the rubicon adapter', function () {
               const nativeBidderRequest = addNativeToBidRequest(bidderRequest, {twin: true});
               const request = converter.toORTB({bidderRequest: nativeBidderRequest, bidRequests: nativeBidderRequest.bids});
               for (let i = 0; i < nativeBidderRequest.bids.length; i++) {
-                var adUnitCode = nativeBidderRequest.bids[i].adUnitCode;
+                let adUnitCode = nativeBidderRequest.bids[i].adUnitCode;
                 if (i === 0) {
                   expect(request.imp[i].id).to.equal(adUnitCode);
                 } else {

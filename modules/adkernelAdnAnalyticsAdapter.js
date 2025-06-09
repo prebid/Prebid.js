@@ -208,7 +208,7 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getCurrentTrafficSource(pageUrl, referrer) {
-    var source = getUTM(pageUrl);
+    let source = getUTM(pageUrl);
     if (source) {
       return source;
     }

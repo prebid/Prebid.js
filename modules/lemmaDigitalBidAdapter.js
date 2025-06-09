@@ -12,18 +12,18 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 
-var BIDDER_CODE = 'lemmadigital';
-var LOG_WARN_PREFIX = 'LEMMADIGITAL: ';
-var ENDPOINT = 'https://pbidj.lemmamedia.com/lemma/servad';
-var USER_SYNC = 'https://sync.lemmadigital.com/js/usersync.html?';
-var DEFAULT_CURRENCY = 'USD';
-var AUCTION_TYPE = 2;
-var DEFAULT_TMAX = 300;
-var DEFAULT_NET_REVENUE = false;
-var DEFAULT_SECURE = 1;
-var RESPONSE_TTL = 300;
-var pubId = 0;
-var adunitId = 0;
+let BIDDER_CODE = 'lemmadigital';
+let LOG_WARN_PREFIX = 'LEMMADIGITAL: ';
+let ENDPOINT = 'https://pbidj.lemmamedia.com/lemma/servad';
+let USER_SYNC = 'https://sync.lemmadigital.com/js/usersync.html?';
+let DEFAULT_CURRENCY = 'USD';
+let AUCTION_TYPE = 2;
+let DEFAULT_TMAX = 300;
+let DEFAULT_NET_REVENUE = false;
+let DEFAULT_SECURE = 1;
+let RESPONSE_TTL = 300;
+let pubId = 0;
+let adunitId = 0;
 
 export var spec = {
 
@@ -70,11 +70,11 @@ export var spec = {
     if (validBidRequests.length === 0) {
       return;
     }
-    var refererInfo;
+    let refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
     }
-    var conf = spec._setRefURL(refererInfo);
+    let conf = spec._setRefURL(refererInfo);
     const request = spec._createoRTBRequest(validBidRequests, conf);
     if (request && request.imp.length == 0) {
       return;
@@ -142,7 +142,7 @@ export var spec = {
    * set referal url
    */
   _setRefURL: (refererInfo) => {
-    var conf = {};
+    let conf = {};
     conf.pageURL = (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href;
     if (refererInfo && refererInfo.referer) {
       conf.refURL = refererInfo.referer;
@@ -156,7 +156,7 @@ export var spec = {
    * set other params into oRTB request
    */
   _setOtherParams: (request, ortbRequest) => {
-    var params = request && request.params ? request.params : null;
+    let params = request && request.params ? request.params : null;
     if (params) {
       ortbRequest.tmax = params.tmax;
       ortbRequest.bcat = params.bcat;
@@ -167,7 +167,7 @@ export var spec = {
    * create IAB standard OpenRTB bid request
    */
   _createoRTBRequest: (bidRequests, conf) => {
-    var oRTBObject = {};
+    let oRTBObject = {};
     try {
       oRTBObject = {
         id: spec._createUUID(),
@@ -178,9 +178,9 @@ export var spec = {
         user: {},
         ext: {}
       };
-      var bid = bidRequests[0];
+      let bid = bidRequests[0];
 
-      var site = spec._getSiteObject(bid, conf);
+      let site = spec._getSiteObject(bid, conf);
       if (site) {
         oRTBObject.site = site;
         // add the content object from config in request
@@ -188,7 +188,7 @@ export var spec = {
           oRTBObject.site.content = config.getConfig('content');
         }
       }
-      var app = spec._getAppObject(bid);
+      let app = spec._getAppObject(bid);
       if (app) {
         oRTBObject.app = app;
         if (typeof oRTBObject.app.content !== 'object' && typeof config.getConfig('content') === 'object') {
@@ -196,11 +196,11 @@ export var spec = {
             config.getConfig('content') || undefined;
         }
       }
-      var device = spec._getDeviceObject(bid);
+      let device = spec._getDeviceObject(bid);
       if (device) {
         oRTBObject.device = device;
       }
-      var source = spec._getSourceObject(bid);
+      let source = spec._getSourceObject(bid);
       if (source) {
         oRTBObject.source = source;
       }
@@ -214,8 +214,8 @@ export var spec = {
    * create impression array objects
    */
   _getImpressionArray: (request) => {
-    var impArray = [];
-    var map = request.map(bid => spec._getImpressionObject(bid));
+    let impArray = [];
+    let map = request.map(bid => spec._getImpressionObject(bid));
     if (map) {
       map.forEach(o => {
         if (o) {
@@ -230,13 +230,13 @@ export var spec = {
    * create impression (single) object
    */
   _getImpressionObject: (bid) => {
-    var impression = {};
-    var bObj;
-    var vObj;
-    var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
-    var mediaTypes = '';
-    var format = [];
-    var params = bid && bid.params ? bid.params : null;
+    let impression = {};
+    let bObj;
+    let vObj;
+    let sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
+    let mediaTypes = '';
+    let format = [];
+    let params = bid && bid.params ? bid.params : null;
     impression = {
       id: bid.bidId,
       tagid: params.adunitId ? params.adunitId.toString() : undefined,
@@ -317,16 +317,16 @@ export var spec = {
    * parse Open RTB response
    */
   _parseRTBResponse: (request, response) => {
-    var bidResponses = [];
+    let bidResponses = [];
     try {
       if (response.seatbid) {
-        var currency = response.curr || DEFAULT_CURRENCY;
-        var seatbid = response.seatbid;
+        let currency = response.curr || DEFAULT_CURRENCY;
+        let seatbid = response.seatbid;
         seatbid.forEach(seatbidder => {
-          var bidder = seatbidder.bid;
+          let bidder = seatbidder.bid;
           bidder.forEach(bid => {
-            var req = spec._parseJSON(request.data);
-            var newBid = {
+            let req = spec._parseJSON(request.data);
+            let newBid = {
               requestId: bid.impid,
               cpm: parseFloat(bid.price).toFixed(2),
               width: bid.w,
@@ -371,7 +371,7 @@ export var spec = {
    * get bid request api end point url
    */
   _endPointURL: (request) => {
-    var params = request && request[0].params ? request[0].params : null;
+    let params = request && request[0].params ? request[0].params : null;
     if (params) {
       pubId = params.pubId ? params.pubId : 0;
       adunitId = params.adunitId ? params.adunitId : 0;
@@ -384,7 +384,7 @@ export var spec = {
    * get domain name from url
    */
   _getDomain: (url) => {
-    var a = document.createElement('a');
+    let a = document.createElement('a');
     a.setAttribute('href', url);
     return a.hostname;
   },
@@ -393,11 +393,11 @@ export var spec = {
    * create the site object
    */
   _getSiteObject: (request, conf) => {
-    var params = request && request.params ? request.params : null;
+    let params = request && request.params ? request.params : null;
     if (params) {
       pubId = params.pubId ? params.pubId : '0';
-      var siteId = params.siteId ? params.siteId : '0';
-      var appParams = params.app;
+      let siteId = params.siteId ? params.siteId : '0';
+      let appParams = params.app;
       if (!appParams) {
         return {
           publisher: {
@@ -419,10 +419,10 @@ export var spec = {
    * create the app object
    */
   _getAppObject: (request) => {
-    var params = request && request.params ? request.params : null;
+    let params = request && request.params ? request.params : null;
     if (params) {
       pubId = params.pubId ? params.pubId : 0;
-      var appParams = params.app;
+      let appParams = params.app;
       if (appParams) {
         return {
           publisher: {
@@ -445,7 +445,7 @@ export var spec = {
    * create the device object
    */
   _getDeviceObject: (request) => {
-    var params = request && request.params ? request.params : null;
+    let params = request && request.params ? request.params : null;
     if (params) {
       return {
         dnt: utils.getDNT() ? 1 : 0,
@@ -478,7 +478,7 @@ export var spec = {
    * create source object
    */
   _getSourceObject: (request) => {
-    var params = request && request.params ? request.params : null;
+    let params = request && request.params ? request.params : null;
     if (params) {
       return {
         pchain: params.pchain,
@@ -504,12 +504,12 @@ export var spec = {
    * create the banner object
    */
   _getBannerRequest: (bid) => {
-    var bObj;
-    var adFormat = [];
+    let bObj;
+    let adFormat = [];
     if (utils.deepAccess(bid, 'mediaTypes.banner')) {
-      var params = bid ? bid.params : null;
-      var bannerData = params && params.banner;
-      var sizes = spec._getSizes(bid) || [];
+      let params = bid ? bid.params : null;
+      let bannerData = params && params.banner;
+      let sizes = spec._getSizes(bid) || [];
       if (sizes && sizes.length == 0) {
         sizes = bid.mediaTypes.banner.sizes[0];
       }
@@ -544,11 +544,11 @@ export var spec = {
    * create the video object
    */
   _getVideoRequest: (bid) => {
-    var vObj;
+    let vObj;
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
-      var params = bid ? bid.params : null;
-      var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
-      var sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : []
+      let params = bid ? bid.params : null;
+      let videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
+      let sizes = bid.mediaTypes.video && bid.mediaTypes.video.playerSize ? bid.mediaTypes.video.playerSize[0] : []
       if (sizes && sizes.length > 0) {
         vObj = {};
         if (videoData) {
@@ -568,7 +568,7 @@ export var spec = {
    */
   _checkMediaType: (adm, newBid) => {
     // Create a regex here to check the strings
-    var videoRegex = new RegExp(/VAST.*version/);
+    let videoRegex = new RegExp(/VAST.*version/);
     if (videoRegex.test(adm)) {
       newBid.mediaType = VIDEO;
     } else {

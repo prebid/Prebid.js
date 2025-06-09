@@ -15,8 +15,8 @@ import { getUniqueIdentifierStr } from './utils.js';
  priceKeyString;
  */
 function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId} = {}) {
-  var _bidSrc = src;
-  var _statusCode = statusCode || 0;
+  let _bidSrc = src;
+  let _statusCode = statusCode || 0;
 
   Object.assign(this, {
     bidderCode: bidder,

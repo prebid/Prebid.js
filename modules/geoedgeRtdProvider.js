@@ -159,7 +159,7 @@ export function getMacros(bid, key) {
  * @return {string}
  */
 function replaceMacros(wrapper, macros) {
-  var re = new RegExp('\\' + Object.keys(macros).join('|'), 'gi');
+  let re = new RegExp('\\' + Object.keys(macros).join('|'), 'gi');
 
   return wrapper.replace(re, function(matched) {
     return macros[matched];

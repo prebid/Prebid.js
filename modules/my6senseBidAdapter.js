@@ -16,16 +16,16 @@ function getUrl(url) {
   if (!url) {
     url = window.location.href;// "clean" url of current web page
   }
-  var canonicalLink = null;
+  let canonicalLink = null;
   // first look for meta data with property "og:url"
-  var metaElements = document.getElementsByTagName('meta');
-  for (var i = 0; i < metaElements.length && !canonicalLink; i++) {
+  let metaElements = document.getElementsByTagName('meta');
+  for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
     if (metaElements[i].getAttribute('property') == 'og:url') {
       canonicalLink = metaElements[i].content;
     }
   }
   if (!canonicalLink) {
-    var canonicalLinkContainer = document.querySelector("link[rel='canonical']");// html element containing the canonical link
+    let canonicalLinkContainer = document.querySelector("link[rel='canonical']");// html element containing the canonical link
     if (canonicalLinkContainer) {
       // get clean url from href of <link rel='canocial' .../>
       canonicalLink = canonicalLinkContainer.href;
@@ -102,7 +102,7 @@ function fixRequestParamForServer(key, value) {
 // called second
 
 function buildGdprServerProperty(bidderRequest) {
-  var gdprObj = {
+  let gdprObj = {
     gdpr_consent: null,
     gdpr: null
   };

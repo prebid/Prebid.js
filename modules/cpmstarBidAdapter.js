@@ -33,7 +33,7 @@ export const spec = {
   },
 
   getPlayerSize: function (bidRequest) {
-    var playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+    let playerSize = utils.deepAccess(bidRequest, 'mediaTypes.video.playerSize');
     if (playerSize == null) return [640, 440];
     if (playerSize[0] != null) playerSize = playerSize[0];
     if (playerSize == null || playerSize[0] == null || playerSize[1] == null) return [640, 440];
@@ -45,10 +45,10 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    var requests = [];
+    let requests = [];
 
-    for (var i = 0; i < validBidRequests.length; i++) {
-      var bidRequest = validBidRequests[i];
+    for (let i = 0; i < validBidRequests.length; i++) {
+      let bidRequest = validBidRequests[i];
       const referer = bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : bidderRequest.refererInfo.domain;
       const e = utils.getBidIdParameter('endpoint', bidRequest.params);
       const ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
@@ -72,11 +72,11 @@ export const spec = {
       url.searchParams.set('referer', referer);
 
       if (bidRequest.schain && bidRequest.schain.nodes) {
-        var schain = bidRequest.schain;
-        var schainString = '';
+        let schain = bidRequest.schain;
+        let schainString = '';
         schainString += schain.ver + ',' + schain.complete;
-        for (var i2 = 0; i2 < schain.nodes.length; i2++) {
-          var node = schain.nodes[i2];
+        for (let i2 = 0; i2 < schain.nodes.length; i2++) {
+          let node = schain.nodes[i2];
           schainString += '!' +
             (node.asi || '') + ',' +
             (node.sid || '') + ',' +
@@ -130,30 +130,30 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, request) {
-    var bidRequest = request.bidRequest;
-    var mediaType = spec.getMediaType(bidRequest);
+    let bidRequest = request.bidRequest;
+    let mediaType = spec.getMediaType(bidRequest);
 
-    var bidResponses = [];
+    let bidResponses = [];
 
     if (!Array.isArray(serverResponse.body)) {
       serverResponse.body = [serverResponse.body];
     }
 
-    for (var i = 0; i < serverResponse.body.length; i++) {
-      var raw = serverResponse.body[i];
-      var rawBid = raw.creatives[0];
+    for (let i = 0; i < serverResponse.body.length; i++) {
+      let raw = serverResponse.body[i];
+      let rawBid = raw.creatives[0];
       if (!rawBid) {
         utils.logWarn('cpmstarBidAdapter: server response failed check');
         return;
       }
-      var cpm = (parseFloat(rawBid.cpm) || 0);
+      let cpm = (parseFloat(rawBid.cpm) || 0);
 
       if (!cpm) {
         utils.logWarn('cpmstarBidAdapter: server response failed check. Missing cpm');
         return;
       }
 
-      var bidResponse = {
+      let bidResponse = {
         requestId: rawBid.requestid,
         cpm: cpm,
         width: rawBid.width || 0,
@@ -174,7 +174,7 @@ export const spec = {
       if (mediaType == BANNER && rawBid.code) {
         bidResponse.ad = rawBid.code + (rawBid.px_cr ? "\n<img width=0 height=0 src='" + rawBid.px_cr + "' />" : '');
       } else if (mediaType == VIDEO && rawBid.creativemacros && rawBid.creativemacros.HTML5VID_VASTSTRING) {
-        var playerSize = spec.getPlayerSize(bidRequest);
+        let playerSize = spec.getPlayerSize(bidRequest);
         if (playerSize != null) {
           bidResponse.width = playerSize[0];
           bidResponse.height = playerSize[1];
@@ -194,10 +194,10 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (serverResponses.length == 0 || !serverResponses[0].body) return syncs;
-    var usersyncs = serverResponses[0].body[0].syncs;
+    let usersyncs = serverResponses[0].body[0].syncs;
     if (!usersyncs || usersyncs.length < 0) return syncs;
-    for (var i = 0; i < usersyncs.length; i++) {
-      var us = usersyncs[i];
+    for (let i = 0; i < usersyncs.length; i++) {
+      let us = usersyncs[i];
       if ((us.type === 'image' && syncOptions.pixelEnabled) || (us.type == 'iframe' && syncOptions.iframeEnabled)) {
         syncs.push(us);
       }

@@ -23,7 +23,7 @@ export const spec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map((bid) => {
-      var gdprConsent;
+      let gdprConsent;
       if (bidderRequest && bidderRequest.gdprConsent) {
         gdprConsent = {
           consent_string: bidderRequest.gdprConsent.consentString,

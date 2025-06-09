@@ -111,7 +111,7 @@ function getUser(bidderRequest, firstPartyData) {
     user.buyeruid = bidderRequest.bids[0].userId.tdid;
   }
 
-  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
+  let eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
   if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
@@ -122,7 +122,7 @@ function getUser(bidderRequest, firstPartyData) {
 }
 
 function getSite(bidderRequest, firstPartyData) {
-  var site = utils.mergeDeep({
+  let site = utils.mergeDeep({
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
     ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
@@ -132,7 +132,7 @@ function getSite(bidderRequest, firstPartyData) {
   firstPartyData.site
   );
 
-  var publisherDomain = bidderRequest.refererInfo.domain;
+  let publisherDomain = bidderRequest.refererInfo.domain;
   if (publisherDomain) {
     utils.deepSetValue(site, 'publisher.domain', publisherDomain);
   }

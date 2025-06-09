@@ -9,7 +9,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const bidRequests = [];
     validBidRequests.forEach(bid => {
-      var _a, _b;
+      let _a, _b;
       const params = bid.params;
       bidRequests.push({
         method: 'GET',

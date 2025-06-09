@@ -119,7 +119,7 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
 
-    for (var i = 0; i < serverResponse.body.length; i++) {
+    for (let i = 0; i < serverResponse.body.length; i++) {
       let bidResponse = {
         requestId: serverResponse.body[i].bidid,
         cpm: serverResponse.body[i].cpm || 0,
@@ -189,7 +189,7 @@ function getUsersIds({ userIdAsEids }) {
 
 function getRr() {
   try {
-    var td = top.document;
+    let td = top.document;
     var rr = td.referrer;
   } catch (err) { return false }
 
@@ -203,7 +203,7 @@ function getRr() {
 function getFl() {
   if (navigator.plugins !== undefined && navigator.plugins !== null) {
     if (navigator.plugins['Shockwave Flash'] !== undefined && navigator.plugins['Shockwave Flash'] !== null && typeof navigator.plugins['Shockwave Flash'] === 'object') {
-      var description = navigator.plugins['Shockwave Flash'].description;
+      let description = navigator.plugins['Shockwave Flash'].description;
       if (description && !(navigator.mimeTypes !== undefined && navigator.mimeTypes['application/x-shockwave-flash'] && !navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin)) {
         description = description.replace(/^.*\s+(\S+\s+\S+$)/, '$1').replace(/^(.*)\..*$/, '$1');
 

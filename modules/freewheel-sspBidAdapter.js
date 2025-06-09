@@ -27,13 +27,13 @@ function isValidUrl(str) {
   }
 
   // regExp for url validation
-  var pattern = /^(https?|ftp|file):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
+  let pattern = /^(https?|ftp|file):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
   return pattern.test(str);
 }
 
 function getBiggerSize(array) {
-  var result = [0, 0];
-  for (var i = 0; i < array.length; i++) {
+  let result = [0, 0];
+  for (let i = 0; i < array.length; i++) {
     if (array[i][0] * array[i][1] > result[0] * result[1]) {
       result = array[i];
     }
@@ -42,11 +42,11 @@ function getBiggerSize(array) {
 }
 
 function getBiggerSizeWithLimit(array, minSizeLimit, maxSizeLimit) {
-  var minSize = minSizeLimit || [0, 0];
-  var maxSize = maxSizeLimit || [Number.MAX_VALUE, Number.MAX_VALUE];
-  var candidates = [];
+  let minSize = minSizeLimit || [0, 0];
+  let maxSize = maxSizeLimit || [Number.MAX_VALUE, Number.MAX_VALUE];
+  let candidates = [];
 
-  for (var i = 0; i < array.length; i++) {
+  for (let i = 0; i < array.length; i++) {
     if (array[i][0] * array[i][1] >= minSize[0] * minSize[1] && array[i][0] * array[i][1] <= maxSize[0] * maxSize[1]) {
       candidates.push(array[i]);
     }
@@ -60,10 +60,10 @@ function getBiggerSizeWithLimit(array, minSizeLimit, maxSizeLimit) {
 * @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
 */
 function getPricing(xmlNode) {
-  var pricingExtNode;
-  var princingData = {};
+  let pricingExtNode;
+  let princingData = {};
 
-  var extensions = xmlNode.querySelectorAll('Extension');
+  let extensions = xmlNode.querySelectorAll('Extension');
   // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
   Array.prototype.forEach.call(extensions, function(node) {
@@ -73,7 +73,7 @@ function getPricing(xmlNode) {
   });
 
   if (pricingExtNode) {
-    var priceNode = pricingExtNode.querySelector('Price');
+    let priceNode = pricingExtNode.querySelector('Price');
     princingData = {
       currency: priceNode.getAttribute('currency'),
       price: priceNode.textContent
@@ -96,9 +96,9 @@ function getPricing(xmlNode) {
 * @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
 */
 function getAdvertiserDomain(xmlNode) {
-  var domain = [];
-  var brandExtNode;
-  var extensions = xmlNode.querySelectorAll('Extension');
+  let domain = [];
+  let brandExtNode;
+  let extensions = xmlNode.querySelectorAll('Extension');
   // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
   Array.prototype.forEach.call(extensions, function(node) {
@@ -109,7 +109,7 @@ function getAdvertiserDomain(xmlNode) {
 
   // Currently we only return one Domain
   if (brandExtNode) {
-    var domainNode = brandExtNode.querySelector('Domain');
+    let domainNode = brandExtNode.querySelector('Domain');
     domain.push(domainNode.textContent);
   } else {
     logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
@@ -119,10 +119,10 @@ function getAdvertiserDomain(xmlNode) {
 }
 
 function hashcode(inputString) {
-  var hash = 0;
-  var char;
+  let hash = 0;
+  let char;
   if (inputString.length == 0) return hash;
-  for (var i = 0; i < inputString.length; i++) {
+  for (let i = 0; i < inputString.length; i++) {
     char = inputString.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash; // Convert to 32bit integer
@@ -131,8 +131,8 @@ function hashcode(inputString) {
 }
 
 function getCreativeId(xmlNode) {
-  var creaId = '';
-  var adNodes = xmlNode.querySelectorAll('Ad');
+  let creaId = '';
+  let adNodes = xmlNode.querySelectorAll('Ad');
   // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
   Array.prototype.forEach.call(adNodes, function(el) {
@@ -143,21 +143,21 @@ function getCreativeId(xmlNode) {
 }
 
 function getValueFromKeyInImpressionNode(xmlNode, key) {
-  var value = '';
-  var impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
-  var isRootViewKeyPresent = false;
-  var isAdsDisplayStartedPresent = false;
+  let value = '';
+  let impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
+  let isRootViewKeyPresent = false;
+  let isAdsDisplayStartedPresent = false;
   Array.prototype.forEach.call(impNodes, function (el) {
     if (isRootViewKeyPresent && isAdsDisplayStartedPresent) {
       return value;
     }
     isRootViewKeyPresent = false;
     isAdsDisplayStartedPresent = false;
-    var text = el.textContent;
-    var queries = text.substring(el.textContent.indexOf('?') + 1).split('&');
-    var tempValue = '';
+    let text = el.textContent;
+    let queries = text.substring(el.textContent.indexOf('?') + 1).split('&');
+    let tempValue = '';
     Array.prototype.forEach.call(queries, function (item) {
-      var split = item.split('=');
+      let split = item.split('=');
       if (split[0] == key) {
         tempValue = split[1];
       }
@@ -191,7 +191,7 @@ function getCampaignId(xmlNode) {
  * returns the top most accessible window
  */
 function getTopMostWindow() {
-  var res = window;
+  let res = window;
 
   try {
     while (top !== res) {
@@ -203,7 +203,7 @@ function getTopMostWindow() {
 }
 
 function getComponentId(inputFormat) {
-  var component = 'mustang'; // default component id
+  let component = 'mustang'; // default component id
 
   if (inputFormat && inputFormat !== 'inbanner') {
     // format identifiers are equals to their component ids.
@@ -242,12 +242,12 @@ function getFloorCurrency(config) {
 }
 
 function formatAdHTML(bid, size) {
-  var integrationType = bid.params.format;
+  let integrationType = bid.params.format;
 
-  var divHtml = '<div id="freewheelssp_prebid_target" style="width:' + size[0] + 'px;height:' + size[1] + 'px;"></div>';
+  let divHtml = '<div id="freewheelssp_prebid_target" style="width:' + size[0] + 'px;height:' + size[1] + 'px;"></div>';
 
-  var script = '';
-  var libUrl = '';
+  let script = '';
+  let libUrl = '';
   if (integrationType && integrationType !== 'inbanner') {
     libUrl = PRIMETIME_URL + getComponentId(bid.params.format) + '.min.js';
     script = getOutstreamScript(bid);
@@ -289,7 +289,7 @@ var getInBannerScript = function(bid, size) {
 };
 
 var getOutstreamScript = function(bid) {
-  var config = bid.params;
+  let config = bid.params;
 
   // default placement if no placement is set
   if (!config.hasOwnProperty('domId') && !config.hasOwnProperty('auto') && !config.hasOwnProperty('p') && !config.hasOwnProperty('article')) {
@@ -300,11 +300,11 @@ var getOutstreamScript = function(bid) {
     }
   }
 
-  var script = 'var config = {' +
+  let script = 'var config = {' +
   '  preloadedVast:vast,' +
   '  ASLoader:new window.com.stickyadstv.tools.ASLoader(' + bid.params.zoneId + ', \'' + getComponentId(bid.params.format) + '\')';
 
-  for (var key in config) {
+  for (let key in config) {
     // dont' send format parameter
     // neither zone nor vastUrlParams value as Vast is already loaded
     if (config.hasOwnProperty(key) && key !== 'format' && key !== 'zone' && key !== 'zoneId' && key !== 'vastUrlParams') {
@@ -343,13 +343,13 @@ export const spec = {
     // var currency = config.getConfig(currency);
 
     let buildRequest = (currentBidRequest, bidderRequest) => {
-      var zone = currentBidRequest.params.zoneId;
-      var timeInMillis = new Date().getTime();
-      var keyCode = hashcode(zone + '' + timeInMillis);
-      var bidfloor = getBidFloor(currentBidRequest, config);
-      var format = currentBidRequest.params.format;
+      let zone = currentBidRequest.params.zoneId;
+      let timeInMillis = new Date().getTime();
+      let keyCode = hashcode(zone + '' + timeInMillis);
+      let bidfloor = getBidFloor(currentBidRequest, config);
+      let format = currentBidRequest.params.format;
 
-      var requestParams = {
+      let requestParams = {
         reqType: 'AdsSetup',
         protocolVersion: '4.2',
         zoneId: zone,
@@ -399,7 +399,7 @@ export const spec = {
       }
 
       // Add schain object
-      var schain = currentBidRequest.schain;
+      let schain = currentBidRequest.schain;
       if (schain) {
         try {
           requestParams.schain = JSON.stringify(schain);
@@ -416,21 +416,21 @@ export const spec = {
         }
       }
 
-      var vastParams = currentBidRequest.params.vastUrlParams;
+      let vastParams = currentBidRequest.params.vastUrlParams;
       if (typeof vastParams === 'object') {
-        for (var key in vastParams) {
+        for (let key in vastParams) {
           if (vastParams.hasOwnProperty(key)) {
             requestParams[key] = vastParams[key];
           }
         }
       }
 
-      var location = bidderRequest?.refererInfo?.page;
+      let location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
       }
 
-      var playerSize = [];
+      let playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
         if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
@@ -452,9 +452,9 @@ export const spec = {
 
       // Add video context and placement in requestParams
       if (currentBidRequest.mediaTypes.video) {
-        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : '';
-        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
-        var videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
+        let videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : '';
+        let videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
+        let videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
 
         if (format == 'inbanner') {
           videoPlacement = 2;
@@ -486,8 +486,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, request) {
-    var bidrequest = request.bidRequest;
-    var playerSize = [];
+    let bidrequest = request.bidRequest;
+    let playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
       if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
@@ -507,9 +507,9 @@ export const spec = {
       serverResponse = serverResponse.body;
     }
 
-    var xmlDoc;
+    let xmlDoc;
     try {
-      var parser = new DOMParser();
+      let parser = new DOMParser();
       xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
       logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
@@ -581,7 +581,7 @@ export const spec = {
       }
     }
 
-    var queryString = '';
+    let queryString = '';
     if (params) {
       queryString = '?' + `${formatQS(params)}`;
     }

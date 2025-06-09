@@ -158,7 +158,7 @@ describe('novatiqIdSystem', function () {
       let novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;
-      var config = {params: {removeAdditionalInfo: true}};
+      let config = {params: {removeAdditionalInfo: true}};
       const response = novatiqIdSubmodule.decode(novatiqId, config);
       expect(response.novatiq.ext.syncResponse).should.be.not.empty;
       expect(response.novatiq.snowflake.id).should.be.not.empty;

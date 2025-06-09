@@ -85,7 +85,7 @@ export const spec = {
     const response = (serverResponse || {}).body
 
     if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
-      var bidid = response.bidid
+      let bidid = response.bidid
       response.seatbid.forEach(bidObj => {
         bidObj.bid.forEach(bid => {
           bidResponses.push({

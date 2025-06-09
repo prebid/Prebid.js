@@ -2,7 +2,7 @@ import {spec} from '../../../modules/rhythmoneBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 import * as sinon from 'sinon';
 
-var r1adapter = spec;
+let r1adapter = spec;
 
 describe('rhythmone adapter tests', function () {
   beforeEach(function() {
@@ -19,7 +19,7 @@ describe('rhythmone adapter tests', function () {
 
   describe('Verify 1.0 POST Banner Bid Request', function () {
     it('buildRequests works', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -38,7 +38,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
       expect(bidRequest.method).to.equal('POST');
@@ -56,7 +56,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('interpretResponse works', function() {
-      var bidList = {
+      let bidList = {
         'body': [
           {
             'impid': 'div-gpt-ad-1438287399331-0',
@@ -69,7 +69,7 @@ describe('rhythmone adapter tests', function () {
         ]
       };
 
-      var bannerBids = r1adapter.interpretResponse(bidList);
+      let bannerBids = r1adapter.interpretResponse(bidList);
 
       expect(bannerBids.length).to.equal(1);
       const bid = bannerBids[0];
@@ -85,7 +85,7 @@ describe('rhythmone adapter tests', function () {
 
   describe('Verify POST Video Bid Request', function() {
     it('buildRequests works', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -111,7 +111,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       expect(bidRequest.url).to.have.string('https://tag.1rx.io/rmp/myplacement/0/mypath?z=myzone&hbv=');
       expect(bidRequest.method).to.equal('POST');
@@ -133,7 +133,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('interpretResponse works', function() {
-      var bidList = {
+      let bidList = {
         'body': [
           {
             'impid': 'div-gpt-ad-1438287399331-1',
@@ -150,7 +150,7 @@ describe('rhythmone adapter tests', function () {
         ]
       };
 
-      var videoBids = r1adapter.interpretResponse(bidList);
+      let videoBids = r1adapter.interpretResponse(bidList);
 
       expect(videoBids.length).to.equal(1);
       const bid = videoBids[0];
@@ -169,7 +169,7 @@ describe('rhythmone adapter tests', function () {
 
   describe('Verify Multi-Format ads and Multiple Size Bid Request', function() {
     it('buildRequests works', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -198,7 +198,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.site).to.not.equal(null);
@@ -226,7 +226,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('interpretResponse works', function() {
-      var bidList = {
+      let bidList = {
         'body': {
           'id': '1e810245dd1779',
           'seatbid': [
@@ -250,7 +250,7 @@ describe('rhythmone adapter tests', function () {
         }
       };
 
-      var forRMPMultiFormatResponse = r1adapter.interpretResponse(bidList);
+      let forRMPMultiFormatResponse = r1adapter.interpretResponse(bidList);
 
       expect(forRMPMultiFormatResponse.length).to.equal(1);
       const bid = forRMPMultiFormatResponse[0];
@@ -268,7 +268,7 @@ describe('rhythmone adapter tests', function () {
 
   describe('misc buildRequests', function() {
     it('should send GDPR Consent data to RhythmOne tag', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -290,14 +290,14 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var consentString = 'testConsentString';
-      var gdprBidderRequest = this.defaultBidderRequest;
+      let consentString = 'testConsentString';
+      let gdprBidderRequest = this.defaultBidderRequest;
       gdprBidderRequest.gdprConsent = {
         'gdprApplies': true,
         'consentString': consentString
       };
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, gdprBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, gdprBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.user.ext.consent).to.equal(consentString);
@@ -305,7 +305,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('prefer 2.0 sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -328,7 +328,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300);
@@ -336,7 +336,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('does not return request for invalid banner size configuration', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -358,12 +358,12 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       expect(bidRequest.method).to.be.undefined;
     });
 
     it('does not return request for missing banner size configuration', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -383,12 +383,12 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       expect(bidRequest.method).to.be.undefined;
     });
 
     it('reject bad sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -408,13 +408,13 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
     });
 
     it('dnt is correctly set to 1', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -434,9 +434,9 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var dntStub = sinon.stub(utils, 'getDNT').returns(1);
+      let dntStub = sinon.stub(utils, 'getDNT').returns(1);
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       dntStub.restore();
 
@@ -445,7 +445,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('sets floor to zero', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -466,14 +466,14 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].bidfloor).to.equal(0);
     });
 
     it('supports string video sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -494,7 +494,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.equal(600);
@@ -502,7 +502,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('rejects bad video sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -523,7 +523,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.be.undefined;
@@ -531,7 +531,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('supports missing video size', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -551,7 +551,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.be.undefined;
@@ -559,7 +559,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('uses default zone and path', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -581,7 +581,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].ext.bidder.zone).to.equal('1r');
@@ -589,7 +589,7 @@ describe('rhythmone adapter tests', function () {
     });
 
     it('should return empty when required params not found', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -612,14 +612,14 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       expect(bidRequest).to.be.empty;
     });
 
     it('should return empty site data when refererInfo is missing', function() {
       delete this.defaultBidderRequest.refererInfo;
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'rhythmone',
           'params': {
@@ -638,7 +638,7 @@ describe('rhythmone adapter tests', function () {
         }
       ];
 
-      var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
 
       expect(openrtbRequest.site.domain).to.equal('');
@@ -649,7 +649,7 @@ describe('rhythmone adapter tests', function () {
 
   it('should secure correctly', function() {
     this.defaultBidderRequest.refererInfo.stack[0] = ['https://securesite.dvl'];
-    var bidRequestList = [
+    let bidRequestList = [
       {
         'bidder': 'rhythmone',
         'params': {
@@ -668,14 +668,14 @@ describe('rhythmone adapter tests', function () {
       }
     ];
 
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.imp[0].secure).to.equal(1);
   });
 
   it('should pass schain', function() {
-    var schain = {
+    let schain = {
       'ver': '1.0',
       'complete': 1,
       'nodes': [{
@@ -688,7 +688,7 @@ describe('rhythmone adapter tests', function () {
         'hp': 1
       }]
     };
-    var bidRequestList = [
+    let bidRequestList = [
       {
         'bidder': 'rhythmone',
         'params': {
@@ -708,7 +708,7 @@ describe('rhythmone adapter tests', function () {
       }
     ];
 
-    var bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    let bidRequest = r1adapter.buildRequests(bidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.source.ext.schain).to.deep.equal(schain);
@@ -716,7 +716,7 @@ describe('rhythmone adapter tests', function () {
 
   describe('misc interpretResponse', function () {
     it('No bid response', function() {
-      var noBidResponse = r1adapter.interpretResponse({
+      let noBidResponse = r1adapter.interpretResponse({
         'body': ''
       });
       expect(noBidResponse.length).to.equal(0);
@@ -724,7 +724,7 @@ describe('rhythmone adapter tests', function () {
   });
 
   describe('isBidRequestValid', function () {
-    var bid = {
+    let bid = {
       'bidder': 'rhythmone',
       'params': {
         'placementId': 'myplacement',

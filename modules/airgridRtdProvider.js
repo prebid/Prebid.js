@@ -36,7 +36,7 @@ function getModuleUrl(accountId) {
  * @return {void}
  */
 export function attachScriptTagToDOM(rtdConfig) {
-  var edktInitializor = (window.edktInitializor = window.edktInitializor || {});
+  let edktInitializor = (window.edktInitializor = window.edktInitializor || {});
   if (!edktInitializor.invoked) {
     edktInitializor.accountId = rtdConfig.params.accountId;
     edktInitializor.publisherId = rtdConfig.params.publisherId;

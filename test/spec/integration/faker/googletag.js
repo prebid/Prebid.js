@@ -1,11 +1,11 @@
 import faker from 'faker';
 import { randomFive } from './fixtures.js';
 
-var Slot = function Slot({ code, divId }) {
+let Slot = function Slot({ code, divId }) {
   code = code || `ad-slot-code-${randomFive()}`;
   divId = divId || `div-id-${randomFive()}`;
 
-  var slot = {
+  let slot = {
     targeting: [],
     getSlotElementId: function getSlotElementId() {
       return divId;
@@ -16,7 +16,7 @@ var Slot = function Slot({ code, divId }) {
     },
 
     setTargeting: function setTargeting(key, value) {
-      var obj = [];
+      let obj = [];
       obj[key] = value;
       this.targeting.push(obj);
     },
@@ -54,7 +54,7 @@ export function enable() {
     _ppid: undefined,
     cmd: [],
     pubads: function () {
-      var self = this;
+      let self = this;
       return {
         setPublisherProvidedId: function (ppid) {
           self._ppid = ppid;

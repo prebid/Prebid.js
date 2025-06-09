@@ -95,7 +95,7 @@ export const spec = {
 
       if ((getGlobal()).getUserIds && typeof (getGlobal()).getUserIds === 'function') {
         const userIds = (getGlobal()).getUserIds();
-        for (var id in userIds) {
+        for (let id in userIds) {
           params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
         }
       }
@@ -221,9 +221,9 @@ function getTestConfig(bidRequests) {
 }
 
 function compareSizesByPriority(size1, size2) {
-  var priorityOrderForSizesAsc = isMobileDevice() ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
-  var index1 = priorityOrderForSizesAsc.indexOf(size1);
-  var index2 = priorityOrderForSizesAsc.indexOf(size2);
+  let priorityOrderForSizesAsc = isMobileDevice() ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
+  let index1 = priorityOrderForSizesAsc.indexOf(size1);
+  let index2 = priorityOrderForSizesAsc.indexOf(size2);
   if (index1 > -1) {
     if (index2 > -1) {
       return (index1 < index2) ? 1 : -1;
@@ -240,7 +240,7 @@ function getSizesSortedByPriority(sizes) {
 }
 
 function getSize(bid, first) {
-  var arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
+  let arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
   if (arraySizes.length) {
     return first ? arraySizes[0] : arraySizes.join(',');
   } else {
@@ -384,7 +384,7 @@ function waitForElementsPresent(elements) {
     }
   });
   document.addEventListener('DOMContentLoaded', function (event) {
-    var config = {
+    let config = {
       childList: true,
       subtree: true,
       characterData: true
@@ -447,7 +447,7 @@ function getViewabilityTracker() {
 
   function intersectionCallback(entries) {
     entries.forEach(function(entry) {
-      var adBox = entry.target;
+      let adBox = entry.target;
       if (entry.isIntersecting) {
         if (entry.intersectionRatio >= VIEWABILITY_MIN_RATIO && entry.boundingClientRect && entry.boundingClientRect.height > 0 && entry.boundingClientRect.width > 0) {
           visibilityAds[adBox.id] = true;
@@ -464,7 +464,7 @@ function getViewabilityTracker() {
 
   function defineObserver() {
     if (!observer) {
-      var observerConfig = {
+      let observerConfig = {
         root: null,
         rootMargin: '0px',
         threshold: [VIEWABILITY_MIN_RATIO]

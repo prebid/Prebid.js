@@ -6,16 +6,16 @@ import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, wai
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 import { getWinDimensions, internal } from '../../src/utils.js';
 
-var assert = require('assert');
+let assert = require('assert');
 
 describe('Utils', function () {
-  var obj_string = 's',
+  let obj_string = 's',
     obj_number = 1,
     obj_object = {},
     obj_array = [],
     obj_function = function () {};
 
-  var type_string = 'String',
+  let type_string = 'String',
     type_number = 'Number',
     type_object = 'Object',
     type_array = 'Array',
@@ -71,98 +71,98 @@ describe('Utils', function () {
 
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
-      var obj = {
+      let obj = {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParameter('a', obj);
+      let output = utils.getBidIdParameter('a', obj);
       assert.equal(output, 'valueA');
     });
 
     it('should return empty string, if the key is not existsed in the object', function () {
-      var obj = {
+      let obj = {
         a: 'valueA',
         b: 'valueB'
       };
-      var output = utils.getBidIdParameter('c', obj);
+      let output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
     });
   });
 
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {
-      var obj = {
+      let obj = {
         a: 'http://example.com/?foo=bar&bar=foo',
         b: 'abc["def"]'
       };
 
-      var output = utils.parseQueryStringParameters(obj);
-      var expectedResult = 'a=' + encodeURIComponent('http://example.com/?foo=bar&bar=foo') + '&b=' + encodeURIComponent('abc["def"]');
+      let output = utils.parseQueryStringParameters(obj);
+      let expectedResult = 'a=' + encodeURIComponent('http://example.com/?foo=bar&bar=foo') + '&b=' + encodeURIComponent('abc["def"]');
       assert.equal(output, expectedResult);
     });
 
     it('should return an empty string, if input obj is empty', function () {
-      var obj = {};
-      var output = utils.parseQueryStringParameters(obj);
+      let obj = {};
+      let output = utils.parseQueryStringParameters(obj);
       assert.equal(output, '');
     });
   });
 
   describe('transformAdServerTargetingObj', function () {
     it('should append query string to existing using the input obj', function () {
-      var obj = getAdServerTargeting();
+      let obj = getAdServerTargeting();
 
-      var output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
-      var expected = 'foobar=300x250%2C300x600%2C0x0&' + TARGETING_KEYS.SIZE + '=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '=10.00&' + TARGETING_KEYS.AD_ID + '=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '=appnexus&' + TARGETING_KEYS.SIZE + '_triplelift=0x0&' + TARGETING_KEYS.PRICE_BUCKET + '_triplelift=10.00&' + TARGETING_KEYS.AD_ID + '_triplelift=222bb26f9e8bd&' + TARGETING_KEYS.BIDDER + '_triplelift=triplelift&' + TARGETING_KEYS.SIZE + '_appnexus=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_appnexus=10.00&' + TARGETING_KEYS.AD_ID + '_appnexus=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '_appnexus=appnexus&' + TARGETING_KEYS.SIZE + '_pagescience=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pagescience=10.00&' + TARGETING_KEYS.AD_ID + '_pagescience=25bedd4813632d7&' + TARGETING_KEYS.BIDDER + '_pagescienc=pagescience&' + TARGETING_KEYS.SIZE + '_brightcom=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brightcom=10.00&' + TARGETING_KEYS.AD_ID + '_brightcom=26e0795ab963896&' + TARGETING_KEYS.BIDDER + '_brightcom=brightcom&' + TARGETING_KEYS.SIZE + '_brealtime=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brealtime=10.00&' + TARGETING_KEYS.AD_ID + '_brealtime=275bd666f5a5a5d&' + TARGETING_KEYS.BIDDER + '_brealtime=brealtime&' + TARGETING_KEYS.SIZE + '_pubmatic=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pubmatic=10.00&' + TARGETING_KEYS.AD_ID + '_pubmatic=28f4039c636b6a7&' + TARGETING_KEYS.BIDDER + '_pubmatic=pubmatic&' + TARGETING_KEYS.SIZE + '_rubicon=300x600&' + TARGETING_KEYS.PRICE_BUCKET + '_rubicon=10.00&' + TARGETING_KEYS.AD_ID + '_rubicon=29019e2ab586a5a&' + TARGETING_KEYS.BIDDER + '_rubicon=rubicon';
+      let output = utils.transformAdServerTargetingObj(obj[Object.keys(obj)[0]]);
+      let expected = 'foobar=300x250%2C300x600%2C0x0&' + TARGETING_KEYS.SIZE + '=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '=10.00&' + TARGETING_KEYS.AD_ID + '=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '=appnexus&' + TARGETING_KEYS.SIZE + '_triplelift=0x0&' + TARGETING_KEYS.PRICE_BUCKET + '_triplelift=10.00&' + TARGETING_KEYS.AD_ID + '_triplelift=222bb26f9e8bd&' + TARGETING_KEYS.BIDDER + '_triplelift=triplelift&' + TARGETING_KEYS.SIZE + '_appnexus=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_appnexus=10.00&' + TARGETING_KEYS.AD_ID + '_appnexus=233bcbee889d46d&' + TARGETING_KEYS.BIDDER + '_appnexus=appnexus&' + TARGETING_KEYS.SIZE + '_pagescience=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pagescience=10.00&' + TARGETING_KEYS.AD_ID + '_pagescience=25bedd4813632d7&' + TARGETING_KEYS.BIDDER + '_pagescienc=pagescience&' + TARGETING_KEYS.SIZE + '_brightcom=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brightcom=10.00&' + TARGETING_KEYS.AD_ID + '_brightcom=26e0795ab963896&' + TARGETING_KEYS.BIDDER + '_brightcom=brightcom&' + TARGETING_KEYS.SIZE + '_brealtime=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_brealtime=10.00&' + TARGETING_KEYS.AD_ID + '_brealtime=275bd666f5a5a5d&' + TARGETING_KEYS.BIDDER + '_brealtime=brealtime&' + TARGETING_KEYS.SIZE + '_pubmatic=300x250&' + TARGETING_KEYS.PRICE_BUCKET + '_pubmatic=10.00&' + TARGETING_KEYS.AD_ID + '_pubmatic=28f4039c636b6a7&' + TARGETING_KEYS.BIDDER + '_pubmatic=pubmatic&' + TARGETING_KEYS.SIZE + '_rubicon=300x600&' + TARGETING_KEYS.PRICE_BUCKET + '_rubicon=10.00&' + TARGETING_KEYS.AD_ID + '_rubicon=29019e2ab586a5a&' + TARGETING_KEYS.BIDDER + '_rubicon=rubicon';
       assert.equal(output, expected);
     });
 
     it('should return an empty string, if input obj is empty', function () {
-      var obj = {};
-      var output = utils.transformAdServerTargetingObj(obj);
+      let obj = {};
+      let output = utils.transformAdServerTargetingObj(obj);
       assert.equal(output, '');
     });
   });
 
   describe('extend', function () {
     it('should merge two input object', function () {
-      var target = {
+      let target = {
         a: '1',
         b: '2'
       };
 
-      var source = {
+      let source = {
         c: '3'
       };
 
-      var expectedResult = {
+      let expectedResult = {
         a: '1',
         b: '2',
         c: '3'
       };
 
-      var output = Object.assign(target, source);
+      let output = Object.assign(target, source);
       assert.deepEqual(output, expectedResult);
     });
 
     it('should merge two input object even though target object is empty', function () {
-      var target = {};
-      var source = {
+      let target = {};
+      let source = {
         c: '3'
       };
 
-      var output = Object.assign(target, source);
+      let output = Object.assign(target, source);
       assert.deepEqual(output, source);
     });
 
     it('just return target object, if the source object is empty', function () {
-      var target = {
+      let target = {
         a: '1',
         b: '2'
       };
-      var source = {};
+      let source = {};
 
-      var output = Object.assign(target, source);
+      let output = Object.assign(target, source);
       assert.deepEqual(output, target);
     });
   });
@@ -206,357 +206,357 @@ describe('Utils', function () {
 
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
-      var sizes = [[728, 90], [970, 90]];
-      var output = utils.parseSizesInput(sizes);
+      let sizes = [[728, 90], [970, 90]];
+      let output = utils.parseSizesInput(sizes);
       assert.deepEqual(output, ['728x90', '970x90']);
     });
 
     it('should return query string using single size array', function () {
-      var sizes = [728, 90];
-      var output = utils.parseSizesInput(sizes);
+      let sizes = [728, 90];
+      let output = utils.parseSizesInput(sizes);
       assert.deepEqual(output, ['728x90']);
     });
 
     it('should return query string using string input', function () {
-      var sizes = '300x250,970x90';
-      var output = utils.parseSizesInput(sizes);
+      let sizes = '300x250,970x90';
+      let output = utils.parseSizesInput(sizes);
       assert.deepEqual(output, ['300x250', '970x90']);
     });
 
     it('return undefined if input array is empty', function () {
-      var sizes = [];
-      var output = utils.parseSizesInput(sizes);
+      let sizes = [];
+      let output = utils.parseSizesInput(sizes);
       assert.deepEqual(output, []);
     });
   });
 
   describe('parseGPTSingleSizeArray', function () {
     it('should return size string with input single size array', function () {
-      var size = [300, 250];
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = [300, 250];
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, '300x250');
     });
 
     it('should return size string with input single size array', function () {
-      var size = ['300', '250'];
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = ['300', '250'];
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, '300x250');
     });
 
     it('return undefined using string input', function () {
-      var size = '1';
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = '1';
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined using number input', function () {
-      var size = 1;
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = 1;
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined using one length single array', function () {
-      var size = [300];
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = [300];
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined if the input is empty', function () {
-      var size = '';
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = '';
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined if the input is not a number', function () {
-      var size = ['foo', 'bar'];
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = ['foo', 'bar'];
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined if the input is not a number 2', function () {
-      var size = ['foo', 300];
-      var output = utils.parseGPTSingleSizeArray(size);
+      let size = ['foo', 300];
+      let output = utils.parseGPTSingleSizeArray(size);
       assert.equal(output, undefined);
     });
   });
 
   describe('parseGPTSingleSizeArrayToRtbSize', function () {
     it('should return size string with input single size array', function () {
-      var size = [300, 250];
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = [300, 250];
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.deepEqual(output, {w: 300, h: 250});
     });
 
     it('should return size string with input single size array', function () {
-      var size = ['300', '250'];
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = ['300', '250'];
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.deepEqual(output, {w: 300, h: 250});
     });
 
     it('return undefined using string input', function () {
-      var size = '1';
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = '1';
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined using number input', function () {
-      var size = 1;
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = 1;
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined using one length single array', function () {
-      var size = [300];
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = [300];
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined if the input is empty', function () {
-      var size = '';
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = '';
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined if the input is not a number', function () {
-      var size = ['foo', 'bar'];
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = ['foo', 'bar'];
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
 
     it('return undefined if the input is not a number 2', function () {
-      var size = [300, 'foo'];
-      var output = utils.parseGPTSingleSizeArrayToRtbSize(size);
+      let size = [300, 'foo'];
+      let output = utils.parseGPTSingleSizeArrayToRtbSize(size);
       assert.equal(output, undefined);
     });
   });
 
   describe('isA', function () {
     it('should return true with string object', function () {
-      var output = utils.isA(obj_string, type_string);
+      let output = utils.isA(obj_string, type_string);
       assert.deepEqual(output, true);
     });
 
     it('should return false with object', function () {
-      var output = utils.isA(obj_object, type_string);
+      let output = utils.isA(obj_object, type_string);
       assert.deepEqual(output, false);
     });
 
     it('should return true with object', function () {
-      var output = utils.isA(obj_object, type_object);
+      let output = utils.isA(obj_object, type_object);
       assert.deepEqual(output, true);
     });
 
     it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_object);
+      let output = utils.isA(obj_array, type_object);
       assert.deepEqual(output, false);
     });
 
     it('should return true with array object', function () {
-      var output = utils.isA(obj_array, type_array);
+      let output = utils.isA(obj_array, type_array);
       assert.deepEqual(output, true);
     });
 
     it('should return false with array object', function () {
-      var output = utils.isA(obj_array, type_function);
+      let output = utils.isA(obj_array, type_function);
       assert.deepEqual(output, false);
     });
 
     it('should return true with function', function () {
-      var output = utils.isA(obj_function, type_function);
+      let output = utils.isA(obj_function, type_function);
       assert.deepEqual(output, true);
     });
 
     it('should return false with number', function () {
-      var output = utils.isA(obj_function, type_number);
+      let output = utils.isA(obj_function, type_number);
       assert.deepEqual(output, false);
     });
 
     it('should return true with number', function () {
-      var output = utils.isA(obj_number, type_number);
+      let output = utils.isA(obj_number, type_number);
       assert.deepEqual(output, true);
     });
   });
 
   describe('isFn', function () {
     it('should return true with input function', function () {
-      var output = utils.isFn(obj_function);
+      let output = utils.isFn(obj_function);
       assert.deepEqual(output, true);
     });
 
     it('should return false with input string', function () {
-      var output = utils.isFn(obj_string);
+      let output = utils.isFn(obj_string);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input number', function () {
-      var output = utils.isFn(obj_number);
+      let output = utils.isFn(obj_number);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input Array', function () {
-      var output = utils.isFn(obj_array);
+      let output = utils.isFn(obj_array);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input object', function () {
-      var output = utils.isFn(obj_object);
+      let output = utils.isFn(obj_object);
       assert.deepEqual(output, false);
     });
   });
 
   describe('isStr', function () {
     it('should return true with input string', function () {
-      var output = utils.isStr(obj_string);
+      let output = utils.isStr(obj_string);
       assert.deepEqual(output, true);
     });
 
     it('should return false with input number', function () {
-      var output = utils.isStr(obj_number);
+      let output = utils.isStr(obj_number);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input object', function () {
-      var output = utils.isStr(obj_object);
+      let output = utils.isStr(obj_object);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input array', function () {
-      var output = utils.isStr(obj_array);
+      let output = utils.isStr(obj_array);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input function', function () {
-      var output = utils.isStr(obj_function);
+      let output = utils.isStr(obj_function);
       assert.deepEqual(output, false);
     });
   });
 
   describe('isArray', function () {
     it('should return false with input string', function () {
-      var output = utils.isArray(obj_string);
+      let output = utils.isArray(obj_string);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input number', function () {
-      var output = utils.isArray(obj_number);
+      let output = utils.isArray(obj_number);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input object', function () {
-      var output = utils.isArray(obj_object);
+      let output = utils.isArray(obj_object);
       assert.deepEqual(output, false);
     });
 
     it('should return true with input array', function () {
-      var output = utils.isArray(obj_array);
+      let output = utils.isArray(obj_array);
       assert.deepEqual(output, true);
     });
 
     it('should return false with input function', function () {
-      var output = utils.isArray(obj_function);
+      let output = utils.isArray(obj_function);
       assert.deepEqual(output, false);
     });
   });
 
   describe('isPlainObject', function () {
     it('should return false with input string', function () {
-      var output = utils.isPlainObject(obj_string);
+      let output = utils.isPlainObject(obj_string);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input number', function () {
-      var output = utils.isPlainObject(obj_number);
+      let output = utils.isPlainObject(obj_number);
       assert.deepEqual(output, false);
     });
 
     it('should return true with input object', function () {
-      var output = utils.isPlainObject(obj_object);
+      let output = utils.isPlainObject(obj_object);
       assert.deepEqual(output, true);
     });
 
     it('should return false with input array', function () {
-      var output = utils.isPlainObject(obj_array);
+      let output = utils.isPlainObject(obj_array);
       assert.deepEqual(output, false);
     });
 
     it('should return false with input function', function () {
-      var output = utils.isPlainObject(obj_function);
+      let output = utils.isPlainObject(obj_function);
       assert.deepEqual(output, false);
     });
   });
 
   describe('isEmpty', function () {
     it('should return true with empty object', function () {
-      var output = utils.isEmpty(obj_object);
+      let output = utils.isEmpty(obj_object);
       assert.deepEqual(output, true);
     });
 
     it('should return false with non-empty object', function () {
-      var obj = { a: 'b' };
-      var output = utils.isEmpty(obj);
+      let obj = { a: 'b' };
+      let output = utils.isEmpty(obj);
       assert.deepEqual(output, false);
     });
 
     it('should return false with null', function () {
-      var obj = null;
-      var output = utils.isEmpty(obj);
+      let obj = null;
+      let output = utils.isEmpty(obj);
       assert.deepEqual(output, true);
     });
   });
 
   describe('contains', function () {
     	it('should return true if the input string contains in the input obj', function () {
-      var output = utils.contains('123', '1');
+      let output = utils.contains('123', '1');
       assert.deepEqual(output, true);
     	});
 
     	it('should return false if the input string do not contain in the input obj', function () {
-      var output = utils.contains('234', '1');
+      let output = utils.contains('234', '1');
       assert.deepEqual(output, false);
     	});
 
     it('should return false if the input string is empty', function () {
-      var output = utils.contains();
+      let output = utils.contains();
       assert.ok(!output, 'an empty string returns false');
     });
   });
 
   describe('_map', function () {
     	it('return empty array when input object is empty', function () {
-      var input = {};
-      var callback = function () {};
+      let input = {};
+      let callback = function () {};
 
-      var output = utils._map(input, callback);
+      let output = utils._map(input, callback);
       assert.deepEqual(output, []);
     	});
 
     	it('return value array with vaild input object', function () {
-      var input = { a: 'A', b: 'B' };
-      var callback = function (v) { return v; };
+      let input = { a: 'A', b: 'B' };
+      let callback = function (v) { return v; };
 
-      var output = utils._map(input, callback);
+      let output = utils._map(input, callback);
       assert.deepEqual(output, ['A', 'B']);
     	});
 
     	it('return value array with vaild input object_callback func changed 1', function () {
-      var input = { a: 'A', b: 'B' };
-      var callback = function (v, k) { return v + k; };
+      let input = { a: 'A', b: 'B' };
+      let callback = function (v, k) { return v + k; };
 
-      var output = utils._map(input, callback);
+      let output = utils._map(input, callback);
       assert.deepEqual(output, ['Aa', 'Bb']);
     	});
 
     	it('return value array with vaild input object_callback func changed 2', function () {
-      var input = { a: 'A', b: 'B' };
-      var callback = function (v, k, o) { return o; };
+      let input = { a: 'A', b: 'B' };
+      let callback = function (v, k, o) { return o; };
 
-      var output = utils._map(input, callback);
+      let output = utils._map(input, callback);
       assert.deepEqual(output, [input, input]);
     	});
   });
 
   describe('createInvisibleIframe', function () {
-    var output = utils.createInvisibleIframe();
+    let output = utils.createInvisibleIframe();
 
     it('return iframe - id', function () {
       assert.ok(output.id);
@@ -605,9 +605,9 @@ describe('Utils', function () {
 
   describe('polyfill test', function () {
     it('should not add polyfill to array', function() {
-      var arr = ['hello', 'world'];
-      var count = 0;
-      for (var key in arr) {
+      let arr = ['hello', 'world'];
+      let count = 0;
+      for (let key in arr) {
         count++;
       }
       assert.equal(arr.length, count, 'Polyfill test fails');
@@ -629,7 +629,7 @@ describe('Utils', function () {
   });
 
   describe('deepAccess', function() {
-    var obj = {
+    let obj = {
       1: 2,
       test: {
         first: 11
@@ -637,18 +637,18 @@ describe('Utils', function () {
     };
 
     it('should allow deep access of object properties', function() {
-      var value1 = utils.deepAccess(obj, 'test');
+      let value1 = utils.deepAccess(obj, 'test');
       assert.deepEqual(value1, obj.test);
 
-      var value2 = utils.deepAccess(obj, 'test.first');
+      let value2 = utils.deepAccess(obj, 'test.first');
       assert.equal(value2, 11);
 
-      var value3 = utils.deepAccess(obj, '1');
+      let value3 = utils.deepAccess(obj, '1');
       assert.equal(value3, 2);
     });
 
     it('should allow safe access (returning undefined for missing properties and not throwing exceptions)', function() {
-      var value;
+      let value;
 
       assert.doesNotThrow(function() {
         value = utils.deepAccess(obj, 'test.second.third');

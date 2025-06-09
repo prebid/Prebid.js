@@ -7,8 +7,8 @@ const BIDDER_CODE = 'apacdex';
 const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
 const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
 
-var bySlotTargetKey = {};
-var bySlotSizesCount = {}
+let bySlotTargetKey = {};
+let bySlotSizesCount = {}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -62,11 +62,11 @@ export const spec = {
         }
       }
 
-      var targetKey = 0;
+      let targetKey = 0;
       if (bySlotTargetKey[bidReq.adUnitCode] != undefined) {
         targetKey = bySlotTargetKey[bidReq.adUnitCode];
       } else {
-        var biggestSize = _getBiggestSize(bidReq.sizes);
+        let biggestSize = _getBiggestSize(bidReq.sizes);
         if (biggestSize) {
           if (bySlotSizesCount[biggestSize] != undefined) {
             bySlotSizesCount[biggestSize]++
@@ -101,7 +101,7 @@ export const spec = {
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
-    var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
+    let pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
     payload.site.page = pageUrl;
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
@@ -245,10 +245,10 @@ export const spec = {
 
 function _getBiggestSize(sizes) {
   if (sizes.length <= 0) return false
-  var acreage = 0;
-  var index = 0;
-  for (var i = 0; i < sizes.length; i++) {
-    var currentAcreage = sizes[i][0] * sizes[i][1];
+  let acreage = 0;
+  let index = 0;
+  for (let i = 0; i < sizes.length; i++) {
+    let currentAcreage = sizes[i][0] * sizes[i][1];
     if (currentAcreage >= acreage) {
       acreage = currentAcreage;
       index = i;

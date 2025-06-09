@@ -11,29 +11,29 @@ const CONSTANTS = {
 };
 const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
-var dsuModule = (function() {
+let dsuModule = (function() {
   'use strict';
 
-  var DSU_KEY = 'apr_dsu';
-  var DSU_VERSION_NUMBER = '1';
-  var SIGNATURE_SALT = 'YicAu6ZpNG';
-  var DSU_CREATOR = {'USERREPORT': '1'};
+  let DSU_KEY = 'apr_dsu';
+  let DSU_VERSION_NUMBER = '1';
+  let SIGNATURE_SALT = 'YicAu6ZpNG';
+  let DSU_CREATOR = {'USERREPORT': '1'};
 
   function stringToU8(str) {
     if (typeof TextEncoder === 'function') {
       return new TextEncoder().encode(str);
     }
     str = unescape(encodeURIComponent(str));
-    var bytes = new Uint8Array(str.length);
-    for (var i = 0, j = str.length; i < j; i++) {
+    let bytes = new Uint8Array(str.length);
+    for (let i = 0, j = str.length; i < j; i++) {
       bytes[i] = str.charCodeAt(i);
     }
     return bytes;
   }
 
   function _add(a, b) {
-    var rl = a.l + b.l;
-    var a2 = {
+    let rl = a.l + b.l;
+    let a2 = {
       h: a.h + b.h + (rl / 2 >>> 31) >>> 0,
       l: rl >>> 0
     };
@@ -47,7 +47,7 @@ var dsuModule = (function() {
     a.l >>>= 0;
   }
   function _rotl(a, n) {
-    var a2 = {
+    let a2 = {
       h: a.h << n | a.l >>> (32 - n),
       l: a.l << n | a.h >>> (32 - n)
     };
@@ -55,7 +55,7 @@ var dsuModule = (function() {
     a.l = a2.l;
   }
   function _rotl32(a) {
-    var al = a.l;
+    let al = a.l;
     a.l = a.h;
     a.h = al;
   }
@@ -87,27 +87,27 @@ var dsuModule = (function() {
     if (typeof m === 'string') {
       m = stringToU8(m);
     }
-    var k0 = {
+    let k0 = {
       h: key[1] >>> 0,
       l: key[0] >>> 0
     };
-    var k1 = {
+    let k1 = {
       h: key[3] >>> 0,
       l: key[2] >>> 0
     };
-    var v0 = {
+    let v0 = {
       h: k0.h,
       l: k0.l
     };
-    var v2 = k0;
-    var v1 = {
+    let v2 = k0;
+    let v1 = {
       h: k1.h,
       l: k1.l
     };
-    var v3 = k1;
-    var ml = m.length;
-    var ml7 = ml - 7;
-    var buf = new Uint8Array(new ArrayBuffer(8));
+    let v3 = k1;
+    let ml = m.length;
+    let ml7 = ml - 7;
+    let buf = new Uint8Array(new ArrayBuffer(8));
     _xor(v0, {
       h: 0x736f6d65,
       l: 0x70736575
@@ -124,9 +124,9 @@ var dsuModule = (function() {
       h: 0x74656462,
       l: 0x79746573
     });
-    var mp = 0;
+    let mp = 0;
     while (mp < ml7) {
-      var mi = {
+      let mi = {
         h: _getInt(m, mp + 4),
         l: _getInt(m, mp)
       };
@@ -137,14 +137,14 @@ var dsuModule = (function() {
       mp += 8;
     }
     buf[7] = ml;
-    var ic = 0;
+    let ic = 0;
     while (mp < ml) {
       buf[ic++] = m[mp++];
     }
     while (ic < 7) {
       buf[ic++] = 0;
     }
-    var mil = {
+    let mil = {
       h: buf[7] << 24 | buf[6] << 16 | buf[5] << 8 | buf[4],
       l: buf[3] << 24 | buf[2] << 16 | buf[1] << 8 | buf[0]
     };
@@ -160,7 +160,7 @@ var dsuModule = (function() {
     _compress(v0, v1, v2, v3);
     _compress(v0, v1, v2, v3);
     _compress(v0, v1, v2, v3);
-    var h = v0;
+    let h = v0;
     _xor(h, v1);
     _xor(h, v2);
     _xor(h, v3);
@@ -168,25 +168,25 @@ var dsuModule = (function() {
   }
 
   function hashHex(key, m) {
-    var r = hash(key, m);
+    let r = hash(key, m);
     return ('0000000' + r.h.toString(16)).substr(-8) +
             ('0000000' + r.l.toString(16)).substr(-8);
   }
 
-  var SIPHASH_KEY = [0x86395a57, 0x6b5ba7f7, 0x69732c07, 0x2a6ef48d];
-  var hashWithKey = hashHex.bind(null, SIPHASH_KEY);
+  let SIPHASH_KEY = [0x86395a57, 0x6b5ba7f7, 0x69732c07, 0x2a6ef48d];
+  let hashWithKey = hashHex.bind(null, SIPHASH_KEY);
 
-  var parseUrlRegex = new RegExp('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?');
-  var overwrite = null;
-  var cache = {};
+  let parseUrlRegex = new RegExp('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?');
+  let overwrite = null;
+  let cache = {};
   function parseUrl(url) {
-    var addscheme =
+    let addscheme =
     url.indexOf('/') !== 0 &&
     url.indexOf('/') !== -1 &&
     (url.indexOf(':') === -1 || url.indexOf(':') > url.indexOf('/'));
 
-    var match = parseUrlRegex.exec(addscheme ? 'noscheme://' + url : url);
-    var res = {
+    let match = parseUrlRegex.exec(addscheme ? 'noscheme://' + url : url);
+    let res = {
       scheme: addscheme ? '' : match[2] || '',
       host: match[4] || '',
       hostname: match[4] ? match[4].split(':')[0] : '',
@@ -203,49 +203,49 @@ var dsuModule = (function() {
   }
 
   function location() {
-    var url = overwrite || window.location.toString();
+    let url = overwrite || window.location.toString();
     url = url.replace(/\.demo\.audienceproject\.com\//, '/');
 
     if (cache.url === url) {
       return cache.parsed;
     }
-    var parsed = parseUrl(url);
+    let parsed = parseUrl(url);
     cache.url = url;
     cache.parsed = parsed;
     return parsed;
   }
 
   function getDaysSinceApEpoch() {
-    var timeDiff = (new Date()).getTime() - (new Date(2019, 0, 1)).getTime();
-    var daysSinceApEpoch = Math.floor(timeDiff / (1000 * 3600 * 24));
+    let timeDiff = (new Date()).getTime() - (new Date(2019, 0, 1)).getTime();
+    let daysSinceApEpoch = Math.floor(timeDiff / (1000 * 3600 * 24));
     return daysSinceApEpoch;
   }
 
   function generateDsu() {
-    var dsuId = generateUUID();
-    var loc = location();
+    let dsuId = generateUUID();
+    let loc = location();
 
-    var dsuIdSuffix = hashWithKey(dsuId + loc.toString());
-    var suffix4 = dsuIdSuffix.substr(0, 4);
-    var suffix8 = dsuIdSuffix.substr(4);
+    let dsuIdSuffix = hashWithKey(dsuId + loc.toString());
+    let suffix4 = dsuIdSuffix.substr(0, 4);
+    let suffix8 = dsuIdSuffix.substr(4);
 
     dsuId = dsuId.substr(0, 19) + suffix4 + '-' + suffix8;
 
-    var daysSinceApEpoch = getDaysSinceApEpoch();
-    var originHash = hashWithKey(loc.origin);
+    let daysSinceApEpoch = getDaysSinceApEpoch();
+    let originHash = hashWithKey(loc.origin);
 
-    var metadata = [
+    let metadata = [
       DSU_CREATOR.USERREPORT,
       daysSinceApEpoch,
       originHash
     ].join('.');
-    var signature = hashWithKey(dsuId + metadata + SIGNATURE_SALT);
+    let signature = hashWithKey(dsuId + metadata + SIGNATURE_SALT);
 
     return [DSU_VERSION_NUMBER, signature, dsuId, metadata].join('.');
   }
 
   function readOrCreateDsu() {
-    var dsu;
+    let dsu;
     try {
       dsu = storage.getDataFromLocalStorage(DSU_KEY);
     } catch (err) {

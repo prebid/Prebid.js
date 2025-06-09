@@ -830,8 +830,8 @@ export function toLegacyResponse(ortbResponse, ortbRequest) {
  * Inverts key-values of an object.
  */
 function inverse(obj) {
-  var retobj = {};
-  for (var key in obj) {
+  let retobj = {};
+  for (let key in obj) {
     retobj[obj[key]] = key;
   }
   return retobj;

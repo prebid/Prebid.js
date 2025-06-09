@@ -199,7 +199,7 @@ const buildRequest = (params) => {
       ...params,
     },
   };
-  var response = spec.buildRequests([bidRequest], BIDDER_REQUEST);
+  let response = spec.buildRequests([bidRequest], BIDDER_REQUEST);
   return response;
 };
 

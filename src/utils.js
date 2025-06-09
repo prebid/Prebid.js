@@ -9,12 +9,12 @@ import { default as deepAccess } from 'dlv/index.js';
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 
-var tStr = 'String';
-var tFn = 'Function';
-var tNumb = 'Number';
-var tObject = 'Object';
-var tBoolean = 'Boolean';
-var toString = Object.prototype.toString;
+let tStr = 'String';
+let tFn = 'Function';
+let tNumb = 'Number';
+let tObject = 'Object';
+let tBoolean = 'Boolean';
+let toString = Object.prototype.toString;
 let consoleExists = Boolean(window.console);
 let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
@@ -116,8 +116,8 @@ export function getPrebidInternal() {
 }
 
 /* utility method to get incremental integer starting from 1 */
-var getIncrementalInteger = (function () {
-  var count = 0;
+let getIncrementalInteger = (function () {
+  let count = 0;
   return function () {
     count++;
     return count;
@@ -162,7 +162,7 @@ export function getBidIdParameter(key, paramsObj) {
 // aliases to formatQS
 export function parseQueryStringParameters(queryObj) {
   let result = '';
-  for (var k in queryObj) {
+  for (let k in queryObj) {
     if (queryObj.hasOwnProperty(k)) { result += k + '=' + encodeURIComponent(queryObj[k]) + '&'; }
   }
   result = result.replace(/&$/, '');
@@ -1170,7 +1170,7 @@ export function cyrb53Hash(str, seed = 0) {
       // automatically handled for our convienence:
       // 1. 0x003fffff /*opA & 0x000fffff*/ * 0x7fffffff /*opB*/ = 0x1fffff7fc00001
       //    0x1fffff7fc00001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/
-      var result = (opA & 0x003fffff) * opB;
+      let result = (opA & 0x003fffff) * opB;
       // 2. We can remove an integer coersion from the statement above because:
       //    0x1fffff7fc00001 + 0xffc00000 = 0x1fffffff800001
       //    0x1fffffff800001 < Number.MAX_SAFE_INTEGER /*0x1fffffffffffff*/

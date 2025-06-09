@@ -22,9 +22,9 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
   }
 
   // store gpt slots in a more performant hash lookup by elementId (adUnit code)
-  var gptSlotCache = {};
+  let gptSlotCache = {};
   // put adUnits in a more performant hash lookup by code.
-  var adUnitsCache = adUnits.reduce(function (cache, adUnit) {
+  let adUnitsCache = adUnits.reduce(function (cache, adUnit) {
     if (adUnit.code && adUnit.bids) {
       cache[adUnit.code] = adUnit;
     } else {
@@ -37,8 +37,8 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(function () {
     // verify all necessary gpt functions exist
-    var gpt = window.googletag;
-    var pads = gpt.pubads;
+    let gpt = window.googletag;
+    let pads = gpt.pubads;
     if (!gpt.display || !gpt.enableServices || typeof pads !== 'function' || !pads().refresh || !pads().disableInitialLoad || !pads().getSlots || !pads().enableSingleRequest) {
       logError('could not bind to gpt googletag api');
       return;
@@ -47,8 +47,8 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
 
     // function to convert google tag slot sizes to [[w,h],...]
     function mapGptSlotSizes(aGPTSlotSizes) {
-      var aSlotSizes = [];
-      for (var i = 0; i < aGPTSlotSizes.length; i++) {
+      let aSlotSizes = [];
+      for (let i = 0; i < aGPTSlotSizes.length; i++) {
         try {
           aSlotSizes.push([aGPTSlotSizes[i].getWidth(), aGPTSlotSizes[i].getHeight()]);
         } catch (e) {
@@ -68,9 +68,9 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
 
     // maps gpt slots to adUnits, matches are copied to new array and removed from passed array.
     function pickAdUnits(gptSlots) {
-      var adUnits = [];
+      let adUnits = [];
       // traverse backwards (since gptSlots is mutated) to find adUnits in cache and remove non-mapped slots
-      for (var i = gptSlots.length - 1; i > -1; i--) {
+      for (let i = gptSlots.length - 1; i > -1; i--) {
         const gptSlot = gptSlots[i];
         const elemId = gptSlot.getSlotElementId();
         const adUnit = adUnitsCache[elemId];
@@ -87,11 +87,11 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
     }
 
     // store original gpt functions that will be overridden
-    var fGptDisplay = gpt.display;
-    var fGptEnableServices = gpt.enableServices;
-    var fGptRefresh = pads().refresh;
-    var fGptDisableInitialLoad = pads().disableInitialLoad;
-    var fGptEnableSingleRequest = pads().enableSingleRequest;
+    let fGptDisplay = gpt.display;
+    let fGptEnableServices = gpt.enableServices;
+    let fGptRefresh = pads().refresh;
+    let fGptDisableInitialLoad = pads().disableInitialLoad;
+    let fGptEnableSingleRequest = pads().enableSingleRequest;
 
     // override googletag.enableServices()
     //  - make sure fGptDisableInitialLoad() has been called so we can
@@ -116,7 +116,7 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
       fGptDisplay.apply(gpt, arguments);
 
       // if not SRA mode, get only the gpt slot corresponding to sEementId
-      var aGptSlots;
+      let aGptSlots;
       if (!bEnabledSRA) {
         // eslint-disable-next-line no-undef
         aGptSlots = googletag.pubads().getSlots().filter(function (oGptSlot) {
@@ -132,7 +132,7 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
         gptSlot._displayed = true;
       });
 
-      var adUnits = pickAdUnits(/* mutated: */ aGptSlots);
+      let adUnits = pickAdUnits(/* mutated: */ aGptSlots);
 
       if (!bInitialLoadDisabled) {
         if (aGptSlots.length) {
@@ -161,7 +161,7 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
       logInfo('refresh:', aGptSlots);
       // get already displayed adUnits from aGptSlots if provided, else all defined gptSlots
       aGptSlots = defaultSlots(aGptSlots);
-      var adUnits = pickAdUnits(/* mutated: */ aGptSlots).filter(function (adUnit) {
+      let adUnits = pickAdUnits(/* mutated: */ aGptSlots).filter(function (adUnit) {
         return gptSlotCache[adUnit.code]._displayed;
       });
 

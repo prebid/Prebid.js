@@ -1,6 +1,6 @@
 import s2sTesting from 'modules/s2sTesting.js';
 
-var expect = require('chai').expect;
+let expect = require('chai').expect;
 
 describe('s2sTesting', function () {
   describe('s2sTesting.getSource', function () {
@@ -23,7 +23,7 @@ describe('s2sTesting', function () {
     });
 
     it('gets the expected source from 3 sources', function () {
-      var sources = ['server', 'client', 'both'];
+      let sources = ['server', 'client', 'both'];
       expect(getExpectedSource(0, {server: 1, client: 1, both: 2}, sources)).to.equal('server');
       expect(getExpectedSource(0.2499999, {server: 1, client: 1, both: 2}, sources)).to.equal('server');
       expect(getExpectedSource(0.25, {server: 1, client: 1, both: 2}, sources)).to.equal('client');
@@ -37,7 +37,7 @@ describe('s2sTesting', function () {
       expect(getExpectedSource(0.39999, {server: 2, client: 3})).to.equal('server');
       expect(getExpectedSource(0.4, {server: 2, client: 3})).to.equal('client');
       expect(getExpectedSource(0.9, {server: 2, client: 3})).to.equal('client');
-      var sources = ['server', 'client', 'both'];
+      let sources = ['server', 'client', 'both'];
       expect(getExpectedSource(0, {server: 2, client: 3}, sources)).to.equal('server');
       expect(getExpectedSource(0.39999, {server: 2, client: 3}, sources)).to.equal('server');
       expect(getExpectedSource(0.4, {server: 2, client: 3}, sources)).to.equal('client');
@@ -57,7 +57,7 @@ describe('s2sTesting', function () {
     });
 
     it('ignores order of sources', function () {
-      var sources = ['server', 'client', 'both'];
+      let sources = ['server', 'client', 'both'];
       expect(getExpectedSource(0, {client: 1, server: 1, both: 2}, sources)).to.equal('server');
       expect(getExpectedSource(0.2499999, {both: 2, client: 1, server: 1}, sources)).to.equal('server');
       expect(getExpectedSource(0.25, {client: 1, both: 2, server: 1}, sources)).to.equal('client');
@@ -125,7 +125,7 @@ describe('s2sTesting', function () {
           }
         }
         s2sTesting.calculateBidSources(s2sConfig);
-        var serverClientBidders = s2sTesting.getSourceBidderMap();
+        let serverClientBidders = s2sTesting.getSourceBidderMap();
         expect(serverClientBidders.server).to.eql(['rubicon']);
         expect(serverClientBidders.client).to.have.members(['appnexus']);
       });
@@ -189,7 +189,7 @@ describe('s2sTesting', function () {
       });
 
       it('sets one bidder source from one adUnit', function () {
-        var adUnits = [
+        let adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {server: 4, client: 1}}
           ]}
@@ -218,7 +218,7 @@ describe('s2sTesting', function () {
       });
 
       it('defaults to client if no bidSource', function () {
-        var adUnits = [
+        let adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {}}
           ]}
@@ -233,13 +233,13 @@ describe('s2sTesting', function () {
       });
 
       it('sets multiple bidders sources from one adUnit', function () {
-        var adUnits = [
+        let adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {server: 2, client: 1}},
             {bidder: 'appnexus', bidSource: {server: 3, client: 1}}
           ]}
         ];
-        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
+        let serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
         expect(serverClientBidders.server).to.eql(['appnexus']);
         expect(serverClientBidders.client).to.have.members(['rubicon']);
         // should have saved the source on the bid
@@ -250,7 +250,7 @@ describe('s2sTesting', function () {
       });
 
       it('sets multiple bidders sources from multiple adUnits', function () {
-        var adUnits = [
+        let adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {server: 2, client: 1}},
             {bidder: 'appnexus', bidSource: {server: 1, client: 1}}
@@ -260,7 +260,7 @@ describe('s2sTesting', function () {
             {bidder: 'bidder3', bidSource: {client: 1}}
           ]}
         ];
-        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
+        let serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
         expect(serverClientBidders.server).to.have.members(['rubicon']);
         expect(serverClientBidders.server).to.not.have.members(['appnexus', 'bidder3']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus', 'bidder3']);
@@ -276,14 +276,14 @@ describe('s2sTesting', function () {
       });
 
       it('should reuse calculated sources', function () {
-        var adUnits = [
+        let adUnits = [
           {bids: [
             {bidder: 'rubicon', calcSource: 'client', bidSource: {server: 4, client: 1}},
             {bidder: 'appnexus', calcSource: 'server', bidSource: {server: 1, client: 1}},
             {bidder: 'bidder3', calcSource: 'server', bidSource: {client: 1}}
           ]}
         ];
-        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
+        let serverClientBidders = s2sTesting.getSourceBidderMap(adUnits, []);
 
         expect(serverClientBidders.server).to.have.members(['appnexus', 'bidder3']);
         expect(serverClientBidders.server).to.not.have.members(['rubicon']);
@@ -307,7 +307,7 @@ describe('s2sTesting', function () {
 
       it('should get sources from  both', function () {
         // set rubicon: server and appnexus: client
-        var adUnits = [
+        let adUnits = [
           {bids: [
             {bidder: 'rubicon', bidSource: {server: 4, client: 1}},
             {bidder: 'appnexus', bidSource: {client: 1}}
@@ -324,7 +324,7 @@ describe('s2sTesting', function () {
           }
         }
         s2sTesting.calculateBidSources(s2sConfig);
-        var serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
+        let serverClientBidders = s2sTesting.getSourceBidderMap(adUnits);
         expect(serverClientBidders.server).to.have.members(['rubicon', 'appnexus']);
         expect(serverClientBidders.client).to.have.members(['rubicon', 'appnexus']);
       });

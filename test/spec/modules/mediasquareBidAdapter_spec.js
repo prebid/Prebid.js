@@ -3,7 +3,7 @@ import {spec} from 'modules/mediasquareBidAdapter.js';
 import { server } from 'test/mocks/xhr.js';
 
 describe('MediaSquare bid adapter tests', function () {
-  var DEFAULT_PARAMS = [{
+  let DEFAULT_PARAMS = [{
     adUnitCode: 'banner-div',
     bidId: 'aaaa1234',
     auctionId: 'bbbb1234',
@@ -25,7 +25,7 @@ describe('MediaSquare bid adapter tests', function () {
       code: 'publishername_atf_desktop_rg_pave'
     },
   }];
-  var VIDEO_PARAMS = [{
+  let VIDEO_PARAMS = [{
     adUnitCode: 'banner-div',
     bidId: 'aaaa1234',
     auctionId: 'bbbb1234',
@@ -43,7 +43,7 @@ describe('MediaSquare bid adapter tests', function () {
       code: 'publishername_atf_desktop_rg_pave'
     },
   }];
-  var NATIVE_PARAMS = [{
+  let NATIVE_PARAMS = [{
     adUnitCode: 'banner-div',
     bidId: 'aaaa1234',
     auctionId: 'bbbb1234',
@@ -62,7 +62,7 @@ describe('MediaSquare bid adapter tests', function () {
       code: 'publishername_atf_desktop_rg_pave'
     },
   }];
-  var FLOORS_PARAMS = [{
+  let FLOORS_PARAMS = [{
     adUnitCode: 'banner-div',
     bidId: 'aaaa1234',
     auctionId: 'bbbb1234',
@@ -82,7 +82,7 @@ describe('MediaSquare bid adapter tests', function () {
     sizes: [[300, 250]],
     getFloor: function (a) { return { currency: 'USD', floor: 1.0 }; },
   }];
-  var BID_RESPONSE = {'body': {
+  let BID_RESPONSE = {'body': {
     'responses': [{
       'transaction_id': 'cccc1234',
       'cpm': 22.256608,
@@ -256,18 +256,18 @@ describe('MediaSquare bid adapter tests', function () {
     expect(message).to.have.property('ova').and.to.equal('cleared');
   });
   it('Verifies user sync without cookie in bid response', function () {
-    var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    let syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with cookies in bid response', function () {
     BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
-    var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
+    let syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent);
     expect(syncs).to.have.lengthOf(1);
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
     expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');
   });
   it('Verifies user sync with no bid response', function() {
-    var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+    let syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with no bid body response', function() {

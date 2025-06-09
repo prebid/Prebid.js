@@ -16,7 +16,7 @@ describe('Bucksense Adapter', function() {
   };
 
   describe('isBidRequestValid', function() {
-    var bid;
+    let bid;
 
     beforeEach(function() {
       bid = getValidBidObject();
@@ -43,7 +43,7 @@ describe('Bucksense Adapter', function() {
   });
 
   describe('buildRequests', function() {
-    var bid, bidRequestObj;
+    let bid, bidRequestObj;
 
     beforeEach(function() {
       bid = getValidBidObject();
@@ -87,19 +87,19 @@ describe('Bucksense Adapter', function() {
     });
 
     it('should build a very basic request', function() {
-      var request = spec.buildRequests([bid], bidRequestObj);
+      let request = spec.buildRequests([bid], bidRequestObj);
       expect(request[0].method).to.equal('POST');
     });
 
     it('bidRequest data', function () {
-      var request = spec.buildRequests([bid], bidRequestObj);
+      let request = spec.buildRequests([bid], bidRequestObj);
       expect(request[0].data).to.exist;
     });
   });
 
   describe('interpretResponse', function() {
-    var serverResponse;
-    var serverRequest;
+    let serverResponse;
+    let serverRequest;
 
     beforeEach(function() {
       serverRequest = {
@@ -137,13 +137,13 @@ describe('Bucksense Adapter', function() {
     });
 
     it('should return an array of bid responses', function() {
-      var responses = spec.interpretResponse(serverResponse, serverRequest);
+      let responses = spec.interpretResponse(serverResponse, serverRequest);
       expect(responses).to.be.an('array').with.length(1);
     });
 
     it('should return an array of bid responses', function() {
       serverResponse = {};
-      var responses = spec.interpretResponse(serverResponse, serverRequest);
+      let responses = spec.interpretResponse(serverResponse, serverRequest);
       expect(responses).to.be.an('array').with.length(0);
     });
   });

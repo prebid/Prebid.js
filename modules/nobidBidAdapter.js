@@ -27,26 +27,26 @@ function log(msg, obj) {
   logInfo('-NoBid- ' + msg, obj)
 }
 function nobidSetCookie(cname, cvalue, hours) {
-  var d = new Date();
+  let d = new Date();
   d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
-  var expires = 'expires=' + d.toUTCString();
+  let expires = 'expires=' + d.toUTCString();
   storage.setCookie(cname, cvalue, expires);
 }
 function nobidGetCookie(cname) {
   return storage.getCookie(cname);
 }
 function nobidBuildRequests(bids, bidderRequest) {
-  var serializeState = function(divIds, siteId, adunits) {
-    var filterAdUnitsByIds = function(divIds, adUnits) {
-      var filtered = [];
+  let serializeState = function(divIds, siteId, adunits) {
+    let filterAdUnitsByIds = function(divIds, adUnits) {
+      let filtered = [];
       if (!divIds.length) {
         filtered = adUnits;
       } else if (adUnits) {
-        var a = [];
+        let a = [];
         if (!(divIds instanceof Array)) a.push(divIds);
         else a = divIds;
-        for (var i = 0, l = adUnits.length; i < l; i++) {
-          var adUnit = adUnits[i];
+        for (let i = 0, l = adUnits.length; i < l; i++) {
+          let adUnit = adUnits[i];
           if (adUnit && adUnit.d && (a.indexOf(adUnit.d) > -1)) {
             filtered.push(adUnit);
           }
@@ -54,8 +54,8 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return filtered;
     }
-    var gdprConsent = function(bidderRequest) {
-      var gdprConsent = {};
+    let gdprConsent = function(bidderRequest) {
+      let gdprConsent = {};
       if (bidderRequest && bidderRequest.gdprConsent) {
         gdprConsent = {
           consentString: bidderRequest.gdprConsent.consentString,
@@ -65,14 +65,14 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return gdprConsent;
     }
-    var uspConsent = function(bidderRequest) {
-      var uspConsent = '';
+    let uspConsent = function(bidderRequest) {
+      let uspConsent = '';
       if (bidderRequest && bidderRequest.uspConsent) {
         uspConsent = bidderRequest.uspConsent;
       }
       return uspConsent;
     }
-    var gppConsent = function(bidderRequest) {
+    let gppConsent = function(bidderRequest) {
       let gppConsent = null;
       if (bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent?.applicableSections) {
         gppConsent = {};
@@ -85,13 +85,13 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return gppConsent;
     }
-    var schain = function(bids) {
+    let schain = function(bids) {
       if (bids && bids.length > 0) {
         return bids[0].schain
       }
       return null;
     }
-    var coppa = function() {
+    let coppa = function() {
       if (config.getConfig('coppa') === true) {
         return {'coppa': true};
       }
@@ -100,8 +100,8 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return null;
     }
-    var topLocation = function(bidderRequest) {
-      var ret = '';
+    let topLocation = function(bidderRequest) {
+      let ret = '';
       if (bidderRequest?.refererInfo?.page) {
         ret = bidderRequest.refererInfo.page;
       } else {
@@ -110,28 +110,28 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return encodeURIComponent(ret.replace(/\%/g, ''));
     }
-    var timestamp = function() {
-      var date = new Date();
-      var zp = function (val) { return (val <= 9 ? '0' + val : '' + val); }
-      var d = date.getDate();
-      var y = date.getFullYear();
-      var m = date.getMonth() + 1;
-      var h = date.getHours();
-      var min = date.getMinutes();
-      var s = date.getSeconds();
+    let timestamp = function() {
+      let date = new Date();
+      let zp = function (val) { return (val <= 9 ? '0' + val : '' + val); }
+      let d = date.getDate();
+      let y = date.getFullYear();
+      let m = date.getMonth() + 1;
+      let h = date.getHours();
+      let min = date.getMinutes();
+      let s = date.getSeconds();
       return '' + y + '-' + zp(m) + '-' + zp(d) + ' ' + zp(h) + ':' + zp(min) + ':' + zp(s);
     };
-    var clientDim = function() {
+    let clientDim = function() {
       try {
         const winDimensions = getWinDimensions();
-        var width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
-        var height = Math.max(winDimensions.document.documentElement.clientHeight, winDimensions.innerHeight || 0);
+        let width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
+        let height = Math.max(winDimensions.document.documentElement.clientHeight, winDimensions.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
         logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
-    var getEIDs = function(eids) {
+    let getEIDs = function(eids) {
       if (isArray(eids) && eids.length > 0) {
         let src = [];
         eids.forEach((eid) => {
@@ -148,7 +148,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         return src;
       }
     }
-    var state = {};
+    let state = {};
     state['sid'] = siteId;
     state['l'] = topLocation(bidderRequest);
     state['tt'] = encodeURIComponent(document.title);
@@ -176,23 +176,23 @@ function nobidBuildRequests(bids, bidderRequest) {
     return state;
   };
   function newAdunit(adunitObject, adunits) {
-    var getAdUnit = function(divid, adunits) {
-      for (var i = 0; i < adunits.length; i++) {
+    let getAdUnit = function(divid, adunits) {
+      for (let i = 0; i < adunits.length; i++) {
         if (adunits[i].d === divid) {
           return adunits[i];
         }
       }
       return false;
     }
-    var removeByAttrValue = function(array, attribute, value) {
-      for (var i = array.length - 1; i >= 0; i--) {
-        var entry = array[i];
+    let removeByAttrValue = function(array, attribute, value) {
+      for (let i = array.length - 1; i >= 0; i--) {
+        let entry = array[i];
         if (entry[attribute] && entry[attribute] === value) {
           array.splice(i, 1);
         }
       }
     }
-    var a = getAdUnit(adunitObject.div, adunits) || {};
+    let a = getAdUnit(adunitObject.div, adunits) || {};
     if (adunitObject.account) {
       a.s = adunitObject.account;
     }
@@ -246,16 +246,16 @@ function nobidBuildRequests(bids, bidderRequest) {
     return false;
   }
   /* DISCOVER SLOTS */
-  var divids = [];
-  var siteId = 0;
-  var adunits = [];
-  for (var i = 0; i < bids.length; i++) {
-    var bid = bids[i];
-    var divid = bid.adUnitCode;
+  let divids = [];
+  let siteId = 0;
+  let adunits = [];
+  for (let i = 0; i < bids.length; i++) {
+    let bid = bids[i];
+    let divid = bid.adUnitCode;
     divids.push(divid);
-    var sizes = bid.sizes;
+    let sizes = bid.sizes;
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
-    var placementId = bid.params['placementId'];
+    let placementId = bid.params['placementId'];
 
     let adType = 'banner';
     const videoMediaType = deepAccess(bid, 'mediaTypes.video');
@@ -286,30 +286,30 @@ function nobidBuildRequests(bids, bidderRequest) {
   }
 }
 function nobidInterpretResponse(response, bidRequest) {
-  var findBid = function(divid, bids) {
-    for (var i = 0; i < bids.length; i++) {
+  let findBid = function(divid, bids) {
+    for (let i = 0; i < bids.length; i++) {
       if (bids[i].adUnitCode == divid) {
         return bids[i];
       }
     }
     return false;
   }
-  var setRefreshLimit = function(response) {
+  let setRefreshLimit = function(response) {
     if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
   }
-  var setUserBlock = function(response) {
+  let setUserBlock = function(response) {
     if (response && typeof response.ublock !== 'undefined') {
       nobidSetCookie('_ublock', '1', response.ublock);
     }
   }
   setRefreshLimit(response);
   setUserBlock(response);
-  var bidResponses = [];
-  for (var i = 0; response.bids && i < response.bids.length; i++) {
-    var bid = response.bids[i];
+  let bidResponses = [];
+  for (let i = 0; response.bids && i < response.bids.length; i++) {
+    let bid = response.bids[i];
     if (bid.bdrid < 100 || !bidRequest || !bidRequest.bidderRequest || !bidRequest.bidderRequest.bids) continue;
     window.nobid.bidResponses['' + bid.id] = bid;
-    var reqBid = findBid(bid.divid, bidRequest.bidderRequest.bids);
+    let reqBid = findBid(bid.divid, bidRequest.bidderRequest.bids);
     if (!reqBid) continue;
     const bidResponse = {
       requestId: reqBid.bidId,
@@ -343,10 +343,10 @@ function nobidInterpretResponse(response, bidRequest) {
 };
 window.nobid.renderTag = function(doc, id, win) {
   log('nobid.renderTag()', id);
-  var bid = window.nobid.bidResponses['' + id];
+  let bid = window.nobid.bidResponses['' + id];
   if (bid && bid.adm2) {
     log('nobid.renderTag() found tag', id);
-    var markup = bid.adm2;
+    let markup = bid.adm2;
     doc.write(markup);
     doc.close();
     return;
@@ -355,14 +355,14 @@ window.nobid.renderTag = function(doc, id, win) {
 }
 window.addEventListener('message', function (event) {
   let key = event.message ? 'message' : 'data';
-  var msg = '' + event[key];
+  let msg = '' + event[key];
   if (msg.substring(0, 'nbTagRenderer.requestAdMarkup|'.length) === 'nbTagRenderer.requestAdMarkup|') {
     log('Prebid received nbTagRenderer.requestAdMarkup event');
-    var adId = msg.substring(msg.indexOf('|') + 1);
+    let adId = msg.substring(msg.indexOf('|') + 1);
     if (window.nobid && window.nobid.bidResponses) {
-      var bid = window.nobid.bidResponses['' + adId];
+      let bid = window.nobid.bidResponses['' + adId];
       if (bid && bid.adm2) {
-        var markup = bid.adm2;
+        let markup = bid.adm2;
         if (markup) {
           event.source.postMessage('nbTagRenderer.renderAdInSafeFrame|' + markup, '*');
         }
@@ -397,8 +397,8 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     function resolveEndpoint() {
-      var ret = 'https://ads.servenobid.com/';
-      var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
+      let ret = 'https://ads.servenobid.com/';
+      let env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
       env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
       if (!env) ret = 'https://ads.servenobid.com/';
       else if (env == 'beta') ret = 'https://beta.servenobid.com/';
@@ -406,7 +406,7 @@ export const spec = {
       else if (env == 'qa') ret = 'https://qa-ads.nobid.com/';
       return ret;
     }
-    var buildEndpoint = function() {
+    let buildEndpoint = function() {
       return resolveEndpoint() + 'adreq?cb=' + Math.floor(Math.random() * 11000);
     }
     log('validBidRequests', validBidRequests);

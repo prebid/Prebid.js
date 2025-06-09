@@ -280,7 +280,7 @@ function onAuctionEndEvent(auctionDetails, config, userConsent) {
     return;
   }
 
-  var payload = JSON.stringify({ bidders: [...enrichedBidders] });
+  let payload = JSON.stringify({ bidders: [...enrichedBidders] });
   const sentBeacon = sendBeacon(url.toString(), payload);
   if (sentBeacon) {
     return;

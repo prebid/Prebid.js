@@ -114,7 +114,7 @@ describe('BidlabBidAdapter', function () {
       expect(spec.onBidWon).to.exist.and.to.be.a('function');
     });
     it('should return nothing', function () {
-      var response = spec.onBidWon({});
+      let response = spec.onBidWon({});
       expect(response).to.be.an('undefined')
       expect(utils.triggerPixel.called).to.equal(true);
     });
@@ -130,7 +130,7 @@ describe('BidlabBidAdapter', function () {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
     it('should return nothing', function () {
-      var response = spec.onBidWon([]);
+      let response = spec.onBidWon([]);
       expect(response).to.be.an('undefined')
       expect(utils.triggerPixel.called).to.equal(true);
     });

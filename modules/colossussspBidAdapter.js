@@ -33,7 +33,7 @@ function isBidResponseValid(bid) {
 
 function getUserId(eids, id, source, uidExt) {
   if (id) {
-    var uid = { id };
+    let uid = { id };
     if (uidExt) {
       uid.ext = uidExt;
     }

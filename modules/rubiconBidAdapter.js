@@ -44,7 +44,7 @@ const GVLID = 52;
 
 let impIdMap = {};
 
-var sizeMap = {
+let sizeMap = {
   1: '468x60',
   2: '728x90',
   5: '120x90',
@@ -1247,7 +1247,7 @@ export function hasValidVideoParams(bid) {
   let arrayType = Object.prototype.toString.call([]);
   let numberType = Object.prototype.toString.call(0);
   // required params and their associated object type
-  var requiredParams = {
+  let requiredParams = {
     mimes: arrayType,
     protocols: arrayType,
     linearity: numberType

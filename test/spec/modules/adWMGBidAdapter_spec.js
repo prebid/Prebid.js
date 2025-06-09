@@ -216,7 +216,7 @@ describe('adWMGBidAdapter', function () {
     });
 
     it('should return a valid response', () => {
-      var responses = spec.interpretResponse(serverResponse);
+      let responses = spec.interpretResponse(serverResponse);
       expect(responses).to.be.an('array').that.is.not.empty;
 
       let response = responses[0];
@@ -237,7 +237,7 @@ describe('adWMGBidAdapter', function () {
 
     it('should return an empty array when serverResponse is empty', () => {
       serverResponse = {};
-      var responses = spec.interpretResponse(serverResponse);
+      let responses = spec.interpretResponse(serverResponse);
       expect(responses).to.deep.equal([]);
     });
   });

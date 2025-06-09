@@ -5,7 +5,7 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
-var pulsepointAdapter = adapter({
+let pulsepointAdapter = adapter({
   global: 'PulsePointPrebidAnalytics',
   handler: 'on',
   analyticsType: 'bundle'

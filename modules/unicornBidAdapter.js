@@ -123,11 +123,11 @@ const interpretResponse = (serverResponse, request) => {
   logInfo('[UNICORN] interpretResponse.serverResponse:', serverResponse);
   logInfo('[UNICORN] interpretResponse.request:', request);
   const res = serverResponse.body;
-  var bids = []
+  let bids = []
   if (res) {
     res.seatbid.forEach(sb => {
       sb.bid.forEach(b => {
-        var bid = {
+        let bid = {
           requestId: b.impid,
           cpm: b.price || 0,
           width: b.w,

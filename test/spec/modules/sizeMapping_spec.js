@@ -5,7 +5,7 @@ let utils = require('src/utils.js');
 let deepClone = utils.deepClone;
 
 describe('sizeMapping', function () {
-  var sizeConfig = [{
+  let sizeConfig = [{
     'mediaQuery': '(min-width: 1200px)',
     'sizesSupported': [
       [970, 90],
@@ -24,7 +24,7 @@ describe('sizeMapping', function () {
     'sizesSupported': []
   }];
 
-  var sizeConfigWithLabels = [{
+  let sizeConfigWithLabels = [{
     'mediaQuery': '(min-width: 1200px)',
     'labels': ['desktop']
   }, {

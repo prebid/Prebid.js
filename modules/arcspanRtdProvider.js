@@ -23,7 +23,7 @@ function init(config, userConsent) {
     return false;
   }
   if (typeof window.arcobj2 === 'undefined') {
-    var scriptUrl;
+    let scriptUrl;
     if (config.params.silo === 'test') {
       scriptUrl = 'https://localhost:8080/as.js';
     } else {
@@ -35,10 +35,10 @@ function init(config, userConsent) {
 }
 
 function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
-  var _v1 = [];
-  var _v1s = [];
-  var _v2 = [];
-  var arcobj1 = window.arcobj1;
+  let _v1 = [];
+  let _v1s = [];
+  let _v2 = [];
+  let arcobj1 = window.arcobj1;
   if (typeof arcobj1 != 'undefined') {
     if (typeof arcobj1.page_iab_codes.text != 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.text); }
     if (typeof arcobj1.page_iab_codes.images != 'undefined') { _v1 = _v1.concat(arcobj1.page_iab_codes.images); }
@@ -47,9 +47,9 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
     if (typeof arcobj1.page_iab_newcodes.text != 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.text])]; }
     if (typeof arcobj1.page_iab_newcodes.images != 'undefined') { _v2 = [...new Set([..._v2, ...arcobj1.page_iab_newcodes.images])]; }
 
-    var _content = {};
+    let _content = {};
     _content.data = [];
-    var p = {};
+    let p = {};
     p.name = 'arcspan';
     p.segment = [];
     p.ext = { segtax: 6 };
@@ -57,7 +57,7 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
       p.segment = p.segment.concat({ id: e });
     });
     _content.data = _content.data.concat(p);
-    var _ortb2 = {
+    let _ortb2 = {
       site: {
         name: 'arcspan',
         domain: new URL(location.href).hostname,

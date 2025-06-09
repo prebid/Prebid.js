@@ -159,8 +159,8 @@ export const spec = {
     if (!serverResponse.body || !serverResponse.body.recs || !serverResponse.body.recs.length) {
       return [];
     }
-    var response = serverResponse.body;
-    var isNative = response.pbtypeId == 1;
+    let response = serverResponse.body;
+    let isNative = response.pbtypeId == 1;
     return response.recs.map(rec => {
       let bid = {
         requestId: response.ireqId,

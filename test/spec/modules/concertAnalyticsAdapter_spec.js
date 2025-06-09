@@ -73,7 +73,7 @@ describe('ConcertAnalyticsAdapter', function() {
 
       const requiredFields = ['event', 'concert_rid', 'adId', 'auctionId', 'creativeId', 'position', 'url', 'cpm', 'width', 'height', 'timeToRespond'];
 
-      for (var i = 0; i < requiredFields.length; i++) {
+      for (let i = 0; i < requiredFields.length; i++) {
         expect(concertAnalytics.eventsStorage[0]).to.have.property(requiredFields[i]);
       }
     });

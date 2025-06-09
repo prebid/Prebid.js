@@ -1292,7 +1292,7 @@ describe('Livewrapped adapter tests', function () {
 
     let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     let data = JSON.parse(result.data);
-    var expected = {user: {ext: {prop: 'value', eids: testbidRequest.bids[0].userIdAsEids}}}
+    let expected = {user: {ext: {prop: 'value', eids: testbidRequest.bids[0].userIdAsEids}}}
 
     expect(data.rtbData).to.deep.equal(expected);
     expect(ortb2).to.deep.equal({user: {ext: {prop: 'value'}}});

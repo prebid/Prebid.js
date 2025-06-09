@@ -54,15 +54,15 @@ export const spec = {
       return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
     };
     let getOrigins = function() {
-      var ori = [window.location.protocol + '//' + window.location.hostname];
+      let ori = [window.location.protocol + '//' + window.location.hostname];
 
       if (window.location.ancestorOrigins) {
-        for (var i = 0; i < window.location.ancestorOrigins.length; i++) {
+        for (let i = 0; i < window.location.ancestorOrigins.length; i++) {
           ori.push(window.location.ancestorOrigins[i]);
         }
       } else if (window !== window.top) {
         // Derive the parent origin
-        var parts = document.referrer.split('/');
+        let parts = document.referrer.split('/');
 
         ori.push(parts[0] + '//' + parts[2]);
 
@@ -81,8 +81,8 @@ export const spec = {
       bid.sizes = ((isArray(bid.sizes) && isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => isArray(size));
 
-      var adUnitId = getBidIdParameter('adUnitId', bid.params);
-      var options = deepClone(bid.params);
+      let adUnitId = getBidIdParameter('adUnitId', bid.params);
+      let options = deepClone(bid.params);
 
       delete options.adUnitId;
 

@@ -462,15 +462,15 @@ export function _getPlatform(context = window) {
  * @return {object} firstPartyData - Data object containing first party information
  */
 function loadOrCreateFirstPartyData() {
-  var FIRST_PARTY_KEY = '_iiq_fdata';
-  var tryParse = function (data) {
+  let FIRST_PARTY_KEY = '_iiq_fdata';
+  let tryParse = function (data) {
     try {
       return JSON.parse(data);
     } catch (err) {
       return null;
     }
   };
-  var readData = function (key) {
+  let readData = function (key) {
     if (hasLocalStorage()) {
       // TODO FIX RULES VIOLATION
       // eslint-disable-next-line no-restricted-properties
@@ -482,15 +482,15 @@ function loadOrCreateFirstPartyData() {
   var hasLocalStorage = function () {
     return false;
   };
-  var generateGUID = function () {
-    var d = new Date().getTime();
+  let generateGUID = function () {
+    let d = new Date().getTime();
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = (d + Math.random() * 16) % 16 | 0;
+      let r = (d + Math.random() * 16) % 16 | 0;
       d = Math.floor(d / 16);
       return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
     });
   };
-  var storeData = function (key, value) {
+  let storeData = function (key, value) {
     try {
       if (hasLocalStorage()) {
         // TODO FIX RULES VIOLATION
@@ -501,9 +501,9 @@ function loadOrCreateFirstPartyData() {
       return null;
     }
   };
-  var firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
+  let firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
   if (!firstPartyData || !firstPartyData.pcid) {
-    var firstPartyId = generateGUID();
+    let firstPartyId = generateGUID();
     firstPartyData = { pcid: firstPartyId, pcidDate: Date.now() };
   } else if (firstPartyData && !firstPartyData.pcidDate) {
     firstPartyData.pcidDate = Date.now();

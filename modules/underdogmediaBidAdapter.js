@@ -66,8 +66,8 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    var sizes = [];
-    var siteId = 0;
+    let sizes = [];
+    let siteId = 0;
 
     let data = {
       dt: 10,
@@ -293,10 +293,10 @@ function makeNotification(bid, mid, bidParam) {
 }
 
 function getUrlVars() {
-  var vars = {};
-  var hash;
-  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
-  for (var i = 0; i < hashes.length; i++) {
+  let vars = {};
+  let hash;
+  let hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+  for (let i = 0; i < hashes.length; i++) {
     hash = hashes[i].split('=');
     if (hash[0].match(/^utm_/)) {
       vars[hash[0]] = hash[1].substr(0, 150);

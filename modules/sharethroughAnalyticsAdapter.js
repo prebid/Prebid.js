@@ -7,7 +7,7 @@ const analyticsType = 'endpoint';
 const STR_BIDDER_CODE = 'sharethrough';
 const STR_VERSION = '0.1.0';
 
-var sharethroughAdapter = Object.assign(adapter(
+let sharethroughAdapter = Object.assign(adapter(
   {
     emptyUrl,
     analyticsType
@@ -19,9 +19,9 @@ var sharethroughAdapter = Object.assign(adapter(
 
   track({ eventType, args }) {
     if (eventType === 'bidRequested' && args.bidderCode === 'sharethrough') {
-      var bids = args.bids;
-      var keys = Object.keys(bids);
-      for (var i = 0; i < keys.length; i++) {
+      let bids = args.bids;
+      let keys = Object.keys(bids);
+      for (let i = 0; i < keys.length; i++) {
         this.placementCodeSet[bids[keys[i]].placementCode] = args.bids[keys[i]];
       }
     }

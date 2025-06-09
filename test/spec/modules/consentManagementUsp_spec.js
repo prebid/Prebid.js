@@ -15,7 +15,7 @@ import {defer} from '../../../src/utils/promise.js';
 let expect = require('chai').expect;
 
 function createIFrameMarker() {
-  var ifr = document.createElement('iframe');
+  let ifr = document.createElement('iframe');
   ifr.width = 0;
   ifr.height = 0;
   ifr.name = '__uspapiLocator';

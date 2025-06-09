@@ -78,7 +78,7 @@ export const spec = {
 
     if (responses.length && responses[0].body.responses.length) {
       let params = '';
-      var gdpr;
+      let gdpr;
 
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         if (typeof gdprConsent.gdprApplies === 'boolean') {

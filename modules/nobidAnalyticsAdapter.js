@@ -38,8 +38,8 @@ function isExpired (data, retentionSeconds) {
 }
 function sendEvent (event, eventType) {
   function resolveEndpoint() {
-    var ret = 'https://carbon-nv.servenobids.com/admin/status';
-    var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
+    let ret = 'https://carbon-nv.servenobids.com/admin/status';
+    let env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
     env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
     if (!env) ret = 'https://carbon-nv.servenobids.com';
     else if (env == 'dev') ret = 'https://localhost:8383';

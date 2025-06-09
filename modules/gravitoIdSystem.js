@@ -45,7 +45,7 @@ export const gravitoIdSystemSubmodule = {
    */
   decode: function(value) {
     if (value && typeof value === 'object') {
-      var result = {};
+      let result = {};
       if (value.gravitompId) {
         result = value.gravitompId
       }

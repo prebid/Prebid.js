@@ -34,7 +34,7 @@ describe('JustIdSystem', function () {
   });
 
   describe('getId basic', function() {
-    var atmMock = (cmd, param) => {
+    let atmMock = (cmd, param) => {
       switch (cmd) {
         case 'getReadyState':
           param('ready')
@@ -46,11 +46,11 @@ describe('JustIdSystem', function () {
       }
     }
 
-    var currentAtm;
+    let currentAtm;
 
-    var getAtmStub = sinon.stub(jtUtils, 'getAtm').callsFake(() => currentAtm);
+    let getAtmStub = sinon.stub(jtUtils, 'getAtm').callsFake(() => currentAtm);
 
-    var logErrorStub;
+    let logErrorStub;
 
     beforeEach(function() {
       logErrorStub = sinon.spy(utils, 'logError');
@@ -104,7 +104,7 @@ describe('JustIdSystem', function () {
     });
 
     it('work with stub', function(done) {
-      var calls = [];
+      let calls = [];
       currentAtm = (cmd, param) => {
         calls.push({cmd: cmd, param: param});
       }
@@ -133,14 +133,14 @@ describe('JustIdSystem', function () {
     const scriptTag = document.createElement('script');
 
     const onPrebidGetId = sinon.stub().callsFake(event => {
-      var cacheIdObj = event.detail && event.detail.cacheIdObj;
-      var justId = (cacheIdObj && cacheIdObj.uid && cacheIdObj.uid + '-x') || 'user123';
+      let cacheIdObj = event.detail && event.detail.cacheIdObj;
+      let justId = (cacheIdObj && cacheIdObj.uid && cacheIdObj.uid + '-x') || 'user123';
       scriptTag.dispatchEvent(new CustomEvent('justIdReady', { detail: { justId: justId } }));
     });
 
     scriptTag.addEventListener('prebidGetId', onPrebidGetId)
 
-    var scriptTagCallback;
+    let scriptTagCallback;
 
     beforeEach(() => {
       loadExternalScriptStub.callsFake((url, moduleCode, moduleType, callback) => {
@@ -149,7 +149,7 @@ describe('JustIdSystem', function () {
       });
     })
 
-    var logErrorStub;
+    let logErrorStub;
 
     beforeEach(() => {
       logErrorStub = sinon.spy(utils, 'logError');
@@ -204,7 +204,7 @@ function expectedUrl(url, srcId) {
 }
 
 function configModeCombined(url, partner) {
-  var conf = {
+  let conf = {
     params: {
       mode: 'COMBINED'
     }

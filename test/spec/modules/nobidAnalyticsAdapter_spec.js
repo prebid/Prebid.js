@@ -9,7 +9,7 @@ const TOP_LOCATION = 'https://www.somesite.com';
 const SITE_ID = 1234;
 
 describe('NoBid Prebid Analytic', function () {
-  var clock;
+  let clock;
   describe('enableAnalytics', function () {
     beforeEach(function () {
       sinon.stub(events, 'getEvents').returns([]);

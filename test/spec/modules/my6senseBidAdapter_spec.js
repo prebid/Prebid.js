@@ -116,13 +116,13 @@ describe('My6sense Bid adapter test', function () {
 
   describe('test if buildRequests function', function () {
     it('normal', function () {
-      var requests = spec.buildRequests([bidRequests[0]]);
+      let requests = spec.buildRequests([bidRequests[0]]);
       expect(requests).to.be.lengthOf(1);
     });
   });
   describe('test bid responses', function () {
     it('success 1', function () {
-      var bids = spec.interpretResponse(serverResponses[0], {'bidRequest': bidRequests[0]});
+      let bids = spec.interpretResponse(serverResponses[0], {'bidRequest': bidRequests[0]});
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].cpm).to.equal(1.5);
       expect(bids[0].width).to.equal(300);
@@ -130,7 +130,7 @@ describe('My6sense Bid adapter test', function () {
       expect(bids[0].adm).to.have.length.above(1);
     });
     it('success 2', function () {
-      var bids = spec.interpretResponse(serverResponses[3]);
+      let bids = spec.interpretResponse(serverResponses[3]);
       expect(bids).to.be.lengthOf(1);
       expect(bids[0].cpm).to.equal(5);
       expect(bids[0].width).to.equal(300);
@@ -140,11 +140,11 @@ describe('My6sense Bid adapter test', function () {
       expect(bids[0].currency).to.equal('USD');
     });
     it('fail 1 (cpm=0)', function () {
-      var bids = spec.interpretResponse(serverResponses[1]);
+      let bids = spec.interpretResponse(serverResponses[1]);
       expect(bids).to.be.lengthOf(1);
     });
     it('fail 2 (no response)', function () {
-      var bids = spec.interpretResponse([]);
+      let bids = spec.interpretResponse([]);
       expect(bids).to.be.lengthOf(0);
     });
   });

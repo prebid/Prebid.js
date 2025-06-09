@@ -17,18 +17,18 @@ const analyticsName = 'Asteriobid PBM Analytics';
 
 let ajax = ajaxBuilder(0);
 
-var _VERSION = 1;
-var initOptions = null;
-var _pageViewId = generateUUID();
-var _startAuction = 0;
-var _bidRequestTimeout = 0;
+let _VERSION = 1;
+let initOptions = null;
+let _pageViewId = generateUUID();
+let _startAuction = 0;
+let _bidRequestTimeout = 0;
 let flushInterval;
-var pmAnalyticsEnabled = false;
+let pmAnalyticsEnabled = false;
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
 const {width: x, height: y} = getViewportSize();
 
-var _pageView = {
+let _pageView = {
   eventType: 'pageView',
   userAgent: window.navigator.userAgent,
   timestamp: Date.now(),
@@ -39,7 +39,7 @@ var _pageView = {
   screenHeight: y
 };
 
-var _eventQueue = [
+let _eventQueue = [
   _pageView
 ];
 
@@ -121,7 +121,7 @@ function flush() {
   }
 
   if (_eventQueue.length > 1) {
-    var data = {
+    let data = {
       pageViewId: _pageViewId,
       ver: _VERSION,
       bundleId: initOptions.bundleId,

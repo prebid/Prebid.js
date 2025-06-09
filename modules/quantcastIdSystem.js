@@ -35,18 +35,18 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
   // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
   if (!window._qevents && clientId && clientId != '') {
-    var fpa = storage.getCookie(QUANTCAST_FPA);
-    var fpan = '0';
-    var domain = quantcastIdSubmodule.findRootDomain();
-    var now = new Date();
-    var usPrivacyParamString = '';
-    var firstPartyParamStrings;
-    var gdprParamStrings;
+    let fpa = storage.getCookie(QUANTCAST_FPA);
+    let fpan = '0';
+    let domain = quantcastIdSubmodule.findRootDomain();
+    let now = new Date();
+    let usPrivacyParamString = '';
+    let firstPartyParamStrings;
+    let gdprParamStrings;
 
     if (!fpa) {
-      var et = now.getTime();
-      var expires = new Date(et + (cookieExpDays * DAY_MS)).toGMTString();
-      var rand = Math.round(Math.random() * 2147483647);
+      let et = now.getTime();
+      let expires = new Date(et + (cookieExpDays * DAY_MS)).toGMTString();
+      let rand = Math.round(Math.random() * 2147483647);
       fpa = `B0-${rand}-${et}`;
       fpan = '1';
       storage.setCookie(QUANTCAST_FPA, fpa, expires, '/', domain, null);
@@ -86,22 +86,22 @@ export function hasGDPRConsent(gdprConsent) {
 }
 
 export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOSES) {
-  var gdprApplies = vendorData.gdprApplies;
-  var purposes = vendorData.purpose;
-  var vendors = vendorData.vendor;
-  var qcConsent = vendors && vendors.consents && vendors.consents[QUANTCAST_VENDOR_ID];
-  var qcInterest = vendors && vendors.legitimateInterests && vendors.legitimateInterests[QUANTCAST_VENDOR_ID];
-  var restrictions = vendorData.publisher ? vendorData.publisher.restrictions : {};
+  let gdprApplies = vendorData.gdprApplies;
+  let purposes = vendorData.purpose;
+  let vendors = vendorData.vendor;
+  let qcConsent = vendors && vendors.consents && vendors.consents[QUANTCAST_VENDOR_ID];
+  let qcInterest = vendors && vendors.legitimateInterests && vendors.legitimateInterests[QUANTCAST_VENDOR_ID];
+  let restrictions = vendorData.publisher ? vendorData.publisher.restrictions : {};
 
   if (!gdprApplies) {
     return true;
   }
 
   return requiredPurposes.map(function(purpose) {
-    var purposeConsent = purposes.consents ? purposes.consents[purpose] : false;
-    var purposeInterest = purposes.legitimateInterests ? purposes.legitimateInterests[purpose] : false;
+    let purposeConsent = purposes.consents ? purposes.consents[purpose] : false;
+    let purposeInterest = purposes.legitimateInterests ? purposes.legitimateInterests[purpose] : false;
 
-    var qcRestriction = restrictions && restrictions[purpose]
+    let qcRestriction = restrictions && restrictions[purpose]
       ? restrictions[purpose][QUANTCAST_VENDOR_ID]
       : null;
 
@@ -195,8 +195,8 @@ export const quantcastIdSubmodule = {
     const coppa = coppaDataHandler.getCoppa();
 
     if (coppa || !hasCCPAConsent(US_PRIVACY_STRING) || !hasGDPRConsent(GDPR_PRIVACY_STRING)) {
-      var expired = new Date(0).toUTCString();
-      var domain = quantcastIdSubmodule.findRootDomain();
+      let expired = new Date(0).toUTCString();
+      let domain = quantcastIdSubmodule.findRootDomain();
       logInfo('QuantcastId: Necessary consent not present for Id, exiting QuantcastId');
       storage.setCookie(QUANTCAST_FPA, '', expired, '/', domain, null);
       return undefined;
@@ -205,8 +205,8 @@ export const quantcastIdSubmodule = {
     const configParams = (config && config.params) || {};
     const storageParams = (config && config.storage) || {};
 
-    var clientId = configParams.clientId || '';
-    var cookieExpDays = storageParams.expires || DEFAULT_COOKIE_EXP_DAYS;
+    let clientId = configParams.clientId || '';
+    let cookieExpDays = storageParams.expires || DEFAULT_COOKIE_EXP_DAYS;
 
     // Callbacks on Event Listeners won't trigger if the event is already complete so this check is required
     if (document.readyState === 'complete') {

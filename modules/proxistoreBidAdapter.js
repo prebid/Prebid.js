@@ -8,9 +8,9 @@ const COOKIE_LESS_URL =
   'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
 
 function _createServerRequest(bidRequests, bidderRequest) {
-  var sizeIds = [];
+  let sizeIds = [];
   bidRequests.forEach(function (bid) {
-    var sizeId = {
+    let sizeId = {
       id: bid.bidId,
       sizes: bid.sizes.map(function (size) {
         return {
@@ -23,7 +23,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
     };
     sizeIds.push(sizeId);
   });
-  var payload = {
+  let payload = {
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bidRequests[0].auctionId,
     transactionId: bidRequests[0].ortb2Imp?.ext?.tid,
@@ -37,7 +37,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
   };
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    var gdprConsent = bidderRequest.gdprConsent;
+    let gdprConsent = bidderRequest.gdprConsent;
 
     if (
       typeof gdprConsent.gdprApplies === 'boolean' &&
@@ -54,7 +54,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
     }
 
     if (gdprConsent.vendorData) {
-      var vendorData = gdprConsent.vendorData;
+      let vendorData = gdprConsent.vendorData;
 
       if (
         vendorData.vendor &&
@@ -68,14 +68,14 @@ function _createServerRequest(bidRequests, bidderRequest) {
     }
   }
 
-  var options = {
+  let options = {
     contentType: 'application/json',
     withCredentials: payload.gdpr.consentGiven,
     customHeaders: {
       version: '1.0.4',
     },
   };
-  var endPointUri =
+  let endPointUri =
     payload.gdpr.consentGiven || !payload.gdpr.applies
       ? COOKIE_BASE_URL
       : COOKIE_LESS_URL;
@@ -89,8 +89,8 @@ function _createServerRequest(bidRequests, bidderRequest) {
 }
 
 function _assignSegments(bid) {
-  var segs = (bid.ortb2 && bid.ortb2.user && bid.ortb2.user.ext && bid.ortb2.user.ext.data && bid.ortb2.user.ext.data.sd_rtd && bid.ortb2.user.ext.data.sd_rtd.segments ? bid.ortb2.user.ext.data.sd_rtd.segments : []);
-  var cats = {};
+  let segs = (bid.ortb2 && bid.ortb2.user && bid.ortb2.user.ext && bid.ortb2.user.ext.data && bid.ortb2.user.ext.data.sd_rtd && bid.ortb2.user.ext.data.sd_rtd.segments ? bid.ortb2.user.ext.data.sd_rtd.segments : []);
+  let cats = {};
   if (bid.ortb2 && bid.ortb2.site && bid.ortb2.site.ext && bid.ortb2.site.ext.data && bid.ortb2.site.ext.data.sd_rtd) {
     if (bid.ortb2.site.ext.data.sd_rtd.categories) {
       segs = segs.concat(bid.ortb2.site.ext.data.sd_rtd.categories);
@@ -142,7 +142,7 @@ function isBidRequestValid(bid) {
  */
 
 function buildRequests(bidRequests, bidderRequest) {
-  var request = _createServerRequest(bidRequests, bidderRequest);
+  let request = _createServerRequest(bidRequests, bidderRequest);
 
   return request;
 }

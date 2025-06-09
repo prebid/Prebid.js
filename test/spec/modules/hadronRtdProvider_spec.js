@@ -575,11 +575,11 @@ describe('hadronRtdProvider', function () {
       const rtdConfig = {
         params: {
           handleRtd: function (bidConfig, rtd, rtdConfig, pbConfig) {
-            var adUnits = bidConfig.adUnits;
-            for (var i = 0; i < adUnits.length; i++) {
-              var adUnit = adUnits[i];
-              for (var j = 0; j < adUnit.bids.length; j++) {
-                var bid = adUnit.bids[j];
+            let adUnits = bidConfig.adUnits;
+            for (let i = 0; i < adUnits.length; i++) {
+              let adUnit = adUnits[i];
+              for (let j = 0; j < adUnit.bids.length; j++) {
+                let bid = adUnit.bids[j];
                 if (bid.bidder == 'adBuzz') {
                   for (var k = 0; k < rtd.adBuzz.length; k++) {
                     bid.adBuzzData.segments.adBuzz.push(rtd.adBuzz[k]);

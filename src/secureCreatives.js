@@ -60,8 +60,8 @@ function ensureAdId(adId, reply) {
 }
 
 export function receiveMessage(ev) {
-  var key = ev.message ? 'message' : 'data';
-  var data = {};
+  let key = ev.message ? 'message' : 'data';
+  let data = {};
   try {
     data = JSON.parse(ev[key]);
   } catch (e) {

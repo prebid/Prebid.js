@@ -333,7 +333,7 @@ describe('AxonixBidAdapter', function () {
     });
 
     it('when there is no notification expected server side, none is called', function () {
-      var response = spec.onBidWon({});
+      let response = spec.onBidWon({});
       expect(utils.triggerPixel.called).to.equal(false);
       expect(response).to.be.an('undefined')
     });

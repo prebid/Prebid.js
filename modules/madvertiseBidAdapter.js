@@ -39,9 +39,9 @@ export const spec = {
       bidRequest.startTime = new Date().getTime();
 
       // non-video request builder
-      var src = '?rt=bid_request&v=1.0';
+      let src = '?rt=bid_request&v=1.0';
 
-      for (var i = 0; i < bidRequest.sizes.length; i++) {
+      for (let i = 0; i < bidRequest.sizes.length; i++) {
         if (Array.isArray(bidRequest.sizes[i]) && bidRequest.sizes[i].length == 2) {
           src = src + '&sizes[' + i + ']=' + bidRequest.sizes[i][0] + 'x' + bidRequest.sizes[i][1];
         }

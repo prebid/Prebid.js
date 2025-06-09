@@ -72,7 +72,7 @@ export const spec = {
   interpretResponse: function(serverResponse, request) {
     const response = serverResponse.body;
     const bidResponses = [];
-    var bidRequestResponses = [];
+    let bidRequestResponses = [];
 
     utils._each(response, function(bidAd) {
       bidAd.adResponse = {

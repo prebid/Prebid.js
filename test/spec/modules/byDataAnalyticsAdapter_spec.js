@@ -180,9 +180,9 @@ describe('byData Analytics Adapter ', () => {
       events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(EVENTS.NO_BID, noBidArgs);
       events.emit(EVENTS.BID_WON, bidWonArgs)
-      var userToken = ascAdapter.getVisitorData(userData);
-      var newAuData = ascAdapter.dataProcess(auctionEndArgs);
-      var newBwData = ascAdapter.getBidWonData(bidWonArgs);
+      let userToken = ascAdapter.getVisitorData(userData);
+      let newAuData = ascAdapter.dataProcess(auctionEndArgs);
+      let newBwData = ascAdapter.getBidWonData(bidWonArgs);
       newAuData['visitor_data'] = userToken;
       newBwData['visitor_data'] = userToken;
       expect(newAuData).to.deep.equal(expectedDataArgs);

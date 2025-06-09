@@ -166,8 +166,8 @@ livewrappedAnalyticsAdapter.enableAnalytics = function (config) {
 };
 
 livewrappedAnalyticsAdapter.sendEvents = function() {
-  var sentRequests = getSentRequests();
-  var events = {
+  let sentRequests = getSentRequests();
+  let events = {
     publisherId: initOptions.publisherId,
     gdpr: sentRequests.gdpr,
     auctionIds: sentRequests.auctionIds,
@@ -196,9 +196,9 @@ function getMediaTypeEnum(mediaType) {
 }
 
 function getSentRequests() {
-  var sentRequests = [];
-  var gdpr = [];
-  var auctionIds = [];
+  let sentRequests = [];
+  let gdpr = [];
+  let auctionIds = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     let auction = cache.auctions[auctionId];
@@ -230,7 +230,7 @@ function getSentRequests() {
 }
 
 function getResponses(gdpr, auctionIds) {
-  var responses = [];
+  let responses = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
@@ -252,7 +252,7 @@ function getResponses(gdpr, auctionIds) {
 }
 
 function getWins(gdpr, auctionIds) {
-  var wins = [];
+  let wins = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
@@ -293,7 +293,7 @@ function getWins(gdpr, auctionIds) {
 }
 
 function getGdprPos(gdpr, auction) {
-  var gdprPos = 0;
+  let gdprPos = 0;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
     if (gdpr[gdprPos].gdprApplies == auction.gdprApplies &&
         gdpr[gdprPos].gdprConsent == auction.gdprConsent) {
@@ -309,7 +309,7 @@ function getGdprPos(gdpr, auction) {
 }
 
 function getAuctionIdPos(auctionIds, auctionId) {
-  var auctionIdPos = 0;
+  let auctionIdPos = 0;
   for (auctionIdPos = 0; auctionIdPos < auctionIds.length; auctionIdPos++) {
     if (auctionIds[auctionIdPos] == auctionId) {
       break;
@@ -348,7 +348,7 @@ function getResponseObject(auction, bid, gdprPos, auctionIdPos) {
 }
 
 function getTimeouts(gdpr, auctionIds) {
-  var timeouts = [];
+  let timeouts = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     let auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
@@ -370,7 +370,7 @@ function getTimeouts(gdpr, auctionIds) {
 }
 
 function getAdRenderFailed(auctionIds) {
-  var adRenderFails = [];
+  let adRenderFails = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     let auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
@@ -400,7 +400,7 @@ function getAdRenderFailed(auctionIds) {
 }
 
 function getbidAdUnits() {
-  var bidAdUnits = [];
+  let bidAdUnits = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     let auction = cache.auctions[auctionId];

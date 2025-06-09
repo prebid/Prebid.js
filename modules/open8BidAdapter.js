@@ -21,11 +21,11 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    var requests = [];
-    for (var i = 0; i < validBidRequests.length; i++) {
-      var bid = validBidRequests[i];
-      var queryString = '';
-      var slotKey = getBidIdParameter('slotKey', bid.params);
+    let requests = [];
+    for (let i = 0; i < validBidRequests.length; i++) {
+      let bid = validBidRequests[i];
+      let queryString = '';
+      let slotKey = getBidIdParameter('slotKey', bid.params);
       queryString = tryAppendQueryString(queryString, 'slot_key', slotKey);
       queryString = tryAppendQueryString(queryString, 'imp_id', generateImpId());
       queryString += ('bid_id=' + bid.bidId);
@@ -40,13 +40,13 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, request) {
-    var bidderResponse = serverResponse.body;
+    let bidderResponse = serverResponse.body;
 
     if (!bidderResponse.isAdReturn) {
       return [];
     }
 
-    var ad = bidderResponse.ad;
+    let ad = bidderResponse.ad;
 
     const bid = {
       slotKey: bidderResponse.slotKey,
@@ -140,11 +140,11 @@ export const spec = {
 }
 
 function generateImpId() {
-  var l = 16;
-  var c = 'abcdefghijklmnopqrstuvwsyz0123456789';
-  var cl = c.length;
-  var r = '';
-  for (var i = 0; i < l; i++) {
+  let l = 16;
+  let c = 'abcdefghijklmnopqrstuvwsyz0123456789';
+  let cl = c.length;
+  let r = '';
+  for (let i = 0; i < l; i++) {
     r += c[Math.floor(Math.random() * cl)];
   }
   return r;

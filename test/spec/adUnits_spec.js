@@ -1,12 +1,12 @@
 import 'src/prebid.js';
 
 describe('Publisher API _ AdUnits', function () {
-  var assert = require('chai').assert;
-  var expect = require('chai').expect;
-  var pbjsTestOnly = require('../helpers/pbjs-test-only').pbjsTestOnly;
+  let assert = require('chai').assert;
+  let expect = require('chai').expect;
+  let pbjsTestOnly = require('../helpers/pbjs-test-only').pbjsTestOnly;
 
   before(function () {
-    var adUnits = [{
+    let adUnits = [{
       code: '/1996833/slot-1',
       sizes: [[300, 250], [728, 90]],
       bids: [
@@ -62,7 +62,7 @@ describe('Publisher API _ AdUnits', function () {
   });
 
   describe('addAdUnits', function () {
-    var adUnits, adUnit1, bids1, adUnit2, bids2;
+    let adUnits, adUnit1, bids1, adUnit2, bids2;
 
     it('should have two adUnits', function () {
       adUnits = pbjsTestOnly.getAdUnits();
@@ -109,7 +109,7 @@ describe('Publisher API _ AdUnits', function () {
   });
 
   describe('removeAdUnit', function () {
-    var adUnits, adUnit2, bids2;
+    let adUnits, adUnit2, bids2;
 
     it('the first adUnit should be not existed', function () {
       $$PREBID_GLOBAL$$.removeAdUnit('/1996833/slot-1');

@@ -1,5 +1,5 @@
 export default function Adapter(code) {
-  var bidderCode = code;
+  let bidderCode = code;
 
   function setBidderCode(code) {
     bidderCode = code;

@@ -161,7 +161,7 @@ describe('invibesBidAdapter:', function () {
   }
 
   let StubbedPersistence = function (initialValue) {
-    var value = initialValue;
+    let value = initialValue;
     return {
       load: function () {
         let str = value || '';
@@ -1262,7 +1262,7 @@ describe('invibesBidAdapter:', function () {
 	  UseAdUnitCode: true
     };
 
-    var buildResponse = function(placementId, cid, blcids, creativeId, ShouldSetLId) {
+    let buildResponse = function(placementId, cid, blcids, creativeId, ShouldSetLId) {
       if (ShouldSetLId) {
         return {
           MultipositionEnabled: true,
@@ -1390,14 +1390,14 @@ describe('invibesBidAdapter:', function () {
 
     context('AdWeb generates LIDs', function() {
       it('works when no LID is not sent from AdWeb', function() {
-        var firstResponse = buildResponse('12345', 1, [], 123);
+        let firstResponse = buildResponse('12345', 1, [], 123);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        let firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
         expect(firstResult[0].creativeId).to.equal(123);
       });
 
       it('sets lid when AdWeb sends it', function() {
-        var firstResponse = buildResponse('12345', 1, [], 123, true);
+        let firstResponse = buildResponse('12345', 1, [], 123, true);
 
         spec.interpretResponse({body: firstResponse}, {bidRequests});
         expect(global.document.cookie.indexOf('ivbsdid')).to.greaterThanOrEqual(0);
@@ -1406,47 +1406,47 @@ describe('invibesBidAdapter:', function () {
 
     context('in multiposition context, with conflicting ads', function() {
       it('registers the second ad when no conflict', function() {
-        var firstResponse = buildResponse('12345', 1, [1], 123);
-        var secondResponse = buildResponse('abcde', 2, [2], 456);
+        let firstResponse = buildResponse('12345', 1, [1], 123);
+        let secondResponse = buildResponse('abcde', 2, [2], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        let firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        let secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
       it('registers the second ad when no conflict - empty arrays', function() {
-        var firstResponse = buildResponse('12345', 1, [], 123);
-        var secondResponse = buildResponse('abcde', 2, [], 456);
+        let firstResponse = buildResponse('12345', 1, [], 123);
+        let secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        let firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        let secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
         expect(secondResult[0].creativeId).to.equal(456);
       });
 
       it('doesnt register the second ad when it is blacklisted by the first', function() {
-        var firstResponse = buildResponse('12345', 1, [2], 123);
-        var secondResponse = buildResponse('abcde', 2, [], 456);
+        let firstResponse = buildResponse('12345', 1, [2], 123);
+        let secondResponse = buildResponse('abcde', 2, [], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        let firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        let secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
         expect(secondResult).to.be.empty;
       });
 
       it('doesnt register the second ad when it is blacklisting the first', function() {
-        var firstResponse = buildResponse('12345', 1, [], 123);
-        var secondResponse = buildResponse('abcde', 2, [1], 456);
+        let firstResponse = buildResponse('12345', 1, [], 123);
+        let secondResponse = buildResponse('abcde', 2, [1], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        let firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        let secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
         expect(secondResult).to.be.empty;
       });
 
       it('doesnt register the second ad when it has same ids as the first', function() {
-        var firstResponse = buildResponse('12345', 1, [1], 123);
-        var secondResponse = buildResponse('abcde', 1, [1], 456);
+        let firstResponse = buildResponse('12345', 1, [1], 123);
+        let secondResponse = buildResponse('abcde', 1, [1], 456);
 
-        var firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
-        var secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
+        let firstResult = spec.interpretResponse({body: firstResponse}, {bidRequests});
+        let secondResult = spec.interpretResponse({body: secondResponse}, {bidRequests});
         expect(secondResult).to.be.empty;
       });
     });
@@ -1524,7 +1524,7 @@ describe('invibesBidAdapter:', function () {
       expect(top.window.invibes.optIn).to.equal(2);
       expect(top.window.invibes.GdprModuleInstalled).to.be.false;
       expect(top.window.invibes.UspModuleInstalled).to.be.true;
-      var index;
+      let index;
       for (index = 0; index < top.window.invibes.purposes.length; ++index) {
         expect(top.window.invibes.purposes[index]).to.be.true;
       }

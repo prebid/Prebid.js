@@ -35,15 +35,15 @@ import {getMinBidCacheTTL, onMinBidCacheTTLChange} from '../../src/bidTTL.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-var assert = require('assert');
+let assert = require('assert');
 
 /* use this method to test individual files instead of the whole prebid.js project */
 
 // TODO refactor to use the spec files
-var utils = require('../../src/utils');
-var fixtures = require('../fixtures/fixtures');
-var adapterManager = require('src/adapterManager').default;
-var events = require('src/events');
+let utils = require('../../src/utils');
+let fixtures = require('../fixtures/fixtures');
+let adapterManager = require('src/adapterManager').default;
+let events = require('src/events');
 
 const BIDDER_CODE = 'sampleBidder';
 const BIDDER_CODE1 = 'sampleBidder1';
@@ -219,7 +219,7 @@ describe('auctionmanager.js', function () {
 
     /* return the expected response for a given bid, filter by keys if given */
     function getDefaultExpected(bid, keys) {
-      var expected = {};
+      let expected = {};
       expected[TARGETING_KEYS.BIDDER] = bid.bidderCode;
       expected[TARGETING_KEYS.AD_ID] = bid.adId;
       expected[TARGETING_KEYS.PRICE_BUCKET] = bid.pbMg;
@@ -245,7 +245,7 @@ describe('auctionmanager.js', function () {
       }, {});
     }
 
-    var bid = {};
+    let bid = {};
 
     before(function () {
       bid = Object.assign({}, DEFAULT_BID);
@@ -355,10 +355,10 @@ describe('auctionmanager.js', function () {
           }
         };
 
-      var expected = getDefaultExpected(bid);
+      let expected = getDefaultExpected(bid);
       expected[TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
 
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -490,10 +490,10 @@ describe('auctionmanager.js', function () {
           }
         };
 
-      var expected = getDefaultExpected(bid);
+      let expected = getDefaultExpected(bid);
       expected[TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
 
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -528,9 +528,9 @@ describe('auctionmanager.js', function () {
 
           }
         };
-      var expected = getDefaultExpected(bid);
+      let expected = getDefaultExpected(bid);
 
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -586,10 +586,10 @@ describe('auctionmanager.js', function () {
 
           }
         };
-      var expected = getDefaultExpected(bid, [TARGETING_KEYS.BIDDER, TARGETING_KEYS.AD_ID]);
+      let expected = getDefaultExpected(bid, [TARGETING_KEYS.BIDDER, TARGETING_KEYS.AD_ID]);
       expected[TARGETING_KEYS.PRICE_BUCKET] = 10.0;
 
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -670,10 +670,10 @@ describe('auctionmanager.js', function () {
 
           }
         };
-      var expected = getDefaultExpected(bid, [TARGETING_KEYS.BIDDER, TARGETING_KEYS.AD_ID, TARGETING_KEYS.SIZE]);
+      let expected = getDefaultExpected(bid, [TARGETING_KEYS.BIDDER, TARGETING_KEYS.AD_ID, TARGETING_KEYS.SIZE]);
       expected[TARGETING_KEYS.PRICE_BUCKET] = 15.0;
 
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -702,10 +702,10 @@ describe('auctionmanager.js', function () {
             ]
           }
         };
-      var expected = getDefaultExpected(bid);
+      let expected = getDefaultExpected(bid);
       expected[TARGETING_KEYS.PRICE_BUCKET] = 5.57;
 
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
       assert.equal(bid.sendStandardTargeting, false);
     });
@@ -728,11 +728,11 @@ describe('auctionmanager.js', function () {
           }
         };
 
-      var expected = {
+      let expected = {
         'aKeyWithAValue': 42
       };
 
-      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
   });

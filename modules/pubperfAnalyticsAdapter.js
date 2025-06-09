@@ -6,7 +6,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { logError } from '../src/utils.js';
 
-var pubperfAdapter = adapter({
+let pubperfAdapter = adapter({
   global: 'pubperf_pbjs',
   analyticsType: 'bundle',
   handler: 'on'

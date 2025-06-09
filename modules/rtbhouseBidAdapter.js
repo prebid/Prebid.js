@@ -186,7 +186,7 @@ function mapBanner(slot) {
   if (slot.mediaType === 'banner' ||
     deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
-    var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
+    let sizes = slot.sizes || slot.mediaTypes.banner.sizes;
     return {
       w: sizes[0][0],
       h: sizes[0][1],

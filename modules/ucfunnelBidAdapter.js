@@ -194,7 +194,7 @@ function parseSizes(bid) {
 }
 
 function getSupplyChain(schain) {
-  var supplyChain = '';
+  let supplyChain = '';
   if (schain != null && schain.nodes) {
     supplyChain = schain.ver + ',' + schain.complete;
     for (let i = 0; i < schain.nodes.length; i++) {
@@ -231,7 +231,7 @@ function getFloor(bid, size, mediaTypes) {
     return bid.params.bidfloor;
   }
   if (typeof bid.getFloor === 'function') {
-    var bidFloor = bid.getFloor({
+    let bidFloor = bid.getFloor({
       currency: CURRENCY,
       mediaType: getMediaType(mediaTypes),
       size: (size) ? [ size[0], size[1] ] : '*',
@@ -251,7 +251,7 @@ function addBidData(bidData, key, value) {
 
 function getFormat(size) {
   let formatList = []
-  for (var i = 0; i < size.length; i++) {
+  for (let i = 0; i < size.length; i++) {
     formatList.push(size[i].join(','));
   }
   return (formatList.length > 0) ? formatList.join(';') : '';

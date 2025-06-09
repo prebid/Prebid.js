@@ -31,7 +31,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
-      var payload = {
+      let payload = {
         bidfloor: raiGetFloor(bid, config),
         ifa: bid.params.ifa,
         pid: bid.params.pid,
@@ -86,9 +86,9 @@ export const spec = {
         }
       }
 
-      var payloadString = JSON.stringify(payload);
+      let payloadString = JSON.stringify(payload);
 
-      var endpoint = 'https://shb.richaudience.com/hb/';
+      let endpoint = 'https://shb.richaudience.com/hb/';
 
       return {
         method: 'POST',
@@ -106,9 +106,9 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     // try catch
-    var response = serverResponse.body;
+    let response = serverResponse.body;
     if (response) {
-      var bidResponse = {
+      let bidResponse = {
         requestId: JSON.parse(bidRequest.data).bidId,
         cpm: response.cpm,
         width: response.width,
@@ -161,12 +161,12 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
 
-    var rand = Math.floor(Math.random() * 9999999999);
-    var syncUrl = '';
-    var consent = '';
-    var consentGPP = '';
+    let rand = Math.floor(Math.random() * 9999999999);
+    let syncUrl = '';
+    let consent = '';
+    let consentGPP = '';
 
-    var raiSync = {};
+    let raiSync = {};
 
     raiSync = raiGetSyncInclude(config);
 

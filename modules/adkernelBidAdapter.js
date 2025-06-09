@@ -286,7 +286,7 @@ function buildImps(bidRequest, secure) {
   if (secure) {
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
   }
-  var sizes = [];
+  let sizes = [];
   let mediaTypes = bidRequest.mediaTypes;
   let isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1;
   let result = [];

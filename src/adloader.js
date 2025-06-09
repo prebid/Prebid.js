@@ -113,7 +113,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     if (!doc) {
       doc = document;
     }
-    var jptScript = doc.createElement('script');
+    let jptScript = doc.createElement('script');
     jptScript.type = 'text/javascript';
     jptScript.async = true;
 

@@ -27,7 +27,7 @@ const pageView = {};
  * Native asset mapping - we use constant id per type
  * id > 10 indicates additional images
  */
-var nativeAssetMap = {
+let nativeAssetMap = {
   title: 0,
   cta: 1,
   icon: 2,
@@ -39,7 +39,7 @@ var nativeAssetMap = {
 /**
  * currency used in bidRequest - updated on request
  */
-var requestCurrency = DEFAULT_CURRENCY;
+let requestCurrency = DEFAULT_CURRENCY;
 
 /**
  * return native asset type, based on asset id
@@ -347,10 +347,10 @@ const mapBanner = slot => {
  * @param {object} paramValue Native parameter value
  * @returns {object} native asset object that conforms to ortb native ads spec
  */
-var mapAsset = function mapAsset(paramName, paramValue) {
+let mapAsset = function mapAsset(paramName, paramValue) {
   const { required, sizes, wmin, hmin, len } = paramValue;
-  var id = nativeAssetMap[paramName];
-  var assets = [];
+  let id = nativeAssetMap[paramName];
+  let assets = [];
 
   if (id !== undefined) {
     switch (paramName) {
@@ -390,7 +390,7 @@ var mapAsset = function mapAsset(paramName, paramValue) {
         var hasMultipleImages = sizes && Array.isArray(sizes[0]);
         var imageSizes = hasMultipleImages ? sizes : [sizes];
 
-        for (var i = 0; i < imageSizes.length; i++) {
+        for (let i = 0; i < imageSizes.length; i++) {
           assets.push({
             id: i > 0 ? 10 + i : id,
             required: required,
@@ -438,10 +438,10 @@ var mapAsset = function mapAsset(paramName, paramValue) {
 const mapNative = (slot) => {
   const native = deepAccess(slot, 'mediaTypes.native');
   if (native) {
-    var nativeParams = Object.keys(native);
-    var assets = [];
+    let nativeParams = Object.keys(native);
+    let assets = [];
     nativeParams.forEach(function (par) {
-      var newAssets = mapAsset(par, native[par]);
+      let newAssets = mapAsset(par, native[par]);
       assets = assets.concat(newAssets);
     });
     return {
@@ -454,19 +454,19 @@ const mapNative = (slot) => {
   }
 }
 
-var mapVideo = (slot, videoFromBid) => {
-  var videoFromSlot = deepAccess(slot, 'mediaTypes.video');
-  var videoParamsUsed = ['api', 'context', 'linearity', 'maxduration', 'mimes', 'protocols', 'playbackmethod'];
-  var videoAssets;
+let mapVideo = (slot, videoFromBid) => {
+  let videoFromSlot = deepAccess(slot, 'mediaTypes.video');
+  let videoParamsUsed = ['api', 'context', 'linearity', 'maxduration', 'mimes', 'protocols', 'playbackmethod'];
+  let videoAssets;
 
   if (videoFromSlot) {
     const video = videoFromBid ? Object.assign(videoFromSlot, videoFromBid) : videoFromSlot;
-    var videoParams = Object.keys(video);
-    var playerSize = video.playerSize;
+    let videoParams = Object.keys(video);
+    let playerSize = video.playerSize;
     videoAssets = {}; // player width / height
 
     if (playerSize) {
-      var maxSize = playerSize.reduce(function (prev, next) {
+      let maxSize = playerSize.reduce(function (prev, next) {
         return next[0] >= prev[0] && next[1] >= prev[1] ? next : prev;
       }, [1, 1]);
       videoAssets.w = maxSize[0];

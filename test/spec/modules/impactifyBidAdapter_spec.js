@@ -14,7 +14,7 @@ const AUCTIONURI = '/bidder';
 const COOKIESYNCURI = '/static/cookie_sync.html';
 const GVLID = 606;
 
-var gdprData = {
+let gdprData = {
   'consentString': 'BOh7mtYOh7mtYAcABBENCU-AAAAncgPIXJiiAoao0PxBFkgCAC8ACIAAQAQQAAIAAAIAAAhBGAAAQAQAEQgAAAAAAABAAAAAAAAAAAAAAACAAAAAAAACgAAAAABAAAAQAAAAAAA',
   'gdprApplies': true
 };

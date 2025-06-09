@@ -16,7 +16,7 @@ let events = {
   bids: []
 };
 
-var terceptAnalyticsAdapter = Object.assign(adapter(
+let terceptAnalyticsAdapter = Object.assign(adapter(
   {
     emptyUrl,
     analyticsType

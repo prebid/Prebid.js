@@ -70,8 +70,8 @@ describe('FeedAdAdapter', function () {
       expect(result).to.equal(false);
     });
     it('should detect too long placement id', function () {
-      var placementId = '';
-      for (var i = 0; i < 300; i++) {
+      let placementId = '';
+      for (let i = 0; i < 300; i++) {
         placementId += 'a';
       }
       let result = spec.isBidRequestValid({

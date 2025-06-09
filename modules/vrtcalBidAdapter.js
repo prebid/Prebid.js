@@ -116,7 +116,7 @@ export const spec = {
 
     const bidResponses = [];
 
-    var response = serverResponse.body;
+    let response = serverResponse.body;
 
     if (response) {
       const bidResponse = {

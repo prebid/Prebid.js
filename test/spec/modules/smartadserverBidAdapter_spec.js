@@ -9,7 +9,7 @@ import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 // Default params with optional ones
 describe('Smart bid adapter tests', function () {
-  var DEFAULT_PARAMS = [{
+  let DEFAULT_PARAMS = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
     mediaTypes: {
@@ -40,7 +40,7 @@ describe('Smart bid adapter tests', function () {
     },
   }];
 
-  var DEFAULT_PARAMS_WITH_EIDS = [{
+  let DEFAULT_PARAMS_WITH_EIDS = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
     mediaTypes: {
@@ -142,7 +142,7 @@ describe('Smart bid adapter tests', function () {
   }];
 
   // Default params without optional ones
-  var DEFAULT_PARAMS_WO_OPTIONAL = [{
+  let DEFAULT_PARAMS_WO_OPTIONAL = [{
     adUnitCode: 'sas_42',
     bidId: 'abcd1234',
     mediaTypes: {
@@ -164,7 +164,7 @@ describe('Smart bid adapter tests', function () {
     requestId: 'efgh5678'
   }];
 
-  var BID_RESPONSE = {
+  let BID_RESPONSE = {
     body: {
       cpm: 12,
       width: 300,
@@ -180,7 +180,7 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
-  var BID_RESPONSE_IS_NO_AD = {
+  let BID_RESPONSE_IS_NO_AD = {
     body: {
       cpm: 12,
       width: 300,
@@ -196,7 +196,7 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
-  var BID_RESPONSE_IMAGE_SYNC = {
+  let BID_RESPONSE_IMAGE_SYNC = {
     body: {
       cpm: 12,
       width: 300,
@@ -213,7 +213,7 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
-  var BID_RESPONSE_IFRAME_SYNC_MISSING_CSYNC = {
+  let BID_RESPONSE_IFRAME_SYNC_MISSING_CSYNC = {
     body: {
       cpm: 12,
       width: 300,
@@ -229,7 +229,7 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
-  var sellerDefinedAudience = [
+  let sellerDefinedAudience = [
     {
       'name': 'hearst.com',
       'ext': { 'segtax': 1 },
@@ -240,7 +240,7 @@ describe('Smart bid adapter tests', function () {
     }
   ];
 
-  var sellerDefinedContext = [
+  let sellerDefinedContext = [
     {
       'name': 'cnn.com',
       'ext': { 'segtax': 2 },
@@ -417,7 +417,7 @@ describe('Smart bid adapter tests', function () {
   });
 
   it('Verifies user sync', function () {
-    var syncs = spec.getUserSyncs({
+    let syncs = spec.getUserSyncs({
       iframeEnabled: true
     }, [BID_RESPONSE]);
     expect(syncs).to.have.lengthOf(1);
@@ -441,7 +441,7 @@ describe('Smart bid adapter tests', function () {
   });
 
   it('Verifies user sync using dspPixels', function () {
-    var syncs = spec.getUserSyncs({
+    let syncs = spec.getUserSyncs({
       iframeEnabled: false,
       pixelEnabled: true
     }, [BID_RESPONSE_IMAGE_SYNC]);
@@ -634,7 +634,7 @@ describe('Smart bid adapter tests', function () {
       },
     }];
 
-    var INSTREAM_BID_RESPONSE = {
+    let INSTREAM_BID_RESPONSE = {
       body: {
         cpm: 12,
         width: 640,
@@ -977,7 +977,7 @@ describe('Smart bid adapter tests', function () {
       transactionId: 'zsfgzzga'
     }];
 
-    var OUTSTREAM_BID_RESPONSE = {
+    let OUTSTREAM_BID_RESPONSE = {
       body: {
         cpm: 14,
         width: 800,
@@ -1517,7 +1517,7 @@ describe('Smart bid adapter tests', function () {
       config.resetConfig();
     });
 
-    var DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES = [{
+    let DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES = [{
       adUnitCode: 'sas_42',
       bidId: 'abcd1234',
       mediaTypes: {

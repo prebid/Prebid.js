@@ -1286,7 +1286,7 @@ function _getUserIds(bidRequest) {
  * @return {Object} IX diag values for ad units
  */
 function buildIXDiag(validBidRequests, fledgeEnabled) {
-  var adUnitMap = validBidRequests
+  let adUnitMap = validBidRequests
     .map(bidRequest => bidRequest.adUnitCode)
     .filter((value, index, arr) => arr.indexOf(value) === index);
 

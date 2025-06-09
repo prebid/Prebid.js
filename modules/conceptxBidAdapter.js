@@ -23,7 +23,7 @@ export const spec = {
       requestUrl += '?gdpr_applies=' + bidderRequest.gdprConsent.gdprApplies;
       requestUrl += '&consentString=' + bidderRequest.gdprConsent.consentString;
     }
-    for (var i = 0; i < validBidRequests.length; i++) {
+    for (let i = 0; i < validBidRequests.length; i++) {
       const requestParent = { adUnits: [], meta: {} };
       const bid = validBidRequests[i]
       const { adUnitCode, auctionId, bidId, bidder, bidderRequestId, ortb2 } = bid

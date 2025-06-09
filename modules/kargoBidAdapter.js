@@ -263,11 +263,11 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   const seed = _generateRandomUUID();
   const clientId = getClientId();
 
-  var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
-  var gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
+  let gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
+  let gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
 
-  var gppString = (gppConsent && gppConsent.consentString) ? gppConsent.consentString : '';
-  var gppApplicableSections = (gppConsent && gppConsent.applicableSections && Array.isArray(gppConsent.applicableSections)) ? gppConsent.applicableSections.join(',') : '';
+  let gppString = (gppConsent && gppConsent.consentString) ? gppConsent.consentString : '';
+  let gppApplicableSections = (gppConsent && gppConsent.applicableSections && Array.isArray(gppConsent.applicableSections)) ? gppConsent.applicableSections.join(',') : '';
 
   // don't sync if opted out via usPrivacy
   if (typeof usPrivacy == 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
@@ -308,11 +308,11 @@ function getExtensions(ortb2, refererInfo) {
 function _generateRandomUUID() {
   try {
     // crypto.getRandomValues is supported everywhere but Opera Mini for years
-    var buffer = new Uint8Array(16);
+    let buffer = new Uint8Array(16);
     crypto.getRandomValues(buffer);
     buffer[6] = (buffer[6] & ~176) | 64;
     buffer[8] = (buffer[8] & ~64) | 128;
-    var hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
+    let hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
       return ('00' + x.toString(16)).slice(-2);
     }).join('');
     return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);

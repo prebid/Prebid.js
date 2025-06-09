@@ -1920,8 +1920,8 @@ describe('kargo adapter tests', function() {
 
       // Makes the seed in the URLs predictable
       sandbox.stub(crypto, 'getRandomValues').callsFake(function (buf) {
-        var bytes = [50, 5, 232, 133, 141, 55, 49, 57, 244, 126, 248, 44, 255, 38, 128, 0];
-        for (var i = 0; i < bytes.length; i++) {
+        let bytes = [50, 5, 232, 133, 141, 55, 49, 57, 244, 126, 248, 44, 255, 38, 128, 0];
+        for (let i = 0; i < bytes.length; i++) {
           buf[i] = bytes[i];
         }
         return buf;

@@ -97,7 +97,7 @@ describe('lifestreetBidAdapter', function() {
       });
 
       it('invalid bid case: slot not passed', function() {
-        var validBid = {
+        let validBid = {
           bidder: 'lifestreet',
           params: {
             adkey: '78c',

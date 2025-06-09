@@ -104,7 +104,7 @@ describe('etarget adapter', function () {
     });
 
     it('should not change original validBidRequests object', function () {
-      var resultBids = JSON.parse(JSON.stringify(bids[0]));
+      let resultBids = JSON.parse(JSON.stringify(bids[0]));
       let request = spec.buildRequests([bids[0]]);
       assert.deepEqual(resultBids, bids[0]);
     });

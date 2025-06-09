@@ -116,7 +116,7 @@ export const spec = {
     let nurl = 0;
     _each(serverResponse.body.seatbid, (seatbid) => {
       logInfo('_each', seatbid);
-      var bid = seatbid.bid[0];
+      let bid = seatbid.bid[0];
       if (bid.nurl !== undefined) {
         nurl = bid.nurl.split('://');
         nurl = window.location.protocol + '//' + nurl[1];

@@ -158,7 +158,7 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, request) {
     const bidResponses = [];
-    var bidRequests = {};
+    let bidRequests = {};
 
     if (!serverResponse || !serverResponse.body) {
       return bidResponses;
@@ -415,15 +415,15 @@ function getNativeAssets(response, nativeConfig) {
   }
   const native = {};
 
-  var adJson = {};
-  var textsJson = {};
+  let adJson = {};
+  let textsJson = {};
   if (typeof response.Ad === 'string') {
     adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
     textsJson = adJson.Content.Preview.Text;
 
-    var impressionUrl = adJson.TrackingPrefix +
+    let impressionUrl = adJson.TrackingPrefix +
             '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
-    var insertionUrl = adJson.TrackingPrefix +
+    let insertionUrl = adJson.TrackingPrefix +
             '/pixel?event_kind=INSERTION&attempt=' + adJson.Attempt;
 
     if (adJson.Campaign) {

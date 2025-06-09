@@ -5,7 +5,7 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
-var datablocksAdapter = adapter({
+let datablocksAdapter = adapter({
   global: 'datablocksAnalytics',
   handler: 'on',
   analyticsType: 'bundle'

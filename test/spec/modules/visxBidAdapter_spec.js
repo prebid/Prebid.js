@@ -1944,7 +1944,7 @@ describe('VisxAdapter', function () {
       const [, path, querySt] = url.match(/^https?:\/\/[^\/]+(?:\/([^?]+)?)?(?:\?(.+)?)?$/) || [];
       const query = {};
       (querySt || '').split('&').forEach((q) => {
-        var kv = q.split('=');
+        let kv = q.split('=');
         if (kv[0]) {
           query[kv[0]] = decodeURIComponent(kv[1] || '');
         }

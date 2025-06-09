@@ -94,7 +94,7 @@ function send(data, status) {
   });
 }
 
-var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
+let yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       switch (eventType) {

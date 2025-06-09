@@ -85,7 +85,7 @@ function serializeSupplyChainObj(schainObj) {
  */
 function getBidFloor(bid, mediaType, sizes, bidfloor) {
   let floor = bidfloor;
-  var size = sizes && sizes.length > 0 ? sizes[0] : '*';
+  let size = sizes && sizes.length > 0 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
     if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
@@ -190,7 +190,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
 const render = (bid) => {
   bid.ad = bid.vastUrl;
-  var obj = {
+  let obj = {
     vastTimeout: 5000,
     maxAllowedVastTagRedirects: 3,
     allowVpaid: true,

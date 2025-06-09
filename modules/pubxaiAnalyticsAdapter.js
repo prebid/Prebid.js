@@ -331,7 +331,7 @@ if (document.visibilityState) {
 }
 
 // declare the analytics adapter
-var pubxaiAnalyticsAdapter = Object.assign(
+let pubxaiAnalyticsAdapter = Object.assign(
   adapter({
     emptyUrl,
     analyticsType,

@@ -76,7 +76,7 @@ export const spec = {
       return false;
     }
 
-    var banner = utils.deepAccess(bid, 'mediaTypes.banner');
+    let banner = utils.deepAccess(bid, 'mediaTypes.banner');
     if (banner === undefined) {
       return false;
     }
@@ -154,7 +154,7 @@ export const spec = {
     });
 
     if (bid.trackers && bid.trackers.length > 0) {
-      for (var i = 0; i < bid.trackers.length; i++) {
+      for (let i = 0; i < bid.trackers.length; i++) {
         if (bid.trackers[i].type == 0) {
           utils.triggerPixel(bid.trackers[i].url);
         }

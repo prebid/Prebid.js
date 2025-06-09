@@ -40,7 +40,7 @@ const CONFIG_WITH_DEBUG = {
 }
 
 describe('Automatad Analytics Adapter', () => {
-  var sandbox, clock;
+  let sandbox, clock;
 
   describe('Adapter Setup Configuration', () => {
     beforeEach(() => {

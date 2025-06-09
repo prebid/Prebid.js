@@ -20,14 +20,14 @@ const MODULE_CODE = 'hadronAnalytics';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
-var viewId = utils.generateUUID();
+let viewId = utils.generateUUID();
 
-var partnerId = DEFAULT_PARTNER_ID;
-var eventsToTrack = [];
+let partnerId = DEFAULT_PARTNER_ID;
+let eventsToTrack = [];
 
 const { width: x, height: y } = getViewportSize();
 
-var pageView = {
+let pageView = {
   eventType: 'pageView',
   userAgent: window.navigator.userAgent,
   timestamp: Date.now(),
@@ -39,18 +39,18 @@ var pageView = {
   screenHeight: y
 };
 
-var eventQueue = [
+let eventQueue = [
   pageView
 ];
 
-var startAuction = 0;
-var bidRequestTimeout = 0;
+let startAuction = 0;
+let bidRequestTimeout = 0;
 let analyticsType = 'endpoint';
 
 let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
   track({eventType, args}) {
     args = args ? utils.deepClone(args) : {};
-    var data = {};
+    let data = {};
     if (!eventsToTrack.includes(eventType)) return;
     switch (eventType) {
       case EVENTS.AUCTION_INIT: {
@@ -156,7 +156,7 @@ function flush() {
   // Don't send anything if no partner id was declared
   if (partnerId === DEFAULT_PARTNER_ID) return;
   if (eventQueue.length > 1) {
-    var data = {
+    let data = {
       pageViewId: viewId,
       ver: HADRONID_ANALYTICS_VER,
       partnerId: partnerId,

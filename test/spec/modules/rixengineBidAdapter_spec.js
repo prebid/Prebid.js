@@ -131,7 +131,7 @@ describe('rixengine bid adapter', function () {
 
     it('handles empty response', function () {
       it('No bid response', function() {
-        var noBidResponse = spec.interpretResponse({
+        let noBidResponse = spec.interpretResponse({
           body: '',
         });
         expect(noBidResponse.length).to.equal(0);

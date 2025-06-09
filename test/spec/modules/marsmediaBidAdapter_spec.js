@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { internal, resetWinDimensions } from '../../../src/utils';
 
-var marsAdapter = spec;
+let marsAdapter = spec;
 
 describe('marsmedia adapter tests', function () {
   let element, win;
@@ -81,7 +81,7 @@ describe('marsmedia adapter tests', function () {
 
   describe('Verify 1.0 POST Banner Bid Request', function () {
     it('buildRequests works', function () {
-      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
 
       expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
@@ -128,7 +128,7 @@ describe('marsmedia adapter tests', function () {
 
   describe('Verify POST Video Bid Request', function() {
     it('buildRequests works', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -152,7 +152,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       expect(bidRequest.url).to.have.string('https://hb.go2speed.media/bidder/?bid=3mhdom&zoneId=9999&hbv=');
       expect(bidRequest.method).to.equal('POST');
@@ -174,7 +174,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('interpretResponse with vast url works', function() {
-      var bidList = {
+      let bidList = {
         'body': [
           {
             'impid': 'Unit-Code',
@@ -192,7 +192,7 @@ describe('marsmedia adapter tests', function () {
         ]
       };
 
-      var videoBids = marsAdapter.interpretResponse(bidList);
+      let videoBids = marsAdapter.interpretResponse(bidList);
 
       expect(videoBids.length).to.equal(1);
       const bid = videoBids[0];
@@ -208,7 +208,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('interpretResponse with xml works', function() {
-      var bidList = {
+      let bidList = {
         'body': [
           {
             'impid': 'Unit-Code',
@@ -226,7 +226,7 @@ describe('marsmedia adapter tests', function () {
         ]
       };
 
-      var videoBids = marsAdapter.interpretResponse(bidList);
+      let videoBids = marsAdapter.interpretResponse(bidList);
 
       expect(videoBids.length).to.equal(1);
       const bid = videoBids[0];
@@ -244,14 +244,14 @@ describe('marsmedia adapter tests', function () {
 
   describe('misc buildRequests', function() {
     it('should send GDPR Consent data to Marsmedia tag', function () {
-      var consentString = 'testConsentString';
-      var gdprBidderRequest = this.defaultBidderRequest;
+      let consentString = 'testConsentString';
+      let gdprBidderRequest = this.defaultBidderRequest;
       gdprBidderRequest.gdprConsent = {
         'gdprApplies': true,
         'consentString': consentString
       };
 
-      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, gdprBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, gdprBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.user.ext.consent).to.equal(consentString);
@@ -296,7 +296,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('prefer 2.0 sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -317,7 +317,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].banner.format[0].w).to.equal(300);
@@ -325,7 +325,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('does not return request for invalid banner size configuration', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -345,12 +345,12 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       expect(bidRequest.method).to.be.undefined;
     });
 
     it('does not return request for missing banner size configuration', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -368,12 +368,12 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       expect(bidRequest.method).to.be.undefined;
     });
 
     it('reject bad sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -391,15 +391,15 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].banner.format.length).to.equal(1);
     });
 
     it('dnt is correctly set to 1', function () {
-      var dntStub = sinon.stub(utils, 'getDNT').returns(1);
+      let dntStub = sinon.stub(utils, 'getDNT').returns(1);
 
-      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
 
       dntStub.restore();
 
@@ -408,7 +408,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('supports string video sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -429,7 +429,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.equal(600);
@@ -437,7 +437,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('rejects bad video sizes', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -458,7 +458,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.be.undefined;
@@ -466,7 +466,7 @@ describe('marsmedia adapter tests', function () {
     });
 
     it('supports missing video size', function () {
-      var bidRequestList = [
+      let bidRequestList = [
         {
           'bidder': 'marsmedia',
           'params': {
@@ -486,7 +486,7 @@ describe('marsmedia adapter tests', function () {
         }
       ];
 
-      var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
 
       const openrtbRequest = JSON.parse(bidRequest.data);
       expect(openrtbRequest.imp[0].video.w).to.be.undefined;
@@ -495,7 +495,7 @@ describe('marsmedia adapter tests', function () {
 
     it('should return empty site data when refererInfo is missing', function() {
       delete this.defaultBidderRequest.refererInfo;
-      var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+      let bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
 
       expect(openrtbRequest.site.domain).to.equal('');
@@ -565,7 +565,7 @@ describe('marsmedia adapter tests', function () {
 
   it('should return empty site.domain and site.page when refererInfo.stack is empty', function() {
     this.defaultBidderRequest.refererInfo.stack = [];
-    var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+    let bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.site.domain).to.equal('');
@@ -575,14 +575,14 @@ describe('marsmedia adapter tests', function () {
 
   it('should secure correctly', function() {
     this.defaultBidderRequest.refererInfo.stack[0] = ['https://securesite.dvl'];
-    var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
+    let bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.imp[0].secure).to.equal(1);
   });
 
   it('should pass schain', function() {
-    var schain = {
+    let schain = {
       'ver': '1.0',
       'complete': 1,
       'nodes': [{
@@ -595,7 +595,7 @@ describe('marsmedia adapter tests', function () {
         'hp': 1
       }]
     };
-    var bidRequestList = [
+    let bidRequestList = [
       {
         'bidder': 'marsmedia',
         'params': {
@@ -616,7 +616,7 @@ describe('marsmedia adapter tests', function () {
       }
     ];
 
-    var bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
+    let bidRequest = marsAdapter.buildRequests(bidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
 
     expect(openrtbRequest.source.ext.schain).to.deep.equal(schain);
@@ -624,7 +624,7 @@ describe('marsmedia adapter tests', function () {
 
   describe('misc interpretResponse', function () {
     it('No bid response', function() {
-      var noBidResponse = marsAdapter.interpretResponse({
+      let noBidResponse = marsAdapter.interpretResponse({
         'body': ''
       });
       expect(noBidResponse.length).to.equal(0);
@@ -632,7 +632,7 @@ describe('marsmedia adapter tests', function () {
   });
 
   describe('isBidRequestValid', function () {
-    var bid = {
+    let bid = {
       'bidder': 'marsmedia',
       'params': {
         'zoneId': 9999
@@ -672,7 +672,7 @@ describe('marsmedia adapter tests', function () {
       expect(spec.onBidWon).to.exist.and.to.be.a('function');
     });
     it('should return nothing', function () {
-      var response = spec.onBidWon({});
+      let response = spec.onBidWon({});
       expect(response).to.be.an('undefined')
       expect(utils.triggerPixel.called).to.equal(true);
     });
@@ -689,7 +689,7 @@ describe('marsmedia adapter tests', function () {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
     it('should return nothing', function () {
-      var response = spec.onTimeout({});
+      let response = spec.onTimeout({});
       expect(response).to.be.an('undefined')
       expect(utils.triggerPixel.called).to.equal(true);
     });
@@ -706,7 +706,7 @@ describe('marsmedia adapter tests', function () {
       expect(spec.onSetTargeting).to.exist.and.to.be.a('function');
     });
     it('should return nothing', function () {
-      var response = spec.onSetTargeting({});
+      let response = spec.onSetTargeting({});
       expect(response).to.be.an('undefined')
       expect(utils.triggerPixel.called).to.equal(true);
     });

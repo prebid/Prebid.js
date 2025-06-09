@@ -70,7 +70,7 @@ export const spec = {
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
     const currency = getCurrencyFromBidderRequest(bidderRequest) || 'USD';
-    var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
+    let adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
     const adRequestsContainFloors = adRequests.some(r => r.flr !== undefined);
 
     if (eids) {
@@ -129,7 +129,7 @@ export const spec = {
     }
 
     serverResponse.body.ads.forEach(function(ad) {
-      var bidResponse = {
+      let bidResponse = {
         requestId: ad.bidId,
         cpm: ad.cpmBid,
         width: ad.width,
@@ -235,7 +235,7 @@ function hasPubcid(bid) {
 }
 
 function bidToAdRequest(bid, currency) {
-  var adRequest = {
+  let adRequest = {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,

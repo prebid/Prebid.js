@@ -515,7 +515,7 @@ describe('Seedtag Adapter', function () {
 
     describe('User param', function () {
       it('should be added to payload user data param when bidderRequest has ortb2 user info', function () {
-        var ortb2 = {
+        let ortb2 = {
 
           user: {
 
@@ -549,7 +549,7 @@ describe('Seedtag Adapter', function () {
       })
 
       it('should be added to payload user eids param when validRequest has userId info', function () {
-        var userIdAsEids = [{
+        let userIdAsEids = [{
           source: 'sourceid',
           uids: [{
             atype: 1,
@@ -570,7 +570,7 @@ describe('Seedtag Adapter', function () {
     describe('Blocking params', function () {
       it('should add bcat param to payload when bidderRequest has ortb2 bcat info', function () {
         const blockedCategories = ['IAB1', 'IAB2']
-        var ortb2 = {
+        let ortb2 = {
           bcat: blockedCategories
         }
         bidderRequest['ortb2'] = ortb2
@@ -582,7 +582,7 @@ describe('Seedtag Adapter', function () {
 
       it('should add badv param to payload when bidderRequest has ortb2 badv info', function () {
         const blockedAdvertisers = ['blocked.com']
-        var ortb2 = {
+        let ortb2 = {
           badv: blockedAdvertisers
         }
         bidderRequest['ortb2'] = ortb2
@@ -593,7 +593,7 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should not add bcat and badv params to payload when bidderRequest does not have ortb2 badv and bcat info', function () {
-        var ortb2 = {}
+        let ortb2 = {}
         bidderRequest['ortb2'] = ortb2
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -606,7 +606,7 @@ describe('Seedtag Adapter', function () {
     describe('Site params', function () {
       it('should add cat param to payload when bidderRequest has ortb2 site cat info', function () {
         const siteCategories = ['1217', 'bsr004', '692']
-        var ortb2 = {
+        let ortb2 = {
           site: {
             cat: siteCategories
           }
@@ -620,7 +620,7 @@ describe('Seedtag Adapter', function () {
 
       it('should add pagecat param to payload when bidderRequest has ortb2 site pagecat info', function () {
         const pageCategories = ['1217', 'bsr004', '692']
-        var ortb2 = {
+        let ortb2 = {
           site: {
             pagecat: pageCategories
           }
@@ -634,7 +634,7 @@ describe('Seedtag Adapter', function () {
 
       it('should add cattac param to payload when bidderRequest has ortb2 site cattax info', function () {
         const taxonomy = 6
-        var ortb2 = {
+        let ortb2 = {
           site: {
             cattax: taxonomy
           }
@@ -647,7 +647,7 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should not add site params to payload when bidderRequest does not have ortb2 site info', function () {
-        var ortb2 = {}
+        let ortb2 = {}
         bidderRequest['ortb2'] = ortb2
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -661,7 +661,7 @@ describe('Seedtag Adapter', function () {
     describe('device.sua param', function () {
       it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
         const sua = 1
-        var ortb2 = {
+        let ortb2 = {
           device: {
             sua: sua
           }
@@ -674,7 +674,7 @@ describe('Seedtag Adapter', function () {
       });
 
       it('should not add device.sua param to payload when bidderRequest does not have ortb2 device.sua info', function () {
-        var ortb2 = {
+        let ortb2 = {
           device: {}
         }
         bidderRequest['ortb2'] = ortb2

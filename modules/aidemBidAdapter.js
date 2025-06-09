@@ -87,8 +87,8 @@ const converter = ortbConverter({
 
 // AIDEM Custom FN
 function recur(obj) {
-  var result = {}; var _tmp;
-  for (var i in obj) {
+  let result = {}; let _tmp;
+  for (let i in obj) {
     // enabledPlugin is too nested, also skip functions
     if (!(i === 'enabledPlugin' || typeof obj[i] === 'function')) {
       if (typeof obj[i] === 'object' && obj[i] !== null) {

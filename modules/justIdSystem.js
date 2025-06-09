@@ -67,7 +67,7 @@ export const justIdSubmodule = {
   getId(config, consentData, cacheIdObj) {
     utils.logInfo(LOG_PREFIX, 'getId', config, consentData, cacheIdObj);
 
-    var configWrapper
+    let configWrapper
     try {
       configWrapper = new ConfigWrapper(config);
     } catch (e) {
@@ -79,7 +79,7 @@ export const justIdSubmodule = {
         try {
           utils.logInfo(LOG_PREFIX, 'fetching uid...');
 
-          var uidProvider = configWrapper.isCombinedMode()
+          let uidProvider = configWrapper.isCombinedMode()
             ? new CombinedUidProvider(configWrapper, consentData?.gdpr, cacheIdObj)
             : new BasicUidProvider(configWrapper);
 
@@ -145,7 +145,7 @@ export const ConfigWrapper = function(config) {
     throw EX_INVALID_MODE;
   }
 
-  var url = params().url;
+  let url = params().url;
   if (this.isCombinedMode() && (utils.isEmptyStr(url) || !utils.isStr(url))) {
     throw EX_URL_REQUIRED;
   }
@@ -182,7 +182,7 @@ const BasicUidProvider = function(configWrapper) {
   const atmVarName = configWrapper.getAtmVarName();
 
   this.getUid = function(idCallback, errCallback) {
-    var atm = getAtm();
+    let atm = getAtm();
     if (typeof atm !== 'function') { // it may be AsyncFunction, so we can't use utils.isFn
       utils.logInfo(LOG_PREFIX, 'ATM function not found!', atmVarName, atm);
       errCallback('ATM not found');

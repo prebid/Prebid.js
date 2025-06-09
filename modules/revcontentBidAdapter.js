@@ -40,15 +40,15 @@ export const spec = {
     const userId = validBidRequests[0].params.userId;
     const widgetId = validBidRequests[0].params.widgetId;
     const apiKey = validBidRequests[0].params.apiKey;
-    var domain = validBidRequests[0].params.domain;
-    var host = validBidRequests[0].params.endpoint;
+    let domain = validBidRequests[0].params.domain;
+    let host = validBidRequests[0].params.endpoint;
 
     if (typeof host === 'undefined') {
       host = 'trends.revcontent.com';
     }
 
     let serverRequests = [];
-    var refererInfo;
+    let refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo.page;
     }
@@ -57,7 +57,7 @@ export const spec = {
       domain = parseDomain(refererInfo, {noPort: true});
     }
 
-    var endpoint = 'https://' + host + '/rtb?apiKey=' + apiKey + '&userId=' + userId;
+    let endpoint = 'https://' + host + '/rtb?apiKey=' + apiKey + '&userId=' + userId;
 
     if (!isNaN(widgetId) && widgetId > 0) {
       endpoint = endpoint + '&widgetId=' + widgetId;
@@ -150,7 +150,7 @@ export const spec = {
               break;
           }
         });
-        var size = serverRequest.bid[0].params.size;
+        let size = serverRequest.bid[0].params.size;
         prBid.width = size.width;
         prBid.height = size.height;
 

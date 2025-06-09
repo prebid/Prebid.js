@@ -17,7 +17,7 @@ const ADAPTER_CODE = 'automatadAnalytics'
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: ADAPTER_CODE})
 const trialCountMilsMapping = [1500, 3000, 5000, 10000];
 
-var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null; var __atmtdAnalyticsQueue = []; var qBeingUsed; var qTraversalComplete;
+let isLoggingEnabled; let queuePointer = 0; let retryCount = 0; let timer = null; let __atmtdAnalyticsQueue = []; let qBeingUsed; let qTraversalComplete;
 
 const prettyLog = (level, text, isGroup = false, cb = () => {}) => {
   if (self.isLoggingEnabled === undefined) {

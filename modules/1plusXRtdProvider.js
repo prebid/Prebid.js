@@ -127,7 +127,7 @@ export const extractFpid = (fpidStorageType) => {
 export const getPapiUrl = (customerId, consent, fpid) => {
   // https://[yourClientId].profiles.tagger.opecloud.com/[VERSION]/targeting?url=
   const currentUrl = encodeURIComponent(window.location.href);
-  var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
+  let papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
   if (consent) {
     Object.entries(consent).forEach(([key, value]) => {
       papiUrl += `&${key}=${value}`

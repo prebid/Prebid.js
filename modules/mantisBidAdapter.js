@@ -15,25 +15,25 @@ function inIframe() {
 }
 
 export function onVisible(win, element, doOnVisible, time, pct) {
-  var started = null;
-  var notified = false;
-  var onNotVisible = null;
-  var whenNotVisible = function () {
+  let started = null;
+  let notified = false;
+  let onNotVisible = null;
+  let whenNotVisible = function () {
     if (notified && onNotVisible) {
       onNotVisible();
     }
     notified = false;
   };
-  var interval;
-  var listener;
-  var doCheck = function (winWidth, winHeight, rect) {
-    var hidden = typeof document.hidden !== 'undefined' && document.hidden;
+  let interval;
+  let listener;
+  let doCheck = function (winWidth, winHeight, rect) {
+    let hidden = typeof document.hidden !== 'undefined' && document.hidden;
     if (rect.width == 0 || rect.height == 0 || hidden) {
       return whenNotVisible();
     }
-    var minHeight = (rect.height * pct);
-    var minWidth = (rect.width * pct);
-    var inView = (
+    let minHeight = (rect.height * pct);
+    let minWidth = (rect.width * pct);
+    let inView = (
       (
         (rect.top < 0 && rect.bottom >= minHeight) ||
         (rect.top > 0 && (winHeight - rect.top) >= minHeight)
@@ -76,8 +76,8 @@ export function onVisible(win, element, doOnVisible, time, pct) {
   }
   interval = setInterval(function () {
     const windowDimensions = getWinDimensions();
-    var winHeight = (windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight);
-    var winWidth = (windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth);
+    let winHeight = (windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight);
+    let winWidth = (windowDimensions.innerWidth || windowDimensions.document.documentElement.clientWidth);
     doCheck(winWidth, winHeight, getBoundingClientRect(element));
   }, 100);
 }
@@ -127,17 +127,17 @@ function isArray(value) {
 }
 
 function jsonToQuery(data, chain, form) {
-  var parts = form || [];
-  for (var key in data) {
-    var queryKey = key;
+  let parts = form || [];
+  for (let key in data) {
+    let queryKey = key;
     if (chain) {
       queryKey = chain + '[' + key + ']';
     }
-    var val = data[key];
+    let val = data[key];
     if (isArray(val)) {
-      for (var index = 0; index < val.length; index++) {
-        var akey = queryKey + '[' + index + ']';
-        var aval = val[index];
+      for (let index = 0; index < val.length; index++) {
+        let akey = queryKey + '[' + index + ']';
+        let aval = val[index];
         if (isObject(aval)) {
           jsonToQuery(aval, akey, parts);
         }
@@ -152,7 +152,7 @@ function jsonToQuery(data, chain, form) {
 }
 
 function buildMantisUrl(path, data, domain) {
-  var params = {
+  let params = {
     referrer: document.referrer,
     tz: new Date().getTimezoneOffset(),
     buster: new Date().getTime(),
@@ -163,7 +163,7 @@ function buildMantisUrl(path, data, domain) {
   if (window.mantis_uuid) {
     params.uuid = window.mantis_uuid;
   } else if (storage.hasLocalStorage()) {
-    var localUuid = storage.getDataFromLocalStorage('mantis:uuid');
+    let localUuid = storage.getDataFromLocalStorage('mantis:uuid');
     if (localUuid) {
       params.uuid = localUuid;
     }
@@ -193,7 +193,7 @@ function buildMantisUrl(path, data, domain) {
   Object.keys(data).forEach(function (key) {
     params[key] = data[key];
   });
-  var query = jsonToQuery(params);
+  let query = jsonToQuery(params);
   return (window.mantis_domain === undefined ? domain || 'https://mantodea.mantisadnetwork.com' : window.mantis_domain) + path + '?' + query;
 }
 
@@ -204,7 +204,7 @@ export const spec = {
     return !!(bid.params.property && (bid.params.code || bid.params.zoneId || bid.params.zone));
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var property = null;
+    let property = null;
     validBidRequests.some(function (bid) {
       if (bid.params.property) {
         property = bid.params.property;
@@ -273,7 +273,7 @@ export const spec = {
 };
 
 export function sfPostMessage ($sf, width, height, callback) {
-  var viewed = false;
+  let viewed = false;
 
   $sf.ext.register(width, height, function () {
     if ($sf.ext.inViewPercentage() < 50 || viewed) {
@@ -285,9 +285,9 @@ export function sfPostMessage ($sf, width, height, callback) {
 };
 
 export function iframePostMessage (win, name, callback) {
-  var frames = document.getElementsByTagName('iframe');
-  for (var i = 0; i < frames.length; i++) {
-    var frame = frames[i];
+  let frames = document.getElementsByTagName('iframe');
+  for (let i = 0; i < frames.length; i++) {
+    let frame = frames[i];
     if (frame.name == name) {
       onVisible(win, frame, function (stop) {
         callback();

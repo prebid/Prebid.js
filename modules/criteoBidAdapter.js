@@ -556,7 +556,7 @@ function hasNativeMediaType(bidRequest) {
 function hasValidVideoMediaType(bidRequest) {
   let isValid = true;
 
-  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
+  let requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
   requiredMediaTypesParams.forEach(function (param) {
     if (param === 'placement') {

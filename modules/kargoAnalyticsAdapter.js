@@ -19,7 +19,7 @@ let _logBidResponseData = {
 
 let _bidResponseDataLogged = [];
 
-var kargoAnalyticsAdapter = Object.assign(
+let kargoAnalyticsAdapter = Object.assign(
   adapter({ analyticsType }), {
     track({ eventType, args }) {
       switch (eventType) {

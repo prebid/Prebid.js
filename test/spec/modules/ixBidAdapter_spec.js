@@ -2838,7 +2838,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requests).to.be.an('array');
       expect(requests).to.have.lengthOf(1);
 
-      for (var i = 0; i < requests.length; i++) {
+      for (let i = 0; i < requests.length; i++) {
         const reqSize = `${requests[i].url}?${utils.parseQueryStringParameters(requests[i].data)}`.length;
         expect(reqSize).to.be.lessThan(8000);
         let payload = extractPayload(requests[i]);

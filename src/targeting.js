@@ -34,7 +34,7 @@ import {
 } from './utils.js';
 import { getHighestCpm, getOldestHighestCpmBid } from './utils/reducers.js';
 
-var pbTargetingKeys = [];
+let pbTargetingKeys = [];
 
 const MAX_DFP_KEYLENGTH = 20;
 
@@ -481,7 +481,7 @@ export function newTargeting(auctionManager) {
     })
 
     targetingObj = targetingObj.reduce(function (accumulator, targeting) {
-      var key = Object.keys(targeting)[0];
+      let key = Object.keys(targeting)[0];
       accumulator[key] = Object.assign({}, accumulator[key], targeting[key]);
       return accumulator;
     }, {});

@@ -212,7 +212,7 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
-    var query = [];
+    let query = [];
     if (gdprConsent) {
       if (gdprConsent.consentString) {
         query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));

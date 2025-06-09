@@ -49,7 +49,7 @@ registerBidder(spec);
 async function getapi(url) {
   try {
     const response = await fetch(url);
-    var data = await response.json();
+    let data = await response.json();
 
     const dataMap = new Map(Object.entries(data));
     const uuidValue = dataMap.get('UUID');

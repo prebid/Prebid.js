@@ -45,8 +45,8 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const adUnits = [];
-    var bidderUrl = REQUEST_ENDPOINT + Math.random();
-    var userIds;
+    let bidderUrl = REQUEST_ENDPOINT + Math.random();
+    let userIds;
 
     _each(validBidRequests, function (bid) {
       userIds = bid.userId;

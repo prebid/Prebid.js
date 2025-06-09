@@ -26,11 +26,11 @@ export const spec = {
     return !!(bid.params.refid && bid.params.country);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var i, l, bid, reqParams, netRevenue, gdprObject;
-    var request = [];
-    var bids = deepClone(validBidRequests);
-    var lastCountry = 'sk';
-    var floors = [];
+    let i, l, bid, reqParams, netRevenue, gdprObject;
+    let request = [];
+    let bids = deepClone(validBidRequests);
+    let lastCountry = 'sk';
+    let floors = [];
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if (countryMap[bid.params.country]) {
@@ -71,14 +71,14 @@ export const spec = {
     };
 
     function getMetaData() {
-      var mts = {};
-      var hmetas = document.getElementsByTagName('meta');
-      var wnames = ['title', 'og:title', 'description', 'og:description', 'og:url', 'base', 'keywords'];
+      let mts = {};
+      let hmetas = document.getElementsByTagName('meta');
+      let wnames = ['title', 'og:title', 'description', 'og:description', 'og:url', 'base', 'keywords'];
       try {
-        for (var k in hmetas) {
+        for (let k in hmetas) {
           if (typeof hmetas[k] == 'object') {
-            var mname = hmetas[k].name || hmetas[k].getAttribute('property');
-            var mcont = hmetas[k].content;
+            let mname = hmetas[k].name || hmetas[k].getAttribute('property');
+            let mcont = hmetas[k].content;
             if (!!mname && mname != 'null' && !!mcont) {
               if (wnames.indexOf(mname) >= 0) {
                 if (!mts[mname]) {
@@ -100,8 +100,8 @@ export const spec = {
     }
 
     function formRequestUrl(reqData) {
-      var key;
-      var url = [];
+      let key;
+      let url = [];
 
       for (key in reqData) {
         if (reqData.hasOwnProperty(key) && reqData[key]) { url.push(key, '=', reqData[key], '&'); }
@@ -115,12 +115,12 @@ export const spec = {
       banner: 1,
       video: 1
     };
-    var bidObject, bid, type;
-    var bidRespones = [];
-    var bids = bidRequest.bids;
-    var responses = serverResponse.body;
-    var data = [];
-    for (var i = 0; i < responses.length; i++) {
+    let bidObject, bid, type;
+    let bidRespones = [];
+    let bids = bidRequest.bids;
+    let responses = serverResponse.body;
+    let data = [];
+    for (let i = 0; i < responses.length; i++) {
       data = responses[i];
       type = data.response === 'banner' ? BANNER : VIDEO;
       bid = bids[i];
@@ -154,7 +154,7 @@ export const spec = {
     return bidRespones;
 
     function verifySize(adItem, validSizes) {
-      for (var j = 0, k = validSizes.length; j < k; j++) {
+      for (let j = 0, k = validSizes.length; j < k; j++) {
         if (adItem.width == validSizes[j][0] &&
             adItem.height == validSizes[j][1]) {
           return true;

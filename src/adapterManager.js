@@ -75,7 +75,7 @@ config.getConfig('s2sConfig', config => {
   }
 });
 
-var _analyticsRegistry = {};
+let _analyticsRegistry = {};
 
 const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
@@ -429,10 +429,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     return partitions;
   }, [[], []]);
 
-  var uniqueServerBidRequests = [];
+  let uniqueServerBidRequests = [];
   serverBidderRequests.forEach(serverBidRequest => {
-    var index = -1;
-    for (var i = 0; i < uniqueServerBidRequests.length; ++i) {
+    let index = -1;
+    for (let i = 0; i < uniqueServerBidRequests.length; ++i) {
       if (serverBidRequest.uniquePbsTid === uniqueServerBidRequests[i].uniquePbsTid) {
         index = i;
         break;

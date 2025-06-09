@@ -157,9 +157,9 @@ function bidToSlotName(bid) {
     return bid.params.location + '-' + bid.params.format;
   }
 
-  var sizes = bid.mediaTypes.banner.sizes;
+  let sizes = bid.mediaTypes.banner.sizes;
   sizes.sort();
-  var format = sizes.map(size => size[0] + 'x' + size[1]).join('_');
+  let format = sizes.map(size => size[0] + 'x' + size[1]).join('_');
 
   if (format.length > 0) {
     return bid.params.location + '-' + format;

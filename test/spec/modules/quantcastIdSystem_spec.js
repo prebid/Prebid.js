@@ -45,9 +45,9 @@ describe('QuantcastId fire pixel', function () {
 
   it('fpa should be set when not present on this call', function () {
     firePixel('clientId');
-    var urlString = utils.triggerPixel.getCall(0).args[0];
-    var parsedUrl = utils.parseUrl(urlString);
-    var urlSearchParams = parsedUrl.search;
+    let urlString = utils.triggerPixel.getCall(0).args[0];
+    let parsedUrl = utils.parseUrl(urlString);
+    let urlSearchParams = parsedUrl.search;
     assert.equal(urlSearchParams.fpan, '1');
     assert.notEqual(urlSearchParams.fpa, null);
   });
@@ -55,9 +55,9 @@ describe('QuantcastId fire pixel', function () {
   it('fpa should be extracted from the Quantcast first party cookie when present on this call', function () {
     sinon.stub(storage, 'getCookie').returns('P0-TestFPA');
     firePixel('clientId');
-    var urlString = utils.triggerPixel.getCall(0).args[0];
-    var parsedUrl = utils.parseUrl(urlString);
-    var urlSearchParams = parsedUrl.search;
+    let urlString = utils.triggerPixel.getCall(0).args[0];
+    let parsedUrl = utils.parseUrl(urlString);
+    let urlSearchParams = parsedUrl.search;
     assert.equal(urlSearchParams.fpan, '0');
     assert.equal(urlSearchParams.fpa, 'P0-TestFPA');
     storage.getCookie.restore();

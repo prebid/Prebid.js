@@ -16,14 +16,14 @@ export const spec = {
     return !!(bid && bid.params && bid.params.token && bid.params.placementId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    var i
-    var j
-    var bid
-    var bidParam
-    var bidParams = []
-    var sizes
-    var frameWidth = Math.round(window.screen.width)
-    var frameHeight = Math.round(window.screen.height)
+    let i
+    let j
+    let bid
+    let bidParam
+    let bidParams = []
+    let sizes
+    let frameWidth = Math.round(window.screen.width)
+    let frameHeight = Math.round(window.screen.height)
     for (i = 0; i < validBidRequests.length; i++) {
       bid = validBidRequests[i]
       if (bid.sizes) {
@@ -61,7 +61,7 @@ export const spec = {
       }
     }
 
-    var ServerRequestObjects = {
+    let ServerRequestObjects = {
       method: SMARTICO_CONFIG.method,
       url: SMARTICO_CONFIG.bidRequestUrl,
       bids: validBidRequests,
@@ -71,17 +71,17 @@ export const spec = {
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    var i
-    var bid
-    var bidObject
-    var url
-    var html
-    var ad
-    var ads
-    var token
-    var language
-    var scriptId
-    var bidResponses = []
+    let i
+    let bid
+    let bidObject
+    let url
+    let html
+    let ad
+    let ads
+    let token
+    let language
+    let scriptId
+    let bidResponses = []
     ads = serverResponse.body
     for (i = 0; i < ads.length; i++) {
       ad = ads[i]

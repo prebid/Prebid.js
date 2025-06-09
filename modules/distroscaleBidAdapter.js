@@ -34,13 +34,13 @@ function _getBidFloor(bid, mType, sz) {
 }
 
 function _createImpressionObject(bid) {
-  var impObj = UNDEF;
-  var i;
-  var sizes = {};
-  var sizesCount = 0;
+  let impObj = UNDEF;
+  let i;
+  let sizes = {};
+  let sizesCount = 0;
 
   function addSize(arr) {
-    var w, h;
+    let w, h;
     if (arr && arr.length > 1) {
       w = parseInt(arr[0]);
       h = parseInt(arr[1]);
@@ -76,11 +76,11 @@ function _createImpressionObject(bid) {
     logWarn(LOG_WARN_PREFIX + 'Error: missing sizes: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
   } else {
     // Use the first preferred size
-    var keys = Object.keys(sizes);
+    let keys = Object.keys(sizes);
     keys.sort(function(a, b) {
       return sizes[a].idx - sizes[b].idx
     });
-    var bannerObj = {
+    let bannerObj = {
       pos: 0,
       w: sizes[keys[0]].w,
       h: sizes[keys[0]].h,
@@ -101,7 +101,7 @@ function _createImpressionObject(bid) {
       }
     };
 
-    var floor = _getBidFloor(bid, BANNER, [sizes[keys[0]].w, sizes[keys[0]].h]);
+    let floor = _getBidFloor(bid, BANNER, [sizes[keys[0]].w, sizes[keys[0]].h]);
     if (floor > 0) {
       impObj.bidfloor = floor;
       impObj.bidfloorcur = DEFAULT_CURRENCY;
@@ -130,12 +130,12 @@ export const spec = {
 
   buildRequests: (validBidRequests, bidderRequest) => {
     // TODO: does the fallback to window.location make sense?
-    var pageUrl = bidderRequest?.refererInfo?.page || window.location.href;
+    let pageUrl = bidderRequest?.refererInfo?.page || window.location.href;
 
     // check if dstag is already loaded in ancestry tree
-    var dsloaded = 0;
+    let dsloaded = 0;
     try {
-      var win = window;
+      let win = window;
       while (true) {
         if (win.vx.cs_loaded) {
           dsloaded = 1;
@@ -150,7 +150,7 @@ export const spec = {
       // ignore exception
     }
 
-    var payload = {
+    let payload = {
       id: '' + (new Date()).getTime(),
       at: AUCTION_TYPE,
       cur: [DEFAULT_CURRENCY],
@@ -173,8 +173,8 @@ export const spec = {
     };
 
     validBidRequests.forEach(b => {
-      var bid = deepClone(b);
-      var impObj = _createImpressionObject(bid);
+      let bid = deepClone(b);
+      let impObj = _createImpressionObject(bid);
       if (impObj) {
         payload.imp.push(impObj);
       }

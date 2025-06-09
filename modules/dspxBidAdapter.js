@@ -224,16 +224,16 @@ function createOutstreamEmbedCode(bid) {
   fragment.appendChild(div);
 
   // run scripts
-  var scripts = div.getElementsByTagName('script');
-  var scriptsClone = [];
-  for (var idx = 0; idx < scripts.length; idx++) {
+  let scripts = div.getElementsByTagName('script');
+  let scriptsClone = [];
+  for (let idx = 0; idx < scripts.length; idx++) {
     scriptsClone.push(scripts[idx]);
   }
-  for (var i = 0; i < scriptsClone.length; i++) {
-    var currentScript = scriptsClone[i];
-    var s = document.createElement('script');
-    for (var j = 0; j < currentScript.attributes.length; j++) {
-      var a = currentScript.attributes[j];
+  for (let i = 0; i < scriptsClone.length; i++) {
+    let currentScript = scriptsClone[i];
+    let s = document.createElement('script');
+    for (let j = 0; j < currentScript.attributes.length; j++) {
+      let a = currentScript.attributes[j];
       s.setAttribute(a.name, a.value);
     }
     s.appendChild(document.createTextNode(currentScript.innerHTML));

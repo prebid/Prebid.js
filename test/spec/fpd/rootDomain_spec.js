@@ -34,14 +34,14 @@ describe('findRootDomain', function () {
 
   it('should just find the root domain', function () {
     rejectDomain = 'co.uk';
-    var domain = findRootDomain('sub.realdomain.co.uk');
+    let domain = findRootDomain('sub.realdomain.co.uk');
     expect(domain).to.be.eq('realdomain.co.uk');
     expect(cookies).to.eql({});
   });
 
   it('should find the full domain when no subdomain is present', function () {
     rejectDomain = 'co.uk';
-    var domain = findRootDomain('realdomain.co.uk');
+    let domain = findRootDomain('realdomain.co.uk');
     expect(domain).to.be.eq('realdomain.co.uk');
     expect(cookies).to.eql({});
   });

@@ -130,7 +130,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
 function bidToTag(bid) {
   const tag = {};
-  for (var k in bid.params) {
+  for (let k in bid.params) {
     tag[k] = bid.params[k];
   }
   try {

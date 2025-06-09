@@ -234,12 +234,12 @@ export const spec = {
 
       // Add targeting
       if (getBidIdParameter('data', bid.params.user)) {
-        var targetingarr = [];
-        for (var i = 0; i < bid.params.user.data.length; i++) {
-          var isemq = (bid.params.user.data[i].name) || 'empty';
+        let targetingarr = [];
+        for (let i = 0; i < bid.params.user.data.length; i++) {
+          let isemq = (bid.params.user.data[i].name) || 'empty';
           if (isemq !== 'empty') {
-            var provider = bid.params.user.data[i].name;
-            var targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
+            let provider = bid.params.user.data[i].name;
+            let targetingstring = (bid.params.user.data[i].segment[0].value) || 'empty';
             targetingarr.push({
               id: provider,
               name: provider,
@@ -376,7 +376,7 @@ function createOutstreamConfig(bid) {
 
   logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
 
-  var playerConfig = {
+  let playerConfig = {
     minAdWidth: confMinAdWidth,
     maxAdWidth: confMaxAdWidth,
     coreSetup: {},
@@ -420,7 +420,7 @@ function createOutstreamConfig(bid) {
 
   const divID = '[id="' + elementId + '"]';
 
-  var playerListener = function callback(event) {
+  let playerListener = function callback(event) {
     switch (event) {
       case 'AdError':
         try {

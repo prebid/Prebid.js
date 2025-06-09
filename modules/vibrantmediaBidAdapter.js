@@ -126,7 +126,7 @@ export const spec = {
 
     const transformedBidRequests = transformBidRequests(validBidRequests);
 
-    var url = window.parent.location.href;
+    let url = window.parent.location.href;
 
     if ((window.self === window.top) && (!url || (url.substr(0, 4) !== 'http') || isBaseUrl(url))) {
       url = document.URL;

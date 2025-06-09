@@ -173,7 +173,7 @@ describe('Freedom Ad Network Bid Adapter', function () {
 
         expect(req.originalBidRequest).to.equal(bidRequest);
 
-        var data = JSON.parse(req.data);
+        let data = JSON.parse(req.data);
         expect(data.id).to.equal(bidRequest.bidId);
         expect(data.placements[0]).to.equal(bidRequest.params.placementId);
       }

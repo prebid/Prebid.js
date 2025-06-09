@@ -289,7 +289,7 @@ describe('1plusXRtdProvider', () => {
       }
 
       for (const consent of [consent1, consent2, consent3, consent4]) {
-        var failed = false;
+        let failed = false;
         try {
           extractConsent(consent)
         } catch (e) {

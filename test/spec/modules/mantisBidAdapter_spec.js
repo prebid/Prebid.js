@@ -179,7 +179,7 @@ describe('MantisAdapter', function () {
     });
 
     it('detect amp', function () {
-      var oldContext = window.context;
+      let oldContext = window.context;
 
       window.context = {};
       window.context.tagName = 'AMP-AD';

@@ -641,7 +641,7 @@ function parseNativeResponse(bid, newBid) {
 }
 
 function pageInfo() {
-  var w, d, l, r, m, p, t;
+  let w, d, l, r, m, p, t;
   for (w = window, d = w.document, l = d.location.href, r = d.referrer, m = 0, t = new Date(); w !== w.parent;) {
     try {
       p = w.parent; l = p.location.href; r = p.document.referrer; w = p;

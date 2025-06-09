@@ -41,8 +41,8 @@ export const spec = {
         sizes = bidRequest.mediaTypes[BANNER].sizes;
       }
 
-      var tagData = [];
-      for (var i = 0, j = sizes.length; i < j; i++) {
+      let tagData = [];
+      for (let i = 0, j = sizes.length; i < j; i++) {
         let tag = {};
         tag.sizes = [];
         tag.id = bidRequest.params.placementId;

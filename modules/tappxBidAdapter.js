@@ -44,7 +44,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'skip': DATA_TYPES.NUMBER
 }
 
-var hostDomain;
+let hostDomain;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -339,7 +339,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
 
     let videoParams = deepAccess(validBidRequests, 'params.video');
     if (typeof videoParams !== 'undefined') {
-      for (var key in VIDEO_CUSTOM_PARAMS) {
+      for (let key in VIDEO_CUSTOM_PARAMS) {
         if (videoParams.hasOwnProperty(key)) {
           video[key] = _checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
         }
@@ -579,8 +579,8 @@ function createRenderer(bid, request, url) {
 }
 
 export function _checkParamDataType(key, value, datatype) {
-  var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
-  var functionToExecute;
+  let errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
+  let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
       functionToExecute = isBoolean;

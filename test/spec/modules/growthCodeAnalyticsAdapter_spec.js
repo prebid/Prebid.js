@@ -61,7 +61,7 @@ describe('growthCode analytics adapter', () => {
     events.emit(EVENTS.AUCTION_END, auction);
     assert(server.requests.length > 0)
     const body = JSON.parse(server.requests[0].requestBody);
-    var eventTypes = [];
+    let eventTypes = [];
     body.events.forEach(e => eventTypes.push(e.eventType));
     assert(eventTypes.length > 0)
     growthCodeAnalyticsAdapter.disableAnalytics();

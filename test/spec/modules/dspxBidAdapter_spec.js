@@ -245,7 +245,7 @@ describe('dspxAdapter', function () {
     ];
 
     // With gdprConsent
-    var bidderRequest = {
+    let bidderRequest = {
       refererInfo: {
         referer: 'some_referrer.net'
       },
@@ -257,7 +257,7 @@ describe('dspxAdapter', function () {
     };
 
     // With ortb2
-    var bidderRequestWithORTB = {
+    let bidderRequestWithORTB = {
       refererInfo: {
         referer: 'some_referrer.net'
       },
@@ -298,7 +298,7 @@ describe('dspxAdapter', function () {
       }
     };
 
-    var request1 = spec.buildRequests([bidRequests[0]], bidderRequest)[0];
+    let request1 = spec.buildRequests([bidRequests[0]], bidderRequest)[0];
     it('sends bid request to our endpoint via GET', function () {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
@@ -306,7 +306,7 @@ describe('dspxAdapter', function () {
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a475&pbcode=testDiv1&media_types%5Bbanner%5D=300x250&schain%5Bver%5D=1.0&schain%5Bcomplete%5D=1&schain%5Bnodes%5D%5B0%5D%5Basi%5D=example.com&schain%5Bnodes%5D%5B0%5D%5Bsid%5D=0&schain%5Bnodes%5D%5B0%5D%5Bhp%5D=1&schain%5Bnodes%5D%5B0%5D%5Brid%5D=bidrequestid&schain%5Bnodes%5D%5B0%5D%5Bdomain%5D=example.com&did_netid=123&did_id5=ID5-ZHMOcvSShIBZiIth_yYh9odjNFxVEmMQ_i5TArPfWw!ID5*dtrjfV5mPLasyya5TW2IE9oVzQZwx7xRPGyAYS4hcWkAAOoxoFef4bIoREpQys8x&did_id5_linktype=2&did_uid2=456&did_sharedid=01EXPPGZ9C8NKG1MTXVHV98505&did_pubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61&did_tdid=tdid_ID&did_ppuid=1%3Apuburl.com%3Apubid1&did_cpubcid=e09ab6a3-ae74-4f01-b2e8-81b141d6dc61');
     });
 
-    var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
+    let request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
     it('sends bid request to our DEV endpoint via GET', function () {
       expect(request2.method).to.equal('GET');
       expect(request2.url).to.equal(ENDPOINT_URL_DEV);
@@ -315,12 +315,12 @@ describe('dspxAdapter', function () {
     });
 
     // Without gdprConsent
-    var bidderRequestWithoutGdpr = {
+    let bidderRequestWithoutGdpr = {
       refererInfo: {
         referer: 'some_referrer.net'
       }
     };
-    var request3 = spec.buildRequests([bidRequests[2]], bidderRequestWithoutGdpr)[0];
+    let request3 = spec.buildRequests([bidRequests[2]], bidderRequestWithoutGdpr)[0];
     it('sends bid request without gdprConsent to our endpoint via GET', function () {
       expect(request3.method).to.equal('GET');
       expect(request3.url).to.equal(ENDPOINT_URL);
@@ -328,7 +328,7 @@ describe('dspxAdapter', function () {
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a477&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
     });
 
-    var request4 = spec.buildRequests([bidRequests[3]], bidderRequestWithoutGdpr)[0];
+    let request4 = spec.buildRequests([bidRequests[3]], bidderRequestWithoutGdpr)[0];
     it('sends bid request without gdprConsent  to our DEV endpoint via GET', function () {
       expect(request4.method).to.equal('GET');
       expect(request4.url).to.equal(ENDPOINT_URL_DEV);
@@ -336,14 +336,14 @@ describe('dspxAdapter', function () {
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
-    var request5 = spec.buildRequests([bidRequests[4]], bidderRequestWithoutGdpr)[0];
+    let request5 = spec.buildRequests([bidRequests[4]], bidderRequestWithoutGdpr)[0];
     it('sends bid video request to our endpoint via GET', function () {
       expect(request5.method).to.equal('GET');
       let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&pbver=test&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv4&media_types%5Bvideo%5D=640x480&vctx=instream&vf=vast4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
-    var request6 = spec.buildRequests([bidRequests[5]], bidderRequestWithoutGdpr)[0];
+    let request6 = spec.buildRequests([bidRequests[5]], bidderRequestWithoutGdpr)[0];
     it('sends bid request without gdprConsent  to our DEV endpoint with overriden DEV params via GET', function () {
       expect(request6.method).to.equal('GET');
       expect(request6.url).to.equal('http://localhost');
@@ -351,7 +351,7 @@ describe('dspxAdapter', function () {
       expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=107&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&pfilter%5Btest%5D=1&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250&vctx=instream&vpl%5Bmimes%5D%5B0%5D=video%2Fmp4&vpl%5Bprotocols%5D%5B0%5D=1&vpl%5Bprotocols%5D%5B1%5D=2&vpl%5Bplaybackmethod%5D%5B0%5D=2&vpl%5Bskip%5D=1');
     });
 
-    var request7 = spec.buildRequests([bidRequests[5]], bidderRequestWithORTB)[0];
+    let request7 = spec.buildRequests([bidRequests[5]], bidderRequestWithORTB)[0];
     it('ortb2 iab_content test', function () {
       expect(request7.method).to.equal('GET');
       expect(request7.url).to.equal('http://localhost');

@@ -105,7 +105,7 @@ export const novatiqIdSubmodule = {
 
       function onSuccess(response, responseObj) {
         let syncrc;
-        var novatiqIdJson = { syncResponse: 0 };
+        let novatiqIdJson = { syncResponse: 0 };
         syncrc = responseObj.status;
         logInfo('NOVATIQ Sync Response Code:' + syncrc);
         logInfo('NOVATIQ *** ASYNC request returned ' + syncrc);
