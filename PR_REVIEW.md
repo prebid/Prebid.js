@@ -55,7 +55,7 @@ Follow steps above for general review process. In addition, please verify the fo
     - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
     - First party data must be read from the bid request object: bidrequest.ortb2
     - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloor()` function.
-    - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.ortb2.source.ext.schain.
+    - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidderRequest.ortb2.source.ext.schain or bidRequest.ortb2.source.ext.schain.
     - The bidderRequest.refererInfo.referer must be checked in addition to any bidder-specific parameter.
     - Page position must come from bidrequest.mediaTypes.banner.pos or bidrequest.mediaTypes.video.pos
     - Eids object is to be preferred to Userids object in the bid request, as the userid object may be removed in a future version
