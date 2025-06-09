@@ -10,9 +10,14 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-// RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
-// eslint-disable-next-line prebid/validate-imports
-import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule

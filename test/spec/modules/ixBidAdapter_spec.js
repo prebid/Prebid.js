@@ -5395,11 +5395,81 @@ describe('IndexexchangeAdapter', function () {
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
     });
+
     it('should add device to request when device doesnt exist', () => {
       let r = {}
       r = addDeviceInfo(r);
       expect(r.device.w).to.exist;
       expect(r.device.h).to.exist;
+    });
+
+    it('should add device.ip if available in fpd', () => {
+      const ortb2 = {
+        device: {
+          ip: '192.168.1.1',
+          ipv6: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+        }};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.equal('192.168.1.1')
+      expect(payload.device.ipv6).to.equal('2001:0db8:85a3:0000:0000:8a2e:0370:7334')
+    });
+
+    it('should not add device.ip if neither ip nor ipv6 exists', () => {
+      const ortb2 = {device: {}};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.ip).to.be.undefined;
+      expect(payload.device.ip6).to.be.undefined;
+    });
+  });
+
+  describe('fetch requests', function () {
+    let ajaxStub;
+
+    beforeEach(function () {
+      ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
+        return sinon.spy(function (url, callback, data, options) {
+          callback.success('OK');
+        });
+      });
+    });
+
+    afterEach(function () {
+      ajaxStub.restore();
+    });
+
+    it('should send the correct headers in the actual fetch call', function (done) {
+      const requests = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+      const request = requests[0];
+      const ajax = ajaxLib.ajaxBuilder();
+
+      ajax(
+        request.url,
+        {
+          success: () => {
+            try {
+              sinon.assert.calledOnce(ajaxStub);
+              const ajaxCall = ajaxStub.returnValues[0];
+              sinon.assert.calledOnce(ajaxCall);
+              const [calledUrl, callback, calledData, calledOptions] = ajaxCall.getCall(0).args;
+
+              expect(calledUrl).to.equal(request.url);
+              expect(calledData).to.equal(request.data);
+
+              expect(calledOptions.contentType).to.equal('text/plain');
+              expect(calledOptions.withCredentials).to.be.true;
+
+              done();
+            } catch (err) {
+              done(err);
+            }
+          },
+          error: (err) => done(err || new Error('Ajax request failed')),
+        },
+        request.data,
+        request.options
+      );
     });
   });
 

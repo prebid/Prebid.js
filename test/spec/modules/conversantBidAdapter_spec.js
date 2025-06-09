@@ -486,7 +486,7 @@ describe('Conversant adapter tests', function() {
       expect(bid).to.have.property('width', 300);
       expect(bid).to.have.property('height', 250);
       expect(bid.meta.advertiserDomains).to.deep.equal(['https://example.com']);
-      expect(bid).to.have.property('ad', 'markup000<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="notify000"></div>');
+      expect(bid).to.have.property('ad', '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="notify000"></div>markup000');
       expect(bid).to.have.property('ttl', 300);
       expect(bid).to.have.property('netRevenue', true);
     });
@@ -500,7 +500,7 @@ describe('Conversant adapter tests', function() {
       expect(bid).to.have.property('creativeId', '1002');
       expect(bid).to.have.property('width', 300);
       expect(bid).to.have.property('height', 600);
-      expect(bid).to.have.property('ad', 'markup002<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="notify002"></div>');
+      expect(bid).to.have.property('ad', '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="notify002"></div>markup002');
       expect(bid).to.have.property('ttl', 300);
       expect(bid).to.have.property('netRevenue', true);
     });

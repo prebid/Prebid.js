@@ -204,7 +204,7 @@ export function storeBatch(batch) {
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
         } else {
-          assignVastUrlAndCacheId(bidResponse, getCacheUrl(bidResponse.videoCacheKey), cacheId.uuid);
+          assignVastUrlAndCacheId(bidResponse, getCacheUrl(cacheId.uuid), cacheId.uuid);
           addBidToAuction(auctionInstance, bidResponse);
           afterBidAdded();
         }
