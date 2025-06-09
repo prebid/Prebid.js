@@ -69,6 +69,8 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
       }
     }
   }
+
+  delete placement.bidfloor;
 };
 
 const placementProcessingFunction = buildPlacementProcessingFunction({
@@ -85,15 +87,31 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
     bidderRequest,
     placementProcessingFunction
   });
-
+  const base = request.data;
   const firstPartyData = bidderRequest.ortb2 || {};
-  request.data.userObj = firstPartyData.user;
-  request.data.siteObj = firstPartyData.site;
-  request.data.appObj = firstPartyData.app;
+
+  request.data = {
+    deviceWidth: base.deviceWidth,
+    deviceHeight: base.deviceHeight,
+    language: base.language,
+    secure: base.secure,
+    host: base.host,
+    page: base.page,
+    placements: base.placements,
+    ccpa: base.ccpa,
+    userObj: firstPartyData.user,
+    siteObj: firstPartyData.site,
+    appObj: firstPartyData.app
+  };
 
   if (bidderRequest.gdprConsent) {
     request.data.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
     request.data.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+  }
+
+  if (base.gpp) {
+    request.data.gpp = base.gpp;
+    request.data.gpp_sid = base.gpp_sid;
   }
 
   return request;
