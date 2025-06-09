@@ -128,6 +128,242 @@ export const getBrowserType = () => {
   return browserIndex.toString();
 }
 
+// Find all bids for a specific ad unit
+function findBidsForAdUnit(auction, code) {
+  return auction?.bidsReceived?.filter(bid => bid.adUnitCode === code) || [];
+}
+
+// Find rejected bids for a specific ad unit
+function findRejectedBidsForAdUnit(auction, code) {
+  if (!auction?.bidsRejected) return [];
+  
+  // If bidsRejected is an array
+  if (Array.isArray(auction.bidsRejected)) {
+    return auction.bidsRejected.filter(bid => bid.adUnitCode === code);
+  }
+  
+  // If bidsRejected is an object mapping bidders to their rejected bids
+  if (typeof auction.bidsRejected === 'object') {
+    return Object.values(auction.bidsRejected)
+      .filter(Array.isArray)
+      .flatMap(bidderBids => bidderBids.filter(bid => bid.adUnitCode === code));
+  }
+  
+  return [];
+}
+
+// Find a rejected bid due to price floor
+function findRejectedFloorBid(rejectedBids) {
+  return rejectedBids.find(bid => {
+    const errorMessage = bid.statusMessage || bid.status || '';
+    return errorMessage.includes('price floor') ||
+           (bid.floorData?.floorValue && bid.cpm < bid.floorData.floorValue);
+  });
+}
+
+// Find the winning or highest bid for an ad unit
+function findWinningBid(adUnitCode) {
+  try {
+    const pbjs = getGlobal();
+    if (!pbjs?.getHighestCpmBids) return null;
+    
+    const highestCpmBids = pbjs.getHighestCpmBids(adUnitCode);
+    if (!highestCpmBids?.length) {
+      logInfo(CONSTANTS.LOG_PRE_FIX, `No highest CPM bids found for ad unit: ${adUnitCode}`);
+      return null;
+    }
+    
+    const highestCpmBid = highestCpmBids[0];
+    logInfo(CONSTANTS.LOG_PRE_FIX, `Found highest CPM bid using pbjs.getHighestCpmBids() for ad unit: ${adUnitCode}, CPM: ${highestCpmBid.cpm}`);
+    return highestCpmBid;
+  } catch (error) {
+    logError(CONSTANTS.LOG_PRE_FIX, `Error finding highest CPM bid: ${error}`);
+    return null;
+  }
+}
+
+// Find a bid with floor data
+function findBidWithFloor(bids) {
+  return bids.find(bid => bid.floorData?.floorValue);
+}
+
+// Find floor value from bidder requests
+function findFloorValueFromBidderRequests(auction, code) {
+  if (!auction?.bidderRequests?.length) return 0;
+
+  // Find all bids in bidder requests for this ad unit
+  const bidsFromRequests = auction.bidderRequests
+    .flatMap(request => request.bids || [])
+    .filter(bid => bid.adUnitCode === code);
+
+  if (!bidsFromRequests.length) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `No bids found for ad unit: ${code}`);
+    return 0;
+  }
+
+  const bidWithGetFloor = bidsFromRequests.find(bid => bid.getFloor);
+  if (!bidWithGetFloor) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `No bid with getFloor method found for ad unit: ${code}`);
+    return 0;
+  }
+
+  // Helper function to extract sizes from a source object
+  const extractSizes = (source) => {
+    if (source?.mediaTypes?.banner?.sizes) return source.mediaTypes.banner.sizes;
+    if (source?.sizes) return source.sizes;
+    return null;
+  };
+
+  // Try to get sizes from different sources in order of preference
+  const adUnit = auction.adUnits?.find(unit => unit.code === code);
+  const sizes = extractSizes(adUnit) || extractSizes(bidWithGetFloor) || [['*', '*']];
+
+  if (sizes.length === 1 && sizes[0][0] === '*') {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `No sizes found, using wildcard size for ad unit: ${code}`);
+  }
+
+  // Try to get floor values for each size
+  let minFloor = -1;
+  
+  for (const size of sizes) {
+    const floorInfo = bidWithGetFloor.getFloor({
+      currency: 'USD', // Default currency
+      mediaType: 'banner', // Default media type
+      size
+    });
+
+    if (floorInfo?.floor && !isNaN(parseFloat(floorInfo.floor))) {
+      const floorValue = parseFloat(floorInfo.floor);
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Floor value for size ${size}: ${floorValue}`);
+
+      // Update minimum floor value
+      minFloor = minFloor === -1 ? floorValue : Math.min(minFloor, floorValue);
+    }
+  }
+
+  if (minFloor !== -1) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `Calculated minimum floor value ${minFloor} for ad unit: ${code}`);
+    return minFloor;
+  }
+
+  logInfo(CONSTANTS.LOG_PRE_FIX, `No floor data found for ad unit: ${code}`);
+  return 0;
+}
+
+// Select multiplier based on priority order: floors.json → config.json → default
+function selectMultiplier(multiplierKey, profileConfigs) {
+  // Define sources in priority order
+  const multiplierSources = [
+    {
+      name: 'floor.json',
+      getValue: () => _multipliers && multiplierKey in _multipliers ? _multipliers[multiplierKey] : null
+    },
+    {
+      name: 'config.json',
+      getValue: () => {
+        const configPath = profileConfigs?.plugins?.dynamicFloors?.pmTargetingKeys?.multiplier;
+        const lowerKey = multiplierKey.toLowerCase();
+        return configPath && lowerKey in configPath ? configPath[lowerKey] : null;
+      }
+    },
+    {
+      name: 'default',
+      getValue: () => CONSTANTS.MULTIPLIERS[multiplierKey]
+    }
+  ];
+  
+  // Find the first source with a non-null value
+  for (const source of multiplierSources) {
+    const value = source.getValue();
+    if (value != null) {
+      return { value, source: source.name };
+    }
+  }
+  
+  // Fallback (shouldn't happen due to default source)
+  return { value: CONSTANTS.MULTIPLIERS[multiplierKey], source: 'default' };
+}
+
+// Identify winning bid scenario and return scenario data
+function handleWinningBidScenario(winningBid, code) {
+  return {
+    scenario: 'winning',
+    bidStatus: CONSTANTS.BID_STATUS.WON,
+    baseValue: winningBid.cpm,
+    multiplierKey: 'WIN',
+    logMessage: `Bid won for ad unit: ${code}, CPM: ${winningBid.cpm}`
+  };
+}
+
+// Identify rejected floor bid scenario and return scenario data
+function handleRejectedFloorBidScenario(rejectedFloorBid, code) {
+  const baseValue = rejectedFloorBid.floorData?.floorValue || 0;
+  return {
+    scenario: 'rejected',
+    bidStatus: CONSTANTS.BID_STATUS.FLOORED,
+    baseValue,
+    multiplierKey: 'FLOORED',
+    logMessage: `Bid rejected due to price floor for ad unit: ${code}, Floor value: ${baseValue}, Bid CPM: ${rejectedFloorBid.cpm}`
+  };
+}
+
+// Identify floored bid scenario and return scenario data
+function handleFlooredBidScenario(bidWithFloor, code) {
+  const baseValue = bidWithFloor.floorData.floorValue;
+  return {
+    scenario: 'floored',
+    bidStatus: CONSTANTS.BID_STATUS.FLOORED,
+    baseValue,
+    multiplierKey: 'FLOORED',
+    logMessage: `Floored bid for ad unit: ${code}, Floor value: ${baseValue}`
+  };
+}
+
+// Identify no bid scenario and return scenario data
+function handleNoBidScenario(auction, code) {
+  const baseValue = findFloorValueFromBidderRequests(auction, code);
+  return {
+    scenario: 'nobid',
+    bidStatus: CONSTANTS.BID_STATUS.NOBID,
+    baseValue,
+    multiplierKey: 'NOBID',
+    logMessage: `No bids for ad unit: ${code}, Floor value: ${baseValue}`
+  };
+}
+
+// Determine which scenario applies based on bid conditions
+function determineScenario(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code) {
+  if (winningBid) {
+    return handleWinningBidScenario(winningBid, code);
+  } 
+  
+  if (rejectedFloorBid) {
+    return handleRejectedFloorBidScenario(rejectedFloorBid, code);
+  }
+  
+  const bidWithFloor = findBidWithFloor(bidsForAdUnit);
+  if (bidWithFloor?.floorData?.floorValue) {
+    return handleFlooredBidScenario(bidWithFloor, code);
+  }
+  
+  return handleNoBidScenario(auction, code);
+}
+
+// Main function that determines bid status and calculates values
+function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code) {
+  const profileConfigs = getProfileConfigs();
+  
+  // Determine the scenario based on bid conditions
+  const { bidStatus, baseValue, multiplierKey, logMessage } = 
+    determineScenario(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code);
+  
+  // Select the appropriate multiplier
+  const { value: multiplier, source } = selectMultiplier(multiplierKey, profileConfigs);
+  logInfo(CONSTANTS.LOG_PRE_FIX, logMessage + ` (Using ${source} multiplier: ${multiplier})`);
+  
+  return { bidStatus, baseValue, multiplier };
+}
+
 // Getter Functions
 export const getOs = () => getOS().toString();
 export const getDeviceType = () => fetchDeviceType().toString();
@@ -324,237 +560,6 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
  * @param {Object} auction - Auction object
  * @return {Object} - Targeting data for ad units
  */
-// Find all bids for a specific ad unit
-function findBidsForAdUnit(auction, code) {
-  return auction?.bidsReceived?.filter(bid => bid.adUnitCode === code) || [];
-}
-
-// Find rejected bids for a specific ad unit
-function findRejectedBidsForAdUnit(auction, code) {
-  const rejectedBidsForAdUnit = [];
-
-  if (!auction?.bidsRejected) return rejectedBidsForAdUnit;
-
-  if (Array.isArray(auction.bidsRejected)) {
-    rejectedBidsForAdUnit.push(...auction.bidsRejected.filter(bid => bid.adUnitCode === code));
-  } else if (typeof auction.bidsRejected === 'object') {
-    Object.keys(auction.bidsRejected).forEach(bidder => {
-      const bidderRejectedBids = auction.bidsRejected[bidder];
-      if (Array.isArray(bidderRejectedBids)) {
-        rejectedBidsForAdUnit.push(...bidderRejectedBids.filter(bid => bid.adUnitCode === code));
-      }
-    });
-  }
-
-  return rejectedBidsForAdUnit;
-}
-
-// Find a rejected bid due to price floor
-function findRejectedFloorBid(rejectedBids) {
-  return rejectedBids.find(bid => {
-    const errorMessage = bid.statusMessage || bid.status || '';
-    return errorMessage.includes('price floor') ||
-           (bid.floorData && bid.floorData.floorValue && bid.cpm < bid.floorData.floorValue);
-  });
-}
-
-// Find the winning or highest bid for an ad unit
-function findWinningBid(adUnitCode) {
-  try {
-    const pbjs = getGlobal();
-    if (pbjs && typeof pbjs.getHighestCpmBids === 'function') {
-      const highestCpmBids = pbjs.getHighestCpmBids(adUnitCode);
-      if (highestCpmBids && highestCpmBids.length > 0) {
-        const highestCpmBid = highestCpmBids[0];
-        logInfo(CONSTANTS.LOG_PRE_FIX, `Found highest CPM bid using pbjs.getHighestCpmBids() for ad unit: ${adUnitCode}, CPM: ${highestCpmBid.cpm}`);
-        return highestCpmBid;
-      } else {
-        logInfo(CONSTANTS.LOG_PRE_FIX, `No highest CPM bids found for ad unit: ${adUnitCode}`);
-      }
-    }
-  } catch (error) {
-    logError(CONSTANTS.LOG_PRE_FIX, `Error finding highest CPM bid: ${error}`);
-  }
-
-  return null;
-}
-
-// Find a bid with floor data
-function findBidWithFloor(bids) {
-  return bids.find(bid => bid.floorData?.floorValue);
-}
-
-// Find floor value from bidder requests
-function findFloorValueFromBidderRequests(auction, code) {
-  if (!auction?.bidderRequests || auction.bidderRequests.length === 0) {
-    return 0;
-  }
-
-  // Find all bids in bidder requests for this ad unit
-  const bidsFromRequests = auction.bidderRequests
-    .flatMap(request => request.bids || [])
-    .filter(bid => bid.adUnitCode === code);
-
-  if (bidsFromRequests.length === 0) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `No bids found for ad unit: ${code}`);
-    return 0;
-  }
-
-  const bidWithGetFloor = bidsFromRequests.find(bid => bid.getFloor);
-  if (!bidWithGetFloor) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `No bid with getFloor method found for ad unit: ${code}`);
-    return 0;
-  }
-
-  // Try to get the ad unit from the auction
-  const adUnit = auction.adUnits?.find(unit => unit.code === code);
-  let sizes = [];
-
-  // Try to get sizes from the ad unit
-  if (adUnit) {
-    if (adUnit.mediaTypes && adUnit.mediaTypes.banner && adUnit.mediaTypes.banner.sizes) {
-      sizes = adUnit.mediaTypes.banner.sizes;
-    } else if (adUnit.sizes) {
-      sizes = adUnit.sizes;
-    }
-  }
-
-  // If no sizes found in the ad unit, try to get from the bid
-  if (sizes.length === 0) {
-    if (bidWithGetFloor.mediaTypes && bidWithGetFloor.mediaTypes.banner && bidWithGetFloor.mediaTypes.banner.sizes) {
-      sizes = bidWithGetFloor.mediaTypes.banner.sizes;
-    } else if (bidWithGetFloor.sizes) {
-      sizes = bidWithGetFloor.sizes;
-    }
-  }
-
-  // If still no sizes, use a default size
-  if (sizes.length === 0) {
-    sizes = [['*', '*']]; // Use wildcard size
-    logInfo(CONSTANTS.LOG_PRE_FIX, `No sizes found, using wildcard size for ad unit: ${code}`);
-  }
-
-  // Try to get floor values for each size
-  let minFloor = -1;
-  sizes.forEach(size => {
-    const floorInfo = bidWithGetFloor.getFloor({
-      currency: 'USD', // Default currency
-      mediaType: 'banner', // Default media type
-      size
-    });
-
-    if (floorInfo && floorInfo.floor && !isNaN(parseFloat(floorInfo.floor))) {
-      const floorValue = parseFloat(floorInfo.floor);
-      logInfo(CONSTANTS.LOG_PRE_FIX, `Floor value for size ${size}: ${floorValue}`);
-
-      // Update minimum floor value
-      minFloor = minFloor === -1 ? floorValue : Math.min(minFloor, floorValue);
-    }
-  });
-
-  if (minFloor !== -1) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, `Calculated minimum floor value ${minFloor} for ad unit: ${code}`);
-    return minFloor;
-  }
-
-  logInfo(CONSTANTS.LOG_PRE_FIX, `No floor data found for ad unit: ${code}`);
-  return 0;
-}
-
-// Determine bid status and calculate appropriate values
-function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit, auction, code) {
-  let bidStatus, baseValue, multiplier;
-  const profileConfigs = getProfileConfigs();
-
-  // Helper function to set bid status, base value, and multiplier
-  function setBidStatusAndValues(status, baseValueSource, multiplierKey, logMessage) {
-    bidStatus = status;
-    baseValue = baseValueSource;
-    // Define sources in priority order with their access patterns
-    const multiplierSources = [
-      {
-        name: 'floor.json',
-        getValue: () => { // Check floors.json
-          return _multipliers && multiplierKey in _multipliers ? _multipliers[multiplierKey] : null;
-        }
-      },
-      {
-        name: 'config.json',
-        getValue: () => { // Check config.json (via optional chaining)
-          const configPath = profileConfigs?.plugins?.dynamicFloors?.pmTargetingKeys?.multiplier;
-          const lowerKey = multiplierKey.toLowerCase();
-          return configPath && lowerKey in configPath ? configPath[lowerKey] : null;
-        }
-      },
-      {
-        name: 'default',
-        getValue: () => CONSTANTS.MULTIPLIERS[multiplierKey]
-      }
-    ];
-    
-    // Find the first source that has a non-null value
-    for (const source of multiplierSources) {
-      const value = source.getValue();
-      if (value != null) {
-        multiplier = value;
-        logInfo(CONSTANTS.LOG_PRE_FIX, logMessage + ` (Using ${source.name} multiplier: ${multiplier})`);
-        return;
-      }
-    }
-    
-    // Fallback if somehow all sources failed (shouldn't happen due to default source)
-    multiplier = CONSTANTS.MULTIPLIERS[multiplierKey];
-    logInfo(CONSTANTS.LOG_PRE_FIX, logMessage + ` (Using default multiplier: ${multiplier})`);
-  
-  }
-
-  if (winningBid) {
-    // Winning bid case
-    setBidStatusAndValues(
-      CONSTANTS.BID_STATUS.WON,
-      winningBid.cpm,
-      'WIN',
-      `Bid won for ad unit: ${code}, CPM: ${winningBid.cpm}`
-    );
-  } else if (rejectedFloorBid) {
-    // Bid rejected due to price floor case
-    const floorValue = rejectedFloorBid.floorData?.floorValue || 0;
-    setBidStatusAndValues(
-      CONSTANTS.BID_STATUS.FLOORED,
-      floorValue,
-      'FLOORED',
-      `Bid rejected due to price floor for ad unit: ${code}, Floor value: ${floorValue}, Bid CPM: ${rejectedFloorBid.cpm}`
-    );
-  } else {
-    // Find any bid with floor data for this ad unit
-    const bidWithFloor = findBidWithFloor(bidsForAdUnit);
-
-    if (bidWithFloor?.floorData?.floorValue) {
-      // Floor bid case
-      const floorValue = bidWithFloor.floorData.floorValue || 0;
-      setBidStatusAndValues(
-        CONSTANTS.BID_STATUS.FLOORED,
-        floorValue,
-        'FLOORED',
-        `Floored bid for ad unit: ${code}, Floor value: ${floorValue}`
-      );
-    } else {
-      // No bid case - try to get floor value from bidder requests
-      const floorValue = findFloorValueFromBidderRequests(auction, code);
-
-      setBidStatusAndValues(
-        CONSTANTS.BID_STATUS.NOBID,
-        floorValue,
-        'NOBID',
-        `No bids for ad unit: ${code}, Floor value: ${floorValue}`
-      );
-    }
-  }
-
-  return { bidStatus, baseValue, multiplier };
-}
-
-
 export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   // Access the profile configs stored globally
   const profileConfigs = getProfileConfigs();
@@ -565,13 +570,13 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
     return {};
   }
 
-  const isRtdFloorApplied = bid =>
-    bid.floorData?.floorProvider === "PM" &&
-    !bid.floorData.skipped
+  // Helper to check if RTD floor is applied to a bid
+  const isRtdFloorApplied = bid => bid.floorData?.floorProvider === "PM" && !bid.floorData.skipped;
 
-  const hasRtdFloorAppliedBid = auction?.adUnits?.some(adUnit =>
-    adUnit.bids?.some(isRtdFloorApplied)
-  ) || auction?.bidsReceived?.some(isRtdFloorApplied);
+  // Check if any bid has RTD floor applied
+  const hasRtdFloorAppliedBid = 
+    auction?.adUnits?.some(adUnit => adUnit.bids?.some(isRtdFloorApplied)) || 
+    auction?.bidsReceived?.some(isRtdFloorApplied);
 
   // Only log when RTD floor is applied
   if (hasRtdFloorAppliedBid) {
@@ -579,44 +584,40 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
   }
 
   // Process each ad unit code
-  const targeting = adUnitCodes.reduce((acc, code) => {
-    // Initialize acc[code] if it doesn't exist
-    if (!acc[code]) {
-      acc[code] = {};
+  const targeting = {};
+  
+  adUnitCodes.forEach(code => {
+    targeting[code] = {};
+    
+    // For non-RTD floor applied cases, only set pm_ym_flrs to 0
+    if (!hasRtdFloorAppliedBid) {
+      targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 0;
+      return;
     }
+    
+    // Find bids and determine status for RTD floor applied cases
+    const bidsForAdUnit = findBidsForAdUnit(auction, code);
+    const rejectedBidsForAdUnit = findRejectedBidsForAdUnit(auction, code);
+    const rejectedFloorBid = findRejectedFloorBid(rejectedBidsForAdUnit);
+    const winningBid = findWinningBid(code);
 
-    // For RTD floor applied cases, set all targeting keys
-    if (hasRtdFloorAppliedBid) {
-      // Find bids and determine status
-      const bidsForAdUnit = findBidsForAdUnit(auction, code);
-      const rejectedBidsForAdUnit = findRejectedBidsForAdUnit(auction, code);
-      const rejectedFloorBid = findRejectedFloorBid(rejectedBidsForAdUnit);
-      const winningBid = findWinningBid(code);
+    // Determine bid status and values
+    const { bidStatus, baseValue, multiplier } = determineBidStatusAndValues(
+      winningBid,
+      rejectedFloorBid,
+      bidsForAdUnit,
+      auction,
+      code
+    );
 
-      // Determine bid status and values
-      const { bidStatus, baseValue, multiplier } = determineBidStatusAndValues(
-        winningBid,
-        rejectedFloorBid,
-        bidsForAdUnit,
-        auction,
-        code
-      );
-
-      // Set all targeting keys
-      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 1;
-      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = (baseValue * multiplier).toFixed(2);
-      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
-    } else {
-      // For non-RTD floor applied cases, only set pm_ym_flrs to 0
-      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 0;
-    }
-
-    return acc;
-  }, {});
+    // Set all targeting keys
+    targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 1;
+    targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = (baseValue * multiplier).toFixed(2);
+    targeting[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
+  });
 
   return targeting;
 };
-
 
 export const pubmaticSubmodule = {
   /**
