@@ -1,6 +1,5 @@
 import { deepAccess, generateUUID, isFn, parseSizesInput, parseUrl } from '../../src/utils.js';
 import { config } from '../../src/config.js';
-import { find } from '../../src/polyfill.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
@@ -77,7 +76,7 @@ export function getOsVersion() {
     { s: 'UNIX', r: /UNIX/ },
     { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
   ];
-  let cs = find(clientStrings, cs => cs.r.test(navigator.userAgent));
+  let cs = clientStrings.find(cs => cs.r.test(navigator.userAgent));
   return cs ? cs.s : 'unknown';
 }
 
