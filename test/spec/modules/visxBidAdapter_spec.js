@@ -901,7 +901,7 @@ describe('VisxAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    it('should send requst for banner bid', function () {
+    it('should send request for banner bid', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
