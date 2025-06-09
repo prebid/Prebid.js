@@ -119,13 +119,10 @@ function commonConfig(overrides) {
       'no-useless-catch': 'off',
       '@stylistic/quotes': 'off',
       '@stylistic/quote-props': 'off',
-      '@stylistic/array-bracket-spacing': 'off',
       '@stylistic/object-curly-spacing': 'off',
       '@stylistic/semi': 'off',
-      '@stylistic/space-before-function-paren': 'off',
       '@stylistic/multiline-ternary': 'off',
       '@stylistic/computed-property-spacing': 'off',
-      '@stylistic/lines-between-class-members': 'off',
       '@stylistic/indent': 'off',
       '@stylistic/comma-dangle': 'off',
       '@stylistic/object-curly-newline': 'off',
@@ -237,9 +234,6 @@ module.exports = [
       'no-redeclare': 'off',
       'no-global-assign': 'off',
       'default-case-last': 'off',
-      '@stylistic/no-mixed-spaces-and-tabs': 'off',
-      '@stylistic/no-tabs': 'off',
-      '@stylistic/no-trailing-spaces': 'error'
     }
   })
 ]
