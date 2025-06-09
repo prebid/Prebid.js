@@ -3889,7 +3889,7 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig: options });
       sinon.assert.calledOnce(logErrorSpy);
     });
-    
+
     it('should set adapterOptions', function () {
       config.setConfig({
         s2sConfig: {

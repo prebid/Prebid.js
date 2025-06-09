@@ -1242,7 +1242,7 @@ describe('The Criteo bidding adapter', function () {
           },
         },
       ];
-      
+
       // Create a modified bidderRequest with schain
       const modifiedBidderRequest = {
         ...bidderRequest,
