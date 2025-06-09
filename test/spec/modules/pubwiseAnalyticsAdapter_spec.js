@@ -133,7 +133,6 @@ describe('PubWise Prebid Analytics', function () {
       expect(data.eventList[0], 'eventList property').to.exist;
       expect(data.eventList[0].args, 'eventList property').to.exist;
 
-
       // console.log(data.eventList[0].args);
 
       let eventArgs = data.eventList[0].args;

@@ -1,4 +1,3 @@
-
 import {spec, storage, VIDEO_RENDERER_URL} from 'modules/tpmnBidAdapter.js';
 import {generateUUID} from '../../../src/utils.js';
 import {expect} from 'chai';

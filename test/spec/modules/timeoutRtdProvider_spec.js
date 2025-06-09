@@ -1,4 +1,3 @@
-
 import { timeoutRtdFunctions, timeoutSubmodule } from '../../../modules/timeoutRtdProvider'
 import { expect } from 'chai';
 import * as ajax from 'src/ajax.js';

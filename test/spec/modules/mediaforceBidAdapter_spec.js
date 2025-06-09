@@ -339,7 +339,6 @@ describe('mediaforce bid adapter', function () {
       assert.notExists(data.imp[0].banner, 'Banner object should be omitted');
     });
 
-
     it('should return proper requests for multiple imps', function () {
       let bidderRequest = {
         bids: multiBid,

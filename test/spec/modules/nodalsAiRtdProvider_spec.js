@@ -139,7 +139,6 @@ const createTargetingEngineStub = (getTargetingDataReturnValue = {}, raiseError 
   return window.$nodals.adTargetingEngine[version];
 };
 
-
 describe('NodalsAI RTD Provider', () => {
   let sandbox;
   let validConfig;

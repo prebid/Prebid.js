@@ -1022,7 +1022,6 @@ describe('Unit: Prebid Module', function () {
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
 
-
       slots.forEach(function(slot) {
         targeting = {};
         slot.getTargetingKeys().map(function (key) {
