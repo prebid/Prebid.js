@@ -1,5 +1,5 @@
 import { BANNER, VIDEO } from '../../src/mediaTypes.js';
-import {deepAccess, isArray, isEmptyStr, isFn, logError} from '../../src/utils.js';
+import {deepAccess, isArray, isEmptyStr, isFn} from '../../src/utils.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -69,11 +69,9 @@ export function fillUsersIds(bidRequest, payload) {
           }
         }
       }
-
     });
   }
   payload["did_cpubcid"] = bidRequest.crumbs?.pubcid;
-
 }
 
 export function appendToUrl(url, what) {

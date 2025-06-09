@@ -142,7 +142,7 @@ export const spec = {
       // schain
       if (bidRequest.schain && bidRequest.schain.ver && bidRequest.schain.complete && bidRequest.schain.nodes) {
         let schain = bidRequest.schain;
-        let schainString = schain.ver  + ","  + schain.complete;
+        let schainString = schain.ver + "," + schain.complete;
         for (let node of schain.nodes) {
             schainString += '!' + [
               node.asi ?? '',
