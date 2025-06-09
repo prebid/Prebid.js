@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, cpmAdjustment } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
+import { config } from 'src/config.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse;
@@ -225,21 +226,21 @@ describe('PubMatic adapter', () => {
       it('should include previousAuctionInfo in request when available', () => {
         const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
         const bidderRequestWithPrevAuction = utils.deepClone(bidderRequest);
-        
+
         bidderRequestWithPrevAuction.ortb2 = bidderRequestWithPrevAuction.ortb2 || {};
         bidderRequestWithPrevAuction.ortb2.ext = bidderRequestWithPrevAuction.ortb2.ext || {};
         bidderRequestWithPrevAuction.ortb2.ext.prebid = bidderRequestWithPrevAuction.ortb2.ext.prebid || {};
         bidderRequestWithPrevAuction.ortb2.ext.prebid.previousauctioninfo = {
           bidderRequestId: 'bidder-request-id'
         };
-        
+
         const request = spec.buildRequests([bidRequestWithPrevAuction], bidderRequestWithPrevAuction);
         expect(request.data.ext).to.have.property('previousAuctionInfo');
         expect(request.data.ext.previousAuctionInfo).to.deep.equal({
           bidderRequestId: 'bidder-request-id'
         });
       });
-      
+
       it('should generate request with banner', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -1108,7 +1109,7 @@ describe('PubMatic adapter', () => {
         expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
         expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
       });
-      
+
       it('should not set primaryCatId and secondaryCatIds in meta when bid.cat is undefined', () => {
         const copiedResponse = utils.deepClone(response);
         delete copiedResponse.body.seatbid[0].bid[0].cat;
@@ -1118,6 +1119,36 @@ describe('PubMatic adapter', () => {
         expect(bidResponse[0]).to.be.an('object');
         expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
         expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
+      });
+    });
+
+    describe('getUserSyncs', () => {
+      beforeEach(() => {
+        spec.buildRequests(validBidRequests, bidderRequest);
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('returns iframe sync url with consent parameters and COPPA', () => {
+        config.setConfig({ coppa: true });
+        const gdprConsent = { gdprApplies: true, consentString: 'CONSENT' };
+        const uspConsent = '1YNN';
+        const gppConsent = { gppString: 'GPP', applicableSections: [2, 4] };
+        const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, uspConsent, gppConsent);
+        expect(sync).to.deep.equal({
+          type: 'iframe',
+          url: 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=5670&gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2%2C4&coppa=1'
+        });
+      });
+
+      it('returns image sync url when no consent data provided', () => {
+        const [sync] = spec.getUserSyncs({}, []);
+        expect(sync).to.deep.equal({
+          type: 'image',
+          url: 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670'
+        });
       });
     });
   })
