@@ -17,6 +17,22 @@ const IDENTIFIER_PREFIX = 'Sharethrough:';
 const impIdMap = {};
 let isEqtvTest = null;
 
+/**
+ * Gets value of the local variable impIdMap
+ * @returns {*} Value of impIdMap
+ */
+export function getImpIdMap() {
+  return impIdMap;
+};
+
+/**
+ * Sets value of the local variable isEqtvTest
+ * @param {*} value
+ */
+export function setIsEqtvTest(value) {
+  isEqtvTest = value;
+}
+
 // this allows stubbing of utility function that is used internally by the sharethrough adapter
 export const sharethroughInternal = {
   getProtocol,
@@ -282,9 +298,9 @@ export const sharethroughAdapterSpec = {
 
     const hash =
       '6708e3aeca04848e919e9c8c'; // banner
-      // '67ff7ea9b4590cf0ca852f94'; // banner + ttl
-      // '682c50e92634fafa0d974114'; // native
-      // '67c8545f9d44a9f4fd5de345'; // video
+    // '67ff7ea9b4590cf0ca852f94'; // banner + ttl
+    // '682c50e92634fafa0d974114'; // native
+    // '67c8545f9d44a9f4fd5de345'; // video
     const options = isEqtvTest ? { options: { customHeaders: { 'X-Eqtv-Debug': hash } } } : undefined;
 
     return imps.map((impression) => {
@@ -386,13 +402,13 @@ export const sharethroughAdapterSpec = {
   },
 
   // Empty implementation for prebid core to be able to find it
-  onTimeout: (data) => {},
+  onTimeout: (data) => { },
 
   // Empty implementation for prebid core to be able to find it
-  onBidWon: (bid) => {},
+  onBidWon: (bid) => { },
 
   // Empty implementation for prebid core to be able to find it
-  onSetTargeting: (bid) => {},
+  onSetTargeting: (bid) => { },
 };
 
 function getBidRequestFloor(bid) {
