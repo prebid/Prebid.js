@@ -409,6 +409,52 @@ describe('permutiveRtdProvider', function () {
         expect(bidderConfig[bidder].user.keywords).to.deep.equal(keywords)
       })
     })
+    it('should deduplicate keywords', function () {
+      const moduleConfig = getConfig()
+      const acBidders = moduleConfig.params.acBidders
+      const segmentsData = transformedTargeting()
+
+      // Includes to the existing keywords all segments for `p_standard` and `p_standard_aud`
+      // which will be also present in the new bid: they should *not* be duplicated
+      const existingKeywords = [
+        'testKeyword',
+        'some_key=some_value',
+        ...segmentsData.ac.map(c => `p_standard=${c}`),
+        ...segmentsData.ssp.cohorts.map(c => `p_standard_aud=${c}`),
+      ]
+
+      const sampleOrtbConfig = {
+        site: { name: 'example' },
+        user: {
+          keywords: existingKeywords.join(','),
+          data: [
+            {
+              name: 'www.dataprovider1.com',
+              ext: { taxonomyname: 'iab_audience_taxonomy' },
+              segment: [{ id: '687' }, { id: '123' }]
+            }
+          ]
+        }
+      }
+
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+      acBidders.forEach(bidder => {
+        const customCohortsData = segmentsData[bidder] || []
+
+        const expectedKeywords = [
+          ...existingKeywords,
+          // both `standard` and `standard_aud` were already included in existing keywords
+          ...customCohortsData.map(c => `permutive=${c}`)
+        ]
+
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal(expectedKeywords.join(','))
+      })
+    })
     it('should merge ortb2 correctly for ac and ssps', function () {
       const customTargetingData = {
         ...getTargetingData(),
