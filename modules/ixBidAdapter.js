@@ -821,7 +821,7 @@ function addRequestedFeatureToggles(r, requestedFeatureToggles) {
 
 /**
  * enrichRequest adds userSync configs, source, and referer info to request and ixDiag objects.
- * @param  {object} r                Base reuqest object.
+ * @param  {object} r                Base request object.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
  * @param  {Array}  impressions      A list of impressions to be added to the request.
  * @param  {Array}  validBidRequests A list of valid bid request config objects.
@@ -866,7 +866,7 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 
 /**
  * applyRegulations applies regulation info such as GDPR and GPP to the reqeust obejct.
- * @param  {object}  r                Base reuqest object.
+ * @param  {object}  r                Base request object.
  * @param  {object}  bidderRequest    An object containing other info like gdprConsent.
  * @return {object}                   Object enriched with regulation info describing the request to the server.
  */
