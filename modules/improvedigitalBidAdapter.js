@@ -276,7 +276,10 @@ const ID_REQUEST = {
         url: adServerUrl(extendMode, publisherId),
         data: JSON.stringify(ortbRequest),
         ortbRequest,
-        bidderRequest
+        bidderRequest,
+        options: {
+          endpointCompression: true,
+        },
       }
     }
 
