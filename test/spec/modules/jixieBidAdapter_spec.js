@@ -369,7 +369,7 @@ describe('jixie Adapter', function () {
           hp: 1
         }]
       };
-      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], { 
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
         ortb2: {
           source: {
             ext: {
