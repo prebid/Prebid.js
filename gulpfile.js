@@ -527,7 +527,7 @@ gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg
 gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
-gulp.task('update-browserslist', shell.task('npx update-browserslist-db@latest'));
+gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
 gulp.task('test', gulp.series('update-browserslist', clean, lint, 'test-all-features-disabled', 'test-only'));
