@@ -798,7 +798,6 @@ export const utils = {
 
   /**
    * Indicates if Omid is supported
-   *
    * @param {string} adClient - The identifier of the ad plugin requesting the bid
    * @returns {boolean} - support of omid
    */

@@ -5,7 +5,6 @@
  * The domainOverride function, given document.domain, will return
  * the topmost domain we are able to set a cookie on. For example,
  * given subdomain.example.com, it would return example.com.
- *
  * @param {StorageManager} storage e.g. from getStorageManager()
  * @param {string} moduleName the name of the module using this function
  * @returns {function(): string}

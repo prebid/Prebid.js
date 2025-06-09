@@ -20,7 +20,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -30,7 +29,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {validBidRequests} validBidRequests an array of bids.
    * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.

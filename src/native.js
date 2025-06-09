@@ -657,7 +657,6 @@ export function fromOrtbNativeRequest(openRTBRequest) {
  * IMPLEMENTATION DETAILS: This function returns the same exact object if no
  * conversion is needed. If a conversion is needed (meaning, at least one
  * bidRequest contains a native.ortb definition), it will return a copy.
- *
  * @param {BidRequest[]} bidRequests an array of valid bid requests
  * @returns an array of valid bid requests where the openRTB bids are converted to proprietary format.
  */
@@ -686,7 +685,6 @@ export function convertOrtbRequestToProprietaryNative(bidRequests) {
 
 /**
  * convert PBJS proprietary native properties that are *not* assets to the ORTB native format.
- *
  * @param legacyNative `bidResponse.native` object as returned by adapters
  */
 export function legacyPropertiesToOrtbNative(legacyNative) {

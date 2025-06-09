@@ -68,7 +68,6 @@ const CONVERTER = ortbConverter({
 
 /**
  * Bridgeupp : Builds an impression object for oRTB requests based on the bid request.
- *
  * @param {function} buildImp - Function to build the imp object.
  * @param {Object} bidRequest - The request containing bid details.
  * @param {Object} context - Context for the impression.
@@ -106,7 +105,6 @@ function imp(buildImp, bidRequest, context) {
 
 /**
  * Bridgeupp: Constructs the request object.
- *
  * @param {function} buildRequest - Function to build the request.
  * @param {Array} imps - Array of impression objects.
  * @param {Object} bidderRequest - Object containing bidder request information.
@@ -134,7 +132,6 @@ function bidResponse(buildBidResponse, bid, context) {
 
 /**
  * Bridgeupp bid response
- *
  * @param {function} buildResponse - Function to build the response.
  * @param {Array} bidResponses - List of bid responses.
  * @param {Object} ortbResponse - Original oRTB response data.
@@ -154,7 +151,6 @@ export const spec = {
 
   /**
    * Bridgeupp : Determines whether the given bid request is valid.
-   *
    * @param {Object} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -168,7 +164,6 @@ export const spec = {
 
   /**
    * Bridgeupp: Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @param {Object} bidderRequest - Additional request details.
    * @return {ServerRequest} Info describing the request to the server.
@@ -192,7 +187,6 @@ export const spec = {
 
   /**
    * Bridgeupp: Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @param {ServerRequest} bidRequest - Original bid request.
    * @return {Bid[]} An array of bids which were nested inside the server.
@@ -241,7 +235,6 @@ export const spec = {
 
   /**
    * Bridgeupp: Callback to report timeout event.
-   *
    * @param {TimedOutBid[]} timeoutData - Array of timeout details.
    */
   onTimeout: (timeoutData) => {
@@ -250,7 +243,6 @@ export const spec = {
 
   /**
    * Bridgeupp: Callback to report targeting event.
-   *
    * @param {Bid} bid - The bid object
    */
   onSetTargeting: (bid) => {
@@ -259,7 +251,6 @@ export const spec = {
 
   /**
    * Bridgeupp: Callback to report successful ad render event.
-   *
    * @param {Bid} bid - The bid that successfully rendered.
    */
   onAdRenderSucceeded: (bid) => {
@@ -268,7 +259,6 @@ export const spec = {
 
   /**
    * Bridgeupp: Callback to report bidder error event.
-   *
    * @param {Object} errorData - Details about the error.
    */
   onBidderError: (errorData) => {
@@ -277,7 +267,6 @@ export const spec = {
 
   /**
    * Bridgeupp: Callback to report bid won event.
-   *
    * @param {Bid} bid - The bid that won the auction.
    */
   onBidWon: (bid) => {

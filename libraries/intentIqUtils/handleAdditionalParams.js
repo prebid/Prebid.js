@@ -2,7 +2,6 @@ import { MAX_REQUEST_LENGTH } from "../intentIqConstants/intentIqConstants.js";
 
 /**
  * Appends additional parameters to a URL if they are valid and applicable for the given request destination.
- *
  * @param {string} browser - The name of the current browser; used to look up the maximum URL length.
  * @param {string} url - The base URL to which additional parameters may be appended.
  * @param {(string|number)} requestTo - The destination identifier; used as an index to check if a parameter applies.

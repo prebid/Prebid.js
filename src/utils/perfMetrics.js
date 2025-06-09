@@ -25,7 +25,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * Register a metric.
-       *
        * @param name metric name
        * @param value metric valiue
        */
@@ -53,7 +52,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
       /**
        * Mark the current time as a checkpoint with the given name, to be referenced later
        * by `timeSince` or `timeBetween`.
-       *
        * @param name checkpoint name
        */
       function checkpoint(name) {
@@ -62,7 +60,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * Get the tame passed since `checkpoint`, and optionally save it as a metric.
-       *
        * @param {string} checkpoint checkpoint name
        * @param {string} [metric] - The name of the metric to save. Optional.
        * @returns {number|null} - The time in milliseconds between now and the checkpoint, or `null` if the checkpoint is not found.
@@ -78,7 +75,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * Get the time passed between `startCheckpoint` and `endCheckpoint`, optionally saving it as a metric.
-       *
        * @param {string} startCheckpoint - The name of the starting checkpoint.
        * @param {string} endCheckpoint - The name of the ending checkpoint.
        * @param {string} [metric] - The name of the metric to save. Optional.
@@ -96,7 +92,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * A function that, when called, stops a time measure and saves it as a metric.
-       *
        * @typedef {function(): void} MetricsTimer
        * @template {function} F
        * @property {function(F): F} stopBefore returns a wrapper around the given function that begins by
@@ -107,7 +102,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * Start measuring a time metric with the given name.
-       *
        * @param name metric name
        * @return {MetricsTimer}
        */
@@ -117,7 +111,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * Run fn and measure the time spent in it.
-       *
        * @template T
        * @param name the name to use for the measured time metric
        * @param {function(): T} fn
@@ -139,7 +132,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * Convenience method for measuring time spent in a `.before` or `.after` hook.
-       *
        * @template T
        * @param {string} name - The metric name.
        * @param {HookFn} next - The hook's `next` (first) argument.
@@ -183,8 +175,8 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * const metrics = newMetrics();
        * const requests = metrics.measureTime('buildRequests', buildRequests)
        * requests.forEach((req) => {
-       *   const requestMetrics = metrics.fork();
-       *   requestMetrics.measureTime('processRequest', () => processRequest(req);
+       * const requestMetrics = metrics.fork();
+       * requestMetrics.measureTime('processRequest', () => processRequest(req);
        * })
        * ```
        *
@@ -193,8 +185,8 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *
        * ```
        * {
-       *    buildRequests: 10,
-       *    processRequest: [100, 200, 300]
+       * buildRequests: 10,
+       * processRequest: [100, 200, 300]
        * }
        * ```
        *
@@ -202,12 +194,10 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *
        * ```
        * {
-       *   buildRequests: 10,
-       *   processRequest: 100 // or 200 for the 2nd loop, etc
+       * buildRequests: 10,
+       * processRequest: 100 // or 200 for the 2nd loop, etc
        * }
        * ```
-       *
-       *
        * @param {Object} [options={}] - Options for forking the metrics.
        * @param {boolean} [options.propagate=true] - If false, the forked metrics will not be propagated here.
        * @param {boolean} [options.stopPropagation=false] - If true, propagation from the new metrics is stopped here, instead of
@@ -244,7 +234,6 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
 
       /**
        * return a version of these metrics where all new metrics are renamed according to `renameFn`.
-       *
        * @param {function(String): Array[String]} renameFn
        */
       function renameWith(renameFn) {

@@ -125,7 +125,6 @@ function _createBidResponse(response) {
 }
 /**
  * Determines whether or not the given bid request is valid.
- *
  * @param bid  The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
@@ -135,7 +134,6 @@ function isBidRequestValid(bid) {
 }
 /**
  * Make a server request from the list of BidRequests.
- *
  * @param bidRequests - an array of bids
  * @param bidderRequest
  * @return ServerRequest Info describing the request to the server.
@@ -148,7 +146,6 @@ function buildRequests(bidRequests, bidderRequest) {
 }
 /**
  * Unpack the response from the server into a list of bids.
- *
  * @param serverResponse A successful response from the server.
  * @param bidRequest Request original server request
  * @return  An array of bids which were nested inside the server.

@@ -35,13 +35,11 @@ export const vastLocalCache = new Map();
 
 /**
  * A CacheableBid describes the types which the videoCache can store.
- *
  * @typedef {CacheableUrlBid|CacheablePayloadBid} CacheableBid
  */
 
 /**
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
- *
  * @param {string} uri The URI where the VAST content can be found.
  * @param {(string|string[])} impTrackerURLs An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
@@ -67,7 +65,6 @@ function wrapURI(uri, impTrackerURLs) {
 /**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
  * the bid can't be converted cleanly.
- *
  * @param {CacheableBid} bid
  * @param {Object} [options] - Options object.
  * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`.
@@ -102,7 +99,6 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
 
 /**
  * A function which should be called with the results of the storage operation.
- *
  * @callback videoCacheStoreCallback
  *
  * @param {Error} [error] The error, if one occurred.
@@ -114,7 +110,6 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
 
 /**
  * A function which bridges the APIs between the videoCacheStoreCallback and our ajax function's API.
- *
  * @param {videoCacheStoreCallback} done A callback to the "store" function.
  * @return {Function} A callback which interprets the cache server's responses, and makes up the right
  *   arguments for our callback.
@@ -148,7 +143,6 @@ function getVastXml(bid) {
 
 /**
  * If the given bid is for a Video ad, generate a unique ID and cache it somewhere server-side.
- *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
  * the data has been stored in the cache.

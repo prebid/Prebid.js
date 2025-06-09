@@ -46,7 +46,6 @@ function isArrayFilled (_array) {
 
 /**
  * Get video metadata from bid request
- *
  * @param {BidRequest} bidRequest A valid bid requests that should be sent to the Server.
  * @return video metadata
  */
@@ -142,7 +141,6 @@ function getVideoMetadata(bidRequest, bidderRequest) {
 
 /**
  * Check if user sync is enabled for Dailymotion
- *
  * @return boolean True if user sync is enabled
  */
 function isUserSyncEnabled() {
@@ -165,7 +163,6 @@ export const spec = {
    * Determines whether or not the given bid request is valid.
    * The only mandatory parameter for a bid to be valid is the API key.
    * Other parameters are optional.
-   *
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -191,7 +188,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of valid BidRequests (that already passed the isBidRequestValid call)
-   *
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
    * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
@@ -289,7 +285,6 @@ export const spec = {
    * Map the response from the server into a list of bids.
    * As dailymotion prebid server returns an entry with the correct Prebid structure,
    * we directly include it as the only bid in the response.
-   *
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -297,7 +292,6 @@ export const spec = {
 
   /**
    * Retrieves user synchronization URLs based on provided options and consents.
-   *
    * @param {object} syncOptions - Options for synchronization.
    * @param {object[]} serverResponses - Array of server responses.
    * @returns {object[]} - Array of synchronization URLs.

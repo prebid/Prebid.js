@@ -3,7 +3,6 @@
  *
  * This function attempts to use the Navigation Timing Level 2 API first, and falls back to
  * the Navigation Timing Level 1 API if the former is not available.
- *
  * @param {Window} win - The window object from which to retrieve performance timing information.
  * @returns {string} The TTFB in milliseconds as a string, or an empty string if the TTFB cannot be determined.
  */

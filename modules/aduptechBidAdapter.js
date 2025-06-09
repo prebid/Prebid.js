@@ -22,7 +22,6 @@ export const internal = {
 
   /**
    * Extracts the GDPR information from given bidderRequest
-   *
    * @param {BidderRequest} bidderRequest
    * @returns {null|Object.<string, string|boolean>}
    */
@@ -39,7 +38,6 @@ export const internal = {
 
   /**
    * Extracts the pageUrl from given bidderRequest.refererInfo or gobal "pageUrl" config or from (top) window location
-   *
    * @param {BidderRequest} bidderRequest
    * @returns {string}
    */
@@ -50,7 +48,6 @@ export const internal = {
 
   /**
    * Extracts the referrer based on given bidderRequest.refererInfo or from (top) document referrer
-   *
    * @param {BidderRequest} bidderRequest
    * @returns {string}
    */
@@ -61,7 +58,6 @@ export const internal = {
 
   /**
    * Extracts banner config from given bidRequest
-   *
    * @param {BidRequest} bidRequest
    * @returns {null|Object.<string, *>}
    */
@@ -98,7 +94,6 @@ export const internal = {
 
   /**
    * Extracts native config from given bidRequest
-   *
    * @param {BidRequest} bidRequest
    * @returns {null|Object.<string, *>}
    */
@@ -121,7 +116,6 @@ export const internal = {
 
   /**
    * Extracts the bidder params from given bidRequest
-   *
    * @param {BidRequest} bidRequest
    * @returns {null|Object.<string, *>}
    */
@@ -135,7 +129,6 @@ export const internal = {
 
   /**
    * Try to get floor information via bidRequest.getFloor()
-   *
    * @param {BidRequest} bidRequest
    * @param {Object<string, *>} options
    * @returns {null|Object.<string, *>}
@@ -157,7 +150,6 @@ export const internal = {
 
   /**
    * Group given array of bidRequests by params.publisher
-   *
    * @param {BidRequest[]} bidRequests
    * @returns {Object.<string, BidRequest>}
    */
@@ -186,7 +178,6 @@ export const internal = {
 
   /**
    * Build ednpoint url based on given publisher code
-   *
    * @param {string} publisher
    * @returns {string}
    */
@@ -205,7 +196,6 @@ export const spec = {
 
   /**
    * Validate given bid request
-   *
    * @param {BidRequest[]} bidRequest
    * @returns {boolean}
    */
@@ -230,7 +220,6 @@ export const spec = {
 
   /**
    * Build real bid requests
-   *
    * @param {BidRequest[]} validBidRequests
    * @param {BidderRequest} bidderRequest
    * @returns {Object[]}
@@ -313,7 +302,6 @@ export const spec = {
 
   /**
    * Handle bid response
-   *
    * @param {Object} response
    * @returns {Object[]}
    */

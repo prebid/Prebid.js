@@ -295,7 +295,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -367,7 +366,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} validBidRequests - An array of valid bid requests
    * @param {*} bidderRequest - The current bidder request object
    * @returns {ServerRequest} - Info describing the request to the server
@@ -443,7 +441,6 @@ export const spec = {
    * - vastImpUrl
    * - vastXml
    * - dealId
-   *
    * @param {Object} response A successful response from ttd.
    * @param {ServerRequest} serverRequest The result of buildRequests() that lead to this response.
    * @return {Bid[]} An array of formatted bids.
@@ -512,7 +509,6 @@ export const spec = {
 
   /**
    * Register the user sync pixels which should be dropped after the auction.
-   *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @param {gdprConsent} gdprConsent GDPR consent object

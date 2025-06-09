@@ -86,7 +86,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid
    * @returns boolean True if this is a valid bid, and false otherwise.
    */
@@ -121,7 +120,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {validBidRequests[]} validBidRequests An array of bidRequest objects
    * @param {bidderRequest} bidderRequest The master bidRequest object.
    * @return ServerRequest Info describing the request to the server.
@@ -135,7 +133,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -156,7 +153,6 @@ export const spec = {
 
   /**
    * Register the user sync pixels which should be dropped after the auction.
-   *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
@@ -186,14 +182,12 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   *
    * @param {Object} timeoutData Containing timeout specific data
    */
   onTimeout: function (timeoutData) { },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   *
    * @param {Object} bid The bid that won the auction
    */
   onBidWon: function (bid) {
@@ -219,7 +213,6 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-   *
    * @param {Bid} bid The bid of which the targeting has been set
    */
   onSetTargeting: function (bid) { }
@@ -227,7 +220,6 @@ export const spec = {
 
 /**
  * Buid openRtb request from bidRequest and bidderRequest
- *
  * @param {BidRequest} bidRequest
  * @param {BidderRequest} bidderRequest
  * @returns {Request}
@@ -287,7 +279,6 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
 
 /**
  * Build bid response from openrtb bid response.
- *
  * @param {Object} bid
  * @param {BidRequest} bidRequest
  * @param {Object} responseBody
@@ -384,7 +375,6 @@ function buildBidResponse(bid, bidRequest, responseBody) {
 
 /**
  * Convert OpenRtb native response to bid native object.
- *
  * @param {Object} nativeResponse
  * @param {String} currency
  * @param {String} cpm
@@ -486,7 +476,6 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
 
 /**
  * Create an imp array
- *
  * @param {Object} bidRequest
  * @returns {Array}
  */
@@ -563,7 +552,6 @@ function createImp(bidRequest) {
 
 /**
  * Convert bid sizes to size array
- *
  * @param {number[]|number[][]} sizes
  * @returns {number[][]}
  */
@@ -576,7 +564,6 @@ function canonicalizeSizesArray(sizes) {
 
 /**
  * Create Assets Object for Native request
- *
  * @param {Object} params
  * @returns {Object[]}
  */
@@ -647,7 +634,6 @@ function createNativeAssets(params) {
 
 /**
  * Create native image object
- *
  * @param {Object} image
  * @param {Number} type
  * @returns {Object}
@@ -675,7 +661,6 @@ function mapNativeImage(image, type) {
 
 /**
  * Get user id from bid request. if no user id module used, return a new uuid.
- *
  * @param {BidRequest} bidRequest
  * @returns {String} userId
  */
@@ -702,7 +687,6 @@ function getUserId(bidRequest) {
 
 /**
  * Get bid floor price
- *
  * @param {BidRequest} bid
  * @param {Object} params
  * @param {string} params.mediaType
@@ -733,7 +717,6 @@ function getBidFloor(bid, {mediaType = '*', size = '*'}) {
 
 /**
  * Get bcat
- *
  * @param {BidRequest} bidRequest
  * @returns {String[]}
  */
@@ -750,7 +733,6 @@ function getBcat(bidRequest) {
 
 /**
  * Get device info
- *
  * @returns {Object}
  */
 function getDevice() {
@@ -768,7 +750,6 @@ function getDevice() {
 
 /**
  * Fulfill inventory info
- *
  * @param payload
  * @param bidRequest
  * @param bidderRequest
@@ -800,7 +781,6 @@ function fulfillInventoryInfo(payload, bidRequest, bidderRequest) {
 
 /**
  * Get browser language
- *
  * @returns {String} language
  */
 function getLanguage() {
@@ -811,7 +791,6 @@ function getLanguage() {
 
 /**
  * Create render for outstream video.
- *
  * @param {BidRequest} bidRequest
  * @returns
  */

@@ -32,7 +32,6 @@ export const getLowEntropySUA = lowEntropySUAAccessor();
  * Note that the return value is a promise because the underlying browser API returns a promise; this
  * seems to plan for additional controls (such as alerts / permission request prompts to the user); it's unclear
  * at the moment if this means that asking for more hints would result in slower / more expensive calls.
- *
  * @param {Array[String]} hints hints to request, defaults to all (HIGH_ENTROPY_HINTS).
  */
 export const getHighEntropySUA = highEntropySUAAccessor();
@@ -70,7 +69,6 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
 /**
  * Convert a User Agent client hints object to an ORTB 2.6 device.sua fragment
  * https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
- *
  * @param source source of the UAData object (0 to 3)
  * @param uaData https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData/
  * @return {{}}

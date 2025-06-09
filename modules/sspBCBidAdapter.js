@@ -263,7 +263,6 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * Get highest floorprice for a given adslot
  * (sspBC adapter accepts one floor per imp)
  * returns floor = 0 if getFloor() is not defined
- *
  * @param {object} slot bid request adslot
  * @returns {number} floorprice
  */

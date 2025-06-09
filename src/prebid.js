@@ -789,7 +789,6 @@ pbjsInstance.offEvent = function (event, handler, id) {
 
 /**
  * Return a copy of all events emitted
- *
  * @alias module:pbjs.getEvents
  */
 pbjsInstance.getEvents = function () {
@@ -1003,7 +1002,6 @@ pbjsInstance.mergeBidderConfig = config.mergeBidderConfig;
 /**
  * Set Prebid config options.
  * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
- *
  * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
  */
 pbjsInstance.setConfig = config.setConfig;
@@ -1017,15 +1015,14 @@ pbjsInstance.que.push(() => listenMessagesFromCreative());
  *
  * <script src="url/to/Prebid.js" async></script>
  * <script>
- *   var pbjs = pbjs || {};
- *   pbjs.cmd = pbjs.cmd || [];
- *   pbjs.cmd.push(functionToExecuteOncePrebidLoads);
+ * var pbjs = pbjs || {};
+ * pbjs.cmd = pbjs.cmd || [];
+ * pbjs.cmd.push(functionToExecuteOncePrebidLoads);
  * </script>
  *
  * If the page's script runs before prebid loads, then their function gets added to the queue, and executed
  * by prebid once it's done loading. If it runs after prebid loads, then this monkey-patch causes their
  * function to execute immediately.
- *
  * @param  {function} command A function which takes no arguments. This is guaranteed to run exactly once, and only after
  *                            the Prebid script has been fully loaded.
  * @alias module:pbjs.cmd.push

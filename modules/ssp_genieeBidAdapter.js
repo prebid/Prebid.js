@@ -347,7 +347,6 @@ export const spec = {
   },
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {Array<BidRequest>} validBidRequests an array of bid requests
    * @return ServerRequest Info describing the request to the server.
    */
@@ -390,7 +389,6 @@ export const spec = {
   },
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @param {BidRequest} bidderRequest A matched bid request for this response.
    * @return Array<BidResponse> An array of bids which were nested inside the server.

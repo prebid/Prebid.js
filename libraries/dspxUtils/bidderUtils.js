@@ -8,7 +8,6 @@ import {deepAccess, isArray, isEmptyStr, isFn, logError} from '../../src/utils.j
  */
 /**
  * Adds userIds to payload
- *
  * @param bidRequest
  * @param payload
  */
@@ -98,7 +97,6 @@ export function objectToQueryString(obj, prefix) {
 
 /**
  * Check if it's a banner bid request
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a banner bid
  */
@@ -108,7 +106,6 @@ export function isBannerRequest(bid) {
 
 /**
  * Check if it's a video bid request
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a video bid
  */
@@ -118,7 +115,6 @@ export function isVideoRequest(bid) {
 
 /**
  * Get video sizes
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object}
  */
@@ -128,7 +124,6 @@ export function getVideoSizes(bid) {
 
 /**
  * Get video context
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object}
  */
@@ -138,7 +133,6 @@ export function getVideoContext(bid) {
 
 /**
  * Get banner sizes
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object} True if it's a video bid
  */
@@ -172,7 +166,6 @@ export function parseSizes(sizes) {
 
 /**
  * Get MediaInfo object for server request
- *
  * @param mediaTypesInfo
  * @returns {*}
  */
@@ -188,7 +181,6 @@ export function convertMediaInfoForRequest(mediaTypesInfo) {
 
 /**
  * Get media types info
- *
  * @param bid
  */
 export function getMediaTypesInfo(bid) {

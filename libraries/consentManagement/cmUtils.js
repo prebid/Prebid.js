@@ -41,7 +41,6 @@ export function consentManagementHook(name, loadConsentData) {
 
 /**
  * Look up consent data from CMP or config.
- *
  * @param {Object} options
  * @param {String} options.name e.g. 'GPP'. Used only for log messages.
  * @param {ConsentHandler} options.consentDataHandler consent data handler object (from src/consentHandler)

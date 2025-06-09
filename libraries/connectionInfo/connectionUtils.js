@@ -1,6 +1,5 @@
 /**
  * Returns the type of connection.
- *
  * @returns {number} - Type of connection.
  */
 export function getConnectionType() {

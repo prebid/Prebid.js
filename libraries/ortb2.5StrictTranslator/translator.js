@@ -9,15 +9,13 @@ function deleteField(errno, path, obj, field, value) {
 
 /**
  * Translates an ortb request to 2.5, and removes from the result any field that is:
- *  - not defined in the 2.5 spec, or
- *  - defined as an enum, but has a value that is not listed in the 2.5 spec.
+ * - not defined in the 2.5 spec, or
+ * - defined as an enum, but has a value that is not listed in the 2.5 spec.
  *
  * `ortb2` is modified in place and returned.
  *
  * Note that using this utility will cause your adapter to pull in an additional ~3KB after minification.
  * If possible, consider making your endpoint tolerant to unrecognized or invalid fields instead.
- *
- *
  * @param ortb2 ORTB request
  * @param translator translation function. The default moves 2.x fields that have a known standard location in 2.5.
  *                   See the `ortb2.5Translator` library.

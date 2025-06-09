@@ -13,7 +13,6 @@ const BIDDER_CODE = 'vdoai';
 
 /**
  * Determines whether or not the given bid response is valid.
- *
  * @param {object} vdoresponse The bid to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
@@ -36,7 +35,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} vdobid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -48,7 +46,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (vdoValidBidRequests, bidderRequest) => {
@@ -82,7 +79,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} vdoServerResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */

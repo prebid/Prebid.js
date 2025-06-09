@@ -40,7 +40,6 @@ const whitelistedResources = /video|fetch|xmlhttprequest|other/;
  * if the entry exists, emit the BID_WON
  *
  * Note: this is a workaround till a better approach is engineered.
- *
  * @param {object} config
  * @param {Array<AdUnit>} config.adUnits
  * @param {Array<Bid>} config.bidsReceived

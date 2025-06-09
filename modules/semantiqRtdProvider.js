@@ -143,7 +143,6 @@ export const getOrtbKeywords = (keywords) => Object.entries(keywords).reduce((ac
 
 /**
  * Dispatches a page impression event to the SemantIQ service.
- *
  * @param {number} companyId
  * @returns {Promise<void>}
  */

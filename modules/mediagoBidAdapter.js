@@ -45,7 +45,6 @@ let reqTimes = 0;
 /**
  * get pmg uid
  * 获取并生成用户的id
- *
  * @return {string}
  */
 export const getPmgUID = () => {
@@ -65,7 +64,6 @@ export const getPmgUID = () => {
 
 /**
  * 获取一个对象的某个值，如果没有则返回空字符串
- *
  * @param  {Object}    obj  对象
  * @param  {...string} keys 键名
  * @return {any}
@@ -201,7 +199,6 @@ export function getCurrentTimeToUTCString() {
 
 /**
  * 获取rtb请求参数
- *
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
@@ -299,7 +296,6 @@ export const spec = {
   // aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -318,7 +314,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {Array}  validBidRequests an an array of bids
    * @param {Object} bidderRequest  The master bidRequest object
    * @return ServerRequest Info describing the request to the server.

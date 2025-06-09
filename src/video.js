@@ -62,7 +62,6 @@ export function fillVideoDefaults(adUnit) {
  * validateOrtbVideoFields mutates the `adUnit.mediaTypes.video` object by removing invalid ortb properties (default).
  * The onInvalidParam callback can be used to handle invalid properties differently.
  * Other properties are ignored and kept as is.
- *
  * @param {Object} adUnit - The adUnit object.
  * @param {Function} onInvalidParam - The callback function to be called with key, value, and adUnit.
  * @returns {void}

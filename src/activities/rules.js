@@ -39,7 +39,6 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   return [
     /**
      * Register an activity control rule.
-     *
      * @param {string} activity - Activity name, as defined in `activities.js`.
      * @param {string} ruleName - A name for this rule, used for logging.
      * @param {function(Object): {allow: boolean, reason?: string}} rule - Rule definition function. Takes in activity
@@ -66,7 +65,6 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
     },
     /**
      * Test whether an activity is allowed.
-     *
      * @param {string} activity activity name
      * @param {{}} params activity parameters; should be generated through the `activityParams` utility.
      * @return {boolean} true for allow, false for deny.

@@ -390,7 +390,6 @@ function interpretBannerBid(serverBid) {
 
 /**
  * https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/dsa_transparency.md
- *
  * @param {object} dsa
  * @returns {boolean} whether dsa object contains valid attributes values
  */

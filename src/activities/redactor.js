@@ -79,7 +79,6 @@ export function redactRule(ruleDef) {
 
 /**
  * Return a transformation function that will apply the given rules to an object.
- *
  * @param {Array[TransformationRule]} rules
  * @return {TransformationFunction}
  */
@@ -199,7 +198,6 @@ export function redactorFactory(isAllowed = isActivityAllowed) {
 /**
  * Returns an object that can redact other privacy-sensitive objects according
  * to activity rules.
- *
  * @param {{}} params activity parameters to use for activity checks
  * @return {{ortb2: function({}): {}, bidRequest: function({}): {}}} methods
  *  that can redact disallowed data from ORTB2 and/or bid request objects.

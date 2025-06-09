@@ -57,7 +57,6 @@ export const DEFAULT_RULES = Object.freeze([
 
 /**
  * Factory for ORTB 2.5 translation functions.
- *
  * @param deleteFields if true, the translation function will remove fields that have been translated (transferred somewhere else within the request)
  * @param rules translation rules; an array of functions of the type returned by `moveRule`
  * @return {function({}): {}} a translation function that takes an ORTB object, modifies it in place, and returns it.

@@ -66,7 +66,6 @@ export function isBidRequestValid(bid) {
 
 /**
  * Parses the native response from the server into Prebid's native format.
- *
  * @param {string} adm - The adm field from the bid response (JSON string).
  * @returns {Object} The parsed native response object.
  */

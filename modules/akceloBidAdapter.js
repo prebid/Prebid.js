@@ -75,7 +75,6 @@ export const spec = {
 
   /**
    * Determines whether the given bid request is valid.
-   *
    * @param {Bid} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -92,7 +91,6 @@ export const spec = {
   },
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
@@ -105,7 +103,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @param  {BidRequest} bidRequest  The bid request sent to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
@@ -121,7 +118,6 @@ export const spec = {
 
   /**
    * Register the user sync pixels which should be dropped after the auction.
-   *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @param {*} gdprConsent

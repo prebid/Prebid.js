@@ -39,7 +39,6 @@ const prebid = getGlobal();
 
 /**
  * Enable video support for the Ad Server.
- *
  * @property {string} name The identifying name for this adserver.
  * @property {VideoSupport} videoSupport An object with the functions needed to support video in Prebid.
  */

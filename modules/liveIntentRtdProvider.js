@@ -25,7 +25,6 @@ const init = (config, userConsent) => {
 
 /**
  * onBidRequest is called for each bidder during an auction and contains the bids for that bidder.
- *
  * @param {Object} bidRequest
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent

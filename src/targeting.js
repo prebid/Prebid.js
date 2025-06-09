@@ -136,7 +136,6 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
 
 /**
  * Return a map where each code in `adUnitCodes` maps to a list of GPT slots that match it.
- *
  * @param {Array<String>} adUnitCodes
  * @param customSlotMatching
  * @param getSlots
@@ -447,24 +446,23 @@ export function newTargeting(auctionManager) {
    * e.g: Sample input to this function
    * ```
    * [
-   *    {
-   *      "div-gpt-ad-1460505748561-0": [{"hb_bidder": ["appnexusAst"]}]
-   *    },
-   *    {
-   *      "div-gpt-ad-1460505748561-0": [{"hb_bidder_appnexusAs": ["appnexusAst", "other"]}]
-   *    }
+   * {
+   * "div-gpt-ad-1460505748561-0": [{"hb_bidder": ["appnexusAst"]}]
+   * },
+   * {
+   * "div-gpt-ad-1460505748561-0": [{"hb_bidder_appnexusAs": ["appnexusAst", "other"]}]
+   * }
    * ]
    * ```
    * Resulting array
    * ```
    * {
-   *  "div-gpt-ad-1460505748561-0": {
-   *    "hb_bidder": "appnexusAst",
-   *    "hb_bidder_appnexusAs": "appnexusAst,other"
-   *  }
+   * "div-gpt-ad-1460505748561-0": {
+   * "hb_bidder": "appnexusAst",
+   * "hb_bidder_appnexusAs": "appnexusAst,other"
+   * }
    * }
    * ```
-   *
    * @param {targetingArray}  targeting
    * @return {Object.<string,targeting>}  targeting
    */

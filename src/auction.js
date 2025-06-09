@@ -126,7 +126,6 @@ export function resetAuctionState() {
 
 /**
  * Creates new auction instance
- *
  * @param {Object} requestConfig
  * @param {AdUnit} requestConfig.adUnits
  * @param {AdUnitCode} requestConfig.adUnitCodes
@@ -421,7 +420,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
 /**
  * Hook into this to intercept bids before they are added to an auction.
- *
  * @type {Function}
  * @param adUnitCode
  * @param bid

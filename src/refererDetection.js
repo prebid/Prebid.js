@@ -55,7 +55,6 @@ export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
 
 /**
  * This function returns canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
- *
  * @param {Object} doc document
  * @returns {string|null}
  */
@@ -81,7 +80,6 @@ export function detectReferer(win) {
   /**
    * This function would return a read-only array of hostnames for all the parent frames.
    * win.location.ancestorOrigins is only supported in webkit browsers. For non-webkit browsers it will return undefined.
-   *
    * @param {Window} win Window object
    * @returns {(undefined|Array)} Ancestor origins or undefined
    */
@@ -115,7 +113,6 @@ export function detectReferer(win) {
 
   /**
    * Walk up the windows to get the origin stack and best available referrer, canonical URL, etc.
-   *
    * @returns {refererInfo} An object containing referer information.
    */
   function refererInfo() {

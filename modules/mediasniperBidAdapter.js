@@ -164,7 +164,6 @@ registerBidder(spec);
 /**
  * Returns an openRTB 2.5 object.
  * This one will be populated at each step of the buildRequest process.
- *
  * @returns {object}
  */
 function createOrtbTemplate() {
@@ -184,7 +183,6 @@ function createOrtbTemplate() {
 
 /**
  * Create the OpenRTB 2.5 imp object.
- *
  * @param {*} bid Prebid bid object from request
  * @returns
  */
@@ -239,7 +237,6 @@ function createImp(bid) {
 
 /**
  * Returns floor from priceFloors module or MediaKey default value.
- *
  * @param {*} bid a Prebid.js bid (request) object
  * @param {string} mediaType the mediaType or the wildcard '*'
  * @param {string|Array} size the size array or the wildcard '*'
@@ -290,7 +287,6 @@ function getMinFloor(bid) {
 
 /**
  * Returns an openRtb 2.5 banner object.
- *
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */

@@ -29,7 +29,6 @@ import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel, logInfo 
 
 /**
  * Yandex bidder-specific params which the publisher used in their bid request.
- *
  * @typedef {Object} YandexBidRequestParams
  * @property {string} placementId Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
  * @property {number} [pageId] Deprecated. Please use `placementId` instead.
@@ -96,7 +95,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid request to validate.
    * @returns {boolean} True if this is a valid bid, and false otherwise.
    */
@@ -114,7 +112,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {ExtendedBidRequest[]} validBidRequests An array of bids.
    * @param {BidderRequest} bidderRequest Bidder request object.
    * @returns {YandexServerRequest[]} Objects describing the requests to the server.
@@ -406,7 +403,6 @@ function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
 
 /**
  * Unpack the response from the server into a list of bids.
- *
  * @param {ServerResponse} serverResponse A successful response from the server.
  * @param {YandexServerRequest} yandexServerRequest
  * @return {Bid[]} An array of bids which were nested inside the server.

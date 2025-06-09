@@ -1,7 +1,6 @@
 /**
  * This module adds AMX to the User ID Module
  * The {@link module:modules/userId} is required
- *
  * @module modules/amxIdSystem
  * @requires module:modules/userId
  */

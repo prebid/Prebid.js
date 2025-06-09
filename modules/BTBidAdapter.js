@@ -20,7 +20,6 @@ const CONVERTER = ortbConverter({
 
 /**
  * Builds an impression object for the ORTB 2.5 request.
- *
  * @param {function} buildImp - The function for building an imp object.
  * @param {Object} bidRequest - The bid request object.
  * @param {Object} context - The context object.
@@ -42,7 +41,6 @@ function imp(buildImp, bidRequest, context) {
 
 /**
  * Builds a request object for the ORTB 2.5 request.
- *
  * @param {function} buildRequest - The function for building a request object.
  * @param {Array} imps - An array of ORTB 2.5 impression objects.
  * @param {Object} bidderRequest - The bidder request object.
@@ -65,7 +63,6 @@ function request(buildRequest, imps, bidderRequest, context) {
 
 /**
  * Processes a bid response using the provided build function, bid, and context.
- *
  * @param {Function} buildBidResponse - The function to build the bid response.
  * @param {Object} bid - The bid object to include in the bid response.
  * @param {Object} context - The context object containing additional information.
@@ -81,7 +78,6 @@ function bidResponse(buildBidResponse, bid, context) {
 
 /**
  * Checks if a bid request is valid.
- *
  * @param {Object} bid - The bid request object.
  * @returns {boolean} True if the bid request is valid, false otherwise.
  */
@@ -96,7 +92,6 @@ function isBidRequestValid(bid) {
 
 /**
  * Builds the bid requests for the BT Service.
- *
  * @param {Array} validBidRequests - An array of valid bid request objects.
  * @param {Object} bidderRequest - The bidder request object.
  * @returns {Array} An array of BT Service bid requests.
@@ -119,7 +114,6 @@ function buildRequests(validBidRequests, bidderRequest) {
 
 /**
  * Interprets the server response and maps it to bids.
- *
  * @param {Object} serverResponse - The server response object.
  * @param {Object} request - The request object.
  * @returns {Array} An array of bid objects.
@@ -137,7 +131,6 @@ function interpretResponse(serverResponse, request) {
 
 /**
  * Generates user synchronization data based on provided options and consents.
- *
  * @param {Object} syncOptions - Synchronization options.
  * @param {Object[]} serverResponses - An array of server responses.
  * @param {Object} gdprConsent - GDPR consent information.

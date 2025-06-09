@@ -1,7 +1,6 @@
 /**
  * Serialize the SupplyChain for Non-OpenRTB Requests
  * https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/supplychainobject.md
- *
  * @param {Object} schain                 The supply chain object.
  * @param {string} schain.ver             The version of the supply chain.
  * @param {number} schain.complete        Indicates if the chain is complete (1) or not (0).

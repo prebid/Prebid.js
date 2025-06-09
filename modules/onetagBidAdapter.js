@@ -24,7 +24,6 @@ const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Determines whether or not the given bid request is valid.
- *
  * @param {BidRequest} bid The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
@@ -100,7 +99,6 @@ const isValidAsset = function(asset) {
 
 /**
  * Make a server request from the list of BidRequests.
- *
  * @param {Array<Object>} validBidRequests - an array of bids
  * @param bidderRequest
  * @return ServerRequest Info describing the request to the server.

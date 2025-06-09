@@ -78,7 +78,6 @@ export function removeDataByKey(key, allowedStorage) {
 /**
  * Determines the allowed storage types based on provided parameters.
  * If no valid storage types are provided, it defaults to 'html5'.
- *
  * @param {Array<string>} params - An array containing storage type preferences, e.g., ['html5', 'cookie'].
  * @return {Array<string>} - Returns an array with allowed storage types. Defaults to ['html5'] if no valid options are provided.
  */

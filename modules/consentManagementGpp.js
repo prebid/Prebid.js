@@ -58,7 +58,6 @@ export class GPPClient {
   /**
    * initialize this client - update consent data if already available,
    * and set up event listeners to also update on CMP changes
-   *
    * @param pingData
    * @returns {Promise<{}>} a promise to GPP consent data
    */
@@ -100,7 +99,6 @@ export class GPPClient {
 
   /**
    * Retrieve and store GPP consent data.
-   *
    * @param pingData
    * @returns {Promise<{}>} a promise to GPP consent data
    */
@@ -118,7 +116,6 @@ export class GPPClient {
 
   /**
    * Return a promise to GPP consent data, to be retrieved the next time the CMP signals it's ready.
-   *
    * @returns {Promise<{}>}
    */
   nextUpdate() {
@@ -130,7 +127,6 @@ export class GPPClient {
   /**
    * Return a promise to GPP consent data, to be retrieved immediately if the CMP is ready according to `pingData`,
    * or as soon as it signals that it's ready otherwise.
-   *
    * @param pingData
    * @returns {Promise<{}>}
    */

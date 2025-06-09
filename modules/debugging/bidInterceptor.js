@@ -190,7 +190,6 @@ Object.assign(BidInterceptor.prototype, {
   },
   /**
    * Match a candidate bid against all registered rules.
-   *
    * @param {{}} candidate
    * @param args
    * @returns {Rule|undefined} the first matching rule, or undefined if no match was found.
@@ -200,7 +199,6 @@ Object.assign(BidInterceptor.prototype, {
   },
   /**
    * Match a set of bids against all registered rules.
-   *
    * @param bids
    * @param bidRequest
    * @returns {[{bid: *, rule: Rule}[], *[]]} a 2-tuple for matching bids (decorated with the matching rule) and
@@ -221,7 +219,6 @@ Object.assign(BidInterceptor.prototype, {
   /**
    * Run a set of bids against all registered rules, filter out those that match,
    * and generate mock responses for them.
-   *
    * @param {Object} params
    * @param {Object[]} [params.bids]
    * @param {Object} params.bidRequest

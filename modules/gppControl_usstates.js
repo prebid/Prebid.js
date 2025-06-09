@@ -28,7 +28,6 @@ const FIELDS = {
  * Scalar fields are copied over if they exist in the input (state) data, or set to null otherwise.
  * List fields are also copied, but forced to the "correct" length (by truncating or padding with nulls);
  * additionally, elements within them can be moved around using the `move` argument.
- *
  * @param {Object} opts
  * @param {string[]} [opts.nullify] list of fields to force to null
  * @param {Object} [opts.move] Map from list field name to an index remapping for elements within that field (using 1 as the first index).

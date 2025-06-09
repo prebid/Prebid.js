@@ -136,7 +136,6 @@ export const get51DegreesJSURL = (pathData, win) => {
 
 /**
  * Retrieves high entropy values from `navigator.userAgentData` if available
- *
  * @param {Array<string>} hints - An array of hints indicating which high entropy values to retrieve
  * @returns {Promise<undefined | Object<string, any>>} A promise that resolves to an object containing high entropy values if supported, or `undefined` if not
  */
@@ -155,7 +154,6 @@ export const getHighEntropyValues = async (hints) => {
  * however, Google is likely to restrict it as part of the Privacy Sandbox in future
  * versions of Chrome, so we want to be future-proof and transparent here.
  * Hence, a check that would output the warning if the user does not have proper delegation of UA-CH.
- *
  * @returns {boolean} True if 51Degrees meta is present
  * @returns {boolean} False if 51Degrees meta is not present
  */
@@ -173,7 +171,6 @@ export const is51DegreesMetaPresent = () => {
 
 /**
  * Sets the value of a key in the ORTB2 object if the value is not empty
- *
  * @param {Object} obj The object to set the key in
  * @param {string} key The key to set
  * @param {any} value The value to set
@@ -190,7 +187,6 @@ export const deepSetNotEmptyValue = (obj, key, value) => {
 
 /**
  * Converts all 51Degrees data to ORTB2 format
- *
  * @param {Object} data51 Response from 51Degrees API
  * @param {Object} [data51.device] Device data
  *
@@ -212,7 +208,6 @@ export const convert51DegreesDataToOrtb2 = (data51) => {
 
 /**
  * Converts 51Degrees device data to ORTB2 format
- *
  * @param {Object} device 51Degrees device object
  * @param {string} [device.deviceid] Device ID (unique 51Degrees identifier)
  * @param {string} [device.devicetype] Device type

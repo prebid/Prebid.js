@@ -241,7 +241,6 @@ export const buildUTMTagData = (url) => {
 
 /**
  * get rtb qequest params
- *
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
@@ -344,7 +343,6 @@ export const spec = {
   // aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -369,7 +367,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {Array}  validBidRequests an an array of bids
    * @param {Object} bidderRequest  The master bidRequest object
    * @return ServerRequest Info describing the request to the server.

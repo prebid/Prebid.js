@@ -15,7 +15,6 @@ const BASE_URL = 'https://srv.freedomadnetwork.com';
 
 /**
  * Build OpenRTB request from bidRequest and bidderRequest
- *
  * @param {BidRequest} bid
  * @param {BidderRequest} bidderRequest
  * @returns {Request}
@@ -90,7 +89,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -131,7 +129,6 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   *
    * @param {Bid} bid The bid that won the auction
    */
   onBidWon: function (bid) {

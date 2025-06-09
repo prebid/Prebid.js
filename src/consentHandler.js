@@ -162,7 +162,6 @@ export function gvlidRegistry() {
 
     /**
      * Get a module's GVL ID(s).
-     *
      * @param {string} moduleName - The name of the module.
      * @return {GvlIdResult} An object where:
      *   `modules` is a map from module type to that module's GVL ID;

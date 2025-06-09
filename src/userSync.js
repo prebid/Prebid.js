@@ -37,7 +37,6 @@ const storage = getCoreStorageManager('usersync');
 
 /**
  * Factory function which creates a new UserSyncPool.
- *
  * @param {} deps Configuration options and dependencies which the
  *   UserSync object needs in order to behave properly.
  */

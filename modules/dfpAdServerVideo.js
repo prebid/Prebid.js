@@ -63,7 +63,6 @@ export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
 
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
- *
  * @see [The DFP API]{@link https://support.google.com/dfp_premium/answer/1068325?hl=en#env} for details.
  *
  * @param {DfpVideoOptions} options Options which should be used to construct the URL.

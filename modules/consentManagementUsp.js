@@ -98,7 +98,6 @@ function lookupUspConsent({onSuccess, onError}) {
 
 /**
  * Lookup consent data and store it in the `consentData` global as well as `adapterManager.js`' uspDataHanlder.
- *
  * @param cb a callback that takes an error message and extra error arguments; all args will be undefined if consent
  * data was retrieved successfully.
  */
@@ -164,7 +163,6 @@ export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(
  * This function checks the consent data provided by USPAPI to ensure it's in an expected state.
  * If it's bad, we exit the module depending on config settings.
  * If it's good, then we store the value and exit the module.
- *
  * @param {Object} consentObject - The object returned by USPAPI that contains the user's consent choices.
  * @param {Object} callbacks - An object containing the callback functions.
  * @param {function(string): void} callbacks.onSuccess - Callback accepting the resolved USP consent string.

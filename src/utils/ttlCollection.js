@@ -4,7 +4,6 @@ import {setFocusTimeout} from './focusTimeout.js';
 
 /**
  * Create a set-like collection that automatically forgets items after a certain time.
- *
  * @param {Object} [options={}] - Optional settings
  * @param {function(*): (number|Promise<number>)} [options.startTime=timestamp] - A function taking an item added to this collection,
  *   and returning (a promise to) a timestamp to be used as the starting time for the item

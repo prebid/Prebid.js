@@ -231,7 +231,6 @@ export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
 
 /**
  * Get a storage manager for "core" (vendorless, or first-party) modules. Shorthand for `getStorageManager({moduleName, moduleType: 'core'})`.
- *
  * @param {string} moduleName Module name
  */
 export function getCoreStorageManager(moduleName) {

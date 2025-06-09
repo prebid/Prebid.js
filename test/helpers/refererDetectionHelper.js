@@ -1,6 +1,5 @@
 /**
  * Build a walkable linked list of window-like objects for testing.
- *
  * @param {Array} urls Array of URL strings starting from the top window.
  * @param {string} [topReferrer]
  * @param {string} [canonicalUrl]
@@ -10,7 +9,6 @@
 export function buildWindowTree(urls, topReferrer = null, canonicalUrl = null, ancestorOrigins = false) {
   /**
    * Find the origin from a given fully-qualified URL.
-   *
    * @param {string} url The fully qualified URL
    * @returns {string|null}
    */

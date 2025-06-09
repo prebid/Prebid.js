@@ -33,7 +33,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid has all the params needed to make a valid request.
-   *
    * @param {BidRequest} bidRequest
    * @returns {boolean}
    */
@@ -44,7 +43,6 @@ export const spec = {
   /**
    * Build the request to the Server which requests Bids for the given array of Requests.
    * Each BidRequest in the argument array is guaranteed to have passed the isBidRequestValid() test.
-   *
    * @param {BidRequest[]} validBidRequests
    * @param {*} bidderRequest
    * @returns {ServerRequest|ServerRequest[]}

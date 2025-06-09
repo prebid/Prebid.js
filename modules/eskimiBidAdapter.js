@@ -135,7 +135,6 @@ function isValidVideoRequest(bidRequest) {
 /**
  * Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
  * Make a server request from the list of BidRequests.
- *
  * @param {*} validBidRequests
  * @param {*} bidderRequest
  * @return ServerRequest Info describing the request to the server.

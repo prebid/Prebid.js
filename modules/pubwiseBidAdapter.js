@@ -138,7 +138,6 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -180,7 +179,6 @@ export const spec = {
   },
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
@@ -290,7 +288,6 @@ export const spec = {
   },
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} response A successful response from the server.
    * @param {Object} request
    * @return {Bid[]} An array of bids which were nested inside the server.
@@ -919,7 +916,6 @@ function _createVideoRequest(bid) {
 
 /**
  * Determines if the array has values
- *
  * @param {object} test
  * @returns {boolean}
  */
@@ -934,7 +930,6 @@ function _isNonEmptyArray(test) {
 
 /**
  * Returns the overridden bid endpoint_url if it is set, primarily used for testing
- *
  * @param {object} bid the current bid
  * @returns
  */

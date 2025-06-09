@@ -26,7 +26,6 @@ export const spec = {
   isBidRequestValid,
   /**
    * Builds the OpenRTB server request from the list of valid bid requests.
-   *
    * @param {Array} validBidRequests - Array of valid bid requests.
    * @param {Object} bidderRequest - The bidder request object containing additional data.
    * @returns {Array} Array of server requests to be sent to the endpoint.
@@ -58,7 +57,6 @@ export const spec = {
 
   /**
    * Interprets the server's response and extracts bid information.
-   *
    * @param {Object} serverResponse - The response from the server.
    * @param {Object} request - The original server request.
    * @returns {Array} Array of bids to be passed to the auction.
@@ -133,7 +131,6 @@ export const spec = {
 
 /**
  * Builds the OpenRTB 2.5 request payload.
- *
  * @param {Object} bid - The bid request object.
  * @param {Object} bidderRequest - The bidder request object.
  * @returns {Object|null} The OpenRTB 2.5 request payload or null if missing mandatory parameters.

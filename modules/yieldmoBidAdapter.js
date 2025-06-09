@@ -63,7 +63,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
@@ -696,7 +695,6 @@ function validateVideoParams(bid) {
 
 /**
  * Shortcut object property and check if required characters count was deleted
- *
  * @param {number} extraCharacters count of characters to remove
  * @param {object} target object on which string property length should be reduced
  * @param {string} propertyName name of property to reduce
@@ -729,7 +727,6 @@ function getEids(bidRequest) {
 
 /**
  * Check if top window can be accessed
- *
  * @return {boolean} true if can access top window otherwise false
  */
 function canAccessTopWindow() {

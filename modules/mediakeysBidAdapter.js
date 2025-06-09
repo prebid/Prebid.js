@@ -86,7 +86,6 @@ const ORTB_VIDEO_PARAMS = {
 /**
  * Returns the OpenRtb deviceType id detected from User Agent
  * Voluntary limited to phone, tablet, desktop.
- *
  * @returns {number}
  */
 function getDeviceType() {
@@ -101,7 +100,6 @@ function getDeviceType() {
 
 /**
  * Returns the OS name detected from User Agent.
- *
  * @returns {number}
  */
 function getOS() {
@@ -116,7 +114,6 @@ function getOS() {
 
 /**
  * Returns floor from priceFloors module or MediaKey default value.
- *
  * @param {*} bid a Prebid.js bid (request) object
  * @param {string} mediaType the mediaType or the wildcard '*'
  * @param {string|Array} size the size array or the wildcard '*'
@@ -144,7 +141,6 @@ function getFloor(bid, mediaType, size = '*') {
 /**
  * Returns the highest floor price found when a bid have
  * several mediaTypes.
- *
  * @param {*} bid a Prebid.js bid (request) object
  * @returns {number|boolean}
  */
@@ -171,7 +167,6 @@ function getHighestFloor(bid) {
 /**
  * Returns an openRTB 2.5 object.
  * This one will be populated at each step of the buildRequest process.
- *
  * @returns {object}
  */
 function createOrtbTemplate() {
@@ -207,7 +202,6 @@ function createOrtbTemplate() {
 
 /**
  * Returns an openRtb 2.5 banner object.
- *
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */
@@ -240,7 +234,6 @@ function createBannerImp(bid) {
 
 /**
  * Returns an openRtb 2.5 native object with a native 1.2 request.
- *
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */
@@ -383,7 +376,6 @@ function createNativeImp(bid) {
 
 /**
  * Returns an openRtb 2.5 video object.
- *
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */
@@ -424,7 +416,6 @@ function createVideoImp(bid) {
 
 /**
  * Create the OpenRTB 2.5 imp object.
- *
  * @param {*} bid Prebid bid object from request
  * @returns
  */
@@ -480,7 +471,6 @@ function createImp(bid) {
 /**
  * If array, extract the first IAB category from provided list
  * If string just return it
- *
  * @param {string|Array} cat IAB Category
  * @returns {string|null}
  */
@@ -498,7 +488,6 @@ function getPrimaryCatFromResponse(cat) {
 
 /**
  * Create the Prebid.js native object from response.
- *
  * @param {*} bid bid object from response
  * @returns {object} Prebid.js native object used in response
  */

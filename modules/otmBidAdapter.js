@@ -24,7 +24,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -34,7 +33,6 @@ export const spec = {
 
   /**
    * Build bidder requests.
-   *
    * @param validBidRequests
    * @param bidderRequest
    * @returns {[]}
@@ -86,7 +84,6 @@ export const spec = {
 
   /**
    * Generate response.
-   *
    * @param serverResponse
    * @returns {[]|*[]}
    */

@@ -149,7 +149,6 @@ export const sharedIdSystemSubmodule = {
    *
    * On the other hand, if there is no pixelUrl, then the extendId should return storedId so that
    * its expiration time is updated.
-   *
    * @function
    * @param {SubmoduleParams} [config]
    * @param {ConsentData|undefined} consentData

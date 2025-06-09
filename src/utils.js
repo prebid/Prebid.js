@@ -490,7 +490,6 @@ export function insertElement(elm, doc, target, asLastChildChild) {
 /**
  * Returns a promise that completes when the given element triggers a 'load' or 'error' DOM event, or when
  * `timeout` milliseconds have elapsed.
- *
  * @param {HTMLElement} element
  * @param {Number} [timeout]
  * @returns {Promise}
@@ -812,7 +811,6 @@ export function checkCookieSupport() {
  *
  * Note that the arguments from the previous calls will *not* be forwarded to the original function.
  * Only the final call's arguments matter.
- *
  * @param {function} func The function which should be executed, once the returned function has been executed
  *   numRequiredCalls times.
  * @param {number} numRequiredCalls The number of times which the returned function needs to be called before
@@ -1212,7 +1210,6 @@ export function safeJSONEncode(data) {
 
 /**
  * Returns a memoized version of `fn`.
- *
  * @param fn
  * @param key cache key generator, invoked with the same arguments passed to `fn`.
  *        By default, the first argument is used as key.
@@ -1269,7 +1266,6 @@ export function setScriptAttributes(script, attributes) {
 
 /**
  * Perform a binary search for `el` on an ordered array `arr`.
- *
  * @returns the lowest nonnegative integer I that satisfies:
  *   key(arr[i]) >= key(el) for each i between I and arr.length
  *
@@ -1298,7 +1294,6 @@ export function binarySearch(arr, el, key = (el) => el) {
 /**
  * Checks if an object has non-serializable properties.
  * Non-serializable properties are functions and RegExp objects.
- *
  * @param {Object} obj - The object to check.
  * @param {Set} checkedObjects - A set of properties that have already been checked.
  * @returns {boolean} - Returns true if the object has non-serializable properties, false otherwise.
@@ -1336,7 +1331,6 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
 
 /**
  * Returns the value of a nested property in an array of objects.
- *
  * @param {Array} collection - Array of objects.
  * @param {String} key - Key of nested property.
  * @returns {any|undefined} - Value of nested property.

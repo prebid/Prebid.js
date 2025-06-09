@@ -178,7 +178,6 @@ export const spec = {
   },
   /**
    * Retrieves user synchronization URLs based on provided options and consents.
-   *
    * @param {object} syncOptions - Options for synchronization.
    * @param {object[]} serverResponses - Array of server responses.
    * @param {object} gdprConsent - GDPR consent object.

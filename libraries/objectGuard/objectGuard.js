@@ -13,13 +13,12 @@ import {deepAccess, deepClone, deepEqual, deepSetValue} from '../../src/utils.js
  * Create a factory function for object guards using the given rules.
  *
  * An object guard is a pair {obj, verify} where:
- *  - `obj` is a view on the guarded object that applies "redact" rules (the same rules used in activites/redactor.js)
- *  - `verify` is a function that, when called, will check that the guarded object was not modified
- *   in a way that violates any "write protect" rules, and rolls back any offending changes.
+ * - `obj` is a view on the guarded object that applies "redact" rules (the same rules used in activites/redactor.js)
+ * - `verify` is a function that, when called, will check that the guarded object was not modified
+ * in a way that violates any "write protect" rules, and rolls back any offending changes.
  *
  * This is meant to provide sandboxed version of a privacy-sensitive object, where reads
  * are filtered through redaction rules and writes are checked against write protect rules.
- *
  * @param {Array[TransformationRule]} rules
  * @return {function(*, ...[*]): ObjectGuard}
  */

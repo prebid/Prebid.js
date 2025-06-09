@@ -69,7 +69,6 @@ function mapBidEvent(eventType, args) {
  * In order to pass back the concert_rid from CBS, it is tucked into the `creativeId`
  * slot in the bid response and combined with a pipe `|`. This method splits the creative ID
  * and the concert_rid.
- *
  * @param {string} creativeId
  */
 function getConcertRequestId(creativeId) {

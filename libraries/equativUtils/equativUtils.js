@@ -5,7 +5,6 @@ const DEFAULT_FLOOR = 0.0;
 
 /**
  * Get floors from Prebid Price Floors module
- *
  * @param {object} bid Bid request object
  * @param {string} currency Ad server currency
  * @param {string} mediaType Bid media type

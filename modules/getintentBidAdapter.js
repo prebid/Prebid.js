@@ -40,7 +40,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
@@ -50,7 +49,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} bidRequests - an array of bids.
    * @return ServerRequest[]
    */
@@ -68,7 +66,6 @@ export const spec = {
   /**
    * Callback for bids, after the call to DSP completes.
    * Parse the response from the server into a list of bids.
-   *
    * @param {object} serverResponse A response from the GetIntent's server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -110,7 +107,6 @@ function buildUrl(bid) {
 
 /**
  * Builds GI bid request from BidRequest.
- *
  * @param {BidRequest} bidRequest
  * @return {object} GI bid request
  */

@@ -35,7 +35,6 @@ export const spec = {
   aliases: ['bp'],
   /**
    * Test if the bid request is valid.
-   *
    * @param {Bid} bid The Bid params
    * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
    */
@@ -51,7 +50,6 @@ export const spec = {
   },
   /**
    * Create a BeOp server request from a list of BidRequest
-   *
    * @param {validBidRequests} validBidRequests The array of validated bidRequests
    * @param {BidderRequest} bidderRequest Common params for each bidRequests
    * @return ServerRequest Info describing the request to the BeOp's server
@@ -145,7 +143,6 @@ export const spec = {
 
   /**
    * User syncs.
-   *
    * @param {*} syncOptions Publisher prebid configuration.
    * @param {*} serverResponses A successful response from the server.
    * @return {UserSync[]} An array of syncs that should be executed.

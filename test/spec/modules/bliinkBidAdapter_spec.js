@@ -294,9 +294,6 @@ const getConfigInterpretResponseRTB = (noAd = false, isInvalidVast = false) => {
  *
  *
  * @description Below start tests for utils fonctions
- *
- *
- *
  */
 
 const testsGetMetaList = [
@@ -405,9 +402,6 @@ describe('BLIINK Adapter getUserIds', function () {
  *
  *
  * @description End tests for utils fonctions
- *
- *
- *
  */
 
 /**

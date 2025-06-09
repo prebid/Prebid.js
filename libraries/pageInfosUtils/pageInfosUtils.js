@@ -1,6 +1,5 @@
 /**
  * Retrieves the referrer information from the bidder request.
- *
  * @param {Object} bidderRequest - The bidder request object.
  * @param {Object} [bidderRequest.refererInfo] - The referer information object.
  * @param {string} [bidderRequest.refererInfo.page] - The page URL of the referer.
@@ -20,7 +19,6 @@ export function getReferrerInfo(bidderRequest) {
  * This function attempts to get the title from the top-level window's document.
  * If an error occurs (e.g., due to cross-origin restrictions), it falls back to the current document.
  * It first tries to get the title from the `og:title` meta tag, and if that is not available, it uses the document's title.
- *
  * @returns {string} The title of the current web page, or an empty string if no title is found.
  */
 export function getPageTitle() {
@@ -39,7 +37,6 @@ export function getPageTitle() {
  * This function attempts to get the description from the top-level window's document.
  * If it fails (e.g., due to cross-origin restrictions), it falls back to the current document.
  * It looks for meta tags with either the name "description" or the property "og:description".
- *
  * @returns {string} The content of the description meta tag, or an empty string if not found.
  */
 export function getPageDescription() {
@@ -56,7 +53,6 @@ export function getPageDescription() {
 
 /**
  * Retrieves the downlink speed of the user's network connection.
- *
  * @param {object} nav - The navigator object, typically `window.navigator`.
  * @returns {string} The downlink speed as a string if available, otherwise an empty string.
  */

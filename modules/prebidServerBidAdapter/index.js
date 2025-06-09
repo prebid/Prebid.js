@@ -305,7 +305,6 @@ function doAllSyncs(bidders, s2sConfig) {
 
 /**
  * Modify the cookie sync url from prebid server to add new params.
- *
  * @param {string} type the type of sync, "image", "redirect", "iframe"
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
@@ -321,7 +320,6 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
 
 /**
  * Run a cookie sync for the given type, url, and bidder
- *
  * @param {string} type the type of sync, "image", "redirect", "iframe"
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
@@ -346,7 +344,6 @@ function doBidderSync(type, url, bidder, done, timeout) {
 
 /**
  * Do client-side syncs for bidders.
- *
  * @param {Array} bidders a list of bidder names
  */
 function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {

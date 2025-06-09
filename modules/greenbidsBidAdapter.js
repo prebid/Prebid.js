@@ -20,7 +20,6 @@ export const spec = {
   supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -35,7 +34,6 @@ export const spec = {
   },
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {validBidRequests[]} validBidRequests array of bids
    * @param bidderRequest bidder request object
    * @return ServerRequest Info describing the request to the server.
@@ -103,7 +101,6 @@ export const spec = {
   },
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server response.
    */
@@ -144,7 +141,6 @@ registerBidder(spec);
 
 /**
  * Converts the sizes from the bid object to the required format.
- *
  * @param {Object} bid - The bid object containing size information.
  * @param {Array} bid.sizes - The sizes array from the bid object.
  * @returns {Array} - The parsed sizes in the required format.
@@ -157,7 +153,6 @@ function getSizes(bid) {
 
 /**
  * Hydrates the given payload with GPP consent data if available.
- *
  * @param {Object} payload - The payload object to be hydrated.
  * @param {Object} gppData - The GPP consent data object.
  * @param {string} gppData.gppString - The GPP consent string.
@@ -177,7 +172,6 @@ function hydratePayloadWithGppConsentData(payload, gppData) {
 
 /**
  * Hydrates the given payload with GDPR consent data if available.
- *
  * @param {Object} payload - The payload object to be hydrated with GDPR consent data.
  * @param {Object} gdprData - The GDPR data object containing consent information.
  * @param {boolean} gdprData.gdprApplies - Indicates if GDPR applies.
@@ -201,7 +195,6 @@ function hydratePayloadWithGdprConsentData(payload, gdprData) {
 
 /**
  * Adds USP (CCPA) consent data to the payload if available.
- *
  * @param {Object} payload - The payload object to be hydrated with USP consent data.
  * @param {string} uspConsentData - The USP consent string to be added to the payload.
  */
@@ -219,7 +212,6 @@ const gdprStatus = {
 
 /**
  * Determines the GDPR status based on whether GDPR applies and the provided GDPR data.
- *
  * @param {boolean} gdprApplies - Indicates if GDPR applies.
  * @param {Object} gdprData - The GDPR data object.
  * @param {boolean} gdprData.isServiceSpecific - Indicates if the GDPR data is service-specific.

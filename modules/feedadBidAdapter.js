@@ -137,7 +137,6 @@ const BID_METADATA = {};
 
 /**
  * Checks if the bid is compatible with FeedAd.
- *
  * @param {BidRequest} bid - the bid to check
  * @return {boolean} true if the bid is valid
  */
@@ -172,7 +171,6 @@ function isValidClientToken(clientToken) {
  * The words can be separated by hyphens or underscores.
  * Multiple separators must not follow each other.
  * The whole placement ID must not be larger than 256 characters.
- *
  * @param placementId - the placement id to verify
  * @returns if the placement ID is valid.
  */

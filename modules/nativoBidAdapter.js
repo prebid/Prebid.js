@@ -128,7 +128,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {Object} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -154,7 +153,6 @@ export const spec = {
   /**
    * Called when the page asks Prebid.js for bids
    * Make a server request from the list of BidRequests
-   *
    * @param {Array} validBidRequests - An array of bidRequest objects, one for each AdUnit that your module is involved in. This array has been processed for special features like sizeConfig, so it’s the list that you should be looping through
    * @param {Object} bidderRequest - The master bidRequest object. This object is useful because it carries a couple of bid parameters that are global to all the bids.
    * @return ServerRequest Info describing the request to the server.
@@ -327,7 +325,6 @@ export const spec = {
    * Will be called when the browser has received the response from your server.
    * The function will parse the response and create a bidResponse object containing one or more bids.
    * The adapter should indicate no valid bids by returning an empty array.
-   *
    * @param {Object} response - Data returned from the bidding server request endpoint
    * @param {Object} request - The request object used to call the server request endpoint
    * @return {Array} An array of bids which were nested inside the server.

@@ -148,7 +148,6 @@ function onImplMessage(msg) {
 /**
  * onGetBidRequestData is called once per auction.
  * Update the `ortb2Fragments` object with the data from the injected script.
- *
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
  * @param {SubmoduleConfig} config

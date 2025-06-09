@@ -29,7 +29,6 @@ export let serverData = {}; // Tracks data returned from Relevad RTD server
 
 /**
  * Provides contextual IAB categories and segments to the bidders.
- *
  * @param      {Object}    reqBidsConfigObj  Bids request configuration
  * @param      {Function}  onDone            Ajax callback
  * @param      {Object}    moduleConfig      Rtd module configuration
@@ -79,7 +78,6 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
 
 /**
  * Sets global ORTB user and site data
- *
  * @param      {Object}  ortb2     The global ORTB structure
  * @param      {Object}  rtdData   Rtd segments and categories
  */
@@ -94,7 +92,6 @@ export function setGlobalOrtb2(ortb2, rtdData) {
 
 /**
  * Compose ORTB2 data fragment from RTD data
- *
  * @param  {Object}  rtdData RTD segments and categories
  * @param  {string}      prefix  Site path prefix
  * @return {Object} ORTB2 fragment ready to be merged into global or bidder ORTB
@@ -125,7 +122,6 @@ function composeOrtb2Data(rtdData, prefix) {
 
 /**
  * Sets ORTB user and site data for a given bidder
- *
  * @param      {Object}  bidderOrtbFragment  The bidder ORTB fragment
  * @param      {Object}  bidder     The bidder name
  * @param      {Object}  rtdData    RTD categories and segments
@@ -148,7 +144,6 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
 
 /**
  * Filters dictionary entries
- *
  * @param      {Object}   dict A dictionary with numeric values
  * @param      {string}  minscore       The minimum value
  * @return     {Array<string>} Array of category names with scores greater or equal to minscore
@@ -168,7 +163,6 @@ function filterByScore(dict, minscore) {
 
 /**
  * Filters RTD by relevancy score
- *
  * @param      {object}  data      The Input RTD
  * @param      {string}  minscore  The minimum relevancy score
  * @return     {object}  Filtered RTD
@@ -204,7 +198,6 @@ function getFiltered(data, minscore) {
 
 /**
  * Adds Rtd data to global ORTB structure and bidder requests
- *
  * @param      {Object}  reqBids       The bid requests list
  * @param      {Object}  data          The Rtd data
  * @param      {Object}  moduleConfig  The Rtd module configuration
@@ -289,7 +282,6 @@ export function addRtdData(reqBids, data, moduleConfig) {
 
 /**
  * Sends bid info to the RTD server
- *
  * @param      {JSON}  data  Bids information
  * @param      {object}  config  Configuraion
  */
@@ -304,7 +296,6 @@ function sendBids(data, config) {
 
 /**
  * Processes AUCTION_END event
- *
  * @param      {object}  auctionDetails  Auction details
  * @param      {object}  config          Module configuration
  * @param      {object}  userConsent     User GDPR consent object

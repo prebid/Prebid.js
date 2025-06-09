@@ -281,7 +281,6 @@ function _getDoNotTrack() {
 
 /**
  * Extracts the page url from given bid request or use the (top) window location as fallback
- *
  * @param {*} bidderRequest
  * @returns {string}
  */
@@ -292,7 +291,6 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
 
 /**
  * Extracts the referrer from given bid request or use the (top) document referrer as fallback
- *
  * @param {*} bidderRequest
  * @returns {string}
  */
@@ -303,7 +301,6 @@ function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
 
 /**
  * Validate geo object
- *
  * @param {Object} geo
  * @returns {boolean}
  */
@@ -325,7 +322,6 @@ export function validateGeoObject(geo) {
 
 /**
  * Get bid floor from Price Floors Module
- *
  * @param {Object} bid
  * @returns {?number}
  */

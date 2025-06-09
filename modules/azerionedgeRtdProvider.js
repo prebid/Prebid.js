@@ -28,7 +28,6 @@ export const storage = getStorageManager({
 
 /**
  * Get script url to load
- *
  * @param {Object} config
  *
  * @return {String}
@@ -42,7 +41,6 @@ function getScriptURL(config) {
 
 /**
  * Attach script tag to DOM
- *
  * @param {Object} config
  * @param {Object} userConsent
  *
@@ -65,7 +63,6 @@ export function attachScript(config, userConsent) {
 
 /**
  * Fetch audiences info from localStorage.
- *
  * @return {Array} Audience ids.
  */
 export function getAudiences() {
@@ -79,7 +76,6 @@ export function getAudiences() {
 
 /**
  * Pass audience data to configured bidders, using ORTB2
- *
  * @param {Object} reqBidsConfigObj
  * @param {Object} config
  * @param {Array} audiences
@@ -108,7 +104,6 @@ export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
 
 /**
  * Module initialisation.
- *
  * @param {Object} config
  * @param {Object} userConsent
  *
@@ -121,7 +116,6 @@ function init(config, userConsent) {
 
 /**
  * Real-time user audiences retrieval
- *
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
  * @param {Object} config

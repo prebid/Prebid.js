@@ -12,7 +12,6 @@ const storageManager = getStorageManager({ bidderCode: 'orbidder' });
 
 /**
  * Determines whether or not the given bid response is valid.
- *
  * @param {object} bidResponse The bid response to validate.
  * @return boolean True if this is a valid bid response, and false if it is not valid.
  */
@@ -50,7 +49,6 @@ export const spec = {
   /**
    * Returns a customzied hostname if 'ov_orbidder_host' is set in the browser's local storage.
    * This is only used for integration testing.
-   *
    * @return The hostname bid requests should be sent to.
    */
   getHostname() {
@@ -64,7 +62,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false if it is not valid.
    */
@@ -77,7 +74,6 @@ export const spec = {
 
   /**
    * Build a request from the list of valid BidRequests that will be sent by prebid to the orbidder /bid endpoint, i.e. the server.
-   *
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the orbidder /bid endpoint,
    * i.e. the server.
    * @return The requests for the orbidder /bid endpoint, i.e. the server.
@@ -121,7 +117,6 @@ export const spec = {
 
   /**
    * Unpack the response from the orbidder /bid endpoint into a list of bids.
-   *
    * @param {*} serverResponse A successful response from the orbidder /bid endpoint, i.e. the server.
    * @return {Bid[]} An array of bids from orbidder.
    */

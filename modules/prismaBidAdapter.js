@@ -28,7 +28,6 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -37,7 +36,6 @@ export const spec = {
   },
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
@@ -94,7 +92,6 @@ export const spec = {
   },
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
@@ -148,7 +145,6 @@ export const spec = {
 
   /**
    * Register the user sync pixels which should be dropped after the auction.
-   *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.

@@ -266,7 +266,6 @@ export const spec = {
 
   /**
    * Register the user sync pixels which should be dropped after the auction.
-   *
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
@@ -499,7 +498,6 @@ function outstreamRender(bid) {
 
 /**
  * Extract sizes for a given bid from either `mediaTypes` or `sizes` directly.
- *
  * @param {Object} bid
  * @returns {string[]}
  */
@@ -536,7 +534,6 @@ function extractSizes(bid) {
 /**
  * Gets the floor price if the Price Floors Module is enabled for a given auction,
  * which will add the getFloor() function to the bidRequest object.
- *
  * @param {Object} bid
  * @param {string[]} sizes
  * @returns The floor CPM in cents of a matched rule based on the rule selection process (mediaType, size and currency),
@@ -561,7 +558,6 @@ function getBidFloor(bid, sizes) {
 
 /**
  * Checks if an object has a property with a given name and the property value is not null or undefined.
- *
  * @param {Object} obj - The object to check.
  * @param {string} propName - The name of the property to check.
  * @returns {boolean} Returns true if the object has a property with the given name and the property value is not null or undefined, otherwise false.
@@ -582,7 +578,6 @@ function isImageAssetOfType(type) {
 /**
  * Retrieves the Digital Services Act (DSA) object from a matched bid.
  * Only includes specific attributes (behalf, paid, transparency, adrender) from the DSA object.
- *
  * @param {Object} matchedBid - The server response body to inspect for the DSA information.
  * @returns {Object|undefined} A copy of the DSA object if it exists, or undefined if not.
  */
@@ -601,7 +596,6 @@ function getDigitalServicesActObjectFromMatchedBid(matchedBid) {
 
 /**
  * Conditionally assigns a value to a specified key on an object if the value is not undefined.
- *
  * @param {Object} obj - The object to which the value will be assigned.
  * @param {string} key - The key under which the value should be assigned.
  * @param {*} value - The value to be assigned, if it is not undefined.

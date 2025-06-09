@@ -35,7 +35,6 @@ function template(strings, ...keys) {
 
 /**
  * Creates a bid requests for a given bid.
- *
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
 function formatBidRequest(bid, bidderRequest = {}) {

@@ -163,7 +163,6 @@ function objectToQueryString(obj, prefix) {
 }
 /**
  * Add extra params to server request
- *
  * @param params
  * @param payload
  * @param bidderRequest
@@ -214,7 +213,6 @@ function prepareExtraParams(params, payload, bidderRequest, bidRequest) {
 
 /**
  * Check if it's a banner bid request
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a banner bid
  */
@@ -224,7 +222,6 @@ function isBannerRequest(bid) {
 
 /**
  * Check if it's a video bid request
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a video bid
  */
@@ -234,7 +231,6 @@ function isVideoRequest(bid) {
 
 /**
  * Get video sizes
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object} True if it's a video bid
  */
@@ -244,7 +240,6 @@ function getVideoSizes(bid) {
 
 /**
  * Get banner sizes
- *
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object} True if it's a video bid
  */

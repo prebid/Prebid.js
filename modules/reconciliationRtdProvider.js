@@ -112,7 +112,6 @@ function handleAdMessage(e) {
  * -- iframe.window  <-- top iframe window
  * --- iframe.window
  * ---- iframe.window <-- win
- *
  * @param {Window} win nested iframe window object
  * @param {Window} topWin top window
  */

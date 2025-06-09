@@ -152,7 +152,6 @@ export function parsePaapiAdId(adId) {
 /**
  * Returns the PAAPI runAdAuction result for the given filters, as a map from ad unit code to auction result
  * (an object with `width`, `height`, and one of `urn` or `frameConfig`).
- *
  * @param filters
  * @param raa
  * @return {Promise<{[p: string]: any}>}

@@ -87,7 +87,6 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
 
 /**
  * @typedef videoEvent
- *
  */
 
 /**

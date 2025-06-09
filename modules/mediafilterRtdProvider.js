@@ -4,7 +4,6 @@
  * The {@link module:modules/realTimeData} module is required
  *
  * For more information, visit {@link https://www.themediatrust.com The Media Trust}.
- *
  * @author Mirnes Cajlakovic <mcajlakovic@themediatrust.com>
  * @module modules/mediafilterRtdProvider
  * @requires module:modules/realTimeData

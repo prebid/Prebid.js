@@ -186,7 +186,6 @@ export const _internal = {
 
   /**
    * Ensure that the bidder is Adagio.
-   *
    * @param {string} alias
    * @returns {boolean}
    */
@@ -199,7 +198,6 @@ export const _internal = {
 
   /**
    * Returns the session data from the localStorage.
-   *
    * @param {string} storageValue - The value stored in the localStorage.
    * @returns {Session}
    */
@@ -216,7 +214,6 @@ export const _internal = {
 
   /**
    * Returns the abTest data from the localStorage.
-   *
    * @param {string} storageValue - The value stored in the localStorage.
    * @returns {AbTest}
    */
@@ -228,7 +225,6 @@ export const _internal = {
 
   /**
    * Returns the parsed data from the localStorage.
-   *
    * @param {string} storageValue - The value stored in the localStorage.
    * @returns {Object}
    */
@@ -279,7 +275,6 @@ function init(config, _userConsent) {
 
 /**
  * onBidRequest is called for each bidder during an auction and contains the bids for that bidder.
- *
  * @param {*} bidderRequest
  * @param {*} config
  * @param {*} _userConsent
@@ -311,7 +306,6 @@ function onBidRequest(bidderRequest, config, _userConsent) {
 /**
  * onGetBidRequestData is called once per auction.
  * Update both the `ortb2Fragments` and `ortb2Imp` objects with features computed for Adagio.
- *
  * @param {*} bidReqConfig
  * @param {*} callback
  * @param {*} config
@@ -421,7 +415,6 @@ submodule('realTimeData', adagioRtdSubmodule);
 /**
  * storeRequestInAdagioNS store ad-units in the ADAGIO namespace for further usage.
  * Not all the properties are stored, only the ones that are useful for adagio.js.
- *
  * @param {*} bid - The bid object. Correspond to the bidRequest.bids[i] object.
  * @param {*} config - The RTD module configuration.
  * @returns {void}
@@ -603,7 +596,6 @@ function getTimestampUTC() {
 /**
  * registerEventsForAdServers bind adagio listeners to ad-server events.
  * Theses events are used to track the viewability and attention.
- *
  * @param {*} config
  * @returns {void}
  */

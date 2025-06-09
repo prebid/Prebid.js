@@ -67,7 +67,6 @@ function slotDimensions(bid) {
 
 /**
  * Extracts feature flags from a comma-separated url parameter `cwfeatures`.
- *
  * @returns *[]
  */
 function getFeatureFlags() {
@@ -154,7 +153,6 @@ export const spec = {
 
   /**
    * Determines whether the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -177,7 +175,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {validBidRequests[]} validBidRequests An array of bids.
    * @return ServerRequest Info describing the request to the server.
    */
@@ -212,7 +209,6 @@ export const spec = {
   },
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */

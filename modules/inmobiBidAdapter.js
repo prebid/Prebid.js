@@ -41,7 +41,6 @@ const CONVERTER = ortbConverter({
 
 /**
  * Builds an impression object for oRTB 2.5 requests based on the bid request.
- *
  * @param {function} buildImp - Function to build the imp object.
  * @param {Object} bidRequest - The request containing bid details.
  * @param {Object} context - Context for the impression.
@@ -83,7 +82,6 @@ function imp(buildImp, bidRequest, context) {
 
 /**
  * Constructs the oRTB 2.5 request object.
- *
  * @param {function} buildRequest - Function to build the request.
  * @param {Array} imps - Array of impression objects.
  * @param {Object} bidderRequest - Object containing bidder request information.
@@ -103,7 +101,6 @@ function request(buildRequest, imps, bidderRequest, context) {
 
 /**
  * Transforms an oRTB 2.5 bid into a bid response format for Prebid.js.
- *
  * @param {function} buildBidResponse - Function to build a bid response.
  * @param {Object} bid - The bid to be transformed.
  * @param {Object} context - Context for the bid.
@@ -129,7 +126,6 @@ function bidResponse(buildBidResponse, bid, context) {
 
 /**
  * Converts the oRTB 2.5 bid response into the format required by Prebid.js.
- *
  * @param {function} buildResponse - Function to build the response.
  * @param {Array} bidResponses - List of bid responses.
  * @param {Object} ortbResponse - Original oRTB response data.
@@ -150,7 +146,6 @@ export const spec = {
 
   /**
    * Determines user sync options based on consent and supported sync types.
-   *
    * @param {Object} syncOptions - Options for user syncing (iframe, pixel).
    * @param {Array} responses - List of bid responses.
    * @param {Object} gdprConsent - GDPR consent details.
@@ -213,7 +208,6 @@ export const spec = {
 
   /**
    * Validates if a bid request contains the required parameters for InMobi.
-   *
    * @param {Object} bid - Bid request to validate.
    * @returns {boolean} True if the bid request is valid, otherwise false.
    */
@@ -227,7 +221,6 @@ export const spec = {
 
   /**
    * Builds the server request from bid requests for InMobi.
-   *
    * @param {BidRequest[]} bidRequests - Array of bid requests.
    * @param {Object} bidderRequest - Additional request details.
    * @returns {ServerRequest} The server request for bidding.
@@ -252,7 +245,6 @@ export const spec = {
 
   /**
    * Interprets the server response and formats it into bids.
-   *
    * @param {Object} response - Response from the server.
    * @param {ServerRequest} request - Original bid request.
    * @returns {Bid[]} Parsed bids or configurations.
@@ -270,7 +262,6 @@ export const spec = {
 
   /**
    * Callback to report timeout event.
-   *
    * @param {TimedOutBid[]} timeoutData - Array of timeout details.
    */
   onTimeout: (timeoutData) => {
@@ -279,7 +270,6 @@ export const spec = {
 
   /**
    * Callback to report targeting event.
-   *
    * @param {Bid} bid - The bid object
    */
   onSetTargeting: (bid) => {
@@ -288,7 +278,6 @@ export const spec = {
 
   /**
    * Callback to report successful ad render event.
-   *
    * @param {Bid} bid - The bid that successfully rendered.
    */
   onAdRenderSucceeded: (bid) => {
@@ -297,7 +286,6 @@ export const spec = {
 
   /**
    * Callback to report bidder error event.
-   *
    * @param {Object} errorData - Details about the error.
    */
   onBidderError: (errorData) => {
@@ -306,7 +294,6 @@ export const spec = {
 
   /**
    * Callback to report bid won event.
-   *
    * @param {Bid} bid - The bid that won the auction.
    */
   onBidWon: (bid) => {

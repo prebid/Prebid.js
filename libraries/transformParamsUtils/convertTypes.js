@@ -3,7 +3,6 @@ import {isFn} from '../../src/utils.js';
 /**
  * Try to convert a value to a type.
  * If it can't be done, the value will be returned.
- *
  * @param {string} typeToConvert The target type. e.g. "string", "number", etc.
  * @param {*} value The value to be converted into typeToConvert.
  */

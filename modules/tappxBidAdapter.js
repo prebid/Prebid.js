@@ -53,7 +53,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -71,7 +70,6 @@ export const spec = {
   /**
    * Takes an array of valid bid requests, all of which are guaranteed to have passed the isBidRequestValid() test.
    * Make a server request from the list of BidRequests.
-   *
    * @param {*} validBidRequests
    * @param {*} bidderRequest
    * @return ServerRequest Info describing the request to the server.
@@ -86,7 +84,6 @@ export const spec = {
 
   /**
    * Parse the response and generate one or more bid objects.
-   *
    * @param {*} serverResponse
    * @param {*} originalRequest
    */
@@ -109,7 +106,6 @@ export const spec = {
 
   /**
    * If the publisher allows user-sync activity, the platform will call this function and the adapter may register pixels and/or iframe user syncs.
-   *
    * @param {*} syncOptions
    * @param {*} serverResponses
    * @param {*} gdprConsent
@@ -188,7 +184,6 @@ function validMediaType(bid) {
 
 /**
  * Parse the response and generate one bid object.
- *
  * @param {object} serverBid Bid by OpenRTB 2.5
  * @returns {object} Prebid banner bidObject
  */
@@ -238,7 +233,6 @@ function interpretBid(serverBid, request) {
 
 /**
  * Build and makes the request
- *
  * @param {*} validBidRequests
  * @param {*} bidderRequest
  * @return response ad

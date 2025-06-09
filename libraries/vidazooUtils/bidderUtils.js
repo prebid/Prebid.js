@@ -157,9 +157,8 @@ export function onBidWon(bid) {
  *
  * The options object accepts the following fields:
  *
- *  - iframeSyncUrl
- *  - imageSyncUrl
- *
+ * - iframeSyncUrl
+ * - imageSyncUrl
  * @param options
  */
 export function createUserSyncGetter(options = {

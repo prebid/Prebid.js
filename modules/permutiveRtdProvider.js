@@ -51,7 +51,6 @@ function readPermutiveModuleConfigFromCache() {
 
 /**
  * Access the submodules RTD params attached to the Permutive SDK.
- *
  * @return The Permutive config available by the Permutive SDK or null if the operation errors.
  */
 function getParamsFromPermutive() {
@@ -65,13 +64,12 @@ function getParamsFromPermutive() {
 /**
  * Merges segments into existing bidder config in reverse priority order. The highest priority is 1.
  *
- *   1. customModuleConfig <- set by publisher with pbjs.setConfig
- *   2. permutiveRtdConfig <- set by the publisher using the Permutive platform
- *   3. defaultConfig
+ * 1. customModuleConfig <- set by publisher with pbjs.setConfig
+ * 2. permutiveRtdConfig <- set by the publisher using the Permutive platform
+ * 3. defaultConfig
  *
  * As items with a higher priority will be deeply merged into the previous config, deep merges are performed by
  * reversing the priority order.
- *
  * @param {Object} customModuleConfig - Publisher config for module
  * @return {Object} Deep merges of the default, Permutive and custom config.
  */
@@ -441,7 +439,6 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
 
 /**
  * Pull the latest configuration and cohort information and update accordingly.
- *
  * @param reqBidsConfigObj - Bidder provided config for request
  * @param moduleConfig - Publisher provided config
  */

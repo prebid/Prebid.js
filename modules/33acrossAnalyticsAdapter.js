@@ -625,7 +625,6 @@ function setCachedBidStatus(auctionId, bidId, status) {
 
 /**
  * Guarantees sending of data without waiting for response, even after page is left/closed
- *
  * @param {AnalyticsReport} report Request payload
  * @param {string} endpoint URL
  */
@@ -641,7 +640,6 @@ function sendReport(report, endpoint) {
 
 /**
  * Encapsulate certain logger functions and add a prefix to the final messages.
- *
  * @return {Object} New logger functions
  */
 function getLogger() {

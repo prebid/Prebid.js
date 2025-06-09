@@ -27,7 +27,6 @@ export const c1xAdapter = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -44,7 +43,6 @@ export const c1xAdapter = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */

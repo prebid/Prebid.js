@@ -140,7 +140,6 @@ const MEDIA_TYPES = {
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
- *
  * @param  {object} bid A valid bid request config object
  * @return {object}     A impression object that will be sent to ad server.
  */
@@ -163,7 +162,6 @@ function bidToBannerImp(bid) {
 
 /**
  * Sets imp.displaymanager
- *
  * @param {object} imp
  * @param {object} bid
  */
@@ -198,7 +196,6 @@ function setDisplayManager(imp, bid) {
 
 /**
  * Transform valid bid request config object to video impression object that will be sent to ad server.
- *
  * @param  {object} bid A valid bid request config object.
  * @return {object}     A impression object that will be sent to ad server.
  */
@@ -285,7 +282,6 @@ function verifyVideoPlcmt(imp) {
 
 /**
  * Transform valid bid request config object to native impression object that will be sent to ad server.
- *
  * @param  {object} bid A valid bid request config object.
  * @return {object}     A impression object that will be sent to ad server.
  */
@@ -422,7 +418,6 @@ function _applyFloor(bid, imp, mediaType) {
 
 /**
  * Parses a raw bid for the relevant information.
- *
  * @param  {object} rawBid   The bid to be parsed.
  * @param  {string} currency Global currency in bid response.
  * @return {object} bid      The parsed bid.
@@ -505,7 +500,6 @@ function parseBid(rawBid, currency, bidRequest) {
 
 /**
  * Determines whether or not the given object is valid size format.
- *
  * @param  {*}       size The object to be validated.
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
@@ -516,7 +510,6 @@ function isValidSize(size) {
 /**
  * Determines whether or not the given size object is an element of the size
  * array.
- *
  * @param  {Array}  sizeArray The size array.
  * @param  {object} size      The size object.
  * @return {boolean}          True if the size object is an element of the size array, and false
@@ -586,7 +579,6 @@ function getFirstSize(sizes = []) {
 
 /**
  * Determines whether or not the given bidFloor parameters are valid.
- *
  * @param  {number}  bidFloor    The bidFloor parameter inside bid request config.
  * @param  {number}  bidFloorCur The bidFloorCur parameter inside bid request config.
  * @return {boolean}                True if this is a valid bidFloor parameters format, and false
@@ -610,7 +602,6 @@ function nativeMediaTypeValid(bid) {
 
 /**
  * Get bid request object with the associated id.
- *
  * @param  {*}      id          Id of the impression.
  * @param  {Array}  impressions List of impressions sent in the request.
  * @return {object}             The impression with the associated id.
@@ -663,13 +654,11 @@ function getEidInfo(allEids) {
 
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
- *
  * @param  {Array}  validBidRequests A list of valid bid request config objects.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
  * @param  {object} impressions      An object containing a list of impression objects describing the bids for each transaction
  * @param  {Array}  version          Endpoint version denoting banner, video or native.
  * @return {Array}                   List of objects describing the request to the server.
- *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
@@ -772,7 +761,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
 /**
  * addRTI adds RTI info of the partner to retrieved user IDs from prebid ID module.
- *
  * @param {Array} userEids userEids info retrieved from prebid
  * @param {Array} eidInfo eidInfo info from prebid
  */
@@ -833,7 +821,6 @@ function addRequestedFeatureToggles(r, requestedFeatureToggles) {
 
 /**
  * enrichRequest adds userSync configs, source, and referer info to request and ixDiag objects.
- *
  * @param  {object} r                Base reuqest object.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
  * @param  {Array}  impressions      A list of impressions to be added to the request.
@@ -879,7 +866,6 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 
 /**
  * applyRegulations applies regulation info such as GDPR and GPP to the reqeust obejct.
- *
  * @param  {object}  r                Base reuqest object.
  * @param  {object}  bidderRequest    An object containing other info like gdprConsent.
  * @return {object}                   Object enriched with regulation info describing the request to the server.
@@ -937,7 +923,6 @@ function applyRegulations(r, bidderRequest) {
 
 /**
  * addImpressions adds impressions to request object
- *
  * @param  {Array}  impressions        List of impressions to be added to the request.
  * @param  {Array}  impKeys            List of impression keys.
  * @param  {object} r                  Reuqest object.
@@ -1150,7 +1135,6 @@ function appendIXQueryParams(bidderRequest, url, params) {
 
 /**
  * addFPD adds ortb2 first party data to request object.
- *
  * @param  {object} bidderRequest     An object containing other info like gdprConsent.
  * @param  {object} r                 Reuqest object.
  * @param  {object} fpd               ortb2 first party data.
@@ -1230,7 +1214,6 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 
 /**
  * Adds First-Party Data (FPD) from the bid object to the imp object.
- *
  * @param {Object} imp - The imp object, representing an impression in the OpenRTB format.
  * @param {Object} bid - The bid object, containing information about the bid request.
  */
@@ -1243,7 +1226,6 @@ function addAdUnitFPD(imp, bid) {
 
 /**
  * addIdentifiersInfo adds indentifier info to ixDaig.
- *
  * @param  {Array}  impressions        List of impressions to be added to the request.
  * @param  {object} r                  Reuqest object.
  * @param  {Array}  impKeys            List of impression keys.
@@ -1269,7 +1251,6 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
 
 /**
  * Return an object of user IDs stored by Prebid User ID module
- *
  * @returns {Array} ID providers that are present in userIds
  */
 function _getUserIds(bidRequest) {
@@ -1280,7 +1261,6 @@ function _getUserIds(bidRequest) {
 
 /**
  * Calculates IX diagnostics values and packages them into an object
- *
  * @param {Array} validBidRequests - The valid bid requests from prebid
  * @param {boolean} fledgeEnabled - Flag indicating if protected audience (fledge) is enabled
  * @return {Object} IX diag values for ad units
@@ -1477,7 +1457,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
 
 /**
  * Updates the Object to track missing banner sizes.
- *
  * @param {object} validBidRequest    The bid request for an ad unit's with a configured size.
  * @param {object} missingBannerSizes The object containing missing banner sizes
  * @param {object} imp                The impression for the bidrequest
@@ -1604,7 +1583,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param  {object}  bid The bid to validate.
    * @return {boolean}     True if this is a valid bid, and false otherwise.
    */
@@ -1696,7 +1674,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param  {Array}  validBidRequests A list of valid bid request config objects.
    * @param  {object} bidderRequest    A object contains bids and other info like gdprConsent.
    * @return {object}                  Info describing the request to the server.
@@ -1782,7 +1759,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param  {object} serverResponse A successful response from the server.
    * @param  {object} bidderRequest  The bid request sent to the server.
    * @return {Array}                 An array of bids which were nested inside the server.
@@ -1955,7 +1931,6 @@ export function combineImps(imps) {
 
 /**
  * Deduplicates ext fields. For example if imp.ext.tid exists, removes imp.banner.ext.tid
- *
  * @param {object} r request object
  * @returns object
  */
@@ -2003,7 +1978,6 @@ export function deduplicateImpExtFields(r) {
 /**
  * Removes ext.siteids in multiformat scenario
  * Site id will be set only at imp.ext.siteId
- *
  * @param {object} r request object
  * @returns object
  */

@@ -30,7 +30,6 @@ export function getAdUnitSizes(adUnit) {
 
 /**
  * Normalize adUnit.mediaTypes.banner.sizes to Array.<Array.<number>>
- *
  * @param {Array.<number|string> | Array.<Array.<number|string>>} bidSizes - value of adUnit.mediaTypes.banner.sizes.
  * @returns {Array.<Array.<number>>} - Normalized value.
  */

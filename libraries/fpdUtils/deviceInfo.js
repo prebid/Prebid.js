@@ -50,7 +50,6 @@ export function getDevice() {
 
 /**
  * get screen size
- *
  * @returns {Array} eg: "['widthxheight']"
  */
 export function getScreenSize() {

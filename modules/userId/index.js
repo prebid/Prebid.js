@@ -425,7 +425,6 @@ function getPrimaryIds(submodule) {
 /**
  * Given a collection of items, where each item maps to any number of IDs (getKeys) and an ID module (getIdMod),
  * return a map from ID key to all items that map to that ID key, in order of priority (highest priority first).
- *
  * @template T
  * @param {T[]} items
  * @param {(item: T) => string[]} getKeys
@@ -854,7 +853,6 @@ function retryOnCancel(initParams) {
  * This will force a refresh of the specified ID submodules regardless of `auctionDelay` / `syncDelay` settings, and
  * return a promise that resolves to the same value as `getUserIds()` when the refresh is complete.
  * If a refresh is already in progress, it will be canceled (rejecting promises returned by previous calls to `refreshUserIds`).
- *
  * @param {string[]} [submoduleNames] submodules to refresh. If omitted, refresh all submodules.
  * @param {Function} [callback] called when the refresh is complete
  */

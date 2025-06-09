@@ -6,7 +6,6 @@
  * and apply the tageting to each ad request. These values are created
  * from the Optimera Mesaurement script which is installed on the
  * Publisher's site.
- *
  * @module modules/optimeraRtdProvider
  * @requires module:modules/realTimeData
  */
@@ -205,7 +204,6 @@ export function setScoresURL() {
 /**
  * Set the scores for the device if given.
  * Add data and insights to the winddow.optimera object.
- *
  * @param {*} result
  * @returns {string} JSON string of Optimera Scores.
  */

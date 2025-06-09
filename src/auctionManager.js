@@ -31,7 +31,6 @@ import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
  * a factory is created to assist in testing.
- *
  * @returns {AuctionManager} auctionManagerInstance
  */
 export function newAuctionManager() {

@@ -43,7 +43,6 @@ export function getEffectiveConnectionType() {
 
 /**
  * Retrieves the user IDs as EIDs from the first valid bid request.
- *
  * @param {Array} validBidRequests - Array of valid bid requests
  * @returns {Array|undefined} - Array of user IDs as EIDs, or undefined if not found
  */

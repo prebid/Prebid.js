@@ -15,7 +15,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param poBid  The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -39,7 +38,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param paValidBidRequests  An array of bids
    * @param poBidderRequest
    * @return ServerRequest Info describing the request to the server.
@@ -88,7 +86,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param poServerResponse A successful response from the server.
    * @param poPidRequest Request original server request
    * @return An array of bids which were nested inside the server.
@@ -122,7 +119,6 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction.
-   *
    * @param poBid The bid that won the auction
    */
   onBidWon: function (poBid) {

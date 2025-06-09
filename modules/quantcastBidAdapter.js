@@ -114,7 +114,6 @@ export const spec = {
   /**
    * Verify the `AdUnits.bids` response with `true` for valid request and `false`
    * for invalid request.
-   *
    * @param {object} bid
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
@@ -125,7 +124,6 @@ export const spec = {
   /**
    * Make a server request when the page asks Prebid.js for bids from a list of
    * `BidRequests`.
-   *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be send to Quantcast server
    * @param bidderRequest
    * @return ServerRequest information describing the request to the server.
@@ -210,10 +208,8 @@ export const spec = {
    * Returns an empty array if no valid bids
    *
    * Response Data Format can be found at https://wiki.corp.qc/display/adinf/QCX
-   *
    * @param {*} serverResponse A successful response from Quantcast server.
    * @return {Bid[]} An array of bids which were nested inside the server.
-   *
    */
   interpretResponse(serverResponse) {
     if (serverResponse === undefined) {

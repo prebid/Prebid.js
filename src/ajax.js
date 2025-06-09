@@ -67,7 +67,6 @@ export function toFetchRequest(url, data, options = {}) {
  *
  * If provided, `request` and `done` should be functions accepting a single argument.
  * `request` is invoked at the beginning of each request, and `done` at the end; both are passed its origin.
- *
  * @returns {function(*, {}?): Promise<Response>}
  */
 export function fetcherFactory(timeout = 3000, {request, done} = {}) {

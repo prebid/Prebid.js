@@ -16,7 +16,6 @@ export const MODE_CALLBACK = 2;
 
 /**
  * Returns a client function that can interface with a CMP regardless of where it's located.
- *
  * @param {object} obj
  * @param obj.apiName name of the CMP api, e.g. "__gpp"
  * @param [obj.apiVersion] CMP API version

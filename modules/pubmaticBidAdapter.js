@@ -655,7 +655,6 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -696,7 +695,6 @@ export const spec = {
 
   /**
    * Make a server request from the list of BidRequests.
-   *
    * @param {Array} validBidRequests - an array of bids
    * @param {Object} bidderRequest - bidder request object
    * @return {ServerRequest} Info describing the request to the server.
@@ -746,7 +744,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {*} response A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */

@@ -49,16 +49,14 @@ import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activ
  * Typical usage looks something like:
  *
  * const adapter = registerBidder({
- *   code: 'myBidderCode',
- *   aliases: ['alias1', 'alias2'],
- *   supportedMediaTypes: ['video', 'native'],
- *   isBidRequestValid: function(paramsObject) { return true/false },
- *   buildRequests: function(bidRequests, bidderRequest) { return some ServerRequest(s) },
- *   interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
+ * code: 'myBidderCode',
+ * aliases: ['alias1', 'alias2'],
+ * supportedMediaTypes: ['video', 'native'],
+ * isBidRequestValid: function(paramsObject) { return true/false },
+ * buildRequests: function(bidRequests, bidderRequest) { return some ServerRequest(s) },
+ * interpretResponse: function(oneServerResponse) { return some Bids, or throw an error. }
  * });
- *
  * @see BidderSpec for the full API and more thorough descriptions.
- *
  */
 
 /**
@@ -152,7 +150,6 @@ import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activ
 
 /**
  * TODO: Move this to the UserSync module after that PR is merged.
- *
  * @typedef {object} UserSync
  *
  * @property {('image'|'iframe')} type The type of user sync to be done.
@@ -167,7 +164,6 @@ const TIDS = ['auctionId', 'transactionId'];
  * Register a bidder with prebid, using the given spec.
  *
  * If possible, Adapter modules should use this function instead of adapterManager.registerBidAdapter().
- *
  * @param {BidderSpec} spec An object containing the bare-bones functions we need to make a Bidder.
  */
 export function registerBidder(spec) {
@@ -239,7 +235,6 @@ export const guardTids = memoize(({bidderCode}) => {
 /**
  * Make a new bidder from the given spec. This is exported mainly for testing.
  * Adapters will probably find it more convenient to use registerBidder instead.
- *
  * @param {BidderSpec} spec
  */
 export function newBidder(spec) {
@@ -374,7 +369,6 @@ const RESPONSE_PROPS = ['bids', 'paapi']
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
  * them over the network, and parsing the responses.
- *
  * @param spec bid adapter spec
  * @param bids bid requests to run
  * @param bidderRequest the bid request object that `bids` is connected to

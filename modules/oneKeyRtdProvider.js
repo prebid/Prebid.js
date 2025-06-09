@@ -20,7 +20,6 @@ window.OneKey.queue = window.OneKey.queue || [];
  * Modify the AdUnit object for each auction.
  * It’s called as part of the requestBids hook.
  * https://docs.prebid.org/dev-docs/add-rtd-submodule.html#getbidrequestdata
- *
  * @param {Object} reqBidsConfigObj
  * @param {function} done
  * @param {Object} rtdConfig

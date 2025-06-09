@@ -374,7 +374,6 @@ export function partitionBuyersByBidder(igbRequests) {
 
 /**
  * Expand PAAPI api filters into a map from ad unit code to auctionId.
- *
  * @param {Object} [options]
  * @param {string} [options.auctionId] when specified, the result will have this as the value for each entry.
  *   when not specified, each ad unit will map to the latest auction that involved that ad unit.
@@ -397,7 +396,6 @@ function expandFilters({auctionId, adUnitCode} = {}) {
 
 /**
  * Get PAAPI auction configuration.
- *
  * @param {Object} [filters] - Filters object
  * @param {string} [filters.auctionId] optional auction filter; if omitted, the latest auction for each ad unit is used
  * @param {string} [filters.adUnitCode] optional ad unit filter

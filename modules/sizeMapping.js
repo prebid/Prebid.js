@@ -64,7 +64,6 @@ if (FEATURES.VIDEO) {
 
 /**
  * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match.
- *
  * @param {Object} options - The options object.
  * @param {Array<string>} [options.labels=[]] - Labels specified on adUnit or bidder.
  * @param {boolean} [options.labelAll=false] - If true, all labels must match to be enabled.

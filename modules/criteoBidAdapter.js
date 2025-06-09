@@ -49,7 +49,6 @@ const CONVERTER = ortbConverter({
 
 /**
  * Builds an impression object for the ORTB 2.5 request.
- *
  * @param {function} buildImp - The function for building an imp object.
  * @param {Object} bidRequest - The bid request object.
  * @param {Object} context - The context object.
@@ -118,7 +117,6 @@ function imp(buildImp, bidRequest, context) {
 
 /**
  * Builds a request object for the ORTB 2.5 request.
- *
  * @param {function} buildRequest - The function for building a request object.
  * @param {Array} imps - An array of ORTB 2.5 impression objects.
  * @param {Object} bidderRequest - The bidder request object.
@@ -149,7 +147,6 @@ function request(buildRequest, imps, bidderRequest, context) {
 
 /**
  * Build bid from oRTB 2.5 bid.
- *
  * @param buildBidResponse
  * @param bid
  * @param context
@@ -190,7 +187,6 @@ function bidResponse(buildBidResponse, bid, context) {
 
 /**
  * Builds bid response from the oRTB 2.5 bid response.
- *
  * @param buildResponse
  * @param bidResponses
  * @param ortbResponse

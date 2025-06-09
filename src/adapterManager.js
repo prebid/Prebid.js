@@ -161,7 +161,6 @@ const hookedGetBids = hook('sync', getBids, 'getBids');
 
 /**
  * Filter an adUnit's  bids for building client and/or server requests
- *
  * @param bids an array of bids as defined in an adUnit
  * @param s2sConfig null if the adUnit is being routed to a client adapter; otherwise the s2s adapter's config
  * @returns the subset of `bids` that are pertinent for the given `s2sConfig`

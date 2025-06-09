@@ -31,7 +31,6 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
@@ -41,7 +40,6 @@ export const spec = {
 
   /**
    * Serialize a supply chain object to a string uri encoded
-   *
    * @param {*} schain object
    */
   serializeSupplyChain: function(schain) {
@@ -56,7 +54,6 @@ export const spec = {
 
   /**
    * Transforms the banner ad unit sizes into an object array.
-   *
    * @param {*} bannerSizes Array of size array (ex. [[300, 250]]).
    * @returns
    */
@@ -69,7 +66,6 @@ export const spec = {
 
   /**
    * Fills the payload with specific video attributes.
-   *
    * @param {*} payload Payload that will be sent in the ServerRequest
    * @param {*} videoMediaType Video media type
    */
@@ -156,7 +152,6 @@ export const spec = {
 
   /**
    * Creates the server request.
-   *
    * @param {*} payload Body of the request.
    * @param {string} domain Endpoint domain .
    * @returns {ServerRequest} Info describing the request to the server.
@@ -174,7 +169,6 @@ export const spec = {
 
   /**
    * Makes server requests from the list of BidRequests.
-   *
    * @param {BidRequest[]} validBidRequests an array of bids
    * @param {BidRequest} bidderRequest bidder request object
    * @return {ServerRequest[]} Info describing the request to the server.
@@ -277,7 +271,6 @@ export const spec = {
 
   /**
    * Unpack the response from the server into a list of bids.
-   *
    * @param {*} serverResponse A successful response from the server.
    * @param {*} bidRequestString
    * @return {Bid[]} An array of bids which were nested inside the server.
@@ -326,7 +319,6 @@ export const spec = {
 
   /**
    * User syncs.
-   *
    * @param {*} syncOptions Publisher prebid configuration.
    * @param {*} serverResponses A successful response from the server.
    * @return {UserSync[]} An array of syncs that should be executed.

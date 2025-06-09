@@ -28,7 +28,6 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 /**
  * Returns whether the given bid request contains at least one supported media request, which has valid data. (We can
  * ignore invalid/unsupported ones, as they will be filtered out by the prebid server.)
- *
  * @param {*} bidRequest the bid requests sent by the Prebid API.
  *
  * @return {boolean} true if the given bid request contains at least one supported media request with valid details,
@@ -67,7 +66,6 @@ const isValidPixelUrl = function (candidateUrl) {
 
 /**
  * Returns transformed bid requests that are in a format native to the prebid server.
- *
  * @param {*[]} bidRequests the bid requests sent by the Prebid API.
  *
  * @returns {*[]} the transformed bid requests.
@@ -101,7 +99,6 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid. For all bid requests passed to the buildRequests
    * function, each will have been passed to this function and this function will have returned true.
-   *
    * @param {object} bid the bid params to validate.
    *
    * @return {boolean} true if this is a valid bid, otherwise false.
@@ -114,7 +111,6 @@ export const spec = {
 
   /**
    * Return a prebid server request from the list of bid requests.
-   *
    * @param {BidRequest[]}  validBidRequests an array of bids validated via the isBidRequestValid function.
    * @param {BidderRequest} bidderRequest    an object with data common to all bid requests.
    *
@@ -154,7 +150,6 @@ export const spec = {
 
   /**
    * Translate the Kormorant prebid server response into a list of bids.
-   *
    * @param {ServerResponse} serverResponse a successful response from the prebid server.
    * @param {BidRequest}     bidRequest     the original bid request associated with this response.
    *
@@ -176,16 +171,15 @@ export const spec = {
    * Example timeout data:
    *
    * [{
-   *   "bidder": "example",
-   *   "bidId": "51ef8751f9aead",
-   *   "params": {
-   *     ...
-   *   },
-   *   "adUnitCode": "div-gpt-ad-1460505748561-0",
-   *   "timeout": 3000,
-   *   "auctionId": "18fd8b8b0bd757"
+   * "bidder": "example",
+   * "bidId": "51ef8751f9aead",
+   * "params": {
+   * ...
+   * },
+   * "adUnitCode": "div-gpt-ad-1460505748561-0",
+   * "timeout": 3000,
+   * "auctionId": "18fd8b8b0bd757"
    * }]
-   *
    * @param {{}} timeoutData data relating to the timeout.
    */
   onTimeout: function(timeoutData) {
@@ -198,24 +192,23 @@ export const spec = {
    * Example bid won data:
    *
    * {
-   *   "bidder": "example",
-   *   "width": 300,
-   *   "height": 250,
-   *   "adId": "330a22bdea4cac",
-   *   "mediaType": "banner",
-   *   "cpm": 0.28
-   *   "ad": "...",
-   *   "requestId": "418b37f85e772c",
-   *   "adUnitCode": "div-gpt-ad-1460505748561-0",
-   *   "size": "350x250",
-   *   "adserverTargeting": {
-   *     "hb_bidder": "example",
-   *     "hb_adid": "330a22bdea4cac",
-   *     "hb_pb": "0.20",
-   *     "hb_size": "350x250"
-   *   }
+   * "bidder": "example",
+   * "width": 300,
+   * "height": 250,
+   * "adId": "330a22bdea4cac",
+   * "mediaType": "banner",
+   * "cpm": 0.28
+   * "ad": "...",
+   * "requestId": "418b37f85e772c",
+   * "adUnitCode": "div-gpt-ad-1460505748561-0",
+   * "size": "350x250",
+   * "adserverTargeting": {
+   * "hb_bidder": "example",
+   * "hb_adid": "330a22bdea4cac",
+   * "hb_pb": "0.20",
+   * "hb_size": "350x250"
    * }
-   *
+   * }
    * @param {*} bidData the data associated with the won bid. See example above for data format.
    */
   onBidWon: function(bidData) {

@@ -40,7 +40,6 @@ export const markWinningBid = hook('sync', function (bid) {
 
 /**
  * Emit the AD_RENDER_FAILED event.
- *
  * @param {Object} data
  * @param data.reason one of the values in AD_RENDER_FAILED_REASON
  * @param data.message failure description

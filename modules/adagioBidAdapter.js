@@ -166,7 +166,6 @@ function _getEids(bidRequest) {
 
 /**
  * Merge and compute video params set at mediaTypes and bidder params level
- *
  * @param {object} bidRequest - copy of the original bidRequest object.
  * @returns {void}
  */
@@ -357,7 +356,6 @@ function _getFloors(bidRequest) {
  * This function will check through:
  * - bidderSettings object
  * - ortb2.site.ext.data FPD…
- *
  * @param {*} bid
  * @param {String} paramName
  */

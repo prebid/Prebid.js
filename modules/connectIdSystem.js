@@ -60,7 +60,6 @@ function storeObject(obj) {
 
 /**
  * Attempts to store a cookie on eTLD + 1
- *
  * @function
  * @param {String} key
  * @param {String} value
