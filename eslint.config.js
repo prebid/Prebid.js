@@ -106,7 +106,6 @@ function commonConfig(overrides) {
       'jsdoc/require-yields': 'off',
       'jsdoc/require-yields-check': 'off',
       'jsdoc/tag-lines': 'off',
-      'no-var': 'off',
       'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
