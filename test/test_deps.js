@@ -28,6 +28,7 @@ window.addEventListener('unhandledrejection', function (ev) {
 })
 
 const sinon = require('sinon');
+globalThis.sinon = sinon;
 if (!sinon.sandbox) {
   sinon.sandbox = {create: sinon.createSandbox.bind(sinon)};
 }
