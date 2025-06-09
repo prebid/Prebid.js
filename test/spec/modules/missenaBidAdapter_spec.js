@@ -31,17 +31,21 @@ describe('Missena Adapter', function () {
       device: {
         ext: { cdep: COOKIE_DEPRECATION_LABEL },
       },
+      source: {
+        ext: {
+          schain: {
+            validation: 'strict',
+            config: {
+              ver: '1.0',
+            },
+          },
+        },
+      },
     },
     params: {
       apiKey: API_KEY,
       placement: 'sticky',
       formats: ['sticky-banner'],
-    },
-    schain: {
-      validation: 'strict',
-      config: {
-        ver: '1.0',
-      },
     },
     getFloor: (inputParams) => {
       if (inputParams.mediaType === BANNER) {
@@ -80,7 +84,7 @@ describe('Missena Adapter', function () {
       user: {
         ext: { consent: CONSENT_STRING },
       },
-      device: {        
+      device: {
         w: screen.width,
         h: screen.height,
         ext: { cdep: COOKIE_DEPRECATION_LABEL },

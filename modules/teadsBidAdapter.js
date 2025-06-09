@@ -87,8 +87,9 @@ export const spec = {
 
     const firstBidRequest = validBidRequests[0];
 
-    if (firstBidRequest.schain) {
-      payload.schain = firstBidRequest.schain;
+    const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     let gpp = bidderRequest.gppConsent;

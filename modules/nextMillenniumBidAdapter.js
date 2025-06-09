@@ -508,8 +508,7 @@ function getDeviceObj() {
 }
 
 export function getSourceObj(validBidRequests, bidderRequest) {
-  const schain = validBidRequests?.[0]?.schain ||
-    (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain || bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
 
   if (!schain) return;
 

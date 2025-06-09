@@ -112,8 +112,9 @@ export const spec = {
       payload.regs.ext.uspIab = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (bidSchain) {
+      const schain = mapSchain(bidSchain);
       if (schain) {
         payload.schain = schain;
       }

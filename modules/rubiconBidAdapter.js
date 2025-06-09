@@ -617,8 +617,9 @@ export const spec = {
     }
 
     // if SupplyChain is supplied and contains all required fields
-    if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-      data.rp_schain = spec.serializeSupplyChain(bidRequest.schain);
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
+    if (schain && hasValidSupplyChainParams(schain)) {
+      data.rp_schain = spec.serializeSupplyChain(schain);
     }
 
     return data;
@@ -1001,7 +1002,7 @@ function applyFPD(bidRequest, mediaType, data) {
                 return param;
               }
 
-              // finally we will add this one, if param has been added already, add our seperator
+              // finally we will add this one, if param has been added already, add our separator
               if (param) {
                 param += '~~'
               }

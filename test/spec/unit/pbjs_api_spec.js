@@ -1007,7 +1007,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('setTargetingForGPTAsync', function () {
     let logErrorSpy;
-    let targeting; 
+    let targeting;
 
     beforeEach(function () {
       logErrorSpy = sinon.spy(utils, 'logError');
@@ -1025,7 +1025,7 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
       $$PREBID_GLOBAL$$.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
 
-      
+
       slots.forEach(function(slot) {
         targeting = {};
         slot.getTargetingKeys().map(function (key) {

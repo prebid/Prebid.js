@@ -809,16 +809,22 @@ const testsBuildRequests = [
       fn: spec.buildRequests(
         [
           {
-            schain: {
-              ver: '1.0',
-              complete: 1,
-              nodes: [
-                {
-                  asi: 'ssp.test',
-                  sid: '00001',
-                  hp: 1,
-                },
-              ],
+            ortb2: {
+              source: {
+                ext: {
+                  schain: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [
+                      {
+                        asi: 'ssp.test',
+                        sid: '00001',
+                        hp: 1,
+                      },
+                    ],
+                  }
+                }
+              }
             },
           },
         ],
@@ -1100,6 +1106,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
   let configStub;
 
   beforeEach(() => {
+    window.bliinkBid = {};
     const metaElement = document.createElement('meta');
     metaElement.name = 'keywords';
     metaElement.content = 'Bliink, Saber, Prebid';

@@ -110,10 +110,11 @@ export const spec = {
         requestData.device.ifa = bid.params.idfa || bid.params.aid;
       }
 
-      if (bid.schain) {
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain) {
         requestData.source = {
           ext: {
-            schain: bid.schain
+            schain: schain
           }
         };
       } else if (bid.params.schain) {

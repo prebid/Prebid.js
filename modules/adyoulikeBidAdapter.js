@@ -87,8 +87,9 @@ export const spec = {
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
-        if (bidReq.schain) {
-          accumulator[bidReq.bidId].SChain = bidReq.schain;
+        const schain = bidReq?.ortb2?.source?.ext?.schain;
+        if (schain) {
+          accumulator[bidReq.bidId].SChain = schain;
         }
         if (!eids && bidReq.userIdAsEids && bidReq.userIdAsEids.length) {
           eids = bidReq.userIdAsEids;

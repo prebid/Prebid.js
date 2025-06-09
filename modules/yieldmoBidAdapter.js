@@ -138,8 +138,9 @@ export const spec = {
         if (criteoId) {
           serverRequest.cri_prebid = criteoId;
         }
-        if (request.schain) {
-          serverRequest.schain = JSON.stringify(request.schain);
+        const schain = deepAccess(request, 'ortb2.source.ext.schain');
+        if (schain) {
+          serverRequest.schain = JSON.stringify(schain);
         }
         if (deepAccess(request, 'params.lr_env')) {
           serverRequest.ats_envelope = request.params.lr_env;
@@ -413,7 +414,7 @@ function getId(request, idType) {
  * @return Object OpenRTB request object
  */
 function openRtbRequest(bidRequests, bidderRequest) {
-  const schain = bidRequests[0].schain;
+  const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
     tmax: bidderRequest.timeout || 400,

@@ -878,16 +878,22 @@ describe('advertisingBidAdapter ', function () {
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0,
-      schain: {
-        ver: '1.0',
-        complete: 1,
-        nodes: [
-          {
-            asi: 'indirectseller.com',
-            sid: '00001',
-            hp: 1
+      ortb2: {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [
+                {
+                  asi: 'indirectseller.com',
+                  sid: '00001',
+                  hp: 1
+                }
+              ]
+            }
           }
-        ]
+        }
       }
     };
     let bidderRequest = {

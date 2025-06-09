@@ -14,7 +14,7 @@ import {
   parsePaapiAdId,
   parsePaapiSize, resizeCreativeHook,
   topLevelPAAPI
-} from '/modules/topLevelPaapi.js';
+} from '../../../modules/topLevelPaapi.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {expect} from 'chai/index.js';
 import {getBidToRender} from '../../../src/adRendering.js';

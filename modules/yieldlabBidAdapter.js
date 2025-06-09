@@ -75,8 +75,9 @@ export const spec = {
           query[prop] = bid.params.customParams[prop];
         }
       }
-      if (bid.schain && isPlainObject(bid.schain) && Array.isArray(bid.schain.nodes)) {
-        query.schain = createSchainString(bid.schain);
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain && isPlainObject(schain) && Array.isArray(schain.nodes)) {
+        query.schain = createSchainString(schain);
       }
 
       const iabContent = getContentObject(bid);
@@ -449,7 +450,7 @@ function getContentObject(bid) {
  * Creates a string for iab_content object by
  * 1. flatten the iab content object
  * 2. encoding the values
- * 3. joining array of defined keys ('keyword', 'cat') into one value seperated with '|'
+ * 3. joining array of defined keys ('keyword', 'cat') into one value separated with '|'
  * 4. encoding the whole string
  * @param {Object} iabContent
  * @returns {String}

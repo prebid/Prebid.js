@@ -1,5 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
- 
+
 import { assert } from 'chai';
 import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
@@ -330,10 +330,16 @@ describe('Adf adapter', function () {
       let validBidRequests = [{
         bidId: 'bidId',
         params: {},
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       }];

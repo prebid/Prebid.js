@@ -217,8 +217,9 @@ const converter = ortbConverter({
       'site.ext.michao.site',
       bidRequest.params.site.toString()
     );
-    if (bidRequest?.schain) {
-      deepSetValue(openRTBBidRequest, 'source.schain', bidRequest.schain);
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(openRTBBidRequest, 'source.schain', schain);
     }
 
     if (bidRequest.params?.partner) {
