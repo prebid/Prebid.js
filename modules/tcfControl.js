@@ -379,7 +379,8 @@ export function checkIfCredentialsAllowed(next, options = {}, moduleType, module
   const rule = ACTIVE_RULES.purpose[1];
   const ruleOptions = CONFIGURABLE_RULES[rule.purpose];
   const {purpose} = getConsent(consentData, ruleOptions.type, ruleOptions.id, null);
-  if (!purpose && ruleOptions.enforcePurpose) {
+
+  if (!purpose && rule.enforcePurpose) {
     options.withCredentials = false;
     logWarn(`${RULE_NAME} denied ${ACTIVITY_ACCESS_REQUEST_CREDENTIALS}`);
   }
