@@ -563,7 +563,7 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
 
       // Set all targeting keys
       acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRS] = 1;
-      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = parseFloat((baseValue * multiplier).toFixed(2));
+      acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_FLRV] = (baseValue * multiplier).toFixed(2);
       acc[code][CONSTANTS.TARGETING_KEYS.PM_YM_BID_S] = bidStatus;
     } else {
       // For non-RTD floor applied cases, only set pm_ym_flrs to 0
