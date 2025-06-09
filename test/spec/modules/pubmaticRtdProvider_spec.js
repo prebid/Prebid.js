@@ -1851,10 +1851,6 @@ describe('Pubmatic RTD Provider', () => {
                 
                 const result = getTargetingData(adUnitCodes, config, userConsent, auction);
                 
-                /* eslint-disable no-console */
-                console.log('This will not cause an ESLint error', result);
-                /* eslint-enable no-console */
-                
                 // Restore the original value
                 setProfileConfigs(originalProfileConfigs);
                 
@@ -2468,46 +2464,6 @@ describe('Pubmatic RTD Provider', () => {
                             "bidId": "4d87e40318460b8",
                             "bidderRequestId": "2b57cd87f57d7d8",
                             "src": "client",
-                            "metrics": {
-                                "requestBids.usp": 0.30000000447034836,
-                                "requestBids.userId": 0.19999999552965164,
-                                "requestBids.rtd": 538.5,
-                                "requestBids.fpd": 1.3000000044703484,
-                                "requestBids.validate": 0.4000000059604645,
-                                "requestBids.makeRequests": 1.3999999985098839,
-                                "requestBids.total": 2519.3000000044703,
-                                "requestBids.callBids": 1973.6000000014901,
-                                "adapter.client.net": [
-                                    1957.8999999985099
-                                ],
-                                "adapters.client.pubmatic.net": [
-                                    1957.8999999985099
-                                ],
-                                "adapter.client.interpretResponse": [
-                                    1.2999999970197678
-                                ],
-                                "adapters.client.pubmatic.interpretResponse": [
-                                    1.2999999970197678
-                                ],
-                                "addBidResponse.validate": [
-                                    0.20000000298023224
-                                ],
-                                "addBidResponse.categoryTranslation": [
-                                    0
-                                ],
-                                "addBidResponse.dchain": [
-                                    0.4000000059604645
-                                ],
-                                "addBidResponse.dsa": [
-                                    0
-                                ],
-                                "adapter.client.validate": 0.20000000298023224,
-                                "adapters.client.pubmatic.validate": 0.20000000298023224,
-                                "adapter.client.buildRequests": 8.199999995529652,
-                                "adapters.client.pubmatic.buildRequests": 8.199999995529652,
-                                "adapter.client.total": 1972.3999999985099,
-                                "adapters.client.pubmatic.total": 1972.3999999985099
-                            },
                             "auctionsCount": 1,
                             "bidRequestsCount": 1,
                             "bidderRequestsCount": 1,
@@ -2628,30 +2584,7 @@ describe('Pubmatic RTD Provider', () => {
                             "pm_dspid": 1208,
                             "pm_seat": "pubmatic",
                             "dealChannel": "PMP",
-                            "metrics": {
-                                "requestBids.usp": 0.30000000447034836,
-                                "requestBids.userId": 0.19999999552965164,
-                                "requestBids.rtd": 538.5,
-                                "requestBids.fpd": 1.3000000044703484,
-                                "requestBids.validate": 0.4000000059604645,
-                                "requestBids.makeRequests": 1.3999999985098839,
-                                "requestBids.total": 2519.3000000044703,
-                                "requestBids.callBids": 1973.6000000014901,
-                                "adapter.client.validate": 0.20000000298023224,
-                                "adapters.client.pubmatic.validate": 0.20000000298023224,
-                                "adapter.client.buildRequests": 8.199999995529652,
-                                "adapters.client.pubmatic.buildRequests": 8.199999995529652,
-                                "adapter.client.total": 1972.3999999985099,
-                                "adapters.client.pubmatic.total": 1972.3999999985099,
-                                "adapter.client.net": 1957.8999999985099,
-                                "adapters.client.pubmatic.net": 1957.8999999985099,
-                                "adapter.client.interpretResponse": 1.2999999970197678,
-                                "adapters.client.pubmatic.interpretResponse": 1.2999999970197678,
-                                "addBidResponse.validate": 0.20000000298023224,
-                                "addBidResponse.categoryTranslation": 0,
-                                "addBidResponse.dchain": 0.4000000059604645,
-                                "addBidResponse.dsa": 0
-                            },
+                            
                             "adapterCode": "pubmatic",
                             "originalCpm": 15,
                             "originalCurrency": "USD",
@@ -2692,67 +2625,11 @@ describe('Pubmatic RTD Provider', () => {
                     ],
                     "winningBids": [],
                     "timeout": 3000,
-                    "metrics": {
-                        "adapter.client.validate": [
-                            0.20000000298023224
-                        ],
-                        "adapters.client.pubmatic.validate": [
-                            0.20000000298023224
-                        ],
-                        "adapter.client.buildRequests": [
-                            8.199999995529652
-                        ],
-                        "adapters.client.pubmatic.buildRequests": [
-                            8.199999995529652
-                        ],
-                        "adapter.client.net": [
-                            1957.8999999985099
-                        ],
-                        "adapters.client.pubmatic.net": [
-                            1957.8999999985099
-                        ],
-                        "adapter.client.interpretResponse": [
-                            1.2999999970197678
-                        ],
-                        "adapters.client.pubmatic.interpretResponse": [
-                            1.2999999970197678
-                        ],
-                        "addBidResponse.validate": [
-                            0.20000000298023224
-                        ],
-                        "addBidResponse.categoryTranslation": [
-                            0
-                        ],
-                        "addBidResponse.dchain": [
-                            0.4000000059604645
-                        ],
-                        "addBidResponse.dsa": [
-                            0
-                        ],
-                        "adapter.client.total": [
-                            1972.3999999985099
-                        ],
-                        "adapters.client.pubmatic.total": [
-                            1972.3999999985099
-                        ],
-                        "requestBids.usp": 0.30000000447034836,
-                        "requestBids.userId": 0.19999999552965164,
-                        "requestBids.rtd": 538.5,
-                        "requestBids.fpd": 1.3000000044703484,
-                        "requestBids.validate": 0.4000000059604645,
-                        "requestBids.makeRequests": 1.3999999985098839,
-                        "requestBids.total": 2519.3000000044703,
-                        "requestBids.callBids": 1973.6000000014901
-                    },
                     "seatNonBids": []
                 }
                 
                 const result = getTargetingData(adUnitCodes, config, userConsent, auction);
-                
-                /* eslint-disable no-console */
-                console.log('This will not cause an ESLint error', result);
-                /* eslint-enable no-console */
-                
+               
                 // Restore the original value
                 setProfileConfigs(originalProfileConfigs);
                 
@@ -3012,10 +2889,6 @@ describe('Pubmatic RTD Provider', () => {
                 });
 
                 const result = getTargetingData(adUnitCodes, config, userConsent, auction);
-                
-                /* eslint-disable no-console */
-                console.log('This will not cause an ESLint error', result);
-                /* eslint-enable no-console */
                 
                 // Restore the original value
                 setProfileConfigs(originalProfileConfigs);

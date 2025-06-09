@@ -207,11 +207,22 @@ export const fetchData = async (publisherId, profileId, type) => {
 
       // Extract multipliers from floors.json if available
       if (type === "FLOORS" && data && data.multiplier) {
-        _multipliers = {
-          WIN: data.multiplier.win || CONSTANTS.MULTIPLIERS.WIN,
-          FLOORED: data.multiplier.floored || CONSTANTS.MULTIPLIERS.FLOORED,
-          NOBID: data.multiplier.nobid || CONSTANTS.MULTIPLIERS.NOBID
+        // Map of source keys to destination keys
+        const multiplierKeys = {
+          'win': 'WIN',
+          'floored': 'FLOORED',
+          'nobid': 'NOBID'
         };
+        
+        // Initialize _multipliers and only add keys that exist in data.multiplier
+        _multipliers = Object.entries(multiplierKeys)
+          .reduce((acc, [srcKey, destKey]) => {
+            if (srcKey in data.multiplier) {
+              acc[destKey] = data.multiplier[srcKey];
+            }
+            return acc;
+          }, {});
+        
         logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
       }
 
@@ -459,12 +470,42 @@ function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit
   function setBidStatusAndValues(status, baseValueSource, multiplierKey, logMessage) {
     bidStatus = status;
     baseValue = baseValueSource;
-    const floorMultiplier = _multipliers?.[multiplierKey];
-    const configMultiplier = profileConfigs?.plugins?.dynamicFloors?.pmTargetingKeys?.multiplier?.[multiplierKey.toLowerCase()];
-
-    multiplier = floorMultiplier ?? configMultiplier ?? CONSTANTS.MULTIPLIERS[multiplierKey];
-
-    logInfo(CONSTANTS.LOG_PRE_FIX, logMessage + ` (Using ${floorMultiplier ? 'floor.json' : (configMultiplier ? 'config.json' : 'default')} multiplier: ${multiplier})`);
+    // Define sources in priority order with their access patterns
+    const multiplierSources = [
+      {
+        name: 'floor.json',
+        getValue: () => { // Check floors.json
+          return _multipliers && multiplierKey in _multipliers ? _multipliers[multiplierKey] : null;
+        }
+      },
+      {
+        name: 'config.json',
+        getValue: () => { // Check config.json (via optional chaining)
+          const configPath = profileConfigs?.plugins?.dynamicFloors?.pmTargetingKeys?.multiplier;
+          const lowerKey = multiplierKey.toLowerCase();
+          return configPath && lowerKey in configPath ? configPath[lowerKey] : null;
+        }
+      },
+      {
+        name: 'default',
+        getValue: () => CONSTANTS.MULTIPLIERS[multiplierKey]
+      }
+    ];
+    
+    // Find the first source that has a non-null value
+    for (const source of multiplierSources) {
+      const value = source.getValue();
+      if (value != null) {
+        multiplier = value;
+        logInfo(CONSTANTS.LOG_PRE_FIX, logMessage + ` (Using ${source.name} multiplier: ${multiplier})`);
+        return;
+      }
+    }
+    
+    // Fallback if somehow all sources failed (shouldn't happen due to default source)
+    multiplier = CONSTANTS.MULTIPLIERS[multiplierKey];
+    logInfo(CONSTANTS.LOG_PRE_FIX, logMessage + ` (Using default multiplier: ${multiplier})`);
+  
   }
 
   if (winningBid) {
