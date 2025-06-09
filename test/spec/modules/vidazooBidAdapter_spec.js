@@ -307,7 +307,14 @@ describe('VidazooBidAdapter', function () {
       });
       const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
-      expect(requests[0]).to.deep.equal({
+
+      const req = requests[0];
+      expect(req.data).to.have.property('iiqpcid');
+      expect(req.data).to.have.property('iiqpcidDate');
+      delete req.data.iiqpcid;
+      delete req.data.iiqpcidDate;
+
+      expect(req).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`,
         data: {
@@ -412,7 +419,15 @@ describe('VidazooBidAdapter', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
-      expect(requests[0]).to.deep.equal({
+
+      const req = requests[0];
+
+      expect(req.data).to.have.property('iiqpcid');
+      expect(req.data).to.have.property('iiqpcidDate');
+      delete req.data.iiqpcid;
+      delete req.data.iiqpcidDate;
+
+      expect(req).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
         data: {

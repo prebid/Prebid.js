@@ -3,12 +3,10 @@ import {
   spec as adapter,
   createDomain,
   storage,
-  getAndSetFirstPartyData,
-  createFirstPartyData,
 } from 'modules/kueezRtbBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
+import sinon, {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
 import {
@@ -20,6 +18,8 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
+  getAndSetFirstPartyData,
+  createFirstPartyData
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
@@ -266,7 +266,6 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('build requests', function () {
     let sandbox;
-    let createFirstPartyDataStub;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         kueezrtb: {
@@ -275,10 +274,6 @@ describe('KueezRtbBidAdapter', function () {
       };
       sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
-      createFirstPartyDataStub = sandbox.stub(adapter, 'createFirstPartyData').returns({
-        pcid: 'pcid',
-        pcidDate: 1000
-      });
     });
 
     it('should build video request', function () {
@@ -288,7 +283,14 @@ describe('KueezRtbBidAdapter', function () {
       });
       const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
-      expect(requests[0]).to.deep.equal({
+      const req = requests[0];
+
+      expect(req.data).to.have.property('iiqpcid');
+      expect(req.data).to.have.property('iiqpcidDate');
+      delete req.data.iiqpcid;
+      delete req.data.iiqpcidDate;
+
+      expect(req).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`,
         data: {
@@ -315,8 +317,6 @@ describe('KueezRtbBidAdapter', function () {
           referrer: 'https://www.somereferrer.com',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           schain: VIDEO_BID.schain,
-          iiqpcid: 'pcid',
-          iiqpcidDate: 1000,
           sizes: ['545x307'],
           sua: {
             'source': 2,
@@ -373,7 +373,14 @@ describe('KueezRtbBidAdapter', function () {
       });
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
-      expect(requests[0]).to.deep.equal({
+
+      const req = requests[0]
+      expect(req.data).to.have.property('iiqpcid');
+      expect(req.data).to.have.property('iiqpcidDate');
+      delete req.data.iiqpcid;
+      delete req.data.iiqpcidDate;
+
+      expect(req).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
         data: {
@@ -386,8 +393,6 @@ describe('KueezRtbBidAdapter', function () {
           auctionId: 'auction_id',
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
-          iiqpcid: 'pcid',
-          iiqpcidDate: 1000,
           bidderWinsCount: 1,
           bidderTimeout: 3000,
           bidderRequestId: '1fdb5ff1b6eaa7',
@@ -728,7 +733,7 @@ describe('KueezRtbBidAdapter', function () {
     it('should get and set first party data', function () {
       storage.removeDataFromLocalStorage('_iiq_fdata');
 
-      const data = getAndSetFirstPartyData();
+      const data = getAndSetFirstPartyData(storage);
       expect(data).to.have.property('pcid');
       expect(data).to.have.property('pcidDate');
 
