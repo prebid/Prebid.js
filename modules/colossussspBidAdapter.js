@@ -71,6 +71,8 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   }
 
   delete placement.bidfloor;
+  delete placement.plcmt;
+  delete placement.ext;
 };
 
 const placementProcessingFunction = buildPlacementProcessingFunction({
