@@ -552,14 +552,14 @@ describe('Improve Digital Adapter Tests', function () {
     it('should add schain', function () {
       const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
       const bidRequest = Object.assign({}, simpleBidRequest);
-      
+
       // Add schain to both locations in the bid
       bidRequest.ortb2 = {
         source: {
           ext: {schain: schain}
         }
       };
-      
+
       // Add schain to bidderRequest as well
       const modifiedBidderRequest = {
         ...bidderRequestReferrer,
@@ -569,7 +569,7 @@ describe('Improve Digital Adapter Tests', function () {
           }
         }
       };
-      
+
       const request = spec.buildRequests([bidRequest], modifiedBidderRequest)[0];
       const payload = JSON.parse(request.data);
       expect(payload.source.ext.schain).to.equal(schain);

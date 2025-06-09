@@ -449,14 +449,14 @@ describe('Conversant adapter tests', function() {
   it('Verify supply chain data', () => {
     const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
-    
+
     // Add schain to bidderRequest
     bidderRequest.ortb2 = {
       source: {
         ext: {schain: schain}
       }
     };
-    
+
     const bidsWithSchain = bidRequests.map((bid) => {
       return Object.assign({
         ortb2: {
@@ -464,7 +464,7 @@ describe('Conversant adapter tests', function() {
             ext: {schain: schain}
           }
         }
-      }, bid);  
+      }, bid);
     });
     const request = spec.buildRequests(bidsWithSchain, bidderRequest);
     const payload = request.data;

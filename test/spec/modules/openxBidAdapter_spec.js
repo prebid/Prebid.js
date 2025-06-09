@@ -1110,7 +1110,7 @@ describe('OpenxRtbAdapter', function () {
               ext: {schain: schainConfig}
             }}
           }];
-          
+
           // Add schain to mockBidderRequest as well
           mockBidderRequest.ortb2 = {
             source: {
