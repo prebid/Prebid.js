@@ -90,7 +90,7 @@ describe('viqeoBidAdapter', function () {
     const bids = spec.interpretResponse(serverResponse, bidRequestData);
     expect(bids).to.have.lengthOf(1);
   });
-  it('should set flooPrice to getFloor.floor value if it is greater than params.floor', function() {
+  it('should set flooPrice to getFloor.floor value if it is greater than params.floor', function () {
     const bidRequestData = [{
       bidId: 'id1',
       bidder: 'viqeo',

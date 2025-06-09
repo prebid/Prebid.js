@@ -49,7 +49,7 @@ const RESPONSE = {
 describe('glomexBidAdapter', function () {
   const adapter = newBidder(spec)
 
-  it('should expose gvlid', function() {
+  it('should expose gvlid', function () {
     expect(spec.gvlid).to.equal(967)
   });
 

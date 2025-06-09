@@ -192,7 +192,7 @@ describe('Yandex adapter', function () {
       });
     });
 
-    it('should send eids and ortb2 user data if defined', function() {
+    it('should send eids and ortb2 user data if defined', function () {
       const bidderRequestWithUserData = {
         ...bidderRequest,
         ortb2: {
@@ -240,7 +240,7 @@ describe('Yandex adapter', function () {
       expect(data.user).to.deep.equal(expected);
     });
 
-    it('should send site', function() {
+    it('should send site', function () {
       const expected = {
         site: bidderRequest.ortb2.site
       };
@@ -278,15 +278,15 @@ describe('Yandex adapter', function () {
       });
     });
 
-    describe('video', function() {
-      function getVideoBidRequest(extra) {
+    describe('video', function () {
+      function getVideoBidRequest (extra) {
         const bannerRequest = getBidRequest(extra);
         const requests = spec.buildRequests([bannerRequest], bidderRequest);
 
         return requests[0].data.imp[0].video;
       }
 
-      it('should map basic video parameters', function() {
+      it('should map basic video parameters', function () {
         const bidRequest = getVideoBidRequest({
           mediaTypes: {
             video: {
@@ -341,7 +341,7 @@ describe('Yandex adapter', function () {
     });
 
     describe('native', () => {
-      function buildRequestAndGetNativeParams(extra) {
+      function buildRequestAndGetNativeParams (extra) {
         const bannerRequest = getBidRequest(extra);
         const requests = spec.buildRequests([bannerRequest], bidderRequest);
 
@@ -547,7 +547,7 @@ describe('Yandex adapter', function () {
       expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });
 
-    describe('video', function() {
+    describe('video', function () {
       const videoBidRequest = {
         bidRequest: {
           mediaType: 'video',
@@ -575,7 +575,7 @@ describe('Yandex adapter', function () {
         }
       };
 
-      it('should handle valid video response', function() {
+      it('should handle valid video response', function () {
         const result = spec.interpretResponse(sampleVideoResponse, videoBidRequest);
 
         expect(result).to.have.lengthOf(1);
@@ -600,7 +600,7 @@ describe('Yandex adapter', function () {
     });
 
     describe('native', () => {
-      function getNativeAdmResponse() {
+      function getNativeAdmResponse () {
         return {
           native: {
             link: {
@@ -649,7 +649,7 @@ describe('Yandex adapter', function () {
         };
       }
 
-      it('handles native responses', function() {
+      it('handles native responses', function () {
         bannerRequest.bidRequest = {
           mediaType: NATIVE,
           bidId: 'bidid-1',
@@ -702,21 +702,21 @@ describe('Yandex adapter', function () {
     });
   });
 
-  describe('onBidWon', function() {
-    beforeEach(function() {
+  describe('onBidWon', function () {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 
-    it('Should not trigger pixel if bid does not contain nurl', function() {
+    it('Should not trigger pixel if bid does not contain nurl', function () {
       spec.onBidWon({});
 
       expect(utils.triggerPixel.callCount).to.equal(0)
     })
 
-    it('Should trigger pixel if bid has nurl', function() {
+    it('Should trigger pixel if bid has nurl', function () {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker',
         timeToRespond: 378,
@@ -726,7 +726,7 @@ describe('Yandex adapter', function () {
       expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker?rtt=378')
     })
 
-    it('Should trigger pixel if bid has nurl with path & params', function() {
+    it('Should trigger pixel if bid has nurl with path & params', function () {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2',
         timeToRespond: 378,
@@ -736,7 +736,7 @@ describe('Yandex adapter', function () {
       expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&rtt=378')
     })
 
-    it('Should trigger pixel if bid has nurl with path & params and rtt macros', function() {
+    it('Should trigger pixel if bid has nurl with path & params and rtt macros', function () {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
         timeToRespond: 378,
@@ -746,7 +746,7 @@ describe('Yandex adapter', function () {
       expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=378')
     })
 
-    it('Should trigger pixel if bid has nurl and there is no timeToRespond param, but has rtt macros in nurl', function() {
+    it('Should trigger pixel if bid has nurl and there is no timeToRespond param, but has rtt macros in nurl', function () {
       spec.onBidWon({
         nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
       });
@@ -757,7 +757,7 @@ describe('Yandex adapter', function () {
   })
 });
 
-function getBidConfig() {
+function getBidConfig () {
   return {
     bidder: 'yandex',
     params: {
@@ -766,7 +766,7 @@ function getBidConfig() {
   };
 }
 
-function getBidRequest(extra = {}) {
+function getBidRequest (extra = {}) {
   return {
     ...getBidConfig(),
     bidId: 'bidid-1',

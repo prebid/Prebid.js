@@ -91,7 +91,7 @@ describe('BedigitechAdapter', function () {
         }
       ],
       'headers': {
-        'get': function() {}
+        'get': function () {}
       }
     };
 
@@ -120,7 +120,7 @@ describe('BedigitechAdapter', function () {
       expect(result).to.have.lengthOf(1);
       let resultKeys = Object.keys(result[0]);
       expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort());
-      resultKeys.forEach(function(k) {
+      resultKeys.forEach(function (k) {
         if (k === 'ad') {
           expect(result[0][k]).to.match(/<!-- Creative -->$/);
         } else if (k === 'meta') {

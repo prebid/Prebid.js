@@ -122,11 +122,11 @@ export const spec = {
   }
 };
 
-function extractSizes(bidRequest) {
+function extractSizes (bidRequest) {
   return (bidRequest.mediaTypes?.banner?.sizes || []).map(([width, height]) => ({w: width, h: height}));
 }
 
-function isTest(validBidRequest) {
+function isTest (validBidRequest) {
   return validBidRequest.params?.test === true;
 }
 

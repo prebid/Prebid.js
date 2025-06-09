@@ -4,7 +4,7 @@ import { logError } from '../../src/utils.js';
  * Detects the browser using either userAgent or userAgentData
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-export function detectBrowser() {
+export function detectBrowser () {
   try {
     if (navigator.userAgent) {
       return detectBrowserFromUserAgent(navigator.userAgent);
@@ -22,7 +22,7 @@ export function detectBrowser() {
  * @param {string} userAgent - The user agent string from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-export function detectBrowserFromUserAgent(userAgent) {
+export function detectBrowserFromUserAgent (userAgent) {
   const browserRegexPatterns = {
     opera: /Opera|OPR/,
     edge: /Edg/,
@@ -67,7 +67,7 @@ export function detectBrowserFromUserAgent(userAgent) {
  * @param {Object} userAgentData - The user agent data object from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-export function detectBrowserFromUserAgentData(userAgentData) {
+export function detectBrowserFromUserAgentData (userAgentData) {
   const brandNames = userAgentData.brands.map(brand => brand.brand);
 
   if (brandNames.includes('Microsoft Edge')) {

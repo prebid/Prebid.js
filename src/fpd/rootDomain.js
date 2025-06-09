@@ -7,7 +7,7 @@ export const coreStorage = getCoreStorageManager('fpdEnrichment');
  * Find the root domain by testing for the topmost domain that will allow setting cookies.
  */
 
-export const findRootDomain = memoize(function findRootDomain(fullDomain = window.location.host) {
+export const findRootDomain = memoize(function findRootDomain (fullDomain = window.location.host) {
   if (!coreStorage.cookiesAreEnabled()) {
     return fullDomain;
   }

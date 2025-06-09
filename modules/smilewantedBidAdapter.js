@@ -31,7 +31,7 @@ export const spec = {
    * @param {BidRequest} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (!bid.params || !bid.params.zoneId) {
       return false;
     }
@@ -60,7 +60,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     return validBidRequests.map(bid => {
@@ -146,7 +146,7 @@ export const spec = {
    * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body) return [];
     const bidResponses = [];
 
@@ -248,7 +248,7 @@ export const spec = {
  * @param bidResponse
  * @returns {*}
  */
-function newRenderer(bidRequest, bidResponse) {
+function newRenderer (bidRequest, bidResponse) {
   const renderer = Renderer.install({
     id: bidRequest.bidId,
     url: bidResponse.OustreamTemplateUrl,
@@ -267,7 +267,7 @@ function newRenderer(bidRequest, bidResponse) {
  * Initialise SmileWanted outstream
  * @param bid
  */
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     window.SmileWantedOutStreamInit({
       width: bid.width,
@@ -284,7 +284,7 @@ function outstreamRender(bid) {
  * @param bid A valid bid object
  * @returns {*|number} floor price
  */
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: 'USD',

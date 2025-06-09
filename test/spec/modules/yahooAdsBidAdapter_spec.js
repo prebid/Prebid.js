@@ -174,7 +174,7 @@ const generateResponseMock = (admPayloadType, vastVersion, videoContext) => {
   const serverResponse = {
     body: {
       id: 'fc0c35df-21fb-4f93-9ebd-88759dbe31f9',
-      seatbid: [{ bid: [ bidResponse ], seat: 13107 }]
+      seatbid: [{ bid: [bidResponse], seat: 13107 }]
     }
   };
   const { validBidRequests, bidderRequest } = generateBuildRequestMock({adUnitType: admPayloadType, videoContext});
@@ -452,7 +452,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
   describe('First party data module - "Site" support (ortb2):', () => {
     // Should not allow invalid "site" data types
-    const INVALID_ORTB2_TYPES = [ null, [], 123, 'unsupportedKeyName', true, false, undefined ];
+    const INVALID_ORTB2_TYPES = [null, [], 123, 'unsupportedKeyName', true, false, undefined];
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = { site: param }
@@ -617,7 +617,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   describe('First party data module - "User" support (ortb2):', () => {
     // Global ortb2.user validations
     // Should not allow invalid "user" data types
-    const INVALID_ORTB2_TYPES = [ null, [], 'unsupportedKeyName', true, false, undefined ];
+    const INVALID_ORTB2_TYPES = [null, [], 'unsupportedKeyName', true, false, undefined];
     INVALID_ORTB2_TYPES.forEach(param => {
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
         const ortb2 = { user: param }

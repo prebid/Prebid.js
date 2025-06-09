@@ -67,7 +67,7 @@ describe('Real time module', function () {
   let eventHandlers;
   let sandbox;
 
-  function mockEmitEvent(event, ...args) {
+  function mockEmitEvent (event, ...args) {
     (eventHandlers[event] || []).forEach((h) => h(...args));
   }
 
@@ -169,7 +169,7 @@ describe('Real time module', function () {
     describe('setBidRequestData', () => {
       let withWait, withoutWait;
 
-      function runSetBidRequestData() {
+      function runSetBidRequestData () {
         return new Promise((resolve) => {
           rtdModule.setBidRequestsData(resolve, {bidRequest: {}});
         });
@@ -276,7 +276,7 @@ describe('Real time module', function () {
     let providers;
     let _detachers;
 
-    function eventHandlingProvider(name) {
+    function eventHandlingProvider (name) {
       const provider = {
         name: name,
         init: () => true,
@@ -332,7 +332,7 @@ describe('Real time module', function () {
   describe('data deletion requests', () => {
     let detach = () => null;
 
-    function mkRtdModule(name) {
+    function mkRtdModule (name) {
       const mod = {
         name,
         init: () => true,

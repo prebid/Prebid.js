@@ -38,7 +38,7 @@ const deviceConnection = {
 
 export const BIDFLOOR_CURRENCY = 'USD'
 
-function getBidFloor(bidRequest) {
+function getBidFloor (bidRequest) {
   let floorInfo = {};
 
   if (typeof bidRequest.getFloor === 'function') {
@@ -73,21 +73,21 @@ const getConnectionType = () => {
   }
 };
 
-function mapMediaType(seedtagMediaType) {
+function mapMediaType (seedtagMediaType) {
   if (seedtagMediaType === 'display') return BANNER;
   if (seedtagMediaType === 'video') return VIDEO;
   else return seedtagMediaType;
 }
 
-function hasVideoMediaType(bid) {
+function hasVideoMediaType (bid) {
   return !!bid.mediaTypes && !!bid.mediaTypes.video;
 }
 
-function hasBannerMediaType(bid) {
+function hasBannerMediaType (bid) {
   return !!bid.mediaTypes && !!bid.mediaTypes.banner;
 }
 
-function hasMandatoryDisplayParams(bid) {
+function hasMandatoryDisplayParams (bid) {
   const p = bid.params;
   return (
     !!p.publisherId &&
@@ -95,7 +95,7 @@ function hasMandatoryDisplayParams(bid) {
   );
 }
 
-function hasMandatoryVideoParams(bid) {
+function hasMandatoryVideoParams (bid) {
   const videoParams = getVideoParams(bid);
 
   let isValid =
@@ -109,7 +109,7 @@ function hasMandatoryVideoParams(bid) {
   return isValid
 }
 
-function buildBidRequest(validBidRequest) {
+function buildBidRequest (validBidRequest) {
   const params = validBidRequest.params;
   const mediaTypes = _map(
     Object.keys(validBidRequest.mediaTypes),
@@ -145,7 +145,7 @@ function buildBidRequest(validBidRequest) {
 /**
  * return video param (global or overrided per bidder)
  */
-function getVideoParams(validBidRequest) {
+function getVideoParams (validBidRequest) {
   const videoParams = validBidRequest.mediaTypes.video || {};
   if (videoParams.playerSize) {
     videoParams.w = videoParams.playerSize[0][0];
@@ -155,11 +155,11 @@ function getVideoParams(validBidRequest) {
   return videoParams;
 }
 
-function isVideoOutstream(validBidRequest) {
+function isVideoOutstream (validBidRequest) {
   return getVideoParams(validBidRequest).context === 'outstream';
 }
 
-function buildBidResponse(seedtagBid) {
+function buildBidResponse (seedtagBid) {
   const mediaType = mapMediaType(seedtagBid.mediaType);
   const bid = {
     requestId: seedtagBid.bidId,
@@ -195,7 +195,7 @@ function buildBidResponse(seedtagBid) {
  * @see https://web.dev/ttfb/
  *      https://developer.mozilla.org/en-US/docs/Web/API/Navigation_timing_API
  */
-function ttfb() {
+function ttfb () {
   const ttfb = (() => {
     // Timing API V2
     try {
@@ -219,7 +219,7 @@ function ttfb() {
   return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
 }
 
-function geom(adunitCode) {
+function geom (adunitCode) {
   const slot = document.getElementById(adunitCode);
   if (slot) {
     const { top, left, width, height } = getBoundingClientRect(slot);
@@ -240,7 +240,7 @@ function geom(adunitCode) {
   }
 }
 
-export function getTimeoutUrl(data) {
+export function getTimeoutUrl (data) {
   let queryParams = '';
   if (
     isArray(data) &&
@@ -273,7 +273,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     const hasVideo = hasVideoMediaType(bid);
     const hasBanner = hasBannerMediaType(bid);
 
@@ -296,7 +296,7 @@ export const spec = {
    * @param {bidderRequest} bidderRequest an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     const payload = {
       url: bidderRequest.refererInfo.page,
       publisherToken: validBidRequests[0].params.publisherId,
@@ -405,7 +405,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs (syncOptions, serverResponses) {
     const serverResponse = serverResponses[0];
     if (syncOptions.iframeEnabled && serverResponse) {
       const cookieSyncUrl = serverResponse.body.cookieSync;
@@ -419,7 +419,7 @@ export const spec = {
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {TimedOutBid} data Containing timeout specific data
    */
-  onTimeout(data) {
+  onTimeout (data) {
     const url = getTimeoutUrl(data);
     triggerPixel(url);
   },

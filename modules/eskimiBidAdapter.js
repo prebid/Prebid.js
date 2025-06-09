@@ -78,7 +78,7 @@ const CONVERTER = ortbConverter({
     ttl: DEFAULT_BID_TTL,
     currency: DEFAULT_CURRENCY
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
@@ -94,7 +94,7 @@ const CONVERTER = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     mergeDeep(req, {
       at: 1,
@@ -113,20 +113,20 @@ const CONVERTER = ortbConverter({
   },
 });
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   return (isPlacementIdValid(bidRequest) && (isValidBannerRequest(bidRequest) || isValidVideoRequest(bidRequest)));
 }
 
-function isPlacementIdValid(bidRequest) {
+function isPlacementIdValid (bidRequest) {
   return !!parseInt(bidRequest.params.placementId);
 }
 
-function isValidBannerRequest(bidRequest) {
+function isValidBannerRequest (bidRequest) {
   const bannerSizes = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}.sizes`);
   return utils.isArray(bannerSizes) && bannerSizes.length > 0 && bannerSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
 }
 
-function isValidVideoRequest(bidRequest) {
+function isValidVideoRequest (bidRequest) {
   const videoSizes = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.playerSize`);
 
   return utils.isArray(videoSizes) && videoSizes.length > 0 && videoSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
@@ -140,7 +140,7 @@ function isValidVideoRequest(bidRequest) {
  * @param {*} bidderRequest
  * @return ServerRequest Info describing the request to the server.
  */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   let videoBids = validBidRequests.filter(bid => isVideoBid(bid));
   let bannerBids = validBidRequests.filter(bid => isBannerBid(bid));
   let requests = [];
@@ -156,11 +156,11 @@ function buildRequests(validBidRequests, bidderRequest) {
   return requests;
 }
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   return CONVERTER.fromORTB({request: request.data, response: response.body}).bids;
 }
 
-function buildVideoImp(bidRequest, imp) {
+function buildVideoImp (bidRequest, imp) {
   const videoAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`, {});
   const videoBidderParams = utils.deepAccess(bidRequest, `params.${VIDEO}`, {});
 
@@ -186,7 +186,7 @@ function buildVideoImp(bidRequest, imp) {
   return {...imp};
 }
 
-function buildBannerImp(bidRequest, imp) {
+function buildBannerImp (bidRequest, imp) {
   const bannerAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}`, {});
   const bannerBidderParams = utils.deepAccess(bidRequest, `params.${BANNER}`, {});
 
@@ -208,7 +208,7 @@ function buildBannerImp(bidRequest, imp) {
   return {...imp};
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   const data = CONVERTER.toORTB({bidRequests, bidderRequest, context: {mediaType}})
 
   const bid = bidRequests.find((b) => b.params.placementId)
@@ -239,11 +239,11 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function isVideoBid(bid) {
+function isVideoBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
-function isBannerBid(bid) {
+function isBannerBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
 }
 
@@ -255,7 +255,7 @@ function isBannerBid(bid) {
  * @param gppConsent
  * @return {{type: (string), url: (*|string)}[]}
  */
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
     let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let query = [];
@@ -285,7 +285,7 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsen
  * Get Bid Request endpoint url by region
  * @return {string}
  */
-function getBidRequestUrlByRegion() {
+function getBidRequestUrlByRegion () {
   return `https://ittr${getRegionSubdomainSuffix()}.eskimi.com/prebidjs`;
 }
 
@@ -293,7 +293,7 @@ function getBidRequestUrlByRegion() {
  * Get User Sync endpoint url by region
  * @return {string}
  */
-function getUserSyncUrlByRegion() {
+function getUserSyncUrlByRegion () {
   return `https://ittpx${getRegionSubdomainSuffix()}.eskimi.com/sync?sp_id=137`;
 }
 
@@ -301,7 +301,7 @@ function getUserSyncUrlByRegion() {
  * Get subdomain URL suffix by region
  * @return {string}
  */
-function getRegionSubdomainSuffix() {
+function getRegionSubdomainSuffix () {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const region = timezone.split('/')[0];

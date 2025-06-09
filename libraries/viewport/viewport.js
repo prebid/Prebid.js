@@ -1,6 +1,6 @@
 import {getWinDimensions, getWindowTop} from '../../src/utils.js';
 
-export function getViewportCoordinates() {
+export function getViewportCoordinates () {
   try {
     const win = getWindowTop();
     let { scrollY: top, scrollX: left } = win;
@@ -11,7 +11,7 @@ export function getViewportCoordinates() {
   }
 }
 
-export function getViewportSize() {
+export function getViewportSize () {
   const windowDimensions = getWinDimensions();
   try {
     const innerHeight = windowDimensions.innerHeight || windowDimensions.document.documentElement.clientHeight || windowDimensions.document.body.clientHeight || 0;

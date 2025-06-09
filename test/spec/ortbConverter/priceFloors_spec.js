@@ -31,7 +31,7 @@ describe('pbjs - ortb imp floor params', () => {
   it('sets bidfoor and bidfloorcur according to getFloor', () => {
     const imp = {};
     const req = {
-      getFloor() {
+      getFloor () {
         return {
           currency: 'EUR',
           floor: '1.23'
@@ -64,7 +64,7 @@ describe('pbjs - ortb imp floor params', () => {
     let req;
     beforeEach(() => {
       req = {
-        getFloor(opts) {
+        getFloor (opts) {
           return {
             floor: 1.23,
             currency: opts.currency
@@ -105,7 +105,7 @@ describe('pbjs - ortb imp floor params', () => {
   it('asks for specific mediaType if context.mediaType is set', () => {
     let reqMediaType;
     const req = {
-      getFloor(opts) {
+      getFloor (opts) {
         reqMediaType = opts.mediaType;
       }
     }

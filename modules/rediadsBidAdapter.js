@@ -21,7 +21,7 @@ const converter = ortbConverter({
     ttl: 300,
     currency: DEFAULT_CURRENCY,
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     let mediaType = 'banner'; // Default media type
 
     if (bid.vastXml || bid.vastUrl || (bid.adm && bid.adm.startsWith('<VAST'))) {
@@ -53,7 +53,7 @@ export const spec = {
     }
     return isValid;
   },
-  buildRequests(bidRequests = [], bidderRequest) {
+  buildRequests (bidRequests = [], bidderRequest) {
     const commonParams = bidRequests[0]?.params || {};
     const siteContent = bidRequests[0]?.site?.content || null;
     let data = {};
@@ -103,7 +103,7 @@ export const spec = {
       },
     ];
   },
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     let bids = [];
     try {
       bids = converter.fromORTB({

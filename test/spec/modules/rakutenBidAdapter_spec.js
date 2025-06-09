@@ -3,12 +3,12 @@ import { spec } from 'modules/rakutenBidAdapter/index.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import {config} from '../../../src/config.js';
 
-describe('rakutenBidAdapter', function() {
+describe('rakutenBidAdapter', function () {
   const adapter = newBidder(spec);
   const ENDPOINT = 'https://s-bid.rmp.rakuten.com/h';
   let sandbox;
 
-  beforeEach(function() {
+  beforeEach(function () {
     config.resetConfig();
   });
 

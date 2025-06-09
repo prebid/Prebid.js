@@ -14,7 +14,7 @@ const FRAME_USER_SYNC = 'https://cdn.undertone.com/js/usersync.html';
 const PIXEL_USER_SYNC_1 = 'https://usr.undertone.com/userPixel/syncOne?id=1&of=2';
 const PIXEL_USER_SYNC_2 = 'https://usr.undertone.com/userPixel/syncOne?id=2&of=2';
 
-function getBidFloor(bidRequest, mediaType) {
+function getBidFloor (bidRequest, mediaType) {
   if (typeof bidRequest.getFloor !== 'function') {
     return 0;
   }
@@ -28,7 +28,7 @@ function getBidFloor(bidRequest, mediaType) {
   return (floor && floor.currency === 'USD' && floor.floor) || 0;
 }
 
-function getGdprQueryParams(gdprConsent) {
+function getGdprQueryParams (gdprConsent) {
   if (!gdprConsent) {
     return null;
   }
@@ -38,7 +38,7 @@ function getGdprQueryParams(gdprConsent) {
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
-function getBannerCoords(id) {
+function getBannerCoords (id) {
   const element = document.getElementById(id);
   if (element) {
     const {left, top} = getBoundingClientRect(element);
@@ -52,13 +52,13 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid && bid.params && bid.params.publisherId) {
       bid.params.publisherId = parseInt(bid.params.publisherId);
       return true;
     }
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const windowDimensions = getWinDimensions();
     const vw = Math.max(windowDimensions.document.documentElement.clientWidth, windowDimensions.innerWidth || 0);
     const vh = Math.max(windowDimensions.document.documentElement.clientHeight, windowDimensions.innerHeight || 0);
@@ -143,7 +143,7 @@ export const spec = {
       data: JSON.stringify(payload)
     };
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const bids = [];
     const body = serverResponse.body;
 
@@ -173,7 +173,7 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
     let gdprParams = getGdprQueryParams(gdprConsent);

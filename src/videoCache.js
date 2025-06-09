@@ -46,7 +46,7 @@ export const vastLocalCache = new Map();
  * @param {(string|string[])} impTrackerURLs An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri, impTrackerURLs) {
+function wrapURI (uri, impTrackerURLs) {
   impTrackerURLs = impTrackerURLs && (Array.isArray(impTrackerURLs) ? impTrackerURLs : [impTrackerURLs]);
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
@@ -73,7 +73,7 @@ function wrapURI(uri, impTrackerURLs) {
  * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`.
  * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
  */
-function toStorageRequest(bid, {index = auctionManager.index} = {}) {
+function toStorageRequest (bid, {index = auctionManager.index} = {}) {
   const vastValue = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
@@ -119,7 +119,7 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
  * @return {Function} A callback which interprets the cache server's responses, and makes up the right
  *   arguments for our callback.
  */
-function shimStorageCallback(done) {
+function shimStorageCallback (done) {
   return {
     success: function (responseBody) {
       let ids;
@@ -142,7 +142,7 @@ function shimStorageCallback(done) {
   }
 }
 
-function getVastXml(bid) {
+function getVastXml (bid) {
   return bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
 };
 
@@ -153,7 +153,7 @@ function getVastXml(bid) {
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
  * the data has been stored in the cache.
  */
-export function store(bids, done, getAjax = ajaxBuilder) {
+export function store (bids, done, getAjax = ajaxBuilder) {
   const requestData = {
     puts: bids.map(toStorageRequest)
   };
@@ -164,7 +164,7 @@ export function store(bids, done, getAjax = ajaxBuilder) {
   });
 }
 
-export function getCacheUrl(id) {
+export function getCacheUrl (id) {
   return `${config.getConfig('cache.url')}?uuid=${id}`;
 }
 
@@ -188,9 +188,9 @@ export const _internal = {
   store
 }
 
-export function storeBatch(batch) {
+export function storeBatch (batch) {
   const bids = batch.map(entry => entry.bidResponse)
-  function err(msg) {
+  function err (msg) {
     logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids)
   }
   _internal.store(bids, function (error, cacheIds) {

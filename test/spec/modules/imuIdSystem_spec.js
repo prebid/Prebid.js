@@ -174,13 +174,13 @@ describe('imuId module', function () {
     });
 
     it('should return "undefined" success', function () {
-      const res = getApiCallback(function(uid) { return uid });
+      const res = getApiCallback(function (uid) { return uid });
       expect(res.success('{"uid": "testid"}')).to.equal(undefined);
       expect(res.error()).to.equal(undefined);
     });
 
     it('should return "undefined" catch error response', function () {
-      const res = getApiCallback(function(uid) { return uid });
+      const res = getApiCallback(function (uid) { return uid });
       expect(res.success('error response')).to.equal(undefined);
     });
   });
@@ -188,7 +188,7 @@ describe('imuId module', function () {
     before(() => {
       attachIdSystem(imuIdSubmodule);
     });
-    it('should return the correct EID schema with imuid', function() {
+    it('should return the correct EID schema with imuid', function () {
       const userId = {
         imuid: 'testimuid'
       };
@@ -203,7 +203,7 @@ describe('imuId module', function () {
       });
     });
 
-    it('should return the correct EID schema with imppid', function() {
+    it('should return the correct EID schema with imppid', function () {
       const userId = {
         imppid: 'imppid-value-imppid-value-imppid-value'
       };

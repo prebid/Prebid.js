@@ -41,7 +41,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (_isVideoBid(bid)) {
       if (!_isValidVideoBid(bid, true)) {
         // in case if video bid configuration invalid will try to send bid request for banner
@@ -52,7 +52,7 @@ export const spec = {
     }
     return !!bid.params.uid && !isNaN(parseInt(bid.params.uid));
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
@@ -190,7 +190,7 @@ export const spec = {
       bidsMap
     };
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     serverResponse = serverResponse && serverResponse.body;
     const bidResponses = [];
     const bidsMap = bidRequest.bidsMap;
@@ -211,7 +211,7 @@ export const spec = {
     if (errorMessage) logError(errorMessage);
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     var query = [];
     if (gdprConsent) {
       if (gdprConsent.consentString) {
@@ -233,13 +233,13 @@ export const spec = {
       }];
     }
   },
-  onSetTargeting: function(bid) {
+  onSetTargeting: function (bid) {
     // Call '/track/pending' with the corresponding bid.requestId
     if (bid.ext && bid.ext.events && bid.ext.events.pending) {
       triggerPixel(bid.ext.events.pending);
     }
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     // Call '/track/win' with the corresponding bid.requestId
     if (bid.ext && bid.ext.events && bid.ext.events.win) {
       triggerPixel(bid.ext.events.win);
@@ -251,7 +251,7 @@ export const spec = {
       triggerPixel(bid.ext.events.runtime.replace('{STATUS_CODE}', RUNTIME_STATUS_RESPONSE_TIME + _roundedTime));
     }
   },
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     // Call '/track/bid_timeout' with timeout data
     const dataToSend = timeoutData.map(({ params, timeout }) => {
       const data = { timeout };
@@ -266,11 +266,11 @@ export const spec = {
   }
 };
 
-function buildUrl(path) {
+function buildUrl (path) {
   return (config.getConfig('devMode') ? DEBUG_URL : BASE_URL) + path;
 }
 
-function makeBanner(bannerParams) {
+function makeBanner (bannerParams) {
   const bannerSizes = bannerParams && bannerParams.sizes;
   if (bannerSizes) {
     const sizes = parseSizesInput(bannerSizes);
@@ -281,7 +281,7 @@ function makeBanner(bannerParams) {
   }
 }
 
-function makeVideo(videoParams = {}) {
+function makeVideo (videoParams = {}) {
   const video = Object.keys(videoParams).filter((param) => param !== 'context' && param !== 'playerSize')
     .reduce((result, param) => {
       result[param] = videoParams[param];
@@ -293,7 +293,7 @@ function makeVideo(videoParams = {}) {
   }
 }
 
-function buildImpObject(bid) {
+function buildImpObject (bid) {
   const { params: { uid }, bidId, mediaTypes, sizes, adUnitCode } = bid;
   const video = mediaTypes && _isVideoBid(bid) && _isValidVideoBid(bid) && makeVideo(mediaTypes.video);
   const banner = makeBanner((mediaTypes && mediaTypes.banner) || (!video && { sizes }));
@@ -315,7 +315,7 @@ function buildImpObject(bid) {
   }
 }
 
-function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
+function _addBidResponse (serverBid, bidsMap, currency, bidResponses) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
@@ -375,19 +375,19 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
   }
 }
 
-function _isVideoBid(bid) {
+function _isVideoBid (bid) {
   return bid.mediaType === VIDEO || deepAccess(bid, 'mediaTypes.video');
 }
 
-function _isVideoInstreamBid(bid) {
+function _isVideoInstreamBid (bid) {
   return _isVideoBid(bid) && deepAccess(bid, 'mediaTypes.video', {}).context === VIDEO_INSTREAM;
 }
 
-function _isBannerBid(bid) {
+function _isBannerBid (bid) {
   return bid.mediaType === BANNER || deepAccess(bid, 'mediaTypes.banner');
 }
 
-function _isValidVideoBid(bid, logErrors = false) {
+function _isValidVideoBid (bid, logErrors = false) {
   let result = true;
   const videoMediaType = deepAccess(bid, 'mediaTypes.video');
   if (!_isVideoInstreamBid(bid)) {
@@ -405,7 +405,7 @@ function _isValidVideoBid(bid, logErrors = false) {
   return result;
 }
 
-function _isAdSlotExists(adUnitCode) {
+function _isAdSlotExists (adUnitCode) {
   if (document.getElementById(adUnitCode)) {
     return true;
   }
@@ -420,7 +420,7 @@ function _isAdSlotExists(adUnitCode) {
 
 // Generate user id (25 chars) with NanoID
 // https://github.com/ai/nanoid/
-function _generateUserId() {
+function _generateUserId () {
   for (
     var t = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict',
       e = new Date().getTime() % 1073741824,
@@ -436,7 +436,7 @@ function _generateUserId() {
   return i;
 }
 
-function _getUserId() {
+function _getUserId () {
   const USER_ID_KEY = '__vads';
   let vads;
 
@@ -463,7 +463,7 @@ function _getUserId() {
   return null;
 }
 
-function _roundResponseTime(time, timeRange) {
+function _roundResponseTime (time, timeRange) {
   if (time <= 0) {
     return 0; // Special code for scriptLoadTime of 0 ms or less
   } else if (time > 5000) {

@@ -14,18 +14,18 @@ const urlTemplate = template`https://ads.lfstmedia.com/gate/${'adapter'}/${'slot
 /**
  * A helper function for template to generate string from boolean
  */
-function boolToString(value) {
+function boolToString (value) {
   return value ? '1' : '0';
 }
 
 /**
  * A helper function to form URL from the template
  */
-function template(strings, ...keys) {
-  return function(...values) {
+function template (strings, ...keys) {
+  return function (...values) {
     let dict = values[values.length - 1] || {};
     let result = [strings[0]];
-    keys.forEach(function(key, i) {
+    keys.forEach(function (key, i) {
       let value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
@@ -38,7 +38,7 @@ function template(strings, ...keys) {
  *
  * @param {BidRequest} bid The bid params to use for formatting a request
  */
-function formatBidRequest(bid, bidderRequest = {}) {
+function formatBidRequest (bid, bidderRequest = {}) {
   const {params} = bid;
   const {referer} = (bidderRequest.refererInfo || {});
   let url = urlTemplate({
@@ -78,7 +78,7 @@ function formatBidRequest(bid, bidderRequest = {}) {
   };
 }
 
-function isResponseValid(response) {
+function isResponseValid (response) {
   return !/^\s*\{\s*"advertisementAvailable"\s*:\s*false/i.test(response.content) &&
     response.content.indexOf('<VAST version="2.0"></VAST>') === -1 && /* (typeof response.cpm !== 'undefined') && */
     response.status === 1;

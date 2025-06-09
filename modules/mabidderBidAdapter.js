@@ -9,13 +9,13 @@ const converter = ortbConverter({})
 export const spec = {
   supportedMediaTypes: [BANNER],
   code: BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (typeof bid.params === 'undefined') {
       return false;
     }
     return !!(bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]))
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const fpd = converter.toORTB({ bidRequests: validBidRequests, bidderRequest: bidderRequest });
 
     const bids = [];
@@ -48,7 +48,7 @@ export const spec = {
 
     return req;
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const bidResponses = [];
     if (serverResponse.body) {
       const body = serverResponse.body;

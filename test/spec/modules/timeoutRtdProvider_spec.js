@@ -10,18 +10,18 @@ const PC_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537
 const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1';
 const TABLET_USER_AGENT = 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148';
 
-function resetUserAgent() {
+function resetUserAgent () {
   window.navigator.__defineGetter__('userAgent', () => DEFAULT_USER_AGENT);
 };
 
-function setUserAgent(userAgent) {
+function setUserAgent (userAgent) {
   window.navigator.__defineGetter__('userAgent', () => userAgent);
 }
 
-function resetConnection() {
+function resetConnection () {
   window.navigator.__defineGetter__('connection', () => DEFAULT_CONNECTION);
 }
-function setConnectionType(connectionType) {
+function setConnectionType (connectionType) {
   window.navigator.__defineGetter__('connection', () => { return {'type': connectionType} });
 }
 
@@ -35,7 +35,7 @@ describe('getDeviceType', () => {
     ['pc', PC_USER_AGENT, 2],
     ['mobile', MOBILE_USER_AGENT, 4],
     ['tablet', TABLET_USER_AGENT, 5],
-  ].forEach(function(args) {
+  ].forEach(function (args) {
     const [deviceType, userAgent, deviceTypeNum] = args;
     it(`should be able to recognize ${deviceType} devices`, () => {
       setUserAgent(userAgent);
@@ -62,7 +62,7 @@ describe('getConnectionSpeed', () => {
     ['4g', 'fast'],
     ['not known', 'unknown'],
     [undefined, 'unknown'],
-  ].forEach(function(args) {
+  ].forEach(function (args) {
     const [connectionType, connectionSpeed] = args;
     it(`should be able to categorize connection speed when the connection type is ${connectionType}`, () => {
       setConnectionType(connectionType);
@@ -235,7 +235,7 @@ describe('Timeout RTD submodule', () => {
       }
     }
     const handleTimeoutIncrementStub = sandbox.stub(timeoutRtdFunctions, 'handleTimeoutIncrement');
-    timeoutSubmodule.getBidRequestData(reqBidsConfigObj, function() {}, config)
+    timeoutSubmodule.getBidRequestData(reqBidsConfigObj, function () {}, config)
 
     expect(ajaxStub.calledWith(expectedLink)).to.be.true;
     expect(handleTimeoutIncrementStub.calledWith(reqBidsConfigObj, JSON.parse(response))).to.be.true;
@@ -258,7 +258,7 @@ describe('Timeout RTD submodule', () => {
         }
       }
     }
-    timeoutSubmodule.getBidRequestData({}, function() {}, config);
+    timeoutSubmodule.getBidRequestData({}, function () {}, config);
     expect(ajaxStub.calledWith(expectedLink)).to.be.true;
   });
 
@@ -275,14 +275,14 @@ describe('Timeout RTD submodule', () => {
     }
     const handleTimeoutIncrementStub = sandbox.stub(timeoutRtdFunctions, 'handleTimeoutIncrement');
     const reqBidsConfigObj = {};
-    timeoutSubmodule.getBidRequestData(reqBidsConfigObj, function() {}, config);
+    timeoutSubmodule.getBidRequestData(reqBidsConfigObj, function () {}, config);
     expect(handleTimeoutIncrementStub.calledWith(reqBidsConfigObj, config.params.rules)).to.be.true;
   });
 
   it('should exit quietly if no relevant timeout config is found', () => {
     const callback = sandbox.stub()
     const ajaxStub = sandbox.stub().callsFake((url, callbackObj) => {});
-    sandbox.stub(ajax, 'ajaxBuilder').callsFake(function() { return ajaxStub });
+    sandbox.stub(ajax, 'ajaxBuilder').callsFake(function () { return ajaxStub });
     const handleTimeoutIncrementStub = sandbox.stub(timeoutRtdFunctions, 'handleTimeoutIncrement');
 
     timeoutSubmodule.getBidRequestData({}, callback, {});

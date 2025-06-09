@@ -152,7 +152,7 @@ describe('AdoceanAdapter', function () {
       expect(requests[0].url).to.include('slaves=zpniqismex,wafpdwlrks');
     });
 
-    it('should attach schain parameter if available', function() {
+    it('should attach schain parameter if available', function () {
       let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests.some(e => e.url.includes('schain='))).to.be.false;
 
@@ -182,7 +182,7 @@ describe('AdoceanAdapter', function () {
         }
       ],
       'headers': {
-        'get': function() {}
+        'get': function () {}
       }
     };
 
@@ -225,7 +225,7 @@ describe('AdoceanAdapter', function () {
       expect(result).to.have.lengthOf(1);
       let resultKeys = Object.keys(result[0]);
       expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort());
-      resultKeys.forEach(function(k) {
+      resultKeys.forEach(function (k) {
         if (k === 'ad') {
           expect(result[0][k]).to.match(/<!-- Creative -->$/);
         } else if (k === 'meta') {

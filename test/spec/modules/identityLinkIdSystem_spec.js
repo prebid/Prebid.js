@@ -98,7 +98,7 @@ describe('IdentityLinkId tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should call the LiveRamp envelope endpoint with GPP consent string', function() {
+  it('should call the LiveRamp envelope endpoint with GPP consent string', function () {
     const gppData = {
       ready: true,
       gppString: 'DBABLA~BVVqAAAACqA.QA',
@@ -226,10 +226,10 @@ describe('IdentityLinkId tests', function () {
   it('if ats is present on a page, and envelope is generated and stored in storage, call a callback', function () {
     setTestEnvelopeCookie();
     let envelopeValueFromStorage = getEnvelopeFromStorage();
-    window.ats = {retrieveEnvelope: function() {
+    window.ats = {retrieveEnvelope: function () {
     }}
     // mock ats.retrieveEnvelope to return envelope
-    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage })
+    stub(window.ats, 'retrieveEnvelope').callsFake(function () { return envelopeValueFromStorage })
     let callBackSpy = sinon.spy();
     let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -241,7 +241,7 @@ describe('IdentityLinkId tests', function () {
     before(() => {
       attachIdSystem(identityLinkSubmodule);
     });
-    it('identityLink', function() {
+    it('identityLink', function () {
       const userId = {
         idl_env: 'some-random-id-value'
       };

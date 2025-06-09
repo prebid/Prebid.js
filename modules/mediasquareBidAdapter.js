@@ -34,7 +34,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.owner && bid.params.code);
   },
   /**
@@ -44,7 +44,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -108,7 +108,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
     // const headerValue = serverResponse.headers.get('some-response-header');
     const bidResponses = [];
@@ -162,7 +162,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
       return serverResponses[0].body.cookies;
@@ -175,7 +175,7 @@ export const spec = {
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Object} bid The bid that won the auction
    */
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     // fires a pixel to confirm a winning bid
     if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
       return;
@@ -208,7 +208,7 @@ export const spec = {
 
 }
 
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       sizes: [bid.width, bid.height],
@@ -226,7 +226,7 @@ function outstreamRender(bid) {
   });
 }
 
-function createRenderer(bid, url) {
+function createRenderer (bid, url) {
   const renderer = Renderer.install({
     id: bid.bidId,
     url: url,

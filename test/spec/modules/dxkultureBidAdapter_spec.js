@@ -20,7 +20,7 @@ const getBannerRequest = () => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 300, 250 ],
+              [300, 250],
             ]
           }
         },
@@ -192,7 +192,7 @@ const getBidderResponse = () => {
   };
 }
 
-describe('dxkultureBidAdapter', function() {
+describe('dxkultureBidAdapter', function () {
   let videoBidRequest;
 
   const VIDEO_REQUEST = {
@@ -250,10 +250,10 @@ describe('dxkultureBidAdapter', function() {
     };
   });
 
-  describe('isValidRequest', function() {
+  describe('isValidRequest', function () {
     let bidderRequest;
 
-    beforeEach(function() {
+    beforeEach(function () {
       bidderRequest = getBannerRequest();
     });
 
@@ -272,14 +272,14 @@ describe('dxkultureBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     let bidderRequest;
 
-    beforeEach(function() {
+    beforeEach(function () {
       bidderRequest = getBannerRequest();
     });
 
-    it('should return expected request object', function() {
+    it('should return expected request object', function () {
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(bidRequest.url).equal('https://ads.dxkulture.com/pbjs?pid=publisherId&placementId=123456');
       expect(bidRequest.method).equal('POST');
@@ -289,7 +289,7 @@ describe('dxkultureBidAdapter', function() {
   context('banner validation', function () {
     let bidderRequest;
 
-    beforeEach(function() {
+    beforeEach(function () {
       bidderRequest = getBannerRequest();
     });
 
@@ -418,7 +418,7 @@ describe('dxkultureBidAdapter', function() {
     let bidRequestsWithMediaTypes;
     let mockBidderRequest;
 
-    beforeEach(function() {
+    beforeEach(function () {
       bidderBannerRequest = getBannerRequest();
 
       mockBidderRequest = {refererInfo: {}};
@@ -529,10 +529,10 @@ describe('dxkultureBidAdapter', function() {
     }
   });
 
-  describe('interpretResponse', function() {
-    context('when mediaType is banner', function() {
+  describe('interpretResponse', function () {
+    context('when mediaType is banner', function () {
       let bidRequest, bidderResponse;
-      beforeEach(function() {
+      beforeEach(function () {
         const bidderRequest = getBannerRequest();
         bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
@@ -550,7 +550,7 @@ describe('dxkultureBidAdapter', function() {
         expect(bids).to.be.an('array').that.is.not.empty;
         validateBidOnIndex(0);
 
-        function validateBidOnIndex(index) {
+        function validateBidOnIndex (index) {
           expect(bids[index]).to.have.property('currency', 'USD');
           expect(bids[index]).to.have.property('requestId', getBidderResponse().body.seatbid[0].bid[index].impid);
           expect(bids[index]).to.have.property('cpm', getBidderResponse().body.seatbid[0].bid[index].price);
@@ -567,7 +567,7 @@ describe('dxkultureBidAdapter', function() {
 
     context('when mediaType is video', function () {
       let bidRequest, bidderResponse;
-      beforeEach(function() {
+      beforeEach(function () {
         const bidderRequest = getVideoRequest();
         bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
@@ -608,7 +608,7 @@ describe('dxkultureBidAdapter', function() {
 
   describe('getUserSyncs', function () {
     let bidRequest, bidderResponse;
-    beforeEach(function() {
+    beforeEach(function () {
       const bidderRequest = getVideoRequest();
       bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
       bidderResponse = getBidderResponse();

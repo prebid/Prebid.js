@@ -24,14 +24,14 @@ describe('user sync', function () {
   let defaultUserSyncConfig = config.getConfig('userSync');
   let regRule, isAllowed;
 
-  function mkUserSync(deps) {
+  function mkUserSync (deps) {
     [regRule, isAllowed] = ruleRegistry();
     return newUserSync(Object.assign({
       regRule, isAllowed
     }, deps))
   }
 
-  function newTestUserSync(configOverrides, disableBrowserCookies) {
+  function newTestUserSync (configOverrides, disableBrowserCookies) {
     const thisConfig = Object.assign({}, defaultUserSyncConfig, configOverrides);
     return mkUserSync({
       config: thisConfig,
@@ -431,7 +431,7 @@ describe('user sync', function () {
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
-  it('should not fire image pixel for a bidder if iframe pixel is fired for same bidder', function() {
+  it('should not fire image pixel for a bidder if iframe pixel is fired for same bidder', function () {
     const userSync = mkUserSync({
       config: config.getConfig('userSync'),
       browserSupportsCookies: true
@@ -483,7 +483,7 @@ describe('user sync', function () {
     expect(triggerPixelStub.getCall(1)).to.be.null;
   });
 
-  it('should override default image syncs if setConfig used all filter', function() {
+  it('should override default image syncs if setConfig used all filter', function () {
     const userSync = mkUserSync({
       config: config.getConfig('userSync'),
       browserSupportsCookies: true

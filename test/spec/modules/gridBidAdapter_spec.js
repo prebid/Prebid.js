@@ -40,7 +40,7 @@ describe('TheMediaGrid Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    function parseRequest(data) {
+    function parseRequest (data) {
       return JSON.parse(data);
     }
     const bidderRequest = {
@@ -739,7 +739,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.regs).to.have.property('coppa', 1);
       getConfigStub.restore();
     });
-    it('should contain imp[].ext.data.adserver if available', function() {
+    it('should contain imp[].ext.data.adserver if available', function () {
       const ortb2Imp = [{
         ext: {
           data: {
@@ -786,7 +786,7 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
-    it('should prioritize pbadslot over adslot', function() {
+    it('should prioritize pbadslot over adslot', function () {
       const ortb2Imp = [{
         ext: {
           data: {
@@ -815,7 +815,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.data.pbadslot);
     });
 
-    it('should prioritize gpid over pbadslot and adslot', function() {
+    it('should prioritize gpid over pbadslot and adslot', function () {
       const ortb2Imp = [{
         ext: {
           gpid: 'gpid',
@@ -854,7 +854,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.imp[2].ext.gpid).to.equal(ortb2Imp[2].ext.gpid);
     });
 
-    it('should contain imp[].instl if available', function() {
+    it('should contain imp[].instl if available', function () {
       const ortb2Imp = [{
         instl: 1
       }, {
@@ -880,7 +880,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.imp[2].instl).to.be.undefined;
     });
 
-    it('all id must be a string', function() {
+    it('all id must be a string', function () {
       const fpdUserIdNumVal = 2345543345;
       const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
         arg => arg === 'tmguid' ? fpdUserIdNumVal : null);
@@ -941,7 +941,7 @@ describe('TheMediaGrid Adapter', function () {
       getDataFromLocalStorageStub.restore();
     })
 
-    it('tmax should be set as integer', function() {
+    it('tmax should be set as integer', function () {
       let [request] = spec.buildRequests([bidRequests[0]], {...bidderRequest, timeout: '10'});
       let payload = parseRequest(request.data);
       expect(payload.tmax).to.equal(10);
@@ -1582,13 +1582,13 @@ describe('TheMediaGrid Adapter', function () {
     });
   });
 
-  describe('onDataDeletionRequest', function() {
+  describe('onDataDeletionRequest', function () {
     let ajaxStub;
-    beforeEach(function() {
+    beforeEach(function () {
       ajaxStub = sinon.stub(spec, 'ajaxCall');
     });
 
-    it('should send right request on onDataDeletionRequest call', function() {
+    it('should send right request on onDataDeletionRequest call', function () {
       spec.onDataDeletionRequest([{}]);
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal('https://media.grid.bidswitch.net/uspapi_delete_c2s');
@@ -1681,7 +1681,7 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
-    it('should pass usPrivacy param if it is available', function() {
+    it('should pass usPrivacy param if it is available', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {}, '1YNN')).to.deep.equal({
         type: 'image', url: `${syncUrl}&us_privacy=1YNN`
       });

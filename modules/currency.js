@@ -65,7 +65,7 @@ let auctionDelay = 0;
  *  This optional currency rates definition follows the same format as config.rates, however it is only utilized if
  *  there is an error loading the config.conversionRateFile.
  */
-export function setConfig(config) {
+export function setConfig (config) {
   ratesURL = DEFAULT_CURRENCY_RATE_URL;
 
   if (config.rates !== null && typeof config.rates === 'object') {
@@ -123,7 +123,7 @@ export function setConfig(config) {
 }
 config.getConfig('currency', config => setConfig(config.currency));
 
-function errorSettingsRates(msg) {
+function errorSettingsRates (msg) {
   if (defaultRates) {
     logWarn(msg);
     logWarn('Currency failed loading rates, falling back to currency.defaultRates');
@@ -132,7 +132,7 @@ function errorSettingsRates(msg) {
   }
 }
 
-function loadRates() {
+function loadRates () {
   if (needToCallForCurrencyFile) {
     needToCallForCurrencyFile = false;
     currencyRatesLoaded = false;
@@ -164,7 +164,7 @@ function loadRates() {
   }
 }
 
-function initCurrency() {
+function initCurrency () {
   conversionCache = {};
   if (!currencySupportEnabled) {
     currencySupportEnabled = true;
@@ -180,7 +180,7 @@ function initCurrency() {
   }
 }
 
-export function resetCurrency() {
+export function resetCurrency () {
   if (currencySupportEnabled) {
     getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
     getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
@@ -201,11 +201,11 @@ export function resetCurrency() {
   }
 }
 
-function responsesReadyHook(next, ready) {
+function responsesReadyHook (next, ready) {
   next(ready.then(() => responseReady.promise));
 }
 
-export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid, reject) {
+export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook (fn, adUnitCode, bid, reject) {
   if (!bid) {
     return fn.call(this, adUnitCode, bid, reject); // if no bid, call original and let it display warnings
   }
@@ -227,7 +227,7 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
   }
 
   // used for analytics
-  bid.getCpmInNewCurrency = function(toCurrency) {
+  bid.getCpmInNewCurrency = function (toCurrency) {
     return (parseFloat(this.cpm) * getCurrencyConversion(this.currency, toCurrency)).toFixed(3);
   };
 
@@ -241,7 +241,7 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
   }
 });
 
-function rejectOnAuctionTimeout({auctionId}) {
+function rejectOnAuctionTimeout ({auctionId}) {
   bidResponseQueue = bidResponseQueue.filter(([fn, ctx, adUnitCode, bid, reject]) => {
     if (bid.auctionId === auctionId) {
       reject(REJECTION_REASON.CANNOT_CONVERT_CURRENCY)
@@ -251,7 +251,7 @@ function rejectOnAuctionTimeout({auctionId}) {
   });
 }
 
-function processBidResponseQueue() {
+function processBidResponseQueue () {
   while (bidResponseQueue.length > 0) {
     const [fn, ctx, adUnitCode, bid, reject] = bidResponseQueue.shift();
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
@@ -273,7 +273,7 @@ function processBidResponseQueue() {
   responseReady.resolve();
 }
 
-function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
+function getCurrencyConversion (fromCurrency, toCurrency = adServerCurrency) {
   var conversionRate = null;
   var rates;
   let cacheKey = `${fromCurrency}->${toCurrency}`;
@@ -334,7 +334,7 @@ function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
   return conversionRate;
 }
 
-function roundFloat(num, dec) {
+function roundFloat (num, dec) {
   var d = 1;
   for (let i = 0; i < dec; i++) {
     d += '0';
@@ -342,7 +342,7 @@ function roundFloat(num, dec) {
   return Math.round(num * d) / d;
 }
 
-export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
+export function setOrtbCurrency (ortbRequest, bidderRequest, context) {
   if (currencySupportEnabled) {
     ortbRequest.cur = ortbRequest.cur || [context.currency || adServerCurrency];
   }
@@ -350,14 +350,14 @@ export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
 
 registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});
 
-function enrichFPDHook(next, fpd) {
+function enrichFPDHook (next, fpd) {
   return next(fpd.then(ortb2 => {
     deepSetValue(ortb2, 'ext.prebid.adServerCurrency', adServerCurrency);
     return ortb2;
   }))
 }
 
-export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('currency', function requestBidsHook (fn, reqBidsConfigObj) {
   const continueAuction = ((that) => () => fn.call(that, reqBidsConfigObj))(this);
 
   if (!currencyRatesLoaded && auctionDelay > 0) {

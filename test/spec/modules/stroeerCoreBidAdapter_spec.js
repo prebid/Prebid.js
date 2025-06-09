@@ -21,7 +21,7 @@ describe('stroeerCore bid adapter', function () {
     sandbox.restore();
   });
 
-  function assertStandardFieldsBid(bidObject, bidId, width, height, cpm) {
+  function assertStandardFieldsBid (bidObject, bidId, width, height, cpm) {
     assert.propertyVal(bidObject, 'requestId', bidId);
     assert.propertyVal(bidObject, 'width', width);
     assert.propertyVal(bidObject, 'height', height);
@@ -31,22 +31,22 @@ describe('stroeerCore bid adapter', function () {
     assert.propertyVal(bidObject, 'creativeId', '');
   }
 
-  function assertStandardFieldsOnBannerBid(bidObject, bidId, ad, width, height, cpm) {
+  function assertStandardFieldsOnBannerBid (bidObject, bidId, ad, width, height, cpm) {
     assertStandardFieldsBid(bidObject, bidId, width, height, cpm);
     assertBannerAdMarkup(bidObject, ad);
   }
 
-  function assertStandardFieldsOnVideoBid(bidObject, bidId, vastXml, width, height, cpm) {
+  function assertStandardFieldsOnVideoBid (bidObject, bidId, vastXml, width, height, cpm) {
     assertStandardFieldsBid(bidObject, bidId, width, height, cpm);
     assertVideoVastXml(bidObject, vastXml);
   }
 
-  function assertBannerAdMarkup(bidObject, ad) {
+  function assertBannerAdMarkup (bidObject, ad) {
     assert.propertyVal(bidObject, 'ad', ad);
     assert.notProperty(bidObject, 'vastXml');
   }
 
-  function assertVideoVastXml(bidObject, vastXml) {
+  function assertVideoVastXml (bidObject, vastXml) {
     assert.propertyVal(bidObject, 'vastXml', vastXml);
     assert.notProperty(bidObject, 'ad');
   }
@@ -167,7 +167,7 @@ describe('stroeerCore bid adapter', function () {
     return win;
   };
 
-  function createElement(id, offsetTop = 0) {
+  function createElement (id, offsetTop = 0) {
     return {
       id,
       getBoundingClientRect: function () {
@@ -178,7 +178,7 @@ describe('stroeerCore bid adapter', function () {
     }
   }
 
-  function setupSingleWindow(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
+  function setupSingleWindow (sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
     let singleWin = null
     singleWin = createWindow('http://www.xyz.com/', {
       parent: singleWin, top: singleWin, frameElement: createElement(undefined, 304), placementElements: placementElements
@@ -192,7 +192,7 @@ describe('stroeerCore bid adapter', function () {
     return singleWin;
   }
 
-  function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
+  function setupNestedWindows (sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
     const topWin = createWindow('http://www.abc.org/');
     topWin.innerHeight = 800;
 
@@ -364,7 +364,7 @@ describe('stroeerCore bid adapter', function () {
           expected: 'https://other.com:871/xyz'
         }, {
           protocol: 'http:', params: {sid: 'ODA=', port: '234', path: '/xyz'}, expected: 'https://hb.adscale.de:234/xyz'
-        }, ];
+        },];
 
         samples.forEach(sample => {
           it(`should use ${sample.expected} as endpoint when given params ${JSON.stringify(sample.params)} and protocol ${sample.protocol}`,
@@ -577,7 +577,7 @@ describe('stroeerCore bid adapter', function () {
           assert.deepEqual(serverRequestInfo.data.bids, [...expectedBannerBids, ...expectedVideoBids]);
         });
 
-        it('should split multi-format bid', function() {
+        it('should split multi-format bid', function () {
           const multiFormatBid = {
             bidId: 'bid3',
             bidder: 'stroeerCore',

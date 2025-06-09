@@ -83,12 +83,12 @@ describe('addefendBidAdapter', () => {
 
     it('sends correct bid parameters', () => {
       const bidRequest = deepClone(defaultBidRequest);
-      expect(request.data.bids).to.deep.equal([ {
+      expect(request.data.bids).to.deep.equal([{
         bidId: bidRequest.bidId,
         placementId: bidRequest.params.placementId,
-        sizes: [ '300x250', '300x600' ],
+        sizes: ['300x250', '300x600'],
         transactionId: 'd58851660c0c4461e4aa06344fc9c0c6'
-      } ]);
+      }]);
     });
 
     it('handles empty gdpr object', () => {

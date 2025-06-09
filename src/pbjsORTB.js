@@ -5,11 +5,11 @@ export const [DEFAULT, PBS] = PROCESSOR_DIALECTS;
 
 const types = new Set(PROCESSOR_TYPES);
 
-export function processorRegistry() {
+export function processorRegistry () {
   const processors = {};
 
   return {
-    registerOrtbProcessor({type, name, fn, priority = 0, dialects = [DEFAULT]}) {
+    registerOrtbProcessor ({type, name, fn, priority = 0, dialects = [DEFAULT]}) {
       if (!types.has(type)) {
         throw new Error(`ORTB processor type must be one of: ${PROCESSOR_TYPES.join(', ')}`)
       }
@@ -26,7 +26,7 @@ export function processorRegistry() {
         }
       })
     },
-    getProcessors(dialect) {
+    getProcessors (dialect) {
       return processors[dialect] || {};
     }
   }

@@ -11,7 +11,7 @@ const CONSTANTS = {
 };
 const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
-var dsuModule = (function() {
+var dsuModule = (function () {
   'use strict';
 
   var DSU_KEY = 'apr_dsu';
@@ -19,7 +19,7 @@ var dsuModule = (function() {
   var SIGNATURE_SALT = 'YicAu6ZpNG';
   var DSU_CREATOR = {'USERREPORT': '1'};
 
-  function stringToU8(str) {
+  function stringToU8 (str) {
     if (typeof TextEncoder === 'function') {
       return new TextEncoder().encode(str);
     }
@@ -31,7 +31,7 @@ var dsuModule = (function() {
     return bytes;
   }
 
-  function _add(a, b) {
+  function _add (a, b) {
     var rl = a.l + b.l;
     var a2 = {
       h: a.h + b.h + (rl / 2 >>> 31) >>> 0,
@@ -40,13 +40,13 @@ var dsuModule = (function() {
     a.h = a2.h;
     a.l = a2.l;
   }
-  function _xor(a, b) {
+  function _xor (a, b) {
     a.h ^= b.h;
     a.h >>>= 0;
     a.l ^= b.l;
     a.l >>>= 0;
   }
-  function _rotl(a, n) {
+  function _rotl (a, n) {
     var a2 = {
       h: a.h << n | a.l >>> (32 - n),
       l: a.l << n | a.h >>> (32 - n)
@@ -54,13 +54,13 @@ var dsuModule = (function() {
     a.h = a2.h;
     a.l = a2.l;
   }
-  function _rotl32(a) {
+  function _rotl32 (a) {
     var al = a.l;
     a.l = a.h;
     a.h = al;
   }
 
-  function _compress(v0, v1, v2, v3) {
+  function _compress (v0, v1, v2, v3) {
     _add(v0, v1);
     _add(v2, v3);
     _rotl(v1, 13);
@@ -76,14 +76,14 @@ var dsuModule = (function() {
     _xor(v3, v0);
     _rotl32(v2);
   }
-  function _getInt(a, offset) {
+  function _getInt (a, offset) {
     return a[offset + 3] << 24 |
           a[offset + 2] << 16 |
           a[offset + 1] << 8 |
           a[offset];
   }
 
-  function hash(key, m) {
+  function hash (key, m) {
     if (typeof m === 'string') {
       m = stringToU8(m);
     }
@@ -167,7 +167,7 @@ var dsuModule = (function() {
     return h;
   }
 
-  function hashHex(key, m) {
+  function hashHex (key, m) {
     var r = hash(key, m);
     return ('0000000' + r.h.toString(16)).substr(-8) +
             ('0000000' + r.l.toString(16)).substr(-8);
@@ -179,7 +179,7 @@ var dsuModule = (function() {
   var parseUrlRegex = new RegExp('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?');
   var overwrite = null;
   var cache = {};
-  function parseUrl(url) {
+  function parseUrl (url) {
     var addscheme =
     url.indexOf('/') !== 0 &&
     url.indexOf('/') !== -1 &&
@@ -202,7 +202,7 @@ var dsuModule = (function() {
     return res;
   }
 
-  function location() {
+  function location () {
     var url = overwrite || window.location.toString();
     url = url.replace(/\.demo\.audienceproject\.com\//, '/');
 
@@ -215,13 +215,13 @@ var dsuModule = (function() {
     return parsed;
   }
 
-  function getDaysSinceApEpoch() {
+  function getDaysSinceApEpoch () {
     var timeDiff = (new Date()).getTime() - (new Date(2019, 0, 1)).getTime();
     var daysSinceApEpoch = Math.floor(timeDiff / (1000 * 3600 * 24));
     return daysSinceApEpoch;
   }
 
-  function generateDsu() {
+  function generateDsu () {
     var dsuId = generateUUID();
     var loc = location();
 
@@ -244,7 +244,7 @@ var dsuModule = (function() {
     return [DSU_VERSION_NUMBER, signature, dsuId, metadata].join('.');
   }
 
-  function readOrCreateDsu() {
+  function readOrCreateDsu () {
     var dsu;
     try {
       dsu = storage.getDataFromLocalStorage(DSU_KEY);
@@ -270,7 +270,7 @@ var dsuModule = (function() {
   };
 })();
 
-function serializeSizes(sizes) {
+function serializeSizes (sizes) {
   if (Array.isArray(sizes[0]) === false) {
     sizes = [sizes];
   }
@@ -278,7 +278,7 @@ function serializeSizes(sizes) {
   return sizes.map(s => s[0] + 'x' + s[1]).join('_');
 }
 
-function getRawConsentString(gdprConsentConfig) {
+function getRawConsentString (gdprConsentConfig) {
   if (!gdprConsentConfig || gdprConsentConfig.gdprApplies === false) {
     return null;
   }
@@ -286,7 +286,7 @@ function getRawConsentString(gdprConsentConfig) {
   return gdprConsentConfig.consentString;
 }
 
-function getConsentStringFromPrebid(gdprConsentConfig) {
+function getConsentStringFromPrebid (gdprConsentConfig) {
   const consentString = getRawConsentString(gdprConsentConfig);
   if (!consentString) {
     return null;
@@ -302,7 +302,7 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
   return isConsentGiven ? consentString : null;
 }
 
-function getIabConsentString(bidderRequest) {
+function getIabConsentString (bidderRequest) {
   if (deepAccess(bidderRequest, 'gdprConsent')) {
     return getConsentStringFromPrebid(bidderRequest.gdprConsent);
   }
@@ -310,7 +310,7 @@ function getIabConsentString(bidderRequest) {
   return 'disabled';
 }
 
-function injectPixels(ad, pixels, scripts) {
+function injectPixels (ad, pixels, scripts) {
   if (!pixels && !scripts) {
     return ad;
   }
@@ -333,11 +333,11 @@ function injectPixels(ad, pixels, scripts) {
   return trackedAd;
 }
 
-function getScreenParams() {
+function getScreenParams () {
   return `${window.screen.width}x${window.screen.height}@${window.devicePixelRatio}`;
 }
 
-function getBids(bids) {
+function getBids (bids) {
   const bidArr = bids.map(bid => {
     const bidId = bid.bidId;
 
@@ -375,7 +375,7 @@ function getBids(bids) {
   return bidArr.join(';');
 };
 
-function getEndpointsGroups(bidRequests) {
+function getEndpointsGroups (bidRequests) {
   let endpoints = [];
   const getEndpoint = bid => {
     const publisherId = bid.params.publisherId || config.getConfig('apstream.publisherId');
@@ -407,7 +407,7 @@ function getEndpointsGroups(bidRequests) {
   return endpoints;
 }
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   const publisherId = config.getConfig('apstream.publisherId');
   const isPublisherIdExist = !!(publisherId || bid.params.publisherId);
   const isOneMediaType = Object.keys(bid.mediaTypes).length === 1;
@@ -415,7 +415,7 @@ function isBidRequestValid(bid) {
   return isPublisherIdExist && isOneMediaType;
 }
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   // convert Native ORTB definition to old-style prebid native definition
   bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
   const data = {
@@ -461,7 +461,7 @@ function buildRequests(bidRequests, bidderRequest) {
   return serverRequests;
 }
 
-function interpretResponse(serverResponse) {
+function interpretResponse (serverResponse) {
   let bidResponses = serverResponse && serverResponse.body;
 
   if (!bidResponses || !bidResponses.length) {

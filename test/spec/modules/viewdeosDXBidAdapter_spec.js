@@ -149,9 +149,9 @@ const displayEqResponse = [{
 describe('viewdeosDXBidAdapter', function () {
   const adapter = newBidder(spec);
 
-  describe('when outstream params are passing properly', function() {
+  describe('when outstream params are passing properly', function () {
     const videoBids = spec.interpretResponse({body: SERVER_OUSTREAM_VIDEO_RESPONSE}, {bidderRequest: outstreamVideoBidderRequest});
-    it('should return renderer with expected outstream params config', function() {
+    it('should return renderer with expected outstream params config', function () {
       expect(!!videoBids[0].renderer).to.equal(true);
       expect(videoBids[0].renderer.getConfig().video_controls).to.equal('show');
     })
@@ -317,13 +317,13 @@ describe('viewdeosDXBidAdapter', function () {
       expect(builtRequestData.data.gdpr_consent).to.be.equal(displayBidderRequestWithGdpr.gdprConsent.consentString);
     });
 
-    function bidServerResponseCheck() {
+    function bidServerResponseCheck () {
       const result = spec.interpretResponse({body: serverResponse}, {bidderRequest});
 
       expect(result).to.deep.equal(eqResponse);
     }
 
-    function nobidServerResponseCheck() {
+    function nobidServerResponseCheck () {
       const noBidServerResponse = {bids: []};
       const noBidResult = spec.interpretResponse({body: noBidServerResponse}, {bidderRequest});
 

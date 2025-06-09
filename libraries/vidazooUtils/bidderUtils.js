@@ -15,11 +15,11 @@ import {bidderSettings} from '../../src/bidderSettings.js';
 import {config} from '../../src/config.js';
 import {BANNER, VIDEO} from '../../src/mediaTypes.js';
 
-export function createSessionId() {
+export function createSessionId () {
   return 'wsid_' + parseInt(Date.now() * Math.random());
 }
 
-export function getTopWindowQueryParams() {
+export function getTopWindowQueryParams () {
   try {
     const parsedUrl = parseUrl(window.top.document.URL, {decodeSearchAsString: true});
     return parsedUrl.search;
@@ -28,24 +28,24 @@ export function getTopWindowQueryParams() {
   }
 }
 
-export function extractCID(params) {
+export function extractCID (params) {
   return params.cId || params.CID || params.cID || params.CId || params.cid || params.ciD || params.Cid || params.CiD;
 }
 
-export function extractPID(params) {
+export function extractPID (params) {
   return params.pId || params.PID || params.pID || params.PId || params.pid || params.piD || params.Pid || params.PiD;
 }
 
-export function extractSubDomain(params) {
+export function extractSubDomain (params) {
   return params.subDomain || params.SubDomain || params.Subdomain || params.subdomain || params.SUBDOMAIN || params.subDOMAIN;
 }
 
-export function isBidRequestValid(bid) {
+export function isBidRequestValid (bid) {
   const params = bid.params || {};
   return !!(extractCID(params) && extractPID(params));
 }
 
-export function tryParseJSON(value) {
+export function tryParseJSON (value) {
   try {
     return JSON.parse(value);
   } catch (e) {
@@ -53,7 +53,7 @@ export function tryParseJSON(value) {
   }
 }
 
-export function setStorageItem(storage, key, value, timestamp) {
+export function setStorageItem (storage, key, value, timestamp) {
   try {
     const created = timestamp || Date.now();
     const data = JSON.stringify({value, created});
@@ -62,7 +62,7 @@ export function setStorageItem(storage, key, value, timestamp) {
   }
 }
 
-export function getStorageItem(storage, key) {
+export function getStorageItem (storage, key) {
   try {
     return tryParseJSON(storage.getDataFromLocalStorage(key, null));
   } catch (e) {
@@ -71,7 +71,7 @@ export function getStorageItem(storage, key) {
   return null;
 }
 
-export function getCacheOpt(storage, useKey) {
+export function getCacheOpt (storage, useKey) {
   let data = storage.getDataFromLocalStorage(useKey, null);
   if (!data) {
     data = String(Date.now());
@@ -81,7 +81,7 @@ export function getCacheOpt(storage, useKey) {
   return data;
 }
 
-export function getUniqueDealId(storage, key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
+export function getUniqueDealId (storage, key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
   const storageKey = `u_${key}`;
   const now = Date.now();
   const data = getStorageItem(storage, storageKey);
@@ -97,7 +97,7 @@ export function getUniqueDealId(storage, key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
   return uniqueId;
 }
 
-export function getNextDealId(storage, key, expiry = DEAL_ID_EXPIRY) {
+export function getNextDealId (storage, key, expiry = DEAL_ID_EXPIRY) {
   try {
     const data = getStorageItem(storage, key);
     let currentValue = 0;
@@ -116,7 +116,7 @@ export function getNextDealId(storage, key, expiry = DEAL_ID_EXPIRY) {
   }
 }
 
-export function hashCode(s, prefix = '_') {
+export function hashCode (s, prefix = '_') {
   const l = s.length;
   let h = 0
   let i = 0;
@@ -128,7 +128,7 @@ export function hashCode(s, prefix = '_') {
   return prefix + h;
 }
 
-export function onBidWon(bid) {
+export function onBidWon (bid) {
   if (!bid.nurl) {
     return;
   }
@@ -162,11 +162,11 @@ export function onBidWon(bid) {
  *
  * @param options
  */
-export function createUserSyncGetter(options = {
+export function createUserSyncGetter (options = {
   iframeSyncUrl: '',
   imageSyncUrl: ''
 }) {
-  return function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
+  return function getUserSyncs (syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
     const syncs = [];
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
@@ -196,7 +196,7 @@ export function createUserSyncGetter(options = {
   }
 }
 
-export function appendUserIdsToRequestPayload(payloadRef, userIds) {
+export function appendUserIdsToRequestPayload (payloadRef, userIds) {
   let key;
   _each(userIds, (userId, idSystemProviderName) => {
     key = `uid.${idSystemProviderName}`;
@@ -214,11 +214,11 @@ export function appendUserIdsToRequestPayload(payloadRef, userIds) {
   });
 }
 
-export function getVidazooSessionId(storage) {
+export function getVidazooSessionId (storage) {
   return getStorageItem(storage, SESSION_ID_KEY) || '';
 }
 
-export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, getUniqueRequestData) {
+export function buildRequestData (bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, getUniqueRequestData) {
   const {
     params,
     bidId,
@@ -353,8 +353,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   return data;
 }
 
-export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
-  return function interpretResponse(serverResponse, request) {
+export function createInterpretResponseFn (bidderCode, allowSingleRequest) {
+  return function interpretResponse (serverResponse, request) {
     if (!serverResponse || !serverResponse.body) {
       return [];
     }
@@ -432,8 +432,8 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
   }
 }
 
-export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
-  function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+export function createBuildRequestsFn (createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
+  function buildRequest (bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     const {params} = bid;
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
@@ -444,7 +444,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     return dto;
   }
 
-  function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
+  function buildSingleRequest (bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
     const {params} = bidRequests[0];
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
@@ -466,7 +466,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     });
   }
 
-  return function buildRequests(validBidRequests, bidderRequest) {
+  return function buildRequests (validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
 

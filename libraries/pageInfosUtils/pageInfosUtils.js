@@ -6,7 +6,7 @@
  * @param {string} [bidderRequest.refererInfo.page] - The page URL of the referer.
  * @returns {string} The referrer URL if available, otherwise an empty string.
  */
-export function getReferrerInfo(bidderRequest) {
+export function getReferrerInfo (bidderRequest) {
   let ref = '';
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     ref = bidderRequest.refererInfo.page;
@@ -23,7 +23,7 @@ export function getReferrerInfo(bidderRequest) {
  *
  * @returns {string} The title of the current web page, or an empty string if no title is found.
  */
-export function getPageTitle() {
+export function getPageTitle () {
   try {
     const ogTitle = window.top.document.querySelector('meta[property="og:title"]');
     return window.top.document.title || (ogTitle && ogTitle.content) || '';
@@ -42,7 +42,7 @@ export function getPageTitle() {
  *
  * @returns {string} The content of the description meta tag, or an empty string if not found.
  */
-export function getPageDescription() {
+export function getPageDescription () {
   try {
     const element = window.top.document.querySelector('meta[name="description"]') ||
         window.top.document.querySelector('meta[property="og:description"]');
@@ -60,6 +60,6 @@ export function getPageDescription() {
  * @param {object} nav - The navigator object, typically `window.navigator`.
  * @returns {string} The downlink speed as a string if available, otherwise an empty string.
  */
-export function getConnectionDownLink(nav) {
+export function getConnectionDownLink (nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }

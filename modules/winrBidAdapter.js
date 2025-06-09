@@ -33,7 +33,7 @@ const GATE_COOKIE_NAME = 'wnr_gate';
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
-function buildBid(bidData) {
+function buildBid (bidData) {
   const bid = bidData;
   const position = {
     domParent: bid.meta.domParent ? `'${bid.meta.domParent}'` : null,
@@ -43,11 +43,11 @@ function buildBid(bidData) {
   return bid;
 }
 
-function getMediaTypeFromBid(bid) {
+function getMediaTypeFromBid (bid) {
   return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
 }
 
-function wrapAd(bid, position) {
+function wrapAd (bid, position) {
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -312,7 +312,7 @@ export const spec = {
   },
 };
 
-function formatRequest(payload, bidderRequest) {
+function formatRequest (payload, bidderRequest) {
   let request = [];
   let options = {
     withCredentials: true
@@ -352,7 +352,7 @@ function formatRequest(payload, bidderRequest) {
  * @param bidderRequest
  * @return Bid
  */
-function newBid(serverBid, rtbBid, bidderRequest) {
+function newBid (serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     adType: rtbBid.ad_type,
@@ -419,7 +419,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   return bid;
 }
 
-function bidToTag(bid) {
+function bidToTag (bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
   tag.primary_size = tag.sizes[0];
@@ -469,11 +469,11 @@ function bidToTag(bid) {
   return tag;
 }
 
-function getRtbBid(tag) {
+function getRtbBid (tag) {
   return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find((ad) => ad.rtb);
 }
 
-function parseMediaType(rtbBid) {
+function parseMediaType (rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType !== BANNER) {
     return false;
@@ -481,7 +481,7 @@ function parseMediaType(rtbBid) {
   return BANNER;
 }
 
-function hasMemberId(bid) {
+function hasMemberId (bid) {
   return !!parseInt(bid.params.member, 10);
 }
 

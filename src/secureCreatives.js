@@ -29,13 +29,13 @@ if (FEATURES.NATIVE) {
   });
 }
 
-export function listenMessagesFromCreative() {
+export function listenMessagesFromCreative () {
   window.addEventListener('message', function (ev) {
     receiveMessage(ev);
   }, false);
 }
 
-export function getReplier(ev) {
+export function getReplier (ev) {
   if (ev.origin == null && ev.ports.length === 0) {
     return function () {
       const msg = 'Cannot post message to a frame with null origin. Please update creatives to use MessageChannel, see https://github.com/prebid/Prebid.js/issues/7870';
@@ -53,13 +53,13 @@ export function getReplier(ev) {
   }
 }
 
-function ensureAdId(adId, reply) {
+function ensureAdId (adId, reply) {
   return function (data, ...args) {
     return reply(Object.assign({}, data, {adId}), ...args);
   }
 }
 
-export function receiveMessage(ev) {
+export function receiveMessage (ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
   try {
@@ -75,7 +75,7 @@ export function receiveMessage(ev) {
   }
 }
 
-function getResizer(adId, bidResponse) {
+function getResizer (adId, bidResponse) {
   // in some situations adId !== bidResponse.adId
   // the first is the one that was requested and is tied to the element
   // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
@@ -83,9 +83,9 @@ function getResizer(adId, bidResponse) {
     resizeRemoteCreative({...bidResponse, width, height, adId});
   }
 }
-function handleRenderRequest(reply, message, bidResponse) {
+function handleRenderRequest (reply, message, bidResponse) {
   handleRender({
-    renderFn(adData) {
+    renderFn (adData) {
       reply(Object.assign({
         message: RESPONSE,
         renderer: getCreativeRendererSource(bidResponse),
@@ -99,7 +99,7 @@ function handleRenderRequest(reply, message, bidResponse) {
   });
 }
 
-function handleNativeRequest(reply, data, adObject) {
+function handleNativeRequest (reply, data, adObject) {
   // handle this script from native template in an ad server
   // window.parent.postMessage(JSON.stringify({
   //   message: 'Prebid Native',
@@ -122,7 +122,7 @@ function handleNativeRequest(reply, data, adObject) {
   }
 }
 
-function handleEventRequest(reply, data, adObject) {
+function handleEventRequest (reply, data, adObject) {
   if (adObject == null) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
@@ -134,11 +134,11 @@ function handleEventRequest(reply, data, adObject) {
   return handleCreativeEvent(data, adObject);
 }
 
-export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
+export function resizeRemoteCreative ({instl, adId, adUnitCode, width, height}) {
   // do not resize interstitials - the creative frame takes the full screen and sizing of the ad should
   // be handled within it.
   if (instl) return;
-  function getDimension(value) {
+  function getDimension (value) {
     return value ? value + 'px' : '100%';
   }
   // resize both container div + iframe
@@ -154,13 +154,13 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
     }
   });
 
-  function getElementByAdUnit(elmType) {
+  function getElementByAdUnit (elmType) {
     let id = getElementIdBasedOnAdServer(adId, adUnitCode);
     let parentDivEle = document.getElementById(id);
     return parentDivEle && parentDivEle.querySelector(elmType);
   }
 
-  function getElementIdBasedOnAdServer(adId, adUnitCode) {
+  function getElementIdBasedOnAdServer (adId, adUnitCode) {
     if (isGptPubadsDefined()) {
       return getDfpElementId(adId);
     } else if (isApnGetTagDefined()) {
@@ -170,7 +170,7 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
     }
   }
 
-  function getDfpElementId(adId) {
+  function getDfpElementId (adId) {
     const slot = window.googletag.pubads().getSlots().find(slot => {
       return slot.getTargetingKeys().find(key => {
         return slot.getTargeting(key).includes(adId);
@@ -179,7 +179,7 @@ export function resizeRemoteCreative({instl, adId, adUnitCode, width, height}) {
     return slot ? slot.getSlotElementId() : null;
   }
 
-  function getAstElementId(adUnitCode) {
+  function getAstElementId (adUnitCode) {
     let astTag = window.apntag.getTag(adUnitCode);
     return astTag && astTag.targetId;
   }

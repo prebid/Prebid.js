@@ -8,7 +8,7 @@ import {keyCompare} from '../../src/utils/reducers.js';
  * throwing errors), the amount is returned unchanged. This behavior can be
  * toggled off with bestEffort = false.
  */
-export function convertCurrency(amount, fromCur, toCur, bestEffort = true) {
+export function convertCurrency (amount, fromCur, toCur, bestEffort = true) {
   if (fromCur === toCur) return amount;
   let result = amount;
   try {
@@ -19,13 +19,13 @@ export function convertCurrency(amount, fromCur, toCur, bestEffort = true) {
   return result;
 }
 
-export function currencyNormalizer(toCurrency = null, bestEffort = true, convert = convertCurrency) {
+export function currencyNormalizer (toCurrency = null, bestEffort = true, convert = convertCurrency) {
   return function (amount, currency) {
     if (toCurrency == null) toCurrency = currency;
     return convert(amount, currency, toCurrency, bestEffort);
   }
 }
 
-export function currencyCompare(get = (obj) => [obj.cpm, obj.currency], normalize = currencyNormalizer()) {
+export function currencyCompare (get = (obj) => [obj.cpm, obj.currency], normalize = currencyNormalizer()) {
   return keyCompare(obj => normalize.apply(null, get(obj)))
 }

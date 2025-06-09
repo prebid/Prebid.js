@@ -136,7 +136,7 @@ registerBidder(spec);
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {number} floor by imp type
  */
-function applyFloor(slot) {
+function applyFloor (slot) {
   const floors = [];
   if (typeof slot.getFloor === 'function') {
     Object.keys(slot.mediaTypes).forEach(type => {
@@ -152,7 +152,7 @@ function applyFloor(slot) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Imp by OpenRTB 2.5 §3.2.4
  */
-function mapImpression(slot, bidderRequest) {
+function mapImpression (slot, bidderRequest) {
   const imp = {
     id: slot.bidId,
     banner: mapBanner(slot),
@@ -182,7 +182,7 @@ function mapImpression(slot, bidderRequest) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Banner by OpenRTB 2.5 §3.2.6
  */
-function mapBanner(slot) {
+function mapBanner (slot) {
   if (slot.mediaType === 'banner' ||
     deepAccess(slot, 'mediaTypes.banner') ||
     (!slot.mediaType && !slot.mediaTypes)) {
@@ -203,7 +203,7 @@ function mapBanner(slot) {
  * @param {object} bidderRequest by Prebid
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
-function mapSite(slot, bidderRequest) {
+function mapSite (slot, bidderRequest) {
   let pubId = 'unknown';
   let channel = null;
   if (slot && slot.length > 0) {
@@ -230,7 +230,7 @@ function mapSite(slot, bidderRequest) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Source by OpenRTB 2.5 §3.2.2
  */
-function mapSource(slot, bidderRequest) {
+function mapSource (slot, bidderRequest) {
   const source = {
     tid: bidderRequest?.auctionId || '',
   };
@@ -242,7 +242,7 @@ function mapSource(slot, bidderRequest) {
  * @param {object} schain object set by Publisher
  * @returns {object} OpenRTB SupplyChain object
  */
-function mapSchain(schain) {
+function mapSchain (schain) {
   if (!schain) {
     return null;
   }
@@ -257,7 +257,7 @@ function mapSchain(schain) {
  * @param {object} schain object set by Publisher
  * @returns {object} bool
  */
-function validateSchain(schain) {
+function validateSchain (schain) {
   if (!schain.nodes) {
     return false;
   }
@@ -271,7 +271,7 @@ function validateSchain(schain) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Request by OpenRTB Native Ads 1.1 §4
  */
-function mapNative(slot) {
+function mapNative (slot) {
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
     return {
       request: {
@@ -286,7 +286,7 @@ function mapNative(slot) {
  * @param {object} slot Slot config by Prebid
  * @returns {Array} Request Assets by OpenRTB Native Ads 1.1 §4.2
  */
-function mapNativeAssets(slot) {
+function mapNativeAssets (slot) {
   const params = slot.nativeParams || deepAccess(slot, 'mediaTypes.native');
   const assets = [];
   if (params.title) {
@@ -350,7 +350,7 @@ function mapNativeAssets(slot) {
  * @param {number} type Image or icon code
  * @returns {object} Request Image by OpenRTB Native Ads 1.1 §4.4
  */
-function mapNativeImage(image, type) {
+function mapNativeImage (image, type) {
   const img = {type: type};
   if (image.aspect_ratios) {
     const ratio = image.aspect_ratios[0];
@@ -370,7 +370,7 @@ function mapNativeImage(image, type) {
  * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
  * @returns {object} Prebid banner bidObject
  */
-function interpretBannerBid(serverBid) {
+function interpretBannerBid (serverBid) {
   return {
     requestId: serverBid.impid,
     mediaType: BANNER,
@@ -394,7 +394,7 @@ function interpretBannerBid(serverBid) {
  * @param {object} dsa
  * @returns {boolean} whether dsa object contains valid attributes values
  */
-function validateDSA(dsa) {
+function validateDSA (dsa) {
   if (isEmpty(dsa) || !isPlainObject(dsa)) return false;
 
   return DSA_ATTRIBUTES.reduce((prev, attr) => {

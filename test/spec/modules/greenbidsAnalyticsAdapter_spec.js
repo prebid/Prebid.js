@@ -139,7 +139,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           bidId: '00123d4c',
         }
       ];
-      function assertHavingRequiredMessageFields(message) {
+      function assertHavingRequiredMessageFields (message) {
         expect(message).to.include({
           version: ANALYTICS_VERSION,
           auctionId: auctionId,

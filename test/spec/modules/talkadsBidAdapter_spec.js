@@ -31,7 +31,7 @@ describe('TalkAds adapter', function () {
   /**
    * isBidRequestValid
    */
-  describe('isBidRequestValid1', function() {
+  describe('isBidRequestValid1', function () {
     it('should fail when config is invalid', function () {
       const bidRequest = {
         ...commonBidRequest,
@@ -42,7 +42,7 @@ describe('TalkAds adapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
   }); // isBidRequestValid1
-  describe('isBidRequestValid2', function() {
+  describe('isBidRequestValid2', function () {
     it('should fail when config is invalid', function () {
       const bidRequest = {
         ...commonBidRequest,
@@ -53,7 +53,7 @@ describe('TalkAds adapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
   }); // isBidRequestValid2
-  describe('isBidRequestValid3', function() {
+  describe('isBidRequestValid3', function () {
     it('should fail when config is invalid', function () {
       const bidRequest = {
         ...commonBidRequest,
@@ -64,7 +64,7 @@ describe('TalkAds adapter', function () {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
   }); // isBidRequestValid3
-  describe('isBidRequestValid4', function() {
+  describe('isBidRequestValid4', function () {
     let bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
@@ -84,7 +84,7 @@ describe('TalkAds adapter', function () {
   /**
    * buildRequests
    */
-  describe('buildRequests1', function() {
+  describe('buildRequests1', function () {
     let bidRequest = {
       ...commonBidRequest,
       ...bannerBidRequestParams,
@@ -104,7 +104,7 @@ describe('TalkAds adapter', function () {
       expect(laResponse.data).to.equal(JSON.stringify(loServerRequest));
     });
   }); // buildRequests1
-  describe('buildRequests2', function() {
+  describe('buildRequests2', function () {
     let bidRequest = {
       ...commonBidRequest,
       ...nativeBidRequestParams,
@@ -142,7 +142,7 @@ describe('TalkAds adapter', function () {
   /**
    * interpretResponse
    */
-  describe('interpretResponse1', function() {
+  describe('interpretResponse1', function () {
     it('should return empty array if no valid bids', function () {
       const laResult = spec.interpretResponse({}, [])
       expect(laResult).to.be.an('array').that.is.empty;
@@ -155,7 +155,7 @@ describe('TalkAds adapter', function () {
       expect(laResult).to.be.an('array').that.is.empty;
     });
   }); // interpretResponse1
-  describe('interpretResponse2', function() {
+  describe('interpretResponse2', function () {
     const loServerResult = {
       body: {
         status: 'ok',
@@ -195,7 +195,7 @@ describe('TalkAds adapter', function () {
   /**
    * onBidWon
    */
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     it('should not make an ajax call if pbid is null', function () {
       const loBid = {
         requestId: '1a2b3c4d56e7f0',

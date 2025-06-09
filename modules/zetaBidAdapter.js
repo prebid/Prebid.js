@@ -30,7 +30,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     // check for all required bid fields
     if (!(bid &&
           bid.bidId &&
@@ -66,7 +66,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest - master bidRequest object
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
     const params = request.params;
@@ -133,7 +133,7 @@ export const spec = {
    * @param bidRequest The payload from the server's response.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let bidResponse = [];
     if (Object.keys(serverResponse.body).length !== 0) {
       let zetaResponse = serverResponse.body;
@@ -164,7 +164,7 @@ export const spec = {
    * @param uspConsent The USP consent parameters
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, definerId, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, definerId, gdprConsent, uspConsent) {
     const syncs = [];
     if (definerId === '' || definerId === null) {
       definerId = PREBID_DEFINER_ID;
@@ -179,7 +179,7 @@ export const spec = {
   }
 }
 
-function buildBanner(request) {
+function buildBanner (request) {
   let sizes = request.sizes;
   if (request.mediaTypes &&
     request.mediaTypes.banner &&

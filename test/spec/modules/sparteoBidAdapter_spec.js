@@ -251,7 +251,7 @@ describe('SparteoAdapter', function () {
   describe('buildRequests', function () {
     describe('Check method return', function () {
       if (FEATURES.VIDEO) {
-        it('should return the right formatted requests', function() {
+        it('should return the right formatted requests', function () {
           const request = adapter.buildRequests([VALID_BID_BANNER, VALID_BID_VIDEO], BIDDER_REQUEST);
           delete request.data.id;
 
@@ -259,7 +259,7 @@ describe('SparteoAdapter', function () {
         });
       }
 
-      it('should return the right formatted banner requests', function() {
+      it('should return the right formatted banner requests', function () {
         const request = adapter.buildRequests([VALID_BID_BANNER], BIDDER_REQUEST_BANNER);
         delete request.data.id;
 
@@ -267,7 +267,7 @@ describe('SparteoAdapter', function () {
       });
 
       if (FEATURES.VIDEO) {
-        it('should return the right formatted video requests', function() {
+        it('should return the right formatted video requests', function () {
           const request = adapter.buildRequests([VALID_BID_VIDEO], BIDDER_REQUEST_VIDEO);
           delete request.data.id;
 
@@ -275,7 +275,7 @@ describe('SparteoAdapter', function () {
         });
       }
 
-      it('should return the right formatted request with endpoint test', function() {
+      it('should return the right formatted request with endpoint test', function () {
         let endpoint = 'https://bid-test.sparteo.com/auction';
 
         let bids = mergeDeep(deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]), {
@@ -295,9 +295,9 @@ describe('SparteoAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     describe('Check method return', function () {
-      it('should return the right formatted response', function() {
+      it('should return the right formatted response', function () {
         let response = {
           body: {
             'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
@@ -402,9 +402,9 @@ describe('SparteoAdapter', function () {
     });
   });
 
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     describe('Check methods succeed', function () {
-      it('should not throw error', function() {
+      it('should not throw error', function () {
         let bids = [
           {
             requestId: '1a2b3c4d',
@@ -444,16 +444,16 @@ describe('SparteoAdapter', function () {
           }
         ];
 
-        bids.forEach(function(bid) {
+        bids.forEach(function (bid) {
           expect(adapter.onBidWon.bind(adapter, bid)).to.not.throw();
         });
       });
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     describe('Check methods succeed', function () {
-      it('should return the sync url', function() {
+      it('should return the sync url', function () {
         const syncOptions = {
           'iframeEnabled': true,
           'pixelEnabled': false

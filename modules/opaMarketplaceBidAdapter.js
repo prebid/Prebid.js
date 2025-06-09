@@ -14,11 +14,11 @@ const BIDDER_CODE = 'opamarketplace';
 const BIDDER_VERSION = '1.0.0';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
-export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
+export function createDomain (subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.opamarketplace.com`;
 }
 
-function createUniqueRequestData(hashUrl, bid) {
+function createUniqueRequestData (hashUrl, bid) {
   const {auctionId, transactionId} = bid;
   return {
     auctionId,

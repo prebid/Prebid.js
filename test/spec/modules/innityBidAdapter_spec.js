@@ -45,7 +45,7 @@ describe('innityAdapterTest', () => {
 
     it('bidRequest HTTP method', () => {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('GET');
       });
     });

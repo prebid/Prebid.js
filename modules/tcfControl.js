@@ -107,7 +107,7 @@ const PUBLISHER_LI_PURPOSES = [2, 7, 9, 10];
 /**
  * Retrieve a module's GVL ID.
  */
-export function getGvlid(moduleType, moduleName, fallbackFn) {
+export function getGvlid (moduleType, moduleName, fallbackFn) {
   if (moduleName) {
     // Check user defined GVL Mapping in pbjs.setConfig()
     const gvlMapping = config.getConfig('gvlMapping');
@@ -144,7 +144,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
 /**
  * Retrieve GVL IDs that are dynamically set on analytics adapters.
  */
-export function getGvlidFromAnalyticsAdapter(code, config) {
+export function getGvlidFromAnalyticsAdapter (code, config) {
   const adapter = adapterManager.getAnalyticsAdapter(code);
   return ((gvlid) => {
     if (typeof gvlid !== 'function') return gvlid;
@@ -156,7 +156,7 @@ export function getGvlidFromAnalyticsAdapter(code, config) {
   })(adapter?.adapter?.gvlid);
 }
 
-export function shouldEnforce(consentData, purpose, name) {
+export function shouldEnforce (consentData, purpose, name) {
   if (consentData == null && gdprDataHandler.enabled) {
     // there is no consent data, but the GDPR module has been installed and configured
     // NOTE: this check is not foolproof, as when Prebid first loads, enforcement hooks have not been attached yet
@@ -168,12 +168,12 @@ export function shouldEnforce(consentData, purpose, name) {
   return consentData && consentData.gdprApplies;
 }
 
-function getConsentOrLI(consentData, path, id, acceptLI) {
+function getConsentOrLI (consentData, path, id, acceptLI) {
   const data = deepAccess(consentData, `vendorData.${path}`);
   return !!data?.consents?.[id] || (acceptLI && !!data?.legitimateInterests?.[id]);
 }
 
-function getConsent(consentData, type, purposeNo, gvlId) {
+function getConsent (consentData, type, purposeNo, gvlId) {
   let purpose;
   if (CONSENT_PATHS[type] !== false) {
     purpose = !!deepAccess(consentData, `vendorData.${CONSENT_PATHS[type]}.${purposeNo}`);
@@ -198,7 +198,7 @@ function getConsent(consentData, type, purposeNo, gvlId) {
  * @param {number=} gvlId - GVL ID for the module
  * @returns {boolean}
  */
-export function validateRules(rule, consentData, currentModule, gvlId) {
+export function validateRules (rule, consentData, currentModule, gvlId) {
   const ruleOptions = CONFIGURABLE_RULES[rule.purpose];
 
   // return 'true' if vendor present in 'vendorExceptions'
@@ -210,7 +210,7 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || vendor);
 }
 
-function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback = () => null) {
+function gdprRule (purposeNo, checkConsent, blocked = null, gvlidFallback = () => null) {
   return function (params) {
     const consentData = gdprDataHandler.getConsentData();
     const modName = params[ACTIVITY_PARAM_COMPONENT_NAME];
@@ -226,11 +226,11 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback = () =>
   };
 }
 
-function singlePurposeGdprRule(purposeNo, blocked = null, gvlidFallback = () => null) {
+function singlePurposeGdprRule (purposeNo, blocked = null, gvlidFallback = () => null) {
   return gdprRule(purposeNo, (cd, modName, gvlid) => !!validateRules(ACTIVE_RULES.purpose[purposeNo], cd, modName, gvlid), blocked, gvlidFallback);
 }
 
-function exceptPrebidModules(ruleFn) {
+function exceptPrebidModules (ruleFn) {
   return function (params) {
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_PREBID) {
       // TODO: this special case is for the PBS adapter (componentType is 'prebid')
@@ -260,7 +260,7 @@ export const transmitEidsRule = exceptPrebidModules((() => {
   // Transmit EID special case:
   // by default, legal basis or vendor exceptions for any purpose between 2 and 10
   // (but disregarding enforcePurpose and enforceVendor config) is enough to allow EIDs through
-  function check2to10Consent(consentData, modName, gvlId) {
+  function check2to10Consent (consentData, modName, gvlId) {
     for (let pno = 2; pno <= 10; pno++) {
       if (ACTIVE_RULES.purpose[pno]?.vendorExceptions?.includes(modName)) {
         return true;
@@ -286,7 +286,7 @@ export const transmitPreciseGeoRule = gdprRule('Special Feature 1', (cd, modName
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
  */
-function emitTCF2FinalResults() {
+function emitTCF2FinalResults () {
   // remove null and duplicate values
   const formatSet = function (st) {
     return Array.from(st.keys()).filter(el => el != null);
@@ -310,7 +310,7 @@ events.on(EVENTS.AUCTION_END, emitTCF2FinalResults);
  * A configuration function that initializes some module variables, as well as adds hooks
  * @param {Object} config - GDPR enforcement config object
  */
-export function setEnforcementConfig(config) {
+export function setEnforcementConfig (config) {
   let rules = deepAccess(config, 'gdpr.rules');
   if (!rules) {
     logWarn('TCF2: enforcing P1 and P2 by default');
@@ -348,7 +348,7 @@ export function setEnforcementConfig(config) {
   }
 }
 
-export function uninstall() {
+export function uninstall () {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
   hooksAdded = false;
 }

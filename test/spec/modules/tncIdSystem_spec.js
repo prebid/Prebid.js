@@ -60,7 +60,7 @@ describe('TNCID tests', function () {
       expect(completeCallback.calledOnceWithExactly()).to.be.true;
     });
 
-    it(`Should call external script if TNC is not loaded on page`, async function() {
+    it(`Should call external script if TNC is not loaded on page`, async function () {
       const completeCallback = sinon.spy();
       const {callback} = tncidSubModule.getId({params: {url: 'https://www.thenewco.tech?providerId=test'}}, { gdprApplies: false });
 
@@ -115,7 +115,7 @@ describe('TNCID tests', function () {
     before(() => {
       attachIdSystem(tncidSubModule);
     });
-    it('tncid', function() {
+    it('tncid', function () {
       const userId = {
         tncid: 'TEST_TNCID'
       };

@@ -1,9 +1,9 @@
 import {config} from 'src/config.js';
 import {RTD_LOCAL_NAME, addRealTimeData, getRealTimeData, blueconicSubmodule, storage} from 'modules/blueconicRtdProvider.js';
 
-describe('blueconicRtdProvider', function() {
+describe('blueconicRtdProvider', function () {
   let getDataFromLocalStorageStub;
-  beforeEach(function() {
+  beforeEach(function () {
     config.resetConfig();
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
   });
@@ -12,14 +12,14 @@ describe('blueconicRtdProvider', function() {
     getDataFromLocalStorageStub.restore();
   });
 
-  describe('blueconicSubmodule', function() {
+  describe('blueconicSubmodule', function () {
     it('successfully instantiates', function () {
 		  expect(blueconicSubmodule.init()).to.equal(true);
     });
   });
 
-  describe('Add Blueconic Real-Time Data', function() {
-    it('merges ortb2Fragment data', function() {
+  describe('Add Blueconic Real-Time Data', function () {
+    it('merges ortb2Fragment data', function () {
       const setConfigUserObj1 = {
         name: 'www.dataprovider1.com',
         ext: {segtax: 1},
@@ -63,7 +63,7 @@ describe('blueconicRtdProvider', function() {
       expect(ortb2Config.user.data).to.deep.include.members([setConfigUserObj1, setConfigUserObj2, rtdUserObj1]);
     });
 
-    it('merges data without duplication', function() {
+    it('merges data without duplication', function () {
       const userObj1 = {
         name: 'www.dataprovider1.com',
         ext: {segtax: 1},
@@ -106,8 +106,8 @@ describe('blueconicRtdProvider', function() {
     });
   });
 
-  describe('Get BlueConic Real-Time Data', function() {
-    it('gets rtd from local storage cache', function() {
+  describe('Get BlueConic Real-Time Data', function () {
+    it('gets rtd from local storage cache', function () {
       const rtdConfig = {
         params: {
           requestParams: {

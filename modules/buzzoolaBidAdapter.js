@@ -95,7 +95,7 @@ export const spec = {
  *
  * @param bid
  */
-function setOutstreamRenderer(bid) {
+function setOutstreamRenderer (bid) {
   let adData = JSON.parse(bid.ad);
   let unitSettings = deepAccess(adData, 'placement.unit_settings');
   let extendedSettings = {

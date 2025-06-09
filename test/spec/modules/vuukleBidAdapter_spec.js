@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/vuukleBidAdapter.js';
 import { config } from '../../../src/config.js';
 
-describe('vuukleBidAdapterTests', function() {
+describe('vuukleBidAdapterTests', function () {
   let bidRequestData = {
     bids: [
       {
@@ -17,7 +17,7 @@ describe('vuukleBidAdapterTests', function() {
   };
   let request = [];
 
-  it('validate_pub_params', function() {
+  it('validate_pub_params', function () {
     expect(
       spec.isBidRequestValid({
         bidder: 'vuukle',
@@ -28,21 +28,21 @@ describe('vuukleBidAdapterTests', function() {
     ).to.equal(true);
   });
 
-  it('validate_generated_params', function() {
+  it('validate_generated_params', function () {
     request = spec.buildRequests(bidRequestData.bids);
     let req_data = request[0].data;
 
     expect(req_data.bidId).to.equal('testbid');
   });
 
-  it('validate_generated_params_tmax', function() {
+  it('validate_generated_params_tmax', function () {
     request = spec.buildRequests(bidRequestData.bids, {timeout: 1234});
     let req_data = request[0].data;
 
     expect(req_data.tmax).to.equal(1234);
   });
 
-  it('validate_response_params', function() {
+  it('validate_response_params', function () {
     let serverResponse = {
       body: {
         'cpm': 0.01,
@@ -67,7 +67,7 @@ describe('vuukleBidAdapterTests', function() {
     expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
   });
 
-  describe('consent handling', function() {
+  describe('consent handling', function () {
     const bidderRequest = {
       gdprConsent: {
         consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
@@ -82,7 +82,7 @@ describe('vuukleBidAdapterTests', function() {
       }
     }
 
-    it('must handle consent 1/1', function() {
+    it('must handle consent 1/1', function () {
       request = spec.buildRequests(bidRequestData.bids, bidderRequest);
       let req_data = request[0].data;
 
@@ -91,7 +91,7 @@ describe('vuukleBidAdapterTests', function() {
       expect(req_data.consent).to.equal('COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
     })
 
-    it('must handle consent 0/1', function() {
+    it('must handle consent 0/1', function () {
       bidderRequest.gdprConsent.gdprApplies = 0;
       request = spec.buildRequests(bidRequestData.bids, bidderRequest);
       let req_data = request[0].data;
@@ -100,7 +100,7 @@ describe('vuukleBidAdapterTests', function() {
       expect(req_data.consentGiven).to.equal(1);
     })
 
-    it('must handle consent 0/0', function() {
+    it('must handle consent 0/0', function () {
       bidderRequest.gdprConsent.gdprApplies = 0;
       bidderRequest.gdprConsent.vendorData = undefined;
       request = spec.buildRequests(bidRequestData.bids, bidderRequest);
@@ -110,7 +110,7 @@ describe('vuukleBidAdapterTests', function() {
       expect(req_data.consentGiven).to.equal(0);
     })
 
-    it('must handle consent undef', function() {
+    it('must handle consent undef', function () {
       request = spec.buildRequests(bidRequestData.bids, {});
       let req_data = request[0].data;
 
@@ -119,21 +119,21 @@ describe('vuukleBidAdapterTests', function() {
     })
   })
 
-  it('must handle usp consent', function() {
+  it('must handle usp consent', function () {
     request = spec.buildRequests(bidRequestData.bids, {uspConsent: '1YNN'});
     let req_data = request[0].data;
 
     expect(req_data.uspConsent).to.equal('1YNN');
   })
 
-  it('must handle undefined usp consent', function() {
+  it('must handle undefined usp consent', function () {
     request = spec.buildRequests(bidRequestData.bids, {});
     let req_data = request[0].data;
 
     expect(req_data.uspConsent).to.equal(undefined);
   })
 
-  it('must handle coppa flag', function() {
+  it('must handle coppa flag', function () {
     sinon.stub(config, 'getConfig')
       .withArgs('coppa')
       .returns(true);

@@ -48,7 +48,7 @@ const whitelistedResources = /video|fetch|xmlhttprequest|other/;
  *
  * @return {boolean} returns TRUE if tracking started
  */
-export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidderRequests}) {
+export function trackInstreamDeliveredImpressions ({adUnits, bidsReceived, bidderRequests}) {
   const instreamTrackingConfig = config.getConfig('instreamTracking') || {};
   // check if instreamTracking is enabled and performance api is available
   if (!instreamTrackingConfig.enabled || !window.performance || !window.performance.getEntriesByType) {
@@ -79,7 +79,7 @@ export function trackInstreamDeliveredImpressions({adUnits, bidsReceived, bidder
   let instreamWinningBidsCount = 0;
   let lastRead = 0; // offset for performance.getEntriesByType
 
-  function poll() {
+  function poll () {
     // get network entries using the last read offset
     const entries = window.performance.getEntriesByType('resource').splice(lastRead);
     for (const resource of entries) {

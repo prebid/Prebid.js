@@ -4,7 +4,7 @@ import { getWindowTop, logError, getWindowLocation, getWindowSelf } from '../../
  * Determines if the script is running inside an iframe and retrieves the URL.
  * @return {string} The encoded vrref value representing the relevant URL.
  */
-export function getReferrer() {
+export function getReferrer () {
   try {
     const url = getWindowSelf() === getWindowTop()
       ? getWindowLocation().href
@@ -30,7 +30,7 @@ export function getReferrer() {
  * @param {string} domainName - The domain name used to determine the relevant referrer.
  * @return {string} The modified URL with appended `vrref` or `fui` parameters.
  */
-export function appendVrrefAndFui(url, domainName) {
+export function appendVrrefAndFui (url, domainName) {
   const fullUrl = encodeURIComponent(getReferrer());
   if (fullUrl) {
     return (url += '&vrref=' + getRelevantRefferer(domainName, fullUrl));
@@ -46,7 +46,7 @@ export function appendVrrefAndFui(url, domainName) {
  * @param {string} fullUrl The full URL to analyze
  * @return {string} The relevant referrer
  */
-export function getRelevantRefferer(domainName, fullUrl) {
+export function getRelevantRefferer (domainName, fullUrl) {
   if (domainName && isDomainIncluded(fullUrl, domainName)) {
     return fullUrl;
   }
@@ -59,7 +59,7 @@ export function getRelevantRefferer(domainName, fullUrl) {
  * @param {string} domainName - The domain name to search for within the URL.
  * @return {boolean} `True` if the domain name is found in the URL, `false` otherwise.
  */
-export function isDomainIncluded(fullUrl, domainName) {
+export function isDomainIncluded (fullUrl, domainName) {
   try {
     return fullUrl.includes(domainName);
   } catch (error) {

@@ -21,7 +21,7 @@ sinon.assert.expose(chai.assert, { prefix: 'sinon' });
 
 const fakeScriptURL = 'https://example.com/script.js';
 
-function makeFakeBidResponse() {
+function makeFakeBidResponse () {
   return {
     ad: '<body>hello ad</body>',
     bidderCode: 'BIDDER',
@@ -31,8 +31,8 @@ function makeFakeBidResponse() {
 }
 
 describe('clean.io RTD module', function () {
-  describe('readConfig()', function() {
-    it('should throw ConfigError on invalid configurations', function() {
+  describe('readConfig()', function () {
+    it('should throw ConfigError on invalid configurations', function () {
       expect(() => readConfig({})).to.throw(ConfigError);
       expect(() => readConfig({ params: {} })).to.throw(ConfigError);
       expect(() => readConfig({ params: { protectionMode: 'bids' } })).to.throw(ConfigError);
@@ -41,23 +41,23 @@ describe('clean.io RTD module', function () {
       expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: '123' } })).to.throw(ConfigError);
     });
 
-    it('should accept valid configurations', function() {
+    it('should accept valid configurations', function () {
       expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } })).to.not.throw();
       expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids' } })).to.not.throw();
       expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids-nowait' } })).to.not.throw();
     });
   });
 
-  describe('Module initialization step', function() {
+  describe('Module initialization step', function () {
     let insertElementStub;
-    beforeEach(function() {
+    beforeEach(function () {
       insertElementStub = sinon.stub(utils, 'insertElement');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.insertElement.restore();
     });
 
-    it('pageInitStepPreloadScript() should insert link/preload element', function() {
+    it('pageInitStepPreloadScript() should insert link/preload element', function () {
       pageInitStepPreloadScript(fakeScriptURL);
 
       sinon.assert.calledOnce(insertElementStub);
@@ -67,7 +67,7 @@ describe('clean.io RTD module', function () {
       sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.href === fakeScriptURL));
     });
 
-    it('pageInitStepProtectPage() should insert script element', function() {
+    it('pageInitStepProtectPage() should insert script element', function () {
       pageInitStepProtectPage(fakeScriptURL);
 
       sinon.assert.calledOnce(loadExternalScriptStub);
@@ -75,32 +75,32 @@ describe('clean.io RTD module', function () {
     });
   });
 
-  function ensurePrependToBidResponse(fakeBidResponse) {
+  function ensurePrependToBidResponse (fakeBidResponse) {
     expect(fakeBidResponse).to.have.own.property('ad').which.is.a('string');
     expect(fakeBidResponse.ad).to.contain('<!-- pbad://creativeId=CREATIVE&bidderCode=BIDDER&cpm=1.23 -->');
   }
 
-  function ensureWrapBidResponse(fakeBidResponse, scriptUrl) {
+  function ensureWrapBidResponse (fakeBidResponse, scriptUrl) {
     expect(fakeBidResponse).to.have.own.property('ad').which.is.a('string');
     expect(fakeBidResponse.ad).to.contain(`src="${scriptUrl}"`);
     expect(fakeBidResponse.ad).to.contain('agent.put(ad)');
   }
 
-  describe('Bid processing step', function() {
-    it('bidWrapStepAugmentHtml() should prepend bid-specific information in a comment', function() {
+  describe('Bid processing step', function () {
+    it('bidWrapStepAugmentHtml() should prepend bid-specific information in a comment', function () {
       const fakeBidResponse = makeFakeBidResponse();
       bidWrapStepAugmentHtml(fakeBidResponse);
       ensurePrependToBidResponse(fakeBidResponse);
     });
 
-    it('bidWrapStepProtectByWrapping() should wrap payload into a script tag', function() {
+    it('bidWrapStepProtectByWrapping() should wrap payload into a script tag', function () {
       const fakeBidResponse = makeFakeBidResponse();
       bidWrapStepProtectByWrapping(fakeScriptURL, 0, fakeBidResponse);
       ensureWrapBidResponse(fakeBidResponse, fakeScriptURL);
     });
   });
 
-  describe('Sumbodule execution', function() {
+  describe('Sumbodule execution', function () {
     let submoduleStub;
     let insertElementStub;
     beforeEach(function () {
@@ -112,7 +112,7 @@ describe('clean.io RTD module', function () {
       submoduleStub.restore();
     });
 
-    function getModule() {
+    function getModule () {
       beforeInit();
 
       expect(submoduleStub.calledOnceWith('realTimeData')).to.equal(true);
@@ -191,7 +191,7 @@ describe('clean.io RTD module', function () {
       const { init } = getModule();
       expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } }, {})).to.equal(true);
 
-      const eventCounter = { registerCleanioBillingEvent: function() {} };
+      const eventCounter = { registerCleanioBillingEvent: function () {} };
       sinon.spy(eventCounter, 'registerCleanioBillingEvent');
 
       events.on(EVENTS.BILLABLE_EVENT, (evt) => {

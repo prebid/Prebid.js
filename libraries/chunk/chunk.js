@@ -6,7 +6,7 @@
  * ['a', 'b', 'c', 'd', 'e'] chunked by 2 =>
  * [['a', 'b'], ['c', 'd'], ['e']]
  */
-export function chunk(array, size) {
+export function chunk (array, size) {
   let newArray = [];
 
   for (let i = 0; i < Math.ceil(array.length / size); i++) {

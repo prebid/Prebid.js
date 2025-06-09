@@ -6,7 +6,7 @@ import { registerVideoSupport } from '../src/adServerManager.js';
 import { getHook, submodule } from '../src/hook.js';
 
 export const adpodUtils = {};
-export function notifyTranslationModule(fn) {
+export function notifyTranslationModule (fn) {
   fn.call(this, 'freewheel');
 }
 

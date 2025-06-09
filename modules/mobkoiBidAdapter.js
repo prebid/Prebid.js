@@ -21,7 +21,7 @@ export const converter = ortbConverter({
     netRevenue: true,
     ttl: 30,
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const ortbRequest = buildRequest(imps, bidderRequest, context);
     const prebidBidRequest = context.bidRequests[0];
 
@@ -33,7 +33,7 @@ export const converter = ortbConverter({
 
     return ortbRequest;
   },
-  bidResponse(buildPrebidBidResponse, ortbBidResponse, context) {
+  bidResponse (buildPrebidBidResponse, ortbBidResponse, context) {
     const prebidBid = buildPrebidBidResponse(ortbBidResponse, context);
     utils.addCustomFieldsToPrebidBidResponse(prebidBid, ortbBidResponse);
     return prebidBid;
@@ -48,7 +48,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     if (
       !deepAccess(bid, `params.${PUBLISHER_PARAMS.PARAM_NAME_PLACEMENT_ID}`)
     ) {
@@ -62,7 +62,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    */
-  buildRequests(prebidBidRequests, prebidBidderRequest) {
+  buildRequests (prebidBidRequests, prebidBidderRequest) {
     const adServerEndpoint = utils.getAdServerEndpointBaseUrl(prebidBidderRequest) + '/bid';
 
     return {
@@ -80,7 +80,7 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    */
-  interpretResponse(serverResponse, customBidRequest) {
+  interpretResponse (serverResponse, customBidRequest) {
     if (!serverResponse.body) return [];
 
     const responseBody = {...serverResponse.body, seatbid: serverResponse.body.seatbid};
@@ -165,7 +165,7 @@ export const utils = {
    * @returns {string} The ORTB ID
    * @throws {Error} If the ORTB ID cannot be found in the given object.
    */
-  getOrtbId(bid) {
+  getOrtbId (bid) {
     const ortbId =
       // called bidderRequestId in Prebid Request
       bid.bidderRequestId ||
@@ -191,7 +191,7 @@ export const utils = {
    * @param {*} prebidBidResponse
    * @param {*} ortbBidResponse
    */
-  addCustomFieldsToPrebidBidResponse(prebidBidResponse, ortbBidResponse) {
+  addCustomFieldsToPrebidBidResponse (prebidBidResponse, ortbBidResponse) {
     prebidBidResponse.ortbBidResponse = ortbBidResponse;
     prebidBidResponse.ortbId = ortbBidResponse.id;
   },

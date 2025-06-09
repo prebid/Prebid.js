@@ -30,11 +30,11 @@ export const spec = {
   createFirstPartyData,
 };
 
-export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
+export function createDomain (subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.kueezrtb.com`;
 }
 
-export function getAndSetFirstPartyData() {
+export function getAndSetFirstPartyData () {
   if (!storage.hasLocalStorage()) {
     return;
   }
@@ -46,13 +46,13 @@ export function getAndSetFirstPartyData() {
   return fdata;
 }
 
-export function createFirstPartyData() {
+export function createFirstPartyData () {
   return {
     pcid: getFirstPartyUUID(), pcidDate: Date.now(),
   };
 }
 
-function getFirstPartyUUID() {
+function getFirstPartyUUID () {
   let d = new Date().getTime();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (d + Math.random() * 16) % 16 | 0;
@@ -61,7 +61,7 @@ function getFirstPartyUUID() {
   });
 };
 
-function createUniqueRequestData(hashUrl, bid) {
+function createUniqueRequestData (hashUrl, bid) {
   const {auctionId, transactionId} = bid;
   const fdata = getAndSetFirstPartyData();
   return {

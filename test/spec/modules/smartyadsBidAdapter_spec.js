@@ -80,13 +80,13 @@ describe('SmartyadsAdapter', function () {
     });
   });
 
-  describe('with COPPA', function() {
-    beforeEach(function() {
+  describe('with COPPA', function () {
+    beforeEach(function () {
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
         .returns(true);
     });
-    afterEach(function() {
+    afterEach(function () {
       config.getConfig.restore();
     });
 

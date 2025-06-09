@@ -132,13 +132,13 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
   });
 });
 
-function mockRandomSizeArray(len) {
+function mockRandomSizeArray (len) {
   return Array.apply(null, {length: len}).map(i => {
     return [Math.floor(Math.random() * 800), Math.floor(Math.random() * 800)]
   });
 }
 
-function mockBidRequestListData(mediaType, size, customSizes) {
+function mockBidRequestListData (mediaType, size, customSizes) {
   return Array.apply(null, {length: size}).map((i, index) => {
     const id = Math.floor(Math.random() * 800) * (index + 1);
     let mediaTypes;
@@ -174,7 +174,7 @@ function mockBidRequestListData(mediaType, size, customSizes) {
   });
 }
 
-function mockRefererData() {
+function mockRefererData () {
   return {
     refererInfo: {
       page: 'https://some-test.page'
@@ -182,7 +182,7 @@ function mockRefererData() {
   }
 }
 
-function mockResponseData(requestData) {
+function mockResponseData (requestData) {
   let data = {}
   requestData.data.forEach((request, index) => {
     const rndIndex = Math.floor(Math.random() * 800);

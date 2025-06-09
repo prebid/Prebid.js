@@ -7,7 +7,7 @@ import {getRefererInfo} from 'src/refererDetection.js';
 import { setConfig as setCurrencyConfig } from '../../../modules/currency';
 import { addFPDToBidderRequest } from '../../helpers/fpd';
 
-function createBidderRequest(auctionId, timeout, pageUrl, addGdprConsent) {
+function createBidderRequest (auctionId, timeout, pageUrl, addGdprConsent) {
   const gdprConsent = addGdprConsent ? {
     consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
     apiVersion: 2,
@@ -41,7 +41,7 @@ function createBidderRequest(auctionId, timeout, pageUrl, addGdprConsent) {
   };
 }
 
-function createValidBidRequest(params, bidId, sizes) {
+function createValidBidRequest (params, bidId, sizes) {
   const validBidRequest = {
     adUnitCode: 'adunit-code',
     bidId: bidId || '22c4871113f461',

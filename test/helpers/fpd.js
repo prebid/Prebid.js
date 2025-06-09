@@ -3,16 +3,16 @@ import {PbPromise} from '../../src/utils/promise.js';
 import {deepClone} from '../../src/utils.js';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 
-export function mockFpdEnrichments(sandbox, overrides = {}) {
+export function mockFpdEnrichments (sandbox, overrides = {}) {
   overrides = Object.assign({}, {
     // override window getters, required for ChromeHeadless, apparently it sees window.self !== window
-    getWindowTop() {
+    getWindowTop () {
       return window
     },
-    getWindowSelf() {
+    getWindowSelf () {
       return window
     },
-    getHighEntropySUA() {
+    getHighEntropySUA () {
       return PbPromise.resolve()
     }
   }, overrides)
@@ -32,21 +32,21 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
   })
 }
 
-export function addFPDEnrichments(ortb2 = {}, overrides) {
+export function addFPDEnrichments (ortb2 = {}, overrides) {
   const sandbox = sinon.sandbox.create();
   mockFpdEnrichments(sandbox, overrides)
   return enrichFPD(PbPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }
 
-export function addFPDToBidderRequest(bidderRequest, overrides) {
+export function addFPDToBidderRequest (bidderRequest, overrides) {
   overrides = Object.assign({}, {
-    getRefererInfo() {
+    getRefererInfo () {
       return bidderRequest.refererInfo || {};
     },
-    gdprConsent() {
+    gdprConsent () {
       return bidderRequest.gdprConsent;
     },
-    uspConsent() {
+    uspConsent () {
       return bidderRequest.uspConsent;
     }
   }, overrides);

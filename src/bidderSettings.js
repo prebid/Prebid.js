@@ -3,7 +3,7 @@ import {getGlobal} from './prebidGlobal.js';
 import { JSON_MAPPING } from './constants.js';
 
 export class ScopedSettings {
-  constructor(getSettings, defaultScope) {
+  constructor (getSettings, defaultScope) {
     this.getSettings = getSettings;
     this.defaultScope = defaultScope;
   }
@@ -15,7 +15,7 @@ export class ScopedSettings {
    * @param path {String}
    * @returns {*}
    */
-  get(scope, path) {
+  get (scope, path) {
     let value = this.getOwn(scope, path);
     if (typeof value === 'undefined') {
       value = this.getOwn(null, path);
@@ -29,7 +29,7 @@ export class ScopedSettings {
    * @param path {String}
    * @returns {*}
    */
-  getOwn(scope, path) {
+  getOwn (scope, path) {
     scope = this.#resolveScope(scope);
     return deepAccess(this.getSettings(), `${scope}.${path}`)
   }
@@ -37,26 +37,26 @@ export class ScopedSettings {
   /**
    * @returns {string[]} all existing scopes except the default one.
    */
-  getScopes() {
+  getScopes () {
     return Object.keys(this.getSettings()).filter((scope) => scope !== this.defaultScope);
   }
 
   /**
    * @returns all settings in the given scope, merged with the settings for the default scope.
    */
-  settingsFor(scope) {
+  settingsFor (scope) {
     return mergeDeep({}, this.ownSettingsFor(null), this.ownSettingsFor(scope));
   }
 
   /**
    * @returns all settings in the given scope, *without* any of the default settings.
    */
-  ownSettingsFor(scope) {
+  ownSettingsFor (scope) {
     scope = this.#resolveScope(scope);
     return this.getSettings()[scope] || {};
   }
 
-  #resolveScope(scope) {
+  #resolveScope (scope) {
     if (scope == null) {
       return this.defaultScope;
     } else {

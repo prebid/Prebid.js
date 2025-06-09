@@ -25,7 +25,7 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME,
 });
 
-function getModuleUrl(accountId) {
+function getModuleUrl (accountId) {
   const path = accountId ?? 'sdk';
   return `https://cdn.edkt.io/${path}/edgekit.min.js`;
 }
@@ -35,7 +35,7 @@ function getModuleUrl(accountId) {
  * @param {Object} rtdConfig
  * @return {void}
  */
-export function attachScriptTagToDOM(rtdConfig) {
+export function attachScriptTagToDOM (rtdConfig) {
   var edktInitializor = (window.edktInitializor = window.edktInitializor || {});
   if (!edktInitializor.invoked) {
     edktInitializor.accountId = rtdConfig.params.accountId;
@@ -51,7 +51,7 @@ export function attachScriptTagToDOM(rtdConfig) {
  * Fetch audiences from localStorage
  * @return {Array}
  */
-export function getMatchedAudiencesFromStorage() {
+export function getMatchedAudiencesFromStorage () {
   const audiences = storage.getDataFromLocalStorage(AG_AUDIENCE_IDS_KEY);
   if (!audiences) return [];
   try {
@@ -68,7 +68,7 @@ export function getMatchedAudiencesFromStorage() {
  * @param {Array} audiences
  * @return {void}
  */
-export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
+export function setAudiencesAsBidderOrtb2 (bidConfig, rtdConfig, audiences) {
   const bidders = deepAccess(rtdConfig, 'params.bidders');
   if (!bidders || bidders.length === 0 || !audiences || audiences.length === 0) return;
 
@@ -98,7 +98,7 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
  * @param {Object} userConsent
  * @return {boolean}
  */
-function init(rtdConfig, userConsent) {
+function init (rtdConfig, userConsent) {
   attachScriptTagToDOM(rtdConfig);
   return true;
 }
@@ -111,7 +111,7 @@ function init(rtdConfig, userConsent) {
  * @param {Object} userConsent
  * @return {void}
  */
-export function passAudiencesToBidders(
+export function passAudiencesToBidders (
   bidConfig,
   onDone,
   rtdConfig,

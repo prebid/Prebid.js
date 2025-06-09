@@ -38,7 +38,7 @@ exports.DefaultDealID = DefaultDealID;
 
 exports.ADAPTER_CODE = ADAPTER_CODE;
 
-function _createBidSlot(placementCode, indexSlotID, sizes, config) {
+function _createBidSlot (placementCode, indexSlotID, sizes, config) {
   config = config || {};
   var bid = {};
   bid.bidder = ('bidder' in config) ? config.bidder : ADAPTER_CODE;
@@ -75,13 +75,13 @@ function _createBidSlot(placementCode, indexSlotID, sizes, config) {
 
 exports.createBidSlot = _createBidSlot;
 
-exports.createBidSlots = function(numSlot, numSize) {
+exports.createBidSlots = function (numSlot, numSize) {
   if (typeof numSlot === 'undefined') numSlot = 1;
   if (typeof numSize === 'undefined') numSize = 1;
 
   var bids = Array(numSlot);
 
-  var mkPlacementCode = function(i, j) { return DefaultPlacementCodePrefix + i + '_' + j; };
+  var mkPlacementCode = function (i, j) { return DefaultPlacementCodePrefix + i + '_' + j; };
   for (var i = 0; i < bids.length; i++) {
     var requestSizes = Array(numSize);
     for (var j = 0; j < requestSizes.length; j++) requestSizes[j] = AllowedAdUnits[(i + j) % AllowedAdUnits.length];
@@ -93,7 +93,7 @@ exports.createBidSlots = function(numSlot, numSize) {
   return bids;
 }
 
-exports.parseIndexRequest = function(url) {
+exports.parseIndexRequest = function (url) {
   if (typeof url === 'undefined') return {};
   var uri = url.split('?')[1];
   var hashes = uri.split('&');
@@ -110,7 +110,7 @@ exports.parseIndexRequest = function(url) {
   return requestJSON;
 }
 
-exports.getExpectedIndexSlots = function(bids) {
+exports.getExpectedIndexSlots = function (bids) {
   var size = 0;
   for (var i = 0; i < bids.length; i++) {
     size += bids[i].sizes.length;
@@ -118,12 +118,12 @@ exports.getExpectedIndexSlots = function(bids) {
   return size;
 }
 
-function clone(x) {
+function clone (x) {
   return deepClone(x);
 }
 
 // returns the difference(lhs, rhs), difference(rhs,lhs), and intersection(lhs, rhs) based on the object keys
-function compareOnKeys(lhs, rhs) {
+function compareOnKeys (lhs, rhs) {
   var lonly = [];
   var ronly = [];
   var both = [];
@@ -146,7 +146,7 @@ function compareOnKeys(lhs, rhs) {
   return { lhsOnly: lonly, rhsOnly: ronly, intersection: both };
 }
 
-function createObjectFromArray(arr) {
+function createObjectFromArray (arr) {
   var obj = {};
 
   for (var i = 0; i < arr.length; i++) {
@@ -160,7 +160,7 @@ function createObjectFromArray(arr) {
   return obj;
 }
 
-exports.expandSizes = function(bid) {
+exports.expandSizes = function (bid) {
   var result = [];
   for (var i = 0; i < bid.sizes.length; i++) {
     var size = bid.sizes[i];
@@ -173,13 +173,13 @@ exports.expandSizes = function(bid) {
   return result;
 }
 
-exports.matchOnPlacementCode = function(expected, prebid) {
+exports.matchOnPlacementCode = function (expected, prebid) {
   var compared = compareOnKeys(expected, prebid);
 
-  return { unmatched: { expected: compared.lhsOnly, prebid: compared.rhsOnly }, matched: compared.intersection.map(function(pair) { return { expected: pair.left, prebid: pair.right, placementCode: pair.name }; }) };
+  return { unmatched: { expected: compared.lhsOnly, prebid: compared.rhsOnly }, matched: compared.intersection.map(function (pair) { return { expected: pair.left, prebid: pair.right, placementCode: pair.name }; }) };
 };
 
-exports.matchBidsOnSID = function(lhs, rhs) {
+exports.matchBidsOnSID = function (lhs, rhs) {
   var lonly = [];
   var ronly = [];
 
@@ -203,12 +203,12 @@ exports.matchBidsOnSID = function(lhs, rhs) {
   var rstore = createObjectFromArray(rhs.map(bid => [bid.ext.sid, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function (pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
 }
 
-exports.matchBidsOnSize = function(lhs, rhs) {
+exports.matchBidsOnSize = function (lhs, rhs) {
   var lonly = [];
   var ronly = [];
 
@@ -222,15 +222,15 @@ exports.matchBidsOnSize = function(lhs, rhs) {
   }
 
   var lstore = createObjectFromArray(configured);
-  var rstore = createObjectFromArray(rhs.map(bid => [ bid.banner.w + 'x' + bid.banner.h, bid ]));
+  var rstore = createObjectFromArray(rhs.map(bid => [bid.banner.w + 'x' + bid.banner.h, bid]));
 
   var compared = compareOnKeys(lstore, rstore);
-  var matched = compared.intersection.map(function(pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
+  var matched = compared.intersection.map(function (pair) { return { configured: pair.left, sent: pair.right, name: pair.name } });
 
   return { unmatched: { configured: compared.lhsOnly, sent: compared.rhsOnly }, matched: matched };
 }
 
-exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, optionalResponseIdentifier, optionalPassOnBid, optionalResponseParam) {
+exports.getBidResponse = function (configuredBids, urlJSON, optionalPriceLevel, optionalResponseIdentifier, optionalPassOnBid, optionalResponseParam) {
   if (typeof configuredBids === 'undefined' || typeof urlJSON === 'undefined') return {};
   var response = {};
 
@@ -254,7 +254,7 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
       if (typeof optionalPassOnBid[i] !== 'undefined' && typeof optionalPassOnBid[i][j] !== 'undefined' && optionalPassOnBid[i][j]) continue;
 
       var bid = {};
-      bid.adomain = [ (DefaultAdDoman + adCount).toString() ];
+      bid.adomain = [(DefaultAdDoman + adCount).toString()];
       bid.adid = (DefaultCreativeID + adCount).toString();
       bid.impid = adCount.toString();
       bid.id = adCount.toString();
@@ -288,7 +288,7 @@ exports.getBidResponse = function(configuredBids, urlJSON, optionalPriceLevel, o
   return response;
 }
 
-exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
+exports.getExpectedAdaptorResponse = function (configuredBids, asResponse) {
   var asAllBids = asResponse.seatbid;
   var expectedResponse = {};
   for (var m = 0; m < asAllBids.length; m++) {
@@ -315,7 +315,7 @@ exports.getExpectedAdaptorResponse = function(configuredBids, asResponse) {
         }
 
         if (typeof expectedResponse[placementCode] === 'undefined') {
-          expectedResponse[placementCode] = [ result ];
+          expectedResponse[placementCode] = [result];
         } else {
           expectedResponse[placementCode].push(result);
         }

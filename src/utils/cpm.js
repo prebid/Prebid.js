@@ -2,7 +2,7 @@ import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
 import {logError} from '../utils.js';
 
-export function adjustCpm(cpm, bidResponse, bidRequest, {index = auctionManager.index, bs = bidderSettings} = {}) {
+export function adjustCpm (cpm, bidResponse, bidRequest, {index = auctionManager.index, bs = bidderSettings} = {}) {
   bidRequest = bidRequest || index.getBidRequest(bidResponse);
   const adapterCode = bidResponse?.adapterCode;
   const bidderCode = bidResponse?.bidderCode || bidRequest?.bidder;

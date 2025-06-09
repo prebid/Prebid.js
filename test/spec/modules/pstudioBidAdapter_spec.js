@@ -505,7 +505,7 @@ describe('PStudioAdapter', function () {
         url: `https://dsp.myads.telkomsel.com/api/v1/pixel?uid=${expectedUID2}`,
       });
       // Helper function to extract UUID from URL
-      function extractValueFromURL(url, key) {
+      function extractValueFromURL (url, key) {
         const match = url.match(new RegExp(`[?&]${key}=([^&]*)`));
         return match ? match[1] : null;
       }

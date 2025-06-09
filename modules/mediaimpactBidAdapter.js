@@ -78,7 +78,7 @@ export const spec = {
     return true;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -104,7 +104,7 @@ export const spec = {
 
     serverResponses.forEach(resp => {
       if (resp.body) {
-        Object.keys(resp.body).map(function(key, index) {
+        Object.keys(resp.body).map(function (key, index) {
           let respObject = resp.body[key];
           if (respObject['syncs'] !== undefined &&
             Array.isArray(respObject.syncs) &&

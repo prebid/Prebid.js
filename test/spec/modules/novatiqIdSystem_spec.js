@@ -10,29 +10,29 @@ describe('novatiqIdSystem', function () {
     useSspHost: true
   }
 
-  describe('getSrcId', function() {
-    it('getSrcId should set srcId value to 000 due to undefined parameter in config section', function() {
+  describe('getSrcId', function () {
+    it('getSrcId should set srcId value to 000 due to undefined parameter in config section', function () {
       const config = { params: { } };
       const configParams = config.params || {};
       const response = novatiqIdSubmodule.getSrcId(configParams, urlParams);
       expect(response).to.eq('000');
     });
 
-    it('getSrcId should set srcId value to 000 due to missing value in config section', function() {
+    it('getSrcId should set srcId value to 000 due to missing value in config section', function () {
       const config = { params: { sourceid: '' } };
       const configParams = config.params || {};
       const response = novatiqIdSubmodule.getSrcId(configParams, urlParams);
       expect(response).to.eq('000');
     });
 
-    it('getSrcId should set value to 000 due to null value in config section', function() {
+    it('getSrcId should set value to 000 due to null value in config section', function () {
       const config = { params: { sourceid: null } };
       const configParams = config.params || {};
       const response = novatiqIdSubmodule.getSrcId(configParams, urlParams);
       expect(response).to.eq('000');
     });
 
-    it('getSrcId should set value to 001 due to wrong length in config section max 3 chars', function() {
+    it('getSrcId should set value to 001 due to wrong length in config section max 3 chars', function () {
       const config = { params: { sourceid: '1234' } };
       const configParams = config.params || {};
       const response = novatiqIdSubmodule.getSrcId(configParams, urlParams);
@@ -40,26 +40,26 @@ describe('novatiqIdSystem', function () {
     });
   });
 
-  describe('getId', function() {
-    it('should log message if novatiqId has wrong format', function() {
+  describe('getId', function () {
+    it('should log message if novatiqId has wrong format', function () {
       const config = { params: { sourceid: '123' } };
       const response = novatiqIdSubmodule.getId(config);
       expect(response.id).to.have.length(40);
     });
 
-    it('should log message if novatiqId not provided', function() {
+    it('should log message if novatiqId not provided', function () {
       const config = { params: { sourceid: '123' } };
       const response = novatiqIdSubmodule.getId(config);
       expect(response.id).should.be.not.empty;
     });
 
-    it('should set sharedStatus if sharedID is configured but returned null', function() {
+    it('should set sharedStatus if sharedID is configured but returned null', function () {
       const config = { params: { sourceid: '123', useSharedId: true } };
       const response = novatiqIdSubmodule.getId(config);
       expect(response.sharedStatus).to.equal('Not Found');
     });
 
-    it('should set sharedStatus if sharedID is configured and is valid', function() {
+    it('should set sharedStatus if sharedID is configured and is valid', function () {
       const config = { params: { sourceid: '123', useSharedId: true } };
 
       let stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
@@ -71,7 +71,7 @@ describe('novatiqIdSystem', function () {
       expect(response.sharedStatus).to.equal('Found');
     });
 
-    it('should set sharedStatus if sharedID is configured and is valid when making an async call', function() {
+    it('should set sharedStatus if sharedID is configured and is valid when making an async call', function () {
       const config = { params: { sourceid: '123', useSharedId: true, useCallbacks: true } };
 
       let stub = sinon.stub(novatiqIdSubmodule, 'getSharedId').returns('fakeId');
@@ -84,8 +84,8 @@ describe('novatiqIdSystem', function () {
     });
   });
 
-  describe('getUrlParams', function() {
-    it('should return default url parameters when none set', function() {
+  describe('getUrlParams', function () {
+    it('should return default url parameters when none set', function () {
       const defaultUrlParams = {
         novatiqId: 'snowflake',
         useStandardUuid: false,
@@ -99,7 +99,7 @@ describe('novatiqIdSystem', function () {
       expect(response).to.deep.equal(defaultUrlParams);
     });
 
-    it('should return custom url parameters when set', function() {
+    it('should return custom url parameters when set', function () {
       let customUrlParams = {
         novatiqId: 'hyperid',
         useStandardUuid: true,
@@ -122,8 +122,8 @@ describe('novatiqIdSystem', function () {
     });
   });
 
-  describe('sendAsyncSyncRequest', function() {
-    it('should return an async function when called asynchronously', function() {
+  describe('sendAsyncSyncRequest', function () {
+    it('should return an async function when called asynchronously', function () {
       const defaultUrlParams = {
         novatiqId: 'snowflake',
         useStandardUuid: false,
@@ -137,14 +137,14 @@ describe('novatiqIdSystem', function () {
     });
   });
 
-  describe('decode', function() {
-    it('should return the same novatiqId as passed in if not async', function() {
+  describe('decode', function () {
+    it('should return the same novatiqId as passed in if not async', function () {
       const novatiqId = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       const response = novatiqIdSubmodule.decode(novatiqId);
       expect(response.novatiq.snowflake).to.have.length(40);
     });
 
-    it('should change the result format if async', function() {
+    it('should change the result format if async', function () {
       let novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;
@@ -154,7 +154,7 @@ describe('novatiqIdSystem', function () {
       expect(response.novatiq.snowflake.syncResponse).should.be.not.empty;
     });
 
-    it('should remove syncResponse if removeAdditionalInfo true', function() {
+    it('should remove syncResponse if removeAdditionalInfo true', function () {
       let novatiqId = {};
       novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       novatiqId.syncResponse = 2;

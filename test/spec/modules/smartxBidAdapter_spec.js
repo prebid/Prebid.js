@@ -6,7 +6,7 @@ import {
 } from 'modules/smartxBidAdapter.js';
 
 describe('The smartx adapter', function () {
-  function getValidBidObject() {
+  function getValidBidObject () {
     return {
       bidId: 123,
       mediaTypes: {

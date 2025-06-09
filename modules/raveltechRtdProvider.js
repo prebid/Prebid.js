@@ -9,7 +9,7 @@ const RAVEL_ENDPOINT = 'https://pb1.rvlproxy.net/bid/bid';
 const getAdapterNameForAlias = (aliasName) => adapterManager.aliasRegistry[aliasName] || aliasName;
 
 const getAnonymizedEids = (eids) => {
-  const ZKAD = window.ZKAD || { anonymizeID(v, p) { return undefined; } };
+  const ZKAD = window.ZKAD || { anonymizeID (v, p) { return undefined; } };
   logInfo('ZKAD.ready=', ZKAD.ready);
   if (!eids) { return eids; }
 
@@ -24,10 +24,10 @@ const getAnonymizedEids = (eids) => {
         return [];
       }
       logInfo('Anonymized as byte array of length=', id.length);
-      return [ {
+      return [{
         ...uid,
         id
-      } ];
+      }];
     })
   })
 
@@ -57,7 +57,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
     }
     let requests = preserveOriginalBid ? buildRequests(validBidRequests, ...rest) : [];
     if (!isArray(requests)) {
-      requests = [ requests ];
+      requests = [requests];
     }
 
     try {
@@ -73,7 +73,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
 
       let ravelRequests = buildRequests(ravelBidRequests, ...rest);
       if (!isArray(ravelRequests) && ravelRequests) {
-        ravelRequests = [ ravelRequests ];
+        ravelRequests = [ravelRequests];
       }
       if (ravelRequests) {
         ravelRequests.forEach(request => {
@@ -84,7 +84,7 @@ const wrapBuildRequests = (aliasName, preserveOriginalBid, buildRequests) => {
         })
       }
 
-      return [ ...requests ?? [], ...ravelRequests ?? [] ];
+      return [...requests ?? [], ...ravelRequests ?? []];
     } catch (e) {
       logError('Error while generating ravel requests :', e);
       return requests;

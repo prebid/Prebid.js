@@ -4,7 +4,7 @@ import {buildUrl, logError, parseUrl} from './utils.js';
 export const dep = {
   fetch: window.fetch.bind(window),
   makeRequest: (r, o) => new Request(r, o),
-  timeout(timeout, resource) {
+  timeout (timeout, resource) {
     const ctl = new AbortController();
     let cancelTimer = setTimeout(() => {
       ctl.abort();
@@ -13,7 +13,7 @@ export const dep = {
     }, timeout);
     return {
       signal: ctl.signal,
-      done() {
+      done () {
         cancelTimer && clearTimeout(cancelTimer)
       }
     }
@@ -28,7 +28,7 @@ const CTYPE = 'Content-Type';
  * transform legacy `ajax` parameters into a fetch request.
  * @returns {Request}
  */
-export function toFetchRequest(url, data, options = {}) {
+export function toFetchRequest (url, data, options = {}) {
   const method = options.method || (data ? POST : GET);
   if (method === GET && data) {
     const urlInfo = parseUrl(url, options);
@@ -70,7 +70,7 @@ export function toFetchRequest(url, data, options = {}) {
  *
  * @returns {function(*, {}?): Promise<Response>}
  */
-export function fetcherFactory(timeout = 3000, {request, done} = {}) {
+export function fetcherFactory (timeout = 3000, {request, done} = {}) {
   let fetcher = (resource, options) => {
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
@@ -94,9 +94,9 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
   return fetcher;
 }
 
-function toXHR({status, statusText = '', headers, url}, responseText) {
+function toXHR ({status, statusText = '', headers, url}, responseText) {
   let xml = 0;
-  function getXML(onError) {
+  function getXML (onError) {
     if (xml === 0) {
       try {
         xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
@@ -116,11 +116,11 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
     response: responseText,
     responseType: '',
     responseURL: url,
-    get responseXML() {
+    get responseXML () {
       return getXML(logError);
     },
     getResponseHeader: (header) => headers?.has(header) ? headers.get(header) : null,
-    toJSON() {
+    toJSON () {
       return Object.assign({responseXML: getXML()}, this)
     },
     timedOut: false
@@ -130,7 +130,7 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
 /**
  * attach legacy `ajax` callbacks to a fetch promise.
  */
-export function attachCallbacks(fetchPm, callback) {
+export function attachCallbacks (fetchPm, callback) {
   const {success, error} = typeof callback === 'object' && callback != null ? callback : {
     success: typeof callback === 'function' ? callback : () => null,
     error: (e, x) => logError('Network error', e, x)
@@ -145,7 +145,7 @@ export function attachCallbacks(fetchPm, callback) {
     );
 }
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
+export function ajaxBuilder (timeout = 3000, {request, done} = {}) {
   const fetcher = fetcherFactory(timeout, {request, done});
   return function (url, callback, data, options = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);
@@ -159,7 +159,7 @@ export function ajaxBuilder(timeout = 3000, {request, done} = {}) {
  * @param {*} data An ArrayBuffer, a TypedArray, a DataView, a Blob, a string literal or object, a FormData or a URLSearchParams object containing the data to send.
  * @returns {boolean} true if the user agent successfully queued the data for transfer. Otherwise, it returns false.
  */
-export function sendBeacon(url, data) {
+export function sendBeacon (url, data) {
   if (!window.navigator || !window.navigator.sendBeacon) {
     return false;
   }

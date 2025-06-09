@@ -42,7 +42,7 @@ const _public = (function () {
    * @param {Array} args  The payload emitted with the event.
    * @private
    */
-  function _dispatch(eventString, args) {
+  function _dispatch (eventString, args) {
     utils.logMessage('Emitting event for: ' + eventString);
 
     let eventPayload = args[0] || {};
@@ -86,7 +86,7 @@ const _public = (function () {
     });
   }
 
-  function _checkAvailableEvent(event) {
+  function _checkAvailableEvent (event) {
     return allEvents.includes(event)
   }
 
@@ -168,6 +168,6 @@ utils._setEventEmitter(_public.emit.bind(_public));
 
 export const {on, off, get, getEvents, emit, addEvents, has} = _public;
 
-export function clearEvents() {
+export function clearEvents () {
   eventsFired.clear();
 }

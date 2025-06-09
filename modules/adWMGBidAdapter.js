@@ -154,7 +154,7 @@ export const spec = {
     return syncs;
   },
   parseUserAgent: (ua) => {
-    function detectDevice() {
+    function detectDevice () {
       if (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i
         .test(ua.toLowerCase())) {
         return 5;
@@ -170,7 +170,7 @@ export const spec = {
       return 2;
     }
 
-    function detectOs() {
+    function detectOs () {
       const module = {
         options: [],
         header: [navigator.platform, ua, navigator.appVersion, navigator.vendor, window.opera],

@@ -26,7 +26,7 @@ export const SERVER_PATH_US1_SYNC = 'https://prebidjs-sync-us1.sonar-ads.com/syn
 /**
  * Bridgeupp : Report events for analytics and debuging.
  */
-function reportEvents(eventType, eventData) {
+function reportEvents (eventType, eventData) {
   if (!eventData || spec?.reportEventsEnabled !== true) {
     return;
   }
@@ -74,7 +74,7 @@ const CONVERTER = ortbConverter({
  * @param {Object} context - Context for the impression.
  * @returns {Object} The constructed impression object.
  */
-function imp(buildImp, bidRequest, context) {
+function imp (buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
@@ -113,7 +113,7 @@ function imp(buildImp, bidRequest, context) {
  * @param {Object} context - Additional context.
  * @returns {Object} The complete oRTB request object.
  */
-function request(buildRequest, imps, bidderRequest, context) {
+function request (buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
   const siteId = context.bidRequests[0]?.params?.siteId;
 
@@ -128,7 +128,7 @@ function request(buildRequest, imps, bidderRequest, context) {
   return request;
 }
 
-function bidResponse(buildBidResponse, bid, context) {
+function bidResponse (buildBidResponse, bid, context) {
   return buildBidResponse(bid, context);
 }
 
@@ -141,7 +141,7 @@ function bidResponse(buildBidResponse, bid, context) {
  * @param {Object} context - Additional context.
  * @returns {Object} Prebid.js compatible bid response.
  */
-function response(buildResponse, bidResponses, ortbResponse, context) {
+function response (buildResponse, bidResponses, ortbResponse, context) {
   return buildResponse(bidResponses, ortbResponse, context);
 }
 
@@ -197,7 +197,7 @@ export const spec = {
    * @param {ServerRequest} bidRequest - Original bid request.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (typeof serverResponse?.body == 'undefined') {
       return [];
     }

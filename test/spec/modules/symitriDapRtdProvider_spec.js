@@ -13,7 +13,7 @@ const responseHeader = {'Content-Type': 'application/json'};
 
 let events = require('src/events');
 
-describe('symitriDapRtdProvider', function() {
+describe('symitriDapRtdProvider', function () {
   const testReqBidsConfigObj = {
     adUnits: [
       {
@@ -22,7 +22,7 @@ describe('symitriDapRtdProvider', function() {
     ]
   };
 
-  const onDone = function() { return true };
+  const onDone = function () { return true };
 
   const sampleGdprConsentConfig = {
     'gdpr': {
@@ -153,7 +153,7 @@ describe('symitriDapRtdProvider', function() {
 
   let ortb2, bidConfig;
 
-  beforeEach(function() {
+  beforeEach(function () {
     bidConfig = {ortb2Fragments: {}};
     ortb2 = bidConfig.ortb2Fragments.global = {};
     config.resetConfig();
@@ -166,14 +166,14 @@ describe('symitriDapRtdProvider', function() {
   afterEach(function () {
   });
 
-  describe('symitriDapRtdSubmodule', function() {
+  describe('symitriDapRtdSubmodule', function () {
     it('successfully instantiates', function () {
       expect(symitriDapRtdSubmodule.init()).to.equal(true);
     });
   });
 
-  describe('Get Real-Time Data', function() {
-    it('gets rtd from local storage cache', function() {
+  describe('Get Real-Time Data', function () {
+    it('gets rtd from local storage cache', function () {
       let dapGetMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetMembershipFromLocalStorage').returns(membership)
       let dapGetRtdObjStub = sinon.stub(dapUtils, 'dapGetRtdObj').returns(cachedRtd)
       let dapGetEncryptedMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetEncryptedMembershipFromLocalStorage').returns(encMembership)
@@ -197,8 +197,8 @@ describe('symitriDapRtdProvider', function() {
     });
   });
 
-  describe('calling DAP APIs', function() {
-    it('Calls callDapAPIs for unencrypted segments flow', function() {
+  describe('calling DAP APIs', function () {
+    it('Calls callDapAPIs for unencrypted segments flow', function () {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       let dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
       try {
@@ -219,7 +219,7 @@ describe('symitriDapRtdProvider', function() {
       }
     });
 
-    it('Calls callDapAPIs for encrypted segments flow', function() {
+    it('Calls callDapAPIs for encrypted segments flow', function () {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       let dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
       try {
@@ -246,9 +246,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapTokenize error callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -259,9 +259,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapTokenize success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -275,9 +275,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapX2Tokenize error callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleX2Config));
       let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -289,9 +289,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapX2Tokenize success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleX2Config));
       let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -348,9 +348,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapMembership success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -361,9 +361,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapMembership error callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -376,9 +376,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapEncMembership success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(esampleConfig));
       let submoduleCallback = dapUtils.dapEncryptedMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -389,9 +389,9 @@ describe('symitriDapRtdProvider', function() {
     it('dapEncMembership error callback', function () {
       let configAsync = JSON.parse(JSON.stringify(esampleConfig));
       let submoduleCallback = dapUtils.dapEncryptedMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -652,7 +652,7 @@ describe('symitriDapRtdProvider', function() {
     });
   });
 
-  describe('Test identifier is added properly to apiParams', function() {
+  describe('Test identifier is added properly to apiParams', function () {
     let sandbox;
 
     beforeEach(() => {

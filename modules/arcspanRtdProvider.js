@@ -18,7 +18,7 @@ export const arcspanSubmodule = {
   getBidRequestData: alterBidRequests,
 };
 
-function init(config, userConsent) {
+function init (config, userConsent) {
   if (typeof config.params.silo === 'undefined') {
     return false;
   }
@@ -34,7 +34,7 @@ function init(config, userConsent) {
   return true;
 }
 
-function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
+function alterBidRequests (reqBidsConfigObj, callback, config, userConsent) {
   var _v1 = [];
   var _v1s = [];
   var _v2 = [];

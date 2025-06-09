@@ -34,14 +34,14 @@ const STORAGE_TYPE_COOKIES = 'cookie';
 const pastDateString = new Date(0).toString();
 const expirationString = new Date(timestamp() + cookiesMaxAge).toString();
 
-function extractProtocolHost(url, returnOnlyHost = false) {
+function extractProtocolHost (url, returnOnlyHost = false) {
   const parsedUrl = parseUrl(url, { noDecodeWholeURL: true })
   return returnOnlyHost
     ? `${parsedUrl.hostname}`
     : `${parsedUrl.protocol}://${parsedUrl.hostname}${parsedUrl.port ? ':' + parsedUrl.port : ''}/`;
 }
 
-function getFromStorage(submoduleConfig, key) {
+function getFromStorage (submoduleConfig, key) {
   if (submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) {
     return storage.getDataFromLocalStorage(key);
   } else if (submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) {
@@ -51,7 +51,7 @@ function getFromStorage(submoduleConfig, key) {
   return storage.getCookie(key) || storage.getDataFromLocalStorage(key);
 }
 
-function saveOnStorage(submoduleConfig, key, value, hostname) {
+function saveOnStorage (submoduleConfig, key, value, hostname) {
   if (key && value) {
     if (submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) {
       storage.setDataInLocalStorage(key, value);
@@ -64,7 +64,7 @@ function saveOnStorage(submoduleConfig, key, value, hostname) {
   }
 }
 
-function setCookieOnAllDomains(key, value, expiration, hostname, stopOnSuccess) {
+function setCookieOnAllDomains (key, value, expiration, hostname, stopOnSuccess) {
   const subDomains = hostname.split('.');
   for (let i = 0; i < subDomains.length; ++i) {
     // Try to write the cookie on this subdomain (we want it to be stored only on the TLD+1)
@@ -86,12 +86,12 @@ function setCookieOnAllDomains(key, value, expiration, hostname, stopOnSuccess) 
   }
 }
 
-function deleteFromAllStorages(key, hostname) {
+function deleteFromAllStorages (key, hostname) {
   setCookieOnAllDomains(key, '', pastDateString, hostname, true);
   storage.removeDataFromLocalStorage(key);
 }
 
-function getCriteoDataFromStorage(submoduleConfig) {
+function getCriteoDataFromStorage (submoduleConfig) {
   return {
     bundle: getFromStorage(submoduleConfig, bundleStorageKey),
     dnaBundle: getFromStorage(submoduleConfig, dnaBundleStorageKey),
@@ -99,7 +99,7 @@ function getCriteoDataFromStorage(submoduleConfig) {
   }
 }
 
-function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
+function buildCriteoUsersyncUrl (topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
   let url = 'https://gum.criteo.com/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
@@ -129,7 +129,7 @@ function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWri
   return url;
 }
 
-function callSyncPixel(submoduleConfig, domain, pixel) {
+function callSyncPixel (submoduleConfig, domain, pixel) {
   if (pixel.writeBundleInStorage && pixel.bundlePropertyName && pixel.storageKeyName) {
     ajax(
       pixel.pixelUrl,
@@ -154,7 +154,7 @@ function callSyncPixel(submoduleConfig, domain, pixel) {
   }
 }
 
-function callCriteoUserSync(submoduleConfig, parsedCriteoData, callback) {
+function callCriteoUserSync (submoduleConfig, parsedCriteoData, callback) {
   const cw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_COOKIES) && storage.cookiesAreEnabled();
   const lsw = (submoduleConfig?.storage?.type === undefined || submoduleConfig?.storage?.type === STORAGE_TYPE_LOCALSTORAGE) && storage.localStorageIsEnabled();
   const topUrl = extractProtocolHost(getRefererInfo().page);
@@ -218,7 +218,7 @@ export const criteoIdSubmodule = {
    * @function
    * @returns {{criteoId: string} | undefined}
    */
-  decode(bidId) {
+  decode (bidId) {
     return bidId;
   },
   /**
@@ -227,7 +227,7 @@ export const criteoIdSubmodule = {
    * @param {SubmoduleConfig} [submoduleConfig]
    * @returns {{id: {criteoId: string} | undefined}}}
    */
-  getId(submoduleConfig) {
+  getId (submoduleConfig) {
     let localData = getCriteoDataFromStorage(submoduleConfig);
 
     const result = (callback) => callCriteoUserSync(submoduleConfig, localData, callback);

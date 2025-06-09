@@ -25,7 +25,7 @@ const converter = ortbConverter({
     netRevenue: NET_REVENUE,
     ttl: TIME_TO_LIVE,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(
       imp,
@@ -34,7 +34,7 @@ const converter = ortbConverter({
     );
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     deepSetValue(request, 'test', TEST_REQUEST);
     deepSetValue(
@@ -181,7 +181,7 @@ export const spec = {
   },
 };
 
-function getBidders(serverResponse) {
+function getBidders (serverResponse) {
   const bidders = serverResponse
     .map((res) => Object.keys(res.body.ext.responsetimemillis || []))
     .flat(1);

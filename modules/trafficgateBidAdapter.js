@@ -22,7 +22,7 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 300
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     mergeDeep(imp, {
       ext: {
@@ -37,7 +37,7 @@ const converter = ortbConverter({
     }
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     mergeDeep(req, {
       at: 1,
@@ -48,7 +48,7 @@ const converter = ortbConverter({
     }
     return req;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     if (bid.ext) {
       bidResponse.meta.networkId = bid.ext.networkId;
@@ -56,20 +56,20 @@ const converter = ortbConverter({
     }
     return bidResponse;
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response (buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
     return response.bids
   },
   overrides: {
     imp: {
-      bidfloor(setBidFloor, imp, bidRequest, context) {
+      bidfloor (setBidFloor, imp, bidRequest, context) {
         const floor = {};
         setBidFloor(floor, bidRequest, {...context, currency: 'USD'});
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
         }
       },
-      video(orig, imp, bidRequest, context) {
+      video (orig, imp, bidRequest, context) {
         if (FEATURES.VIDEO) {
           let videoParams = bidRequest.mediaTypes[VIDEO];
           if (videoParams) {
@@ -86,7 +86,7 @@ const converter = ortbConverter({
   }
 });
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   const isValid = bidRequest.params.placementId && bidRequest.params.host;
   if (!isValid) {
     return false
@@ -97,7 +97,7 @@ function isBidRequestValid(bidRequest) {
   return true
 }
 
-function buildRequests(bids, bidderRequest) {
+function buildRequests (bids, bidderRequest) {
   let videoBids = bids.filter(bid => isVideoBid(bid));
   let bannerBids = bids.filter(bid => isBannerBid(bid));
   let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
@@ -107,7 +107,7 @@ function buildRequests(bids, bidderRequest) {
   return requests;
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: URL.replace('[HOST]', bidRequests[0].params.host),
@@ -115,15 +115,15 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function isVideoBid(bid) {
+function isVideoBid (bid) {
   return !!deepAccess(bid, 'mediaTypes.video');
 }
 
-function isBannerBid(bid) {
+function isBannerBid (bid) {
   return !!deepAccess(bid, 'mediaTypes.banner');
 }
 
-function interpretResponse(resp, req) {
+function interpretResponse (resp, req) {
   if (!resp.body) {
     resp.body = {nbr: 0};
   }

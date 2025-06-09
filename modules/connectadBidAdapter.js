@@ -12,14 +12,14 @@ const SUPPORTED_MEDIA_TYPES = [BANNER];
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 138,
-  aliases: [ BIDDER_CODE_ALIAS ],
+  aliases: [BIDDER_CODE_ALIAS],
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.networkId && bid.params.siteId);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let ret = {
       method: 'POST',
       url: '',
@@ -141,7 +141,7 @@ export const spec = {
     return ret;
   },
 
-  interpretResponse: function(serverResponse, bidRequest, bidderRequest) {
+  interpretResponse: function (serverResponse, bidRequest, bidderRequest) {
     let bid;
     let bids;
     let bidId;
@@ -232,7 +232,7 @@ export const spec = {
   }
 };
 
-function getBidFloor(bidRequest) {
+function getBidFloor (bidRequest) {
   let floorInfo = {};
 
   if (typeof bidRequest.getFloor === 'function') {
@@ -248,11 +248,11 @@ function getBidFloor(bidRequest) {
   return floor;
 }
 
-function retrieveAd(decision) {
+function retrieveAd (decision) {
   return decision.contents && decision.contents[0] && decision.contents[0].body;
 }
 
-function getScreenSize() {
+function getScreenSize () {
   return [window.screen.width, window.screen.height].join('x');
 }
 

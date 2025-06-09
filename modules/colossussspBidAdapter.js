@@ -14,7 +14,7 @@ const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
 const G_URL_SYNC = 'https://sync.colossusssp.com';
 
-function isBidResponseValid(bid) {
+function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
     return false;
   }
@@ -31,7 +31,7 @@ function isBidResponseValid(bid) {
   }
 }
 
-function getUserId(eids, id, source, uidExt) {
+function getUserId (eids, id, source, uidExt) {
   if (id) {
     var uid = { id };
     if (uidExt) {
@@ -39,7 +39,7 @@ function getUserId(eids, id, source, uidExt) {
     }
     eids.push({
       source,
-      uids: [ uid ]
+      uids: [uid]
     });
   }
 }

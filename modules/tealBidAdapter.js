@@ -16,7 +16,7 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const { placement, testMode } = bidRequest.params;
     if (placement) {
@@ -30,7 +30,7 @@ const converter = ortbConverter({
   },
   overrides: {
     bidResponse: {
-      bidderCode(orig, bidResponse, bid, { bidRequest }) {
+      bidderCode (orig, bidResponse, bid, { bidRequest }) {
         let useSourceBidderCode = deepAccess(bidRequest, 'params.useSourceBidderCode', false);
         if (useSourceBidderCode) {
           orig.apply(this, [...arguments].slice(1));
@@ -46,11 +46,11 @@ export const spec = {
   supportedMediaTypes: [BANNER],
   aliases: [],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return Boolean(bid.params?.account);
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const { bidder } = bidRequests[0];
     const data = converter.toORTB({bidRequests, bidderRequest});
     const account = deepAccess(bidRequests[0], 'params.account', null);
@@ -69,7 +69,7 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(response, request) {
+  interpretResponse: function (response, request) {
     const resp = deepClone(response.body);
     const { bidder } = request.data.ext.prebid.passthrough.teal;
     const modifiers = {
@@ -86,7 +86,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
@@ -122,7 +122,7 @@ export const spec = {
     return syncs;
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (bid.pbsWurl) {
       triggerPixel(bid.pbsWurl);
     }
@@ -131,7 +131,7 @@ export const spec = {
     }
   },
 
-  onBidderError: function({ error, bidderRequest }) {
+  onBidderError: function ({ error, bidderRequest }) {
     if (error.responseText && error.status) {
       let id = error.responseText.match(/found for id: (.*)/);
       if (Array.isArray(id) && id.length > 1 && error.status == 400) {

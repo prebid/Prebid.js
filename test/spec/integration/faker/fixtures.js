@@ -1,7 +1,7 @@
 import faker from 'faker';
 import { makeSlot } from './googletag.js';
 
-export function makeAdSlot(overrides = {}) {
+export function makeAdSlot (overrides = {}) {
   return Object.assign(makeSlot(
     {
       code: overrides.code,
@@ -9,7 +9,7 @@ export function makeAdSlot(overrides = {}) {
     }), overrides);
 }
 
-export function makeAdUnit(overrides = {}) {
+export function makeAdUnit (overrides = {}) {
   return Object.assign({
     code: `ad-unit-code-${randomFive()}`,
     sizes: [[300, 250], [300, 600]],
@@ -17,7 +17,7 @@ export function makeAdUnit(overrides = {}) {
   }, overrides);
 }
 
-export function makeBidder(overrides = {}) {
+export function makeBidder (overrides = {}) {
   let adapter;
   adapter = Object.assign({
     bidder: `${faker.company.bsBuzz()}Media`,
@@ -31,7 +31,7 @@ export function makeBidder(overrides = {}) {
   return adapter;
 }
 
-export function makeRequest(overrides = {}) {
+export function makeRequest (overrides = {}) {
   return Object.assign({
     adUnits: overrides.adUnits,
     bidsBackHandler: sinon.spy(),
@@ -39,4 +39,4 @@ export function makeRequest(overrides = {}) {
   }, overrides);
 }
 
-export function randomFive() { return faker.datatype.number({ min: 10000, max: 99999 }); }
+export function randomFive () { return faker.datatype.number({ min: 10000, max: 99999 }); }

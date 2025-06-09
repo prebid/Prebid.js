@@ -31,11 +31,11 @@ const id = factory();
  * @param {string} currPrng the current pseudorandom number generator
  * @returns {function(*=): *}
  */
-function factory(currPrng) {
+function factory (currPrng) {
   if (!currPrng) {
     currPrng = detectPrng();
   }
-  return function ulid(seedTime) {
+  return function ulid (seedTime) {
     if (isNaN(seedTime)) {
       seedTime = Date.now();
     }
@@ -48,7 +48,7 @@ function factory(currPrng) {
  * @param {string} prng the generated pseudorandom number
  * @returns {string}
  */
-function randomChar(prng) {
+function randomChar (prng) {
   let rand = Math.floor(prng() * ENCODING_LEN);
   if (rand === ENCODING_LEN) {
     rand = ENCODING_LEN - 1;
@@ -62,7 +62,7 @@ function randomChar(prng) {
  * @param {function(): number} prng
  * @returns {string}
  */
-function encodeRandom(len, prng) {
+function encodeRandom (len, prng) {
   let str = '';
   for (; len > 0; len--) {
     str = randomChar(prng) + str;
@@ -76,7 +76,7 @@ function encodeRandom(len, prng) {
  * @param {number} len
  * @returns {string} encoded time.
  */
-function encodeTime(now, len) {
+function encodeTime (now, len) {
   if (isNaN(now)) {
     throw new Error(now + ' must be a number');
   }
@@ -115,7 +115,7 @@ function encodeTime(now, len) {
  * @param {string} message error message
  * @returns {Error}
  */
-function createError(message) {
+function createError (message) {
   logError(message);
   const err = new Error(message);
   err.source = 'kinessoId';
@@ -128,7 +128,7 @@ function createError(message) {
  * @param {string} root
  * @returns {string} a random number
  */
-function detectPrng(root) {
+function detectPrng (root) {
   if (!root) {
     root = typeof window !== 'undefined' ? window : null;
   }
@@ -148,7 +148,7 @@ function detectPrng(root) {
  * @param {string} storedId
  * @returns {{success: function(Object): void, error: function(): void}}
  */
-function syncId(storedId) {
+function syncId (storedId) {
   return {
     success: function (responseBody) {
       logInfo('KinessoId: id to be synced: ' + storedId);
@@ -164,7 +164,7 @@ function syncId(storedId) {
  * @param value
  * @returns {string|*}
  */
-function encodeId(value) {
+function encodeId (value) {
   const result = {};
   const knssoId = (value && typeof value === 'string') ? value : undefined;
   if (knssoId) {
@@ -181,7 +181,7 @@ function encodeId(value) {
  * @param {Object} consentData
  * @return {string}
  */
-function kinessoSyncUrl(accountId, consentData) {
+function kinessoSyncUrl (accountId, consentData) {
   const {gdpr, usp: usPrivacyString} = consentData ?? {};
   let kinessoSyncUrl = `${ID_SVC}?accountid=${accountId}`;
   if (usPrivacyString) {
@@ -208,7 +208,7 @@ export const kinessoIdSubmodule = {
    * @param {string} value
    * @returns {{kpuid:{id: string}}|undefined}
    */
-  decode(value) {
+  decode (value) {
     return (value) ? encodeId(value) : undefined;
   },
 
@@ -219,7 +219,7 @@ export const kinessoIdSubmodule = {
    * @param {ConsentData|undefined} consentData
    * @returns {string|undefined}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.accountid !== 'number') {
       logError('User ID - KinessoId submodule requires a valid accountid to be defined');

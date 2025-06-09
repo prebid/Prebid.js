@@ -17,7 +17,7 @@ const CONVERTER =
     }
   });
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   const prebidVersion = config.getConfig('prebid_version') || 'v8.1.0';
   // Group bids by accountId param
   const groupedByAccountId = bidRequests.reduce((accu, item) => {
@@ -41,15 +41,15 @@ function buildRequests(bidRequests, bidderRequest) {
   return reqs;
 };
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   return CONVERTER.fromORTB({ response: response.body, request: request.data }).bids;
 };
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   return isNumber((bid.params || {}).accountId);
 };
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
   let syncs = []
   for (const response of serverResponses) {
     const responseSyncs = ((((response || {}).body || {}).ext || {}).user_syncs || [])

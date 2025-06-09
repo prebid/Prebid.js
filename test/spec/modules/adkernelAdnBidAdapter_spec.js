@@ -208,7 +208,7 @@ describe('AdkernelAdn adapter', function () {
     });
   });
 
-  function buildRequest(bidRequests, bidderRequestAugments = {}) {
+  function buildRequest (bidRequests, bidderRequestAugments = {}) {
     let fullBidderRequest = Object.assign(defaultBidderRequest, bidderRequestAugments);
     fullBidderRequest.auctionId = bidRequests[0].auctionId;
     fullBidderRequest.transactionId = bidRequests[0].transactionId;
@@ -282,9 +282,9 @@ describe('AdkernelAdn adapter', function () {
       expect(bidRequests[0].user).to.have.property('coppa', 1);
     });
 
-    it('should set bidfloor if configured', function() {
+    it('should set bidfloor if configured', function () {
       let bid = Object.assign({}, bid1_pub1);
-      bid.getFloor = function() {
+      bid.getFloor = function () {
         return {
           currency: 'USD',
           floor: 0.145

@@ -103,7 +103,7 @@ export const getPmgUID = () => {
  * @param  {...string} keys 键名
  * @return {any}
  */
-function getKv(obj, ...keys) {
+function getKv (obj, ...keys) {
   let o = obj;
 
   for (let key of keys) {
@@ -123,7 +123,7 @@ const popInAdSize = normalAdSize;
  * get cookie time to UTC string
  * @returns utc string
  */
-export function getCookieTimeToUTCString() {
+export function getCookieTimeToUTCString () {
   const date = new Date();
   date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
   return date.toUTCString();
@@ -134,7 +134,7 @@ export function getCookieTimeToUTCString() {
  * @param {Object} bidRequest single bid request
  * @param {Object} bidderRequest bidder request object
  */
-function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
+function addImpExtParams (bidRequest = {}, bidderRequest = {}) {
   const { deepAccess } = utils;
   const { params = {}, adUnitCode, bidId } = bidRequest;
   const ext = {
@@ -168,7 +168,7 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
  */
-function getItems(validBidRequests, bidderRequest) {
+function getItems (validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
@@ -246,7 +246,7 @@ export const buildUTMTagData = (url) => {
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
  */
-function getParam(validBidRequests, bidderRequest) {
+function getParam (validBidRequests, bidderRequest) {
   const sharedid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
   const eids = validBidRequests[0].userIdAsEids;
 

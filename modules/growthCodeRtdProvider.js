@@ -33,7 +33,7 @@ export const growthCodeRtdProvider = {
  * @param data
  * @returns {any|null}
  */
-function tryParse(data) {
+function tryParse (data) {
   try {
     return JSON.parse(data);
   } catch (err) {
@@ -48,7 +48,7 @@ function tryParse(data) {
  * @param userConsent
  * @returns {boolean}
  */
-function init(config, userConsent) {
+function init (config, userConsent) {
   logMessage(LOG_PREFIX + 'Init RTB');
 
   if (config == null) {
@@ -66,7 +66,7 @@ function init(config, userConsent) {
     return callServer(configParams, items, expiresAt, userConsent);
   }
 }
-function callServer(configParams, items, expiresAt, userConsent) {
+function callServer (configParams, items, expiresAt, userConsent) {
   // Expire Cache
   let now = Math.trunc(Date.now() / 1000);
   if ((!isNaN(expiresAt)) && (now > expiresAt)) {
@@ -105,7 +105,7 @@ function callServer(configParams, items, expiresAt, userConsent) {
   return true;
 }
 
-function addData(reqBidsConfigObj, items) {
+function addData (reqBidsConfigObj, items) {
   let merge = false
 
   for (let j = 0; j < items.length; j++) {
@@ -126,7 +126,7 @@ function addData(reqBidsConfigObj, items) {
  * @param config
  * @param userConsent
  */
-function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
+function alterBidRequests (reqBidsConfigObj, callback, config, userConsent) {
   if (items != null) {
     addData(reqBidsConfigObj, items)
   }

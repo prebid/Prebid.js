@@ -40,7 +40,7 @@ describe('LiveIntent Rtd Provider', function () {
       expect(liveIntentRtdSubmodule.onBidRequestEvent).to.be.a('function');
     });
 
-    it('undefined segments field does not change the ortb2', function() {
+    it('undefined segments field does not change the ortb2', function () {
       const bidRequest = {
         bidderCode: 'appnexus',
         auctionId: '8dbd7cb1-7f6d-4f84-946c-d0df4837234a',
@@ -58,7 +58,7 @@ describe('LiveIntent Rtd Provider', function () {
       expect(ortb2).to.deep.equal({});
     });
 
-    it('extracts segments and move them to the bidRequest.ortb2.user.data when the ortb2 is undefined', function() {
+    it('extracts segments and move them to the bidRequest.ortb2.user.data when the ortb2 is undefined', function () {
       const bidRequest = utils.deepClone(bidRequestExample);
 
       liveIntentRtdSubmodule.onBidRequestEvent(bidRequest);
@@ -67,7 +67,7 @@ describe('LiveIntent Rtd Provider', function () {
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
-    it('extracts segments and move them to the bidRequest.ortb2.user.data when user is undefined', function() {
+    it('extracts segments and move them to the bidRequest.ortb2.user.data when user is undefined', function () {
       bidRequestExample.bids[0].ortb2 = { source: {} }
       const bidRequest = utils.deepClone(bidRequestExample);
 
@@ -77,7 +77,7 @@ describe('LiveIntent Rtd Provider', function () {
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
-    it('extracts segments and move them to the bidRequest.ortb2.user.data when data is undefined', function() {
+    it('extracts segments and move them to the bidRequest.ortb2.user.data when data is undefined', function () {
       bidRequestExample.bids[0].ortb2 = {
         source: {},
         user: {}
@@ -90,7 +90,7 @@ describe('LiveIntent Rtd Provider', function () {
       expect(ortb2).to.deep.equal(expectedOrtb2);
     });
 
-    it('extracts segments and move them to the bidRequest.ortb2.user.data with the existing data', function() {
+    it('extracts segments and move them to the bidRequest.ortb2.user.data with the existing data', function () {
       bidRequestExample.bids[0].ortb2 = {
         source: {},
         user: {

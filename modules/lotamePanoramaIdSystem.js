@@ -52,7 +52,7 @@ let appliedConfig = {
  * Set the Lotame First Party Profile ID in the first party namespace
  * @param {String} profileId
  */
-function setProfileId(profileId) {
+function setProfileId (profileId) {
   if (cookiesAreEnabled()) {
     let expirationDate = new Date(timestamp() + NINE_MONTHS_MS).toUTCString();
     storage.setCookie(
@@ -72,7 +72,7 @@ function setProfileId(profileId) {
 /**
  * Get the Lotame profile id by checking cookies first and then local storage
  */
-function getProfileId() {
+function getProfileId () {
   let profileId;
   if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
     profileId = storage.getCookie(KEY_PROFILE, undefined);
@@ -87,7 +87,7 @@ function getProfileId() {
  * Get a value from browser storage by checking cookies first and then local storage
  * @param {String} key
  */
-function getFromStorage(key) {
+function getFromStorage (key) {
   let value = null;
   if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
     value = storage.getCookie(key, undefined);
@@ -104,7 +104,7 @@ function getFromStorage(key) {
  * @param {String} value
  * @param {Number} expirationTimestamp
  */
-function saveLotameCache(
+function saveLotameCache (
   key,
   value,
   expirationTimestamp = timestamp() + DAYS_TO_CACHE * DAY_MS
@@ -131,7 +131,7 @@ function saveLotameCache(
  * Retrieve all the cached values from cookies and/or local storage
  * @param {Number} clientId
  */
-function getLotameLocalCache(clientId = undefined) {
+function getLotameLocalCache (clientId = undefined) {
   let cache = {
     data: getFromStorage(KEY_ID),
     expiryTimestampMs: 0,
@@ -161,7 +161,7 @@ function getLotameLocalCache(clientId = undefined) {
  * Clear a cached value from cookies and local storage
  * @param {String} key
  */
-function clearLotameCache(key) {
+function clearLotameCache (key) {
   if (key) {
     if (cookiesAreEnabled(DO_NOT_HONOR_CONFIG)) {
       let expirationDate = new Date(0).toUTCString();
@@ -183,7 +183,7 @@ function clearLotameCache(key) {
  * @param {boolean} honorConfig - false to override for reading or deleting old cookies
  * @returns {boolean} for whether we can write the cookie
  */
-function cookiesAreEnabled(honorConfig = true) {
+function cookiesAreEnabled (honorConfig = true) {
   if (honorConfig) {
     return storage.cookiesAreEnabled() && appliedConfig.storage.type.includes('cookie');
   }
@@ -193,7 +193,7 @@ function cookiesAreEnabled(honorConfig = true) {
  * @param {boolean} honorConfig - false to override for reading or deleting old stored items
  * @returns {boolean} for whether we can write the cookie
  */
-function localStorageIsEnabled(honorConfig = true) {
+function localStorageIsEnabled (honorConfig = true) {
   if (honorConfig) {
     return storage.hasLocalStorage() && appliedConfig.storage.type.includes('html5');
   }
@@ -203,7 +203,7 @@ function localStorageIsEnabled(honorConfig = true) {
  * @param {SubmoduleConfig} config
  * @returns {null|string} - string error if it finds one, null otherwise.
  */
-function checkConfigHasErrorsAndReport(config) {
+function checkConfigHasErrorsAndReport (config) {
   let error = null;
   if (typeof config.storage !== 'undefined') {
     Object.assign(appliedConfig.storage, appliedConfig.storage, config.storage);
@@ -239,7 +239,7 @@ export const lotamePanoramaIdSubmodule = {
    * @param {SubmoduleConfig|undefined} config
    * @returns {(Object|undefined)}
    */
-  decode(value, config) {
+  decode (value, config) {
     return isStr(value) ? { lotamePanoramaId: value } : undefined;
   },
 
@@ -251,7 +251,7 @@ export const lotamePanoramaIdSubmodule = {
    * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData, cacheIdObj) {
+  getId (config, consentData, cacheIdObj) {
     if (checkConfigHasErrorsAndReport(config)) {
       return;
     }
@@ -282,7 +282,7 @@ export const lotamePanoramaIdSubmodule = {
 
     const storedUserId = getProfileId();
 
-    const getRequestHost = function() {
+    const getRequestHost = function () {
       if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
         return ID_HOST_COOKIELESS;
       }

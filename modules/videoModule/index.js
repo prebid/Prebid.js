@@ -31,7 +31,7 @@ events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD
  * This module adds User Video support to prebid.js
  * @module modules/videoModule
  */
-export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
+export function PbVideo (videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvents_, gamAdServerFactory_, videoImpressionVerifierFactory_, adQueueCoordinator_) {
   const videoCore = videoCore_;
   const getConfig = getConfig_;
   const pbGlobal = pbGlobal_;
@@ -46,7 +46,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   const videoImpressionVerifierFactory = videoImpressionVerifierFactory_;
   let videoImpressionVerifier;
 
-  function init() {
+  function init () {
     const cache = getConfig('cache');
     videoImpressionVerifier = videoImpressionVerifierFactory(!!cache);
     getConfig(videoKey, ({ video }) => {
@@ -83,7 +83,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  function renderBid(divId, bid, options = {}) {
+  function renderBid (divId, bid, options = {}) {
     const adUrl = bid.vastUrl;
     options.adXml = bid.vastXml;
     options.winner = bid.bidder;
@@ -91,17 +91,17 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     loadAd(adUrl, divId, options);
   }
 
-  function getOrtbVideo(divId) {
+  function getOrtbVideo (divId) {
     return videoCore.getOrtbVideo(divId);
   }
 
-  function getOrtbContent(divId) {
+  function getOrtbContent (divId) {
     return videoCore.getOrtbContent(divId);
   }
 
   return { init, renderBid, getOrtbVideo, getOrtbContent };
 
-  function beforeBidsRequested(nextFn, bidderRequest) {
+  function beforeBidsRequested (nextFn, bidderRequest) {
     logErrorForInvalidDivIds(bidderRequest);
     enrichAuction(bidderRequest);
 
@@ -113,7 +113,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return nextFn.call(this, bidderRequest);
   }
 
-  function logErrorForInvalidDivIds(bidderRequest) {
+  function logErrorForInvalidDivIds (bidderRequest) {
     const adUnits = bidderRequest.adUnits || pbGlobal.adUnits || [];
     adUnits.forEach(adUnit => {
       const video = adUnit.video;
@@ -129,7 +129,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  function enrichAuction(bidderRequest) {
+  function enrichAuction (bidderRequest) {
     if (mainContentDivId) {
       enrichOrtb2(mainContentDivId, bidderRequest);
     }
@@ -144,7 +144,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     });
   }
 
-  function getDivId(adUnit) {
+  function getDivId (adUnit) {
     const videoConfig = adUnit.video;
     if (!adUnit.mediaTypes.video || !videoConfig) {
       return;
@@ -153,7 +153,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return videoConfig.divId;
   }
 
-  function enrichAdUnit(adUnit, videoDivId) {
+  function enrichAdUnit (adUnit, videoDivId) {
     const ortbVideo = getOrtbVideo(videoDivId);
     if (!ortbVideo) {
       return;
@@ -178,7 +178,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     adUnit.mediaTypes.video = video;
   }
 
-  function enrichOrtb2(divId, bidderRequest) {
+  function enrichOrtb2 (divId, bidderRequest) {
     const ortbContent = getOrtbContent(divId);
     if (!ortbContent) {
       return;
@@ -186,7 +186,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     bidderRequest.ortb2 = mergeDeep({}, bidderRequest.ortb2, { site: { content: ortbContent } });
   }
 
-  function auctionEnd(auctionResult) {
+  function auctionEnd (auctionResult) {
     auctionResult.adUnits.forEach(adUnit => {
       if (adUnit.video) {
         renderWinningBid(adUnit);
@@ -195,7 +195,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     pbEvents.off(EVENTS.AUCTION_END, auctionEnd);
   }
 
-  function getAdServerConfig(adUnitVideoConfig) {
+  function getAdServerConfig (adUnitVideoConfig) {
     const globalVideoConfig = getConfig(videoKey);
     const globalProviderConfig = globalVideoConfig.providers.find(provider => provider.divId === adUnitVideoConfig.divId) || {};
     if (!globalVideoConfig.adServer && !globalProviderConfig.adServer && !adUnitVideoConfig.adServer) {
@@ -204,7 +204,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return mergeDeep({}, globalVideoConfig.adServer, globalProviderConfig.adServer, adUnitVideoConfig.adServer);
   }
 
-  async function renderWinningBid(adUnit) {
+  async function renderWinningBid (adUnit) {
     const adUnitCode = adUnit.code;
 
     const videoConfig = adUnit.video;
@@ -215,7 +215,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const options = { adUnitCode };
 
-    async function prefetchVast() {
+    async function prefetchVast () {
       const gamVastWrapper = await gamSubmodule.getVastXml(
         adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params, winningBid
       );
@@ -237,7 +237,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     renderBid(divId, winningBid, options);
   }
 
-  function getWinningBid(adUnitCode) {
+  function getWinningBid (adUnitCode) {
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
     if (!highestCpmBids.length) {
       pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, {adUnitCode}));
@@ -246,11 +246,11 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return highestCpmBids.shift();
   }
 
-  function loadAd(adTagUrl, divId, options) {
+  function loadAd (adTagUrl, divId, options) {
     adQueueCoordinator.queueAd(adTagUrl, divId, options);
   }
 
-  function triggerVideoBidEvent(eventName, adEventPayload) {
+  function triggerVideoBidEvent (eventName, adEventPayload) {
     const bid = getBid(adEventPayload);
     if (!bid) {
       return;
@@ -260,7 +260,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     pbEvents.emit(getExternalVideoEventName(eventName), getExternalVideoEventPayload(eventName, { bid, adEvent: adEventPayload }));
   }
 
-  function getBid(adPayload) {
+  function getBid (adPayload) {
     const { adId, adTagUrl, wrapperAdIds } = adPayload;
     const bidIdentifiers = videoImpressionVerifier.getBidIdentifiers(adId, adTagUrl, wrapperAdIds);
     if (!bidIdentifiers) {
@@ -274,7 +274,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 }
 
-function videoRenderHook(next, args) {
+function videoRenderHook (next, args) {
   if (args.bidResponse.mediaType === VIDEO) {
     const adUnit = auctionManager.index.getAdUnit(args.bidResponse);
     if (adUnit?.video) {
@@ -286,7 +286,7 @@ function videoRenderHook(next, args) {
   next(args);
 }
 
-export function pbVideoFactory() {
+export function pbVideoFactory () {
   const videoCore = videoCoreFactory();
   const adQueueCoordinator = AdQueueCoordinator(videoCore, events);
   const pbGlobal = getGlobal();

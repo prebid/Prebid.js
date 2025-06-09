@@ -26,7 +26,7 @@ export const spec = {
   getUserSyncs
 };
 
-function buildRequests(bidReqs, bidderRequest) {
+function buildRequests (bidReqs, bidderRequest) {
   try {
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
@@ -93,7 +93,7 @@ function buildRequests(bidReqs, bidderRequest) {
   }
 }
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
     return false;
   }
@@ -105,7 +105,7 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-function interpretResponse(serverResponse) {
+function interpretResponse (serverResponse) {
   if (!serverResponse.body || typeof serverResponse.body != 'object') {
     logWarn('Onomagic server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return [];
@@ -143,23 +143,23 @@ function interpretResponse(serverResponse) {
 }
 
 // Don't do user sync for now
-function getUserSyncs(syncOptions, responses, gdprConsent) {
+function getUserSyncs (syncOptions, responses, gdprConsent) {
   return [];
 }
 
-function _isMobile() {
+function _isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
-function _isConnectedTV() {
+function _isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-function _getDeviceType() {
+function _getDeviceType () {
   return _isMobile() ? 1 : _isConnectedTV() ? 3 : 2;
 }
 
-function _getAdMarkup(bid) {
+function _getAdMarkup (bid) {
   let adm = bid.adm;
   if ('nurl' in bid) {
     adm += createTrackPixelHtml(bid.nurl);
@@ -167,17 +167,17 @@ function _getAdMarkup(bid) {
   return adm;
 }
 
-function _isViewabilityMeasurable(element) {
+function _isViewabilityMeasurable (element) {
   return !_isIframe() && element !== null;
 }
 
-function _getViewability(element, topWin, { w, h } = {}) {
+function _getViewability (element, topWin, { w, h } = {}) {
   return getWindowTop().document.visibilityState === 'visible'
     ? percentInView(element, { w, h })
     : 0;
 }
 
-function _isIframe() {
+function _isIframe () {
   try {
     return getWindowSelf() !== getWindowTop();
   } catch (e) {
@@ -185,11 +185,11 @@ function _isIframe() {
   }
 }
 
-function _getMinSize(sizes) {
+function _getMinSize (sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
-function _getBidFloor(bid) {
+function _getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }

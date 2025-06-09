@@ -81,7 +81,7 @@ export const makeBaseSpec = (baseUrl, modes) => {
   }
 }
 
-export function getBidRequestMediaTypes(bidRequest) {
+export function getBidRequestMediaTypes (bidRequest) {
   const mediaTypes = deepAccess(bidRequest, 'mediaTypes');
   if (isPlainObject(mediaTypes)) {
     return Object.keys(mediaTypes);
@@ -89,7 +89,7 @@ export function getBidRequestMediaTypes(bidRequest) {
   return [];
 }
 
-export function getPos(bidRequest) {
+export function getPos (bidRequest) {
   const mediaTypes = getBidRequestMediaTypes(bidRequest);
   const firstMediaType = mediaTypes[0];
   if (mediaTypes.length === 1) {
@@ -97,7 +97,7 @@ export function getPos(bidRequest) {
   }
 }
 
-export function getName(bidRequest) {
+export function getName (bidRequest) {
   const mediaTypes = getBidRequestMediaTypes(bidRequest);
   const firstMediaType = mediaTypes[0];
   if (mediaTypes.length === 1) {
@@ -105,7 +105,7 @@ export function getName(bidRequest) {
   }
 }
 
-export function getFloor(bid) {
+export function getFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
@@ -121,7 +121,7 @@ export function getFloor(bid) {
   return isPlainObject(floorResult) && floorResult.currency === 'USD' && floorResult.floor ? floorResult.floor : 0;
 }
 
-export function getSizesArray(bid) {
+export function getSizesArray (bid) {
   let sizesArray = [];
 
   const mediaTypes = getBidRequestMediaTypes(bid);
@@ -136,7 +136,7 @@ export function getSizesArray(bid) {
   return sizesArray;
 }
 
-export function getSupplyChain(schainObject) {
+export function getSupplyChain (schainObject) {
   if (isEmpty(schainObject)) {
     return '';
   }
@@ -153,11 +153,11 @@ export function getSupplyChain(schainObject) {
   return scStr;
 }
 
-export function getEncodedValIfNotEmpty(val) {
+export function getEncodedValIfNotEmpty (val) {
   return (val !== '' && val !== undefined) ? encodeURIComponent(val) : '';
 }
 
-export function getAllowedSyncMethod(filterSettings, bidderCode) {
+export function getAllowedSyncMethod (filterSettings, bidderCode) {
   const iframeConfigsToCheck = ['all', 'iframe'];
   const pixelConfigToCheck = 'image';
   if (filterSettings && iframeConfigsToCheck.some(config => isSyncMethodAllowed(filterSettings[config], bidderCode))) {
@@ -168,7 +168,7 @@ export function getAllowedSyncMethod(filterSettings, bidderCode) {
   }
 }
 
-export function isSyncMethodAllowed(syncRule, bidderCode) {
+export function isSyncMethodAllowed (syncRule, bidderCode) {
   if (!syncRule) {
     return false;
   }
@@ -177,7 +177,7 @@ export function isSyncMethodAllowed(syncRule, bidderCode) {
   return isInclude && contains(bidders, bidderCode);
 }
 
-export function getEndpoint(testMode, baseUrl, modes) {
+export function getEndpoint (testMode, baseUrl, modes) {
   const protocol = baseUrl.startsWith('http') ? '' : 'https://';
   const url = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
   return testMode
@@ -185,7 +185,7 @@ export function getEndpoint(testMode, baseUrl, modes) {
     : `${protocol}${url}${modes.PRODUCTION}`;
 }
 
-export function getDeviceType(ua) {
+export function getDeviceType (ua) {
   if (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(ua.toLowerCase())) {
     return '5';
   }
@@ -198,7 +198,7 @@ export function getDeviceType(ua) {
   return '1';
 }
 
-export function generateBidsParams(validBidRequests, bidderRequest) {
+export function generateBidsParams (validBidRequests, bidderRequest) {
   const bidsArray = [];
 
   if (validBidRequests.length) {
@@ -210,7 +210,7 @@ export function generateBidsParams(validBidRequests, bidderRequest) {
   return bidsArray;
 }
 
-export function generateBidParameters(bid, bidderRequest) {
+export function generateBidParameters (bid, bidderRequest) {
   const { params } = bid;
   const mediaTypes = getBidRequestMediaTypes(bid);
 
@@ -325,7 +325,7 @@ export function generateBidParameters(bid, bidderRequest) {
   return bidObject;
 }
 
-export function buildBidResponse(adUnit) {
+export function buildBidResponse (adUnit) {
   const bidResponse = {
     requestId: adUnit.requestId,
     cpm: adUnit.cpm,
@@ -357,7 +357,7 @@ export function buildBidResponse(adUnit) {
   return bidResponse;
 }
 
-export function generateGeneralParams(generalObject, bidderRequest, adapterVersion) {
+export function generateGeneralParams (generalObject, bidderRequest, adapterVersion) {
   const domain = window.location.hostname;
   const { syncEnabled, filterSettings } = config.getConfig('userSync') || {};
   const { bidderCode } = bidderRequest;

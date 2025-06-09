@@ -14,7 +14,7 @@ describe('GDPR FPD enrichment', () => {
     sandbox.restore();
   })
 
-  function callHook(ortb2 = {}) {
+  function callHook (ortb2 = {}) {
     let result;
     enrichFPDHook((res) => { result = res }, Promise.resolve(ortb2));
     return result;

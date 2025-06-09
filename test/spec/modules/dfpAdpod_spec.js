@@ -48,7 +48,7 @@ describe('dfpAdpod', function () {
     });
   })
 
-  afterEach(function() {
+  afterEach(function () {
     config.resetConfig();
   });
 
@@ -57,7 +57,7 @@ describe('dfpAdpod', function () {
     amStub.restore();
   });
 
-  function getBidsReceived() {
+  function getBidsReceived () {
     return [
       createBid(10, 'adUnitCode-1', 15, '10.00_395_15s', '123', '395', '10.00'),
       createBid(15, 'adUnitCode-1', 15, '15.00_395_15s', '123', '395', '15.00'),
@@ -65,7 +65,7 @@ describe('dfpAdpod', function () {
     ]
   }
 
-  function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, label, hbpb) {
+  function createBid (cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, label, hbpb) {
     return {
       'bidderCode': 'appnexus',
       'width': 640,
@@ -121,7 +121,7 @@ describe('dfpAdpod', function () {
     }
   }
 
-  it('should return masterTag url', function() {
+  it('should return masterTag url', function () {
     amStub.returns(getBidsReceived());
     let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
     uspDataHandlerStub.returns('1YYY');
@@ -141,7 +141,7 @@ describe('dfpAdpod', function () {
       }
     }));
 
-    function handleResponse(err, masterTag) {
+    function handleResponse (err, masterTag) {
       if (err) {
         return;
       }
@@ -173,13 +173,13 @@ describe('dfpAdpod', function () {
     }
   });
 
-  it('should return masterTag url with correct custom params when brandCategoryExclusion is false', function() {
+  it('should return masterTag url with correct custom params when brandCategoryExclusion is false', function () {
     config.setConfig({
       adpod: {
         brandCategoryExclusion: false,
       }
     });
-    function getBids() {
+    function getBids () {
       let bids = [
         createBid(10, 'adUnitCode-1', 15, '10.00_15s', '123', '395', '10.00'),
         createBid(15, 'adUnitCode-1', 15, '15.00_15s', '123', '395', '15.00'),
@@ -201,7 +201,7 @@ describe('dfpAdpod', function () {
       }
     }));
 
-    function handleResponse(err, masterTag) {
+    function handleResponse (err, masterTag) {
       if (err) {
         return;
       }
@@ -227,7 +227,7 @@ describe('dfpAdpod', function () {
     }
   });
 
-  it('should handle error when cache fails', function() {
+  it('should handle error when cache fails', function () {
     config.setConfig({
       adpod: {
         brandCategoryExclusion: true,
@@ -249,7 +249,7 @@ describe('dfpAdpod', function () {
       'Content-Type': 'plain/text',
     }, 'The server could not save anything at the moment.');
 
-    function handleResponse(err, masterTag) {
+    function handleResponse (err, masterTag) {
       expect(masterTag).to.be.null;
       expect(err).to.be.an('error');
     }

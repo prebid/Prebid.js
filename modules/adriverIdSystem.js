@@ -35,7 +35,7 @@ export const adriverIdSubmodule = {
    * @param {string} value
    * @returns {{adriverId:string}}
    */
-  decode(value) {
+  decode (value) {
     return { adrcid: value }
   },
   /**
@@ -44,7 +44,7 @@ export const adriverIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     if (!isPlainObject(config.params)) {
       config.params = {};
     }

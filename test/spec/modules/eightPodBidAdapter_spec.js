@@ -102,20 +102,20 @@ describe('eightPodBidAdapter', function () {
     })
   })
 
-  describe('onBidWon', function() {
-    beforeEach(function() {
+  describe('onBidWon', function () {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 
-    it('Should not trigger pixel if bid does not contain nurl', function() {
+    it('Should not trigger pixel if bid does not contain nurl', function () {
       spec.onBidWon({});
       expect(utils.triggerPixel.callCount).to.equal(0)
     })
 
-    it('Should trigger pixel if bid nurl', function() {
+    it('Should trigger pixel if bid nurl', function () {
       spec.onBidWon({
         burl: 'https://example.com/some-tracker'
       });
@@ -123,7 +123,7 @@ describe('eightPodBidAdapter', function () {
     })
   })
 
-  describe('getPageKeywords function', function() {
+  describe('getPageKeywords function', function () {
     let sandbox;
 
     beforeEach(() => {
@@ -134,7 +134,7 @@ describe('eightPodBidAdapter', function () {
       sandbox.restore();
     });
 
-    it('should return the top document keywords if available', function() {
+    it('should return the top document keywords if available', function () {
       const keywordsContent = 'keyword1,keyword2,keyword3';
       const fakeTopDocument = {
         querySelector: sandbox.stub()
@@ -146,13 +146,13 @@ describe('eightPodBidAdapter', function () {
       expect(result).to.equal(keywordsContent);
     });
 
-    it('should return the current document keywords if top document is not accessible', function() {
+    it('should return the current document keywords if top document is not accessible', function () {
       const keywordsContent = 'keyword1,keyword2,keyword3';
       sandbox.stub(document, 'querySelector')
         .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
 
       const fakeWindow = {
-        get top() {
+        get top () {
           throw new Error('Access denied');
         }
       };
@@ -161,7 +161,7 @@ describe('eightPodBidAdapter', function () {
       expect(result).to.equal(keywordsContent);
     });
 
-    it('should return an empty string if no keywords meta tag is found', function() {
+    it('should return an empty string if no keywords meta tag is found', function () {
       sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
 
       const result = getPageKeywords();
@@ -169,7 +169,7 @@ describe('eightPodBidAdapter', function () {
     });
   });
 
-  describe('parseUserAgent function', function() {
+  describe('parseUserAgent function', function () {
     let sandbox;
 
     beforeEach(() => {
@@ -180,7 +180,7 @@ describe('eightPodBidAdapter', function () {
       sandbox.restore();
     });
 
-    it('should return the platform and version IOS', function() {
+    it('should return the platform and version IOS', function () {
       const uaStub = sandbox.stub(window.navigator, 'userAgent');
       uaStub.value('Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1');
 
@@ -190,7 +190,7 @@ describe('eightPodBidAdapter', function () {
       expect(result.device).to.equal('16.6');
     });
 
-    it('should return the platform and version android', function() {
+    it('should return the platform and version android', function () {
       const uaStub = sandbox.stub(window.navigator, 'userAgent');
       uaStub.value('Mozilla/5.0 (Linux; Android 5.0.1; SM-G920V Build/LRX22C) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.137 Mobile Safari/537.36');
 

@@ -21,7 +21,7 @@ const adPartnerHandlers = {
   }
 };
 
-function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
+function handleReqORTB2Dot4 (validBidRequest, endpointUrl, bidderRequest) {
   utils.logInfo(`Calling endpoint for ortb_2_4:`, endpointUrl);
   const gdprConsent = getGdprConsentChoice(bidderRequest);
   const envParams = getEnvParams();
@@ -172,7 +172,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   return makeBidRequest(endpointUrl, bidRequestData);
 };
 
-function handleResORTB2Dot4(serverResponse, request, adPartner) {
+function handleResORTB2Dot4 (serverResponse, request, adPartner) {
   utils.logInfo('on handleResORTB2Dot4 -> request:', request);
   utils.logInfo('on handleResORTB2Dot4 -> request json data:', JSON.parse(request.data));
   utils.logInfo('on handleResORTB2Dot4 -> serverResponse:', serverResponse);
@@ -291,7 +291,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
   return bidResponses;
 }
 
-function makeBidRequest(url, data) {
+function makeBidRequest (url, data) {
   const payloadString = JSON.stringify(data);
 
   return {
@@ -301,7 +301,7 @@ function makeBidRequest(url, data) {
   }
 }
 
-function getUrl(adPartner, bid) {
+function getUrl (adPartner, bid) {
   let endpointUrlMapping = {
     [PARTNERS.ORTB_2_4]: bid.params.endpoint + '?idzone=' + bid.params.zoneId + '&fid=' + bid.params.fid
   };
@@ -309,7 +309,7 @@ function getUrl(adPartner, bid) {
   return endpointUrlMapping[adPartner] ? endpointUrlMapping[adPartner] : 'defaultEndpoint';
 }
 
-function getEnvParams() {
+function getEnvParams () {
   const envParams = {
     lang: '',
     userAgent: '',
@@ -380,7 +380,7 @@ export const imps = new Map();
   - procols - it should contain one protocol at least
 
 */
-function handleValidORTB2Dot4(bid) {
+function handleValidORTB2Dot4 (bid) {
   const bannerInfo = bid.mediaTypes?.banner;
   const nativeInfo = bid.mediaTypes?.native;
   const videoInfo = bid.mediaTypes?.video;
@@ -414,14 +414,14 @@ function handleValidORTB2Dot4(bid) {
   return isValid;
 }
 
-function hasValue(value) {
+function hasValue (value) {
   return (
     value !== undefined &&
     value !== null
   );
 }
 
-function getGdprConsentChoice(bidderRequest) {
+function getGdprConsentChoice (bidderRequest) {
   const hasGdprConsent =
     hasValue(bidderRequest) &&
     hasValue(bidderRequest.gdprConsent);

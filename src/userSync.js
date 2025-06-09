@@ -41,7 +41,7 @@ const storage = getCoreStorageManager('usersync');
  * @param {} deps Configuration options and dependencies which the
  *   UserSync object needs in order to behave properly.
  */
-export function newUserSync(deps) {
+export function newUserSync (deps) {
   let publicApi = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
@@ -98,7 +98,7 @@ export function newUserSync(deps) {
    * @private
    * @return {object} A queue with no syncs
    */
-  function getDefaultQueue() {
+  function getDefaultQueue () {
     return {
       image: [],
       iframe: []
@@ -110,7 +110,7 @@ export function newUserSync(deps) {
    * @summary Trigger all user syncs in the queue
    * @private
    */
-  function fireSyncs() {
+  function fireSyncs () {
     if (!usConfig.syncEnabled || !deps.browserSupportsCookies) {
       return;
     }
@@ -127,7 +127,7 @@ export function newUserSync(deps) {
     queue = getDefaultQueue();
   }
 
-  function forEachFire(queue, fn) {
+  function forEachFire (queue, fn) {
     // Randomize the order of the pixels before firing
     // This is to avoid giving any bidder who has registered multiple syncs
     // any preferential treatment and balancing them out
@@ -139,7 +139,7 @@ export function newUserSync(deps) {
    * @summary Loops through user sync pixels and fires each one
    * @private
    */
-  function fireImagePixels() {
+  function fireImagePixels () {
     if (!permittedPixels.image) {
       return;
     }
@@ -156,7 +156,7 @@ export function newUserSync(deps) {
    * @summary Loops through iframe syncs and loads an iframe element into the page
    * @private
    */
-  function loadIframes() {
+  function loadIframes () {
     if (!(permittedPixels.iframe)) {
       return;
     }
@@ -171,7 +171,7 @@ export function newUserSync(deps) {
     });
   }
 
-  function removeImagePixelsForBidder(queue, iframeSyncBidderName) {
+  function removeImagePixelsForBidder (queue, iframeSyncBidderName) {
     queue.image = queue.image.filter(imageSync => {
       let imageSyncBidderName = imageSync[0];
       return imageSyncBidderName !== iframeSyncBidderName
@@ -186,7 +186,7 @@ export function newUserSync(deps) {
    * @param {string} bidder The name of the bidder adding a sync
    * @returns {object} The updated version of numAdapterBids
    */
-  function incrementAdapterBids(numAdapterBids, bidder) {
+  function incrementAdapterBids (numAdapterBids, bidder) {
     if (!numAdapterBids[bidder]) {
       numAdapterBids[bidder] = 1;
     } else {
@@ -244,7 +244,7 @@ export function newUserSync(deps) {
    * @param {string} bidder The name of the adapter. e.g. "rubicon"
    * @returns {boolean} true => bidder is not allowed to register; false => bidder can register
    */
-  function shouldBidderBeBlocked(type, bidder) {
+  function shouldBidderBeBlocked (type, bidder) {
     let filterConfig = usConfig.filterSettings;
 
     // apply the filter check if the config object is there (eg filterSettings.iframe exists) and if the config object is properly setup
@@ -273,7 +273,7 @@ export function newUserSync(deps) {
    * @param {string} type The type of the sync; either image or iframe
    * @returns {boolean} true => config is setup correctly, false => setup incorrectly or filterConfig[type] is not present
    */
-  function isFilterConfigValid(filterConfig, type) {
+  function isFilterConfigValid (filterConfig, type) {
     if (filterConfig.all && filterConfig[type]) {
       logWarn(`Detected presence of the "filterSettings.all" and "filterSettings.${type}" in userSync config.  You cannot mix "all" with "iframe/image" configs; they are mutually exclusive.`);
       return false;
@@ -345,7 +345,7 @@ export const userSync = newUserSync(Object.defineProperties({
   regRule: registerActivityControl,
 }, {
   browserSupportsCookies: {
-    get: function() {
+    get: function () {
       // call storage lazily to give time for consent data to be available
       return !isSafariBrowser() && storage.cookiesAreEnabled();
     }

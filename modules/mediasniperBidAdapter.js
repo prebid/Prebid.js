@@ -99,7 +99,7 @@ export const spec = {
     return request;
   },
 
-  interpretResponse(serverResponse, bidRequest) {
+  interpretResponse (serverResponse, bidRequest) {
     const bidResponses = [];
 
     try {
@@ -167,7 +167,7 @@ registerBidder(spec);
  *
  * @returns {object}
  */
-function createOrtbTemplate() {
+function createOrtbTemplate () {
   return {
     id: '',
     cur: [DEFAULT_CURRENCY],
@@ -188,7 +188,7 @@ function createOrtbTemplate() {
  * @param {*} bid Prebid bid object from request
  * @returns
  */
-function createImp(bid) {
+function createImp (bid) {
   let placementId = '';
   if (isStr(bid.params.placementId)) {
     placementId = bid.params.placementId;
@@ -245,7 +245,7 @@ function createImp(bid) {
  * @param {string|Array} size the size array or the wildcard '*'
  * @returns {number|boolean}
  */
-function getFloor(bid, mediaType, size = '*') {
+function getFloor (bid, mediaType, size = '*') {
   if (!isFn(bid.getFloor)) {
     return false;
   }
@@ -268,7 +268,7 @@ function getFloor(bid, mediaType, size = '*') {
     : false;
 }
 
-function getMinFloor(bid) {
+function getMinFloor (bid) {
   const floors = [];
 
   for (let mediaType in bid.mediaTypes) {
@@ -294,7 +294,7 @@ function getMinFloor(bid) {
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */
-function createBannerImp(bid) {
+function createBannerImp (bid) {
   let sizes = bid.mediaTypes.banner.sizes;
   const params = deepAccess(bid, 'params', {});
 

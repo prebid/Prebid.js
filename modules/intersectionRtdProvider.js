@@ -6,7 +6,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import '../src/adapterManager.js';
 
 let observerAvailable = true;
-function getIntersectionData(requestBidsObject, onDone, providerConfig, userConsent) {
+function getIntersectionData (requestBidsObject, onDone, providerConfig, userConsent) {
   const intersectionMap = {};
   const placeholdersMap = {};
   let done = false;
@@ -24,7 +24,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
   if (auctionDelay > 0) {
     setTimeout(complete, auctionDelay);
   }
-  function findAndObservePlaceholders() {
+  function findAndObservePlaceholders () {
     const observed = adUnits.filter((unit) => {
       const code = unit.code;
       if (placeholdersMap[code]) return true;
@@ -44,7 +44,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
     }
     checkTimeoutId = setTimeout(findAndObservePlaceholders);
   }
-  function observerCallback(entries) {
+  function observerCallback (entries) {
     let entry = entries.pop();
     while (entry) {
       const target = entry.target;
@@ -68,7 +68,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
       entry = entries.pop();
     }
   }
-  function complete() {
+  function complete () {
     if (done) return;
     if (checkTimeoutId) clearTimeout(checkTimeoutId);
     done = true;
@@ -83,7 +83,7 @@ function getIntersectionData(requestBidsObject, onDone, providerConfig, userCons
     onDone();
   }
 }
-function init(moduleConfig) {
+function init (moduleConfig) {
   if (!isFn(window.IntersectionObserver)) {
     logError('IntersectionObserver is not defined');
     observerAvailable = false;
@@ -92,7 +92,7 @@ function init(moduleConfig) {
   }
   return observerAvailable;
 }
-function cloneRect(rect) {
+function cloneRect (rect) {
   return rect ? {
     'left': rect.left,
     'top': rect.top,
@@ -109,7 +109,7 @@ export const intersectionSubmodule = {
   getBidRequestData: getIntersectionData,
   init: init,
 };
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', intersectionSubmodule);
 }
 registerSubModule();

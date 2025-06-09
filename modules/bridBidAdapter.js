@@ -21,7 +21,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid && bid.params && bid.params.placementId);
   },
 
@@ -32,10 +32,10 @@ export const spec = {
    * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const requests = [];
 
-    _each(bidRequests, function(bid) {
+    _each(bidRequests, function (bid) {
       const placementId = bid.params.placementId;
       const bidId = bid.bidId;
       let sizes = bid.sizes;
@@ -128,7 +128,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse.body;
     let highestBid = null;
 

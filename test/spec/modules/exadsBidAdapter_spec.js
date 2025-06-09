@@ -168,7 +168,7 @@ describe('exadsBidAdapterTest', function () {
 
     it('should make a bidRequest by HTTP method', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('POST');
       });
     });
@@ -179,7 +179,7 @@ describe('exadsBidAdapterTest', function () {
 
     it('should make a bidRequest by HTTP method', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('POST');
       });
     });
@@ -190,7 +190,7 @@ describe('exadsBidAdapterTest', function () {
 
     it('should make a bidRequest by HTTP method', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('POST');
       });
     });
@@ -484,13 +484,13 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
-  describe('checking dsa information', function() {
+  describe('checking dsa information', function () {
     it('should add dsa information to the request via bidderRequest.params.dsa', function () {
       const bidRequests = [imageBanner];
 
       const requests = spec.buildRequests(bidRequests, {});
 
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         const payload = JSON.parse(requestItem.data);
 
         expect(payload.regs.ext.dsa).to.exist;
@@ -617,8 +617,8 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
-  describe('on getting the win event', function() {
-    it('should not create nurl request if bid is undefined', function() {
+  describe('on getting the win event', function () {
+    it('should not create nurl request if bid is undefined', function () {
       const result = spec.onBidWon({});
       expect(result).to.be.undefined;
     });

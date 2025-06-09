@@ -376,7 +376,7 @@ registerBidder(spec);
  * @param cur
  * @return Bid
  */
-function prebidBid(serverBid, cur) {
+function prebidBid (serverBid, cur) {
   if (!isStr(cur) || cur === '') {
     cur = DEFAULT_CUR;
   }
@@ -408,7 +408,7 @@ function prebidBid(serverBid, cur) {
   return bid;
 }
 
-function setMediaType(bid, newBid) {
+function setMediaType (bid, newBid) {
   if (deepAccess(bid, 'ext.crtype') === 'native') {
     newBid.mediaType = NATIVE;
   } else {
@@ -416,14 +416,14 @@ function setMediaType(bid, newBid) {
   }
 }
 
-function extractDomainFromHostExceptLocalhost(pageHost) {
+function extractDomainFromHostExceptLocalhost (pageHost) {
   if (pageHost === 'localhost') {
     return 'localhost'
   }
   return extractDomainFromHost(pageHost)
 }
 
-function getLanguage() {
+function getLanguage () {
   const language = navigator.language ? 'language' : 'userLanguage';
   const lang2 = navigator[language].split('-')[0];
   if (lang2.length === 2 || lang2.length === 3) {
@@ -432,7 +432,7 @@ function getLanguage() {
   return '';
 }
 
-function getLocalStorageSafely(key) {
+function getLocalStorageSafely (key) {
   try {
     return storage.getDataFromLocalStorage(key);
   } catch (e) {
@@ -440,7 +440,7 @@ function getLocalStorageSafely(key) {
   }
 }
 
-function setLocalStorageSafely(key, val) {
+function setLocalStorageSafely (key, val) {
   try {
     return storage.setDataInLocalStorage(key, val);
   } catch (e) {
@@ -448,7 +448,7 @@ function setLocalStorageSafely(key, val) {
   }
 }
 
-function createBannerRequest(bid) {
+function createBannerRequest (bid) {
   const sizes = deepAccess(bid, 'mediaTypes.banner.sizes');
   let format = [];
   if (sizes.length > 1) {
@@ -472,7 +472,7 @@ function createBannerRequest(bid) {
   return r
 }
 
-function createNativeRequest(params) {
+function createNativeRequest (params) {
   let nativeRequestObject = {
     plcmtcnt: 1,
     assets: []
@@ -582,7 +582,7 @@ function createNativeRequest(params) {
   return nativeRequestObject;
 }
 
-function commonNativeRequestObject(nativeAsset, params) {
+function commonNativeRequestObject (nativeAsset, params) {
   const key = nativeAsset.KEY;
   return {
     id: nativeAsset.ID,
@@ -595,7 +595,7 @@ function commonNativeRequestObject(nativeAsset, params) {
   };
 }
 
-function parseNativeResponse(bid, newBid) {
+function parseNativeResponse (bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
     let nativeAdm = '';
@@ -640,7 +640,7 @@ function parseNativeResponse(bid, newBid) {
   }
 }
 
-function pageInfo() {
+function pageInfo () {
   var w, d, l, r, m, p, t;
   for (w = window, d = w.document, l = d.location.href, r = d.referrer, m = 0, t = new Date(); w !== w.parent;) {
     try {
@@ -668,7 +668,7 @@ function pageInfo() {
  * @param cur
  * @returns {*|number} floor price
  */
-function getBidFloor(bid, cur) {
+function getBidFloor (bid, cur) {
   let bidFloor = getBidIdParameter('bidfloor', bid.params) || getBidIdParameter('bidFloor', bid.params) || 0;
   const reqCur = cur
 
@@ -694,7 +694,7 @@ function getBidFloor(bid, cur) {
   return {floor: bidFloor, cur: cur}
 }
 
-function copyFromAdmAsset(asset) {
+function copyFromAdmAsset (asset) {
   return {
     url: asset.img && asset.img.url,
     height: asset.img && asset.img.h,

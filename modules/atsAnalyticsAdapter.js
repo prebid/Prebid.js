@@ -209,11 +209,11 @@ let browsersList = [
 
 let listOfSupportedBrowsers = ['Safari', 'Chrome', 'Firefox', 'Microsoft Edge'];
 
-function bidRequestedHandler(args) {
+function bidRequestedHandler (args) {
   let envelopeSourceCookieValue = storage.getCookie('_lr_env_src_ats');
   let envelopeSource = envelopeSourceCookieValue === 'true';
   let requests;
-  requests = args.bids.map(function(bid) {
+  requests = args.bids.map(function (bid) {
     return {
       envelope_source: envelopeSource,
       has_envelope: bid.userId ? !!bid.userId.idl_env : false,
@@ -232,7 +232,7 @@ function bidRequestedHandler(args) {
   return requests;
 }
 
-function bidResponseHandler(args) {
+function bidResponseHandler (args) {
   return {
     bid_id: args.requestId,
     response_time_stamp: new Date(args.responseTimestamp).toJSON(),
@@ -242,10 +242,10 @@ function bidResponseHandler(args) {
   };
 }
 
-export function parseBrowser() {
+export function parseBrowser () {
   let ua = atsAnalyticsAdapter.getUserAgent();
   try {
-    let result = browsersList.filter(function(obj) {
+    let result = browsersList.filter(function (obj) {
       return obj.test.test(ua);
     });
     let browserName = result && result.length ? result[0].name : '';
@@ -297,7 +297,7 @@ let atsAnalyticsAdapter = Object.assign(adapter(
     analyticsType
   }),
 {
-  track({eventType, args}) {
+  track ({eventType, args}) {
     if (typeof args !== 'undefined') {
       atsAnalyticsAdapter.callHandler(eventType, args);
     }

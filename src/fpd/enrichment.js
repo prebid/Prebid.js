@@ -70,7 +70,7 @@ export const enrichFPD = hook('sync', (fpd) => {
     });
 });
 
-function winFallback(fn) {
+function winFallback (fn) {
   try {
     return fn(dep.getWindowTop());
   } catch (e) {
@@ -78,23 +78,23 @@ function winFallback(fn) {
   }
 }
 
-function getSUA() {
+function getSUA () {
   const hints = config.getConfig('firstPartyData.uaHints');
   return !Array.isArray(hints) || hints.length === 0
     ? PbPromise.resolve(dep.getLowEntropySUA())
     : dep.getHighEntropySUA(hints);
 }
 
-function removeUndef(obj) {
+function removeUndef (obj) {
   return getDefinedParams(obj, Object.keys(obj))
 }
 
-function tryToGetCdepLabel() {
+function tryToGetCdepLabel () {
   return PbPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && navigator.cookieDeprecationLabel.getValue());
 }
 
 const ENRICHMENTS = {
-  site(ortb2, ri) {
+  site (ortb2, ri) {
     if (CLIENT_SECTIONS.filter(p => p !== 'site').some(hasSection.bind(null, ortb2))) {
       // do not enrich site if dooh or app are set
       return;
@@ -104,7 +104,7 @@ const ENRICHMENTS = {
       ref: ri.ref,
     });
   },
-  device() {
+  device () {
     return winFallback((win) => {
       // screen.width and screen.height are the physical dimensions of the screen
       const w = getWinDimensions().screen.width;
@@ -132,7 +132,7 @@ const ENRICHMENTS = {
       return device;
     })
   },
-  regs() {
+  regs () {
     const regs = {};
     if (winFallback((win) => win.navigator.globalPrivacyControl)) {
       deepSetValue(regs, 'ext.gpc', '1');
@@ -147,7 +147,7 @@ const ENRICHMENTS = {
 
 // Enrichment of properties common across dooh, app and site - will be dropped into whatever
 // section is appropriate
-function clientEnrichment(ortb2, ri) {
+function clientEnrichment (ortb2, ri) {
   const domain = parseDomain(ri.page, {noLeadingWww: true});
   const keywords = winFallback((win) => win.document.querySelector('meta[name=\'keywords\']'))
     ?.content?.replace?.(/\s/g, '');

@@ -26,7 +26,7 @@ const converter = ortbConverter({
     currency: DEFAULT_CURRENCY,
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const { mediaType } = context;
     const imp = buildImp(bidRequest, context);
     const { width, height } = getSize(mediaType, bidRequest);
@@ -46,7 +46,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const replacements = context.bidRequests[0]?.params?.replacements;
 
@@ -66,7 +66,7 @@ const converter = ortbConverter({
     return request;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const { bidRequest, mediaType } = context;
     const { width, height } = getSize(mediaType, bidRequest);
 
@@ -121,11 +121,11 @@ export const spec = {
   aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch', 'openwebvideo', 'didnavideo', 'ottadvisors', 'pgammedia'],
   supportedMediaTypes: [VIDEO, BANNER],
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return !!(bid.params?.AV_PUBLISHERID && bid.params?.AV_CHANNELID);
   },
 
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const requests = [];
 
     bidRequests.forEach((bidRequest) => {
@@ -149,7 +149,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse(serverResponse, bidderRequest) {
+  interpretResponse (serverResponse, bidderRequest) {
     const { body } = serverResponse;
     const bids = body?.seatbid?.flatMap(seatbid => seatbid?.bid || []) || [];
 
@@ -184,7 +184,7 @@ export const spec = {
     });
   },
 
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs (syncOptions, serverResponses) {
     if (!serverResponses?.[0]?.body || serverResponses.error) {
       return [];
     }
@@ -201,32 +201,32 @@ export const spec = {
   },
 };
 
-function isVideoType(mediaType) {
+function isVideoType (mediaType) {
   return mediaType === VIDEO;
 }
 
-function isBannerType(mediaType) {
+function isBannerType (mediaType) {
   return mediaType === BANNER;
 }
 
-function getValidSyncs(syncs, options) {
+function getValidSyncs (syncs, options) {
   return syncs
     .filter(sync => isSyncValid(sync, options))
     .map(sync => processSync(sync)) || [];
 }
 
-function isSyncValid(sync, options) {
+function isSyncValid (sync, options) {
   return isPlainObject(sync) &&
     isStr(sync.url) &&
     (sync.e === 'inventory' || sync.e === 'sync') &&
     ((sync.t === 1 && options?.pixelEnabled) || (sync.t === 3 && options?.iframeEnabled));
 }
 
-function processSync(sync) {
+function processSync (sync) {
   return { url: sync.url, type: sync.t === 1 ? 'image' : 'iframe' };
 }
 
-function getSize(mediaType, bidRequest) {
+function getSize (mediaType, bidRequest) {
   const { mediaTypes, sizes } = bidRequest;
   const videoSizes = mediaTypes?.video?.playerSize;
   const bannerSizes = mediaTypes?.banner?.sizes;
@@ -248,7 +248,7 @@ function getSize(mediaType, bidRequest) {
 }
 
 // https://docs.prebid.org/dev-docs/modules/floors.html#example-getfloor-scenarios
-function getFloor(bidRequest, size, mediaType) {
+function getFloor (bidRequest, size, mediaType) {
   if (!isFn(bidRequest?.getFloor)) {
     return null;
   }
@@ -268,7 +268,7 @@ function getFloor(bidRequest, size, mediaType) {
   return null;
 }
 
-function replaceMacros(str, replacements) {
+function replaceMacros (str, replacements) {
   if (!replacements || !isStr(str)) {
     return str;
   }
@@ -282,7 +282,7 @@ function replaceMacros(str, replacements) {
     .replaceAll(`\${AUCTION_AD_ID}`, replacements.auctionAdId || '');
 }
 
-function createRenderer(bidRequest) {
+function createRenderer (bidRequest) {
   const config = {};
   const { params = {} } = bidRequest;
   const playerDomain = params.playerDomain || DEFAULT_PLAYER_DOMAIN;
@@ -308,8 +308,8 @@ function createRenderer(bidRequest) {
   return renderer;
 }
 
-function avRenderer(bid) {
-  bid.renderer.push(function() {
+function avRenderer (bid) {
+  bid.renderer.push(function () {
     const eventsCallback = bid?.renderer?.handleVideoEvent ?? null;
     const { ad, adId, adUnitCode, vastUrl, vastXml, width, height, params = [] } = bid;
 

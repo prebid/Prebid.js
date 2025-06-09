@@ -241,7 +241,7 @@ describe('Digital Matter BidAdapter', function () {
       assert.deepEqual(bids[0].width, firstResponse.width);
       assert.deepEqual(bids[0].height, firstResponse.height);
       assert.deepEqual(bids[0].dealId, undefined);
-      assert.deepEqual(bids[0].meta.advertiserDomains, [ 'advertiser.org' ]);
+      assert.deepEqual(bids[0].meta.advertiserDomains, ['advertiser.org']);
 
       assert.deepEqual(bids[1].requestId, secondResponse.bidid);
       assert.deepEqual(bids[1].cpm, secondResponse.cpm);
@@ -252,7 +252,7 @@ describe('Digital Matter BidAdapter', function () {
       assert.deepEqual(bids[1].width, secondResponse.width);
       assert.deepEqual(bids[1].height, secondResponse.height);
       assert.deepEqual(bids[1].dealId, undefined);
-      assert.deepEqual(bids[1].meta.advertiserDomains, [ 'advertiser.org' ]);
+      assert.deepEqual(bids[1].meta.advertiserDomains, ['advertiser.org']);
     });
   });
 

@@ -17,10 +17,10 @@ export const spec = {
   gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.placement);
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
       const placementId = params.placement;
@@ -71,7 +71,7 @@ export const spec = {
       };
     });
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     const response = serverResponse.body;
     const crid = response.crid || 0;
@@ -106,7 +106,7 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (!serverResponses || serverResponses.length === 0) {
       return [];
     }
@@ -140,14 +140,14 @@ export const spec = {
   }
 }
 
-function appendToUrl(url, what) {
+function appendToUrl (url, what) {
   if (!what) {
     return url;
   }
   return url + (url.indexOf('?') !== -1 ? '&' : '?') + what;
 }
 
-function objectToQueryString(obj, prefix) {
+function objectToQueryString (obj, prefix) {
   let str = [];
   let p;
   for (p in obj) {
@@ -169,7 +169,7 @@ function objectToQueryString(obj, prefix) {
  * @param bidderRequest
  * @param {BidRequest} bidRequest - Bid request generated from ad slots
  */
-function prepareExtraParams(params, payload, bidderRequest, bidRequest) {
+function prepareExtraParams (params, payload, bidderRequest, bidRequest) {
   if (params.pfilter !== undefined) {
     payload.pfilter = params.pfilter;
   }
@@ -218,7 +218,7 @@ function prepareExtraParams(params, payload, bidderRequest, bidRequest) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a banner bid
  */
-function isBannerRequest(bid) {
+function isBannerRequest (bid) {
   return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
 }
 
@@ -228,7 +228,7 @@ function isBannerRequest(bid) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a video bid
  */
-function isVideoRequest(bid) {
+function isVideoRequest (bid) {
   return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
@@ -238,7 +238,7 @@ function isVideoRequest(bid) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object} True if it's a video bid
  */
-function getVideoSizes(bid) {
+function getVideoSizes (bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
@@ -248,7 +248,7 @@ function getVideoSizes(bid) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object} True if it's a video bid
  */
-function getBannerSizes(bid) {
+function getBannerSizes (bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
@@ -257,7 +257,7 @@ function getBannerSizes(bid) {
  * @param {string} size
  * @returns {{width: number, height: number}}
  */
-function parseSize(size) {
+function parseSize (size) {
   let sizeObj = {}
   sizeObj.width = parseInt(size[0], 10);
   sizeObj.height = parseInt(size[1], 10);
@@ -269,7 +269,7 @@ function parseSize(size) {
  * @param sizes
  * @returns {{width: number , height: number }[]}
  */
-function parseSizes(sizes) {
+function parseSizes (sizes) {
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
     return sizes.map(size => parseSize(size));
   }

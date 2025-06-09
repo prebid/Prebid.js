@@ -62,7 +62,7 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function getUserSyncs(syncOptions, serverResponses, gdprConsent, usPrivacy) {
+  getUserSyncs: function getUserSyncs (syncOptions, serverResponses, gdprConsent, usPrivacy) {
     if (syncOptions.iframeEnabled) {
       handlePostMessage();
       return [{
@@ -75,7 +75,7 @@ export const spec = {
 };
 registerBidder(spec);
 
-function getSyncUrl(gdprConsent, usPrivacy) {
+function getSyncUrl (gdprConsent, usPrivacy) {
   var unParsedPubAndSection = getStorageData(BASE_KEY + 'lps') || ':';
   var pubSectionArray = unParsedPubAndSection.split(':') || [];
   var pubId = pubSectionArray[0] || -1;
@@ -94,7 +94,7 @@ function getSyncUrl(gdprConsent, usPrivacy) {
   return USER_SYNC_URL + `?p=${pubId}&s=${sectionId}${consentParams}&u=${url}`;
 }
 
-function getPublisherUrl() {
+function getPublisherUrl () {
   var url = '';
   try {
     if (window.top == window) {
@@ -111,7 +111,7 @@ function getPublisherUrl() {
   return url
 }
 
-function buildTrionUrlParams(bid, bidderRequest) {
+function buildTrionUrlParams (bid, bidderRequest) {
   var pubId = getBidIdParameter('pubId', bid.params);
   var sectionId = getBidIdParameter('sectionId', bid.params);
   var url = getPublisherUrl();
@@ -166,11 +166,11 @@ function buildTrionUrlParams(bid, bidderRequest) {
   return trionUrl;
 }
 
-function getBidSizesFromBidRequest(bid) {
+function getBidSizesFromBidRequest (bid) {
   return (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) ? bid.mediaTypes.banner.sizes : bid.sizes;
 }
 
-function handlePostMessage() {
+function handlePostMessage () {
   try {
     if (window.addEventListener) {
       window.addEventListener('message', acceptPostMessage);
@@ -179,7 +179,7 @@ function handlePostMessage() {
   }
 }
 
-export function getStorageData(key) {
+export function getStorageData (key) {
   var item = null;
   try {
     if (storage.hasLocalStorage()) {
@@ -190,7 +190,7 @@ export function getStorageData(key) {
   return item;
 }
 
-export function setStorageData(key, item) {
+export function setStorageData (key, item) {
   try {
     if (storage.hasLocalStorage()) {
       storage.setDataInLocalStorage(key, item);
@@ -199,7 +199,7 @@ export function setStorageData(key, item) {
   }
 }
 
-export function acceptPostMessage(e) {
+export function acceptPostMessage (e) {
   var message = e.data || '';
   if (!message.indexOf || !message.split || message.indexOf(BASE_KEY + 'userId') !== 0) {
     return;

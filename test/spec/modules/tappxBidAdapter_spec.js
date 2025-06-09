@@ -293,7 +293,7 @@ describe('Tappx bid adapter', function () {
       expect(data.imp[0].banner.h).to.be.oneOf([320, 50, 250, 480]);
     });
 
-    it('should properly build a ext optional object', function() {
+    it('should properly build a ext optional object', function () {
       let extBidRequest = c_VALIDBIDREQUESTS;
       extBidRequest[0].params.ext = {'optionalData': '1234'};
       let extBidderRequest = c_BIDDERREQUEST_B;
@@ -305,7 +305,7 @@ describe('Tappx bid adapter', function () {
       expect(data.imp[0].ext.bidder.ext.optionalData).to.be.equal('1234');
     });
 
-    it('should ignore ext optional if is not a object', function() {
+    it('should ignore ext optional if is not a object', function () {
       let badExtBidRequest = c_VALIDBIDREQUESTS;
       badExtBidRequest[0].params.ext = 'stringValue';
       let badExtBidderRequest = c_BIDDERREQUEST_B;
@@ -371,9 +371,9 @@ describe('Tappx bid adapter', function () {
     });
   })
 
-  describe('module Floor implementation', function() {
+  describe('module Floor implementation', function () {
     let getFloorResponse, bidderRequest_f;
-    beforeEach(function() {
+    beforeEach(function () {
       getFloorResponse = {};
       bidderRequest_f = c_BIDREQUEST;
     })
@@ -410,13 +410,13 @@ describe('Tappx bid adapter', function () {
     });
   })
 
-  describe('_getHostInfo tests', function() {
+  describe('_getHostInfo tests', function () {
     const HOST_VALIDBIDREQ = {};
     HOST_VALIDBIDREQ.bidder = 'tappx';
     HOST_VALIDBIDREQ.params = {};
     HOST_VALIDBIDREQ.params.endpoint = 'ZZ1234PBJS';
 
-    it('Test testing endpoints', function() {
+    it('Test testing endpoints', function () {
       let testHostValidRequest = HOST_VALIDBIDREQ;
       testHostValidRequest.params.host = 'testing.xxx.tappx.com\/rtb\/v2\/';
       let testHostObject = _getHostInfo(testHostValidRequest);
@@ -424,7 +424,7 @@ describe('Tappx bid adapter', function () {
       expect(testHostObject.newEndpoint).to.be.false;
       expect(testHostObject.endpoint).to.be.equal(testHostValidRequest.params.endpoint);
     })
-    it('Test classic endpoints', function() {
+    it('Test classic endpoints', function () {
       let classicHostValidRequest = HOST_VALIDBIDREQ;
       classicHostValidRequest.params.host = 'xxx.xxx.tappx.com\/rtb\/v2\/';
       let classicHostObject = _getHostInfo(classicHostValidRequest);
@@ -432,7 +432,7 @@ describe('Tappx bid adapter', function () {
       expect(classicHostObject.newEndpoint).to.be.false;
       expect(classicHostObject.endpoint).to.be.equal(classicHostValidRequest.params.endpoint);
     })
-    it('Test new endpoints', function() {
+    it('Test new endpoints', function () {
       let newHostValidRequest = HOST_VALIDBIDREQ;
       newHostValidRequest.params.host = 'zz1111xxx.xxx.tappx.com\/rtb\/v2\/';
       let newHostObject = _getHostInfo(newHostValidRequest);
@@ -442,7 +442,7 @@ describe('Tappx bid adapter', function () {
     })
   })
 
-  describe('_checkParamDataType tests', function() {
+  describe('_checkParamDataType tests', function () {
     it('should return the expected datatypes', function () {
       assert.isString(_checkParamDataType('Right string', 'test', 'string'));
       assert.isBoolean(_checkParamDataType('Right bool', true, 'boolean'));
@@ -458,7 +458,7 @@ describe('Tappx bid adapter', function () {
     });
   })
 
-  describe('_extractPageUrl tests', function() {
+  describe('_extractPageUrl tests', function () {
     let validBidRequests = c_VALIDBIDREQUESTS;
     let bidderRequest = c_BIDDERREQUEST_B;
     it('should return the Domain of the site', function () {
@@ -467,7 +467,7 @@ describe('Tappx bid adapter', function () {
     });
   })
 
-  describe('Empty params values from bid tests', function() {
+  describe('Empty params values from bid tests', function () {
     let validBidRequest = JSON.parse(JSON.stringify(c_BIDREQUEST));
 
     it('should return false when tappxkey is empty', function () {

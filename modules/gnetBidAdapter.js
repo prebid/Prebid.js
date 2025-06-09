@@ -121,7 +121,7 @@ export const spec = {
   },
 };
 
-function _getCookie() {
+function _getCookie () {
   return storage.cookiesAreEnabled() ? storage.getCookie('gftuid') : null;
 }
 

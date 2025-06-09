@@ -18,7 +18,7 @@ import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import adapterManager from '../src/adapterManager.js';
 
 // keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
-function convertKeywordsToString(keywords) {
+function convertKeywordsToString (keywords) {
   let result = '';
   Object.keys(keywords).forEach(key => {
     // if 'text' or ''
@@ -44,7 +44,7 @@ function convertKeywordsToString(keywords) {
   return result;
 }
 
-function digForAppNexusBidder(s2sConfig) {
+function digForAppNexusBidder (s2sConfig) {
   let result = false;
   // check for plain setup
   if (s2sConfig?.bidders?.includes('appnexus')) result = true;
@@ -74,7 +74,7 @@ function digForAppNexusBidder(s2sConfig) {
 //   return false;
 // }
 
-export function convertAnParams(next, bidderRequests) {
+export function convertAnParams (next, bidderRequests) {
   // check s2sconfig
   const s2sConfig = config.getConfig('s2sConfig');
   let proceed = false;
@@ -99,7 +99,7 @@ export function convertAnParams(next, bidderRequests) {
   next(bidderRequests);
 }
 
-function transformBidParams(bid) {
+function transformBidParams (bid) {
   let params = bid.params;
   if (params) {
     params = convertTypes({

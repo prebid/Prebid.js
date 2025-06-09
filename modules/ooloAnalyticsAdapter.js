@@ -185,7 +185,7 @@ const onAdRenderFailed = (args) => {
 
 var ooloAdapter = Object.assign(
   adapter({ analyticsType }), {
-    track({ eventType, args }) {
+    track ({ eventType, args }) {
       // wait for server configuration before processing the events
       if (typeof initOptions.serverConfig !== 'undefined' && eventsQueue.length === 0) {
         handleEvent(eventType, args)
@@ -196,7 +196,7 @@ var ooloAdapter = Object.assign(
   }
 )
 
-function handleEvent(eventType, args) {
+function handleEvent (eventType, args) {
   try {
     const { sendRaw } = initOptions.serverConfig.events[eventType]
     if (sendRaw) {
@@ -232,7 +232,7 @@ function handleEvent(eventType, args) {
   }
 }
 
-function sendEvent(eventType, args, isRaw) {
+function sendEvent (eventType, args, isRaw) {
   let data = deepClone(args)
 
   Object.assign(data, buildCommonDataProperties(), {
@@ -261,14 +261,14 @@ function sendEvent(eventType, args, isRaw) {
   }
 }
 
-function checkEventsQueue() {
+function checkEventsQueue () {
   while (eventsQueue.length) {
     const event = eventsQueue.shift()
     handleEvent(event.eventType, event.args)
   }
 }
 
-function buildAuctionData(auction) {
+function buildAuctionData (auction) {
   const auctionData = deepClone(auction)
   const keysToRemove = ['adUnitCodes', 'auctionStatus', 'bidderRequests', 'bidsReceived', 'noBids', 'winningBids', 'timestamp', 'config']
 
@@ -293,7 +293,7 @@ function buildAuctionData(auction) {
   return auctionData
 }
 
-function buildCommonDataProperties() {
+function buildCommonDataProperties () {
   return {
     pvid: PAGEVIEW_ID,
     pid: initOptions.pid,
@@ -301,15 +301,15 @@ function buildCommonDataProperties() {
   }
 }
 
-function buildLogMessage(message) {
+function buildLogMessage (message) {
   return `oolo: ${message}`
 }
 
-function parseBidId(bid) {
+function parseBidId (bid) {
   return bid.bidId || bid.requestId
 }
 
-function mapBid({
+function mapBid ({
   bidStatus,
   start,
   end,
@@ -363,7 +363,7 @@ function mapBid({
   return bidObj
 }
 
-function handleCustomFields(obj, eventType, args) {
+function handleCustomFields (obj, eventType, args) {
   try {
     const { pickFields, omitFields } = initOptions.serverConfig.events[eventType]
 
@@ -379,7 +379,7 @@ function handleCustomFields(obj, eventType, args) {
   } catch (e) { }
 }
 
-function handleCustomRawFields(obj, omitRawFields) {
+function handleCustomRawFields (obj, omitRawFields) {
   try {
     if (omitRawFields && obj) {
       omitRawFields.forEach(field => {
@@ -389,7 +389,7 @@ function handleCustomRawFields(obj, omitRawFields) {
   } catch (e) { }
 }
 
-function getServerConfig() {
+function getServerConfig () {
   const defaultConfig = { events: {} }
 
   ajaxCall(
@@ -412,7 +412,7 @@ function getServerConfig() {
   )
 }
 
-function sendPage() {
+function sendPage () {
   setTimeout(() => {
     const payload = {
       timestamp: Date.now(),
@@ -430,7 +430,7 @@ function sendPage() {
   }, 0)
 }
 
-function sendHbConfigData() {
+function sendHbConfigData () {
   const conf = {}
   const pbjsConfig = config.getConfig()
   // Check if pbjsConfig.userSync exists and has userIds property
@@ -448,7 +448,7 @@ function sendHbConfigData() {
   ajaxCall(ENDPOINTS.HBCONFIG, () => { }, JSON.stringify(conf))
 }
 
-function getPagePerformance() {
+function getPagePerformance () {
   let timing
 
   try {
@@ -469,7 +469,7 @@ function getPagePerformance() {
   }
 }
 
-function getTopWindowReferrer() {
+function getTopWindowReferrer () {
   try {
     return window.top.document.referrer
   } catch (e) {
@@ -477,7 +477,7 @@ function getTopWindowReferrer() {
   }
 }
 
-function generatePageViewId(min = 10000, max = 90000) {
+function generatePageViewId (min = 10000, max = 90000) {
   var randomNumber = Math.floor((Math.random() * max) + min)
   var currentdate = new Date()
   var currentTime = {
@@ -499,7 +499,7 @@ function generatePageViewId(min = 10000, max = 90000) {
     (randomNumber)
 }
 
-function ajaxCall(endpoint, callback, data, options = {}) {
+function ajaxCall (endpoint, callback, data, options = {}) {
   if (data) {
     options.contentType = 'application/json'
   }

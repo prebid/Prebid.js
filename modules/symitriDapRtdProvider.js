@@ -15,7 +15,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
-export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
+export function createRtdProvider (moduleName, moduleCode, headerPrefix) {
   const MODULE_NAME = 'realTimeData';
   const SUBMODULE_NAME = moduleName;
   const MODULE_CODE = moduleCode;
@@ -36,7 +36,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
    * @param {String} target
    * @param {String} source
    */
-  function mergeLazy(target, source) {
+  function mergeLazy (target, source) {
     if (!isPlainObject(target)) {
       target = {};
     }
@@ -51,7 +51,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
    * @param {Object} ortb2 destination object to merge RTD into
    * @param {Object} rtd
    */
-  function addRealTimeData(ortb2, rtd) {
+  function addRealTimeData (ortb2, rtd) {
     logInfo('DEBUG(addRealTimeData) - ENTER');
     if (isPlainObject(rtd.ortb2)) {
       logMessage('DEBUG(addRealTimeData): merging original: ', ortb2);
@@ -68,7 +68,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
    * @param {Object} rtdConfig
    * @param {Object} userConsent
    */
-  function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+  function getRealTimeData (bidConfig, onDone, rtdConfig, userConsent) {
     let entropyDict = JSON.parse(storage.getDataFromLocalStorage(DAP_CLIENT_ENTROPY));
 
     // Attempt to load entroy script if no entropy object exist and entropy config settings are present.
@@ -109,7 +109,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
     }
   }
 
-  function generateRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+  function generateRealTimeData (bidConfig, onDone, rtdConfig, userConsent) {
     logInfo('DEBUG(generateRealTimeData) - ENTER');
     logMessage('  - apiHostname: ' + rtdConfig.params.apiHostname);
     logMessage('  - apiVersion:  ' + rtdConfig.params.apiVersion);
@@ -146,14 +146,14 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
    * @param {Object} userConsent
    * @return {boolean}
    */
-  function init(config, userConsent) {
+  function init (config, userConsent) {
     if (dapUtils.checkConsent(userConsent) === false) {
       return false;
     }
     return true;
   }
 
-  function onBidResponse(bidResponse, config, userConsent) {
+  function onBidResponse (bidResponse, config, userConsent) {
     if (bidResponse.dealId && typeof (bidResponse.dealId) != typeof (undefined)) {
       let membership = dapUtils.dapGetMembershipFromLocalStorage(); // Get Membership details from Local Storage
       let deals = membership.deals; // Get list of Deals the user is mapped to
@@ -179,7 +179,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
   const dapUtils = {
 
-    callDapAPIs: function(bidConfig, onDone, rtdConfig, userConsent) {
+    callDapAPIs: function (bidConfig, onDone, rtdConfig, userConsent) {
       if (rtdConfig && isPlainObject(rtdConfig.params)) {
         let config = {
           api_hostname: rtdConfig.params.apiHostname,
@@ -204,7 +204,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         dapUtils.dapRefreshToken(ortb2, config, refreshMembership, onDone) // Refresh Token and membership in all the cases
       }
     },
-    dapGetEntropy: function(resolve, reject) {
+    dapGetEntropy: function (resolve, reject) {
       if (typeof window.dapCalculateEntropy === 'function') {
         window.dapCalculateEntropy(resolve, reject);
       } else {
@@ -212,7 +212,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       }
     },
 
-    dapGetTokenFromLocalStorage: function(ttl) {
+    dapGetTokenFromLocalStorage: function (ttl) {
       let now = Math.round(Date.now() / 1000.0); // in seconds
       let token = null;
       let item = JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN));
@@ -224,14 +224,14 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return token;
     },
 
-    dapRefreshToken: function(ortb2, config, refreshMembership, onDone) {
+    dapRefreshToken: function (ortb2, config, refreshMembership, onDone) {
       dapUtils.dapLog('Token missing or expired, fetching a new one...');
       // Trigger a refresh
       let now = Math.round(Date.now() / 1000.0); // in seconds
       let item = {}
       let configAsync = {...config};
       dapUtils.dapTokenize(configAsync, config.identity, onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
           let exp = dapUtils.dapExtractExpiryFromToken(token);
           if (typeof exp == 'number') {
@@ -257,14 +257,14 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
             }
           }
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
           logError('ERROR(' + error + '): failed to retrieve token! ' + status);
           onDone()
         }
       );
     },
 
-    dapGetMembershipFromLocalStorage: function() {
+    dapGetMembershipFromLocalStorage: function () {
       let now = Math.round(Date.now() / 1000.0); // in seconds
       let membership = null;
       let item = JSON.parse(storage.getDataFromLocalStorage(DAP_MEMBERSHIP));
@@ -281,12 +281,12 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return membership;
     },
 
-    dapRefreshMembership: function(ortb2, config, token, onDone) {
+    dapRefreshMembership: function (ortb2, config, token, onDone) {
       let now = Math.round(Date.now() / 1000.0); // in seconds
       let item = {}
       let configAsync = {...config};
       dapUtils.dapMembership(configAsync, token, onDone,
-        function(membership, status, xhr, onDone) {
+        function (membership, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
           let exp = dapUtils.dapExtractExpiryFromToken(membership.said)
           if (typeof exp == 'number') {
@@ -303,7 +303,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           dapUtils.checkAndAddRealtimeData(ortb2, data, config.segtax);
           onDone();
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
           logError('ERROR(' + error + '): failed to retrieve membership! ' + status);
           if (status == 403 && dapRetryTokenize < DAP_MAX_RETRY_TOKENIZE) {
             dapRetryTokenize++;
@@ -315,7 +315,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       );
     },
 
-    dapGetEncryptedMembershipFromLocalStorage: function() {
+    dapGetEncryptedMembershipFromLocalStorage: function () {
       let now = Math.round(Date.now() / 1000.0); // in seconds
       let encMembership = null;
       let item = JSON.parse(storage.getDataFromLocalStorage(DAP_ENCRYPTED_MEMBERSHIP));
@@ -329,12 +329,12 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return encMembership;
     },
 
-    dapRefreshEncryptedMembership: function(ortb2, config, token, onDone) {
+    dapRefreshEncryptedMembership: function (ortb2, config, token, onDone) {
       let now = Math.round(Date.now() / 1000.0); // in seconds
       let item = {};
       let configAsync = {...config};
       dapUtils.dapEncryptedMembership(configAsync, token, onDone,
-        function(encToken, status, xhr, onDone) {
+        function (encToken, status, xhr, onDone) {
           item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
           let exp = dapUtils.dapExtractExpiryFromToken(encToken);
           if (typeof exp == 'number') {
@@ -349,7 +349,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           dapUtils.checkAndAddRealtimeData(ortb2, encData, config.segtax);
           onDone();
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
           logError('ERROR(' + error + '): failed to retrieve encrypted membership! ' + status);
           if (status == 403 && dapRetryTokenize < DAP_MAX_RETRY_TOKENIZE) {
             dapRetryTokenize++;
@@ -365,7 +365,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      * DESCRIPTION
      * Extract expiry value from a token
      */
-    dapExtractExpiryFromToken: function(token) {
+    dapExtractExpiryFromToken: function (token) {
       let exp = null;
       if (token) {
         const tokenArray = token.split('..');
@@ -384,7 +384,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *  Convert a DAP membership response to an OpenRTB2 segment object suitable
      *  for insertion into user.data.segment or site.data.segment and add it to the rtd obj.
      */
-    dapGetRtdObj: function(membership, segtax) {
+    dapGetRtdObj: function (membership, segtax) {
       let segment = {
         name: 'dap.symitri.com',
         ext: {
@@ -424,7 +424,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *  Convert a DAP membership response to an OpenRTB2 segment object suitable
      *  for insertion into user.data.segment or site.data.segment and add it to the rtd obj.
      */
-    dapGetEncryptedRtdObj: function(encToken, segtax) {
+    dapGetEncryptedRtdObj: function (encToken, segtax) {
       let segment = {
         name: 'dap.symitri.com',
         ext: {
@@ -449,7 +449,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return encData;
     },
 
-    checkAndAddRealtimeData: function(ortb2, data, segtax) {
+    checkAndAddRealtimeData: function (ortb2, data, segtax) {
       if (data.rtd) {
         if (segtax == 710 && dapUtils.checkIfSegmentsAlreadyExist(ortb2, data.rtd, 710)) {
           logMessage('DEBUG(handleInit): rtb Object already added');
@@ -460,7 +460,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       }
     },
 
-    checkIfSegmentsAlreadyExist: function(ortb2, rtd, segtax) {
+    checkIfSegmentsAlreadyExist: function (ortb2, rtd, segtax) {
       let segmentsExist = false
       if (ortb2.user && ortb2.user.data && ortb2.user.data.length > 0) {
         for (let i = 0; i < ortb2.user.data.length; i++) {
@@ -475,7 +475,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return segmentsExist
     },
 
-    dapLog: function(args) {
+    dapLog: function (args) {
       let css = '';
       css += 'display: inline-block;';
       css += 'color: #fff;';
@@ -486,7 +486,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       logInfo('%cDAP Client', css, args);
     },
 
-    isValidHttpsUrl: function(urlString) {
+    isValidHttpsUrl: function (urlString) {
       let url;
       try {
         url = new URL(urlString);
@@ -496,7 +496,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       return url.protocol === 'https:';
     },
 
-    checkConsent: function(userConsent) {
+    checkConsent: function (userConsent) {
       let consent = true;
 
       if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
@@ -521,14 +521,14 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *
      ******************************************************************************/
 
-    dapValidationHelper: function(config, onDone, token, onError) {
+    dapValidationHelper: function (config, onDone, token, onError) {
       if (onError == null) {
-        onError = function(xhr, status, error, onDone) {};
+        onError = function (xhr, status, error, onDone) {};
       }
 
       if (config == null || typeof (config) == typeof (undefined)) {
         onError(null, 'Invalid config object', 'ClientError', onDone);
-        return [ config, true ];
+        return [config, true];
       }
 
       if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
@@ -537,25 +537,25 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       if (typeof (config.api_version) != 'string') {
         onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return [ config, true ];
+        return [config, true];
       }
 
       if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
         onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
-        return [ config, true ];
+        return [config, true];
       }
 
       if (token) {
         if (typeof (token) != 'string') {
           onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
-          return [ config, true ];
+          return [config, true];
         }
       }
 
-      return [ config, false ];
+      return [config, false];
     },
 
-    addIdentifier: async function(identity, apiParams) {
+    addIdentifier: async function (identity, apiParams) {
       if (window.crypto && window.crypto.subtle && typeof (identity.value) != typeof (undefined) && identity.value.trim() !== '') {
         const hashBuffer = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(identity.value));
         const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -604,9 +604,9 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *      function( response, status, xhr } { token = response; },
      *      function( xhr, status, error ) { ; } // handle error
      */
-    dapTokenize: function(config, identity, onDone, onSuccess = null, onError = null) {
+    dapTokenize: function (config, identity, onDone, onSuccess = null, onError = null) {
       let hasTokenizeError;
-      [ config, hasTokenizeError ] = this.dapValidationHelper(config, onDone, null, onError);
+      [config, hasTokenizeError] = this.dapValidationHelper(config, onDone, null, onError);
       if (hasTokenizeError) { return; }
 
       if (typeof (config.domain) != 'string') {
@@ -647,7 +647,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       }
     },
 
-    callTokenize(config, identity, apiParams, onDone, onSuccess, onError) {
+    callTokenize (config, identity, apiParams, onDone, onSuccess, onError) {
       if (typeof (identity.attributes) != typeof (undefined)) {
         apiParams.attributes = identity.attributes;
       }
@@ -737,9 +737,9 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *      } );
      *
      */
-    dapMembership: function(config, token, onDone, onSuccess = null, onError = null) {
+    dapMembership: function (config, token, onDone, onSuccess = null, onError = null) {
       let hasMembershipError;
-      [ config, hasMembershipError ] = this.dapValidationHelper(config, onDone, token, onError);
+      [config, hasMembershipError] = this.dapValidationHelper(config, onDone, token, onError);
       if (hasMembershipError) { return; }
 
       if (typeof (config.domain) != 'string') {
@@ -801,9 +801,9 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *      } );
      *
      */
-    dapEncryptedMembership: function(config, token, onDone, onSuccess = null, onError = null) {
+    dapEncryptedMembership: function (config, token, onDone, onSuccess = null, onError = null) {
       let hasEncryptedMembershipError;
-      [ config, hasEncryptedMembershipError ] = this.dapValidationHelper(config, onDone, token, onError);
+      [config, hasEncryptedMembershipError] = this.dapValidationHelper(config, onDone, token, onError);
       if (hasEncryptedMembershipError) { return; }
 
       let cb = {

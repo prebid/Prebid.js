@@ -46,11 +46,11 @@ describe('Utils', function () {
     // https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
     const $sf = {
       ext: {
-        geom: function() {}
+        geom: function () {}
       }
     };
 
-    afterEach(function() {
+    afterEach(function () {
       delete window.$sf;
     })
 
@@ -604,7 +604,7 @@ describe('Utils', function () {
   });
 
   describe('polyfill test', function () {
-    it('should not add polyfill to array', function() {
+    it('should not add polyfill to array', function () {
       var arr = ['hello', 'world'];
       var count = 0;
       for (var key in arr) {
@@ -628,7 +628,7 @@ describe('Utils', function () {
     });
   });
 
-  describe('deepAccess', function() {
+  describe('deepAccess', function () {
     var obj = {
       1: 2,
       test: {
@@ -636,7 +636,7 @@ describe('Utils', function () {
       }
     };
 
-    it('should allow deep access of object properties', function() {
+    it('should allow deep access of object properties', function () {
       var value1 = utils.deepAccess(obj, 'test');
       assert.deepEqual(value1, obj.test);
 
@@ -647,10 +647,10 @@ describe('Utils', function () {
       assert.equal(value3, 2);
     });
 
-    it('should allow safe access (returning undefined for missing properties and not throwing exceptions)', function() {
+    it('should allow safe access (returning undefined for missing properties and not throwing exceptions)', function () {
       var value;
 
-      assert.doesNotThrow(function() {
+      assert.doesNotThrow(function () {
         value = utils.deepAccess(obj, 'test.second.third');
       });
 
@@ -658,8 +658,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('deepSetValue', function() {
-    it('should set existing properties at various depths', function() {
+  describe('deepSetValue', function () {
+    it('should set existing properties at various depths', function () {
       const testObj = {
         prop: 'value',
         nestedObj: {
@@ -672,7 +672,7 @@ describe('Utils', function () {
       assert.equal(testObj.nestedObj.nestedProp, 'newNestedValue');
     });
 
-    it('should create object levels between top and bottom of given path if they do not exist', function() {
+    it('should create object levels between top and bottom of given path if they do not exist', function () {
       const testObj = {};
       utils.deepSetValue(testObj, 'level1.level2', 'value');
       assert.notEqual(testObj.level1, undefined);
@@ -946,8 +946,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('mergeDeep', function() {
-    it('properly merge objects that share same property names', function() {
+  describe('mergeDeep', function () {
+    it('properly merge objects that share same property names', function () {
       const object1 = {
         propA: {
           subPropA: 'abc'
@@ -975,7 +975,7 @@ describe('Utils', function () {
       });
     });
 
-    it('properly merge objects that have different depths', function() {
+    it('properly merge objects that have different depths', function () {
       const object1 = {
         depth0_A: {
           depth1_A: {
@@ -1016,7 +1016,7 @@ describe('Utils', function () {
       });
     });
 
-    it('properly merge objects with various property types', function() {
+    it('properly merge objects with various property types', function () {
       const object1 = {
         depth0_A: {
           depth1_A: ['a', 'b', 'c'],
@@ -1043,8 +1043,8 @@ describe('Utils', function () {
     });
   });
 
-  describe('deepEqual', function() {
-    it('should return "true" if comparing the same object', function() {
+  describe('deepEqual', function () {
+    it('should return "true" if comparing the same object', function () {
       const obj1 = {
         banner: {
           sizeConfig: [
@@ -1056,7 +1056,7 @@ describe('Utils', function () {
       const obj2 = obj1;
       expect(utils.deepEqual(obj1, obj2)).to.equal(true);
     });
-    it('should return "true" if two deeply nested objects are equal', function() {
+    it('should return "true" if two deeply nested objects are equal', function () {
       const obj1 = {
         banner: {
           sizeConfig: [
@@ -1075,17 +1075,17 @@ describe('Utils', function () {
       };
       expect(utils.deepEqual(obj1, obj2)).to.equal(true);
     });
-    it('should return "true" if comparting the same primitive values', function() {
+    it('should return "true" if comparting the same primitive values', function () {
       const primitive1 = 'Prebid.js';
       const primitive2 = 'Prebid.js';
       expect(utils.deepEqual(primitive1, primitive2)).to.equal(true);
     });
-    it('should return "false" if comparing two different primitive values', function() {
+    it('should return "false" if comparing two different primitive values', function () {
       const primitive1 = 12;
       const primitive2 = 123;
       expect(utils.deepEqual(primitive1, primitive2)).to.equal(false);
     });
-    it('should return "false" if comparing two different deeply nested objects', function() {
+    it('should return "false" if comparing two different deeply nested objects', function () {
       const obj1 = {
         banner: {
           sizeConfig: [
@@ -1105,7 +1105,7 @@ describe('Utils', function () {
       expect(utils.deepEqual(obj1, obj2)).to.equal(false);
     });
     it('should check types if {matchTypes: true}', () => {
-      function Typed(obj) {
+      function Typed (obj) {
         Object.assign(this, obj);
       }
       const obj = {key: 'value'};
@@ -1120,21 +1120,21 @@ describe('Utils', function () {
       expect(deepEqual([], [])).to.be.true;
     });
 
-    describe('cyrb53Hash', function() {
-      it('should return the same hash for the same string', function() {
+    describe('cyrb53Hash', function () {
+      it('should return the same hash for the same string', function () {
         const stringOne = 'string1';
         expect(utils.cyrb53Hash(stringOne)).to.equal(utils.cyrb53Hash(stringOne));
       });
-      it('should return a different hash for the same string with different seeds', function() {
+      it('should return a different hash for the same string with different seeds', function () {
         const stringOne = 'string1';
         expect(utils.cyrb53Hash(stringOne, 1)).to.not.equal(utils.cyrb53Hash(stringOne, 2));
       });
-      it('should return a different hash for different strings with the same seed', function() {
+      it('should return a different hash for different strings with the same seed', function () {
         const stringOne = 'string1';
         const stringTwo = 'string2';
         expect(utils.cyrb53Hash(stringOne)).to.not.equal(utils.cyrb53Hash(stringTwo));
       });
-      it('should return a string value, not a number', function() {
+      it('should return a string value, not a number', function () {
         const stringOne = 'string1';
         expect(typeof utils.cyrb53Hash(stringOne)).to.equal('string');
       });
@@ -1145,11 +1145,11 @@ describe('Utils', function () {
     let element;
     let callbacks;
 
-    function callback() {
+    function callback () {
       callbacks++;
     }
 
-    function delay(delay = 0) {
+    function delay (delay = 0) {
       return new Promise((resolve) => {
         window.setTimeout(resolve, delay);
       })
@@ -1307,12 +1307,12 @@ describe('Utils', function () {
     beforeEach(() => {
       originalCompressionStream = global.CompressionStream;
       global.CompressionStream = class {
-        constructor(type) {
+        constructor (type) {
           if (type !== 'gzip') {
             throw new Error('Unsupported compression type');
           }
           this.readable = new ReadableStream({
-            start(controller) {
+            start (controller) {
               controller.enqueue(new Uint8Array([1, 2, 3, 4]));
               controller.close();
             }
@@ -1354,7 +1354,7 @@ describe('memoize', () => {
   let fn;
 
   beforeEach(() => {
-    fn = sinon.stub().callsFake(function() {
+    fn = sinon.stub().callsFake(function () {
       return Array.from(arguments);
     });
   });

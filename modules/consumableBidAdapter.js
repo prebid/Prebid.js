@@ -26,7 +26,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.networkId && bid.params.siteId && bid.params.unitId && bid.params.unitName);
   },
 
@@ -38,7 +38,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let ret = {
       method: 'POST',
       url: '',
@@ -124,7 +124,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let bid;
     let bids;
     let bidId;
@@ -193,7 +193,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     let syncUrl = 'https://sync.serverbid.com/ss/' + siteId + '.html';
 
     if (syncOptions.iframeEnabled) {
@@ -276,9 +276,9 @@ sizeMap[331] = '320x250';
 sizeMap[3301] = '320x267';
 sizeMap[2730] = '728x250';
 
-function getSize(sizes) {
+function getSize (sizes) {
   const result = [];
-  sizes.forEach(function(size) {
+  sizes.forEach(function (size) {
     const index = sizeMap.indexOf(size[0] + 'x' + size[1]);
     if (index >= 0) {
       result.push(index);
@@ -287,7 +287,7 @@ function getSize(sizes) {
   return result;
 }
 
-function retrieveAd(decision, unitId, unitName) {
+function retrieveAd (decision, unitId, unitName) {
   let ad;
   if (decision.contents && decision.contents[0]) {
     ad = decision.contents[0].body;
@@ -298,7 +298,7 @@ function retrieveAd(decision, unitId, unitName) {
   return ad;
 }
 
-function handleEids(data, validBidRequests) {
+function handleEids (data, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
@@ -308,7 +308,7 @@ function handleEids(data, validBidRequests) {
   }
 }
 
-function getBidFloor(bid, sizes) {
+function getBidFloor (bid, sizes) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
@@ -328,7 +328,7 @@ function getBidFloor(bid, sizes) {
   return floor;
 }
 
-function appendUrlParam(url, queryString) {
+function appendUrlParam (url, queryString) {
   return `${url}${url.indexOf('?') > -1 ? '&' : '?'}${queryString}`;
 }
 

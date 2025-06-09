@@ -23,7 +23,7 @@ const CURRENCY_USD = 'USD';
 const ADAGIO_CODE = 'adagio';
 
 export const _internal = {
-  getAdagioNs: function() {
+  getAdagioNs: function () {
     return _ADAGIO;
   },
   gamSlotCallback
@@ -31,16 +31,16 @@ export const _internal = {
 
 const cache = {
   auctions: {},
-  getAuction: function(auctionId, adUnitCode) {
+  getAuction: function (auctionId, adUnitCode) {
     return this.auctions[auctionId][adUnitCode];
   },
-  getBiddersFromAuction: function(auctionId, adUnitCode) {
+  getBiddersFromAuction: function (auctionId, adUnitCode) {
     return this.getAuction(auctionId, adUnitCode).bdrs.split(',');
   },
-  getAllAdUnitCodes: function(auctionId) {
+  getAllAdUnitCodes: function (auctionId) {
     return Object.keys(this.auctions[auctionId]);
   },
-  updateAuction: function(auctionId, adUnitCode, values) {
+  updateAuction: function (auctionId, adUnitCode, values) {
     this.auctions[auctionId][adUnitCode] = {
       ...this.auctions[auctionId][adUnitCode],
       ...values
@@ -49,16 +49,16 @@ const cache = {
 
   // Map prebid auction id to adagio auction id
   auctionIdReferences: {},
-  addPrebidAuctionIdRef(auctionId, adagioAuctionId) {
+  addPrebidAuctionIdRef (auctionId, adagioAuctionId) {
     this.auctionIdReferences[auctionId] = adagioAuctionId;
   },
-  getAdagioAuctionId(auctionId) {
+  getAdagioAuctionId (auctionId) {
     return this.auctionIdReferences[auctionId];
   },
 
   // Map adunitcode with prebid auction ID
   auctionByAdunit: {},
-  getAuctionIdByAdunit(adUnitPath, adSlotElementId) {
+  getAuctionIdByAdunit (adUnitPath, adSlotElementId) {
     if (cache.auctionByAdunit[adUnitPath]) {
       return { auctionId: cache.auctionByAdunit[adUnitPath], adUnitCode: adUnitPath }
     }
@@ -81,7 +81,7 @@ const guard = {
   auctionTracked: (auctionId) => deepAccess(cache, `auctions.${auctionId}`, false)
 };
 
-function removeDuplicates(arr, getKey) {
+function removeDuplicates (arr, getKey) {
   const seen = {};
   return arr.filter(item => {
     const key = getKey(item);
@@ -89,14 +89,14 @@ function removeDuplicates(arr, getKey) {
   });
 };
 
-function isAdagio(alias) {
+function isAdagio (alias) {
   if (!alias) {
     return false
   }
   return (alias + adapterManager.aliasRegistry[alias]).toLowerCase().includes(ADAGIO_CODE);
 };
 
-function getMediaTypeAlias(mediaType) {
+function getMediaTypeAlias (mediaType) {
   const mediaTypesMap = {
     banner: 'ban',
     outstream: 'vidout',
@@ -107,7 +107,7 @@ function getMediaTypeAlias(mediaType) {
   return mediaTypesMap[mediaType] || mediaType;
 };
 
-function addKeyPrefix(obj, prefix) {
+function addKeyPrefix (obj, prefix) {
   return Object.keys(obj).reduce((acc, key) => {
     // We don't want to prefix already prefixed keys.
     if (key.startsWith(prefix)) {
@@ -120,7 +120,7 @@ function addKeyPrefix(obj, prefix) {
   }, {});
 }
 
-function getUsdCpm(cpm, currency) {
+function getUsdCpm (cpm, currency) {
   let netCpm = cpm
 
   if (typeof currency === 'string' && currency.toUpperCase() !== CURRENCY_USD) {
@@ -133,7 +133,7 @@ function getUsdCpm(cpm, currency) {
   return netCpm
 }
 
-function getCurrencyData(bid) {
+function getCurrencyData (bid) {
   return {
     netCpm: getUsdCpm(bid.cpm, bid.currency),
     orginalCpm: getUsdCpm(bid.originalCpm, bid.originalCurrency)
@@ -144,7 +144,7 @@ function getCurrencyData(bid) {
  * sendRequest to Adagio. It filter null values and encode each query param.
  * @param {Object} qp
  */
-function sendRequest(qp) {
+function sendRequest (qp) {
   if (!qp.org_id || !qp.site) {
     logInfo('request is missing org_id or site, skipping beacon.');
     return;
@@ -166,14 +166,14 @@ function sendRequest(qp) {
  * @param {string} auctionId
  * @param {string} adUnitCode
  */
-function sendNewBeacon(auctionId, adUnitCode) {
+function sendNewBeacon (auctionId, adUnitCode) {
   cache.updateAuction(auctionId, adUnitCode, {
     v: (cache.getAuction(auctionId, adUnitCode).v || 0) + 1
   });
   sendRequest(cache.getAuction(auctionId, adUnitCode));
 };
 
-function getTargetedAuctionId(bid) {
+function getTargetedAuctionId (bid) {
   return deepAccess(bid, 'latestTargetedAuctionId') || deepAccess(bid, 'auctionId');
 }
 
@@ -192,7 +192,7 @@ function getTargetedAuctionId(bid) {
  * Each handler is called when the event is fired.
  */
 
-function handlerAuctionInit(event) {
+function handlerAuctionInit (event) {
   const w = getBestWindowForAdagio();
 
   const prebidAuctionId = event.auctionId;
@@ -303,7 +303,7 @@ function handlerAuctionInit(event) {
  * and to update the auction cache with the seat ID.
  * No beacon is sent here.
  */
-function handlerBidResponse(event) {
+function handlerBidResponse (event) {
   if (!guard.adagio(event.bidder)) {
     return;
   }
@@ -321,7 +321,7 @@ function handlerBidResponse(event) {
   });
 };
 
-function handlerAuctionEnd(event) {
+function handlerAuctionEnd (event) {
   const { auctionId } = event;
 
   if (!guard.auctionTracked(auctionId)) {
@@ -359,7 +359,7 @@ function handlerAuctionEnd(event) {
   });
 }
 
-function handlerBidWon(event) {
+function handlerBidWon (event) {
   let auctionId = getTargetedAuctionId(event);
 
   if (!guard.bidTracked(auctionId, event.adUnitCode)) {
@@ -394,7 +394,7 @@ function handlerBidWon(event) {
   sendNewBeacon(auctionId, event.adUnitCode);
 };
 
-function handlerAdRender(event, isSuccess) {
+function handlerAdRender (event, isSuccess) {
   const { adUnitCode } = event.bid;
   let auctionId = getTargetedAuctionId(event.bid);
 
@@ -408,7 +408,7 @@ function handlerAdRender(event, isSuccess) {
   sendNewBeacon(auctionId, adUnitCode);
 };
 
-function handlerBidTimeout(args) {
+function handlerBidTimeout (args) {
   args.forEach(event => {
     const auction = cache.getAuction(event.auctionId, event.adUnitCode);
     if (!auction) {
@@ -430,7 +430,7 @@ function handlerBidTimeout(args) {
  * The data is retrieved from an AnalyticsTag (set by a custom PBS module named `adg-pba`),
  * located in the AdResponse at `response.ext.prebid.analytics.tags[].pba`.
  */
-function handlerPbsAnalytics(event) {
+function handlerPbsAnalytics (event) {
   const pbaByAdUnit = event.atag.find(e => {
     return e.module === 'adg-pba'
   })?.pba;
@@ -460,7 +460,7 @@ function handlerPbsAnalytics(event) {
  * @param {SlotRenderEndedEvent} event
  * @returns {void}
  */
-function gamSlotCallback(event) {
+function gamSlotCallback (event) {
   const { auctionId, adUnitCode } = cache.getAuctionIdByAdunit(event.slot.getAdUnitPath(), event.slot.getSlotElementId());
   if (!auctionId) {
     const slotName = `${event.slot.getAdUnitPath()} - ${event.slot.getSlotElementId()}`;
@@ -484,7 +484,7 @@ function gamSlotCallback(event) {
 }
 
 let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
-  track: function(event) {
+  track: function (event) {
     const { eventType, args } = event;
     try {
       switch (eventType) {

@@ -80,7 +80,7 @@ const BID = {
   'meta': {
     'demandSource': 1208,
   },
-  getStatusCode() {
+  getStatusCode () {
     return 1;
   }
 };
@@ -125,24 +125,24 @@ const MOCK = {
     'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
     'timestamp': 1519767010567,
     'auctionStatus': 'inProgress',
-    'adUnits': [ {
+    'adUnits': [{
       'code': '/19968336/header-bid-tag-1',
       'sizes': [[640, 480]],
-      'bids': [ {
+      'bids': [{
         'bidder': 'pubmatic',
         'params': {
           'publisherId': '1001'
         }
-      } ],
+      }],
       'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
     }
     ],
     'adUnitCodes': ['/19968336/header-bid-tag-1'],
-    'bidderRequests': [ {
+    'bidderRequests': [{
       'bidderCode': 'pubmatic',
       'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
       'bidderRequestId': '1be65d7958826a',
-      'bids': [ {
+      'bids': [{
         'bidder': 'pubmatic',
         'params': {
           'publisherId': '1001',
@@ -278,7 +278,7 @@ const MOCK = {
   ]
 };
 
-function getLoggerJsonFromRequest(requestBody) {
+function getLoggerJsonFromRequest (requestBody) {
   return JSON.parse(decodeURIComponent(requestBody.split('json=')[1]));
 }
 
@@ -320,8 +320,8 @@ describe('pubmatic analytics adapter', function () {
     expect(utils.logError.called).to.equal(true);
   });
 
-  describe('OW S2S', function() {
-    this.beforeEach(function() {
+  describe('OW S2S', function () {
+    this.beforeEach(function () {
       pubmaticAnalyticsAdapter.enableAnalytics({
         options: {
           publisherId: 9999,
@@ -339,11 +339,11 @@ describe('pubmatic analytics adapter', function () {
       });
     });
 
-    this.afterEach(function() {
+    this.afterEach(function () {
       pubmaticAnalyticsAdapter.disableAnalytics();
     });
 
-    it('Pubmatic Won: No tracker fired', function() {
+    it('Pubmatic Won: No tracker fired', function () {
       this.timeout(5000)
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
@@ -372,7 +372,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pdvid).to.equal('20');
     });
 
-    it('Non-pubmatic won: logger, tracker fired', function() {
+    it('Non-pubmatic won: logger, tracker fired', function () {
       const APPNEXUS_BID = Object.assign({}, BID, {
         'bidder': 'appnexus',
         'adserverTargeting': {
@@ -388,24 +388,24 @@ describe('pubmatic analytics adapter', function () {
         'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
         'timestamp': 1519767010567,
         'auctionStatus': 'inProgress',
-        'adUnits': [ {
+        'adUnits': [{
           'code': '/19968336/header-bid-tag-1',
           'sizes': [[640, 480]],
-          'bids': [ {
+          'bids': [{
             'bidder': 'appnexus',
             'params': {
               'publisherId': '1001'
             }
-          } ],
+          }],
           'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
         }
         ],
         'adUnitCodes': ['/19968336/header-bid-tag-1'],
-        'bidderRequests': [ {
+        'bidderRequests': [{
           'bidderCode': 'appnexus',
           'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
           'bidderRequestId': '1be65d7958826a',
-          'bids': [ {
+          'bids': [{
             'bidder': 'appnexus',
             'params': {
               'publisherId': '1001',
@@ -522,7 +522,7 @@ describe('pubmatic analytics adapter', function () {
     })
   });
 
-  describe('when handling events', function() {
+  describe('when handling events', function () {
     beforeEach(function () {
       pubmaticAnalyticsAdapter.enableAnalytics({
         options: {
@@ -537,7 +537,7 @@ describe('pubmatic analytics adapter', function () {
       pubmaticAnalyticsAdapter.disableAnalytics();
     });
 
-    it('Logger: best case + win tracker', function() {
+    it('Logger: best case + win tracker', function () {
       this.timeout(5000)
 
       const mockUserIds = {
@@ -703,7 +703,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.dmv).to.equal('$prebid.version$' || '-1');
     });
 
-    it('Logger : do not log floor fields when prebids floor shows noData in location property', function() {
+    it('Logger : do not log floor fields when prebids floor shows noData in location property', function () {
       const BID_REQUESTED_COPY = utils.deepClone(MOCK.BID_REQUESTED);
       BID_REQUESTED_COPY['bids'][1]['floorData']['location'] = 'noData';
 
@@ -747,7 +747,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].fskp).to.equal(undefined);
     });
 
-    it('Logger: log floor fields when prebids floor shows setConfig in location property', function() {
+    it('Logger: log floor fields when prebids floor shows setConfig in location property', function () {
       const BID_REQUESTED_COPY = utils.deepClone(MOCK.BID_REQUESTED);
       BID_REQUESTED_COPY['bids'][1]['floorData']['location'] = 'setConfig';
 
@@ -791,7 +791,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].fskp).to.equal(0);
     });
 
-    it('bidCpmAdjustment: USD: Logger: best case + win tracker', function() {
+    it('bidCpmAdjustment: USD: Logger: best case + win tracker', function () {
       const bidCopy = utils.deepClone(BID);
       bidCopy.cpm = bidCopy.originalCpm * 2; //  bidCpmAdjustment => bidCpm * 2
       this.timeout(5000)
@@ -861,7 +861,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.en).to.equal('2.46');
     });
 
-    it('bidCpmAdjustment: JPY: Logger: best case + win tracker', function() {
+    it('bidCpmAdjustment: JPY: Logger: best case + win tracker', function () {
       config.setConfig({
         testGroupId: 25
       });
@@ -935,7 +935,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.en).to.equal('200'); // bidPriceUSD is not getting set as currency module is not added
     });
 
-    it('Logger: when bid is not submitted, default bid status 1 check: pubmatic set as s2s', function() {
+    it('Logger: when bid is not submitted, default bid status 1 check: pubmatic set as s2s', function () {
       config.setConfig({
         testGroupId: '25'
       });
@@ -987,7 +987,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].frv).to.equal(undefined);
     });
 
-    it('Logger: post-timeout check without bid response', function() {
+    it('Logger: post-timeout check without bid response', function () {
       // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
@@ -1024,7 +1024,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocry).to.equal('USD');
     });
 
-    it('Logger: post-timeout check with bid response', function() {
+    it('Logger: post-timeout check with bid response', function () {
       // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
@@ -1077,7 +1077,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].pb).to.equal(1.50);
     });
 
-    it('Logger: currency conversion check', function() {
+    it('Logger: currency conversion check', function () {
       setUANull();
       setConfig({
         adServerCurrency: 'JPY',
@@ -1138,7 +1138,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.dvc).to.deep.equal({'plt': 3});
     });
 
-    it('Logger: regexPattern in bid.params', function() {
+    it('Logger: regexPattern in bid.params', function () {
       setUAMobile();
       const BID_REQUESTED_COPY = utils.deepClone(MOCK.BID_REQUESTED);
       BID_REQUESTED_COPY.bids[1].params.regexPattern = '*';
@@ -1199,7 +1199,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.kgpv).to.equal('*');
     });
 
-    it('Logger: regexPattern in bid.bidResponse and url in adomain', function() {
+    it('Logger: regexPattern in bid.bidResponse and url in adomain', function () {
       const BID2_COPY = utils.deepClone(BID2);
       BID2_COPY.regexPattern = '*';
       BID2_COPY.meta.advertiserDomains = ['https://www.example.com/abc/223']
@@ -1259,7 +1259,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.kgpv).to.equal('*');
     });
 
-    it('Logger: regexPattern in bid.params', function() {
+    it('Logger: regexPattern in bid.params', function () {
       const BID_REQUESTED_COPY = utils.deepClone(MOCK.BID_REQUESTED);
       BID_REQUESTED_COPY.bids[1].params.regexPattern = '*';
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
@@ -1318,7 +1318,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.kgpv).to.equal('*');
     });
 
-    it('Logger: regexPattern in bid.bidResponse', function() {
+    it('Logger: regexPattern in bid.bidResponse', function () {
       const BID2_COPY = utils.deepClone(BID2);
       BID2_COPY.regexPattern = '*';
       events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
@@ -1374,7 +1374,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.kgpv).to.equal('*');
     });
 
-    it('Logger: to handle floor rejected bids', function() {
+    it('Logger: to handle floor rejected bids', function () {
       this.timeout(5000)
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
@@ -1434,7 +1434,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].pb).to.equal(1.50);
     });
 
-    it('Logger: best case + win tracker in case of Bidder Aliases', function() {
+    it('Logger: best case + win tracker in case of Bidder Aliases', function () {
       MOCK.BID_REQUESTED['bids'][0]['bidder'] = 'pubmatic_alias';
       MOCK.BID_REQUESTED['bids'][0]['bidderCode'] = 'pubmatic_alias';
       adapterManager.aliasRegistry['pubmatic_alias'] = 'pubmatic';
@@ -1568,7 +1568,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.origbidid).to.equal('partnerImpressionID-1');
     });
 
-    it('Logger: best case + win tracker in case of GroupM as alternate bidder', function() {
+    it('Logger: best case + win tracker in case of GroupM as alternate bidder', function () {
       MOCK.BID_REQUESTED['bids'][0]['bidderCode'] = 'groupm';
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
@@ -1696,7 +1696,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.origbidid).to.equal('partnerImpressionID-1');
     });
 
-    it('Logger: should use originalRequestId to find the bid', function() {
+    it('Logger: should use originalRequestId to find the bid', function () {
       MOCK.BID_RESPONSE[1]['originalRequestId'] = '3bd4ebb1c900e2';
       MOCK.BID_RESPONSE[1]['requestId'] = '54d4ebb1c9003e';
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
@@ -1742,7 +1742,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.origbidid).to.equal('partnerImpressionID-1');
     });
 
-    it('Logger: best case + win tracker. Log bidId when partnerimpressionid is missing', function() {
+    it('Logger: best case + win tracker. Log bidId when partnerimpressionid is missing', function () {
       delete MOCK.BID_RESPONSE[1]['partnerImpId'];
       MOCK.BID_RESPONSE[1]['requestId'] = '3bd4ebb1c900e2';
       MOCK.BID_RESPONSE[1]['prebidBidId'] = 'Prebid-bid-id-1';

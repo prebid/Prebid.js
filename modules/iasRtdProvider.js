@@ -48,7 +48,7 @@ const IAS_KEY_MAPPINGS = {
  * @param {Object} userConsent
  * @return {boolean}
  */
-export function init(config, userConsent) {
+export function init (config, userConsent) {
   const params = config.params;
   if (!params || !params.pubId) {
     utils.logError('missing pubId param for IAS provider');
@@ -65,7 +65,7 @@ export function init(config, userConsent) {
   return true;
 }
 
-function stringifySlotSizes(sizes) {
+function stringifySlotSizes (sizes) {
   let result = '';
   if (utils.isArray(sizes)) {
     result = sizes.reduce((acc, size) => {
@@ -77,7 +77,7 @@ function stringifySlotSizes(sizes) {
   return result;
 }
 
-function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
+function getAdUnitPath (adSlot, bidRequest, adUnitPath) {
   let p = bidRequest.code;
   if (!utils.isEmpty(adSlot)) {
     p = adSlot.gptSlot;
@@ -91,7 +91,7 @@ function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
   return p;
 }
 
-function stringifySlot(bidRequest, adUnitPath) {
+function stringifySlot (bidRequest, adUnitPath) {
   const sizes = getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
@@ -104,16 +104,16 @@ function stringifySlot(bidRequest, adUnitPath) {
   return '{' + keyValues.join(',') + '}';
 }
 
-function stringifyWindowSize() {
+function stringifyWindowSize () {
   const { innerWidth, innerHeight } = utils.getWinDimensions();
   return [innerWidth || -1, innerHeight || -1].join('.');
 }
 
-function stringifyScreenSize() {
+function stringifyScreenSize () {
   return [(window.screen && window.screen.width) || -1, (window.screen && window.screen.height) || -1].join('.');
 }
 
-function renameKeyValues(source) {
+function renameKeyValues (source) {
   let result = {};
   for (let prop in IAS_KEY_MAPPINGS) {
     if (source.hasOwnProperty(prop)) {
@@ -123,7 +123,7 @@ function renameKeyValues(source) {
   return result;
 }
 
-function formatTargetingData(adUnit) {
+function formatTargetingData (adUnit) {
   let result = {};
   if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
     utils.mergeDeep(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
@@ -140,7 +140,7 @@ function formatTargetingData(adUnit) {
   return renameKeyValues(result);
 }
 
-function constructQueryString(anId, adUnits, pageUrl, adUnitPath) {
+function constructQueryString (anId, adUnits, pageUrl, adUnitPath) {
   let queries = [];
   queries.push(['anId', anId]);
 
@@ -156,7 +156,7 @@ function constructQueryString(anId, adUnits, pageUrl, adUnitPath) {
   return encodeURI(queries.map(qs => qs.join('=')).join('&'));
 }
 
-function parseResponse(result) {
+function parseResponse (result) {
   try {
     mergeResponseData(JSON.parse(result));
   } catch (err) {
@@ -164,7 +164,7 @@ function parseResponse(result) {
   }
 }
 
-function mergeResponseData(iasResponse) {
+function mergeResponseData (iasResponse) {
   const cachedSlots = iasTargeting[SLOTS_OBJECT_FIELD_NAME] || {};
 
   iasTargeting = iasResponse;
@@ -176,7 +176,7 @@ function mergeResponseData(iasResponse) {
     .forEach((adUnit) => (slots[adUnit] = cachedSlots[adUnit]));
 }
 
-function getTargetingData(adUnits, config, userConsent) {
+function getTargetingData (adUnits, config, userConsent) {
   const targeting = {};
   try {
     if (!utils.isEmpty(iasTargeting)) {
@@ -191,7 +191,7 @@ function getTargetingData(adUnits, config, userConsent) {
   return targeting;
 }
 
-function isValidHttpUrl(string) {
+function isValidHttpUrl (string) {
   let url;
   try {
     url = new URL(string);
@@ -201,7 +201,7 @@ function isValidHttpUrl(string) {
   return url.protocol === 'http:' || url.protocol === 'https:';
 }
 
-export function getApiCallback() {
+export function getApiCallback () {
   return {
     success: function (response, req) {
       if (req.status === 200) {
@@ -218,7 +218,7 @@ export function getApiCallback() {
   }
 }
 
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+function getBidRequestData (reqBidsConfigObj, callback, config, userConsent) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const { pubId } = config.params;
   let { pageUrl } = config.params;

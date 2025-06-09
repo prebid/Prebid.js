@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/hybridBidAdapter.js'
 
-function getSlotConfigs(mediaTypes, params) {
+function getSlotConfigs (mediaTypes, params) {
   return {
     params: params,
     sizes: [],
@@ -16,7 +16,7 @@ function getSlotConfigs(mediaTypes, params) {
   }
 }
 
-describe('Hybrid.ai Adapter', function() {
+describe('Hybrid.ai Adapter', function () {
   const PLACE_ID = '5af45ad34d506ee7acad0c26';
   const bidderRequest = {
     refererInfo: { page: 'referer' }
@@ -39,10 +39,10 @@ describe('Hybrid.ai Adapter', function() {
     getSlotConfigs({ video: {playerSize: [[640, 480]], context: 'outstream'} }, videoMandatoryParams),
     getSlotConfigs({ banner: {sizes: [0, 0]} }, inImageMandatoryParams)
   ]
-  describe('isBidRequestValid method', function() {
-    describe('returns true', function() {
+  describe('isBidRequestValid method', function () {
+    describe('returns true', function () {
       describe('when banner slot config has all mandatory params', () => {
-        describe('and banner placement has the correct value', function() {
+        describe('and banner placement has the correct value', function () {
           const slotConfig = getSlotConfigs(
             {banner: {}},
             {
@@ -53,7 +53,7 @@ describe('Hybrid.ai Adapter', function() {
           const isBidRequestValid = spec.isBidRequestValid(slotConfig)
           expect(isBidRequestValid).to.equal(true)
         })
-        describe('and In-Image placement has the correct value', function() {
+        describe('and In-Image placement has the correct value', function () {
           const slotConfig = getSlotConfigs(
             {
               banner: {
@@ -69,8 +69,8 @@ describe('Hybrid.ai Adapter', function() {
           const isBidRequestValid = spec.isBidRequestValid(slotConfig)
           expect(isBidRequestValid).to.equal(true)
         })
-        describe('when video slot has all mandatory params.', function() {
-          it('should return true, when video mediatype object are correct.', function() {
+        describe('when video slot has all mandatory params.', function () {
+          it('should return true, when video mediatype object are correct.', function () {
             const slotConfig = getSlotConfigs(
               {
                 video: {
@@ -89,12 +89,12 @@ describe('Hybrid.ai Adapter', function() {
         })
       })
     })
-    describe('returns false', function() {
-      describe('when params are not correct', function() {
-        function createSlotconfig(params) {
+    describe('returns false', function () {
+      describe('when params are not correct', function () {
+        function createSlotconfig (params) {
           return getSlotConfigs({ banner: {} }, params)
         }
-        it('does not have the placeId.', function() {
+        it('does not have the placeId.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placement: 'banner'
@@ -102,7 +102,7 @@ describe('Hybrid.ai Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have the placement.', function() {
+        it('does not have the placement.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placeId: PLACE_ID
@@ -110,7 +110,7 @@ describe('Hybrid.ai Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have the imageUrl.', function() {
+        it('does not have the imageUrl.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placeId: PLACE_ID,
@@ -119,7 +119,7 @@ describe('Hybrid.ai Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have a the correct placement.', function() {
+        it('does not have a the correct placement.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placeId: PLACE_ID,
@@ -129,26 +129,26 @@ describe('Hybrid.ai Adapter', function() {
           expect(isBidRequestValid).to.equal(false)
         })
       })
-      describe('when video mediaType object is not correct.', function() {
-        function createVideoSlotconfig(mediaType) {
+      describe('when video mediaType object is not correct.', function () {
+        function createVideoSlotconfig (mediaType) {
           return getSlotConfigs(mediaType, {
             placeId: PLACE_ID,
             placement: 'video'
           })
         }
-        it('is a void object', function() {
+        it('is a void object', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createVideoSlotconfig({ video: {} })
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have playerSize.', function() {
+        it('does not have playerSize.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createVideoSlotconfig({ video: { context: 'instream' } })
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have context', function() {
+        it('does not have context', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createVideoSlotconfig({
               video: {
@@ -161,14 +161,14 @@ describe('Hybrid.ai Adapter', function() {
       })
     })
   })
-  it('Url params should be correct ', function() {
+  it('Url params should be correct ', function () {
     const request = spec.buildRequests(validBidRequests, bidderRequest)
     expect(request.method).to.equal('POST')
     expect(request.url).to.equal('https://hbe198.hybrid.ai/prebidhb')
   })
 
-  describe('buildRequests method', function() {
-    it('Common data request should be correct', function() {
+  describe('buildRequests method', function () {
+    it('Common data request should be correct', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest)
       const data = JSON.parse(request.data)
       expect(Array.isArray(data.bidRequests)).to.equal(true)
@@ -180,16 +180,16 @@ describe('Hybrid.ai Adapter', function() {
       })
     })
 
-    describe('GDPR params', function() {
-      describe('when there are not consent management platform', function() {
-        it('cmp should be false', function() {
+    describe('GDPR params', function () {
+      describe('when there are not consent management platform', function () {
+        it('cmp should be false', function () {
           const request = spec.buildRequests(validBidRequests, bidderRequest)
           const data = JSON.parse(request.data)
           expect(data.cmp).to.equal(false)
         })
       })
-      describe('when there are consent management platform', function() {
-        it('cmps should be true and ga should not sended, when gdprApplies is undefined', function() {
+      describe('when there are consent management platform', function () {
+        it('cmps should be true and ga should not sended, when gdprApplies is undefined', function () {
           bidderRequest['gdprConsent'] = {
             gdprApplies: undefined,
             consentString: 'consentString'
@@ -200,7 +200,7 @@ describe('Hybrid.ai Adapter', function() {
           expect(Object.keys(data).indexOf('data')).to.equal(-1)
           expect(data.cs).to.equal('consentString')
         })
-        it('cmps should be true and all gdpr parameters should be sended, when there are gdprApplies', function() {
+        it('cmps should be true and all gdpr parameters should be sended, when there are gdprApplies', function () {
           bidderRequest['gdprConsent'] = {
             gdprApplies: true,
             consentString: 'consentString'
@@ -214,23 +214,23 @@ describe('Hybrid.ai Adapter', function() {
       })
     })
 
-    describe('BidRequests params', function() {
+    describe('BidRequests params', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest)
       const data = JSON.parse(request.data)
       const bidRequests = data.bidRequests
-      it('should request a Banner', function() {
+      it('should request a Banner', function () {
         const bannerBid = bidRequests[0]
         expect(bannerBid.placement).to.equal(spec.placementTypes[bannerMandatoryParams.placement])
       })
-      it('should request a Video', function() {
+      it('should request a Video', function () {
         const bannerBid = bidRequests[1]
         expect(bannerBid.placement).to.equal(spec.placementTypes[videoMandatoryParams.placement])
       })
     })
   })
 
-  describe('interpret response method', function() {
-    it('should return a void array, when the server response are not correct.', function() {
+  describe('interpret response method', function () {
+    it('should return a void array, when the server response are not correct.', function () {
       const request = { data: JSON.stringify({}) }
       const serverResponse = {
         body: {}
@@ -239,16 +239,16 @@ describe('Hybrid.ai Adapter', function() {
       expect(typeof bids).to.equal('object')
       expect(bids.length).to.equal(0)
     })
-    it('should return a void array, when the server response have not got bids.', function() {
+    it('should return a void array, when the server response have not got bids.', function () {
       const request = { data: JSON.stringify({}) }
       const serverResponse = { body: { bids: [] } }
       const bids = spec.interpretResponse(serverResponse, request)
       expect(typeof bids).to.equal('object')
       expect(bids.length).to.equal(0)
     })
-    describe('when the server response return a bid', function() {
-      describe('the bid is a banner', function() {
-        it('should return a banner bid', function() {
+    describe('when the server response return a bid', function () {
+      describe('the bid is a banner', function () {
+        it('should return a banner bid', function () {
           const request = spec.buildRequests([validBidRequests[0]], bidderRequest)
           const serverResponse = {
             body: {
@@ -277,7 +277,7 @@ describe('Hybrid.ai Adapter', function() {
           expect(bids[0].meta.advertiserDomains).to.deep.equal(['hybrid.ai'])
           expect(typeof bids[0].ad).to.equal('string')
         })
-        it('should return a In-Image bid', function() {
+        it('should return a In-Image bid', function () {
           const request = spec.buildRequests([validBidRequests[2]], bidderRequest)
           const serverResponse = {
             body: {
@@ -308,8 +308,8 @@ describe('Hybrid.ai Adapter', function() {
           expect(typeof bids[0].ad).to.equal('string')
         })
       })
-      describe('the bid is a video', function() {
-        it('should return a video bid', function() {
+      describe('the bid is a video', function () {
+        it('should return a video bid', function () {
           const request = spec.buildRequests([validBidRequests[1]], bidderRequest)
           const serverResponse = {
             body: {

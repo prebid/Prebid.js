@@ -292,7 +292,7 @@ describe('tpmnAdapterTests', function () {
           const check = {
             w: 1024,
             h: 768,
-            mimes: [ 'video/mp4' ],
+            mimes: ['video/mp4'],
             playbackmethod: [2, 4, 6],
             api: [1, 2, 3, 6],
             protocols: [3, 4],

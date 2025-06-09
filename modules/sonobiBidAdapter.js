@@ -282,7 +282,7 @@ export const spec = {
   }
 };
 
-function _findBidderRequest(bidderRequests, bidId) {
+function _findBidderRequest (bidderRequests, bidId) {
   for (let i = 0; i < bidderRequests.length; i++) {
     if (bidderRequests[i].bidId === bidId) {
       return bidderRequests[i];
@@ -292,7 +292,7 @@ function _findBidderRequest(bidderRequests, bidId) {
 
 // This function takes all the possible sizes.
 // returns string csv.
-function _validateSize(bid) {
+function _validateSize (bid) {
   let size = [];
   if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
     size.push(deepAccess(bid, 'mediaTypes.video.playerSize'))
@@ -315,14 +315,14 @@ function _validateSize(bid) {
   return [...new Set(parseSizesInput(...size))].join(',');
 }
 
-function _validateSlot(bid) {
+function _validateSlot (bid) {
   if (bid.params.ad_unit) {
     return bid.params.ad_unit;
   }
   return bid.params.placement_id;
 }
 
-function _validateFloor(bid) {
+function _validateFloor (bid) {
   const floor = getBidFloor(bid);
 
   if (floor) {
@@ -331,7 +331,7 @@ function _validateFloor(bid) {
   return '';
 }
 
-function _validateGPID(bid) {
+function _validateGPID (bid) {
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
 
   if (gpid) {
@@ -340,7 +340,7 @@ function _validateGPID(bid) {
   return ''
 }
 
-function _validateMediaType(bidRequest) {
+function _validateMediaType (bidRequest) {
   let mediaType;
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     mediaType = 'video';
@@ -422,11 +422,11 @@ const _creative = (mediaType, referer) => (sbiDc, sbiAid) => {
   return '<script type="text/javascript" src="' + src + '"></script>';
 };
 
-function _videoCreative(sbiDc, sbiAid, referer) {
+function _videoCreative (sbiDc, sbiAid, referer) {
   return `https://${sbiDc}apex.go.sonobi.com/vast.xml?vid=${sbiAid}&ref=${encodeURIComponent(referer)}`
 }
 
-function _getBidIdFromTrinityKey(key) {
+function _getBidIdFromTrinityKey (key) {
   return key.split('|').slice(-1)[0]
 }
 
@@ -438,7 +438,7 @@ export const _isInbounds = (context = getWinDimensions()) => (lowerBound = 0, up
 /**
  * @param context - the window to determine the innerWidth from. This is purely for test purposes as it should always be the current window
  */
-export function _getPlatform(context = window) {
+export function _getPlatform (context = window) {
   const isInBounds = _isInbounds(context);
   const MOBILE_VIEWPORT = {
     lt: 768
@@ -461,7 +461,7 @@ export function _getPlatform(context = window) {
  * Store the UUID in local storage for future use
  * @return {object} firstPartyData - Data object containing first party information
  */
-function loadOrCreateFirstPartyData() {
+function loadOrCreateFirstPartyData () {
   var FIRST_PARTY_KEY = '_iiq_fdata';
   var tryParse = function (data) {
     try {
@@ -512,7 +512,7 @@ function loadOrCreateFirstPartyData() {
   return firstPartyData;
 };
 
-function newRenderer(adUnitCode, bid, rendererOptions = {}) {
+function newRenderer (adUnitCode, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: bid.aid,
     url: OUTSTREAM_REDNERER_URL,
@@ -538,7 +538,7 @@ function newRenderer(adUnitCode, bid, rendererOptions = {}) {
   return renderer;
 }
 
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   // push to render queue because SbiOutstreamRenderer may not be loaded yet
   bid.renderer.push(() => {
     const [
@@ -555,11 +555,11 @@ function outstreamRender(bid) {
   });
 }
 
-function _iframeAllowed() {
+function _iframeAllowed () {
   return userSync.canBidderRegisterSync('iframe', BIDDER_CODE);
 }
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return (bid.params.floor) ? bid.params.floor : null;
   }

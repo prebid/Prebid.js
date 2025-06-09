@@ -91,7 +91,7 @@ describe('oneKeyDataSubmodule', () => {
       rtdConfig: {
         params: {
           proxyHostName: 'host',
-          bidders: [ 'bidder42', 'bidder24' ]
+          bidders: ['bidder42', 'bidder24']
         }
       },
       expectedFragment: {

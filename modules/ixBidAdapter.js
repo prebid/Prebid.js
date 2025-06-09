@@ -144,7 +144,7 @@ const MEDIA_TYPES = {
  * @param  {object} bid A valid bid request config object
  * @return {object}     A impression object that will be sent to ad server.
  */
-function bidToBannerImp(bid) {
+function bidToBannerImp (bid) {
   const imp = bidToImp(bid, BANNER);
   imp.banner = {};
   imp.adunitCode = bid.adUnitCode;
@@ -167,7 +167,7 @@ function bidToBannerImp(bid) {
  * @param {object} imp
  * @param {object} bid
  */
-function setDisplayManager(imp, bid) {
+function setDisplayManager (imp, bid) {
   if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM) {
     let renderer = deepAccess(bid, 'mediaTypes.video.renderer');
     if (!renderer) {
@@ -202,7 +202,7 @@ function setDisplayManager(imp, bid) {
  * @param  {object} bid A valid bid request config object.
  * @return {object}     A impression object that will be sent to ad server.
  */
-export function bidToVideoImp(bid) {
+export function bidToVideoImp (bid) {
   const imp = bidToImp(bid, VIDEO);
   const videoAdUnitRef = deepAccess(bid, 'mediaTypes.video');
   const videoParamRef = deepAccess(bid, 'params.video');
@@ -274,7 +274,7 @@ export function bidToVideoImp(bid) {
   return imp;
 }
 
-function verifyVideoPlcmt(imp) {
+function verifyVideoPlcmt (imp) {
   if (imp.video.hasOwnProperty('plcmt') && (!isInteger(imp.video.plcmt) || (imp.video.plcmt < 1 || imp.video.plcmt > 4))) {
     logWarn(
       `IX Bid Adapter: video.plcmt [${imp.video.plcmt}] must be an integer between 1-4 inclusive`
@@ -289,7 +289,7 @@ function verifyVideoPlcmt(imp) {
  * @param  {object} bid A valid bid request config object.
  * @return {object}     A impression object that will be sent to ad server.
  */
-export function bidToNativeImp(bid) {
+export function bidToNativeImp (bid) {
   const imp = bidToImp(bid, NATIVE);
 
   const request = bid.nativeOrtbRequest
@@ -323,7 +323,7 @@ export function bidToNativeImp(bid) {
  * @param {object} bid   PBJS bid object
  * @returns {object}     IX impression object
  */
-function bidToImp(bid, mediaType) {
+function bidToImp (bid, mediaType) {
   const imp = {};
 
   imp.id = bid.bidId;
@@ -364,7 +364,7 @@ function bidToImp(bid, mediaType) {
  * @param  {object}    imp impression object
  * @param  {string}    mediaType the impression ad type, one of the SUPPORTED_AD_TYPES
  */
-function _applyFloor(bid, imp, mediaType) {
+function _applyFloor (bid, imp, mediaType) {
   let adapterFloor = null;
   let moduleFloor = null;
 
@@ -427,7 +427,7 @@ function _applyFloor(bid, imp, mediaType) {
  * @param  {string} currency Global currency in bid response.
  * @return {object} bid      The parsed bid.
  */
-function parseBid(rawBid, currency, bidRequest) {
+function parseBid (rawBid, currency, bidRequest) {
   const bid = {};
   const isValidExpiry = !!((deepAccess(rawBid, 'exp') && isInteger(rawBid.exp)));
   const dealID = deepAccess(rawBid, 'dealid') || deepAccess(rawBid, 'ext.dealid');
@@ -509,7 +509,7 @@ function parseBid(rawBid, currency, bidRequest) {
  * @param  {*}       size The object to be validated.
  * @return {boolean}      True if this is a valid size format, and false otherwise.
  */
-function isValidSize(size) {
+function isValidSize (size) {
   return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
 }
 
@@ -522,7 +522,7 @@ function isValidSize(size) {
  * @return {boolean}          True if the size object is an element of the size array, and false
  *                            otherwise.
  */
-function includesSize(sizeArray = [], size = []) {
+function includesSize (sizeArray = [], size = []) {
   if (isValidSize(sizeArray)) {
     return sizeArray[0] === size[0] && sizeArray[1] === size[1];
   }
@@ -540,7 +540,7 @@ function includesSize(sizeArray = [], size = []) {
  * @param {object} paramsVideoRef    IX bidder params level video object
  * @returns {string[]}               Are the required video params available
  */
-function checkVideoParams(mediaTypeVideoRef, paramsVideoRef) {
+function checkVideoParams (mediaTypeVideoRef, paramsVideoRef) {
   const errorList = [];
 
   if (!mediaTypeVideoRef) {
@@ -574,7 +574,7 @@ function checkVideoParams(mediaTypeVideoRef, paramsVideoRef) {
  * [250, 350]  -> [250, 350]
  * @param {Array} sizes array of sizes
  */
-function getFirstSize(sizes = []) {
+function getFirstSize (sizes = []) {
   if (isValidSize(sizes)) {
     return sizes;
   } else if (isValidSize(sizes[0])) {
@@ -592,14 +592,14 @@ function getFirstSize(sizes = []) {
  * @return {boolean}                True if this is a valid bidFloor parameters format, and false
  *                               otherwise.
  */
-function isValidBidFloorParams(bidFloor, bidFloorCur) {
+function isValidBidFloorParams (bidFloor, bidFloorCur) {
   const curRegex = /^[A-Z]{3}$/;
 
   return Boolean(typeof bidFloor === 'number' && typeof bidFloorCur === 'string' &&
     bidFloorCur.match(curRegex));
 }
 
-function nativeMediaTypeValid(bid) {
+function nativeMediaTypeValid (bid) {
   const nativeMediaTypes = deepAccess(bid, 'mediaTypes.native');
   if (nativeMediaTypes === undefined) {
     return true
@@ -615,7 +615,7 @@ function nativeMediaTypeValid(bid) {
  * @param  {Array}  impressions List of impressions sent in the request.
  * @return {object}             The impression with the associated id.
  */
-function getBidRequest(id, impressions, validBidRequests) {
+function getBidRequest (id, impressions, validBidRequests) {
   if (!id) {
     return;
   }
@@ -634,7 +634,7 @@ function getBidRequest(id, impressions, validBidRequests) {
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
-function getEidInfo(allEids) {
+function getEidInfo (allEids) {
   let toSend = [];
   let seenSources = {};
   if (isArray(allEids)) {
@@ -671,7 +671,7 @@ function getEidInfo(allEids) {
  * @return {Array}                   List of objects describing the request to the server.
  *
  */
-function buildRequest(validBidRequests, bidderRequest, impressions, version) {
+function buildRequest (validBidRequests, bidderRequest, impressions, version) {
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
   // Get ids from Prebid User ID Modules
@@ -776,7 +776,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
  * @param {Array} userEids userEids info retrieved from prebid
  * @param {Array} eidInfo eidInfo info from prebid
  */
-function addRTI(userEids, eidInfo) {
+function addRTI (userEids, eidInfo) {
   let identityInfo = window.headertag.getIdentityInfo();
   if (identityInfo && typeof identityInfo === 'object') {
     for (const partnerName in identityInfo) {
@@ -799,7 +799,7 @@ function addRTI(userEids, eidInfo) {
  * @param  {Array}  validBidRequests A list of valid bid request config objects.
  * @return {object}                  Object describing the request to the server.
  */
-function createRequest(validBidRequests) {
+function createRequest (validBidRequests) {
   const r = {};
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId.toString();
@@ -819,7 +819,7 @@ function createRequest(validBidRequests) {
  * @param {Array} requestedFeatureToggles - The list of feature toggles to add.
  * @returns {object} The updated request object with the added feature toggles.
  */
-function addRequestedFeatureToggles(r, requestedFeatureToggles) {
+function addRequestedFeatureToggles (r, requestedFeatureToggles) {
   if (requestedFeatureToggles.length > 0) {
     r.ext.features = {};
     // Loop through each feature toggle and add it to the features object.
@@ -841,7 +841,7 @@ function addRequestedFeatureToggles(r, requestedFeatureToggles) {
  * @param  {Array}  userEids         User ID info retrieved from Prebid ID module.
  * @return {object}                  Enriched object describing the request to the server.
  */
-function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids) {
+function enrichRequest (r, bidderRequest, impressions, validBidRequests, userEids) {
   const tmax = deepAccess(bidderRequest, 'timeout');
   if (tmax) {
     r.ext.ixdiag.tmax = tmax;
@@ -884,7 +884,7 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
  * @param  {object}  bidderRequest    An object containing other info like gdprConsent.
  * @return {object}                   Object enriched with regulation info describing the request to the server.
  */
-function applyRegulations(r, bidderRequest) {
+function applyRegulations (r, bidderRequest) {
   // Apply GDPR information to the request if GDPR is enabled.
   if (bidderRequest) {
     if (bidderRequest.gdprConsent) {
@@ -944,7 +944,7 @@ function applyRegulations(r, bidderRequest) {
  * @param  {number}    adUnitIndex        Index of the current add unit
  * @return {object}                    Reqyest object with added impressions describing the request to the server.
  */
-function addImpressions(impressions, impKeys, r, adUnitIndex) {
+function addImpressions (impressions, impKeys, r, adUnitIndex) {
   const adUnitImpressions = impressions[impKeys[adUnitIndex]];
   const { missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
   const sourceImpressions = { ixImps, missingBannerImpressions };
@@ -1125,7 +1125,7 @@ This function appends the provided query parameters to the given URL without add
 @param {Object} params - An object containing key-value pairs of query parameters to append.
 @returns {string} - The modified URL with the provided query parameters appended.
  */
-function appendIXQueryParams(bidderRequest, url, params) {
+function appendIXQueryParams (bidderRequest, url, params) {
   let urlObj;
   try {
     urlObj = new URL(url);
@@ -1158,7 +1158,7 @@ function appendIXQueryParams(bidderRequest, url, params) {
  * @param  {object} user              First party user data.
  * @return {object}                   Reqyest object with added FPD describing the request to the server.
  */
-function addFPD(bidderRequest, r, fpd, site, user) {
+function addFPD (bidderRequest, r, fpd, site, user) {
   r.ext.ixdiag.fpd = true;
 
   Object.keys(site).forEach(key => {
@@ -1234,7 +1234,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
  * @param {Object} imp - The imp object, representing an impression in the OpenRTB format.
  * @param {Object} bid - The bid object, containing information about the bid request.
  */
-function addAdUnitFPD(imp, bid) {
+function addAdUnitFPD (imp, bid) {
   const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
   if (adUnitFPD) {
     deepSetValue(imp, 'ext.data', adUnitFPD)
@@ -1252,7 +1252,7 @@ function addAdUnitFPD(imp, bid) {
  * @param  {string} baseUrl            Base exchagne URL.
  * @return {object}                    Reqyest object with added indentigfier info to ixDiag.
  */
-function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseUrl) {
+function addIdentifiersInfo (impressions, r, impKeys, adUnitIndex, payload, baseUrl) {
   const pbaAdSlot = impressions[impKeys[adUnitIndex]].pbadslot;
   const tagId = impressions[impKeys[adUnitIndex]].tagId;
   const adUnitCode = impressions[impKeys[adUnitIndex]].adUnitCode;
@@ -1272,7 +1272,7 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
  *
  * @returns {Array} ID providers that are present in userIds
  */
-function _getUserIds(bidRequest) {
+function _getUserIds (bidRequest) {
   const userIds = bidRequest.userId || {};
 
   return PROVIDERS.filter(provider => userIds[provider]);
@@ -1285,7 +1285,7 @@ function _getUserIds(bidRequest) {
  * @param {boolean} fledgeEnabled - Flag indicating if protected audience (fledge) is enabled
  * @return {Object} IX diag values for ad units
  */
-function buildIXDiag(validBidRequests, fledgeEnabled) {
+function buildIXDiag (validBidRequests, fledgeEnabled) {
   var adUnitMap = validBidRequests
     .map(bidRequest => bidRequest.adUnitCode)
     .filter((value, index, arr) => arr.indexOf(value) === index);
@@ -1350,7 +1350,7 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
  * @return {boolean} true if successfully removed, false if not found
  */
 
-function removeFromSizes(bannerSizeList, bannerSize) {
+function removeFromSizes (bannerSizeList, bannerSize) {
   if (!bannerSize) return;
 
   for (let i = 0; i < bannerSizeList.length; i++) {
@@ -1367,7 +1367,7 @@ function removeFromSizes(bannerSizeList, bannerSize) {
  * @param {object}  validBidRequest valid request provided by prebid
  * @param {object}  nativeImps reference to created native impressions
  */
-function createNativeImps(validBidRequest, nativeImps) {
+function createNativeImps (validBidRequest, nativeImps) {
   const imp = bidToNativeImp(validBidRequest);
 
   if (Object.keys(imp).length != 0) {
@@ -1391,7 +1391,7 @@ function createNativeImps(validBidRequest, nativeImps) {
  * @param {object}  validBidRequest valid request provided by prebid
  * @param {object}  videoImps reference to created video impressions
  */
-function createVideoImps(validBidRequest, videoImps) {
+function createVideoImps (validBidRequest, videoImps) {
   const imp = bidToVideoImp(validBidRequest);
   if (Object.keys(imp).length != 0) {
     videoImps[validBidRequest.adUnitCode] = {};
@@ -1415,7 +1415,7 @@ function createVideoImps(validBidRequest, videoImps) {
  * @param {object}  missingBannerSizes reference to missing banner config sizes
  * @param {object}  bannerImps reference to created banner impressions
  */
-function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidderRequest) {
+function createBannerImps (validBidRequest, missingBannerSizes, bannerImps, bidderRequest) {
   let imp = bidToBannerImp(validBidRequest);
 
   const bannerSizeDefined = includesSize(deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), deepAccess(validBidRequest, 'params.size'));
@@ -1482,7 +1482,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
  * @param {object} missingBannerSizes The object containing missing banner sizes
  * @param {object} imp                The impression for the bidrequest
  */
-function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
+function updateMissingSizes (validBidRequest, missingBannerSizes, imp) {
   if (missingBannerSizes.hasOwnProperty(validBidRequest.adUnitCode)) {
     let currentSizeList = [];
     if (missingBannerSizes[validBidRequest.adUnitCode].hasOwnProperty('missingSizes')) {
@@ -1510,7 +1510,7 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
  * @param  {Array}  newSize  The new size to be applied
  * @return {object} newImp   Updated impression object
  */
-function createMissingBannerImp(bid, imp, newSize) {
+function createMissingBannerImp (bid, imp, newSize) {
   const newImp = deepClone(imp);
   newImp.banner.w = newSize[0];
   newImp.banner.h = newSize[1];
@@ -1525,7 +1525,7 @@ function createMissingBannerImp(bid, imp, newSize) {
  * Initialize IX Outstream Renderer
  * @param {Object} bid
  */
-function outstreamRenderer(bid) {
+function outstreamRenderer (bid) {
   bid.renderer.push(function () {
     const adUnitCode = bid.adUnitCode;
     const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
@@ -1542,7 +1542,7 @@ function outstreamRenderer(bid) {
  * @param {string} id
  * @returns {Renderer}
  */
-function createRenderer(id, renderUrl) {
+function createRenderer (id, renderUrl) {
   const renderer = Renderer.install({
     id: id,
     url: renderUrl,
@@ -1568,7 +1568,7 @@ function createRenderer(id, renderUrl) {
  * Returns whether our renderer could potentially be used.
  * @param {*} bid bid object
  */
-function isIndexRendererPreferred(bid) {
+function isIndexRendererPreferred (bid) {
   if (deepAccess(bid, 'mediaTypes.video.context') !== 'outstream') {
     return false;
   }
@@ -1585,7 +1585,7 @@ function isIndexRendererPreferred(bid) {
   return !isValid || renderer.backupOnly;
 }
 
-function isExchangeIdConfigured() {
+function isExchangeIdConfigured () {
   let exchangeId = config.getConfig('exchangeId');
   if (typeof exchangeId === 'number' && isFinite(exchangeId)) {
     return true;
@@ -1912,7 +1912,7 @@ export const spec = {
  * @param {number} index index to pass
  * @returns {string} img user sync url
  */
-function buildImgSyncUrl(syncsPerBidder, index) {
+function buildImgSyncUrl (syncsPerBidder, index) {
   let consentString = '';
   let gdprApplies = '0';
   if (gdprConsent && gdprConsent.hasOwnProperty('gdprApplies')) {
@@ -1931,7 +1931,7 @@ function buildImgSyncUrl(syncsPerBidder, index) {
  * @param {Array} imps array of imps
  * @returns object
  */
-export function combineImps(imps) {
+export function combineImps (imps) {
   const result = {}
   imps.forEach((imp) => {
     Object.keys(imp).forEach((key) => {
@@ -1959,7 +1959,7 @@ export function combineImps(imps) {
  * @param {object} r request object
  * @returns object
  */
-export function deduplicateImpExtFields(r) {
+export function deduplicateImpExtFields (r) {
   r.imp.forEach((imp, index) => {
     const impExt = imp.ext;
     if (impExt == undefined) {
@@ -2007,7 +2007,7 @@ export function deduplicateImpExtFields(r) {
  * @param {object} r request object
  * @returns object
  */
-export function removeSiteIDs(r) {
+export function removeSiteIDs (r) {
   r.imp.forEach((imp, index) => {
     const impExt = imp.ext;
     if (impExt == undefined) {
@@ -2055,7 +2055,7 @@ export function removeSiteIDs(r) {
  * @param {object} imp
  * @returns int
  */
-function getFormatCount(imp) {
+function getFormatCount (imp) {
   let formatCount = 0;
   if (imp.banner !== undefined) {
     formatCount += 1;
@@ -2074,7 +2074,7 @@ function getFormatCount(imp) {
  * @param {object} config
  * @returns bool
  */
-function isValidAuctionConfig(config) {
+function isValidAuctionConfig (config) {
   return typeof config === 'object' && config !== null;
 }
 
@@ -2083,7 +2083,7 @@ function isValidAuctionConfig(config) {
  * @param {object} r
  * @returns object
  */
-export function addDeviceInfo(r) {
+export function addDeviceInfo (r) {
   if (r.device == undefined) {
     r.device = {};
   }

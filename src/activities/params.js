@@ -47,8 +47,8 @@ export const ACTIVITY_PARAM_SYNC_URL = 'syncUrl';
  */
 export const ACTIVITY_PARAM_ANL_CONFIG = '_config';
 
-export function activityParamsBuilder(resolveAlias) {
-  return function activityParams(moduleType, moduleName, params) {
+export function activityParamsBuilder (resolveAlias) {
+  return function activityParams (moduleType, moduleName, params) {
     const defaults = {
       [ACTIVITY_PARAM_COMPONENT_TYPE]: moduleType,
       [ACTIVITY_PARAM_COMPONENT_NAME]: moduleName,

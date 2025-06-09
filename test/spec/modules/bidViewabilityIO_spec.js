@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { EVENTS } from 'src/constants.js';
 
-describe('#bidViewabilityIO', function() {
+describe('#bidViewabilityIO', function () {
   const makeElement = (id) => {
     const el = document.createElement('div');
     el.setAttribute('id', id);
@@ -33,43 +33,43 @@ describe('#bidViewabilityIO', function() {
     mediaType: 'native',
   };
 
-  it('init to be a function', function() {
+  it('init to be a function', function () {
     expect(bidViewabilityIO.init).to.be.a('function')
   });
 
-  describe('isSupportedMediaType tests', function() {
-    it('banner to be supported', function() {
+  describe('isSupportedMediaType tests', function () {
+    it('banner to be supported', function () {
       expect(bidViewabilityIO.isSupportedMediaType(banner_bid)).to.be.true
     });
 
-    it('video not to be supported', function() {
+    it('video not to be supported', function () {
       expect(bidViewabilityIO.isSupportedMediaType(video_bid)).to.be.false
     });
 
-    it('native not to be supported', function() {
+    it('native not to be supported', function () {
       expect(bidViewabilityIO.isSupportedMediaType(native_bid)).to.be.false
     });
   })
 
-  describe('getViewableOptions tests', function() {
-    it('normal banner has expected threshold in options object', function() {
+  describe('getViewableOptions tests', function () {
+    it('normal banner has expected threshold in options object', function () {
       expect(bidViewabilityIO.getViewableOptions(banner_bid).threshold).to.equal(bidViewabilityIO.IAB_VIEWABLE_DISPLAY_THRESHOLD);
     });
 
-    it('large banner has expected threshold in options object', function() {
+    it('large banner has expected threshold in options object', function () {
       expect(bidViewabilityIO.getViewableOptions(large_banner_bid).threshold).to.equal(bidViewabilityIO.IAB_VIEWABLE_DISPLAY_LARGE_THRESHOLD)
     });
 
-    it('video bid has undefined viewable options', function() {
+    it('video bid has undefined viewable options', function () {
       expect(bidViewabilityIO.getViewableOptions(video_bid)).to.be.undefined
     });
 
-    it('native bid has undefined viewable options', function() {
+    it('native bid has undefined viewable options', function () {
       expect(bidViewabilityIO.getViewableOptions(native_bid)).to.be.undefined
     });
   })
 
-  describe('markViewed tests', function() {
+  describe('markViewed tests', function () {
     let sandbox;
     const mockObserver = {
       unobserve: sinon.spy()
@@ -78,19 +78,19 @@ describe('#bidViewabilityIO', function() {
       target: makeElement('target_id')
     };
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
     })
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore()
     })
 
-    it('markViewed returns a function', function() {
+    it('markViewed returns a function', function () {
       expect(bidViewabilityIO.markViewed(banner_bid, mockEntry, mockObserver)).to.be.a('function')
     });
 
-    it('markViewed unobserves', function() {
+    it('markViewed unobserves', function () {
       const emitSpy = sandbox.spy(events, ['emit']);
       const func = bidViewabilityIO.markViewed(banner_bid, mockEntry, mockObserver);
       func();
@@ -101,22 +101,22 @@ describe('#bidViewabilityIO', function() {
     });
   })
 
-  describe('viewCallbackFactory tests', function() {
+  describe('viewCallbackFactory tests', function () {
     let sandbox;
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
     })
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore()
     })
 
-    it('viewCallbackFactory returns a function', function() {
+    it('viewCallbackFactory returns a function', function () {
       expect(bidViewabilityIO.viewCallbackFactory(banner_bid)).to.be.a('function')
     });
 
-    it('viewCallbackFactory function does stuff', function() {
+    it('viewCallbackFactory function does stuff', function () {
       const logMessageSpy = sandbox.spy(utils, ['logMessage']);
       const mockObserver = {
         unobserve: sandbox.spy()

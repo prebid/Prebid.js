@@ -33,7 +33,7 @@ describe('DailyhuntAdapter', function () {
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         bidder: 'dailyhunt',

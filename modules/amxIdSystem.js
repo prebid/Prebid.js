@@ -26,7 +26,7 @@ export const storage = getStorageManager({moduleName: NAME, moduleType: MODULE_T
 const AMUID_KEY = '__amuidpb';
 const getBidAdapterID = () => storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(AMUID_KEY) : null;
 
-function validateConfig(config) {
+function validateConfig (config) {
   if (
     config.storage != null &&
     typeof config.storage.expires === 'number' &&
@@ -41,7 +41,7 @@ function validateConfig(config) {
   return true;
 }
 
-function handleSyncResponse(client, response, params, callback) {
+function handleSyncResponse (client, response, params, callback) {
   if (response.id != null && response.id.length > 0) {
     callback(response.id);
     return;
@@ -53,11 +53,11 @@ function handleSyncResponse(client, response, params, callback) {
   }
 
   client(response.u, {
-    error(e) {
+    error (e) {
       logError(`${NAME} failed on ${response.u}`, e);
       callback(null);
     },
-    success(complete) {
+    success (complete) {
       if (complete != null && complete.length > 0) {
         const value = JSON.parse(complete);
         if (value.id != null) {
@@ -96,7 +96,7 @@ export const amxIdSubmodule = {
 
   domainOverride: domainOverrideToRootDomain(storage, NAME),
 
-  getId(config, consentData, _extant) {
+  getId (config, consentData, _extant) {
     if (!validateConfig(config)) {
       return undefined;
     }
@@ -128,11 +128,11 @@ export const amxIdSubmodule = {
       client(
         SYNC_URL,
         {
-          error(e) {
+          error (e) {
             logError(`${NAME} failed to load`, e);
             done(null);
           },
-          success(responseText) {
+          success (responseText) {
             if (responseText != null && responseText.length > 0) {
               try {
                 const parsed = JSON.parse(responseText);

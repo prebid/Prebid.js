@@ -1,7 +1,7 @@
 import {setImpAdUnitCode} from '../../../../libraries/pbsExtensions/processors/adUnitCode.js';
 
 describe('pbjs -> ortb adunit code to imp[].ext.prebid.adunitcode', () => {
-  function setImp(bidRequest) {
+  function setImp (bidRequest) {
     const imp = {};
     setImpAdUnitCode(imp, bidRequest);
     return imp;

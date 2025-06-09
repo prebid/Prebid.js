@@ -11,7 +11,7 @@ import {BANNER} from '../../../src/mediaTypes.js';
 /**
  * fill in a request `imp` with banner parameters from `bidRequest`.
  */
-export function fillBannerImp(imp, bidRequest, context) {
+export function fillBannerImp (imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== BANNER) return;
 
   const bannerParams = bidRequest?.mediaTypes?.banner;
@@ -30,8 +30,8 @@ export function fillBannerImp(imp, bidRequest, context) {
   }
 }
 
-export function bannerResponseProcessor({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url), encodeMacroURI)} = {}) {
-  return function fillBannerResponse(bidResponse, bid) {
+export function bannerResponseProcessor ({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url), encodeMacroURI)} = {}) {
+  return function fillBannerResponse (bidResponse, bid) {
     if (bidResponse.mediaType === BANNER) {
       if (bid.adm && bid.nurl) {
         bidResponse.ad = createPixel(bid.nurl) + bid.adm;

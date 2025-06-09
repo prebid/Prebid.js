@@ -112,7 +112,7 @@ const videoVendorDirectory = {};
  * @param {ParentModule} parentModule_
  * @returns {VideoCore}
  */
-export function VideoCore(parentModule_) {
+export function VideoCore (parentModule_) {
   const parentModule = parentModule_;
 
   /**
@@ -120,13 +120,13 @@ export function VideoCore(parentModule_) {
    * @name VideoCore#registerProvider
    * @param {videoProviderConfig} providerConfig
    */
-  function registerProvider(providerConfig) {
+  function registerProvider (providerConfig) {
     try {
       parentModule.registerSubmodule(providerConfig.divId, providerConfig.vendorCode, providerConfig);
     } catch (e) {}
   }
 
-  function initProvider(divId) {
+  function initProvider (divId) {
     const submodule = parentModule.getSubmodule(divId);
     submodule && submodule.init && submodule.init();
   }
@@ -137,7 +137,7 @@ export function VideoCore(parentModule_) {
    * @param {string} divId - unique identifier of the player instance
    * @returns {Object} oRTB Video params
    */
-  function getOrtbVideo(divId) {
+  function getOrtbVideo (divId) {
     const submodule = parentModule.getSubmodule(divId);
     return submodule && submodule.getOrtbVideo();
   }
@@ -148,7 +148,7 @@ export function VideoCore(parentModule_) {
    * @param {string} divId - unique identifier of the player instance
    * @returns {Object} oRTB Content params
    */
-  function getOrtbContent(divId) {
+  function getOrtbContent (divId) {
     const submodule = parentModule.getSubmodule(divId);
     return submodule && submodule.getOrtbContent();
   }
@@ -160,7 +160,7 @@ export function VideoCore(parentModule_) {
    * @param {string} divId - unique identifier of the player instance
    * @param {Object} options - additional params
    */
-  function setAdTagUrl(adTagUrl, divId, options) {
+  function setAdTagUrl (adTagUrl, divId, options) {
     const submodule = parentModule.getSubmodule(divId);
     submodule && submodule.setAdTagUrl(adTagUrl, options);
   }
@@ -172,7 +172,7 @@ export function VideoCore(parentModule_) {
    * @param {string} divId - unique identifier of the player instance
    * @param {Object} options - additional params
    */
-  function setAdXml(vastXml, divId, options) {
+  function setAdXml (vastXml, divId, options) {
     const submodule = parentModule.getSubmodule(divId);
     submodule && submodule.setAdXml(vastXml, options);
   }
@@ -184,7 +184,7 @@ export function VideoCore(parentModule_) {
    * @param {function} callback - function that will get called when one of the events is triggered
    * @param {string} divId - unique identifier of the player instance
    */
-  function onEvents(events, callback, divId) {
+  function onEvents (events, callback, divId) {
     if (!callback) {
       return;
     }
@@ -211,7 +211,7 @@ export function VideoCore(parentModule_) {
    * @param {function} callback - function that was assigned as a callback when the listener was added
    * @param {string} divId - unique identifier of the player instance
    */
-  function offEvents(events, callback, divId) {
+  function offEvents (events, callback, divId) {
     const submodule = parentModule.getSubmodule(divId);
     if (!submodule) {
       return;
@@ -231,7 +231,7 @@ export function VideoCore(parentModule_) {
     setAdXml,
     onEvents,
     offEvents,
-    hasProviderFor(divId) {
+    hasProviderFor (divId) {
       return !!parentModule.getSubmodule(divId);
     }
   };
@@ -242,13 +242,13 @@ export function VideoCore(parentModule_) {
  * @summary Factory to create a Video Core instance
  * @returns {VideoCore}
  */
-export function videoCoreFactory() {
+export function videoCoreFactory () {
   const videoSubmoduleBuilder = SubmoduleBuilder(videoVendorDirectory);
   const parentModule = ParentModule(videoSubmoduleBuilder);
   return VideoCore(parentModule);
 }
 
-function attachVideoProvider(submoduleFactory) {
+function attachVideoProvider (submoduleFactory) {
   videoVendorDirectory[submoduleFactory.vendorCode] = submoduleFactory;
 }
 

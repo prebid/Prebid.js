@@ -17,12 +17,12 @@ const additionalData = new WeakMap();
 
 export const pageViewId = generateUUID();
 
-export function setAdditionalData(obj, key, value) {
+export function setAdditionalData (obj, key, value) {
   const prevValue = additionalData.get(obj) || {};
   additionalData.set(obj, { ...prevValue, [key]: value });
 }
 
-export function getAdditionalData(obj, key) {
+export function getAdditionalData (obj, key) {
   const data = additionalData.get(obj) || {};
   return data[key];
 }
@@ -121,20 +121,20 @@ export const onTimeout = function (timeoutDataArray) {
   }
 };
 
-function getPageUrlFromRequest(validBidRequest, bidderRequest) {
+function getPageUrlFromRequest (validBidRequest, bidderRequest) {
   return (bidderRequest.refererInfo && bidderRequest.refererInfo.page)
     ? bidderRequest.refererInfo.page
     : window.location.href;
 }
 
-function getPageUrlFromRefererInfo() {
+function getPageUrlFromRefererInfo () {
   const refererInfo = getRefererInfo();
   return (refererInfo && refererInfo.page)
     ? refererInfo.page
     : window.location.href;
 }
 
-function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
+function buildOpenRtbBidRequestPayload (validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout;
   const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest);
@@ -184,7 +184,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   return JSON.stringify(request);
 }
 
-function buildOpenRtbImpObject(validBidRequest) {
+function buildOpenRtbImpObject (validBidRequest) {
   const sizes = getSizes(validBidRequest);
   const mainSize = sizes[0];
   const floorInfo = getFloorInfo(validBidRequest, mainSize) || {};
@@ -202,7 +202,7 @@ function buildOpenRtbImpObject(validBidRequest) {
   };
 }
 
-function getDevice() {
+function getDevice () {
   const ws = getWindowSelf();
   const ua = ws.navigator.userAgent;
 
@@ -217,15 +217,15 @@ function getDevice() {
   return 2; // personal computers
 }
 
-function getTestAsNumber(validBidRequest) {
+function getTestAsNumber (validBidRequest) {
   return isTest(validBidRequest) ? 1 : 0;
 }
 
-function isTest(validBidRequest) {
+function isTest (validBidRequest) {
   return validBidRequest.params && validBidRequest.params.test === true;
 }
 
-function getSizes(validBidRequest) {
+function getSizes (validBidRequest) {
   const sizes = deepAccess(validBidRequest, 'mediaTypes.banner.sizes', validBidRequest.sizes);
   if (isArray(sizes) && sizes.length > 0) {
     return sizes;
@@ -234,7 +234,7 @@ function getSizes(validBidRequest) {
   return [[0, 0]];
 }
 
-function buildFormatArray(sizes) {
+function buildFormatArray (sizes) {
   return sizes.map(size => {
     return {
       w: size[0],
@@ -243,7 +243,7 @@ function buildFormatArray(sizes) {
   });
 }
 
-function getFloorInfo(validBidRequest, mainSize) {
+function getFloorInfo (validBidRequest, mainSize) {
   if (typeof validBidRequest.getFloor === 'function') {
     const sizeParam = mainSize[0] === 0 && mainSize[1] === 0 ? '*' : mainSize;
     return validBidRequest.getFloor({
@@ -259,11 +259,11 @@ function getFloorInfo(validBidRequest, mainSize) {
   }
 }
 
-function getFloorPrice(validBidRequest) {
+function getFloorPrice (validBidRequest) {
   return parseFloat(deepAccess(validBidRequest, 'params.floorPrice', 0.0));
 }
 
-function buildPmpObject(validBidRequest) {
+function buildPmpObject (validBidRequest) {
   if (validBidRequest.params && validBidRequest.params.dealIds && isArray(validBidRequest.params.dealIds)) {
     return {
       deals: validBidRequest.params.dealIds.map(dealId => {

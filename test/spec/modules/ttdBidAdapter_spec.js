@@ -7,14 +7,14 @@ import { detectReferer } from 'src/refererDetection.js';
 import { buildWindowTree } from '../../helpers/refererDetectionHelper';
 
 describe('ttdBidAdapter', function () {
-  function testBuildRequests(bidRequests, bidderRequestBase) {
+  function testBuildRequests (bidRequests, bidderRequestBase) {
     let clonedBidderRequest = deepClone(bidderRequestBase);
     clonedBidderRequest.bids = bidRequests;
     return spec.buildRequests(bidRequests, clonedBidderRequest);
   }
 
-  describe('isBidRequestValid', function() {
-    function makeBid() {
+  describe('isBidRequestValid', function () {
+    function makeBid () {
       return {
         'bidder': 'ttd',
         'params': {
@@ -108,7 +108,7 @@ describe('ttdBidAdapter', function () {
         return;
       }
 
-      function makeBid() {
+      function makeBid () {
         return {
           'bidder': 'ttd',
           'params': {
@@ -248,7 +248,7 @@ describe('ttdBidAdapter', function () {
       }
     }
 
-    function validateExtFirstPartyData(ext) {
+    function validateExtFirstPartyData (ext) {
       expect(ext.data.firstPartyKey).to.equal('firstPartyValue');
       expect(ext.data.firstPartyKey2).to.eql(extFirstPartyDataValues);
       expect(ext.custom).to.equal('custom_data');
@@ -650,7 +650,7 @@ describe('ttdBidAdapter', function () {
       expect(1).to.equal(requestBody.imp[0].secure);
     });
 
-    it('adds all of site first party data to request', function() {
+    it('adds all of site first party data to request', function () {
       const ortb2 = {
         site: {
           ext: extFirstPartyData,
@@ -665,7 +665,7 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.search).to.equal('test search')
     });
 
-    it('adds all of user first party data to request', function() {
+    it('adds all of user first party data to request', function () {
       const ortb2 = {
         user: {
           ext: extFirstPartyData,
@@ -680,7 +680,7 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.user.yob).to.equal(1998)
     });
 
-    it('adds all of imp first party data to request', function() {
+    it('adds all of imp first party data to request', function () {
       const metric = { type: 'viewability', value: 0.8 };
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].ortb2Imp = {
@@ -697,7 +697,7 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].clickbrowser).to.equal(1)
     });
 
-    it('adds all of app first party data to request', function() {
+    it('adds all of app first party data to request', function () {
       const ortb2 = {
         app: {
           ext: extFirstPartyData,
@@ -712,7 +712,7 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.app.ver).to.equal('v1.0')
     });
 
-    it('adds all of device first party data to request', function() {
+    it('adds all of device first party data to request', function () {
       const ortb2 = {
         device: {
           ext: extFirstPartyData,
@@ -727,7 +727,7 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.device.os).to.equal('iPhone')
     });
 
-    it('adds all of pmp first party data to request', function() {
+    it('adds all of pmp first party data to request', function () {
       const ortb2 = {
         pmp: {
           ext: extFirstPartyData,

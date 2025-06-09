@@ -42,7 +42,7 @@ describe('MantisAdapter', function () {
     });
   });
 
-  describe('viewability', function() {
+  describe('viewability', function () {
     it('iframe (viewed)', () => {
       let viewed = false;
 

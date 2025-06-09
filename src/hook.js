@@ -29,7 +29,7 @@ export const ready = readyCtl.promise;
 
 export const getHook = hook.get;
 
-export function setupBeforeHookFnOnce(baseFn, hookFn, priority = 15) {
+export function setupBeforeHookFnOnce (baseFn, hookFn, priority = 15) {
   let result = baseFn.getHooks({hook: hookFn});
   if (result.length === 0) {
     baseFn.before(hookFn, priority);
@@ -37,14 +37,14 @@ export function setupBeforeHookFnOnce(baseFn, hookFn, priority = 15) {
 }
 const submoduleInstallMap = {};
 
-export function module(name, install, {postInstallAllowed = false} = {}) {
+export function module (name, install, {postInstallAllowed = false} = {}) {
   hook('async', function (submodules) {
     submodules.forEach(args => install(...args));
     if (postInstallAllowed) submoduleInstallMap[name] = install;
   }, name)([]); // will be queued until hook.ready() called in pbjs.processQueue();
 }
 
-export function submodule(name, ...args) {
+export function submodule (name, ...args) {
   const install = submoduleInstallMap[name];
   if (install) return install(...args);
   getHook(name).before((next, modules) => {
@@ -56,7 +56,7 @@ export function submodule(name, ...args) {
 /**
  * Copy hook methods (.before, .after, etc) from a given hook to a given wrapper object.
  */
-export function wrapHook(hook, wrapper) {
+export function wrapHook (hook, wrapper) {
   Object.defineProperties(
     wrapper,
     Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
@@ -72,7 +72,7 @@ export function wrapHook(hook, wrapper) {
  * This returns a wrapper around a given 'async' hook that works around this, for when the last argument
  * should be treated as a normal argument.
  */
-export function ignoreCallbackArg(hook) {
+export function ignoreCallbackArg (hook) {
   return wrapHook(hook, function (...args) {
     args.push(function () {})
     return hook.apply(this, args);

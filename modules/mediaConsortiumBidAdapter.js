@@ -31,10 +31,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 1112,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return true
   },
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const useProfileApi = config.getConfig(PROFILE_API_USAGE_CONFIG_KEY) ?? false
     const readOnePlusXId = config.getConfig(ONE_PLUS_X_ID_USAGE_CONFIG_KEY) ?? false
 
@@ -129,7 +129,7 @@ export const spec = {
       }
     ]
   },
-  interpretResponse(serverResponse, params) {
+  interpretResponse (serverResponse, params) {
     if (!isValidResponse(serverResponse)) return []
 
     const {body: {bids, optimizations}} = serverResponse
@@ -190,7 +190,7 @@ export const spec = {
       return formattedBid
     })
   },
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs (syncOptions, serverResponses) {
     if (serverResponses.length !== 2) {
       return
     }
@@ -211,7 +211,7 @@ export const spec = {
 
 registerBidder(spec)
 
-export function getOptimizationsFromLocalStorage() {
+export function getOptimizationsFromLocalStorage () {
   try {
     const storedOptimizations = storageManager.getDataFromLocalStorage(OPTIMIZATIONS_STORAGE_KEY)
 
@@ -221,7 +221,7 @@ export function getOptimizationsFromLocalStorage() {
   }
 }
 
-function getFpIdFromLocalStorage() {
+function getFpIdFromLocalStorage () {
   try {
     return storageManager.getDataFromLocalStorage('ope_fpid')
   } catch (err) {
@@ -229,13 +229,13 @@ function getFpIdFromLocalStorage() {
   }
 }
 
-function isValidResponse(response) {
+function isValidResponse (response) {
   return isPlainObject(response) &&
       isPlainObject(response.body) &&
       isArray(response.body.bids)
 }
 
-function buildXandrOutstreamRenderer(bidId, adUnitCode) {
+function buildXandrOutstreamRenderer (bidId, adUnitCode) {
   const renderer = Renderer.install({
     id: bidId,
     url: XANDR_OUTSTREAM_RENDERER_URL,
@@ -253,7 +253,7 @@ function buildXandrOutstreamRenderer(bidId, adUnitCode) {
   return renderer;
 }
 
-function xandrOutstreamRenderer(bid) {
+function xandrOutstreamRenderer (bid) {
   const {width, height, adUnitCode, vastXml} = bid
 
   bid.renderer.push(() => {

@@ -13,7 +13,7 @@ import {mergeDeep} from '../../src/utils.js';
  * @typedef {import('./objectGuard.js').ObjectGuard} ObjectGuard
  */
 
-function ortb2EnrichRules(isAllowed = isActivityAllowed) {
+function ortb2EnrichRules (isAllowed = isActivityAllowed) {
   return [
     {
       name: ACTIVITY_ENRICH_EIDS,
@@ -28,7 +28,7 @@ function ortb2EnrichRules(isAllowed = isActivityAllowed) {
   ].map(writeProtectRule)
 }
 
-export function ortb2GuardFactory(isAllowed = isActivityAllowed) {
+export function ortb2GuardFactory (isAllowed = isActivityAllowed) {
   return objectGuard(ortb2TransmitRules(isAllowed).concat(ortb2EnrichRules(isAllowed)));
 }
 
@@ -49,14 +49,14 @@ export function ortb2GuardFactory(isAllowed = isActivityAllowed) {
  */
 export const ortb2Guard = ortb2GuardFactory();
 
-export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
-  return function guardOrtb2Fragments(fragments, params) {
+export function ortb2FragmentsGuardFactory (guardOrtb2 = ortb2Guard) {
+  return function guardOrtb2Fragments (fragments, params) {
     fragments.global = fragments.global || {};
     fragments.bidder = fragments.bidder || {};
     const bidders = new Set(Object.keys(fragments.bidder));
     const verifiers = [];
 
-    function makeGuard(ortb2) {
+    function makeGuard (ortb2) {
       const guard = guardOrtb2(ortb2, params);
       verifiers.push(guard.verify);
       return guard.obj;
@@ -69,7 +69,7 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
 
     return {
       obj,
-      verify() {
+      verify () {
         Object.entries(obj.bidder)
           .filter(([bidder]) => !bidders.has(bidder))
           .forEach(([bidder, ortb2]) => {

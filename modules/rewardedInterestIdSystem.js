@@ -39,7 +39,7 @@ export const SOURCE = 'rewardedinterest.com';
  * @function
  * @returns {RewardedInterestApi|undefined}
  */
-export function getRewardedInterestApi() {
+export function getRewardedInterestApi () {
   if (window.__riApi && window.__riApi.getIdentityToken) {
     return window.__riApi;
   }
@@ -49,7 +49,7 @@ export function getRewardedInterestApi() {
  * Wait while rewarded interest API to be set and execute the callback function
  * @param {function} callback
  */
-export function watchRewardedInterestApi(callback) {
+export function watchRewardedInterestApi (callback) {
   Object.defineProperties(window, {
     __rewardedInterestApi: {
       value: undefined,
@@ -73,7 +73,7 @@ export function watchRewardedInterestApi(callback) {
  * @param {RewardedInterestApi} rewardedInterestApi
  * @param {function} callback User ID callbackCompleted
  */
-export function getRewardedInterestId(rewardedInterestApi, callback) {
+export function getRewardedInterestId (rewardedInterestApi, callback) {
   rewardedInterestApi.getIdentityToken().then(callback).catch(error => {
     callback();
     logError(`${MODULE_NAME} module: ID fetch encountered an error`, error);
@@ -83,7 +83,7 @@ export function getRewardedInterestId(rewardedInterestApi, callback) {
 /**
  * @param {function} callback User ID callbackCompleted
  */
-export function apiNotAvailable(callback) {
+export function apiNotAvailable (callback) {
   callback();
   logError(`${MODULE_NAME} module: Rewarded Interest API not found`);
 }
@@ -102,7 +102,7 @@ export const rewardedInterestIdSubmodule = {
    * @param {string} value
    * @returns {{rewardedInterestId: string}|undefined}
    */
-  decode(value) {
+  decode (value) {
     return value ? {[MODULE_NAME]: value} : undefined;
   },
 
@@ -111,7 +111,7 @@ export const rewardedInterestIdSubmodule = {
    * @function
    * @returns {IdResponse|undefined}
    */
-  getId() {
+  getId () {
     return {
       callback: cb => {
         const api = getRewardedInterestApi();

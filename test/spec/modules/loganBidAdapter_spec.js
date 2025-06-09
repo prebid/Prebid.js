@@ -309,8 +309,8 @@ describe('LoganBidAdapter', function () {
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });
-  describe('getUserSyncs', function() {
-    it('Should return array of objects with proper sync config , include GDPR', function() {
+  describe('getUserSyncs', function () {
+    it('Should return array of objects with proper sync config , include GDPR', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
@@ -322,7 +322,7 @@ describe('LoganBidAdapter', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://ssp-cookie.logan.ai/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
-    it('Should return array of objects with proper sync config , include CCPA', function() {
+    it('Should return array of objects with proper sync config , include CCPA', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {
         consentString: '1NNN'
       });

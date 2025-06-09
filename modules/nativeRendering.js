@@ -4,7 +4,7 @@ import {auctionManager} from '../src/auctionManager.js';
 import {RENDERER} from '../libraries/creative-renderer-native/renderer.js';
 import {getCreativeRendererSource} from '../src/creativeRenderers.js';
 
-function getRenderingDataHook(next, bidResponse, options) {
+function getRenderingDataHook (next, bidResponse, options) {
   if (isNativeResponse(bidResponse)) {
     next.bail({
       native: getNativeRenderingData(bidResponse, auctionManager.index.getAdUnit(bidResponse))
@@ -13,7 +13,7 @@ function getRenderingDataHook(next, bidResponse, options) {
     next(bidResponse, options)
   }
 }
-function getRendererSourceHook(next, bidResponse) {
+function getRendererSourceHook (next, bidResponse) {
   if (isNativeResponse(bidResponse)) {
     next.bail(RENDERER);
   } else {

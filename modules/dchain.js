@@ -15,17 +15,17 @@ const MODE = {
 const MODES = []; // an array of modes
 _each(MODE, mode => MODES.push(mode));
 
-export function checkDchainSyntax(bid, mode) {
+export function checkDchainSyntax (bid, mode) {
   let dchainObj = deepClone(bid.meta.dchain);
   let failPrefix = 'Detected something wrong in bid.meta.dchain object for bid:';
   let failMsg = '';
   const dchainPropList = ['ver', 'complete', 'nodes', 'ext'];
 
-  function appendFailMsg(msg) {
+  function appendFailMsg (msg) {
     failMsg += '\n' + msg;
   }
 
-  function printFailMsg() {
+  function printFailMsg () {
     if (mode === MODE.STRICT) {
       logError(failPrefix, bid, '\n', dchainObj, failMsg);
     } else {
@@ -93,7 +93,7 @@ export function checkDchainSyntax(bid, mode) {
   return true;
 }
 
-function isValidDchain(bid) {
+function isValidDchain (bid) {
   let mode = MODE.STRICT;
   const dchainConfig = config.getConfig('dchain');
 
@@ -108,7 +108,7 @@ function isValidDchain(bid) {
   }
 }
 
-export const addBidResponseHook = timedBidResponseHook('dchain', function addBidResponseHook(fn, adUnitCode, bid, reject) {
+export const addBidResponseHook = timedBidResponseHook('dchain', function addBidResponseHook (fn, adUnitCode, bid, reject) {
   const basicDchain = {
     ver: '1.0',
     complete: 0,
@@ -142,7 +142,7 @@ export const addBidResponseHook = timedBidResponseHook('dchain', function addBid
   fn(adUnitCode, bid, reject);
 });
 
-export function init() {
+export function init () {
   getHook('addBidResponse').before(addBidResponseHook, 35);
 }
 

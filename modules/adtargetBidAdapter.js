@@ -53,7 +53,7 @@ export const spec = {
   }
 };
 
-function parseResponse(serverResponse, adapterRequest) {
+function parseResponse (serverResponse, adapterRequest) {
   const isInvalidValidResp = !serverResponse || !isArray(serverResponse.bids);
   const bids = [];
 
@@ -81,7 +81,7 @@ function parseResponse(serverResponse, adapterRequest) {
   return bids;
 }
 
-function bidToTag(bidRequests, adapterRequest) {
+function bidToTag (bidRequests, adapterRequest) {
   const tag = createTag(bidRequests, adapterRequest);
 
   const bids = [];
@@ -94,7 +94,7 @@ function bidToTag(bidRequests, adapterRequest) {
   return { tag, bids };
 }
 
-function prepareBidRequests(bidReq) {
+function prepareBidRequests (bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
   const bidReqParams = {
@@ -106,11 +106,11 @@ function prepareBidRequests(bidReq) {
   return bidReqParams;
 }
 
-function getMediaType(bidderRequest) {
+function getMediaType (bidderRequest) {
   return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
 }
 
-function createBid(bidResponse, bidRequest) {
+function createBid (bidResponse, bidRequest) {
   const mediaType = getMediaType(bidRequest)
   const bid = {
     requestId: bidResponse.requestId,

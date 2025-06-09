@@ -7,7 +7,7 @@ const ALIAS_BIDDER_CODE = ['wi'];
 const SUPPORTED_MEDIA_TYPES = [BANNER]
 const ENDPOINT_URL = 'https://adn-srv.reckoner-api.com/v1/prebid';
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   switch (true) {
     case !!(bid.params.asid):
       break;
@@ -18,7 +18,7 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   return validBidRequests.map(bidRequest => {
     const bidId = bidRequest.bidId
     const params = bidRequest.params;
@@ -34,7 +34,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 }
 
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = [];
   const response = serverResponse.body;
   const cpm = response.cpm || 0;

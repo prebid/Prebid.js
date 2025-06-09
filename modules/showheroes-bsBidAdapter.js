@@ -21,7 +21,7 @@ const converter = ortbConverter({
     currency: 'EUR',
     mediaType: VIDEO,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
     deepSetValue(imp, 'video.ext.context', videoContext);
@@ -50,7 +50,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
 
     if (context.imp?.video?.ext?.context === 'outstream') {
@@ -128,7 +128,7 @@ export const spec = {
     return syncs;
   },
 
-  onBidWon(bid) {
+  onBidWon (bid) {
     if (bid.callbacks) {
       triggerPixel(bid.callbacks.won);
     }
@@ -138,7 +138,7 @@ export const spec = {
   },
 };
 
-function outstreamRender(response, renderConfig) {
+function outstreamRender (response, renderConfig) {
   response.renderer.push(() => {
     const func = deepAccess(window, renderConfig.renderFunc);
     if (!isFn(func)) {
@@ -154,7 +154,7 @@ function outstreamRender(response, renderConfig) {
   });
 }
 
-function createRenderer(bid, renderConfig) {
+function createRenderer (bid, renderConfig) {
   const renderer = Renderer.install({
     id: bid.id,
     url: renderConfig.rendererUrl,

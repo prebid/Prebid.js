@@ -167,7 +167,7 @@ describe('adapterManager tests', function () {
       let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
 
       let doneBidders = [];
-      function mockDoneCB() {
+      function mockDoneCB () {
         doneBidders.push(this.bidderCode)
       }
       adapterManager.callBids(adUnits, bidRequests, () => {}, mockDoneCB);
@@ -224,7 +224,7 @@ describe('adapterManager tests', function () {
       events.off(EVENTS.BID_REQUESTED, count);
     });
 
-    it('should give bidders access to bidder-specific config', function(done) {
+    it('should give bidders access to bidder-specific config', function (done) {
       let mockBidders = ['rubicon', 'appnexus', 'pubmatic'];
       let bidderRequest = getBidRequests().filter(bidRequest => mockBidders.includes(bidRequest.bidderCode));
       let adUnits = getAdUnits();
@@ -233,10 +233,10 @@ describe('adapterManager tests', function () {
       let results = {};
       let cbCount = 0;
 
-      function mock(bidder) {
+      function mock (bidder) {
         bidders[bidder] = adapterManager.bidderRegistry[bidder];
         adapterManager.bidderRegistry[bidder] = {
-          callBids: function(bidRequest, addBidResponse, done, ajax, timeout, configCallback) {
+          callBids: function (bidRequest, addBidResponse, done, ajax, timeout, configCallback) {
             let myResults = results[bidRequest.bidderCode] = [];
             myResults.push(config.getConfig('buildRequests'));
             myResults.push(config.getConfig('test1'));
@@ -267,7 +267,7 @@ describe('adapterManager tests', function () {
         afterInterpretResponse: 'anotherBaseInterpret'
       });
       config.setBidderConfig({
-        bidders: [ 'appnexus' ],
+        bidders: ['appnexus'],
         config: {
           buildRequests: {
             test: 2
@@ -277,14 +277,14 @@ describe('adapterManager tests', function () {
         }
       });
       config.setBidderConfig({
-        bidders: [ 'rubicon' ],
+        bidders: ['rubicon'],
         config: {
           buildRequests: 'rubiconBuild',
           interpretResponse: null
         }
       });
       config.setBidderConfig({
-        bidders: [ 'appnexus', 'rubicon' ],
+        bidders: ['appnexus', 'rubicon'],
         config: {
           test2: { amazing: true }
         }
@@ -292,7 +292,7 @@ describe('adapterManager tests', function () {
 
       adapterManager.callBids(adUnits, bidderRequest, () => {}, () => {});
 
-      function assertions() {
+      function assertions () {
         expect(results).to.deep.equal({
           'appnexus': [
             {
@@ -335,7 +335,7 @@ describe('adapterManager tests', function () {
     var criteoSpec = { onTimeout: sinon.stub() }
     var criteoAdapter = {
       bidder: 'criteo',
-      getSpec: function() { return criteoSpec; }
+      getSpec: function () { return criteoSpec; }
     }
     before(function () {
       config.setConfig({s2sConfig: { enabled: false }});
@@ -378,7 +378,7 @@ describe('adapterManager tests', function () {
       criteoSpec = {}
       adapterManager.bidderRegistry['criteo'] = {
         bidder: 'criteo',
-        getSpec: function() { return criteoSpec; },
+        getSpec: function () { return criteoSpec; },
       }
       bids = [
         {bidder: 'criteo', params: {placementId: 'id'}},
@@ -500,7 +500,7 @@ describe('adapterManager tests', function () {
     const appnexusSpec = { onBidderError: sinon.stub() };
     const appnexusAdapter = {
       bidder,
-      getSpec: function() { return appnexusSpec; },
+      getSpec: function () { return appnexusSpec; },
     }
     before(function () {
       config.setConfig({s2sConfig: { enabled: false }});
@@ -1045,7 +1045,7 @@ describe('adapterManager tests', function () {
         });
       })
 
-      function runTest() {
+      function runTest () {
         adapterManager.callBids(
           getAdUnits(),
           bidRequests,
@@ -1163,7 +1163,7 @@ describe('adapterManager tests', function () {
     let doneStub = sinon.stub();
     let ajaxStub = sinon.stub();
 
-    function getTestAdUnits() {
+    function getTestAdUnits () {
       // copy adUnits
       // return JSON.parse(JSON.stringify(getAdUnits()));
       return utils.deepClone(getAdUnits()).map(adUnit => {
@@ -1172,12 +1172,12 @@ describe('adapterManager tests', function () {
       })
     }
 
-    function callBids(adUnits = getTestAdUnits()) {
+    function callBids (adUnits = getTestAdUnits()) {
       let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
       adapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
     }
 
-    function checkServerCalled(numAdUnits, numBids) {
+    function checkServerCalled (numAdUnits, numBids) {
       sinon.assert.calledOnce(prebidServerAdapterMock.callBids);
       let requestObj = prebidServerAdapterMock.callBids.firstCall.args[0];
       expect(requestObj.ad_units.length).to.equal(numAdUnits);
@@ -1188,7 +1188,7 @@ describe('adapterManager tests', function () {
       }
     }
 
-    function checkClientCalled(adapter, numBids) {
+    function checkClientCalled (adapter, numBids) {
       sinon.assert.calledOnce(adapter.callBids);
       expect(adapter.callBids.firstCall.args[0].bids.length).to.equal(numBids);
     }
@@ -1346,7 +1346,7 @@ describe('adapterManager tests', function () {
     let doneStub = sinon.stub();
     let ajaxStub = sinon.stub();
 
-    function getTestAdUnits() {
+    function getTestAdUnits () {
       // copy adUnits
       return utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => {
@@ -1356,12 +1356,12 @@ describe('adapterManager tests', function () {
       })
     }
 
-    function callBids(adUnits = getTestAdUnits()) {
+    function callBids (adUnits = getTestAdUnits()) {
       let bidRequests = adapterManager.makeBidRequests(adUnits, 1111, 2222, 1000);
       adapterManager.callBids(adUnits, bidRequests, doneStub, ajaxStub);
     }
 
-    function checkServerCalled(numAdUnits, firstConfigNumBids, secondConfigNumBids) {
+    function checkServerCalled (numAdUnits, firstConfigNumBids, secondConfigNumBids) {
       let requestObjects = [];
       let configBids;
       if (firstConfigNumBids === 0 || secondConfigNumBids === 0) {
@@ -1387,7 +1387,7 @@ describe('adapterManager tests', function () {
       })
     }
 
-    function checkClientCalled(adapter, numBids) {
+    function checkClientCalled (adapter, numBids) {
       sinon.assert.calledOnce(adapter.callBids);
       expect(adapter.callBids.firstCall.args[0].bids.length).to.equal(numBids);
     }
@@ -1671,10 +1671,10 @@ describe('adapterManager tests', function () {
     });
   });
 
-  describe('aliasBidderAdaptor', function() {
+  describe('aliasBidderAdaptor', function () {
     const CODE = 'sampleBidder';
 
-    describe('using bidderFactory', function() {
+    describe('using bidderFactory', function () {
       let spec;
 
       beforeEach(function () {
@@ -1687,7 +1687,7 @@ describe('adapterManager tests', function () {
         };
       });
 
-      it('should add alias to registry when original adapter is using bidderFactory', function() {
+      it('should add alias to registry when original adapter is using bidderFactory', function () {
         const mediaType = FEATURES.VIDEO ? 'video' : 'banner'
         let thisSpec = Object.assign(spec, { supportedMediaTypes: [mediaType] });
         registerBidder(thisSpec);
@@ -1772,12 +1772,12 @@ describe('adapterManager tests', function () {
       twinAdUnits = getTwinAdUnits();
     });
 
-    function makeBidRequests(au = adUnits) {
+    function makeBidRequests (au = adUnits) {
       return adapterManager.makeBidRequests(
         au,
         Date.now(),
         utils.getUniqueIdentifierStr(),
-        function callback() {
+        function callback () {
         },
         []
       );
@@ -1785,7 +1785,7 @@ describe('adapterManager tests', function () {
 
     if (FEATURES.NATIVE) {
       it('should add nativeParams to adUnits after BEFORE_REQUEST_BIDS', () => {
-        function beforeReqBids(adUnits) {
+        function beforeReqBids (adUnits) {
           adUnits.forEach(adUnit => {
             adUnit.mediaTypes.native = {
               type: 'image',
@@ -1869,7 +1869,7 @@ describe('adapterManager tests', function () {
             bidders: ['appnexus']
           }
         });
-        function expectBidderCounts(bidders) {
+        function expectBidderCounts (bidders) {
           makeBidRequests().forEach(br => {
             br.bids.forEach(bid => expect(bid.bidderRequestsCount).to.exist.and.eql(bidders[br.bidderCode]));
           })
@@ -2314,7 +2314,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           []
         );
         sinon.assert.calledOnce(utils.shuffle);
@@ -2340,7 +2340,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           []
         );
 
@@ -2389,7 +2389,7 @@ describe('adapterManager tests', function () {
           nativeAdUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           []
         );
         expect(bidRequests[0].bids[0].sizes).to.deep.equal([]);
@@ -2416,7 +2416,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           []
         );
 
@@ -2439,7 +2439,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           []
         );
 
@@ -2457,7 +2457,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           ['visitor-uk', 'desktop']
         );
 
@@ -2482,7 +2482,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           ['visitor-uk', 'desktop']
         );
 
@@ -2505,7 +2505,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           []
         );
         expect(bidRequests[0].gdprConsent.consentString).to.equal('abc123def456');
@@ -2517,7 +2517,7 @@ describe('adapterManager tests', function () {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback () {},
           []
         );
         expect(bidRequests[0].gdprConsent).to.be.undefined;
@@ -2899,7 +2899,7 @@ describe('adapterManager tests', function () {
         }];
       });
 
-      function partition(adUnits, s2sConfigs) {
+      function partition (adUnits, s2sConfigs) {
         return _partitionBidders(adUnits, s2sConfigs, {getS2SBidders})
       }
 
@@ -2936,7 +2936,7 @@ describe('adapterManager tests', function () {
     });
 
     describe('filterBidsForAdUnit', () => {
-      function filterBids(bids, s2sConfig) {
+      function filterBids (bids, s2sConfig) {
         return _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders});
       }
       it('should not filter any bids when s2sConfig == null', () => {
@@ -2983,11 +2983,11 @@ describe('adapterManager tests', function () {
   });
 
   describe('callDataDeletionRequest', () => {
-    function delMethodForBidder(bidderCode) {
+    function delMethodForBidder (bidderCode) {
       const del = sinon.stub();
       adapterManager.registerBidAdapter({
         callBids: sinon.stub(),
-        getSpec() {
+        getSpec () {
           return {
             onDataDeletionRequest: del
           }
@@ -2996,7 +2996,7 @@ describe('adapterManager tests', function () {
       return del;
     }
 
-    function delMethodForAnalytics(provider) {
+    function delMethodForAnalytics (provider) {
       const del = sinon.stub();
       adapterManager.registerAnalyticsAdapter({
         code: provider,

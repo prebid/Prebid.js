@@ -16,7 +16,7 @@ describe('Creative renderer - display', () => {
     }
   });
 
-  function runRenderer(data) {
+  function runRenderer (data) {
     return render(data, {sendMessage, mkFrame}, win);
   }
 

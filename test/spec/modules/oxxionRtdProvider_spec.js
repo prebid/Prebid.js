@@ -139,10 +139,10 @@ describe('oxxionRtdProvider', () => {
   describe('Oxxion RTD sub module', () => {
     let auctionEnd = request;
     auctionEnd.bidsReceived = bids;
-    it('call everything', function() {
+    it('call everything', function () {
       oxxionSubmodule.getBidRequestData(request, null, moduleConfig);
     });
-    it('check bid filtering', function() {
+    it('check bid filtering', function () {
       let requestsList = oxxionSubmodule.getRequestsList(request);
       expect(requestsList.length).to.equal(4);
       expect(requestsList[0]).to.have.property('id');

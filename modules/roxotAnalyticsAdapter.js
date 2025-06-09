@@ -60,7 +60,7 @@ let sendEventCache = [];
 let sendEventTimeoutId = null;
 let sendEventTimeoutTime = 1000;
 
-function detectDevice() {
+function detectDevice () {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
     return 'tablet';
   }
@@ -70,27 +70,27 @@ function detectDevice() {
   return 'desktop';
 }
 
-function checkIsNewFlag() {
+function checkIsNewFlag () {
   let key = buildLocalStorageKey(isNewKey);
   let lastUpdate = Number(storage.getDataFromLocalStorage(key));
   storage.setDataInLocalStorage(key, Date.now());
   return Date.now() - lastUpdate > isNewTtl;
 }
 
-function updateUtmTimeout() {
+function updateUtmTimeout () {
   storage.setDataInLocalStorage(buildLocalStorageKey(utmTtlKey), Date.now());
 }
 
-function isUtmTimeoutExpired() {
+function isUtmTimeoutExpired () {
   let utmTimestamp = storage.getDataFromLocalStorage(buildLocalStorageKey(utmTtlKey));
   return (Date.now() - utmTimestamp) > utmTtl;
 }
 
-function buildLocalStorageKey(key) {
+function buildLocalStorageKey (key) {
   return localStoragePrefix.concat(key);
 }
 
-function isSupportedAdUnit(adUnit) {
+function isSupportedAdUnit (adUnit) {
   if (!initOptions.adUnits.length) {
     return true;
   }
@@ -98,7 +98,7 @@ function isSupportedAdUnit(adUnit) {
   return initOptions.adUnits.includes(adUnit);
 }
 
-function deleteOldAuctions() {
+function deleteOldAuctions () {
   for (let auctionId in auctionCache) {
     let auction = auctionCache[auctionId];
     if (Date.now() - auction.start > auctionTtl) {
@@ -107,7 +107,7 @@ function deleteOldAuctions() {
   }
 }
 
-function buildAuctionEntity(args) {
+function buildAuctionEntity (args) {
   return {
     'id': args.auctionId,
     'start': args.timestamp,
@@ -116,15 +116,15 @@ function buildAuctionEntity(args) {
   };
 }
 
-function extractAdUnitCode(args) {
+function extractAdUnitCode (args) {
   return args.adUnitCode.toLowerCase();
 }
 
-function extractBidder(args) {
+function extractBidder (args) {
   return args.bidder.toLowerCase();
 }
 
-function buildAdUnitAuctionEntity(auction, bidRequest) {
+function buildAdUnitAuctionEntity (auction, bidRequest) {
   return {
     'adUnit': extractAdUnitCode(bidRequest),
     'start': auction.start,
@@ -135,7 +135,7 @@ function buildAdUnitAuctionEntity(auction, bidRequest) {
   };
 }
 
-function buildBidderRequest(auction, bidRequest) {
+function buildBidderRequest (auction, bidRequest) {
   return {
     'bidder': extractBidder(bidRequest),
     'isAfterTimeout': auction.status === AUCTION_STATUS.FINISHED ? 1 : 0,
@@ -152,7 +152,7 @@ function buildBidderRequest(auction, bidRequest) {
   };
 }
 
-function buildBidAfterTimeout(adUnitAuction, args) {
+function buildBidAfterTimeout (adUnitAuction, args) {
   return {
     'auction': deepClone(adUnitAuction),
     'adUnit': extractAdUnitCode(args),
@@ -168,7 +168,7 @@ function buildBidAfterTimeout(adUnitAuction, args) {
   };
 }
 
-function buildImpression(adUnitAuction, args) {
+function buildImpression (adUnitAuction, args) {
   return {
     'isNew': checkIsNewFlag() ? 1 : 0,
     'auction': deepClone(adUnitAuction),
@@ -184,12 +184,12 @@ function buildImpression(adUnitAuction, args) {
   };
 }
 
-function handleAuctionInit(args) {
+function handleAuctionInit (args) {
   auctionCache[args.auctionId] = buildAuctionEntity(args);
   deleteOldAuctions();
 }
 
-function handleBidRequested(args) {
+function handleBidRequested (args) {
   let auction = auctionCache[args.auctionId];
   args.bids.forEach(function (bidRequest) {
     let adUnitCode = extractAdUnitCode(bidRequest);
@@ -203,7 +203,7 @@ function handleBidRequested(args) {
   });
 }
 
-function handleBidAdjustment(args) {
+function handleBidAdjustment (args) {
   let adUnitCode = extractAdUnitCode(args);
   let bidder = extractBidder(args);
   if (!isSupportedAdUnit(adUnitCode)) {
@@ -228,7 +228,7 @@ function handleBidAdjustment(args) {
   }
 }
 
-function handleBidAfterTimeout(adUnitAuction, args) {
+function handleBidAfterTimeout (adUnitAuction, args) {
   let bidder = extractBidder(args);
   let bidderRequest = adUnitAuction['bidders'][bidder];
   let bidAfterTimeout = buildBidAfterTimeout(adUnitAuction, args);
@@ -245,7 +245,7 @@ function handleBidAfterTimeout(adUnitAuction, args) {
   registerEvent(ROXOT_EVENTS.BID_AFTER_TIMEOUT, 'Bid After Timeout', bidAfterTimeout);
 }
 
-function handleBidderDone(args) {
+function handleBidderDone (args) {
   let auction = auctionCache[args.auctionId];
 
   args.bids.forEach(function (bidDone) {
@@ -270,7 +270,7 @@ function handleBidderDone(args) {
   });
 }
 
-function handleAuctionEnd(args) {
+function handleAuctionEnd (args) {
   let auction = auctionCache[args.auctionId];
   if (!Object.keys(auction.adUnits).length) {
     delete auctionCache[args.auctionId];
@@ -296,7 +296,7 @@ function handleAuctionEnd(args) {
   registerEvent(ROXOT_EVENTS.AUCTION, 'Auction', auction);
 }
 
-function handleBidWon(args) {
+function handleBidWon (args) {
   let adUnitCode = extractAdUnitCode(args);
   if (!isSupportedAdUnit(adUnitCode)) {
     return;
@@ -306,12 +306,12 @@ function handleBidWon(args) {
   registerEvent(ROXOT_EVENTS.IMPRESSION, 'Bid won', impression);
 }
 
-function handleOtherEvents(eventType, args) {
+function handleOtherEvents (eventType, args) {
   registerEvent(eventType, eventType, args);
 }
 
 let roxotAdapter = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType}), {
-  track({eventType, args}) {
+  track ({eventType, args}) {
     switch (eventType) {
       case AUCTION_INIT:
         handleAuctionInit(args);
@@ -399,7 +399,7 @@ roxotAdapter.getOptions = function () {
   return initOptions;
 };
 
-function registerEvent(eventType, eventName, data) {
+function registerEvent (eventType, eventName, data) {
   let eventData = {
     eventType: eventType,
     eventName: eventName,
@@ -413,7 +413,7 @@ function registerEvent(eventType, eventName, data) {
   (typeof initOptions.serverConfig === 'undefined') ? checkEventAfterTimeout() : checkSendEvent();
 }
 
-function checkSendEvent() {
+function checkSendEvent () {
   if (sendEventTimeoutId) {
     clearTimeout(sendEventTimeoutId);
     sendEventTimeoutId = null;
@@ -435,7 +435,7 @@ function checkSendEvent() {
   }
 }
 
-function checkEventAfterTimeout() {
+function checkEventAfterTimeout () {
   if (sendEventTimeoutId) {
     return;
   }
@@ -443,7 +443,7 @@ function checkEventAfterTimeout() {
   sendEventTimeoutId = setTimeout(checkSendEvent, sendEventTimeoutTime);
 }
 
-function sendEvent(eventType, eventName, data) {
+function sendEvent (eventType, eventName, data) {
   let url = 'https://' + initOptions.server + '/' + eventType + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   let eventData = {
     'event': eventType,
@@ -466,7 +466,7 @@ function sendEvent(eventType, eventName, data) {
   );
 }
 
-function loadServerConfig() {
+function loadServerConfig () {
   let url = 'https://' + initOptions.configServer + '/c' + '?publisherId=' + initOptions.publisherId + '&host=' + initOptions.host;
   ajax(
     url,
@@ -491,15 +491,15 @@ function loadServerConfig() {
   );
 }
 
-function _logInfo(message, meta) {
+function _logInfo (message, meta) {
   logInfo(buildLogMessage(message), meta);
 }
 
-function _logError(message) {
+function _logError (message) {
   logError(buildLogMessage(message));
 }
 
-function buildLogMessage(message) {
+function buildLogMessage (message) {
   return 'Roxot Prebid Analytics: ' + message;
 }
 

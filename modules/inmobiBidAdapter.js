@@ -47,7 +47,7 @@ const CONVERTER = ortbConverter({
  * @param {Object} context - Context for the impression.
  * @returns {Object} The constructed impression object.
  */
-function imp(buildImp, bidRequest, context) {
+function imp (buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
@@ -90,7 +90,7 @@ function imp(buildImp, bidRequest, context) {
  * @param {Object} context - Additional context.
  * @returns {Object} The complete oRTB request object.
  */
-function request(buildRequest, imps, bidderRequest, context) {
+function request (buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
 
   deepSetValue(request, 'ext.prebid.channel.name', 'pbjs_InMobi');
@@ -109,7 +109,7 @@ function request(buildRequest, imps, bidderRequest, context) {
  * @param {Object} context - Context for the bid.
  * @returns {Object} Formatted bid response.
  */
-function bidResponse(buildBidResponse, bid, context) {
+function bidResponse (buildBidResponse, bid, context) {
   context.mtype = deepAccess(bid, 'mtype');
   if (context.mtype === 4) {
     const admJson = JSON.parse(bid.adm);
@@ -136,7 +136,7 @@ function bidResponse(buildBidResponse, bid, context) {
  * @param {Object} context - Additional context.
  * @returns {Object} Prebid.js compatible bid response.
  */
-function response(buildResponse, bidResponses, ortbResponse, context) {
+function response (buildResponse, bidResponses, ortbResponse, context) {
   let response = buildResponse(bidResponses, ortbResponse, context);
 
   return response;
@@ -315,11 +315,11 @@ export const spec = {
 
 };
 
-function isReportingAllowed(loggingPercentage) {
+function isReportingAllowed (loggingPercentage) {
   return loggingPercentage != 0;
 }
 
-function report(type, data) {
+function report (type, data) {
   if (!data) {
     return;
   }

@@ -30,7 +30,7 @@ const STANDARD_DEFAULT_HEIGHT = 1800;
 let userKey = null;
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
-export function getUserKey(options = {}) {
+export function getUserKey (options = {}) {
   if (userKey) {
     return userKey;
   }
@@ -60,7 +60,7 @@ export function getUserKey(options = {}) {
   return userKey;
 }
 
-function isValidUserKey(userKey) {
+function isValidUserKey (userKey) {
   return typeof userKey === 'string' && !userKey.startsWith('#') && userKey.length > 0;
 }
 
@@ -102,7 +102,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.siteId) && !!(bid.params.publisherNameIdentifier);
   },
   /**
@@ -112,7 +112,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest master bidRequest object
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const urlParams = parseUrl(bidderRequest.refererInfo.page).search;
     const contentCode = urlParams['flipp-content-code'];
     const userKey = getUserKey(validBidRequests[0]?.params);
@@ -160,7 +160,7 @@ export const spec = {
    * @param {BidRequest} bidRequest A bid request object
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse?.body) return [];
     const placements = bidRequest.data.placements;
     const res = serverResponse.body;

@@ -16,9 +16,9 @@ const responseHeader = {
   'Content-Type': 'application/json'
 };
 
-describe('weboramaRtdProvider', function() {
-  describe('weboramaSubmodule', function() {
-    it('successfully instantiates and call contextual api', function() {
+describe('weboramaRtdProvider', function () {
+  describe('weboramaSubmodule', function () {
+    it('successfully instantiates and call contextual api', function () {
       const moduleConfig = {
         params: {
           weboCtxConf: {
@@ -31,7 +31,7 @@ describe('weboramaRtdProvider', function() {
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
     });
 
-    it('instantiate without contextual token should fail', function() {
+    it('instantiate without contextual token should fail', function () {
       const moduleConfig = {
         params: {
           weboCtxConf: {}
@@ -40,7 +40,7 @@ describe('weboramaRtdProvider', function() {
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(false);
     });
 
-    it('instantiate with empty weboUserData conf should return true', function() {
+    it('instantiate with empty weboUserData conf should return true', function () {
       const moduleConfig = {
         params: {
           weboUserDataConf: {}
@@ -49,7 +49,7 @@ describe('weboramaRtdProvider', function() {
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
     });
 
-    it('instantiate with empty sfbxLiteData should return true', function() {
+    it('instantiate with empty sfbxLiteData should return true', function () {
       const moduleConfig = {
         params: {
           sfbxLiteDataConf: {},
@@ -58,8 +58,8 @@ describe('weboramaRtdProvider', function() {
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
     });
 
-    describe('webo user data should check gdpr consent', function() {
-      it('should initialize if gdpr does not applies', function() {
+    describe('webo user data should check gdpr consent', function () {
+      it('should initialize if gdpr does not applies', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -72,7 +72,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
-      it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function() {
+      it('should initialize if gdpr applies and consent / legitimate interests / vendor are ok', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -115,7 +115,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
       });
-      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function() {
+      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interests vendor id', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -158,7 +158,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
-      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interest purpose id', function() {
+      it('should NOT initialize if gdpr applies and consent is nok: miss legitimate interest purpose id', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -201,7 +201,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
-      it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function() {
+      it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -229,7 +229,7 @@ describe('weboramaRtdProvider', function() {
         }
         expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
       });
-      it('should NOT initialize if gdpr applies and consent is nok: miss one purpose id', function() {
+      it('should NOT initialize if gdpr applies and consent is nok: miss one purpose id', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {}
@@ -260,10 +260,10 @@ describe('weboramaRtdProvider', function() {
     });
   });
 
-  describe('Handle Set Targeting and Bid Request', function() {
+  describe('Handle Set Targeting and Bid Request', function () {
     let sandbox;
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
 
       storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY);
@@ -271,12 +271,12 @@ describe('weboramaRtdProvider', function() {
       storage.removeDataFromLocalStorage(DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY);
     });
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
     });
 
-    describe('Add site-centric data (contextual)', function() {
-      it('should set gam targeting and send to bidders by default', function() {
+    describe('Add site-centric data (contextual)', function () {
+      it('should set gam targeting and send to bidders by default', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -363,7 +363,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should use asset id when available and set gam targeting and send to bidders by default', function() {
+      it('should use asset id when available and set gam targeting and send to bidders by default', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -450,7 +450,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should use asset id as callback when available and set gam targeting and send to bidders by default', function() {
+      it('should use asset id as callback when available and set gam targeting and send to bidders by default', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -537,7 +537,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should handle exception from asset id callback', function() {
+      it('should handle exception from asset id callback', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -592,7 +592,7 @@ describe('weboramaRtdProvider', function() {
         expect(targeting).to.deep.equal({});
       });
 
-      it('should handle case when callback return falsy value', function() {
+      it('should handle case when callback return falsy value', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -646,7 +646,7 @@ describe('weboramaRtdProvider', function() {
         expect(targeting).to.deep.equal({});
       });
 
-      describe('should set gam targeting and send to one specific bidder and multiple adunits', function() {
+      describe('should set gam targeting and send to one specific bidder and multiple adunits', function () {
         const testcases = {
           'single string': 'appnexus',
           'array with one entry': ['appnexus'],
@@ -667,7 +667,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
-          it(`check sendToBidders as ${label}`, function() {
+          it(`check sendToBidders as ${label}`, function () {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
@@ -781,7 +781,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting and send to one specific bidder and one adunit', function() {
+      describe('should set gam targeting and send to one specific bidder and one adunit', function () {
         const testcases = {
           'map with one entry': {
             'appnexus': ['adunit1']
@@ -793,7 +793,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
-          it(`check sendToBidders as ${label}`, function() {
+          it(`check sendToBidders as ${label}`, function () {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
@@ -896,7 +896,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting for multiple adunits but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function() {
+      describe('should set gam targeting for multiple adunits but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function () {
         const testcases = {
           'boolean': true,
           'array with both units': ['adunit1', 'adunit2'],
@@ -907,7 +907,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const setPrebidTargeting = testcases[label];
-          it(`check setPrebidTargeting as ${label}`, function() {
+          it(`check setPrebidTargeting as ${label}`, function () {
             const moduleConfig = {
               params: {
                 weboCtxConf: {
@@ -1040,7 +1040,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting for one adunit but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function() {
+      describe('should set gam targeting for one adunit but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function () {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
@@ -1050,7 +1050,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const setPrebidTargeting = testcases[label];
-          it(`check setPrebidTargeting as ${label}`, function() {
+          it(`check setPrebidTargeting as ${label}`, function () {
             const moduleConfig = {
               params: {
                 weboCtxConf: {
@@ -1183,7 +1183,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
+      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -1254,7 +1254,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
+      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function () {
         const moduleConfig = {
           params: {
             weboCtxConf: {
@@ -1356,7 +1356,7 @@ describe('weboramaRtdProvider', function() {
         })
       });
 
-      it('should use default profile in case of api error', function() {
+      it('should use default profile in case of api error', function () {
         const defaultProfile = {
           webo_ctx: ['baz'],
         };
@@ -1444,7 +1444,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
+      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -1588,8 +1588,8 @@ describe('weboramaRtdProvider', function() {
       });
     });
 
-    describe('Add user-centric data (wam)', function() {
-      it('should set gam targeting from local storage and send to bidders by default', function() {
+    describe('Add user-centric data (wam)', function () {
+      it('should set gam targeting from local storage and send to bidders by default', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -1677,7 +1677,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting from local storage and send to one specific bidder and multiple adunits', function() {
+      describe('should set gam targeting from local storage and send to one specific bidder and multiple adunits', function () {
         const testcases = {
           'single string': 'appnexus',
           'array with one entry': ['appnexus'],
@@ -1698,7 +1698,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
-          it(`check sendToBidders as ${label}`, function() {
+          it(`check sendToBidders as ${label}`, function () {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
@@ -1812,7 +1812,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting from local storage and send to one specific bidder and one adunit', function() {
+      describe('should set gam targeting from local storage and send to one specific bidder and one adunit', function () {
         const testcases = {
           'map with one entry': {
             'appnexus': ['adunit1']
@@ -1824,7 +1824,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
-          it(`check sendToBidders as ${label}`, function() {
+          it(`check sendToBidders as ${label}`, function () {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
@@ -1941,7 +1941,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting for multiple adunits but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function() {
+      describe('should set gam targeting for multiple adunits but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function () {
         const testcases = {
           'boolean': true,
           'array with both units': ['adunit1', 'adunit2'],
@@ -1952,7 +1952,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const setPrebidTargeting = testcases[label];
-          it(`check setPrebidTargeting as ${label}`, function() {
+          it(`check setPrebidTargeting as ${label}`, function () {
             const moduleConfig = {
               params: {
                 weboUserDataConf: {
@@ -2087,7 +2087,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting for one adunit but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function() {
+      describe('should set gam targeting for one adunit but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function () {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
@@ -2097,7 +2097,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const setPrebidTargeting = testcases[label];
-          it(`check setPrebidTargeting as ${label}`, function() {
+          it(`check setPrebidTargeting as ${label}`, function () {
             const moduleConfig = {
               params: {
                 weboUserDataConf: {
@@ -2232,7 +2232,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
+      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -2302,7 +2302,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
+      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function () {
         const moduleConfig = {
           params: {
             weboUserDataConf: {
@@ -2406,7 +2406,7 @@ describe('weboramaRtdProvider', function() {
         })
       });
 
-      it('should use default profile in case of nothing on local storage', function() {
+      it('should use default profile in case of nothing on local storage', function () {
         const defaultProfile = {
           webo_audiences: [12345]
         };
@@ -2473,7 +2473,7 @@ describe('weboramaRtdProvider', function() {
         })
       });
 
-      it('should use default profile in case of something malformed on local storage', function() {
+      it('should use default profile in case of something malformed on local storage', function () {
         const defaultProfile = {
           webo_audiences: [12345]
         };
@@ -2549,7 +2549,7 @@ describe('weboramaRtdProvider', function() {
         })
       });
 
-      it('should use default profile if cant read from local storage', function() {
+      it('should use default profile if cant read from local storage', function () {
         const defaultProfile = {
           webo_audiences: [12345]
         };
@@ -2631,7 +2631,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
+      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -2771,8 +2771,8 @@ describe('weboramaRtdProvider', function() {
       });
     });
 
-    describe('Add support to sfbx lite', function() {
-      it('should set gam targeting from local storage and send to bidders by default', function() {
+    describe('Add support to sfbx lite', function () {
+      it('should set gam targeting from local storage and send to bidders by default', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -2859,7 +2859,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting from local storage and send to one specific bidder and multiple adunits', function() {
+      describe('should set gam targeting from local storage and send to one specific bidder and multiple adunits', function () {
         const testcases = {
           'single string': 'appnexus',
           'array with one entry': ['appnexus'],
@@ -2880,7 +2880,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
-          it(`check sendToBidders as ${label}`, function() {
+          it(`check sendToBidders as ${label}`, function () {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
@@ -2994,7 +2994,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting from local storage and send to one specific bidder and one adunit', function() {
+      describe('should set gam targeting from local storage and send to one specific bidder and one adunit', function () {
         const testcases = {
           'map with one entry': {
             'appnexus': ['adunit1']
@@ -3006,7 +3006,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
-          it(`check sendToBidders as ${label}`, function() {
+          it(`check sendToBidders as ${label}`, function () {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
@@ -3123,7 +3123,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting for multiple adunits but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function() {
+      describe('should set gam targeting for multiple adunits but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function () {
         const testcases = {
           'boolean': true,
           'array with both units': ['adunit1', 'adunit2'],
@@ -3134,7 +3134,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const setPrebidTargeting = testcases[label];
-          it(`check setPrebidTargeting as ${label}`, function() {
+          it(`check setPrebidTargeting as ${label}`, function () {
             const moduleConfig = {
               params: {
                 sfbxLiteDataConf: {
@@ -3268,7 +3268,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      describe('should set gam targeting for one adunit but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function() {
+      describe('should set gam targeting for one adunit but not send to bidders with setPrebidTargeting=<true>/sendToBidders=false', function () {
         const testcases = {
           'array with one unit': ['adunit1'],
           'callback': (adUnitCode) => {
@@ -3278,7 +3278,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const setPrebidTargeting = testcases[label];
-          it(`check setPrebidTargeting as ${label}`, function() {
+          it(`check setPrebidTargeting as ${label}`, function () {
             const moduleConfig = {
               params: {
                 sfbxLiteDataConf: {
@@ -3412,7 +3412,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function() {
+      it('should set gam targeting but not send to bidders with (submodule override) setPrebidTargeting=true/(global) sendToBidders=false', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {
@@ -3485,7 +3485,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function() {
+      it('should not set gam targeting with setPrebidTargeting=false but send to bidders', function () {
         const moduleConfig = {
           params: {
             sfbxLiteDataConf: {
@@ -3588,7 +3588,7 @@ describe('weboramaRtdProvider', function() {
         })
       });
 
-      it('should use default profile in case of nothing on local storage', function() {
+      it('should use default profile in case of nothing on local storage', function () {
         const defaultProfile = {
           lite_hobbies: ['sport', 'cinéma'],
         };
@@ -3654,7 +3654,7 @@ describe('weboramaRtdProvider', function() {
         })
       });
 
-      it('should use default profile if cant read from local storage', function() {
+      it('should use default profile if cant read from local storage', function () {
         const defaultProfile = {
           lite_hobbies: ['sport', 'cinéma'],
         };
@@ -3742,7 +3742,7 @@ describe('weboramaRtdProvider', function() {
         });
       });
 
-      it('should use default profile if has no local storage', function() {
+      it('should use default profile if has no local storage', function () {
         const defaultProfile = {
           lite_hobbies: ['sport', 'cinéma'],
         };
@@ -3821,7 +3821,7 @@ describe('weboramaRtdProvider', function() {
           },
         });
       });
-      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function() {
+      it('should be possible update profile from callbacks for a given bidder/adUnitCode', function () {
         let onDataResponse = {};
         const moduleConfig = {
           params: {

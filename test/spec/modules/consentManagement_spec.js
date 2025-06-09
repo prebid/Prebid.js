@@ -7,8 +7,8 @@ import 'src/prebid.js';
 let expect = require('chai').expect;
 
 describe('consentManagement', function () {
-  function mockCMP(cmpResponse) {
-    return function(...args) {
+  function mockCMP (cmpResponse) {
+    return function (...args) {
       args[2](Object.assign({eventStatus: 'tcloaded'}, cmpResponse), true);
     }
   }
@@ -247,7 +247,7 @@ describe('consentManagement', function () {
     beforeEach(resetConsentData);
     after(resetConsentData)
 
-    async function runHook(request = {}) {
+    async function runHook (request = {}) {
       let hookRan = false;
       consentConfig.requestBidsHook(() => {
         hookRan = true
@@ -397,7 +397,7 @@ describe('consentManagement', function () {
       let cmpPostMessageCb = () => { };
       let stringifyResponse;
 
-      function createIFrameMarker(frameName) {
+      function createIFrameMarker (frameName) {
         let ifr = document.createElement('iframe');
         ifr.width = 0;
         ifr.height = 0;
@@ -406,7 +406,7 @@ describe('consentManagement', function () {
         return ifr;
       }
 
-      function creatCmpMessageHandler(prefix, returnValue) {
+      function creatCmpMessageHandler (prefix, returnValue) {
         return function (event) {
           if (event && event.data) {
             let data = event.data;
@@ -425,7 +425,7 @@ describe('consentManagement', function () {
         }
       }
 
-      function testIFramedPage(testName, messageFormatString, tarConsentString, ver) {
+      function testIFramedPage (testName, messageFormatString, tarConsentString, ver) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, async () => {
           stringifyResponse = messageFormatString;
           await setConsentConfig(goodConfig);
@@ -493,7 +493,7 @@ describe('consentManagement', function () {
       });
 
       describe('v2 CMP workflow for normal pages:', function () {
-        beforeEach(function() {
+        beforeEach(function () {
           window.__tcfapi = function () { };
         });
 
@@ -596,7 +596,7 @@ describe('consentManagement', function () {
         describe('when proper consent is not available', () => {
           let tcfStub;
 
-          async function runAuction() {
+          async function runAuction () {
             await setConsentConfig({
               cmpApi: 'iab',
               timeout: 10,
@@ -611,7 +611,7 @@ describe('consentManagement', function () {
             })
           }
 
-          function mockTcfEvent(tcdata) {
+          function mockTcfEvent (tcdata) {
             tcfStub.callsFake((api, version, cb) => {
               if (api === 'addEventListener' && version === 2) {
                 cb(tcdata, true)

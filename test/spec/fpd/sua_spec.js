@@ -173,7 +173,7 @@ describe('lowEntropySUAAccessor', () => {
     enumerable: true
   });
 
-  function getSUA(uaData) {
+  function getSUA (uaData) {
     return lowEntropySUAAccessor(uaData)();
   }
 

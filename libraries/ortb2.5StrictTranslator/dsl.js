@@ -5,7 +5,7 @@ export const ERR_ENUM = 2; // field is an enum and its value is not one of those
 // eslint-disable-next-line symbol-description
 export const extend = Symbol();
 
-export function Obj(primitiveFields, spec = {}) {
+export function Obj (primitiveFields, spec = {}) {
   const scan = (path, parent, field, value, onError) => {
     if (value == null || typeof value !== 'object') {
       onError(ERR_TYPE, path, parent, field, value);
@@ -31,7 +31,7 @@ export function Obj(primitiveFields, spec = {}) {
 export const ID = Obj(['id']);
 export const Named = ID[extend](['name']);
 
-export function Arr(def) {
+export function Arr (def) {
   return (path, parent, field, value, onError) => {
     if (!Array.isArray(value)) {
       onError(ERR_TYPE, path, parent, field, value);
@@ -41,7 +41,7 @@ export function Arr(def) {
   };
 }
 
-export function IntEnum(min, max) {
+export function IntEnum (min, max) {
   return (path, parent, field, value, onError) => {
     const errno = (() => {
       if (typeof value !== 'number') return ERR_TYPE;

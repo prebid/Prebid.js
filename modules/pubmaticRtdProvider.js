@@ -67,7 +67,7 @@ let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
 export let _country;
 
 // Waits for a given promise to resolve within a timeout
-export function withTimeout(promise, ms) {
+export function withTimeout (promise, ms) {
     let timeout;
     const timeoutPromise = new Promise((resolve) => {
       timeout = setTimeout(() => resolve(undefined), ms);

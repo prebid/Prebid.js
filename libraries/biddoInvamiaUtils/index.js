@@ -4,7 +4,7 @@
  * @param {string} endpointUrl - The endpoint URL specific to the bidder.
  * @returns {Array} An array of server requests.
  */
-export function buildBannerRequests(bidRequest, endpointUrl) {
+export function buildBannerRequests (bidRequest, endpointUrl) {
   const serverRequests = [];
   const sizes = bidRequest.mediaTypes.banner.sizes;
 
@@ -39,7 +39,7 @@ export function buildBannerRequests(bidRequest, endpointUrl) {
  * @param {Object} bidderRequest - The matched bid request for this response.
  * @returns {Array} An array of bid responses.
  */
-export function interpretBannerResponse(serverResponse, bidderRequest) {
+export function interpretBannerResponse (serverResponse, bidderRequest) {
   const response = serverResponse.body;
   const bidResponses = [];
 

@@ -49,7 +49,7 @@ config.getConfig(MODULE_NAME, conf => {
  * @param {Object[]} conf - example [{bidder: 'bidderA', maxbids: 2, prefix: 'bidA'}, {bidder: 'bidderB', maxbids: 2}]
  * @return {Boolean}
  */
-export function validateMultibid(conf) {
+export function validateMultibid (conf) {
   let check = true;
   let duplicate = conf.filter(entry => {
     // Check if entry.bidder is not defined or typeof string, filter entry and reset configuration
@@ -81,7 +81,7 @@ export function validateMultibid(conf) {
  * @param {Function} fn reference to original function (used by hook logic)
  * @param {Object[]} bidderRequests containing copy of each bidderRequest object
  */
-export function adjustBidderRequestsHook(fn, bidderRequests) {
+export function adjustBidderRequestsHook (fn, bidderRequests) {
   bidderRequests.map(bidRequest => {
     // Loop through bidderRequests and check if bidderCode exists in multiconfig
     // If true, add bidderRequest.bidLimit to bidder request
@@ -100,7 +100,7 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
  * @param {String} ad unit code for bid
  * @param {Object} bid object
  */
-export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook(fn, adUnitCode, bid, reject) {
+export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook (fn, adUnitCode, bid, reject) {
   let floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
@@ -149,7 +149,7 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
  * A descending sort function that will sort the list of objects based on the following:
  *  - bids without dynamic aliases are sorted before bids with dynamic aliases
  */
-export function sortByMultibid(a, b) {
+export function sortByMultibid (a, b) {
   if (a.bidder !== a.bidderCode && b.bidder === b.bidderCode) {
     return 1;
   }
@@ -169,7 +169,7 @@ export function sortByMultibid(a, b) {
  * @param {Number} adUnitBidLimit bidder targeting limit, default set to 0
  * @param {Boolean} hasModified default set to false, this hook modifies targeting and sets to true
  */
-export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
+export function targetBidPoolHook (fn, bidsReceived, highestCpmCallback, adUnitBidLimit = 0, hasModified = false) {
   if (!config.getConfig('multibid')) resetMultiConfig();
   if (hasMultibid) {
     const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
@@ -228,7 +228,7 @@ export const resetMultibidUnits = () => multibidUnits = {};
 /**
  * Set up hooks on init
  */
-function init() {
+function init () {
   // TODO: does this reset logic make sense - what about simultaneous auctions?
   events.on(EVENTS.AUCTION_INIT, resetMultibidUnits);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
@@ -238,7 +238,7 @@ function init() {
 
 init();
 
-export function setOrtbExtPrebidMultibid(ortbRequest) {
+export function setOrtbExtPrebidMultibid (ortbRequest) {
   const multibid = config.getConfig('multibid');
   if (multibid) {
     deepSetValue(ortbRequest, 'ext.prebid.multibid', multibid.map(o =>

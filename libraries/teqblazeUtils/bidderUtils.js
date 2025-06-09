@@ -196,7 +196,7 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
   return buildRequestsBase({ adUrl, validBidRequests, bidderRequest, placementProcessingFunction });
 };
 
-export function interpretResponseBuilder({addtlBidValidation = (bid) => true} = {}) {
+export function interpretResponseBuilder ({addtlBidValidation = (bid) => true} = {}) {
   return function (serverResponse) {
     let response = [];
     for (let i = 0; i < serverResponse.body.length; i++) {

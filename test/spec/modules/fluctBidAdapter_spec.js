@@ -434,13 +434,13 @@ describe('fluctAdapter', function () {
     });
   });
 
-  describe('should interpretResponse', function() {
+  describe('should interpretResponse', function () {
     const callBeaconSnippet = '<script type="application/javascript">' +
       '(function() { var img = new Image(); img.src = ' +
       '"https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99"' +
       '})()</script>';
 
-    it('should get correct bid response', function() {
+    it('should get correct bid response', function () {
       const bidRequest = {
         bidder: 'fluct',
         params: {
@@ -502,7 +502,7 @@ describe('fluctAdapter', function () {
       expect(result).to.deep.have.same.members(expectedResponse);
     });
 
-    it('should get correct bid response with dealId', function() {
+    it('should get correct bid response with dealId', function () {
       const bidRequest = {
         bidder: 'fluct',
         params: {
@@ -559,7 +559,7 @@ describe('fluctAdapter', function () {
       expect(result).to.deep.have.same.members(expectedResponse);
     });
 
-    it('should get empty response when bid server returns 204', function() {
+    it('should get empty response when bid server returns 204', function () {
       expect(spec.interpretResponse({})).to.be.empty;
     });
   });

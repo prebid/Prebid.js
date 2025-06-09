@@ -33,7 +33,7 @@ export const storage = getStorageManager({
  *
  * @return {String}
  */
-function getScriptURL(config) {
+function getScriptURL (config) {
   const VERSION = 'v1';
   const key = config.params?.key;
   const publisherPath = key ? `${key}/` : '';
@@ -48,7 +48,7 @@ function getScriptURL(config) {
  *
  * @return {void}
  */
-export function attachScript(config, userConsent) {
+export function attachScript (config, userConsent) {
   const script = getScriptURL(config);
   loadExternalScript(script, MODULE_TYPE_RTD, SUBREAL_TIME_MODULE, () => {
     if (typeof window.azerionPublisherAudiences === 'function') {
@@ -68,7 +68,7 @@ export function attachScript(config, userConsent) {
  *
  * @return {Array} Audience ids.
  */
-export function getAudiences() {
+export function getAudiences () {
   try {
     const data = storage.getDataFromLocalStorage(STORAGE_KEY);
     return JSON.parse(data).map(({ id }) => id);
@@ -86,7 +86,7 @@ export function getAudiences() {
  *
  * @return {void}
  */
-export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
+export function setAudiencesToBidders (reqBidsConfigObj, config, audiences) {
   const defaultBidders = ['improvedigital'];
   const bidders = config.params?.bidders || defaultBidders;
   bidders.forEach((bidderCode) =>
@@ -114,7 +114,7 @@ export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
  *
  * @return {boolean}
  */
-function init(config, userConsent) {
+function init (config, userConsent) {
   attachScript(config, userConsent);
   return true;
 }
@@ -129,7 +129,7 @@ function init(config, userConsent) {
  *
  * @return {void}
  */
-export function getBidRequestData(
+export function getBidRequestData (
   reqBidsConfigObj,
   callback,
   config,

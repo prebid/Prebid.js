@@ -10,7 +10,7 @@ export const getCreativeRendererSource = hook('sync', function (bidResponse) {
   return RENDERER;
 })
 
-export const getCreativeRenderer = (function() {
+export const getCreativeRenderer = (function () {
   const renderers = {};
   return function (bidResponse) {
     const src = getCreativeRendererSource(bidResponse);

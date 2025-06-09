@@ -18,15 +18,15 @@ let baseUrl = `https://${domain}`;
 let staticUrl = `https://s.${domain}`;
 let endpointUrl = baseUrl;
 
-function isDevEnv() {
+function isDevEnv () {
   return location.hash.includes('prebid-dev');
 }
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   return !!bidRequest?.params?.placementId;
 }
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   const region = bidRequests[0]?.params?.region || defaultRegion;
   endpointUrl = `https://${region}.${domain}`;
 
@@ -86,7 +86,7 @@ function buildRequests(bidRequests, bidderRequest) {
   };
 }
 
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   // @see required fields https://docs.prebid.org/dev-docs/bidder-adaptor.html
   const response = serverResponse?.body;
   const bidRequestData = JSON.parse(bidRequest?.data);
@@ -137,7 +137,7 @@ function interpretResponse(serverResponse, bidRequest) {
   return {bids, paapi: fledgeAuctionConfigs};
 }
 
-function report(type, data) {
+function report (type, data) {
   // noinspection JSCheckFunctionSignatures
   return fetch(`${endpointUrl}/go/report/${type}`, {
     body: JSON.stringify({
@@ -149,7 +149,7 @@ function report(type, data) {
   });
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   logInfo('Bid won', bid);
 
   let data = {
@@ -173,7 +173,7 @@ function onBidWon(bid) {
   return report('impression', data);
 }
 
-function onTimeout(timeoutData) {
+function onTimeout (timeoutData) {
   logInfo('Timeout from adapter', timeoutData);
 }
 

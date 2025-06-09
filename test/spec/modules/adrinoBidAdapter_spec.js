@@ -75,7 +75,7 @@ describe('adrinoBidAdapter', function () {
 
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -130,7 +130,7 @@ describe('adrinoBidAdapter', function () {
     it('should build the request correctly with custom domain', function () {
       config.setConfig({adrino: { host: 'https://stg-prebid-bidder.adrino.io' }});
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -150,7 +150,7 @@ describe('adrinoBidAdapter', function () {
 
     it('should build the request correctly with gdpr', function () {
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { gdprConsent: { gdprApplies: true, consentString: 'abc123' }, refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -170,7 +170,7 @@ describe('adrinoBidAdapter', function () {
 
     it('should build the request correctly without gdpr', function () {
       const result = spec.buildRequests(
-        [ bidRequest ],
+        [bidRequest],
         { refererInfo: { page: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
@@ -276,10 +276,10 @@ describe('adrinoBidAdapter', function () {
   });
 
   describe('onBidWon', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 

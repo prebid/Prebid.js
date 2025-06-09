@@ -266,11 +266,11 @@ describe('MediaSquare bid adapter tests', function () {
     expect(syncs[0]).to.have.property('type').and.to.equal('image');
     expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');
   });
-  it('Verifies user sync with no bid response', function() {
+  it('Verifies user sync with no bid response', function () {
     var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
   });
-  it('Verifies user sync with no bid body response', function() {
+  it('Verifies user sync with no bid body response', function () {
     var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
     expect(syncs).to.have.lengthOf(0);
     var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);

@@ -13,11 +13,11 @@ config.getConfig('ttlBuffer', (cfg) => {
   }
 })
 
-export function getBufferedTTL(bid) {
+export function getBufferedTTL (bid) {
   return bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : TTL_BUFFER);
 }
 
-export function getMinBidCacheTTL() {
+export function getMinBidCacheTTL () {
   return minCacheTTL;
 }
 
@@ -30,6 +30,6 @@ config.getConfig(CACHE_TTL_SETTING, (cfg) => {
   }
 })
 
-export function onMinBidCacheTTLChange(listener) {
+export function onMinBidCacheTTLChange (listener) {
   listeners.push(listener);
 }

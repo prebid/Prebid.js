@@ -9,7 +9,7 @@ describe('objectGuard', () => {
         paths: ['foo', 'outer.inner.foo'],
         name: 'testRule',
         applies: sinon.stub().callsFake(() => applies),
-        get(val) { return `repl${val}` },
+        get (val) { return `repl${val}` },
       }
     })
     it('can prevent top level read access', () => {

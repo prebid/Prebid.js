@@ -36,7 +36,7 @@ export const spec = {
   getUserSyncs,
 };
 
-function buildRequests(bidReqs, bidderRequest) {
+function buildRequests (bidReqs, bidderRequest) {
   try {
     const impressions = bidReqs.map(bid => {
       let bidSizes = bid?.mediaTypes?.banner?.sizes || bid?.mediaTypes?.video?.playerSize || bid.sizes;
@@ -144,7 +144,7 @@ function buildRequests(bidReqs, bidderRequest) {
   }
 }
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (!bid.params || !bid.params.publisherId) {
     return false;
   }
@@ -152,7 +152,7 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-function interpretResponse(serverResponse) {
+function interpretResponse (serverResponse) {
   let response = [];
   if (!serverResponse.body || typeof serverResponse.body != 'object') {
     logWarn('OMS server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
@@ -195,7 +195,7 @@ function interpretResponse(serverResponse) {
   return response;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   const syncs = [];
 
   if (syncOptions.iframeEnabled) {
@@ -211,7 +211,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   return syncs;
 }
 
-function onBidderError(errorData) {
+function onBidderError (errorData) {
   if (errorData === null || !errorData.bidderRequest) {
     return;
   }
@@ -219,7 +219,7 @@ function onBidderError(errorData) {
   _trackEvent('error', errorData.bidderRequest)
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   if (bid === null) {
     return;
   }
@@ -227,14 +227,14 @@ function onBidWon(bid) {
   _trackEvent('bidwon', bid)
 }
 
-function _trackEvent(endpoint, data) {
+function _trackEvent (endpoint, data) {
   ajax(`${TRACK_EVENT_URL}/${endpoint}`, null, JSON.stringify(data), {
     method: 'POST',
     withCredentials: false
   });
 }
 
-function _getDeviceType(ua, sua) {
+function _getDeviceType (ua, sua) {
   if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
     return 1
   }
@@ -246,7 +246,7 @@ function _getDeviceType(ua, sua) {
   return 2
 }
 
-function _getGpp(bidderRequest) {
+function _getGpp (bidderRequest) {
   if (bidderRequest?.gppConsent != null) {
     return bidderRequest.gppConsent;
   }
@@ -256,7 +256,7 @@ function _getGpp(bidderRequest) {
   );
 }
 
-function _getAdMarkup(bid) {
+function _getAdMarkup (bid) {
   let adm = bid.adm;
   if ('nurl' in bid) {
     adm += createTrackPixelHtml(bid.nurl);
@@ -264,15 +264,15 @@ function _getAdMarkup(bid) {
   return adm;
 }
 
-function _isViewabilityMeasurable(element) {
+function _isViewabilityMeasurable (element) {
   return !_isIframe() && element !== null;
 }
 
-function _getViewability(element, topWin, {w, h} = {}) {
+function _getViewability (element, topWin, {w, h} = {}) {
   return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, {w, h}) : 0;
 }
 
-function _extractGpidData(bid) {
+function _extractGpidData (bid) {
   return {
     gpid: bid?.ortb2Imp?.ext?.gpid,
     adserverName: bid?.ortb2Imp?.ext?.data?.adserver?.name,
@@ -281,7 +281,7 @@ function _extractGpidData(bid) {
   }
 }
 
-function _isIframe() {
+function _isIframe () {
   try {
     return getWindowSelf() !== getWindowTop();
   } catch (e) {
@@ -289,11 +289,11 @@ function _isIframe() {
   }
 }
 
-function _getMinSize(sizes) {
+function _getMinSize (sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
-function _getBidFloor(bid) {
+function _getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }

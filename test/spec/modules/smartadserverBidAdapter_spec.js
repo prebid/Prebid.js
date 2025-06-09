@@ -1257,7 +1257,7 @@ describe('Smart bid adapter tests', function () {
   });
 
   describe('Supply Chain Serializer tests', function () {
-    it('Verify a multi node supply chain serialization matches iab example', function() {
+    it('Verify a multi node supply chain serialization matches iab example', function () {
       let schain = {
         'ver': '1.0',
         'complete': 1,
@@ -1313,19 +1313,19 @@ describe('Smart bid adapter tests', function () {
       }
     };
 
-    it('should include floor from bid params', function() {
+    it('should include floor from bid params', function () {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS))[0].data);
       expect(bidRequest.bidfloor).to.deep.equal(DEFAULT_PARAMS[0].params.bidfloor);
     });
 
-    it('should return default floor when module not activated', function() {
+    it('should return default floor when module not activated', function () {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
 
       const floor = getBidFloor(bidRequest, 'EUR');
       expect(floor).to.deep.equal(0);
     });
 
-    it('should return default floor when getFloor returns not proper object', function() {
+    it('should return default floor when getFloor returns not proper object', function () {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
       bidRequest.getFloor = function () {
         return { floor: 'one' };
@@ -1335,14 +1335,14 @@ describe('Smart bid adapter tests', function () {
       expect(floor).to.deep.equal(0.0);
     });
 
-    it('should return default floor when currency unknown', function() {
+    it('should return default floor when currency unknown', function () {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL))[0].data);
 
       const floor = getBidFloor(bidRequest, null);
       expect(floor).to.deep.equal(0);
     });
 
-    it('should take floor from bidder params over ad unit', function() {
+    it('should take floor from bidder params over ad unit', function () {
       const bidRequest = [{
         mediaTypes: {
           banner: {
@@ -1359,7 +1359,7 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('bidfloor').and.to.equal(1.25);
     });
 
-    it('should take floor from banner ad unit', function() {
+    it('should take floor from banner ad unit', function () {
       const bidRequest = [{
         mediaTypes: {
           banner: {
@@ -1376,7 +1376,7 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('bidfloor').and.to.equal(1.93);
     });
 
-    it('should take floor from video ad unit', function() {
+    it('should take floor from video ad unit', function () {
       const bidRequest = [{
         mediaTypes: {
           video: {
@@ -1394,7 +1394,7 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('bidfloor').and.to.equal(2.72);
     });
 
-    it('should take floor from multiple media type ad unit', function() {
+    it('should take floor from multiple media type ad unit', function () {
       const bidRequest = [{
         mediaTypes: {
           banner: {

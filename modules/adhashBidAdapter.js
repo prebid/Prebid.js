@@ -19,7 +19,7 @@ const storage = getStorageManager({ bidderCode: ADHASH_BIDDER_CODE });
  * @param maxScore maximum allowed score for that bidding
  * @returns boolean flag is the page safe
  */
-function brandSafety(badWords, maxScore) {
+function brandSafety (badWords, maxScore) {
   const delimiter = '~';
 
   /**
@@ -153,7 +153,7 @@ function brandSafety(badWords, maxScore) {
 
 export const spec = {
   code: ADHASH_BIDDER_CODE,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: (bid) => {
     try {

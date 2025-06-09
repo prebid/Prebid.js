@@ -34,7 +34,7 @@ const vidMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 100
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: submoduleName});
 
-function setImDataInCookie(value) {
+function setImDataInCookie (value) {
   storage.setCookie(
     imVidCookieName,
     value,
@@ -47,7 +47,7 @@ function setImDataInCookie(value) {
  * @param {Object} segments
  * @param {Object} moduleConfig
  */
-function getSegments(segments, moduleConfig) {
+function getSegments (segments, moduleConfig) {
   if (!segments) return;
   const maxSegments = !Number.isNaN(moduleConfig.params.maxSegments) ? moduleConfig.params.maxSegments : 200;
   return segments.slice(0, maxSegments);
@@ -56,7 +56,7 @@ function getSegments(segments, moduleConfig) {
 /**
  * @param {string} bidderName
  */
-export function getBidderFunction(bidderName) {
+export function getBidderFunction (bidderName) {
   const biddersFunction = {
     pubmatic: function (bid, data, moduleConfig) {
       if (data.im_segments && data.im_segments.length) {
@@ -85,7 +85,7 @@ export function getBidderFunction(bidderName) {
   return biddersFunction[bidderName] || null;
 }
 
-export function getCustomBidderFunction(config, bidder) {
+export function getCustomBidderFunction (config, bidder) {
   const overwriteFn = deepAccess(config, `params.overwrites.${bidder}`)
 
   if (overwriteFn && isFn(overwriteFn)) {
@@ -101,7 +101,7 @@ export function getCustomBidderFunction(config, bidder) {
  * @param {Object} moduleConfig
  * @param {Object} data
  */
-export function setRealTimeData(bidConfig, moduleConfig, data) {
+export function setRealTimeData (bidConfig, moduleConfig, data) {
   const adUnits = bidConfig.adUnits || getGlobal().adUnits;
   const utils = {deepSetValue, deepAccess, logInfo, logError, mergeDeep};
 
@@ -139,7 +139,7 @@ export function setRealTimeData(bidConfig, moduleConfig, data) {
  * @param {function} onDone
  * @param {Object} moduleConfig
  */
-export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
+export function getRealTimeData (reqBidsConfigObj, onDone, moduleConfig) {
   const cid = deepAccess(moduleConfig, 'params.cid');
   if (!cid) {
     logError('imRtdProvider requires a valid cid to be defined');
@@ -186,7 +186,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, moduleConfig) {
  * @param {function} onDone
  * @param {Object} moduleConfig
  */
-export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
+export function getApiCallback (reqBidsConfigObj, onDone, moduleConfig) {
   return {
     success: function (response, req) {
       let parsedResponse = {};
@@ -236,7 +236,7 @@ export function getApiCallback(reqBidsConfigObj, onDone, moduleConfig) {
  * @param {Object} userConsent
  * @return {boolean}
  */
-function init(provider, userConsent) {
+function init (provider, userConsent) {
   return true;
 }
 

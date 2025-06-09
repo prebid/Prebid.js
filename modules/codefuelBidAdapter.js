@@ -16,7 +16,7 @@ const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
   aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -24,7 +24,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid.nativeParams) {
       return false;
     }
@@ -36,7 +36,7 @@ export const spec = {
    * @param {validBidRequests} validBidRequests - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const page = bidderRequest.refererInfo.page;
     const domain = bidderRequest.refererInfo.domain;
     const ua = navigator.userAgent;
@@ -131,14 +131,14 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     return [];
   }
 
 }
 registerBidder(spec);
 
-function getDeviceType() {
+function getDeviceType () {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
     return 5; // 'tablet'
   }
@@ -148,12 +148,12 @@ function getDeviceType() {
   return 2; // 'desktop'
 }
 
-function flatten(arr) {
+function flatten (arr) {
   return [].concat(...arr);
 }
 
 /* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
+function transformSizes (requestSizes) {
   if (!isArray(requestSizes)) {
     return [];
   }

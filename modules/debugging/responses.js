@@ -58,7 +58,7 @@ export default {
   }
 }
 
-function mapDefaultNativeOrtbAsset(asset) {
+function mapDefaultNativeOrtbAsset (asset) {
   const assetType = ORTB_NATIVE_ASSET_TYPES.find(type => asset.hasOwnProperty(type));
   switch (assetType) {
     case 'img':

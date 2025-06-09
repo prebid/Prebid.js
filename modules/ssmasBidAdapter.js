@@ -17,7 +17,7 @@ export const ssmasOrtbConverter = ortbConverter({
     ttl: 300,
     mediaType: BANNER,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.placementId', bidRequest.params.placementId);
     return imp;

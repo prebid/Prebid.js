@@ -30,23 +30,23 @@ let bidWonObject = {};
 
 let initOptions = {};
 
-function postAjax(url, data) {
+function postAjax (url, data) {
   ajax(url, function () {}, data, {contentType: 'application/json', method: 'POST'});
 }
 
-function handleInitSizes(adUnits) {
+function handleInitSizes (adUnits) {
   return adUnits.map(function (adUnit) {
     return adUnit.sizes.toString() || ''
   });
 }
 
-function handleInitTypes(adUnits) {
+function handleInitTypes (adUnits) {
   return adUnits.map(function (adUnit) {
     return Object.keys(adUnit.mediaTypes).toString();
   });
 }
 
-function detectDevice() {
+function detectDevice () {
   if (
     /ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(
       navigator.userAgent.toLowerCase()
@@ -64,7 +64,7 @@ function detectDevice() {
   return 'desktop';
 }
 
-function detectOsAndBrowser() {
+function detectOsAndBrowser () {
   var module = {
     options: [],
     header: [navigator.platform, navigator.userAgent, navigator.appVersion, navigator.vendor, window.opera],
@@ -281,7 +281,7 @@ function detectOsAndBrowser() {
   return result;
 }
 
-function handleAuctionInit(eventType, args) {
+function handleAuctionInit (eventType, args) {
   initOptions.c_timeout = args.timeout;
   initOptions.ad_unit_size = handleInitSizes(args.adUnits);
   initOptions.ad_unit_type = handleInitTypes(args.adUnits);
@@ -291,7 +291,7 @@ function handleAuctionInit(eventType, args) {
   timestampInit = args.timestamp;
 }
 
-function parseBidType(mediaTypes, mediaType) {
+function parseBidType (mediaTypes, mediaType) {
   if (!mediaTypes) {
     return [mediaType];
   } else {
@@ -299,7 +299,7 @@ function parseBidType(mediaTypes, mediaType) {
   }
 }
 
-function parseSizes(sizes, width, height) {
+function parseSizes (sizes, width, height) {
   if (sizes !== undefined) {
     return sizes.map(s => {
       return s.toString();
@@ -309,7 +309,7 @@ function parseSizes(sizes, width, height) {
   }
 }
 
-function mapObject({
+function mapObject ({
   bidder,
   adUnitCode,
   auctionId,
@@ -340,41 +340,41 @@ function mapObject({
   };
 }
 
-function mapUpLevelObject(object, eventType, array) {
+function mapUpLevelObject (object, eventType, array) {
   Object.assign(object, {
     status: eventType || '',
     bids: array || []
   });
 }
 
-function handleEvent(array, object, eventType, args) {
+function handleEvent (array, object, eventType, args) {
   array.push(mapObject(args));
   mapUpLevelObject(object, eventType, array);
 }
 
-function handleNoBid(eventType, args) {
+function handleNoBid (eventType, args) {
   handleEvent(noBidArray, noBidObject, eventType, args);
 }
 
-function handleBidResponse(eventType, args) {
+function handleBidResponse (eventType, args) {
   handleEvent(isBidArray, isBidObject, eventType, args);
 }
 
-function handleBidTimeout(eventType, args) {
+function handleBidTimeout (eventType, args) {
   args.forEach(bid => {
     bidTimeOutArray.push(mapObject(bid));
   });
   mapUpLevelObject(bidTimeOutObject, eventType, bidTimeOutArray);
 }
 
-function handleBidWon(eventType, args) {
+function handleBidWon (eventType, args) {
   handleEvent(bidWonArray, bidWonObject, eventType, args);
   sendRequest(bidWonObject);
 }
 
-function handleBidRequested(args) {}
+function handleBidRequested (args) {}
 
-function sendRequest(...objects) {
+function sendRequest (...objects) {
   let obj = {
     publisher_id: initOptions.publisher_id.toString() || '',
     site: initOptions.site || '',
@@ -389,7 +389,7 @@ function sendRequest(...objects) {
   postAjax(url, JSON.stringify(obj));
 }
 
-function handleAuctionEnd() {
+function handleAuctionEnd () {
   sendRequest(noBidObject, isBidObject, bidTimeOutObject);
 }
 
@@ -397,7 +397,7 @@ let adWMGAnalyticsAdapter = Object.assign(adapter({
   url,
   analyticsType
 }), {
-  track({
+  track ({
     eventType,
     args
   }) {

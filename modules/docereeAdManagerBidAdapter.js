@@ -72,7 +72,7 @@ export const spec = {
   },
 };
 
-export function getPageUrl() {
+export function getPageUrl () {
   let url = '';
   try {
     url = window.location.href;
@@ -92,7 +92,7 @@ const handleConsent = (consentValue) => {
   return consentValue;
 }
 
-export function getPayload(bid, userData, bidderRequest) {
+export function getPayload (bid, userData, bidderRequest) {
   if (!userData || !bid) {
     return false;
   }

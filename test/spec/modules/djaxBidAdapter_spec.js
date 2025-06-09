@@ -5,7 +5,7 @@ import { spec } from '../../../modules/djaxBidAdapter.js';
 const DOMAIN = 'https://revphpe.djaxbidder.com/header_bidding_vast/';
 const ENDPOINT = DOMAIN + 'www/admin/plugins/Prebid/getAd.php';
 
-describe('Djax Adapter', function() {
+describe('Djax Adapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {

@@ -32,7 +32,7 @@ export const spec = {
    * @param {object} bid
    * @returns {boolean}
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return !!(bid && bid.params && bid.params.adslotId && bid.params.supplyId);
   },
 
@@ -42,7 +42,7 @@ export const spec = {
    * @param [bidderRequest]
    * @returns {ServerRequest|ServerRequest[]}
    */
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -162,7 +162,7 @@ export const spec = {
    * @param {BidRequest} originalBidRequest
    * @returns {Bid[]}
    */
-  interpretResponse(serverResponse, originalBidRequest) {
+  interpretResponse (serverResponse, originalBidRequest) {
     const bidResponses = [];
     const timestamp = Date.now();
     const reqParams = originalBidRequest.queryParams;
@@ -273,7 +273,7 @@ export const spec = {
    * @param {string} uspConsent Is the US Privacy Consent string.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
     if (syncOptions.iframeEnabled) {
@@ -302,7 +302,7 @@ export const spec = {
  * @param {String} adtype
  * @returns {Boolean}
  */
-function isVideo(format, adtype) {
+function isVideo (format, adtype) {
   return deepAccess(format, 'mediaTypes.video') && adtype.toLowerCase() === 'video';
 }
 
@@ -312,7 +312,7 @@ function isVideo(format, adtype) {
  * @param {String} adtype
  * @returns {Boolean}
  */
-function isNative(format, adtype) {
+function isNative (format, adtype) {
   return deepAccess(format, 'mediaTypes.native') && adtype.toLowerCase() === 'native';
 }
 
@@ -321,7 +321,7 @@ function isNative(format, adtype) {
  * @param {Object} format
  * @returns {Boolean}
  */
-function isOutstream(format) {
+function isOutstream (format) {
   const context = deepAccess(format, 'mediaTypes.video.context');
   return (context === 'outstream');
 }
@@ -331,7 +331,7 @@ function isOutstream(format) {
  * @param {Object} format
  * @returns {Array}
  */
-function getPlayerSize(format) {
+function getPlayerSize (format) {
   const playerSize = deepAccess(format, 'mediaTypes.video.playerSize');
   return (playerSize && isArray(playerSize[0])) ? playerSize[0] : playerSize;
 }
@@ -341,7 +341,7 @@ function getPlayerSize(format) {
  * @param {String} size
  * @returns {Array}
  */
-function parseSize(size) {
+function parseSize (size) {
   return size.split(DIMENSION_SIGN).map(Number);
 }
 
@@ -350,7 +350,7 @@ function parseSize(size) {
  * @param {Array.<{source: String, uids: Array.<{id: String, atype: Number, ext: Object}>}>} eids
  * @returns {String}
  */
-function createUserIdString(eids) {
+function createUserIdString (eids) {
   const str = [];
   for (let i = 0; i < eids.length; i++) {
     str.push(eids[i].source + ':' + eids[i].uids[0].id);
@@ -363,7 +363,7 @@ function createUserIdString(eids) {
  * @param {Array.<{source: String, uids: Array.<{id: String, atype: Number, ext: Object}>}>} eids
  * @returns {String} idprovider:atype,idprovider2:atype2,...
  */
-function createUserIdAtypesString(eids) {
+function createUserIdAtypesString (eids) {
   const str = [];
   for (let i = 0; i < eids.length; i++) {
     if (eids[i].uids[0].atype) {
@@ -378,7 +378,7 @@ function createUserIdAtypesString(eids) {
  * @param {Object} obj
  * @returns {String}
  */
-function createQueryString(obj) {
+function createQueryString (obj) {
   const str = [];
   for (const p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -398,7 +398,7 @@ function createQueryString(obj) {
  * @param {Object} obj
  * @returns {String}
  */
-function createTargetingString(obj) {
+function createTargetingString (obj) {
   const str = [];
   for (const p in obj) {
     if (obj.hasOwnProperty(p)) {
@@ -415,7 +415,7 @@ function createTargetingString(obj) {
  * @param {Object} schain
  * @returns {String}
  */
-function createSchainString(schain) {
+function createSchainString (schain) {
   const ver = schain.ver || '';
   const complete = (schain.complete === 1 || schain.complete === 0) ? schain.complete : '';
   const keys = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
@@ -432,7 +432,7 @@ function createSchainString(schain) {
  * @param {Object} bid
  * @returns {Object}
  */
-function getContentObject(bid) {
+function getContentObject (bid) {
   if (bid.params.iabContent && isPlainObject(bid.params.iabContent)) {
     return bid.params.iabContent;
   }
@@ -454,7 +454,7 @@ function getContentObject(bid) {
  * @param {Object} iabContent
  * @returns {String}
  */
-function createIabContentString(iabContent) {
+function createIabContentString (iabContent) {
   const arrKeys = ['keywords', 'cat'];
   const str = [];
   const transformObjToParam = (obj = {}, extraKey = '') => {
@@ -479,7 +479,7 @@ function createIabContentString(iabContent) {
  * @param {String} str
  * @returns {String}
  */
-function encodeURIComponentWithBangIncluded(str) {
+function encodeURIComponentWithBangIncluded (str) {
   return encodeURIComponent(str).replace(/!/g, '%21');
 }
 
@@ -487,7 +487,7 @@ function encodeURIComponentWithBangIncluded(str) {
  * Handles an outstream response after the library is loaded
  * @param {Object} bid
  */
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     window.ma_width = bid.width;
     window.ma_height = bid.height;
@@ -503,7 +503,7 @@ function outstreamRender(bid) {
  * @param {Object} bid
  * @returns {string[]}
  */
-function extractSizes(bid) {
+function extractSizes (bid) {
   const { mediaTypes } = bid; // see https://docs.prebid.org/dev-docs/adunit-reference.html#examples
   const sizes = [];
 
@@ -542,7 +542,7 @@ function extractSizes(bid) {
  * @returns The floor CPM in cents of a matched rule based on the rule selection process (mediaType, size and currency),
  *          using the getFloor() inputs. Multi sizes and unsupported media types will default to '*'
  */
-function getBidFloor(bid, sizes) {
+function getBidFloor (bid, sizes) {
   if (!isFn(bid.getFloor)) {
     return undefined;
   }
@@ -566,7 +566,7 @@ function getBidFloor(bid, sizes) {
  * @param {string} propName - The name of the property to check.
  * @returns {boolean} Returns true if the object has a property with the given name and the property value is not null or undefined, otherwise false.
  */
-function hasValidProperty(obj, propName) {
+function hasValidProperty (obj, propName) {
   return obj.hasOwnProperty(propName) && obj[propName] != null;
 }
 
@@ -575,7 +575,7 @@ function hasValidProperty(obj, propName) {
  * @param {number} type - The desired asset type to filter for i.e. IMG_TYPE_ICON = 1, IMG_TYPE_MAIN = 3
  * @returns {function} - A filtering function that accepts an asset and checks if its img.type matches the desired type.
  */
-function isImageAssetOfType(type) {
+function isImageAssetOfType (type) {
   return asset => asset?.img?.type === type;
 }
 
@@ -586,7 +586,7 @@ function isImageAssetOfType(type) {
  * @param {Object} matchedBid - The server response body to inspect for the DSA information.
  * @returns {Object|undefined} A copy of the DSA object if it exists, or undefined if not.
  */
-function getDigitalServicesActObjectFromMatchedBid(matchedBid) {
+function getDigitalServicesActObjectFromMatchedBid (matchedBid) {
   if (matchedBid.dsa) {
     const { behalf, paid, transparency, adrender } = matchedBid.dsa;
     return {
@@ -606,13 +606,13 @@ function getDigitalServicesActObjectFromMatchedBid(matchedBid) {
  * @param {string} key - The key under which the value should be assigned.
  * @param {*} value - The value to be assigned, if it is not undefined.
  */
-function assignIfNotUndefined(obj, key, value) {
+function assignIfNotUndefined (obj, key, value) {
   if (value !== undefined) {
     obj[key] = value;
   }
 }
 
-function getGoogleTopics(bid) {
+function getGoogleTopics (bid) {
   const userData = deepAccess(bid, 'ortb2.user.data') || [];
   const validData = userData.filter(dataObj =>
     dataObj.segment && isArray(dataObj.segment) && dataObj.segment.length > 0 &&

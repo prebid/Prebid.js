@@ -11,7 +11,7 @@ export const DEFAULT_PROCESSORS = {
     fpd: {
       // sets initial request to bidderRequest.ortb2
       priority: 99,
-      fn(ortbRequest, bidderRequest) {
+      fn (ortbRequest, bidderRequest) {
         mergeDeep(ortbRequest, bidderRequest.ortb2)
       }
     },
@@ -22,7 +22,7 @@ export const DEFAULT_PROCESSORS = {
     },
     props: {
       // sets request properties id, tmax, test
-      fn(ortbRequest, bidderRequest) {
+      fn (ortbRequest, bidderRequest) {
         Object.assign(ortbRequest, {
           id: ortbRequest.id || generateUUID(),
           test: ortbRequest.test || 0
@@ -38,13 +38,13 @@ export const DEFAULT_PROCESSORS = {
     fpd: {
       // sets initial imp to bidRequest.ortb2Imp
       priority: 99,
-      fn(imp, bidRequest) {
+      fn (imp, bidRequest) {
         mergeDeep(imp, bidRequest.ortb2Imp);
       }
     },
     id: {
       // sets imp.id
-      fn(imp, bidRequest) {
+      fn (imp, bidRequest) {
         imp.id = bidRequest.bidId;
       }
     },
@@ -55,7 +55,7 @@ export const DEFAULT_PROCESSORS = {
     pbadslot: {
       // removes imp.ext.data.pbaslot if it's not a string
       // TODO: is this needed?
-      fn(imp) {
+      fn (imp) {
         const pbadslot = imp.ext?.data?.pbadslot;
         if (!pbadslot || typeof pbadslot !== 'string') {
           delete imp.ext?.data?.pbadslot;
@@ -64,7 +64,7 @@ export const DEFAULT_PROCESSORS = {
     },
     secure: {
       // should set imp.secure to 1 unless publisher has set it
-      fn(imp, bidRequest) {
+      fn (imp, bidRequest) {
         imp.secure = imp.secure ?? 1;
       }
     }
@@ -81,7 +81,7 @@ export const DEFAULT_PROCESSORS = {
     },
     props: {
       // sets base bidResponse properties common to all types of bids
-      fn(bidResponse, bid, context) {
+      fn (bidResponse, bid, context) {
         Object.entries({
           requestId: context.bidRequest?.bidId,
           seatBidId: bid.id,

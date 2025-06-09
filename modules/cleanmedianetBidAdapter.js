@@ -44,7 +44,7 @@ export const helper = {
     }
     return BANNER;
   },
-  getBidFloor(bid) {
+  getBidFloor (bid) {
     if (!isFn(bid.getFloor)) {
       return bid.params.bidfloor ? bid.params.bidfloor : null;
     }
@@ -304,7 +304,7 @@ export const spec = {
   }
 };
 
-function newRenderer(bidRequest, bid, rendererOptions = {}) {
+function newRenderer (bidRequest, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
     url: (bidRequest.params && bidRequest.params.rendererUrl) || (bid.ext && bid.ext.renderer_url) || 'https://s.gamoshi.io/video/latest/renderer.js',
     config: rendererOptions,
@@ -318,7 +318,7 @@ function newRenderer(bidRequest, bid, rendererOptions = {}) {
   return renderer;
 }
 
-function renderOutstream(bid) {
+function renderOutstream (bid) {
   bid.renderer.push(() => {
     const unitId = bid.adUnitCode + '/' + bid.adId;
     window['GamoshiPlayer'].renderAd({
@@ -338,7 +338,7 @@ function renderOutstream(bid) {
   });
 }
 
-function addExternalUserId(eids, value, source, rtiPartner) {
+function addExternalUserId (eids, value, source, rtiPartner) {
   if (isStr(value)) {
     eids.push({
       source,
@@ -352,14 +352,14 @@ function addExternalUserId(eids, value, source, rtiPartner) {
   }
 }
 
-function replaceMacros(url, macros) {
+function replaceMacros (url, macros) {
   return url
     .replace('[GDPR]', macros.gdpr)
     .replace('[CONSENT]', macros.consent)
     .replace('[US_PRIVACY]', macros.uspConsent);
 }
 
-function getGdprConsent(bidderRequest) {
+function getGdprConsent (bidderRequest) {
   const gdprConsent = bidderRequest.gdprConsent;
 
   if (gdprConsent && gdprConsent.consentString && gdprConsent.gdprApplies) {

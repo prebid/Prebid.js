@@ -139,7 +139,7 @@ export const c1xAdapter = {
 
 }
 
-function bidToTag(bid, index) {
+function bidToTag (bid, index) {
   const tag = {};
   const adIndex = 'a' + (index + 1).toString(); // ad unit id for c1x
   const sizeKey = adIndex + 's';
@@ -173,7 +173,7 @@ function bidToTag(bid, index) {
   return tag;
 }
 
-function getBidFloor(bidRequest) {
+function getBidFloor (bidRequest) {
   let floorInfo = {};
 
   if (typeof bidRequest.getFloor === 'function') {
@@ -193,14 +193,14 @@ function getBidFloor(bidRequest) {
   return floor;
 }
 
-function bidToShortTag(bid) {
+function bidToShortTag (bid) {
   const tag = {};
   tag.adUnitCode = bid.adUnitCode;
   tag.bidId = bid.bidId;
   return tag;
 }
 
-function stringifyPayload(payload) {
+function stringifyPayload (payload) {
   let payloadString = [];
   for (var key in payload) {
     if (payload.hasOwnProperty(key)) {

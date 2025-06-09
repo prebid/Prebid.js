@@ -14,7 +14,7 @@ import { getUniqueIdentifierStr } from './utils.js';
  dealId,
  priceKeyString;
  */
-function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId} = {}) {
+function Bid (statusCode, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId} = {}) {
   var _bidSrc = src;
   var _statusCode = statusCode || 0;
 
@@ -32,7 +32,7 @@ function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, adU
     source: _bidSrc
   })
 
-  function _getStatus() {
+  function _getStatus () {
     switch (_statusCode) {
       case 0:
         return 'Pending';
@@ -67,6 +67,6 @@ function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, adU
 }
 
 // Bid factory function.
-export function createBid(statusCode, identifiers) {
+export function createBid (statusCode, identifiers) {
   return new Bid(statusCode, identifiers);
 }

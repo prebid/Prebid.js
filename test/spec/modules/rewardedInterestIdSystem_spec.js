@@ -27,7 +27,7 @@ describe('rewardedInterestIdSystem', () => {
 
   before(() => {
     Object.defineProperty(document, 'readyState', {
-      get() {
+      get () {
         return mockReadySate;
       },
     });

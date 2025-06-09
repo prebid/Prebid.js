@@ -43,7 +43,7 @@ const CURRENCY = 'USD';
  * @param {Object} ortb2Data
  * @returns {Object} Device data object
  */
-function getDevice(ortb2Data) {
+function getDevice (ortb2Data) {
   const _device = {};
 
   // Merge the device object from ORTB2 data.
@@ -66,7 +66,7 @@ function getDevice(ortb2Data) {
   return _device;
 }
 
-function getSite(bidderRequest) {
+function getSite (bidderRequest) {
   const { refererInfo } = bidderRequest;
   return {
     domain: parseDomain(refererInfo.topmostLocation) || '',
@@ -76,7 +76,7 @@ function getSite(bidderRequest) {
   };
 };
 
-function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
+function autoDetectAdUnitElementIdFromGpt (adUnitCode) {
   const autoDetectedAdUnit = getGptSlotInfoForAdUnitCode(adUnitCode);
 
   if (autoDetectedAdUnit.divId) {
@@ -84,7 +84,7 @@ function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
   }
 };
 
-function isRendererPreferredFromPublisher(bidRequest) {
+function isRendererPreferredFromPublisher (bidRequest) {
   // renderer defined at adUnit level
   const adUnitRenderer = deepAccess(bidRequest, 'renderer');
   const hasValidAdUnitRenderer = !!(adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render);
@@ -103,18 +103,18 @@ function isRendererPreferredFromPublisher(bidRequest) {
  * Check if the publisher has defined its own video player and uses it for all ad-units.
  * If not or if the `backupOnly` flag is true, this means we use our own player (BlueBillywig) defined in this adapter.
  */
-function getPlayerName(bidRequest) {
+function getPlayerName (bidRequest) {
   return _internal.isRendererPreferredFromPublisher(bidRequest) ? 'other' : 'adagio'; ;
 }
 
-function hasRtd() {
+function hasRtd () {
   const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
   return rtdConfigs.find(provider => provider.name === 'adagio');
 };
 
 export const _internal = {
   canAccessWindowTop,
-  getAdagioNs: function() {
+  getAdagioNs: function () {
     return _ADAGIO;
   },
   getDevice,
@@ -124,7 +124,7 @@ export const _internal = {
   isRendererPreferredFromPublisher,
 };
 
-function _getGdprConsent(bidderRequest) {
+function _getGdprConsent (bidderRequest) {
   if (!deepAccess(bidderRequest, 'gdprConsent')) {
     return false;
   }
@@ -144,21 +144,21 @@ function _getGdprConsent(bidderRequest) {
   });
 }
 
-function _getCoppa() {
+function _getCoppa () {
   return {
     required: config.getConfig('coppa') === true ? 1 : 0
   };
 }
 
-function _getUspConsent(bidderRequest) {
+function _getUspConsent (bidderRequest) {
   return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
 }
 
-function _getSchain(bidRequest) {
+function _getSchain (bidRequest) {
   return deepAccess(bidRequest, 'schain');
 }
 
-function _getEids(bidRequest) {
+function _getEids (bidRequest) {
   if (deepAccess(bidRequest, 'userIdAsEids')) {
     return bidRequest.userIdAsEids;
   }
@@ -170,7 +170,7 @@ function _getEids(bidRequest) {
  * @param {object} bidRequest - copy of the original bidRequest object.
  * @returns {void}
  */
-function _buildVideoBidRequest(bidRequest) {
+function _buildVideoBidRequest (bidRequest) {
   const videoAdUnitParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
   const computedParams = {};
@@ -197,7 +197,7 @@ function _buildVideoBidRequest(bidRequest) {
   validateOrtbVideoFields(bidRequest);
 }
 
-function _parseNativeBidResponse(bid) {
+function _parseNativeBidResponse (bid) {
   if (!bid.admNative || !Array.isArray(bid.admNative.assets)) {
     logError(`${LOG_PREFIX} Invalid native response`);
     return;
@@ -205,7 +205,7 @@ function _parseNativeBidResponse(bid) {
 
   const native = {}
 
-  function addAssetDataValue(data) {
+  function addAssetDataValue (data) {
     const map = {
       1: 'sponsoredBy', // sponsored
       2: 'body', // desc
@@ -309,7 +309,7 @@ function _parseNativeBidResponse(bid) {
 }
 
 // bidRequest param must be the `bidRequest` object with the original `auctionId` value.
-function _getFloors(bidRequest) {
+function _getFloors (bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return false;
   }
@@ -361,7 +361,7 @@ function _getFloors(bidRequest) {
  * @param {*} bid
  * @param {String} paramName
  */
-export function setExtraParam(bid, paramName) {
+export function setExtraParam (bid, paramName) {
   bid.params = bid.params || {};
 
   // eslint-disable-next-line
@@ -387,7 +387,7 @@ export function setExtraParam(bid, paramName) {
   }
 }
 
-function autoFillParams(bid) {
+function autoFillParams (bid) {
   // adUnitElementId …
   const adgGlobalConf = config.getConfig('adagio') || {};
 
@@ -422,7 +422,7 @@ function autoFillParams(bid) {
 
 // See https://support.bluebillywig.com/developers/vast-renderer/
 const OUTSTREAM_RENDERER = {
-  bootstrapPlayer: function(bid) {
+  bootstrapPlayer: function (bid) {
     const rendererCode = bid.outstreamRendererCode;
 
     const config = {
@@ -462,7 +462,7 @@ const OUTSTREAM_RENDERER = {
 
     renderer.bootstrap(config, el, override);
   },
-  newRenderer: function(adUnitCode, rendererCode) {
+  newRenderer: function (adUnitCode, rendererCode) {
     const rendererUrl = BB_RENDERER_URL.replace('$RENDERER', rendererCode);
 
     const renderer = Renderer.install({
@@ -479,12 +479,12 @@ const OUTSTREAM_RENDERER = {
 
     return renderer;
   },
-  outstreamRender: function(bid) {
+  outstreamRender: function (bid) {
     bid.renderer.push(() => {
       OUTSTREAM_RENDERER.bootstrapPlayer(bid)
     });
   },
-  getRendererId: function(publication, renderer) {
+  getRendererId: function (publication, renderer) {
     // By convention, the RENDERER_ID is always the publication name (adagio) and the ad unit code (eg. renderer)
     // joined together by a dash. It's used to identify the correct renderer instance on the page in case there's multiple.
     return `${publication}-${renderer}`;
@@ -496,7 +496,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     bid.params = bid.params || {};
 
     autoFillParams(bid);
@@ -510,7 +510,7 @@ export const spec = {
     return true;
   },
 
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -740,7 +740,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse(serverResponse, bidRequest) {
+  interpretResponse (serverResponse, bidRequest) {
     let bidResponses = [];
     try {
       const response = serverResponse.body;
@@ -802,7 +802,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs (syncOptions, serverResponses) {
     if (!serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSyncs) {
       return false;
     }

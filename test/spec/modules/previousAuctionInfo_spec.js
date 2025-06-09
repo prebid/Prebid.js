@@ -176,7 +176,7 @@ describe('previous auction info', () => {
       bidder = {};
       next = sinon.spy();
     });
-    function runHook() {
+    function runHook () {
       startAuctionHook(next, {ortb2Fragments: {global, bidder}});
     }
     it('should not add info when none is available', () => {
@@ -196,7 +196,7 @@ describe('previous auction info', () => {
         })
       })
 
-      function extractInfo() {
+      function extractInfo () {
         return Object.fromEntries(
           Object.entries(bidder)
             .map(([bidder, ortb2]) => [bidder, ortb2.ext?.prebid?.previousauctioninfo])

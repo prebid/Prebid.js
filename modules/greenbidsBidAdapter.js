@@ -149,7 +149,7 @@ registerBidder(spec);
  * @param {Array} bid.sizes - The sizes array from the bid object.
  * @returns {Array} - The parsed sizes in the required format.
  */
-function getSizes(bid) {
+function getSizes (bid) {
   return parseSizesInput(bid.sizes);
 }
 
@@ -163,7 +163,7 @@ function getSizes(bid) {
  * @param {string} gppData.gppString - The GPP consent string.
  * @param {number[]} gppData.applicableSections - An array of applicable section IDs.
  */
-function hydratePayloadWithGppConsentData(payload, gppData) {
+function hydratePayloadWithGppConsentData (payload, gppData) {
   if (!gppData) { return; }
   let isValidConsentString = typeof gppData.gppString === 'string';
   let validateApplicableSections =
@@ -185,7 +185,7 @@ function hydratePayloadWithGppConsentData(payload, gppData) {
  * @param {number} gdprData.apiVersion - The version of the GDPR API being used.
  * @param {Object} gdprData.vendorData - Additional vendor data related to GDPR.
  */
-function hydratePayloadWithGdprConsentData(payload, gdprData) {
+function hydratePayloadWithGdprConsentData (payload, gdprData) {
   if (!gdprData) { return; }
   let isCmp = typeof gdprData.gdprApplies === 'boolean';
   let isConsentString = typeof gdprData.consentString === 'string';
@@ -205,7 +205,7 @@ function hydratePayloadWithGdprConsentData(payload, gdprData) {
  * @param {Object} payload - The payload object to be hydrated with USP consent data.
  * @param {string} uspConsentData - The USP consent string to be added to the payload.
  */
-function hydratePayloadWithUspConsentData(payload, uspConsentData) {
+function hydratePayloadWithUspConsentData (payload, uspConsentData) {
   if (!uspConsentData) { return; }
   payload.us_privacy = uspConsentData;
 }
@@ -225,7 +225,7 @@ const gdprStatus = {
  * @param {boolean} gdprData.isServiceSpecific - Indicates if the GDPR data is service-specific.
  * @returns {string} The GDPR status.
  */
-function findGdprStatus(gdprApplies, gdprData) {
+function findGdprStatus (gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
     if (gdprData && !gdprData.isServiceSpecific) {

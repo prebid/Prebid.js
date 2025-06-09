@@ -24,13 +24,13 @@ describe('vast trackers', () => {
       bidId: 'bid',
     }
     auction = {
-      getAuctionId() {
+      getAuctionId () {
         return 'aid';
       },
-      getProperties() {
+      getProperties () {
         return {auction: 'props'};
       },
-      getBidRequests() {
+      getBidRequests () {
         return [{bids: [bidRequest]}]
       }
     };

@@ -28,7 +28,7 @@ describe('Geolocation RTD Provider', function () {
     sandbox.restore();
   })
 
-  describe('Geolocation not supported', function() {
+  describe('Geolocation not supported', function () {
     Object.entries({
       'permissions.query': () => sandbox.stub(navigator.permissions, 'query').value(undefined),
       'permissions': () => sandbox.stub(navigator, 'permissions').value(undefined),
@@ -42,7 +42,7 @@ describe('Geolocation RTD Provider', function () {
     });
   });
 
-  describe('Geolocation supported', function() {
+  describe('Geolocation supported', function () {
     let clock, rtdConfig, permState, permGiven, onDone;
 
     beforeEach(() => {

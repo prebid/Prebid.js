@@ -40,7 +40,7 @@ export const userData = {
       return 0;
     }
   },
-  getFromCookie() {
+  getFromCookie () {
     const {cookiesAreEnabled, getCookie} = userData.storageManager;
     if (cookiesAreEnabled()) {
       const cookieData = getCookie(COOKIE_KEY);
@@ -66,14 +66,14 @@ export const userData = {
     }
     return undefined;
   },
-  getCookieDataByKey(cookieData, key) {
+  getCookieDataByKey (cookieData, key) {
     if (!cookieData) {
       return undefined;
     }
     const [, value = ''] = cookieData.split(`${key}=`)
     return value;
   },
-  getFromLocalStorage() {
+  getFromLocalStorage () {
     const {hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage} = userData.storageManager;
 
     if (hasLocalStorage() && localStorageIsEnabled()) {
@@ -81,7 +81,7 @@ export const userData = {
     }
     return undefined;
   },
-  getFromTRC() {
+  getFromTRC () {
     return window.TRC ? window.TRC.user_id : 0;
   }
 }
@@ -101,17 +101,17 @@ const converter = ortbConverter({
     mediaType: BANNER,
     ttl: 300
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     fillTaboolaImpData(bidRequest, imp);
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const reqData = buildRequest(imps, bidderRequest, context);
     fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData)
     return reqData;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
     bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
@@ -217,7 +217,7 @@ export const spec = {
       ajax(resolvedNurl);
     }
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = []
     const queryParams = [];
     if (gdprConsent) {
@@ -256,7 +256,7 @@ export const spec = {
   },
 };
 
-function getSiteProperties({publisherId}, refererInfo, ortb2) {
+function getSiteProperties ({publisherId}, refererInfo, ortb2) {
   const {getPageUrl, getReferrer} = internal;
   return {
     id: publisherId,
@@ -273,7 +273,7 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
   }
 }
 
-function fillTaboolaReqData(bidderRequest, bidRequest, data) {
+function fillTaboolaReqData (bidderRequest, bidRequest, data) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
   deepSetValue(data, 'device', bidderRequest?.ortb2?.device);
@@ -328,7 +328,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
 }
 
-function fillTaboolaImpData(bid, imp) {
+function fillTaboolaImpData (bid, imp) {
   const {tagId, position} = bid.params;
   imp.banner = getBanners(bid, position);
   imp.tagid = tagId;
@@ -350,14 +350,14 @@ function fillTaboolaImpData(bid, imp) {
   deepSetValue(imp, 'ext.gpid', bid?.ortb2Imp?.ext?.gpid);
 }
 
-function getBanners(bid, pos) {
+function getBanners (bid, pos) {
   return {
     ...getSizes(bid.sizes),
     pos: pos
   }
 }
 
-function getSizes(sizes) {
+function getSizes (sizes) {
   return {
     format: sizes.map(size => {
       return {

@@ -179,7 +179,7 @@ describe('shBidAdapter', () => {
 
       it('should get correct bid response when type is outstream (slot V2)', function () {
         window.myRenderer = {
-          renderAd: function() {
+          renderAd: function () {
             return null;
           }
         }

@@ -5,13 +5,13 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const URL = 'https://bidder.onomagic.com/hb';
 
-describe('onomagicBidAdapter', function() {
+describe('onomagicBidAdapter', function () {
   const adapter = newBidder(spec);
   let element, win;
   let bidRequests;
   let sandbox;
 
-  beforeEach(function() {
+  beforeEach(function () {
     element = {
       x: 0,
       y: 0,
@@ -61,7 +61,7 @@ describe('onomagicBidAdapter', function() {
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -109,13 +109,13 @@ describe('onomagicBidAdapter', function() {
       expect(request.url).to.equal(URL);
     });
 
-    it('sets the proper banner object', function() {
+    it('sets the proper banner object', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
-    it('accepts a single array as a size', function() {
+    it('accepts a single array as a size', function () {
       bidRequests[0].mediaTypes.banner.sizes = [300, 250];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
@@ -141,8 +141,8 @@ describe('onomagicBidAdapter', function() {
       expect(payload.site.publisher.id).to.equal(1234567);
     });
 
-    context('when element is fully in view', function() {
-      it('returns 100', function() {
+    context('when element is fully in view', function () {
+      it('returns 100', function () {
         Object.assign(element, { width: 600, height: 400 });
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -150,8 +150,8 @@ describe('onomagicBidAdapter', function() {
       });
     });
 
-    context('when element is out of view', function() {
-      it('returns 0', function() {
+    context('when element is out of view', function () {
+      it('returns 0', function () {
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -159,8 +159,8 @@ describe('onomagicBidAdapter', function() {
       });
     });
 
-    context('when element is partially in view', function() {
-      it('returns percentage', function() {
+    context('when element is partially in view', function () {
+      it('returns percentage', function () {
         const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 800, height: 800 });
@@ -170,8 +170,8 @@ describe('onomagicBidAdapter', function() {
       });
     });
 
-    context('when width or height of the element is zero', function() {
-      it('try to use alternative values', function() {
+    context('when width or height of the element is zero', function () {
+      it('try to use alternative values', function () {
         const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, { width: 0, height: 0 });
@@ -182,8 +182,8 @@ describe('onomagicBidAdapter', function() {
       });
     });
 
-    context('when nested iframes', function() {
-      it('returns \'na\'', function() {
+    context('when nested iframes', function () {
+      it('returns \'na\'', function () {
         Object.assign(element, { width: 600, height: 400 });
 
         utils.getWindowTop.restore();
@@ -197,8 +197,8 @@ describe('onomagicBidAdapter', function() {
       });
     });
 
-    context('when tab is inactive', function() {
-      it('returns 0', function() {
+    context('when tab is inactive', function () {
+      it('returns 0', function () {
         Object.assign(element, { width: 600, height: 400 });
 
         utils.getWindowTop.restore();

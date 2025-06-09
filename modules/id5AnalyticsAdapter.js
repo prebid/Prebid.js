@@ -209,17 +209,17 @@ adapterManager.registerAnalyticsAdapter({
 
 export default id5Analytics;
 
-function redact(obj, key) {
+function redact (obj, key) {
   obj[key] = ID5_REDACTED;
 }
 
-function erase(obj, key) {
+function erase (obj, key) {
   delete obj[key];
 }
 
 // The transform function matches against a path and applies
 // required transformation if match is found.
-function deepTransformingClone(obj, transform, currentPath = []) {
+function deepTransformingClone (obj, transform, currentPath = []) {
   const result = isArray(obj) ? [] : {};
   const recursable = typeof obj === 'object' && obj !== null;
   if (recursable) {
@@ -278,7 +278,7 @@ const TRANSFORM_FUNCTIONS = {
 };
 
 // Builds a rule function depending on the event type
-function transformFnFromCleanupRules(eventType) {
+function transformFnFromCleanupRules (eventType) {
   const rules = CLEANUP_RULES[eventType] || [];
   return (path, obj, key) => {
     for (let i = 0; i < rules.length; i++) {
@@ -304,6 +304,6 @@ function transformFnFromCleanupRules(eventType) {
   };
 }
 
-function makeSureArray(object) {
+function makeSureArray (object) {
   return isArray(object) ? object : [object];
 }

@@ -11,7 +11,7 @@ const VIDEO_CACHE_KEY = '4cf395af-8fee-4960-af0e-88d44e399f14';
 
 let sandbox;
 
-function enableInstreamTracking(regex) {
+function enableInstreamTracking (regex) {
   let configStub = sandbox.stub(config, 'getConfig');
   configStub.withArgs('instreamTracking').returns(Object.assign(
     {
@@ -23,7 +23,7 @@ function enableInstreamTracking(regex) {
   ));
 }
 
-function mockPerformanceApi({adServerCallSent, videoPresent}) {
+function mockPerformanceApi ({adServerCallSent, videoPresent}) {
   let performanceStub = sandbox.stub(window.performance, 'getEntriesByType');
   let entries = [{
     name: 'https://domain.com/img.png',
@@ -56,7 +56,7 @@ function mockPerformanceApi({adServerCallSent, videoPresent}) {
   performanceStub.withArgs('resource').returns(entries);
 }
 
-function mockBidResponse(adUnit, requestId) {
+function mockBidResponse (adUnit, requestId) {
   const bid = {
     'adUnitCod': adUnit.code,
     'bidderCode': adUnit.bids[0].bidder,
@@ -79,7 +79,7 @@ function mockBidResponse(adUnit, requestId) {
   return bid
 }
 
-function mockBidRequest(adUnit, bidResponse) {
+function mockBidRequest (adUnit, bidResponse) {
   return {
     'bidderCode': bidResponse.bidderCode,
     'auctionId': '20882439e3238c',
@@ -101,7 +101,7 @@ function mockBidRequest(adUnit, bidResponse) {
   };
 }
 
-function getMockInput(mediaType) {
+function getMockInput (mediaType) {
   const bannerAdUnit = {
     code: 'banner',
     mediaTypes: {banner: {sizes: [[300, 250]]}},

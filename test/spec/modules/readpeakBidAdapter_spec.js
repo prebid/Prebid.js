@@ -3,7 +3,7 @@ import { spec, ENDPOINT } from 'modules/readpeakBidAdapter.js';
 import { config } from 'src/config.js';
 import { parseUrl } from 'src/utils.js';
 
-describe('ReadPeakAdapter', function() {
+describe('ReadPeakAdapter', function () {
   let baseBidRequest;
   let bannerBidRequest;
   let nativeBidRequest;
@@ -13,7 +13,7 @@ describe('ReadPeakAdapter', function() {
   let bannerServerRequest;
   let bidderRequest;
 
-  beforeEach(function() {
+  beforeEach(function () {
     bidderRequest = {
       refererInfo: {
         page: 'https://publisher.com/home',
@@ -218,38 +218,38 @@ describe('ReadPeakAdapter', function() {
     };
   });
 
-  describe('Native', function() {
-    describe('spec.isBidRequestValid', function() {
-      it('should return true when the required params are passed', function() {
+  describe('Native', function () {
+    describe('spec.isBidRequestValid', function () {
+      it('should return true when the required params are passed', function () {
         expect(spec.isBidRequestValid(nativeBidRequest)).to.equal(true);
       });
 
-      it('should return false when the "publisherId" param is missing', function() {
+      it('should return false when the "publisherId" param is missing', function () {
         nativeBidRequest.params = {
           bidfloor: 5.0
         };
         expect(spec.isBidRequestValid(nativeBidRequest)).to.equal(false);
       });
 
-      it('should return false when no bid params are passed', function() {
+      it('should return false when no bid params are passed', function () {
         nativeBidRequest.params = {};
         expect(spec.isBidRequestValid(nativeBidRequest)).to.equal(false);
       });
 
-      it('should return false when a bid request is not passed', function() {
+      it('should return false when a bid request is not passed', function () {
         expect(spec.isBidRequestValid()).to.equal(false);
         expect(spec.isBidRequestValid({})).to.equal(false);
       });
     });
 
-    describe('spec.buildRequests', function() {
-      it('should create a POST request for every bid', function() {
+    describe('spec.buildRequests', function () {
+      it('should create a POST request for every bid', function () {
         const request = spec.buildRequests([nativeBidRequest], bidderRequest);
         expect(request.method).to.equal('POST');
         expect(request.url).to.equal(ENDPOINT);
       });
 
-      it('should attach request data', function() {
+      it('should attach request data', function () {
         config.setConfig({
           currency: {
             adServerCurrency: 'EUR'
@@ -278,7 +278,7 @@ describe('ReadPeakAdapter', function() {
         expect(data.regs).to.be.undefined;
       });
 
-      it('should get bid floor from module', function() {
+      it('should get bid floor from module', function () {
         const floorModuleData = {
           currency: 'USD',
           floor: 3.2,
@@ -296,7 +296,7 @@ describe('ReadPeakAdapter', function() {
         expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
       });
 
-      it('should send gdpr data when gdpr does not apply', function() {
+      it('should send gdpr data when gdpr does not apply', function () {
         const gdprData = {
           gdprConsent: {
             gdprApplies: false,
@@ -319,7 +319,7 @@ describe('ReadPeakAdapter', function() {
         });
       });
 
-      it('should send gdpr data when gdpr applies', function() {
+      it('should send gdpr data when gdpr applies', function () {
         const tcString = 'sometcstring';
         const gdprData = {
           gdprConsent: {
@@ -344,13 +344,13 @@ describe('ReadPeakAdapter', function() {
       });
     });
 
-    describe('spec.interpretResponse', function() {
-      it('should return no bids if the response is not valid', function() {
+    describe('spec.interpretResponse', function () {
+      it('should return no bids if the response is not valid', function () {
         const bidResponse = spec.interpretResponse({ body: null }, nativeServerRequest);
         expect(bidResponse.length).to.equal(0);
       });
 
-      it('should return a valid bid response', function() {
+      it('should return a valid bid response', function () {
         const bidResponse = spec.interpretResponse(
           { body: nativeServerResponse },
           nativeServerRequest
@@ -385,33 +385,33 @@ describe('ReadPeakAdapter', function() {
     });
   });
 
-  describe('Banner', function() {
-    describe('spec.isBidRequestValid', function() {
-      it('should return true when the required params are passed', function() {
+  describe('Banner', function () {
+    describe('spec.isBidRequestValid', function () {
+      it('should return true when the required params are passed', function () {
         expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(true);
       });
 
-      it('should return false when the "publisherId" param is missing', function() {
+      it('should return false when the "publisherId" param is missing', function () {
         bannerBidRequest.params = {
           bidfloor: 5.0
         };
         expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(false);
       });
 
-      it('should return false when no bid params are passed', function() {
+      it('should return false when no bid params are passed', function () {
         bannerBidRequest.params = {};
         expect(spec.isBidRequestValid(bannerBidRequest)).to.equal(false);
       });
     });
 
-    describe('spec.buildRequests', function() {
-      it('should create a POST request for every bid', function() {
+    describe('spec.buildRequests', function () {
+      it('should create a POST request for every bid', function () {
         const request = spec.buildRequests([bannerBidRequest], bidderRequest);
         expect(request.method).to.equal('POST');
         expect(request.url).to.equal(ENDPOINT);
       });
 
-      it('should attach request data', function() {
+      it('should attach request data', function () {
         config.setConfig({
           currency: {
             adServerCurrency: 'EUR'
@@ -440,7 +440,7 @@ describe('ReadPeakAdapter', function() {
         expect(data.regs).to.be.undefined;
       });
 
-      it('should get bid floor from module', function() {
+      it('should get bid floor from module', function () {
         const floorModuleData = {
           currency: 'USD',
           floor: 3.2,
@@ -458,7 +458,7 @@ describe('ReadPeakAdapter', function() {
         expect(data.imp[0].bidfloorcur).to.equal(floorModuleData.currency);
       });
 
-      it('should send gdpr data when gdpr does not apply', function() {
+      it('should send gdpr data when gdpr does not apply', function () {
         const gdprData = {
           gdprConsent: {
             gdprApplies: false,
@@ -481,7 +481,7 @@ describe('ReadPeakAdapter', function() {
         });
       });
 
-      it('should send gdpr data when gdpr applies', function() {
+      it('should send gdpr data when gdpr applies', function () {
         const tcString = 'sometcstring';
         const gdprData = {
           gdprConsent: {
@@ -506,13 +506,13 @@ describe('ReadPeakAdapter', function() {
       });
     });
 
-    describe('spec.interpretResponse', function() {
-      it('should return no bids if the response is not valid', function() {
+    describe('spec.interpretResponse', function () {
+      it('should return no bids if the response is not valid', function () {
         const bidResponse = spec.interpretResponse({ body: null }, bannerServerRequest);
         expect(bidResponse.length).to.equal(0);
       });
 
-      it('should return a valid bid response', function() {
+      it('should return a valid bid response', function () {
         const bidResponse = spec.interpretResponse(
           { body: bannerServerResponse },
           bannerServerRequest

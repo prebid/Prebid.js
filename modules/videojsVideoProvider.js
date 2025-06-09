@@ -39,7 +39,7 @@ https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module
 const setupFailMessage = 'Failed to instantiate the player';
 const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED];
 
-export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, callbackStorage_, utils) {
+export function VideojsProvider (providerConfig, vjs_, adState_, timeState_, callbackStorage_, utils) {
   let vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
@@ -62,7 +62,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
   // TODO: test with older videojs versions
   let minimumSupportedPlayerVersion = '7.17.0';
 
-  function init() {
+  function init () {
     if (!vjs) {
       triggerSetupFailure(-1, setupFailMessage + ': Videojs not present')
       return;
@@ -94,11 +94,11 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     }
   }
 
-  function getId() {
+  function getId () {
     return divId;
   }
 
-  function getOrtbVideo() {
+  function getOrtbVideo () {
     if (!player) {
       return;
     }
@@ -141,7 +141,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
       // sequence - TODO not yet supported
       maxextended: -1,
       boxingallowed: 1,
-      playbackmethod: [ playBackMethod ],
+      playbackmethod: [playBackMethod],
       playbackend: PLAYBACK_END.VIDEO_COMPLETION,
       // Per ortb 7.4 skip is omitted since neither the player nor ima plugin imposes a skip button, or a skipmin/max
     };
@@ -167,7 +167,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     return video;
   }
 
-  function getOrtbContent() {
+  function getOrtbContent () {
     if (!player) {
       return;
     }
@@ -201,7 +201,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
   }
 
   // Plugins to integrate: https://github.com/googleads/videojs-ima
-  function setAdTagUrl(adTagUrl, options) {
+  function setAdTagUrl (adTagUrl, options) {
     if (!player.ima || !adTagUrl) {
       return;
     }
@@ -217,7 +217,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     }
   }
 
-  function setAdXml(vastXml) {
+  function setAdXml (vastXml) {
     if (!player.ima || !vastXml) {
       return;
     }
@@ -233,7 +233,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     }
   }
 
-  function onEvent(type, callback, payload) {
+  function onEvent (type, callback, payload) {
     registerSetupListeners(type, callback, payload);
 
     if (!player) {
@@ -245,7 +245,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     });
   }
 
-  function registerSetupListeners(externalEventName, callback, basePayload) {
+  function registerSetupListeners (externalEventName, callback, basePayload) {
     // no point in registering for setup failures if already setup.
     if (playerIsSetup) {
       return;
@@ -259,7 +259,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     }
   }
 
-  function registerSetupErrorListener() {
+  function registerSetupErrorListener () {
     if (!player) {
       return
     }
@@ -282,7 +282,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     setupFailedEventHandlers.push(eventHandler)
   }
 
-  function registerListeners(externalEventName, callback, basePayload) {
+  function registerListeners (externalEventName, callback, basePayload) {
     if (externalEventName === MUTE) {
       const eventHandler = () => {
         if (isMuted !== player.muted()) {
@@ -480,7 +480,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     }
   }
 
-  function registerPlaylistEventListener(eventHandler) {
+  function registerPlaylistEventListener (eventHandler) {
     if (player.playlist) {
       // force a playlist event on first item load
       player.one('loadstart', eventHandler);
@@ -491,7 +491,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     }
   }
 
-  function offEvent(event, callback) {
+  function offEvent (event, callback) {
     const videojsEvent = utils.getVideojsEventName(event)
     if (!callback) {
       player.off(videojsEvent);
@@ -504,7 +504,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     }
   }
 
-  function destroy() {
+  function destroy () {
     if (!player) {
       return;
     }
@@ -524,12 +524,12 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     destroy
   };
 
-  function setupPlayer(config) {
+  function setupPlayer (config) {
     const setupConfig = utils.getSetupConfig(config);
     player = vjs(divId, setupConfig, onReady);
   }
 
-  function onReady() {
+  function onReady () {
     try {
       setupAds();
     } catch (e) {
@@ -540,7 +540,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
   }
 
   // TODO: consider supporting https://www.npmjs.com/package/videojs-vast-vpaid as well
-  function setupAds() {
+  function setupAds () {
     if (!player.ima) {
       throw new Error(setupFailMessage + ': ima plugin is missing');
     }
@@ -554,7 +554,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     player.ima(adConfig);
   }
 
-  function triggerSetupFailure(errorCode, msg, sourceError) {
+  function triggerSetupFailure (errorCode, msg, sourceError) {
     const payload = {
       divId,
       playerVersion,
@@ -567,7 +567,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     setupFailedCallbacks = [];
   }
 
-  function triggerSetupComplete() {
+  function triggerSetupComplete () {
     playerIsSetup = true;
     const payload = {
       divId,
@@ -614,7 +614,7 @@ export const utils = {
     return params.adPluginConfig || {}; // TODO: add adPluginConfig to spec
   },
 
-  getPositionCode: function({left, top, width, height}) {
+  getPositionCode: function ({left, top, width, height}) {
     const bottom = getWinDimensions().innerHeight - top - height;
     const right = getWinDimensions().innerWidth - left - width;
 
@@ -625,7 +625,7 @@ export const utils = {
     return bottom >= 0 ? AD_POSITION.ABOVE_THE_FOLD : AD_POSITION.BELOW_THE_FOLD;
   },
 
-  getVideojsEventName: function(eventName) {
+  getVideojsEventName: function (eventName) {
     switch (eventName) {
       case SETUP_COMPLETE:
         return 'ready';
@@ -701,7 +701,7 @@ export const utils = {
      */
   },
 
-  getMedia: function(player) {
+  getMedia: function (player) {
     const playlistItem = this.getCurrentPlaylistItem(player);
     if (playlistItem) {
       return playlistItem.sources[0];
@@ -710,11 +710,11 @@ export const utils = {
     return player.getMedia();
   },
 
-  getValidMediaUrl: function(mediaSrc, playerSrc, eventTargetSrc) {
+  getValidMediaUrl: function (mediaSrc, playerSrc, eventTargetSrc) {
     return this.getMediaUrl(mediaSrc) || this.getMediaUrl(playerSrc) || this.getMediaUrl(eventTargetSrc);
   },
 
-  getMediaUrl: function(source) {
+  getMediaUrl: function (source) {
     if (!source) {
       return;
     }
@@ -751,7 +751,7 @@ export const utils = {
     return playlist.currentIndex && playlist.currentIndex();
   },
 
-  getCurrentPlaylistItem: function(player) {
+  getCurrentPlaylistItem: function (player) {
     const playlist = player.playlist; // has playlist plugin
     if (!playlist) {
       return;
@@ -785,10 +785,10 @@ export default videojsSubmoduleFactory;
 /**
  * @returns {State}
  */
-export function adStateFactory() {
+export function adStateFactory () {
   const adState = Object.assign({}, stateFactory());
 
-  function updateForEvent(event) {
+  function updateForEvent (event) {
     if (!event) {
       return;
     }
@@ -857,10 +857,10 @@ export function adStateFactory() {
   return adState;
 }
 
-export function timeStateFactory() {
+export function timeStateFactory () {
   const timeState = Object.assign({}, stateFactory());
 
-  function updateForTimeEvent(event) {
+  function updateForTimeEvent (event) {
     const { currentTime, duration } = event;
     this.updateState({
       time: currentTime,
@@ -871,7 +871,7 @@ export function timeStateFactory() {
 
   timeState.updateForTimeEvent = updateForTimeEvent;
 
-  function getPlaybackMode(duration) {
+  function getPlaybackMode (duration) {
     if (duration > 0) {
       return PLAYBACK_MODE.VOD;
     } else if (duration < 0) {

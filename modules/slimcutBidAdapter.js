@@ -25,7 +25,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined' && !isNaN(parseInt(getValue(bid.params, 'placementId'))) && parseInt(getValue(bid.params, 'placementId')) > 0) {
       isValid = true;
@@ -39,7 +39,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -68,11 +68,11 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const bidResponses = [];
     serverResponse = serverResponse.body;
     if (serverResponse.responses) {
-      serverResponse.responses.forEach(function(bid) {
+      serverResponse.responses.forEach(function (bid) {
         const bidResponse = {
           cpm: bid.cpm,
           width: bid.width,
@@ -93,7 +93,7 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',
@@ -102,11 +102,11 @@ export const spec = {
     }
     return [];
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     ajax(bid.winUrl + bid.cpm, null);
   }
 }
-function buildRequestObject(bid) {
+function buildRequestObject (bid) {
   const reqObj = {};
   let placementId = getValue(bid.params, 'placementId');
   reqObj.sizes = parseSizesInput(bid.sizes);
@@ -119,7 +119,7 @@ function buildRequestObject(bid) {
   reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
   return reqObj;
 }
-function getReferrerInfo(bidderRequest) {
+function getReferrerInfo (bidderRequest) {
   let ref = window.location.href;
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     ref = bidderRequest.refererInfo.page;

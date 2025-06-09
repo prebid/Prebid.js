@@ -173,14 +173,14 @@ describe('dvgroupBidAdapterTests', function () {
   }
 });
 
-describe('getUserSyncs', function() {
-  it('returns empty sync array', function() {
+describe('getUserSyncs', function () {
+  it('returns empty sync array', function () {
     const syncOptions = {};
 
     expect(spec.getUserSyncs(syncOptions)).to.deep.equal([]);
   });
 
-  it('Should return array of objects with proper sync config , include CCPA', function() {
+  it('Should return array of objects with proper sync config , include CCPA', function () {
     const syncData = spec.getUserSyncs({
       pixelEnabled: true,
     }, {}, {}, '1---');
@@ -192,7 +192,7 @@ describe('getUserSyncs', function() {
     expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=1---&gdpr_consent=')
   });
 
-  it('Should return array of objects with proper sync config , include GDPR', function() {
+  it('Should return array of objects with proper sync config , include GDPR', function () {
     const syncData = spec.getUserSyncs({
       pixelEnabled: true,
     }, {}, {
@@ -214,7 +214,7 @@ describe('getUserSyncs', function() {
     expect(syncData[0].url).to.equal('//sync.dvgroup.com/match/sp?us_privacy=&gdpr_consent=COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw&gdpr=1')
   });
 
-  it('Should return array of objects with proper sync config , include GDPR, no purpose', function() {
+  it('Should return array of objects with proper sync config , include GDPR, no purpose', function () {
     const syncData = spec.getUserSyncs({
       pixelEnabled: true,
     }, {}, {
@@ -231,7 +231,7 @@ describe('getUserSyncs', function() {
     expect(syncData).is.empty;
   });
 
-  it('Should return array of objects with proper sync config , GDPR not applies', function() {
+  it('Should return array of objects with proper sync config , GDPR not applies', function () {
     const syncData = spec.getUserSyncs({
       pixelEnabled: true,
     }, {}, {

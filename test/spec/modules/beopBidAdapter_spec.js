@@ -45,7 +45,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
   });
 
-  describe('isBidRequestValid', function() {
+  describe('isBidRequestValid', function () {
     it('should return true when accountId params found', function () {
       expect(spec.isBidRequestValid(validBid)).to.equal(true);
     });
@@ -193,7 +193,7 @@ describe('BeOp Bid Adapter tests', () => {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     let serverResponse = {
       'body': {
         'bids': [
@@ -321,7 +321,7 @@ describe('BeOp Bid Adapter tests', () => {
     })
   })
 
-  describe('Ensure eids are get', function() {
+  describe('Ensure eids are get', function () {
     let bidRequests = [];
     afterEach(function () {
       bidRequests = [];

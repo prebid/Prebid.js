@@ -10,7 +10,7 @@ import {
  * Returns the best Window object to use with ADAGIO.
  * @returns {Window} window.top or window.self object
  */
-export function getBestWindowForAdagio() {
+export function getBestWindowForAdagio () {
   return (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
 }
 
@@ -18,7 +18,7 @@ export function getBestWindowForAdagio() {
  * Returns the window.ADAGIO global object used to store Adagio data.
  * This object is created in window.top if possible, otherwise in window.self.
  */
-export const _ADAGIO = (function() {
+export const _ADAGIO = (function () {
   const w = getBestWindowForAdagio();
 
   w.ADAGIO = w.ADAGIO || {};

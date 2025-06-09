@@ -32,11 +32,11 @@ export const internal = {
   mappedParams: {}
 }
 
-let r2b2Error = function(message, params) {
+let r2b2Error = function (message, params) {
   logError(message, params, BIDDER_CODE)
 }
 
-function getIdParamsFromPID(pid) {
+function getIdParamsFromPID (pid) {
   // selfpromo test creative
   if (pid === R2B2_TEST_UNIT) {
     return { d: 'test', g: 'test', p: 'selfpromo', m: 0, selfpromo: 1 }
@@ -60,13 +60,13 @@ function getIdParamsFromPID(pid) {
   }
 }
 
-function pickIdFromParams(params) {
+function pickIdFromParams (params) {
   if (!params) return null;
   const { d, g, p, m, pid } = params;
   return d ? { d, g, p, m } : { pid };
 }
 
-function getIdsFromBids(bids) {
+function getIdsFromBids (bids) {
   return bids.reduce((ids, bid) => {
     const params = internal.mappedParams[bid.bidId];
     const id = pickIdFromParams(params);
@@ -77,7 +77,7 @@ function getIdsFromBids(bids) {
   }, []);
 }
 
-function triggerEvent(eventUrl, ids) {
+function triggerEvent (eventUrl, ids) {
   if (ids && !ids.length) return;
   const timeStamp = new Date().getTime();
   const symbol = (eventUrl.indexOf('?') === -1 ? '?' : '&');
@@ -86,7 +86,7 @@ function triggerEvent(eventUrl, ids) {
 }
 
 const converter = ortbConverter({
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const idParams = getIdParamsFromPID(bidRequest.params.pid);
     deepSetValue(imp, 'ext.r2b2', idParams);
@@ -94,7 +94,7 @@ const converter = ortbConverter({
     internal.mappedParams[imp.id] = Object.assign({}, bidRequest.params, idParams);
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     deepSetValue(request, 'ext.version', ADAPTER_VERSION);
     request.cur = [DEFAULT_CURRENCY];
@@ -109,7 +109,7 @@ const converter = ortbConverter({
   processors: pbsExtensions
 });
 
-function setUpRenderer(adUnitCode, bid) {
+function setUpRenderer (adUnitCode, bid) {
   // let renderer load once in main window, but pass the renderDocument
   let renderDoc;
   const config = {
@@ -141,7 +141,7 @@ function setUpRenderer(adUnitCode, bid) {
   return renderer
 }
 
-function getExtMediaType(bidMediaType, responseBid) {
+function getExtMediaType (bidMediaType, responseBid) {
   switch (bidMediaType) {
     case BANNER:
       return {
@@ -165,7 +165,7 @@ function getExtMediaType(bidMediaType, responseBid) {
   }
 }
 
-function createPrebidResponseBid(requestImp, bidResponse, serverResponse, bids) {
+function createPrebidResponseBid (requestImp, bidResponse, serverResponse, bids) {
   const bidId = requestImp.id;
   const adUnitCode = bids[0].adUnitCode;
   const mediaType = bidResponse.ext.prebid.type;
@@ -201,7 +201,7 @@ export const spec = {
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (!bid.params || !bid.params.pid) {
       logWarn('Bad params, "pid" required.');
       return false
@@ -213,7 +213,7 @@ export const spec = {
     }
     return true
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const data = converter.toORTB({
       bidRequests: validBidRequests,
       bidderRequest
@@ -226,7 +226,7 @@ export const spec = {
     }]
   },
 
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     // r2b2Error('error message', {params: 1});
     let prebidResponses = [];
 
@@ -254,7 +254,7 @@ export const spec = {
     }
     return prebidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
     if (!syncOptions.iframeEnabled) {
@@ -286,22 +286,22 @@ export const spec = {
     })
     return syncs;
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     const url = bid.ext?.events?.onBidWon;
     if (url) {
       triggerEvent(url)
     }
   },
-  onSetTargeting: function(bid) {
+  onSetTargeting: function (bid) {
     const url = bid.ext?.events?.onSetTargeting;
     if (url) {
       triggerEvent(url)
     }
   },
-  onTimeout: function(bids) {
+  onTimeout: function (bids) {
     triggerEvent(URL_EVENT_ON_TIMEOUT, getIdsFromBids(bids))
   },
-  onBidderError: function(params) {
+  onBidderError: function (params) {
     let { bidderRequest } = params;
     triggerEvent(URL_EVENT_ON_BIDDER_ERROR, getIdsFromBids(bidderRequest.bids))
   }

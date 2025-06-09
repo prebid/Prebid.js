@@ -125,7 +125,7 @@ const createOrtbSiteObj = (validBidRequests, page) => {
 const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `publisher`) })
 
 // get bidFloor Function for different creatives
-function getBidFloor(bid, creative) {
+function getBidFloor (bid, creative) {
   let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
   return Math.floor(floorInfo?.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
 }
@@ -245,7 +245,7 @@ const createOrtbImpVideoObj = (bid, videoObj) => {
   return obj;
 }
 
-export function getProtocols({protocols}) {
+export function getProtocols ({protocols}) {
   let defaultValue = [2, 3, 5, 6, 7, 8];
   let listProtocols = [
     {key: 'VAST_1_0', value: 1},
@@ -314,7 +314,7 @@ const parseNative = (bid) => {
     clickUrl: _encodeURIComponent(link.url),
     clickTrackers: link.clicktrackers || [],
     impressionTrackers: imptrackers || [],
-    javascriptTrackers: jstracker ? [ jstracker ] : []
+    javascriptTrackers: jstracker ? [jstracker] : []
   };
   assets.forEach(asset => {
     if (!isEmpty(asset.title)) {
@@ -427,7 +427,7 @@ export const spec = {
     return prebidResponse;
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     ajax(bid.winUrl, null, null, {
       method: 'GET'
     })

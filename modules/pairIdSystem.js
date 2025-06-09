@@ -20,11 +20,11 @@ const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-function pairIdFromLocalStorage(key) {
+function pairIdFromLocalStorage (key) {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
 }
 
-function pairIdFromCookie(key) {
+function pairIdFromCookie (key) {
   return storage.cookiesAreEnabled() ? storage.getCookie(key) : null;
 }
 
@@ -46,7 +46,7 @@ export const pairIdSubmodule = {
    * @param { string | undefined } value
    * @returns {{pairId:string} | undefined }
    */
-  decode(value) {
+  decode (value) {
     return value && Array.isArray(value) ? {'pairId': value} : undefined
   },
   /**
@@ -56,7 +56,7 @@ export const pairIdSubmodule = {
    * @param {Object} config.params - The parameters from the configuration.
    * @returns {{id: string[] | undefined}} The obtained IDs or undefined if no IDs are found.
    */
-  getId(config) {
+  getId (config) {
     const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY)
     let ids = []
     if (pairIdsString && typeof pairIdsString == 'string') {

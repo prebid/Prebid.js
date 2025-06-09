@@ -41,18 +41,18 @@ describe('smarticoBidAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    let bidRequests = [ bid ];
+    let bidRequests = [bid];
     let request = spec.buildRequests(bidRequests, bidderRequests);
     it('sends bid request via POST', function () {
       expect(request.method).to.equal('POST');
     });
-    it('must contain token', function() {
+    it('must contain token', function () {
       expect(request.data.bidParams[0].token).to.equal('FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya');
     });
-    it('must contain auctionId', function() {
+    it('must contain auctionId', function () {
       expect(request.data.auctionId).to.exist.and.to.be.a('string')
     });
-    it('must contain valid width and height', function() {
+    it('must contain valid width and height', function () {
       expect(request.data.bidParams[0]['banner-format-width']).to.exist.and.to.be.a('number')
       expect(request.data.bidParams[0]['banner-format-height']).to.exist.and.to.be.a('number')
     });

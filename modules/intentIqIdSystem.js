@@ -63,7 +63,7 @@ export let firstPartyData;
  * Generate standard UUID string
  * @return {string}
  */
-function generateGUID() {
+function generateGUID () {
   let d = new Date().getTime();
   const guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (d + Math.random() * 16) % 16 | 0;
@@ -78,7 +78,7 @@ function generateGUID() {
  * @param {string} plainText The plaintext to encrypt.
  * @returns {string} The encrypted text as a base64 string.
  */
-export function encryptData(plainText) {
+export function encryptData (plainText) {
   return AES.encrypt(plainText, MODULE_NAME).toString();
 }
 
@@ -87,12 +87,12 @@ export function encryptData(plainText) {
  * @param {string} encryptedText The encrypted text as a base64 string.
  * @returns {string} The decrypted plaintext.
  */
-export function decryptData(encryptedText) {
+export function decryptData (encryptedText) {
   const bytes = AES.decrypt(encryptedText, MODULE_NAME);
   return bytes.toString(Utf8);
 }
 
-function collectDeviceInfo() {
+function collectDeviceInfo () {
   const windowDimensions = getWinDimensions();
   return {
     windowInnerHeight: windowDimensions.innerHeight,
@@ -104,12 +104,12 @@ function collectDeviceInfo() {
   }
 }
 
-function addUniquenessToUrl(url) {
+function addUniquenessToUrl (url) {
   url += '&tsrnd=' + Math.floor(Math.random() * 1000) + '_' + new Date().getTime();
   return url;
 }
 
-function appendDeviceInfoToUrl(url, deviceInfo) {
+function appendDeviceInfoToUrl (url, deviceInfo) {
   const screenParamsString = Object.entries(SCREEN_PARAMS)
     .map(([index, param]) => {
       const value = (deviceInfo)[param];
@@ -129,7 +129,7 @@ function appendFirstPartyData (url, firstPartyData, partnerData) {
   return url
 }
 
-function verifyIdType(value) {
+function verifyIdType (value) {
   if (value === 0 || value === 1 || value === 3 || value === 4) return value;
   return -1;
 }
@@ -165,7 +165,7 @@ function appendCounters (url) {
 /**
  * Translate and validate sourceMetaData
  */
-export function translateMetadata(data) {
+export function translateMetadata (data) {
   try {
     const d = data.split('.');
     return (
@@ -180,14 +180,14 @@ export function translateMetadata(data) {
 /**
  * Add sourceMetaData to URL if valid
  */
-function addMetaData(url, data) {
+function addMetaData (url, data) {
   if (typeof data !== 'number' || isNaN(data)) {
     return url;
   }
   return url + '&fbp=' + data;
 }
 
-export function createPixelUrl(firstPartyData, clientHints, configParams, partnerData, cmpData) {
+export function createPixelUrl (firstPartyData, clientHints, configParams, partnerData, cmpData) {
   const deviceInfo = collectDeviceInfo();
   const browser = detectBrowser();
 
@@ -210,7 +210,7 @@ export function createPixelUrl(firstPartyData, clientHints, configParams, partne
   return url;
 }
 
-function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) {
+function sendSyncRequest (allowedStorage, url, partner, firstPartyData, newUser) {
   const lastSyncDate = Number(readData(SYNC_KEY(partner) || '', allowedStorage)) || false;
   const lastSyncElapsedTime = Date.now() - lastSyncDate
 
@@ -238,7 +238,7 @@ function sendSyncRequest(allowedStorage, url, partner, firstPartyData, newUser) 
  * @param {string} gamParameterName - The name of the GAM targeting parameter where the group value will be stored.
  * @param {string} userGroup - The A/B testing group assigned to the user (e.g., 'A', 'B', or a custom value).
  */
-export function setGamReporting(gamObjectReference, gamParameterName, userGroup) {
+export function setGamReporting (gamObjectReference, gamParameterName, userGroup) {
   if (isPlainObject(gamObjectReference) && gamObjectReference.cmd) {
     gamObjectReference.cmd.push(() => {
       gamObjectReference
@@ -253,7 +253,7 @@ export function setGamReporting(gamObjectReference, gamParameterName, userGroup)
  * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
  */
-export function handleClientHints(clientHints) {
+export function handleClientHints (clientHints) {
   const chParams = {};
   for (const key in clientHints) {
     if (clientHints.hasOwnProperty(key) && clientHints[key] !== '') {
@@ -274,13 +274,13 @@ export function handleClientHints(clientHints) {
   return Object.keys(chParams).length ? JSON.stringify(chParams) : '';
 }
 
-export function isCMPStringTheSame(fpData, cmpData) {
+export function isCMPStringTheSame (fpData, cmpData) {
   const firstPartyDataCPString = `${fpData.gdprString}${fpData.gppString}${fpData.uspString}`;
   const cmpDataString = `${cmpData.gdprString}${cmpData.gppString}${cmpData.uspString}`;
   return firstPartyDataCPString === cmpDataString;
 }
 
-function updateCountersAndStore(runtimeEids, allowedStorage, partnerData) {
+function updateCountersAndStore (runtimeEids, allowedStorage, partnerData) {
   if (!runtimeEids?.eids?.length) {
     noDataCount++;
   } else {
@@ -289,14 +289,14 @@ function updateCountersAndStore(runtimeEids, allowedStorage, partnerData) {
   storeCounters(allowedStorage, partnerData);
 }
 
-function clearCountersAndStore(allowedStorage, partnerData) {
+function clearCountersAndStore (allowedStorage, partnerData) {
   callCount = 0;
   failCount = 0;
   noDataCount = 0;
   storeCounters(allowedStorage, partnerData);
 }
 
-function storeCounters(storage, partnerData) {
+function storeCounters (storage, partnerData) {
   partnerData.callCount = callCount;
   partnerData.failCount = failCount;
   partnerData.noDataCounter = noDataCount;
@@ -317,7 +317,7 @@ export const intentIqIdSubmodule = {
    * @param {{string}} value
    * @returns {{intentIqId: {string}}|undefined}
    */
-  decode(value) {
+  decode (value) {
     return value && value != '' && INVALID_ID != value ? {'intentIqId': value} : undefined;
   },
 
@@ -327,7 +327,7 @@ export const intentIqIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     const configParams = (config?.params) || {};
 
     const firePartnerCallback = () => {

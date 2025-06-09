@@ -14,7 +14,7 @@ describe('pbjs - ortb videoCacheKey based on ext.prebid', () => {
     }
   }
 
-  function setCache(bid) {
+  function setCache (bid) {
     const bidResponse = {mediaType: 'video'};
     setBidResponseVideoCache(bidResponse, bid);
     return bidResponse;

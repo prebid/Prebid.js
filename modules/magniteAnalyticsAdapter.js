@@ -652,7 +652,7 @@ export const detectBrowserFromUa = userAgent => {
 let magniteAdapter = adapter({ analyticsType: 'endpoint' });
 
 magniteAdapter.originEnableAnalytics = magniteAdapter.enableAnalytics;
-function enableMgniAnalytics(config = {}) {
+function enableMgniAnalytics (config = {}) {
   let error = false;
   // endpoint
   endpoint = deepAccess(config, 'options.endpoint');
@@ -686,7 +686,7 @@ function enableMgniAnalytics(config = {}) {
   We want to know if a bid was cached client side
     And if it was we will use the actual bidId instead of the pbsBidId override in our BID_RESPONSE handler
 */
-export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+export function callPrebidCacheHook (fn, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
   cache.bidsCachedClientSide.add(bidResponse);
   fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoMediaType);
 }
@@ -1040,7 +1040,7 @@ const handleAtagEvent = function (atag, auctionId) {
     })
   });
 }
-const handleNonBidEvent = function(seatnonbid, auctionId) {
+const handleNonBidEvent = function (seatnonbid, auctionId) {
   const auction = deepAccess(cache, `auctions.${auctionId}.auction`);
   // if no auction just bail
   if (!auction) {

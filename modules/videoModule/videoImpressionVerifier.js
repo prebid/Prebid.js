@@ -39,7 +39,7 @@ export const UUID_MARKER = PB_PREFIX + 'uuid';
  * @param {Boolean} isCacheUsed - wether Prebid is configured to use a cache.
  * @return {VideoImpressionVerifier}
  */
-export function videoImpressionVerifierFactory(isCacheUsed) {
+export function videoImpressionVerifierFactory (isCacheUsed) {
   const vastXmlEditor = vastXmlEditorFactory();
   const bidTracker = tracker();
   if (isCacheUsed) {
@@ -49,12 +49,12 @@ export function videoImpressionVerifierFactory(isCacheUsed) {
   return videoImpressionVerifier(vastXmlEditor, bidTracker);
 }
 
-export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
+export function videoImpressionVerifier (vastXmlEditor_, bidTracker_) {
   const verifier = baseImpressionVerifier(bidTracker_);
   const superTrackBid = verifier.trackBid;
   const vastXmlEditor = vastXmlEditor_;
 
-  verifier.trackBid = function(bid) {
+  verifier.trackBid = function (bid) {
     let { vastXml, vastUrl } = bid;
     if (!vastXml && !vastUrl) {
       return;
@@ -76,7 +76,7 @@ export function videoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   return verifier;
 }
 
-export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
+export function cachedVideoImpressionVerifier (vastXmlEditor_, bidTracker_) {
   const verifier = baseImpressionVerifier(bidTracker_);
   const superTrackBid = verifier.trackBid;
   const superGetBidIdentifiers = verifier.getBidIdentifiers;
@@ -122,7 +122,7 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
 
   return verifier;
 
-  function getTrackingUrl(getUrl, bid) {
+  function getTrackingUrl (getUrl, bid) {
     if (!getUrl || typeof getUrl !== 'function') {
       return;
     }
@@ -131,17 +131,17 @@ export function cachedVideoImpressionVerifier(vastXmlEditor_, bidTracker_) {
   }
 }
 
-export function baseImpressionVerifier(bidTracker_) {
+export function baseImpressionVerifier (bidTracker_) {
   const bidTracker = bidTracker_;
 
-  function trackBid(bid) {
+  function trackBid (bid) {
     let { adId, adUnitCode, requestId, auctionId } = bid;
     const trackingId = PB_PREFIX + generateUUID(10 ** 13);
     bidTracker.store(trackingId, { adId, adUnitCode, requestId, auctionId });
     return trackingId;
   }
 
-  function getBidIdentifiers(adId, adTagUrl, adWrapperIds) {
+  function getBidIdentifiers (adId, adTagUrl, adWrapperIds) {
     return bidTracker.remove(adId) || getBidForAdTagUrl(adTagUrl) || getBidForAdWrappers(adWrapperIds);
   }
 
@@ -150,7 +150,7 @@ export function baseImpressionVerifier(bidTracker_) {
     getBidIdentifiers
   };
 
-  function getBidForAdTagUrl(adTagUrl) {
+  function getBidForAdTagUrl (adTagUrl) {
     if (!adTagUrl) {
       return;
     }
@@ -167,7 +167,7 @@ export function baseImpressionVerifier(bidTracker_) {
     return uuid && bidTracker.remove(uuid);
   }
 
-  function getBidForAdWrappers(adWrapperIds) {
+  function getBidForAdWrappers (adWrapperIds) {
     if (!adWrapperIds || !adWrapperIds.length) {
       return;
     }
@@ -181,14 +181,14 @@ export function baseImpressionVerifier(bidTracker_) {
   }
 }
 
-export function tracker() {
+export function tracker () {
   const model = {};
 
-  function store(key, value) {
+  function store (key, value) {
     model[key] = value;
   }
 
-  function remove(key) {
+  function remove (key) {
     const value = model[key];
     if (!value) {
       return;

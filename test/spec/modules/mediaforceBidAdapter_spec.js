@@ -14,7 +14,7 @@ describe('mediaforce bid adapter', function () {
     sandbox.restore();
   });
 
-  function getLanguage() {
+  function getLanguage () {
     let language = navigator.language ? 'language' : 'userLanguage';
     return navigator[language].split('-')[0];
   }
@@ -715,10 +715,10 @@ describe('mediaforce bid adapter', function () {
   });
 
   describe('onBidWon()', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('should expand price macros in burl', function () {

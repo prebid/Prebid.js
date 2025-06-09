@@ -1,7 +1,7 @@
-export function timeoutQueue() {
+export function timeoutQueue () {
   const queue = [];
   return {
-    submit(timeout, onResume, onTimeout) {
+    submit (timeout, onResume, onTimeout) {
       const item = [
         onResume,
         setTimeout(() => {
@@ -11,7 +11,7 @@ export function timeoutQueue() {
       ];
       queue.push(item);
     },
-    resume() {
+    resume () {
       while (queue.length) {
         const [onResume, timerId] = queue.shift();
         clearTimeout(timerId);

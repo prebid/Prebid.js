@@ -208,7 +208,7 @@ describe('cadent_aperture_mx Adapter', function () {
     };
     let request = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-    describe('non-gpp tests', function() {
+    describe('non-gpp tests', function () {
       it('sends bid request to ENDPOINT via POST', function () {
         expect(request.method).to.equal('POST');
       });
@@ -365,7 +365,7 @@ describe('cadent_aperture_mx Adapter', function () {
         expect(request).to.not.have.property('user');
       });
 
-      it('should add us privacy info to request', function() {
+      it('should add us privacy info to request', function () {
         const uspBidderRequest = utils.deepClone(bidderRequest);
         let consentString = '1YNN';
         uspBidderRequest.uspConsent = consentString;
@@ -375,7 +375,7 @@ describe('cadent_aperture_mx Adapter', function () {
         expect(request.us_privacy).to.exist.and.to.equal(consentString);
       });
 
-      it('should add schain object to request', function() {
+      it('should add schain object to request', function () {
         const schainBidderRequest = utils.deepClone(bidderRequest);
         schainBidderRequest.bids[0].schain = {
           'complete': 1,
@@ -458,9 +458,9 @@ describe('cadent_aperture_mx Adapter', function () {
       });
     });
 
-    describe('gpp tests', function() {
+    describe('gpp tests', function () {
       describe('when gppConsent is not present on bid request', () => {
-        it('should return request with no gpp or gpp_sid properties', function() {
+        it('should return request with no gpp or gpp_sid properties', function () {
           const gppCompliantBidderRequest = utils.deepClone(bidderRequest);
 
           let request = spec.buildRequests(gppCompliantBidderRequest.bids, gppCompliantBidderRequest);
@@ -829,7 +829,7 @@ describe('cadent_aperture_mx Adapter', function () {
       expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=1&gdpr_consent=test&usp=test')
     });
 
-    it('should pass gpp string and section id', function() {
+    it('should pass gpp string and section id', function () {
       let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {
         gppString: 'abcdefgs',
         applicableSections: [1, 2, 4]

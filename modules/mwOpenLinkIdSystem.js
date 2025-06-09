@@ -24,11 +24,11 @@ const openLinkID = {
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: openLinkID.name});
 
-function getExpirationDate() {
+function getExpirationDate () {
   return (new Date(timestamp() + openLinkID.cookie_expiration)).toGMTString();
 }
 
-function isValidConfig(configParams) {
+function isValidConfig (configParams) {
   if (!configParams) {
     logError('User ID - mwOlId submodule requires configParams');
     return false;
@@ -44,11 +44,11 @@ function isValidConfig(configParams) {
   return true;
 }
 
-function deserializeMwOlId(mwOlIdStr) {
+function deserializeMwOlId (mwOlIdStr) {
   const mwOlId = {};
   const mwOlIdArr = mwOlIdStr.split(',');
 
-  mwOlIdArr.forEach(function(value) {
+  mwOlIdArr.forEach(function (value) {
     const pair = value.split(':');
     // unpack a value of 1 as true
     mwOlId[pair[0]] = +pair[1] === 1 ? true : pair[1];
@@ -57,7 +57,7 @@ function deserializeMwOlId(mwOlIdStr) {
   return mwOlId;
 }
 
-function serializeMwOlId(mwOlId) {
+function serializeMwOlId (mwOlId) {
   let components = [];
 
   if (mwOlId.eid) {
@@ -73,7 +73,7 @@ function serializeMwOlId(mwOlId) {
   return components.join(',');
 }
 
-function readCookie(name) {
+function readCookie (name) {
   if (!name) name = openLinkID.name;
   const mwOlIdStr = storage.getCookie(name);
   if (mwOlIdStr) {
@@ -82,14 +82,14 @@ function readCookie(name) {
   return null;
 }
 
-function writeCookie(mwOlId) {
+function writeCookie (mwOlId) {
   if (mwOlId) {
     const mwOlIdStr = encodeURIComponent(serializeMwOlId(mwOlId));
     storage.setCookie(openLinkID.name, mwOlIdStr, getExpirationDate(), 'lax');
   }
 }
 
-function register(configParams, olid) {
+function register (configParams, olid) {
   const { accountId, partnerId, uid } = configParams;
   const url = 'https://ol.mediawallahscript.com/?account_id=' + accountId +
             '&partner_id=' + partnerId +
@@ -100,7 +100,7 @@ function register(configParams, olid) {
   ajax(url);
 }
 
-function setID(configParams) {
+function setID (configParams) {
   if (!isValidConfig(configParams)) return undefined;
   const mwOlId = readCookie();
   const newMwOlId = mwOlId ? deepClone(mwOlId) : {eid: generateUUID()};
@@ -128,7 +128,7 @@ export const mwOpenLinkIdSubModule = {
    * @param {Object} mwOlId
    * @return {(Object|undefined)}
    */
-  decode(mwOlId) {
+  decode (mwOlId) {
     const id = mwOlId && isPlainObject(mwOlId) ? mwOlId.eid : undefined;
     return id ? { 'mwOpenLinkId': id } : undefined;
   },
@@ -139,7 +139,7 @@ export const mwOpenLinkIdSubModule = {
    * @param {SubmoduleConfig} [submoduleConfig]
    * @returns {(Object|undefined)}
    */
-  getId(submoduleConfig) {
+  getId (submoduleConfig) {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
     if (!isValidConfig(submoduleConfigParams)) return undefined;
     return setID(submoduleConfigParams);

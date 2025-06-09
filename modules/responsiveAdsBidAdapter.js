@@ -21,7 +21,7 @@ const converter = ortbConverter({
     ttl: 300,
     currency: DEFAULT_CURRENCY,
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     // add additional information we might need on the backend
     mergeDeep(req, {
@@ -39,11 +39,11 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     // validate the bid request
     return !!(bid.params);
   },
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     // we only want to bid if we are not in a safeframe
     if (isSafeFrameWindow()) {
       return null;
@@ -65,7 +65,7 @@ export const spec = {
       bidderRequest
     };
   },
-  interpretResponse: function(response, request) {
+  interpretResponse: function (response, request) {
     const res = converter.fromORTB({ response: response.body, request: request.data });
     const bids = res.bids;
     return bids;

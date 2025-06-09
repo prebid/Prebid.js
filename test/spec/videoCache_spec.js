@@ -10,12 +10,12 @@ import { storeLocally } from '../../src/videoCache.js';
 const should = chai.should();
 
 describe('The video cache', function () {
-  function assertError(callbackSpy) {
+  function assertError (callbackSpy) {
     callbackSpy.calledOnce.should.equal(true);
     callbackSpy.firstCall.args[0].should.be.an('error');
   }
 
-  function assertSuccess(callbackSpy) {
+  function assertSuccess (callbackSpy) {
     callbackSpy.calledOnce.should.equal(true);
     should.not.exist(callbackSpy.firstCall.args[0]);
   }
@@ -122,7 +122,7 @@ describe('The video cache', function () {
       assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
     });
 
-    it('should include multiple vastImpUrl when it\'s an array', function() {
+    it('should include multiple vastImpUrl when it\'s an array', function () {
       const expectedValue = `<VAST version="3.0">
     <Ad>
       <Wrapper>
@@ -266,10 +266,10 @@ describe('The video cache', function () {
 
       const stub = sinon.stub(auctionManager, 'index');
       stub.get(() => new AuctionIndex(() => [{
-        getAuctionId() {
+        getAuctionId () {
           return '1234-56789-abcde';
         },
-        getAuctionStart() {
+        getAuctionStart () {
           return 1510852447530;
         }
       }]))
@@ -310,7 +310,7 @@ describe('The video cache', function () {
 
     if (FEATURES.VIDEO) {
       it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
-        const mockAfterBidAdded = function() {};
+        const mockAfterBidAdded = function () {};
         let callback = null;
         let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
 
@@ -339,7 +339,7 @@ describe('The video cache', function () {
       });
     }
 
-    function assertRequestMade(bid, expectedValue) {
+    function assertRequestMade (bid, expectedValue) {
       store([bid], function () { });
 
       const request = server.requests[0];
@@ -356,7 +356,7 @@ describe('The video cache', function () {
       });
     }
 
-    function fakeServerCall(bid, responseBody) {
+    function fakeServerCall (bid, responseBody) {
       const callback = sinon.spy();
       store([bid], callback);
       server.requests[0].respond(
@@ -413,7 +413,7 @@ describe('The video cache', function () {
     });
   })
 
-  describe('local video cache', function() {
+  describe('local video cache', function () {
     afterEach(function () {
       config.resetConfig();
     });

@@ -46,12 +46,12 @@ describe('fetcherFactory', () => {
   });
 
   Object.entries({
-    'disableAjaxTimeout is set'() {
+    'disableAjaxTimeout is set' () {
       const fetcher = fetcherFactory(1000);
       config.setConfig({disableAjaxTimeout: true});
       return fetcher;
     },
-    'timeout is null'() {
+    'timeout is null' () {
       return fetcherFactory(null);
     },
   }).forEach(([t, mkFetcher]) => {
@@ -220,7 +220,7 @@ describe('attachCallbacks', () => {
     'x-2': 'v2'
   });
 
-  function responseFactory(body, props) {
+  function responseFactory (body, props) {
     props = Object.assign({headers: sampleHeaders, url: EXAMPLE_URL}, props);
     return function () {
       return {
@@ -234,13 +234,13 @@ describe('attachCallbacks', () => {
     };
   }
 
-  function expectNullXHR(response, reason) {
+  function expectNullXHR (response, reason) {
     return new Promise((resolve, reject) => {
       attachCallbacks(Promise.resolve(response), {
         success: () => {
           reject(new Error('should not succeed'));
         },
-        error(statusText, xhr) {
+        error (statusText, xhr) {
           expect(statusText).to.eql('');
           sinon.assert.match(xhr, {
             readyState: XMLHttpRequest.DONE,
@@ -267,7 +267,7 @@ describe('attachCallbacks', () => {
     const ctl = new AbortController();
     ctl.abort();
     attachCallbacks(fetch('/', {signal: ctl.signal}), {
-      error(_, xhr) {
+      error (_, xhr) {
         expect(xhr.timedOut).to.be.true;
         done();
       }
@@ -339,7 +339,7 @@ describe('attachCallbacks', () => {
         sandbox.restore();
       })
 
-      function checkXHR(xhr) {
+      function checkXHR (xhr) {
         utils.logError.resetHistory();
         const serialized = JSON.parse(JSON.stringify(xhr))
         // serialization of `responseXML` should not generate console messages
@@ -367,13 +367,13 @@ describe('attachCallbacks', () => {
 
       it(`runs ${cbType} callback`, (done) => {
         attachCallbacks(Promise.resolve(response), {
-          success(payload, xhr) {
+          success (payload, xhr) {
             expect(success).to.be.true;
             expect(payload).to.eql(body);
             checkXHR(xhr);
             done();
           },
-          error(statusText, xhr) {
+          error (statusText, xhr) {
             expect(success).to.be.false;
             expect(statusText).to.eql(response.statusText);
             checkXHR(xhr);
@@ -409,11 +409,11 @@ describe('attachCallbacks', () => {
         const {response} = makeResponse();
         const result = {success: false, error: false};
         return attachCallbacks(Promise.resolve(response), {
-          success() {
+          success () {
             result.success = true;
             throw new Error();
           },
-          error() {
+          error () {
             result.error = true;
             throw new Error();
           }

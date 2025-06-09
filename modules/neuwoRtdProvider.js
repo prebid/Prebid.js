@@ -10,7 +10,7 @@ const SEGTAX_IAB = 6 // IAB - Content Taxonomy version 2
 const RESPONSE_IAB_TIER_1 = 'marketing_categories.iab_tier_1'
 const RESPONSE_IAB_TIER_2 = 'marketing_categories.iab_tier_2'
 
-function init(config, userConsent) {
+function init (config, userConsent) {
   // config.params = config.params || {}
   // ignore module if publicToken is missing (module setup failure)
   if (!config || !config.params || !config.params.publicToken) {
@@ -24,7 +24,7 @@ function init(config, userConsent) {
   return true;
 }
 
-export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+export function getBidRequestData (reqBidsConfigObj, callback, config, userConsent) {
   const confParams = config.params || {};
   logInfo('NeuwoRTDModule', 'starting getBidRequestData')
 
@@ -62,7 +62,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
   })
 }
 
-export function addFragment(base, path, addition) {
+export function addFragment (base, path, addition) {
   const container = {}
   deepSetValue(container, path, addition)
   mergeDeep(base, container)
@@ -76,14 +76,14 @@ export function addFragment(base, path, addition) {
  * @param {string} key dot-notated path to array within object
  * @returns base + source[key] if that's an array
  */
-function combineArray(base, source, key) {
+function combineArray (base, source, key) {
   if (Array.isArray(base) === false) base = []
   const addition = deepAccess(source, key, [])
   if (Array.isArray(addition)) return base.concat(addition)
   else return base
 }
 
-export function injectTopics(topics, bidsConfig) {
+export function injectTopics (topics, bidsConfig) {
   topics = topics || {}
 
   // join arrays of IAB category details to single array
@@ -146,7 +146,7 @@ const D_IAB_ID = { // Content Taxonomy version 2.0 final release November 2017 [
   'IAB23-10': '453', 'IAB7-34': '301', 'IAB4-8': '395', 'IAB26-3': '608', 'IAB20-25': '151', 'IAB20-27': '659'
 }
 
-export function convertSegment(segment) {
+export function convertSegment (segment) {
   if (!segment) return {}
   return {
     id: D_IAB_ID[segment.id || segment.ID]
@@ -158,7 +158,7 @@ export function convertSegment(segment) {
  * @param {Array<{ID: string}>} normalizable
  * @returns array of IAB "segments"
  */
-export function pickSegments(normalizable) {
+export function pickSegments (normalizable) {
   if (Array.isArray(normalizable) === false) return []
   return normalizable.map(convertSegment)
     .filter(t => t.id)

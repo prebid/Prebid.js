@@ -66,7 +66,7 @@ export const spec = {
   },
 }
 
-function serializeSchain(schain) {
+function serializeSchain (schain) {
   if (!schain) {
     return null;
   }
@@ -85,7 +85,7 @@ function serializeSchain(schain) {
   return serializedSchain;
 }
 
-function encodeURIComponentForRFC3986(str) {
+function encodeURIComponentForRFC3986 (str) {
   return encodeURIComponent(str).replace(/[!'()*]/g, c => `%${c.charCodeAt(0).toString(16)}`);
 }
 

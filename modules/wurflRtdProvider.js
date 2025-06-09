@@ -92,7 +92,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, config, userConsent) => {
  * @param {Array} bidders List of bidders
  * @param {Object} wjsResponse WURFL.js response
  */
-function enrichBidderRequests(reqBidsConfigObj, bidders, wjsResponse) {
+function enrichBidderRequests (reqBidsConfigObj, bidders, wjsResponse) {
   const authBidders = wjsResponse.wurfl_pbjs?.authorized_bidders ?? {};
   const caps = wjsResponse.wurfl_pbjs?.caps ?? [];
 
@@ -198,7 +198,7 @@ export const enrichBidderRequest = (reqBidsConfigObj, bidderCode, wurflData) => 
  * @returns {Number} ortb2 device type
  * @see https://www.scientiamobile.com/how-to-populate-iab-openrtb-device-object/
  */
-export function makeOrtb2DeviceType(wurflData) {
+export function makeOrtb2DeviceType (wurflData) {
   if (wurflData.is_mobile) {
     if (!('is_phone' in wurflData) || !('is_tablet' in wurflData)) {
       return undefined;
@@ -234,7 +234,7 @@ export function makeOrtb2DeviceType(wurflData) {
  * @param {Object} device the ortb2 device object from Prebid.js
  * @param {Object} ortb2data the ortb2 device data enrchiced with WURFL data
  */
-function enrichOrtb2DeviceData(key, value, device, ortb2data) {
+function enrichOrtb2DeviceData (key, value, device, ortb2data) {
   if (device?.[key] !== undefined) {
     // value already defined by Prebid.js, do not overrides
     return;
@@ -251,7 +251,7 @@ function enrichOrtb2DeviceData(key, value, device, ortb2data) {
  * @param {any} value - The value to convert to a number.
  * @returns {number|undefined} The converted number, or `undefined` if the conversion fails.
  */
-export function toNumber(value) {
+export function toNumber (value) {
   if (value === '' || value === null) {
     return undefined;
   }
@@ -265,7 +265,7 @@ export function toNumber(value) {
  * @param {Object} config Configuration for WURFL RTD submodule
  * @param {Object} userConsent User consent data
  */
-function onAuctionEndEvent(auctionDetails, config, userConsent) {
+function onAuctionEndEvent (auctionDetails, config, userConsent) {
   const altHost = config.params?.altHost ?? null;
 
   let host = WURFL_JS_HOST;

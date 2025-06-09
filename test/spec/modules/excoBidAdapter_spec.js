@@ -279,10 +279,10 @@ describe('ExcoBidAdapter', function () {
       ortb2: {}
     };
 
-    beforeEach(function() {
+    beforeEach(function () {
       stubbedFetch = sinon.stub(window, 'fetch');
     });
-    afterEach(function() {
+    afterEach(function () {
       stubbedFetch.restore();
     });
 
@@ -290,25 +290,25 @@ describe('ExcoBidAdapter', function () {
       expect(adapter.onTimeout).to.exist.and.to.be.a('function');
     });
 
-    it('Should create event url', function() {
+    it('Should create event url', function () {
       const pixelUrl = helpers.getEventUrl([bid], 'mcd_bidder_auction_timeout');
       adapter.onTimeout([bid]);
       expect(stubbedFetch.calledWith(pixelUrl)).to.be.true;
     });
 
-    it('Should trigger event url', function() {
+    it('Should trigger event url', function () {
       adapter.onTimeout([bid]);
       expect(stubbedFetch.callCount).to.equal(1);
     });
   });
 
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     let stubbedFetch;
 
-    beforeEach(function() {
+    beforeEach(function () {
       stubbedFetch = sinon.stub(window, 'fetch');
     });
-    afterEach(function() {
+    afterEach(function () {
       stubbedFetch.restore();
     });
 
@@ -316,7 +316,7 @@ describe('ExcoBidAdapter', function () {
       expect(adapter.onBidWon).to.exist.and.to.be.a('function');
     });
 
-    it('Should trigger event if bid nurl', function() {
+    it('Should trigger event if bid nurl', function () {
       const bid = {
         bidder: adapter.code,
         adUnitCode: 'adunit-code',
@@ -333,7 +333,7 @@ describe('ExcoBidAdapter', function () {
       expect(stubbedFetch.callCount).to.equal(1);
     });
 
-    it('Should not trigger pixel if no bid nurl', function() {
+    it('Should not trigger pixel if no bid nurl', function () {
       const bid = {
         bidder: adapter.code,
         adUnitCode: 'adunit-code',

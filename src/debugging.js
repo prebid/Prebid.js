@@ -9,17 +9,17 @@ import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
 export const DEBUG_KEY = '__$$PREBID_GLOBAL$$_debugging__';
 
-function isDebuggingInstalled() {
+function isDebuggingInstalled () {
   return getGlobal().installedModules.includes('debugging');
 }
 
-function loadScript(url) {
+function loadScript (url) {
   return new PbPromise((resolve) => {
     loadExternalScript(url, MODULE_TYPE_PREBID, 'debugging', resolve);
   });
 }
 
-export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, script = loadScript} = {}) {
+export function debuggingModuleLoader ({alreadyInstalled = isDebuggingInstalled, script = loadScript} = {}) {
   let loading = null;
   return function () {
     if (loading == null) {
@@ -43,13 +43,13 @@ export function debuggingModuleLoader({alreadyInstalled = isDebuggingInstalled, 
   }
 }
 
-export function debuggingControls({load = debuggingModuleLoader(), hook = getHook('requestBids')} = {}) {
+export function debuggingControls ({load = debuggingModuleLoader(), hook = getHook('requestBids')} = {}) {
   let promise = null;
   let enabled = false;
-  function waitForDebugging(next, ...args) {
+  function waitForDebugging (next, ...args) {
     return (promise || PbPromise.resolve()).then(() => next.apply(this, args))
   }
-  function enable() {
+  function enable () {
     if (!enabled) {
       promise = load();
       // set debugging to high priority so that it has the opportunity to mess with most things
@@ -57,11 +57,11 @@ export function debuggingControls({load = debuggingModuleLoader(), hook = getHoo
       enabled = true;
     }
   }
-  function disable() {
+  function disable () {
     hook.getHooks({hook: waitForDebugging}).remove();
     enabled = false;
   }
-  function reset() {
+  function reset () {
     promise = null;
     disable();
   }
@@ -71,7 +71,7 @@ export function debuggingControls({load = debuggingModuleLoader(), hook = getHoo
 const ctl = debuggingControls();
 export const reset = ctl.reset;
 
-export function loadSession() {
+export function loadSession () {
   let storage = null;
   try {
     // eslint-disable-next-line no-restricted-properties

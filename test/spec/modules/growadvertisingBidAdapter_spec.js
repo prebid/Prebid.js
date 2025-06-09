@@ -3,7 +3,7 @@ import { spec } from 'modules/growadvertisingBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
 
-describe('GrowAdvertising Adapter', function() {
+describe('GrowAdvertising Adapter', function () {
   const ZONE_ID = 'unique-zone-id';
   const serverResponseBanner = {
     body: {

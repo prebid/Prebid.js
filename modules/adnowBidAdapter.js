@@ -28,13 +28,13 @@ const ENDPOINT = 'https://n.nnowa.com/a';
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [ NATIVE, BANNER ],
+  supportedMediaTypes: [NATIVE, BANNER],
 
   /**
    * @param {object} bid
    * @return {boolean}
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     if (!bid || !bid.params) return false;
 
     const codeId = parseInt(bid.params.codeId, 10);
@@ -52,7 +52,7 @@ export const spec = {
    * @param {*} bidderRequest
    * @return {ServerRequest}
    */
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -104,7 +104,7 @@ export const spec = {
    * @param {ServerRequest} request
    * @return {Bid[]}
    */
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     const bidObj = request.bidRequest;
     let bid = response.body;
 
@@ -120,11 +120,11 @@ export const spec = {
     bid.requestId = bidObj.bidId;
 
     if (mediaType === BANNER) {
-      return [ this._getBannerBid(bid) ];
+      return [this._getBannerBid(bid)];
     }
 
     if (mediaType === NATIVE) {
-      return [ this._getNativeBid(bid) ];
+      return [this._getNativeBid(bid)];
     }
 
     return [];
@@ -135,7 +135,7 @@ export const spec = {
    * @param {object} bid
    * @return {CommonBidData}
    */
-  _commonBidData(bid) {
+  _commonBidData (bid) {
     return {
       requestId: bid.requestId,
       currency: bid.currency || 'USD',
@@ -152,7 +152,7 @@ export const spec = {
    * @return {boolean}
    * @private
    */
-  _isBannerRequest(req) {
+  _isBannerRequest (req) {
     return !!(req.mediaTypes && req.mediaTypes.banner);
   },
 
@@ -161,7 +161,7 @@ export const spec = {
    * @param {object} bid
    * @return {Bid}
    */
-  _getBannerBid(bid) {
+  _getBannerBid (bid) {
     return {
       ...this._commonBidData(bid),
       width: bid.width || 300,
@@ -175,7 +175,7 @@ export const spec = {
    * @param {object} bid
    * @return {Bid}
    */
-  _getNativeBid(bid) {
+  _getNativeBid (bid) {
     return {
       ...this._commonBidData(bid),
       native: bid.native || {}

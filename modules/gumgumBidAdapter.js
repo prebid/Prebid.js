@@ -29,7 +29,7 @@ let invalidRequestIds = {};
 let pageViewId = null;
 
 // TODO: potential 0 values for browserParams sent to ad server
-function _getBrowserParams(topWindowUrl, mosttopLocation) {
+function _getBrowserParams (topWindowUrl, mosttopLocation) {
   const paramRegex = paramName => new RegExp(`[?#&](${paramName}=(.*?))($|&)`, 'i');
 
   let browserParams = {};
@@ -108,7 +108,7 @@ function _getBrowserParams(topWindowUrl, mosttopLocation) {
   return browserParams;
 }
 
-function getWrapperCode(wrapper, data) {
+function getWrapperCode (wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
@@ -118,7 +118,7 @@ function getWrapperCode(wrapper, data) {
  * @param {Object} schainObj supply chain object
  * @returns {string}
  */
-function _serializeSupplyChainObj(schainObj) {
+function _serializeSupplyChainObj (schainObj) {
   let serializedSchain = `${schainObj.ver},${schainObj.complete}`;
 
   // order of properties: asi,sid,hp,rid,name,domain
@@ -140,7 +140,7 @@ function _serializeSupplyChainObj(schainObj) {
  * @param {BidRequest} bid The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   const {
     params,
     adUnitCode
@@ -181,7 +181,7 @@ function isBidRequestValid(bid) {
  * @param {Object} attributes
  * @returns {Object}
  */
-function _getVidParams(attributes) {
+function _getVidParams (attributes) {
   const {
     minduration: mind,
     maxduration: maxd,
@@ -242,7 +242,7 @@ function _getVidParams(attributes) {
  * @param {Object} bid - The bid object which may contain a method to get dynamic floor values.
  * @returns {Object} An object containing the calculated bid floor and its currency.
  */
-function _getFloor(mediaTypes, staticBidFloor, bid) {
+function _getFloor (mediaTypes, staticBidFloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
   const bidFloor = { floor: 0, currency: 'USD' };
 
@@ -269,7 +269,7 @@ function _getFloor(mediaTypes, staticBidFloor, bid) {
  * @param {Object} ortb2Data ORTB2 object
  * @returns {Object} Device data
  */
-function _getDeviceData(ortb2Data) {
+function _getDeviceData (ortb2Data) {
   const _device = deepAccess(ortb2Data, 'device') || {};
 
   // set device data params from ortb2
@@ -305,7 +305,7 @@ function _getDeviceData(ortb2Data) {
  * @param {number[][]} sizes
  * @returns {number[]}
  */
-function getGreatestDimensions(sizes) {
+function getGreatestDimensions (sizes) {
   let maxw = 0;
   let maxh = 0;
   let greatestVal = 0;
@@ -322,7 +322,7 @@ function getGreatestDimensions(sizes) {
   return [maxw, maxh];
 }
 
-function getEids(userId) {
+function getEids (userId) {
   const idProperties = [
     'uid',
     'eid',
@@ -352,7 +352,7 @@ function getEids(userId) {
  * @param {Object} bidderRequest - The bidder's request information.
  * @returns {Object[]} An array of server requests.
  */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
@@ -386,7 +386,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-174 Removed unnecessary checks to fix failing test
     data.lt = lt;
     data.to = to;
-    function jsoStringifynWithMaxLength(data, maxLength) {
+    function jsoStringifynWithMaxLength (data, maxLength) {
       let jsonString = JSON.stringify(data);
       if (jsonString.length <= maxLength) {
         return jsonString;
@@ -514,7 +514,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
   return bids;
 }
-export function getCids(site) {
+export function getCids (site) {
   if (site.content && Array.isArray(site.content.data)) {
     for (const dataItem of site.content.data) {
       if (typeof dataItem?.name === 'string' && (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv'))) {
@@ -524,7 +524,7 @@ export function getCids(site) {
   }
   return null;
 }
-export function setIrisId(data, site, params) {
+export function setIrisId (data, site, params) {
   let irisID = getCids(site);
   if (irisID) {
     data.irisid = irisID;
@@ -536,7 +536,7 @@ export function setIrisId(data, site, params) {
   }
 }
 
-function handleLegacyParams(params, sizes) {
+function handleLegacyParams (params, sizes) {
   const data = {};
   if (params.inScreenPubID) {
     data.pubId = params.inScreenPubID;
@@ -579,7 +579,7 @@ function handleLegacyParams(params, sizes) {
  * @param {*} serverResponse A successful response from the server.
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = []
   const serverResponseBody = serverResponse.body
 
@@ -648,7 +648,7 @@ function interpretResponse(serverResponse, bidRequest) {
   // added logic for in-slot multi-szie
   } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
-      const [ width, height ] = current;
+      const [width, height] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];
@@ -692,7 +692,7 @@ function interpretResponse(serverResponse, bidRequest) {
  * @param {ServerResponse[]} serverResponses List of server's responses.
  * @return {UserSync[]} The user syncs which should be dropped.
  */
-function getUserSyncs(syncOptions, serverResponses) {
+function getUserSyncs (syncOptions, serverResponses) {
   const responses = serverResponses.map((response) => {
     return (response.body && response.body.pxs && response.body.pxs.scr) || []
   })

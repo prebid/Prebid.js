@@ -12,7 +12,7 @@ import { ajax, sendBeacon } from '../../src/ajax.js';
 import { getRefererInfo } from '../../src/refererDetection.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
-export function shouldLogAPPR(auctionData, adUnitId) {
+export function shouldLogAPPR (auctionData, adUnitId) {
   const adSlot = auctionData.adSlots[adUnitId];
   return (
     (
@@ -23,7 +23,7 @@ export function shouldLogAPPR(auctionData, adUnitId) {
 }
 
 // common error logger for medianet analytics and bid adapter
-export function errorLogger(event, data = undefined, analytics = true) {
+export function errorLogger (event, data = undefined, analytics = true) {
   const { name, cid, value, relatedData, logData, project } = isPlainObject(event) ? {...event, logData: data} : { name: event, relatedData: data };
   const refererInfo = mnetGlobals.refererInfo || getRefererInfo();
   const errorData = Object.assign({},
@@ -45,7 +45,7 @@ export function errorLogger(event, data = undefined, analytics = true) {
   const loggingHost = analytics ? EVENT_PIXEL_URL : POST_ENDPOINT;
   const payload = analytics ? mnFormatQS(errorData) : formatQS(errorData);
 
-  function send() {
+  function send () {
     if (!analytics) {
       fireAjaxLog(loggingHost, payload, pick(errorData, ['cid', 'project', 'event as value']));
       return;
@@ -55,7 +55,7 @@ export function errorLogger(event, data = undefined, analytics = true) {
     triggerPixel(pixelUrl);
   }
 
-  function getUrl() {
+  function getUrl () {
     return loggingHost + '?' + payload;
   }
 
@@ -65,11 +65,11 @@ export function errorLogger(event, data = undefined, analytics = true) {
   };
 }
 
-export function getLoggingPayload(queryParams) {
+export function getLoggingPayload (queryParams) {
   return `logid=kfk&evtid=prebid_analytics_events_client&${queryParams}`;
 }
 
-export function firePostLog(url, payload) {
+export function firePostLog (url, payload) {
   try {
     mnetGlobals.logsQueue.push(url + '?' + payload);
     const isSent = sendBeacon(url, payload);
@@ -83,7 +83,7 @@ export function firePostLog(url, payload) {
   }
 }
 
-export function fireAjaxLog(url, payload, errorData = {}) {
+export function fireAjaxLog (url, payload, errorData = {}) {
   ajax(url,
     {
       success: () => undefined,
@@ -96,7 +96,7 @@ export function fireAjaxLog(url, payload, errorData = {}) {
   );
 }
 
-export function mergeFieldsToLog(objParams) {
+export function mergeFieldsToLog (objParams) {
   const logParams = Object.keys(objParams).map((param) => {
     const value = objParams[param];
     return `${param}=${value === undefined ? '' : value}`;
@@ -104,7 +104,7 @@ export function mergeFieldsToLog(objParams) {
   return logParams.join('||');
 }
 
-export function getProcessedParams(params, status) {
+export function getProcessedParams (params, status) {
   if (params === undefined || status !== BID_SUCCESS) return '';
   const clonedFlattenParams = flattenObj(params, '', {});
   return JSON.stringify(clonedFlattenParams);

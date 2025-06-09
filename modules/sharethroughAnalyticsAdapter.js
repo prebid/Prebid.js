@@ -17,7 +17,7 @@ var sharethroughAdapter = Object.assign(adapter(
   STR_BEACON_HOST: 'https://b.sharethrough.com/butler?',
   placementCodeSet: {},
 
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     if (eventType === 'bidRequested' && args.bidderCode === 'sharethrough') {
       var bids = args.bids;
       var keys = Object.keys(bids);
@@ -31,7 +31,7 @@ var sharethroughAdapter = Object.assign(adapter(
     }
   },
 
-  bidWon(args) {
+  bidWon (args) {
     const curBidderCode = args.bidderCode;
 
     if (curBidderCode !== STR_BIDDER_CODE && (args.adUnitCode in this.placementCodeSet)) {
@@ -40,7 +40,7 @@ var sharethroughAdapter = Object.assign(adapter(
     }
   },
 
-  fireLoseBeacon(winningBidderCode, winningCPM, arid, type) {
+  fireLoseBeacon (winningBidderCode, winningCPM, arid, type) {
     let loseBeaconUrl = this.STR_BEACON_HOST;
     loseBeaconUrl = tryAppendQueryString(loseBeaconUrl, 'winnerBidderCode', winningBidderCode);
     loseBeaconUrl = tryAppendQueryString(loseBeaconUrl, 'winnerCpm', winningCPM);
@@ -50,14 +50,14 @@ var sharethroughAdapter = Object.assign(adapter(
 
     this.fireBeacon(loseBeaconUrl);
   },
-  appendEnvFields(url) {
+  appendEnvFields (url) {
     url = tryAppendQueryString(url, 'hbVersion', '$prebid.version$');
     url = tryAppendQueryString(url, 'strVersion', STR_VERSION);
     url = tryAppendQueryString(url, 'hbSource', 'prebid');
 
     return url;
   },
-  fireBeacon(theUrl) {
+  fireBeacon (theUrl) {
     const img = new Image();
     img.src = theUrl;
   }

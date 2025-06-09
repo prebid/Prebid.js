@@ -1036,7 +1036,7 @@ let bidRequests = [
   }
 ];
 
-function checkMediaTypesSizes(mediaTypes, expectedSizes) {
+function checkMediaTypesSizes (mediaTypes, expectedSizes) {
   const bidRequestWithBannerSizes = Object.assign(bidRequests[0], mediaTypes);
   const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderRequestDefault);
   const payloadWithBannerSizes = JSON.parse(requestWithBannerSizes.data);

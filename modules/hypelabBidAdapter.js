@@ -18,20 +18,20 @@ const PROVIDER_VERSION = '0.0.3';
 
 const url = (route) => ENDPOINT_URL + route;
 
-export function mediaSize(data) {
+export function mediaSize (data) {
   if (!data || !data.creative_set) return { width: 0, height: 0 };
   const media = data.creative_set.video || data.creative_set.image || {};
   return { width: media.width, height: media.height };
 }
 
-function isBidRequestValid(bidderRequest) {
+function isBidRequestValid (bidderRequest) {
   return (
     !!bidderRequest.params?.property_slug &&
     !!bidderRequest.params?.placement_slug
   );
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const result = validBidRequests.map((request) => {
     const uids = (request.userIdAsEids || []).reduce((a, c) => {
       const ids = c.uids.map((uid) => uid.id);
@@ -92,11 +92,11 @@ function buildRequests(validBidRequests, bidderRequest) {
   return result;
 }
 
-function generateTemporaryUUID() {
+function generateTemporaryUUID () {
   return 'tmp_' + generateUUID();
 }
 
-function getBidFloor(bid, sizes) {
+function getBidFloor (bid, sizes) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
@@ -120,14 +120,14 @@ function getBidFloor(bid, sizes) {
   return floor;
 }
 
-function getPosition(id) {
+function getPosition (id) {
   const element = document.getElementById(id);
   if (!element) return null;
   const rect = getBoundingClientRect(element);
   return [rect.left, rect.top];
 }
 
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   const { data } = serverResponse.body;
 
   if (!data.cpm || !data.html) return [];
@@ -154,7 +154,7 @@ function interpretResponse(serverResponse, bidRequest) {
   return [result];
 }
 
-export function report(eventType, data, route = REPORTING_ROUTE) {
+export function report (eventType, data, route = REPORTING_ROUTE) {
   if (!route) return;
 
   const options = {
@@ -167,19 +167,19 @@ export function report(eventType, data, route = REPORTING_ROUTE) {
   ajax(url(route), null, request, options);
 }
 
-function onTimeout(timeoutData) {
+function onTimeout (timeoutData) {
   this.report('timeout', timeoutData);
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   this.report('bidWon', bid);
 }
 
-function onSetTargeting(bid) {
+function onSetTargeting (bid) {
   this.report('setTargeting', bid);
 }
 
-function onBidderError(errorData) {
+function onBidderError (errorData) {
   this.report('bidderError', errorData);
 }
 

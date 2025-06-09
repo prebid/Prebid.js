@@ -82,7 +82,7 @@ describe('adqueryBidAdapter', function () {
   describe('buildRequests', function () {
     let req;
     beforeEach(() => {
-      req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+      req = spec.buildRequests([bidRequest], { refererInfo: { } })[0]
     })
 
     let rdata
@@ -140,7 +140,7 @@ describe('adqueryBidAdapter', function () {
       expect(result).to.be.an('array')
     })
 
-    it('validate response params', function() {
+    it('validate response params', function () {
       const newResponse = spec.interpretResponse(expectedResponse, bidRequest);
       expect(newResponse[0].requestId).to.be.equal(1)
     });
@@ -189,7 +189,7 @@ describe('adqueryBidAdapter', function () {
       expect(typeof sync[0].url === 'string')
     })
 
-    it('Should return array of objects with proper sync config , include GDPR', function() {
+    it('Should return array of objects with proper sync config , include GDPR', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
@@ -202,10 +202,10 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('test onBidWon function', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('exists and is a function', () => {

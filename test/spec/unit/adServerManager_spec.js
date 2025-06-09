@@ -14,7 +14,7 @@ describe('The ad server manager', function () {
   });
 
   it('should register video support to the proper place on the API', function () {
-    function videoSupport() { }
+    function videoSupport () { }
     registerVideoSupport('dfp', { buildVideoUrl: videoSupport });
 
     expect(prebid).to.have.property('adServers');
@@ -23,9 +23,9 @@ describe('The ad server manager', function () {
   });
 
   it('should keep the first function when we try to add a second', function () {
-    function videoSupport() { }
+    function videoSupport () { }
     registerVideoSupport('dfp', { buildVideoUrl: videoSupport });
-    registerVideoSupport('dfp', { buildVideoUrl: function noop() { } });
+    registerVideoSupport('dfp', { buildVideoUrl: function noop () { } });
 
     expect(prebid).to.have.property('adServers');
     expect(prebid.adServers).to.have.property('dfp');
@@ -33,7 +33,7 @@ describe('The ad server manager', function () {
   });
 
   it('should support any custom named property in the public API', function () {
-    function getTestAdServerTargetingKeys() { };
+    function getTestAdServerTargetingKeys () { };
     registerVideoSupport('testAdServer', { getTargetingKeys: getTestAdServerTargetingKeys });
 
     expect(prebid).to.have.property('adServers');

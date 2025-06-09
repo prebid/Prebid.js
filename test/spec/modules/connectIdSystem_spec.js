@@ -77,7 +77,7 @@ describe('Yahoo ConnectID Submodule', () => {
       removeLocalStorageDataStub.restore();
     });
 
-    function invokeGetIdAPI(configParams, consentData) {
+    function invokeGetIdAPI (configParams, consentData) {
       let result = connectIdSubmodule.getId({
         params: configParams
       }, consentData);
@@ -546,7 +546,7 @@ describe('Yahoo ConnectID Submodule', () => {
           expect(result.callback).to.be.a('function');
         });
 
-        function mockOptout(value) {
+        function mockOptout (value) {
           getLocalStorageStub.callsFake((key) => {
             if (key === 'connectIdOptOut') return value;
           })

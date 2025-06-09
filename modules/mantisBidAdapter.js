@@ -6,7 +6,7 @@ import { getWinDimensions } from '../src/utils.js';
 
 export const storage = getStorageManager({bidderCode: 'mantis'});
 
-function inIframe() {
+function inIframe () {
   try {
     return window.self !== window.top && !window.mantis_link;
   } catch (e) {
@@ -14,7 +14,7 @@ function inIframe() {
   }
 }
 
-export function onVisible(win, element, doOnVisible, time, pct) {
+export function onVisible (win, element, doOnVisible, time, pct) {
   var started = null;
   var notified = false;
   var onNotVisible = null;
@@ -81,7 +81,7 @@ export function onVisible(win, element, doOnVisible, time, pct) {
     doCheck(winWidth, winHeight, getBoundingClientRect(element));
   }, 100);
 }
-function storeUuid(uuid) {
+function storeUuid (uuid) {
   if (window.mantis_uuid) {
     return false;
   }
@@ -94,14 +94,14 @@ function storeUuid(uuid) {
   }
 }
 
-function onMessage(type, callback) {
+function onMessage (type, callback) {
   window.addEventListener('message', function (event) {
     if (event.data.mantis && event.data.type == type) {
       callback(event.data.data);
     }
   }, false);
 }
-function isSendable(val) {
+function isSendable (val) {
   if (val === null || val === undefined) {
     return false;
   }
@@ -113,20 +113,20 @@ function isSendable(val) {
   }
   return true;
 }
-function isObject(value) {
+function isObject (value) {
   return Object.prototype.toString.call(value) === '[object Object]';
 }
-function isAmp() {
+function isAmp () {
   return typeof window.context === 'object' && (window.context.tagName === 'AMP-AD' || window.context.tagName === 'AMP-EMBED');
 }
-function isSecure() {
+function isSecure () {
   return document.location.protocol === 'https:';
 }
-function isArray(value) {
+function isArray (value) {
   return Object.prototype.toString.call(value) === '[object Array]';
 }
 
-function jsonToQuery(data, chain, form) {
+function jsonToQuery (data, chain, form) {
   var parts = form || [];
   for (var key in data) {
     var queryKey = key;
@@ -151,7 +151,7 @@ function jsonToQuery(data, chain, form) {
   return parts.join('&');
 }
 
-function buildMantisUrl(path, data, domain) {
+function buildMantisUrl (path, data, domain) {
   var params = {
     referrer: document.referrer,
     tz: new Date().getTimezoneOffset(),

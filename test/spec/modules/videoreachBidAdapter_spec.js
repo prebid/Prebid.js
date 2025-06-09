@@ -97,7 +97,7 @@ describe('videoreachBidAdapter', function () {
         }
       };
 
-    it('should handle response', function() {
+    it('should handle response', function () {
       let expectedResponse = [
         {
           cpm: 10.0,
@@ -119,7 +119,7 @@ describe('videoreachBidAdapter', function () {
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
-    it('should handles empty response', function() {
+    it('should handles empty response', function () {
       let serverResponse = {
         'body': {
           'responses': []

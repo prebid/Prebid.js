@@ -560,32 +560,32 @@ describe('PubWiseAdapter', function () {
   });
 
   describe('Handling Request Construction', function () {
-    it('bid requests are not mutable', function() {
+    it('bid requests are not mutable', function () {
       let sourceBidRequest = utils.deepClone(sampleValidBidRequests);
       spec.buildRequests(sampleValidBidRequests, {auctionId: 'placeholder'});
       expect(sampleValidBidRequests).to.deep.equal(sourceBidRequest, 'Should be unedited as they are used elsewhere');
     });
-    it('should handle complex bidRequest', function() {
+    it('should handle complex bidRequest', function () {
       let request = spec.buildRequests(sampleValidBidRequests, sampleBidderRequest);
       expect(request.bidderRequest).to.equal(sampleBidderRequest, "Bid Request Doesn't Match Sample");
       expect(request.data.source.tid).to.equal(sampleBidderRequest.ortb2.source.tid, 'source.tid -> source.tid Mismatch');
       expect(request.data.imp[0].ext.tid).to.equal(sampleBidderRequest.bids[0].ortb2Imp.ext.tid, 'ext.tid -> ext.tid Mismatch');
     });
-    it('must conform to API for buildRequests', function() {
+    it('must conform to API for buildRequests', function () {
       let request = spec.buildRequests(sampleValidBidRequests);
       expect(request.bidderRequest).to.be.undefined;
     });
   });
 
   describe('Identifies Media Types', function () {
-    it('identifies native adm type', function() {
+    it('identifies native adm type', function () {
       let adm = '{"ver":"1.2","assets":[{"title":{"text":"PubWise Test"}},{"img":{"type":3,"url":"http://www.pubwise.io"}},{"img":{"type":1,"url":"http://www.pubwise.io"}},{"data":{"type":2,"value":"PubWise Test Desc"}},{"data":{"type":1,"value":"PubWise.io"}}],"link":{"url":""}}';
       let newBid = {mediaType: 'unknown'};
       _checkMediaType({adm}, newBid);
       expect(newBid.mediaType).to.equal('native', adm + ' Is a Native adm');
     });
 
-    it('identifies banner adm type', function() {
+    it('identifies banner adm type', function () {
       let adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵	<h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
       let newBid = {mediaType: 'unknown'};
       _checkMediaType({adm}, newBid);
@@ -594,7 +594,7 @@ describe('PubWiseAdapter', function () {
   });
 
   describe('Properly Parses AdSlot Data', function () {
-    it('parses banner', function() {
+    it('parses banner', function () {
       let testBid = utils.deepClone(sampleValidBannerBidRequest)
       _parseAdSlot(testBid)
       expect(testBid).to.deep.equal(sampleBidderBannerRequest);
@@ -602,7 +602,7 @@ describe('PubWiseAdapter', function () {
   });
 
   describe('Properly Handles Response', function () {
-    it('handles response with muiltiple responses', function() {
+    it('handles response with muiltiple responses', function () {
       // the request when it comes back is on the data object
       let pbResponse = spec.interpretResponse(sampleRTBResponse, {'data': sampleRequest})
       expect(pbResponse).to.deep.equal(samplePBBidObjects);
@@ -771,7 +771,7 @@ describe('PubWiseAdapter', function () {
       expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
     });
 
-    it('should assign mediaType even if bid.ext.mediaType does not exists', function() {
+    it('should assign mediaType even if bid.ext.mediaType does not exists', function () {
       let newrequest = spec.buildRequests(newvideoRequests, {
         auctionId: 'new-auction-id'
       });
@@ -779,7 +779,7 @@ describe('PubWiseAdapter', function () {
       expect(newresponse[0].mediaType).to.equal('video');
     });
 
-    it('should not assign renderer if bid is video and request is for instream', function() {
+    it('should not assign renderer if bid is video and request is for instream', function () {
       let request = spec.buildRequests(videoBidRequests, {
         auctionId: 'new-auction-id'
       });
@@ -787,7 +787,7 @@ describe('PubWiseAdapter', function () {
       expect(response[0].renderer).to.not.exist;
     });
 
-    it('should process instream and outstream', function() {
+    it('should process instream and outstream', function () {
       let validOutstreamRequest =
       {
         code: 'video1',
@@ -856,7 +856,7 @@ describe('PubWiseAdapter', function () {
       expect(instreamRequest).to.equal(true);
     });
 
-    describe('Checking for Video.Placement property', function() {
+    describe('Checking for Video.Placement property', function () {
       let sandbox, utilsMock;
       const adUnit = 'DivCheckPlacement';
       const msg_placement_missing = 'PubWise: Video.Placement param missing for DivCheckPlacement';
@@ -883,12 +883,12 @@ describe('PubWiseAdapter', function () {
         sandbox.restore();
       })
 
-      it('should log Video.Placement param missing', function() {
+      it('should log Video.Placement param missing', function () {
         _checkVideoPlacement(videoData, adUnit);
         // when failing this gives an odd message about "AssertError: expected logWarn to be called with arguments" it means the specific message expected
         sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
       })
-      it('shoud not log Video.Placement param missing', function() {
+      it('shoud not log Video.Placement param missing', function () {
         videoData['placement'] = 1;
         _checkVideoPlacement(videoData, adUnit);
         sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);

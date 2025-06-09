@@ -57,8 +57,8 @@ describe('Livewrapped adapter tests', function () {
     config.resetConfig();
   });
 
-  describe('isBidRequestValid', function() {
-    it('should accept a request with id only as valid', function() {
+  describe('isBidRequestValid', function () {
+    it('should accept a request with id only as valid', function () {
       let bid = {params: {adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37'}};
 
       let result = spec.isBidRequestValid(bid);
@@ -66,7 +66,7 @@ describe('Livewrapped adapter tests', function () {
       expect(result).to.be.true;
     });
 
-    it('should accept a request with adUnitName and PublisherId as valid', function() {
+    it('should accept a request with adUnitName and PublisherId as valid', function () {
       let bid = {params: {adUnitName: 'panorama_d_1', publisherId: '26947112-2289-405D-88C1-A7340C57E63E'}};
 
       let result = spec.isBidRequestValid(bid);
@@ -74,7 +74,7 @@ describe('Livewrapped adapter tests', function () {
       expect(result).to.be.true;
     });
 
-    it('should accept a request with adUnitCode and PublisherId as valid', function() {
+    it('should accept a request with adUnitCode and PublisherId as valid', function () {
       let bid = {adUnitCode: 'panorama_d_1', params: {publisherId: '26947112-2289-405D-88C1-A7340C57E63E'}};
 
       let result = spec.isBidRequestValid(bid);
@@ -82,7 +82,7 @@ describe('Livewrapped adapter tests', function () {
       expect(result).to.be.true;
     });
 
-    it('should accept a request with placementCode and PublisherId as valid', function() {
+    it('should accept a request with placementCode and PublisherId as valid', function () {
       let bid = {placementCode: 'panorama_d_1', params: {publisherId: '26947112-2289-405D-88C1-A7340C57E63E'}};
 
       let result = spec.isBidRequestValid(bid);
@@ -90,7 +90,7 @@ describe('Livewrapped adapter tests', function () {
       expect(result).to.be.true;
     });
 
-    it('should not accept a request with adUnitName, adUnitCode, placementCode but no PublisherId as valid', function() {
+    it('should not accept a request with adUnitName, adUnitCode, placementCode but no PublisherId as valid', function () {
       let bid = {placementCode: 'panorama_d_1', adUnitCode: 'panorama_d_1', params: {adUnitName: 'panorama_d_1'}};
 
       let result = spec.isBidRequestValid(bid);
@@ -99,8 +99,8 @@ describe('Livewrapped adapter tests', function () {
     });
   });
 
-  describe('buildRequests', function() {
-    it('should make a well-formed single request object', function() {
+  describe('buildRequests', function () {
+    it('should make a well-formed single request object', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -134,7 +134,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should send ortb2Imp', function() {
+    it('should send ortb2Imp', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let ortb2ImpRequest = clone(bidderRequest);
@@ -171,7 +171,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed multiple request object', function() {
+    it('should make a well-formed multiple request object', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let multiplebidRequest = clone(bidderRequest);
@@ -221,7 +221,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with AdUnitName', function() {
+    it('should make a well-formed single request object with AdUnitName', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -257,7 +257,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with less parameters', function() {
+    it('should make a well-formed single request object with less parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -292,7 +292,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with less parameters, no publisherId', function() {
+    it('should make a well-formed single request object with less parameters, no publisherId', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -327,7 +327,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with app parameters', function() {
+    it('should make a well-formed single request object with app parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -364,7 +364,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with debug parameters', function() {
+    it('should make a well-formed single request object with debug parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -401,7 +401,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with optional parameters', function() {
+    it('should make a well-formed single request object with optional parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -436,7 +436,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with ad blocker recovered parameter', function() {
+    it('should make a well-formed single request object with ad blocker recovered parameter', function () {
       sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
@@ -471,7 +471,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with native only parameters', function() {
+    it('should make a well-formed single request object with native only parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -506,7 +506,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with native and banner parameters', function() {
+    it('should make a well-formed single request object with native and banner parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -542,7 +542,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with video only parameters', function() {
+    it('should make a well-formed single request object with video only parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -577,7 +577,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should use app objects', function() {
+    it('should use app objects', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -628,7 +628,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should use mediaTypes.banner.sizes before legacy sizes', function() {
+    it('should use mediaTypes.banner.sizes before legacy sizes', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -662,7 +662,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass gdpr true parameters', function() {
+    it('should pass gdpr true parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testRequest = clone(bidderRequest);
@@ -703,7 +703,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass gdpr false parameters', function() {
+    it('should pass gdpr false parameters', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testRequest = clone(bidderRequest);
@@ -742,7 +742,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass us privacy parameter', function() {
+    it('should pass us privacy parameter', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testRequest = clone(bidderRequest);
@@ -779,7 +779,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass coppa parameter', function() {
+    it('should pass coppa parameter', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -823,7 +823,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass no cookie support', function() {
+    it('should pass no cookie support', function () {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => false);
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -857,7 +857,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should pass no cookie support Safari', function() {
+    it('should pass no cookie support Safari', function () {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => true);
       let result = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -891,7 +891,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should use params.url, then bidderRequest.refererInfo.page', function() {
+    it('should use params.url, then bidderRequest.refererInfo.page', function () {
       let testRequest = clone(bidderRequest);
       testRequest.refererInfo = {page: 'https://www.topurl.com'};
 
@@ -908,7 +908,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data.url).to.equal('https://www.topurl.com');
     });
 
-    it('should make use of pubcid if available', function() {
+    it('should make use of pubcid if available', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -945,7 +945,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make userId take precedence over pubcid', function() {
+    it('should make userId take precedence over pubcid', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
       let testbidRequest = clone(bidderRequest);
@@ -981,7 +981,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('width and height should default to values from window when not set in config', function() {
+    it('width and height should default to values from window when not set in config', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1020,8 +1020,8 @@ describe('Livewrapped adapter tests', function () {
     });
   });
 
-  describe('price floors module', function() {
-    it('price floors module disabled', function() {
+  describe('price floors module', function () {
+    it('price floors module disabled', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1057,7 +1057,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('getFloor does not return an object', function() {
+    it('getFloor does not return an object', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1097,7 +1097,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('getFloor returns a NaN floor', function() {
+    it('getFloor returns a NaN floor', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1137,7 +1137,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('getFloor returns unexpected currency', function() {
+    it('getFloor returns unexpected currency', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1177,7 +1177,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('getFloor returns valid floor - ad server currency', function() {
+    it('getFloor returns valid floor - ad server currency', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1198,7 +1198,7 @@ describe('Livewrapped adapter tests', function () {
       });
     });
 
-    it('getFloor returns valid floor - default currency', function() {
+    it('getFloor returns valid floor - default currency', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1241,7 +1241,7 @@ describe('Livewrapped adapter tests', function () {
     });
   });
 
-  it('should make use of user ids if available', function() {
+  it('should make use of user ids if available', function () {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
     let testbidRequest = clone(bidderRequest);
@@ -1272,7 +1272,7 @@ describe('Livewrapped adapter tests', function () {
     expect(data.rtbData.user.ext.eids).to.deep.equal(testbidRequest.bids[0].userIdAsEids);
   });
 
-  it('should merge user ids with existing ortb2', function() {
+  it('should merge user ids with existing ortb2', function () {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
@@ -1298,7 +1298,7 @@ describe('Livewrapped adapter tests', function () {
     expect(ortb2).to.deep.equal({user: {ext: {prop: 'value'}}});
   });
 
-  it('should send schain object if available', function() {
+  it('should send schain object if available', function () {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
     let testbidRequest = clone(bidderRequest);
@@ -1324,7 +1324,7 @@ describe('Livewrapped adapter tests', function () {
   });
 
   describe('interpretResponse', function () {
-    it('should handle single success response', function() {
+    it('should handle single success response', function () {
       let lwResponse = {
         ads: [
           {
@@ -1362,7 +1362,7 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
-    it('should forward dealId', function() {
+    it('should forward dealId', function () {
       let lwResponse = {
         ads: [
           {
@@ -1401,7 +1401,7 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
-    it('should forward bidderCode', function() {
+    it('should forward bidderCode', function () {
       let lwResponse = {
         ads: [
           {
@@ -1441,7 +1441,7 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
-    it('should handle single native success response', function() {
+    it('should handle single native success response', function () {
       let lwResponse = {
         ads: [
           {
@@ -1482,7 +1482,7 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
-    it('should handle single video success response', function() {
+    it('should handle single video success response', function () {
       let lwResponse = {
         ads: [
           {
@@ -1523,7 +1523,7 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
-    it('should handle multiple success response', function() {
+    it('should handle multiple success response', function () {
       let lwResponse = {
         ads: [
           {
@@ -1585,7 +1585,7 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
-    it('should return meta-data', function() {
+    it('should return meta-data', function () {
       let lwResponse = {
         ads: [
           {
@@ -1623,7 +1623,7 @@ describe('Livewrapped adapter tests', function () {
       expect(bids).to.deep.equal(expectedResponse);
     })
 
-    it('should send debug-data to external debugger', function() {
+    it('should send debug-data to external debugger', function () {
       let lwResponse = {
         ads: [
           {
@@ -1646,7 +1646,7 @@ describe('Livewrapped adapter tests', function () {
       let debugData;
 
       window.livewrapped = {
-        s2sDebug: function(dbg) {
+        s2sDebug: function (dbg) {
           debugData = dbg;
         }
       };
@@ -1671,7 +1671,7 @@ describe('Livewrapped adapter tests', function () {
       }];
     });
 
-    it('should return empty if no server responses', function() {
+    it('should return empty if no server responses', function () {
       let syncs = spec.getUserSyncs({
         pixelEnabled: true,
         iframeEnabled: true
@@ -1682,7 +1682,7 @@ describe('Livewrapped adapter tests', function () {
       expect(syncs).to.deep.equal(expectedResponse)
     });
 
-    it('should return empty if no user sync', function() {
+    it('should return empty if no user sync', function () {
       let syncs = spec.getUserSyncs({
         pixelEnabled: true,
         iframeEnabled: true
@@ -1693,7 +1693,7 @@ describe('Livewrapped adapter tests', function () {
       expect(syncs).to.deep.equal(expectedResponse)
     });
 
-    it('should returns pixel and iframe user sync', function() {
+    it('should returns pixel and iframe user sync', function () {
       let syncs = spec.getUserSyncs({
         pixelEnabled: true,
         iframeEnabled: true
@@ -1704,7 +1704,7 @@ describe('Livewrapped adapter tests', function () {
       expect(syncs).to.deep.equal(expectedResponse)
     });
 
-    it('should returns pixel only if iframe not supported user sync', function() {
+    it('should returns pixel only if iframe not supported user sync', function () {
       let syncs = spec.getUserSyncs({
         pixelEnabled: true,
         iframeEnabled: false
@@ -1715,7 +1715,7 @@ describe('Livewrapped adapter tests', function () {
       expect(syncs).to.deep.equal(expectedResponse)
     });
 
-    it('should returns iframe only if pixel not supported user sync', function() {
+    it('should returns iframe only if pixel not supported user sync', function () {
       let syncs = spec.getUserSyncs({
         pixelEnabled: false,
         iframeEnabled: true
@@ -1728,6 +1728,6 @@ describe('Livewrapped adapter tests', function () {
   });
 });
 
-function clone(obj) {
+function clone (obj) {
   return JSON.parse(JSON.stringify(obj));
 }

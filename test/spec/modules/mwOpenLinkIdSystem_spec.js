@@ -8,7 +8,7 @@ const P_CONFIG_MOCK = {
 };
 
 describe('mwOpenLinkId module', function () {
-  beforeEach(function() {
+  beforeEach(function () {
     writeCookie('');
   });
 

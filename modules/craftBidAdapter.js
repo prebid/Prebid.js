@@ -18,11 +18,11 @@ export const spec = {
   aliases: ['craft'],
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.sitekey && !!bid.params.placementId && !isAmp();
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     const bidRequest = bidRequests[0];
@@ -65,7 +65,7 @@ export const spec = {
     return request;
   },
 
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, {bidderRequest}) {
     try {
       const bids = interpretResponseUtil(serverResponse, {bidderRequest}, serverBid => {
         const rtbBid = getRtbBid(serverBid);
@@ -81,7 +81,7 @@ export const spec = {
     }
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     ajax(bid._prebidWon, null, null, {
       method: 'POST',
       contentType: 'application/json'
@@ -89,7 +89,7 @@ export const spec = {
   }
 };
 
-function formatRequest(payload, bidderRequest) {
+function formatRequest (payload, bidderRequest) {
   let options = {};
   if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     options = {
@@ -107,7 +107,7 @@ function formatRequest(payload, bidderRequest) {
   };
 }
 
-function newBid(serverBid, rtbBid, bidderRequest) {
+function newBid (serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
@@ -128,7 +128,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   return bid;
 }
 
-function bidToTag(bid) {
+function bidToTag (bid) {
   const tag = {};
   for (var k in bid.params) {
     tag[k] = bid.params[k];
@@ -157,11 +157,11 @@ function bidToTag(bid) {
   return tag;
 }
 
-function getRtbBid(tag) {
+function getRtbBid (tag) {
   return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
 }
 
-function parseMediaType(rtbBid) {
+function parseMediaType (rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType === VIDEO) {
     return VIDEO;
@@ -172,7 +172,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
-function isAmp() {
+function isAmp () {
   try {
     const ampContext = window.context || window.parent.context;
     if (ampContext && ampContext.pageViewId) {

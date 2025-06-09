@@ -1,7 +1,7 @@
 import { SubmoduleBuilder, ParentModule } from 'libraries/video/shared/parentModule.js';
 import { expect } from 'chai';
 
-describe('Parent Module', function() {
+describe('Parent Module', function () {
   const idForMock = 0;
   const vendorCodeForMock = 'a';
   const unrecognizedId = 999;

@@ -40,7 +40,7 @@ const urlAddParams = (url, params) => {
  * @param {Object} target
  * @param {Object} sources
  */
-function mergeDeep(target, ...sources) {
+function mergeDeep (target, ...sources) {
   if (!sources.length) return target;
   const source = sources.shift();
 
@@ -80,7 +80,7 @@ function mergeDeep(target, ...sources) {
  * @param {Object} target
  * @param {Object} source
  */
-function mergeLazy(target, source) {
+function mergeLazy (target, source) {
   if (!isPlainObject(target)) {
     target = {};
   }
@@ -98,7 +98,7 @@ function mergeLazy(target, source) {
  * @param {String} defaultVal
  * @param {Object} arg
  */
-function paramOrDefault(param, defaultVal, arg) {
+function paramOrDefault (param, defaultVal, arg) {
   if (isFn(param)) {
     return param(arg);
   } else if (isStr(param)) {
@@ -113,7 +113,7 @@ function paramOrDefault(param, defaultVal, arg) {
  * @param {Object} rtd
  * @param {Object} rtdConfig
  */
-export function addRealTimeData(bidConfig, rtd, rtdConfig) {
+export function addRealTimeData (bidConfig, rtd, rtdConfig) {
   if (rtdConfig.params && rtdConfig.params.handleRtd) {
     rtdConfig.params.handleRtd(bidConfig, rtd, rtdConfig, config);
   } else {
@@ -134,7 +134,7 @@ export function addRealTimeData(bidConfig, rtd, rtdConfig) {
  * @param {Object} rtdConfig
  * @param {Object} userConsent
  */
-export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+export function getRealTimeData (bidConfig, onDone, rtdConfig, userConsent) {
   if (!storage.getDataFromLocalStorage(LS_TAM_KEY)) {
     const partnerId = rtdConfig.params.partnerId | 0;
     const hadronIdUrl = rtdConfig.params && rtdConfig.params.hadronIdUrl;
@@ -181,7 +181,7 @@ export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
  * @param {Object} userConsent
  * @return {boolean}
  */
-function init(provider, userConsent) {
+function init (provider, userConsent) {
   return true;
 }
 

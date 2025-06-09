@@ -28,7 +28,7 @@ export const converter = ortbConverter({
     netRevenue: true,
     ttl: DEFAULT_TTL,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     if (bidRequest.params.siteId) {
@@ -49,7 +49,7 @@ export const converter = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
     deepSetValue(request, 'test', akceloDemoIsOn() ? 1 : 0);
@@ -59,7 +59,7 @@ export const converter = ortbConverter({
 
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     // In ORTB 2.5, bid responses do not specify their mediatype, which is something Prebid.js requires
     context.mediaType = bid.mtype && ORTB_MTYPES[bid.mtype]
       ? ORTB_MTYPES[bid.mtype]
@@ -79,7 +79,7 @@ export const spec = {
    * @param {Bid} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     if (!bid?.params?.adUnitId) {
       logError("Missing required parameter 'adUnitId'");
       return false;
@@ -97,7 +97,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidRequests, bidderRequest });
 
     return [{ method: 'POST', url: AUCTION_URL, data }];
@@ -110,7 +110,7 @@ export const spec = {
    * @param  {BidRequest} bidRequest  The bid request sent to the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse(serverResponse, bidRequest) {
+  interpretResponse (serverResponse, bidRequest) {
     const { bids } = converter.fromORTB({
       response: serverResponse.body,
       request: bidRequest.data,
@@ -128,7 +128,7 @@ export const spec = {
    * @param {*} uspConsent
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (syncOptions.iframeEnabled) {
       let syncParams = `?endpoint=${COOKIE_SYNC_ENDPOINT}`;
       if (gdprConsent) {

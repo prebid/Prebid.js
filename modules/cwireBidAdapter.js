@@ -32,7 +32,7 @@ export const storage = getStorageManager({bidderCode: BIDDER_CODE});
  * @param bid
  * @returns {*&{cwExt: {dimensions: {width: number, height: number}, style: {maxWidth: number, maxHeight: number}}}}
  */
-function slotDimensions(bid) {
+function slotDimensions (bid) {
   let adUnitCode = bid.adUnitCode;
   let slotEl = document.getElementById(adUnitCode);
 
@@ -70,7 +70,7 @@ function slotDimensions(bid) {
  *
  * @returns *[]
  */
-function getFeatureFlags() {
+function getFeatureFlags () {
   let ffParam = getParameterByName('cwfeatures')
   if (ffParam) {
     return ffParam.split(',')
@@ -78,7 +78,7 @@ function getFeatureFlags() {
   return []
 }
 
-function getRefGroups() {
+function getRefGroups () {
   const groups = getParameterByName('cwgroups')
   if (groups) {
     return groups.split(',')
@@ -89,25 +89,25 @@ function getRefGroups() {
 /**
  * Returns the downlink speed of the connection in Mbps or an empty string if not available.
  */
-function getConnectionDownLink(nav) {
+function getConnectionDownLink (nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
 /**
  * Reads the CWID from local storage.
  */
-function getCwid() {
+function getCwid () {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(CWID_KEY) : null;
 }
 
-function hasCwid() {
+function hasCwid () {
   return storage.localStorageIsEnabled() && storage.getDataFromLocalStorage(CWID_KEY);
 }
 
 /**
  * Store the CWID to local storage.
  */
-function updateCwid(cwid) {
+function updateCwid (cwid) {
   if (storage.localStorageIsEnabled()) {
     storage.setDataInLocalStorage(CWID_KEY, cwid)
   } else {
@@ -118,7 +118,7 @@ function updateCwid(cwid) {
 /**
  * Extract and collect cwire specific extensions.
  */
-function getCwExtension() {
+function getCwExtension () {
   const cwId = getCwid();
   const cwCreative = getParameterByName('cwcreative')
   const cwGroups = getRefGroups()
@@ -252,7 +252,7 @@ export const spec = {
     sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     logInfo('Collecting user-syncs: ', JSON.stringify({syncOptions, gdprConsent, uspConsent, serverResponses}));
 
     const syncs = []

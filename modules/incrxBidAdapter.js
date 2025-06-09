@@ -27,7 +27,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     return !!(bid.params.placementId);
   },
-  hasTypeVideo(bid) {
+  hasTypeVideo (bid) {
     return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
   },
   /**
@@ -131,7 +131,7 @@ export const spec = {
       }
     }
     bids.push(responseBid);
-    function createRenderer(bid, rendererOptions = {}) {
+    function createRenderer (bid, rendererOptions = {}) {
       const renderer = Renderer.install({
         id: bid.slotBidId,
         url: bid.rUrl,

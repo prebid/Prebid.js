@@ -46,7 +46,7 @@ describe('the rubicon adapter', function () {
    * @param {Object} bid
    * @return {sizeMapConverted}
    */
-  function getSizeIdForBid(sizesMapConverted, bid) {
+  function getSizeIdForBid (sizesMapConverted, bid) {
     return sizesMapConverted.find(item => (item.width === bid.width && item.height === bid.height));
   }
 
@@ -55,7 +55,7 @@ describe('the rubicon adapter', function () {
    * @param {sizeMapConverted} size
    * @return {Object}
    */
-  function getResponseAdBySize(ads, size) {
+  function getResponseAdBySize (ads, size) {
     return ads.find(item => item.size_id === size.sizeId);
   }
 
@@ -64,7 +64,7 @@ describe('the rubicon adapter', function () {
    * @param {sizeMapConverted} size
    * @return {BidRequest}
    */
-  function getBidRequestBySize(bidRequests, size) {
+  function getBidRequestBySize (bidRequests, size) {
     return bidRequests.find(item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
   }
 
@@ -84,7 +84,7 @@ describe('the rubicon adapter', function () {
    * @return {{status: string, cpm: number, zone_id: *, size_id: *, impression_id: *, ad_id: *, creative_id: string, type: string, targeting: *[]}}
    */
 
-  function getBidderRequest() {
+  function getBidderRequest () {
     return {
       bidderCode: 'rubicon',
       ortb2: {
@@ -138,7 +138,7 @@ describe('the rubicon adapter', function () {
     };
   };
 
-  function createResponseAdByIndex(i, sizeId, indexOverMap) {
+  function createResponseAdByIndex (i, sizeId, indexOverMap) {
     const overridePropMap = (indexOverMap && indexOverMap[i] && typeof indexOverMap[i] === 'object') ? indexOverMap[i] : {};
     const overrideProps = Object.keys(overridePropMap).reduce((aggregate, key) => {
       aggregate[key] = overridePropMap[key];
@@ -176,7 +176,7 @@ describe('the rubicon adapter', function () {
    * @param {Array.<Array>} size
    * @return {{ params: {accountId: string, siteId: string, zoneId: string }, adUnitCode: string, code: string, sizes: *[], bidId: string, bidderRequestId: string }}
    */
-  function createBidRequestByIndex(i, size) {
+  function createBidRequestByIndex (i, size) {
     return {
       bidder: 'rubicon',
       params: {
@@ -200,7 +200,7 @@ describe('the rubicon adapter', function () {
   /**
    * @param {boolean} [gdprApplies]
    */
-  function createGdprBidderRequest(gdprApplies) {
+  function createGdprBidderRequest (gdprApplies) {
     const bidderRequest = getBidderRequest();
     if (typeof gdprApplies === 'boolean') {
       bidderRequest.gdprConsent = {
@@ -215,11 +215,11 @@ describe('the rubicon adapter', function () {
     return bidderRequest;
   }
 
-  function addUspToBidderRequest(bidderRequest) {
+  function addUspToBidderRequest (bidderRequest) {
     bidderRequest.uspConsent = '1NYN';
   }
 
-  function createVideoBidderRequest() {
+  function createVideoBidderRequest () {
     const bidderRequest = createGdprBidderRequest(true);
     addUspToBidderRequest(bidderRequest);
 
@@ -349,7 +349,7 @@ describe('the rubicon adapter', function () {
     return bidderRequest;
   }
 
-  function removeVideoParamFromBidderRequest(bidderRequest) {
+  function removeVideoParamFromBidderRequest (bidderRequest) {
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
@@ -359,7 +359,7 @@ describe('the rubicon adapter', function () {
     bid.params.video = false;
   }
 
-  function createVideoBidderRequestOutstream() {
+  function createVideoBidderRequestOutstream () {
     const bidderRequest = createGdprBidderRequest(false);
     let bid = bidderRequest.bids[0];
     delete bid.sizes;
@@ -667,7 +667,7 @@ describe('the rubicon adapter', function () {
           expect(data.get('p_pos')).to.equal(null);
         });
 
-        it('should correctly send p_pos in sra fashion', function() {
+        it('should correctly send p_pos in sra fashion', function () {
           config.setConfig({rubicon: {singleRequest: true}});
           // first one is atf
           var sraPosRequest = utils.deepClone(bidderRequest);
@@ -1704,7 +1704,7 @@ describe('the rubicon adapter', function () {
             expect(data.get('p_gpid')).to.equal('/1233/sports&div1');
           });
 
-          describe('Pass DSA signals', function() {
+          describe('Pass DSA signals', function () {
             const ortb2 = {
               regs: {
                 ext: {
@@ -1745,7 +1745,7 @@ describe('the rubicon adapter', function () {
 
               expect(data.get('dsatransparency')).to.equal(expectedTransparency);
             })
-            it('should send dsaparams if \"ortb2.regs.ext.dsa.transparancy[0].params\"', function() {
+            it('should send dsaparams if \"ortb2.regs.ext.dsa.transparancy[0].params\"', function () {
               const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
               ortb2Clone.regs.ext.dsa.transparency = [{
@@ -1759,7 +1759,7 @@ describe('the rubicon adapter', function () {
 
               expect(data.get('dsatransparency')).to.equal(expectedTransparency);
             })
-            it('should pass an empty transparency param if \"ortb2.regs.ext.dsa.transparency[0].params\" is empty', function() {
+            it('should pass an empty transparency param if \"ortb2.regs.ext.dsa.transparency[0].params\" is empty', function () {
               const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
               ortb2Clone.regs.ext.dsa.transparency = [{
@@ -1771,7 +1771,7 @@ describe('the rubicon adapter', function () {
               const data = new URLSearchParams(request.data);
               expect(data.get('dsatransparency')).to.be.null
             })
-            it('should send an empty transparency if \"ortb2.regs.ext.dsa.transparency[0].domain\" is empty', function() {
+            it('should send an empty transparency if \"ortb2.regs.ext.dsa.transparency[0].domain\" is empty', function () {
               const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
               ortb2Clone.regs.ext.dsa.transparency = [{
@@ -1784,7 +1784,7 @@ describe('the rubicon adapter', function () {
 
               expect(data.get('dsatransparency')).to.be.null
             })
-            it('should send dsa signals if \"ortb2.regs.ext.dsa\"', function() {
+            it('should send dsa signals if \"ortb2.regs.ext.dsa\"', function () {
               const expectedTransparency = 'testdomain.com~1~~testdomain2.com~1_2'
               const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest)
               const data = new URLSearchParams(request.data);
@@ -1800,7 +1800,7 @@ describe('the rubicon adapter', function () {
               expect(data.get('dsadatatopubs')).to.equal(ortb2.regs.ext.dsa.datatopub.toString());
               expect(data.get('dsatransparency')).to.equal(expectedTransparency);
             })
-            it('should return one transparency param', function() {
+            it('should return one transparency param', function () {
               const expectedTransparency = 'testdomain.com~1';
               const ortb2Clone = deepClone(ortb2);
               ortb2Clone.regs.ext.dsa.transparency.pop()
@@ -3075,7 +3075,7 @@ describe('the rubicon adapter', function () {
             });
 
             describe('that contains also a banner mediaType', function () {
-              it('should send the banner to fastlane BUT NOT the native bid because missing params.video', function() {
+              it('should send the banner to fastlane BUT NOT the native bid because missing params.video', function () {
                 const bidReq = addNativeToBidRequest(bidderRequest);
                 bidReq.bids[0].mediaTypes.banner = {
                   sizes: [[300, 250]]
@@ -3086,7 +3086,7 @@ describe('the rubicon adapter', function () {
               });
             });
             describe('with another banner request', () => {
-              it('should send the native bid to PBS and the banner to fastlane', function() {
+              it('should send the native bid to PBS and the banner to fastlane', function () {
                 const bidReq = addNativeToBidRequest(bidderRequest);
                 bidReq.bids[0].params = { video: {} };
                 // add second bidRqeuest
@@ -3572,7 +3572,7 @@ describe('the rubicon adapter', function () {
           expect(bids[0].cpm).to.be.equal(0);
         });
 
-        it('should handle DSA object from response', function() {
+        it('should handle DSA object from response', function () {
           let response = {
             'status': 'ok',
             'account_id': 14062,
@@ -4224,7 +4224,7 @@ describe('the rubicon adapter', function () {
               rendererUrl: 'https://example.test/renderer.js'
             }});
             window.MagniteApex = {
-              renderAd: function() {
+              renderAd: function () {
                 return null;
               }
             }
@@ -4708,7 +4708,7 @@ describe('the rubicon adapter', function () {
     });
   });
 
-  describe('configurable settings', function() {
+  describe('configurable settings', function () {
     afterEach(() => {
       config.setConfig({
         rubicon: {
@@ -4757,7 +4757,7 @@ describe('the rubicon adapter', function () {
   });
 });
 
-function addNativeToBidRequest(bidderRequest, options = {twin: false}) {
+function addNativeToBidRequest (bidderRequest, options = {twin: false}) {
   const nativeOrtbRequest = {
     assets: [{
       id: 0,
@@ -4814,7 +4814,7 @@ function addNativeToBidRequest(bidderRequest, options = {twin: false}) {
   return bidderRequest;
 }
 
-function getNativeResponse(options = {impid: 1234}) {
+function getNativeResponse (options = {impid: 1234}) {
   return {
     'id': 'd7786a80-bfb4-4541-859f-225a934e81d4',
     'seatbid': [

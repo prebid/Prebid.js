@@ -89,7 +89,7 @@ function flushEvents () {
   }
 }
 
-function clearCache(cache) {
+function clearCache (cache) {
   const now = Date.now();
   for (const [key, { t }] of Object.entries(cache)) {
     if ((t + CACHE_TTL) < now) {
@@ -98,7 +98,7 @@ function clearCache(cache) {
   }
 }
 
-export function resetAnalyticAdapter() {
+export function resetAnalyticAdapter () {
   latestAuction = '';
   previousAuction = '';
   auctionCount = 0;
@@ -133,7 +133,7 @@ function processEvent (event) {
   }
 }
 
-function processErrorParams(params) {
+function processErrorParams (params) {
   if (isPlainObject(params)) {
     try {
       return JSON.stringify(params);
@@ -358,7 +358,7 @@ function handleBidderDone (args) {
 function getAuctionUnitsData (auctionObject) {
   let unitsData = {};
   const {bidsReceived, bidsRejected} = auctionObject;
-  let _unitsDataBidReducer = function(data, bid, key) {
+  let _unitsDataBidReducer = function (data, bid, key) {
     const {adUnitCode, bidder} = bid;
     data[adUnitCode] = data[adUnitCode] || {};
     data[adUnitCode][key] = data[adUnitCode][key] || {};
@@ -374,7 +374,7 @@ function getAuctionUnitsData (auctionObject) {
   }, unitsData);
   return unitsData
 }
-function handleEmptyAuction(auction) {
+function handleEmptyAuction (auction) {
   let auctionId = auction.auctionId;
   if (!auctionsData[auctionId]) {
     createAuctionData(auction, true);
@@ -515,13 +515,13 @@ function handleBidViewable (args) {
 
 let baseAdapter = adapter({analyticsType});
 let r2b2Analytics = Object.assign({}, baseAdapter, {
-  getUrl() {
+  getUrl () {
     return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_EVENT_PATH}`
   },
-  getErrorUrl() {
+  getErrorUrl () {
     return `${DEFAULT_PROTOCOL}://${LOG_SERVER}/${DEFAULT_ERROR_PATH}`
   },
-  enableAnalytics(conf = {}) {
+  enableAnalytics (conf = {}) {
     if (isPlainObject(conf.options)) {
       const {domain, configId, configVer, server} = conf.options;
       if (!domain || !isStr(domain)) {
@@ -553,7 +553,7 @@ let r2b2Analytics = Object.assign({}, baseAdapter, {
     }
     baseAdapter.enableAnalytics.call(this, conf);
   },
-  track(event) {
+  track (event) {
     const {eventType, args} = event;
     try {
       if (!adServerCurrency) {

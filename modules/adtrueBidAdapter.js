@@ -73,13 +73,13 @@ const NATIVE_ASSETS = {
   'CTA': {ID: 22, KEY: 'cta', TYPE: 12}
 };
 
-function _getDomainFromURL(url) {
+function _getDomainFromURL (url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
 
-let platform = (function getPlatform() {
+let platform = (function getPlatform () {
   var ua = navigator.userAgent;
   if (ua.indexOf('Android') > -1 || ua.indexOf('Adr') > -1) {
     return 'Android'
@@ -90,7 +90,7 @@ let platform = (function getPlatform() {
   return 'windows'
 })();
 
-function _generateGUID() {
+function _generateGUID () {
   var d = new Date().getTime();
   var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     var r = (d + Math.random() * 16) % 16 | 0;
@@ -100,15 +100,15 @@ function _generateGUID() {
   return guid;
 }
 
-function _isMobile() {
+function _isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
-function _isConnectedTV() {
+function _isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-function _parseAdSlot(bid) {
+function _parseAdSlot (bid) {
   bid.params.width = 0;
   bid.params.height = 0;
   // check if size is mentioned in sizes array. in that case do not check for @ in adslot
@@ -133,7 +133,7 @@ function _parseAdSlot(bid) {
   }
 }
 
-function _initConf(refererInfo) {
+function _initConf (refererInfo) {
   return {
     // TODO: do the fallbacks make sense here?
     pageURL: refererInfo?.page || window.location.href,
@@ -141,12 +141,12 @@ function _initConf(refererInfo) {
   };
 }
 
-function _getLanguage() {
+function _getLanguage () {
   const language = navigator.language ? 'language' : 'userLanguage';
   return navigator[language].split('-')[0];
 }
 
-function _createOrtbTemplate(conf) {
+function _createOrtbTemplate (conf) {
   var guid;
   if (storage.getDataFromLocalStorage('adtrue_user_id') == null) {
     storage.setDataInLocalStorage('adtrue_user_id', _generateGUID())
@@ -188,7 +188,7 @@ function _createOrtbTemplate(conf) {
   };
 }
 
-function _checkParamDataType(key, value, datatype) {
+function _checkParamDataType (key, value, datatype) {
   var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
   var functionToExecute;
   switch (datatype) {
@@ -212,7 +212,7 @@ function _checkParamDataType(key, value, datatype) {
   return UNDEFINED;
 }
 
-function _parseNativeResponse(bid, newBid) {
+function _parseNativeResponse (bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
     var adm = '';
@@ -273,7 +273,7 @@ function _parseNativeResponse(bid, newBid) {
   }
 }
 
-function _createBannerRequest(bid) {
+function _createBannerRequest (bid) {
   var sizes = bid.mediaTypes.banner.sizes;
   var format = [];
   var bannerObj;
@@ -314,7 +314,7 @@ function _createBannerRequest(bid) {
   return bannerObj;
 }
 
-function _createVideoRequest(bid) {
+function _createVideoRequest (bid) {
   var videoData = bid.params.video;
   var videoObj;
 
@@ -345,7 +345,7 @@ function _createVideoRequest(bid) {
   return videoObj;
 }
 
-function _checkMediaType(adm, newBid) {
+function _checkMediaType (adm, newBid) {
   var admStr = '';
   var videoRegex = new RegExp(/VAST\s+version/);
   newBid.mediaType = BANNER;
@@ -363,7 +363,7 @@ function _checkMediaType(adm, newBid) {
   }
 }
 
-function _createImpressionObject(bid, conf) {
+function _createImpressionObject (bid, conf) {
   var impObj = {};
   var bannerObj;
   var videoObj;

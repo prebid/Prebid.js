@@ -9,7 +9,7 @@ import { config } from 'src/config.js';
 const GATE_COOKIE_NAME = 'wnr_gate';
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
-function getMediaTypeFromBid(bid) {
+function getMediaTypeFromBid (bid) {
   return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
 }
 
@@ -26,12 +26,12 @@ describe('WinrAdapter', function () {
     let getCookieStub;
     let cookiesAreEnabledStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       getCookieStub = sinon.stub(storage, 'getCookie');
       cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       getCookieStub.restore();
       cookiesAreEnabledStub.restore();
     });
@@ -55,7 +55,7 @@ describe('WinrAdapter', function () {
     };
 
     describe('- with cookies disabled', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         cookiesAreEnabledStub.returns(false);
       });
 
@@ -66,7 +66,7 @@ describe('WinrAdapter', function () {
     });
 
     describe('- with gate cookie set', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         getCookieStub.withArgs(GATE_COOKIE_NAME).returns('true');
       });
 
@@ -77,7 +77,7 @@ describe('WinrAdapter', function () {
     });
 
     describe('- with cookies enabled and gate cookie not set', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         cookiesAreEnabledStub.returns(true);
         getCookieStub.withArgs(GATE_COOKIE_NAME).returns(null);
       });
@@ -129,13 +129,13 @@ describe('WinrAdapter', function () {
       }
     ];
 
-    beforeEach(function() {
-      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
+    beforeEach(function () {
+      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function () {
         return [];
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       getAdUnitsStub.restore();
     });
 
@@ -157,7 +157,7 @@ describe('WinrAdapter', function () {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 1, height: 1}]);
     });
 
-    it('should add publisher_id in request', function() {
+    it('should add publisher_id in request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -185,7 +185,7 @@ describe('WinrAdapter', function () {
       });
     });
 
-    it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function() {
+    it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -256,7 +256,7 @@ describe('WinrAdapter', function () {
       expect(payload.tags[0].reserve).to.exist.and.to.equal(3);
     });
 
-    it('should contain hb_source value for other media', function() {
+    it('should contain hb_source value for other media', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -368,7 +368,7 @@ describe('WinrAdapter', function () {
       expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
     });
 
-    it('should add us privacy string to payload', function() {
+    it('should add us privacy string to payload', function () {
       let consentString = '1YA-';
       let bidderRequest = {
         'bidderCode': 'winr',
@@ -724,7 +724,7 @@ describe('WinrAdapter', function () {
       expect(result.length).to.equal(0);
     });
 
-    it('should add advertiser id', function() {
+    it('should add advertiser id', function () {
       let responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
 
@@ -738,7 +738,7 @@ describe('WinrAdapter', function () {
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
 
-    it('should add advertiserDomains', function() {
+    it('should add advertiserDomains', function () {
       let responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
 
@@ -753,7 +753,7 @@ describe('WinrAdapter', function () {
       expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
     });
 
-    it('should add params', function() {
+    it('should add params', function () {
       let responseParams = deepClone(response);
       let bidderRequest = {
         bids: [{

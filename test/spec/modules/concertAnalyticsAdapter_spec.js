@@ -7,7 +7,7 @@ const sinon = require('sinon');
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 
-describe('ConcertAnalyticsAdapter', function() {
+describe('ConcertAnalyticsAdapter', function () {
   let sandbox;
   let xhr;
   let requests;
@@ -31,7 +31,7 @@ describe('ConcertAnalyticsAdapter', function() {
     sandbox.restore();
   });
 
-  describe('track', function() {
+  describe('track', function () {
     beforeEach(function () {
       sandbox.stub(events, 'getEvents').returns([]);
 
@@ -46,12 +46,12 @@ describe('ConcertAnalyticsAdapter', function() {
       concertAnalytics.disableAnalytics();
     });
 
-    it('should catch all events', function() {
+    it('should catch all events', function () {
       sandbox.spy(concertAnalytics, 'track');
       expectEvents().to.beTrackedBy(concertAnalytics.track);
     });
 
-    it('should report data for BID_RESPONSE, BID_WON events', function() {
+    it('should report data for BID_RESPONSE, BID_WON events', function () {
       fireBidEvents(events);
       clock.tick(3000 + 1000);
 
@@ -61,13 +61,13 @@ describe('ConcertAnalyticsAdapter', function() {
       }
 
       for (var i = 0; i < eventsToReport.length; i++) {
-        expect(concertAnalytics.eventsStorage.some(function(event) {
+        expect(concertAnalytics.eventsStorage.some(function (event) {
           return event.event === eventsToReport[i]
         })).to.equal(true);
       }
     });
 
-    it('should report data in the shape expected by analytics endpoint', function() {
+    it('should report data in the shape expected by analytics endpoint', function () {
       fireBidEvents(events);
       clock.tick(3000 + 1000);
 
@@ -147,7 +147,7 @@ describe('ConcertAnalyticsAdapter', function() {
     'size': [1030, 590]
   }
 
-  function fireBidEvents(events) {
+  function fireBidEvents (events) {
     events.emit(EVENTS.AUCTION_INIT, { timestamp, auctionId, timeout, adUnits });
     events.emit(EVENTS.BID_REQUESTED, { bidder: 'concert' });
     events.emit(EVENTS.BID_RESPONSE, bidResponse);

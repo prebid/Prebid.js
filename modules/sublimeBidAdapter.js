@@ -22,7 +22,7 @@ const SUBLIME_VERSION = '0.8.0';
  * Identify the current device type
  * @returns {string}
  */
-function detectDevice() {
+function detectDevice () {
   const isMobile = /(?:phone|windows\s+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windows\s+ce|opera mini|avantgo|docomo)/i;
 
   const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\d+|meego|silk)(?! .+? mobile))/i;
@@ -40,7 +40,7 @@ const UUID_V4_RE = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0
  * @param {*} value
  * @returns {boolean}
  */
-function isValidNotifyId(value) {
+function isValidNotifyId (value) {
   return UUID_V4_RE.test(value);
 }
 
@@ -49,7 +49,7 @@ function isValidNotifyId(value) {
  * @param {String} msg
  * @param {Object=} obj
  */
-export function log(msg, obj) {
+export function log (msg, obj) {
   logInfo('SublimeBidAdapter - ' + msg, obj);
 }
 
@@ -65,7 +65,7 @@ export const state = {
  * Set a new state
  * @param {Object} value
  */
-export function setState(value) {
+export function setState (value) {
   Object.assign(state, value);
   log('State has been updated :', state);
 }
@@ -75,7 +75,7 @@ export function setState(value) {
  * @param {Object} params - The bid params
  * @return {string}
  */
-function getNotifyId(params) {
+function getNotifyId (params) {
   const sublime = window.sublime = window.sublime || {};
 
   let notifyId = params.notifyId || sublime.notifyId;
@@ -95,7 +95,7 @@ function getNotifyId(params) {
  * @param {string} eventName - Event name that will be send in the e= query string
  * @param {string} [sspName] - The optionnal name of the AD provider
  */
-export function sendEvent(eventName, sspName) {
+export function sendEvent (eventName, sspName) {
   const ts = Date.now();
   const eventObject = {
     t: ts,
@@ -127,7 +127,7 @@ export function sendEvent(eventName, sspName) {
  * @param {BidRequest} bid The bid params to validate.
  * @return {Boolean} True if this is a valid bid, and false otherwise.
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   const notifyId = getNotifyId(bid.params);
   if (!isValidNotifyId(notifyId)) {
     log(`invalid notifyId format, got "${notifyId}"`);
@@ -148,7 +148,7 @@ function isBidRequestValid(bid) {
  * @param {Object} bidderRequest - Info describing the request to the server.
  * @return {ServerRequest|ServerRequest[]} - Info describing the request to the server.
  */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const commonPayload = {
     pbav: SUBLIME_VERSION,
     // Current Prebid params
@@ -222,7 +222,7 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @param {*} bidRequest An object with bid request informations
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = [];
   const response = serverResponse.body;
 
@@ -277,7 +277,7 @@ function interpretResponse(serverResponse, bidRequest) {
  * Send pixel when bidWon event is triggered
  * @param {Object} bid
  */
-function onBidWon(bid) {
+function onBidWon (bid) {
   log('Bid won', bid);
   sendEvent('bidwon', bid.sspname);
 }
@@ -286,7 +286,7 @@ function onBidWon(bid) {
  * Send debug when we timeout
  * @param {Array<Object>} timeoutData
  */
-function onTimeout(timeoutData) {
+function onTimeout (timeoutData) {
   log('Timeout from adapter', timeoutData);
 
   const timeout = deepAccess(timeoutData, '0.timeout');

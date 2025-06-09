@@ -282,12 +282,12 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.have.property('iriscat');
     });
-    it('should set the irisid param when found iris_c73g5jq96mwso4d8', function() {
+    it('should set the irisid param when found iris_c73g5jq96mwso4d8', function () {
       const request = { ...bidRequests[0], params: { irisid: 'abc123' } };
       const bidRequest = spec.buildRequests([request], bidderRequest)[0];
       expect(bidRequest.data).to.have.property('irisid', 'iris_c73g5jq96mwso4d8');
     });
-    it('should set the curl param if present', function() {
+    it('should set the curl param if present', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request], bidderRequest)[0];
       expect(bidRequest.data).to.have.property('curl', 'http://pub.com/news');
@@ -1063,7 +1063,7 @@ describe('gumgumAdapter', function () {
       it('request size that  matches response size for in-slot', function () {
         const request = { ...bidRequest };
         const body = { ...serverResponse };
-        const expectedSize = [[ 320, 50 ], [300, 600], [300, 250]];
+        const expectedSize = [[320, 50], [300, 600], [300, 250]];
         let result;
         request.pi = 3;
         body.ad.width = 300;

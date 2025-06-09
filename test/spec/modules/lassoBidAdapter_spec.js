@@ -36,7 +36,7 @@ const bidderRequest = {
 };
 
 describe('lassoBidAdapter', function () {
-  describe('All needed functions are available', function() {
+  describe('All needed functions are available', function () {
     it(`isBidRequestValid is present and type function`, function () {
       expect(spec.isBidRequestValid).to.exist.and.to.be.a('function')
     });
@@ -94,7 +94,7 @@ describe('lassoBidAdapter', function () {
       expect(bidRequest.data).to.exist;
     });
 
-    it('Returns GET method', function() {
+    it('Returns GET method', function () {
       expect(bidRequest.method).to.exist;
       expect(bidRequest.method).to.equal('GET');
     });
@@ -127,7 +127,7 @@ describe('lassoBidAdapter', function () {
       expect(bidRequest.data).to.exist;
     });
 
-    it('Returns GET method', function() {
+    it('Returns GET method', function () {
       expect(bidRequest.method).to.exist;
       expect(bidRequest.method).to.equal('GET');
     });
@@ -160,7 +160,7 @@ describe('lassoBidAdapter', function () {
       expect(bidRequest.data).to.exist;
     });
 
-    it('Returns GET method', function() {
+    it('Returns GET method', function () {
       expect(bidRequest.method).to.exist;
       expect(bidRequest.method).to.equal('GET');
     });
@@ -193,7 +193,7 @@ describe('lassoBidAdapter', function () {
       expect(bidRequest.data).to.exist;
     });
 
-    it('Returns GET method', function() {
+    it('Returns GET method', function () {
       expect(bidRequest.method).to.exist;
       expect(bidRequest.method).to.equal('GET');
     });
@@ -226,7 +226,7 @@ describe('lassoBidAdapter', function () {
       expect(bidRequest.data).to.exist;
     });
 
-    it('Returns GET method', function() {
+    it('Returns GET method', function () {
       expect(bidRequest.method).to.exist;
       expect(bidRequest.method).to.equal('GET');
     });
@@ -259,7 +259,7 @@ describe('lassoBidAdapter', function () {
       expect(bidRequest.data).to.exist;
     });
 
-    it('Returns GET method', function() {
+    it('Returns GET method', function () {
       expect(bidRequest.method).to.exist;
       expect(bidRequest.method).to.equal('GET');
     });

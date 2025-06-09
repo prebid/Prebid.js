@@ -1,7 +1,7 @@
 import * as pbEvents from 'src/events.js';
 import { EVENTS } from '../../src/constants.js';
 
-export function fireEvents(events = [
+export function fireEvents (events = [
   EVENTS.AUCTION_INIT,
   EVENTS.AUCTION_END,
   EVENTS.BID_REQUESTED,
@@ -15,16 +15,16 @@ export function fireEvents(events = [
   });
 }
 
-export function expectEvents(events) {
+export function expectEvents (events) {
   events = fireEvents(events);
   return {
     to: {
-      beTrackedBy(trackFn) {
+      beTrackedBy (trackFn) {
         events.forEach(([eventType, args]) => {
           sinon.assert.calledWithMatch(trackFn, sinon.match({eventType, args}));
         });
       },
-      beBundledTo(bundleFn) {
+      beBundledTo (bundleFn) {
         events.forEach(([eventType, args]) => {
           sinon.assert.calledWithMatch(bundleFn, sinon.match.any, eventType, sinon.match(args))
         });

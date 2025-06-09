@@ -47,7 +47,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
   };
 }
 
-export function interpretResponse(serverResponse) {
+export function interpretResponse (serverResponse) {
   const bidsValue = []
   const bidResponse = serverResponse.body
   bidResponse.seatbid.forEach(seat => {
@@ -71,19 +71,19 @@ export function interpretResponse(serverResponse) {
   return bidsValue
 }
 
-export function onBidWon(bid) {
+export function onBidWon (bid) {
   if (bid.nurl) {
     const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.price);
     ajax(resolvedNurl);
   }
 }
 
-export function macroReplace(adm, cpm) {
+export function macroReplace (adm, cpm) {
   let replacedadm = replaceAuctionPrice(adm, cpm);
   return replacedadm;
 }
 
-function mapImpression(slot, bidderRequest) {
+function mapImpression (slot, bidderRequest) {
   const imp = {
     id: slot.bidId,
     bidFloor: getBidFloor(slot),
@@ -97,7 +97,7 @@ function mapImpression(slot, bidderRequest) {
   return imp
 }
 
-function mapNative(slot) {
+function mapNative (slot) {
   if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
     let request = {
       assets: slot.nativeOrtbRequest.assets || slot.nativeParams.ortb.assets,
@@ -109,7 +109,7 @@ function mapNative(slot) {
   }
 }
 
-function mapBanner(slot) {
+function mapBanner (slot) {
   if (slot.mediaTypes.banner) {
     let format = (slot.mediaTypes.banner.sizes || slot.sizes).map(size => {
       return { w: size[0], h: size[1] }
@@ -121,7 +121,7 @@ function mapBanner(slot) {
   }
 }
 
-export function buildBidResponse(serverResponse) {
+export function buildBidResponse (serverResponse) {
   const responseBody = serverResponse.body;
   const bids = [];
   responseBody.seatbid.forEach(seat => {

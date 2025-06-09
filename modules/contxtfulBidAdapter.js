@@ -25,15 +25,15 @@ const converter = ortbConverter({
     netRevenue: DEFAULT_NET_REVENUE,
     ttl: DEFAULT_TTL
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const reqData = buildRequest(imps, bidderRequest, context);
     return reqData;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     return bidResponse;
   }

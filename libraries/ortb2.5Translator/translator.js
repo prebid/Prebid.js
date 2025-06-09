@@ -11,7 +11,7 @@ export const EXT_PROMOTIONS = [
   'user.eids'
 ];
 
-export function splitPath(path) {
+export function splitPath (path) {
   const parts = path.split('.');
   const prefix = parts.slice(0, parts.length - 1).join('.');
   const field = parts[parts.length - 1];
@@ -25,7 +25,7 @@ export function splitPath(path) {
  * @return {(function({}): (function(): void|undefined))|*} a function that takes an object and, if it contains
  *        sourcePath, copies its contents to destinationPath, returning a function that deletes the original sourcePath.
  */
-export function moveRule(sourcePath, dest = (prefix, field) => `${prefix}.ext.${field}`) {
+export function moveRule (sourcePath, dest = (prefix, field) => `${prefix}.ext.${field}`) {
   const [prefix, field] = splitPath(sourcePath);
   dest = dest(prefix, field);
   return (ortb2) => {
@@ -37,7 +37,7 @@ export function moveRule(sourcePath, dest = (prefix, field) => `${prefix}.ext.${
   };
 }
 
-function kwarrayRule(section) {
+function kwarrayRule (section) {
   // move 2.6 `kwarray` into 2.5 comma-separated `keywords`.
   return (ortb2) => {
     const kwarray = ortb2[section]?.kwarray;
@@ -62,7 +62,7 @@ export const DEFAULT_RULES = Object.freeze([
  * @param rules translation rules; an array of functions of the type returned by `moveRule`
  * @return {function({}): {}} a translation function that takes an ORTB object, modifies it in place, and returns it.
  */
-export function ortb25Translator(deleteFields = true, rules = DEFAULT_RULES) {
+export function ortb25Translator (deleteFields = true, rules = DEFAULT_RULES) {
   return function (ortb2) {
     rules.forEach(f => {
       try {

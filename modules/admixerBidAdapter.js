@@ -101,7 +101,7 @@ export const spec = {
     }
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     const pixels = [];
     serverResponses.forEach(({body: {cm = {}} = {}}) => {
       const {pixels: img = [], iframes: frm = []} = cm;
@@ -116,11 +116,11 @@ export const spec = {
   }
 };
 
-function getEndpointUrl(code) {
+function getEndpointUrl (code) {
   return ((ALIASES) || []).find((val) => val.code === code)?.endpoint || ENDPOINT_URL;
 }
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidFloor', 0);
   }

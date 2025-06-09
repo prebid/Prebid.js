@@ -3,7 +3,7 @@ import {VIDEO} from '../../../src/mediaTypes.js';
 
 import {ORTB_VIDEO_PARAMS} from '../../../src/video.js';
 
-export function fillVideoImp(imp, bidRequest, context) {
+export function fillVideoImp (imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== VIDEO) return;
 
   const videoParams = bidRequest?.mediaTypes?.video;
@@ -25,7 +25,7 @@ export function fillVideoImp(imp, bidRequest, context) {
   }
 }
 
-export function fillVideoResponse(bidResponse, seatbid, context) {
+export function fillVideoResponse (bidResponse, seatbid, context) {
   if (bidResponse.mediaType === VIDEO) {
     if (context?.imp?.video?.w && context?.imp?.video?.h) {
       [bidResponse.playerWidth, bidResponse.playerHeight] = [context.imp.video.w, context.imp.video.h];

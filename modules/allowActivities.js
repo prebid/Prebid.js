@@ -5,12 +5,12 @@ const CFG_NAME = 'allowActivities';
 const RULE_NAME = `${CFG_NAME} config`;
 const DEFAULT_PRIORITY = 1;
 
-export function updateRulesFromConfig(registerRule) {
+export function updateRulesFromConfig (registerRule) {
   const activeRuleHandles = new Map();
   const defaultRuleHandles = new Map();
   const rulesByActivity = new Map();
 
-  function clearAllRules() {
+  function clearAllRules () {
     rulesByActivity.clear();
     Array.from(activeRuleHandles.values())
       .flatMap(ruleset => Array.from(ruleset.values()))
@@ -20,12 +20,12 @@ export function updateRulesFromConfig(registerRule) {
     defaultRuleHandles.clear();
   }
 
-  function cleanParams(params) {
+  function cleanParams (params) {
     // remove private parameters for publisher condition checks
     return Object.fromEntries(Object.entries(params).filter(([k]) => !k.startsWith('_')))
   }
 
-  function setupRule(activity, priority) {
+  function setupRule (activity, priority) {
     if (!activeRuleHandles.has(activity)) {
       activeRuleHandles.set(activity, new Map())
     }
@@ -41,7 +41,7 @@ export function updateRulesFromConfig(registerRule) {
     }
   }
 
-  function setupDefaultRule(activity) {
+  function setupDefaultRule (activity) {
     if (!defaultRuleHandles.has(activity)) {
       defaultRuleHandles.set(activity, registerRule(activity, RULE_NAME, function () {
         return {allow: false, reason: 'activity denied by default'}

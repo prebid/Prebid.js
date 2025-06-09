@@ -1,6 +1,6 @@
 import { spec } from '../../../modules/zetaBidAdapter.js'
 
-describe('Zeta Bid Adapter', function() {
+describe('Zeta Bid Adapter', function () {
   const bannerRequest = [{
     bidId: 12345,
     auctionId: 67890,
@@ -29,7 +29,7 @@ describe('Zeta Bid Adapter', function() {
     }
   }];
 
-  it('Test the bid validation function', function() {
+  it('Test the bid validation function', function () {
     const validBid = spec.isBidRequestValid(bannerRequest[0]);
     const invalidBid = spec.isBidRequestValid(null);
 

@@ -347,7 +347,7 @@ const mapBanner = slot => {
  * @param {object} paramValue Native parameter value
  * @returns {object} native asset object that conforms to ortb native ads spec
  */
-var mapAsset = function mapAsset(paramName, paramValue) {
+var mapAsset = function mapAsset (paramName, paramValue) {
   const { required, sizes, wmin, hmin, len } = paramValue;
   var id = nativeAssetMap[paramName];
   var assets = [];
@@ -602,11 +602,11 @@ const spec = {
   gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     // as per OneCode integration, bids without params are valid
     return true;
   },
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -667,7 +667,7 @@ const spec = {
     };
   },
 
-  interpretResponse(serverResponse, request) {
+  interpretResponse (serverResponse, request) {
     const { bidderRequest } = request;
     const { body: response = {} } = serverResponse;
     const { seatbid: responseSeat, ext: responseExt = {} } = response;
@@ -790,7 +790,7 @@ const spec = {
     return fledgeAuctionConfigs.length ? { bids, fledgeAuctionConfigs } : bids;
   },
 
-  getUserSyncs(syncOptions, _, gdprConsent = {}) {
+  getUserSyncs (syncOptions, _, gdprConsent = {}) {
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
     let mySyncs = [];
@@ -808,7 +808,7 @@ const spec = {
     return mySyncs;
   },
 
-  onTimeout(timeoutData) {
+  onTimeout (timeoutData) {
     const payload = getNotificationPayload(timeoutData);
     if (payload) {
       payload.event = 'timeout';
@@ -817,7 +817,7 @@ const spec = {
     }
   },
 
-  onBidderError(errorData) {
+  onBidderError (errorData) {
     const payload = getNotificationPayload(errorData);
     if (payload) {
       payload.event = 'parseError';
@@ -826,7 +826,7 @@ const spec = {
     }
   },
 
-  onBidViewable(bid) {
+  onBidViewable (bid) {
     const payload = getNotificationPayload(bid);
     if (payload) {
       payload.event = 'bidViewable';
@@ -835,7 +835,7 @@ const spec = {
     }
   },
 
-  onBidBillable(bid) {
+  onBidBillable (bid) {
     const payload = getNotificationPayload(bid);
     if (payload) {
       payload.event = 'bidBillable';
@@ -844,7 +844,7 @@ const spec = {
     }
   },
 
-  onBidWon(bid) {
+  onBidWon (bid) {
     const payload = getNotificationPayload(bid);
     if (payload) {
       payload.event = 'bidWon';

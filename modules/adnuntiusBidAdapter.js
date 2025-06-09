@@ -55,7 +55,7 @@ const ENVS = {
 };
 
 export const misc = {
-  findHighestPrice: function(arr, bidType) {
+  findHighestPrice: function (arr, bidType) {
     return arr.reduce((highest, cur) => {
       const currentBid = cur[bidType];
       const highestBid = highest[bidType]
@@ -155,7 +155,7 @@ const storageTool = (function () {
     storage.setDataInLocalStorage(METADATA_KEY, JSON.stringify(metaDataForSaving));
   };
 
-  const getFirstValidValueFromArray = function(arr, param) {
+  const getFirstValidValueFromArray = function (arr, param) {
     const example = (arr || []).find((b) => {
       return deepAccess(b, param);
     });
@@ -208,8 +208,8 @@ const storageTool = (function () {
   };
 })();
 
-const targetingTool = (function() {
-  const getSegmentsFromOrtb = function(bidderRequest) {
+const targetingTool = (function () {
+  const getSegmentsFromOrtb = function (bidderRequest) {
     const userData = deepAccess(bidderRequest.ortb2 || {}, 'user.data');
     let segments = [];
     if (userData && Array.isArray(userData)) {
@@ -225,7 +225,7 @@ const targetingTool = (function() {
     return segments
   };
 
-  const getKvsFromOrtb = function(bidderRequest, path) {
+  const getKvsFromOrtb = function (bidderRequest, path) {
     return deepAccess(bidderRequest.ortb2 || {}, path);
   };
 
@@ -244,7 +244,7 @@ const targetingTool = (function() {
 
       existingUrlRelatedData.segments = segments;
     },
-    mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
+    mergeKvsFromOrtb: function (bidTargeting, bidderRequest) {
       const siteKvs = getKvsFromOrtb(bidderRequest || {}, 'site.ext.data');
       const userKvs = getKvsFromOrtb(bidderRequest || {}, 'user.ext.data');
       if (isEmpty(siteKvs) && isEmpty(userKvs)) {
@@ -440,7 +440,7 @@ export const spec = {
       });
     }
 
-    function buildAdResponse(bidderCode, ad, adUnit, dealCount, bidOnRequest) {
+    function buildAdResponse (bidderCode, ad, adUnit, dealCount, bidOnRequest) {
       const advertiserDomains = ad.advertiserDomains || [];
       if (advertiserDomains.length === 0) {
         const destinationUrls = ad.destinationUrls || {};

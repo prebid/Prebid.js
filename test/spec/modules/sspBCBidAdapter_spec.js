@@ -8,7 +8,7 @@ const SYNC_URL_IFRAME = 'https://ssp.wp.pl/bidder/usersync';
 const SYNC_URL_IMAGE = 'https://ssp.wp.pl/v1/sync/pixel';
 
 describe('SSPBC adapter', function () {
-  function prepareTestData() {
+  function prepareTestData () {
     const bidderRequestId = '1041bb47b0fafa';
     const auctionId = '8eda6d06-3d7c-4a94-9b35-74e42fbb3089';
     const transactionId = '50259989-b5c0-4edf-8f47-b1ef5fbedf39';

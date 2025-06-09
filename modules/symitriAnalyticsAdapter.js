@@ -12,7 +12,7 @@ const { BID_WON } = EVENTS;
 let initOptions;
 
 let symitriAnalytics = Object.assign(adapter({url, analyticsType}), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case BID_WON:
         logMessage('##### symitriAnalytics :: Event Triggered : ' + eventType);
@@ -25,7 +25,7 @@ let symitriAnalytics = Object.assign(adapter({url, analyticsType}), {
   }
 });
 
-function sendEvent(payload) {
+function sendEvent (payload) {
   try {
     if (initOptions.apiAuthToken) {
       const body = JSON.stringify(payload);

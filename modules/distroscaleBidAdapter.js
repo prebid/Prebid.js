@@ -11,15 +11,15 @@ const AUCTION_TYPE = 1;
 const GVLID = 754;
 const UNDEF = undefined;
 
-const SUPPORTED_MEDIATYPES = [ BANNER ];
+const SUPPORTED_MEDIATYPES = [BANNER];
 
-function _getHost(url) {
+function _getHost (url) {
   let a = document.createElement('a');
   a.href = url;
   return a.hostname;
 }
 
-function _getBidFloor(bid, mType, sz) {
+function _getBidFloor (bid, mType, sz) {
   if (isFn(bid.getFloor)) {
     let floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,
@@ -33,13 +33,13 @@ function _getBidFloor(bid, mType, sz) {
   return null;
 }
 
-function _createImpressionObject(bid) {
+function _createImpressionObject (bid) {
   var impObj = UNDEF;
   var i;
   var sizes = {};
   var sizesCount = 0;
 
-  function addSize(arr) {
+  function addSize (arr) {
     var w, h;
     if (arr && arr.length > 1) {
       w = parseInt(arr[0]);
@@ -77,7 +77,7 @@ function _createImpressionObject(bid) {
   } else {
     // Use the first preferred size
     var keys = Object.keys(sizes);
-    keys.sort(function(a, b) {
+    keys.sort(function (a, b) {
       return sizes[a].idx - sizes[b].idx
     });
     var bannerObj = {

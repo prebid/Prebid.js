@@ -18,7 +18,7 @@ const {
 } = geoedgeRtdModule;
 
 const key = '123123123';
-function makeConfig(gpt) {
+function makeConfig (gpt) {
   return {
     name: 'geoedge',
     params: {
@@ -33,7 +33,7 @@ function makeConfig(gpt) {
   };
 }
 
-function mockBid(bidderCode) {
+function mockBid (bidderCode) {
   return {
     ad: '<creative/>',
     adId: '1234',
@@ -49,7 +49,7 @@ function mockBid(bidderCode) {
   };
 }
 
-function mockMessageFromClient(key) {
+function mockMessageFromClient (key) {
   return {
     key,
     impression: true,

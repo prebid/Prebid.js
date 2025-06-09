@@ -24,7 +24,7 @@ const BIDDER_CODE = 'connatix';
 describe('connatixBidAdapter', function () {
   let bid;
 
-  function mockBidRequest() {
+  function mockBidRequest () {
     const mediaTypes = {
       banner: {
         sizes: [16, 9],
@@ -40,7 +40,7 @@ describe('connatixBidAdapter', function () {
     };
   };
 
-  function addVideoToBidMock(bid) {
+  function addVideoToBidMock (bid) {
     const mediaTypes = {
       video: {
         context: 'instream',
@@ -347,7 +347,7 @@ describe('connatixBidAdapter', function () {
     let bid;
 
     // Mock a bid request similar to the one already used in connatixBidAdapter tests
-    function mockBidRequest() {
+    function mockBidRequest () {
       const mediaTypes = {
         banner: {
           sizes: [16, 9],
@@ -392,7 +392,7 @@ describe('connatixBidAdapter', function () {
       const floorValue = 5;
 
       // Mock getFloor method on bid
-      bid.getFloor = function() {
+      bid.getFloor = function () {
         return { floor: floorValue };
       };
 
@@ -405,7 +405,7 @@ describe('connatixBidAdapter', function () {
       bid = mockBidRequest();
 
       // Mock getFloor method to throw an error
-      bid.getFloor = function() {
+      bid.getFloor = function () {
         throw new Error('error');
       };
 
@@ -562,7 +562,7 @@ describe('connatixBidAdapter', function () {
       addVideoToBidMock(bid);
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-    it('Should return false if context is set to adpod on video media type', function() {
+    it('Should return false if context is set to adpod on video media type', function () {
       addVideoToBidMock(bid);
       bid.mediaTypes.video.context = ADPOD;
       expect(spec.isBidRequestValid(bid)).to.be.false;
@@ -614,7 +614,7 @@ describe('connatixBidAdapter', function () {
       serverRequest = spec.buildRequests([bid], bidderRequest);
     })
 
-    this.afterEach(function() {
+    this.afterEach(function () {
       setCookieStub.restore();
       setDataInLocalStorageStub.restore();
     });
@@ -658,9 +658,9 @@ describe('connatixBidAdapter', function () {
     this.beforeEach(function () {
       serverResponse = {
         body: {
-          Bids: [ Bid ]
+          Bids: [Bid]
         },
-        headers: function() { }
+        headers: function () { }
       };
     });
 
@@ -677,15 +677,15 @@ describe('connatixBidAdapter', function () {
       expect(response).to.be.an('array').that.is.empty;
     });
 
-    it('Should return one bid response for one bid', function() {
+    it('Should return one bid response for one bid', function () {
       const bidResponses = spec.interpretResponse(serverResponse);
       expect(bidResponses.length).to.equal(1);
     });
 
-    it('Should contains the same values as in the serverResponse', function() {
+    it('Should contains the same values as in the serverResponse', function () {
       const bidResponses = spec.interpretResponse(serverResponse);
 
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
       expect(bidResponse.requestId).to.equal(serverResponse.body.Bids[0].RequestId);
       expect(bidResponse.cpm).to.equal(serverResponse.body.Bids[0].Cpm);
       expect(bidResponse.ttl).to.equal(serverResponse.body.Bids[0].Ttl);
@@ -694,8 +694,8 @@ describe('connatixBidAdapter', function () {
       expect(bidResponse.netRevenue).to.be.true;
     });
 
-    it('Should return n bid responses for n bids', function() {
-      serverResponse.body.Bids = [ { ...Bid }, { ...Bid } ];
+    it('Should return n bid responses for n bids', function () {
+      serverResponse.body.Bids = [{ ...Bid }, { ...Bid }];
 
       const firstBidCpm = 4;
       serverResponse.body.Bids[0].Cpm = firstBidCpm;
@@ -712,10 +712,10 @@ describe('connatixBidAdapter', function () {
 
     it('Should contain specific values for banner bids', function () {
       const adHtml = 'ad html'
-      serverResponse.body.Bids = [ { ...Bid, Ad: adHtml } ];
+      serverResponse.body.Bids = [{ ...Bid, Ad: adHtml }];
 
       const bidResponses = spec.interpretResponse(serverResponse);
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
 
       expect(bidResponse.vastXml).to.be.undefined;
       expect(bidResponse.ad).to.equal(adHtml);
@@ -724,10 +724,10 @@ describe('connatixBidAdapter', function () {
 
     it('Should contain specific values for video bids', function () {
       const adVastXml = 'ad vast xml'
-      serverResponse.body.Bids = [ { ...Bid, VastXml: adVastXml } ];
+      serverResponse.body.Bids = [{ ...Bid, VastXml: adVastXml }];
 
       const bidResponses = spec.interpretResponse(serverResponse);
-      const [ bidResponse ] = bidResponses;
+      const [bidResponse] = bidResponses;
 
       expect(bidResponse.ad).to.be.undefined;
       expect(bidResponse.vastXml).to.equal(adVastXml);
@@ -735,7 +735,7 @@ describe('connatixBidAdapter', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
     const UserSyncEndpoint = 'https://connatix.com/sync'
@@ -745,16 +745,16 @@ describe('connatixBidAdapter', function () {
     const serverResponse = {
       body: {
         UserSyncEndpoint,
-        Bids: [ Bid ]
+        Bids: [Bid]
       },
-      headers: function() { }
+      headers: function () { }
     };
     const serverResponse2 = {
       body: {
         UserSyncEndpoint: UserSyncEndpointWithParams,
-        Bids: [ Bid ]
+        Bids: [Bid]
       },
-      headers: function() { }
+      headers: function () { }
     };
 
     it('Should return an empty array when iframeEnabled: false', function () {
@@ -858,7 +858,7 @@ describe('connatixBidAdapter', function () {
     });
   });
 
-  describe('userIdAsEids', function() {
+  describe('userIdAsEids', function () {
     let validBidRequests;
 
     this.beforeEach(function () {
@@ -866,7 +866,7 @@ describe('connatixBidAdapter', function () {
       validBidRequests = [bid];
     })
 
-    it('Connatix adapter reads EIDs from Prebid user models and adds it to Request', function() {
+    it('Connatix adapter reads EIDs from Prebid user models and adds it to Request', function () {
       validBidRequests[0].userIdAsEids = [{
         'source': 'adserver.org',
         'uids': [{
@@ -949,7 +949,7 @@ describe('connatixBidAdapter', function () {
 
     it('Should return the value of the getFloor method if the getFloor method is defined but the bidfloor parameter is not defined', function () {
       const floorValue = 7;
-      bid.getFloor = function() {
+      bid.getFloor = function () {
         return { floor: floorValue };
       };
 
@@ -962,7 +962,7 @@ describe('connatixBidAdapter', function () {
       bid.params.bidfloor = floorParamValue;
 
       const floorMethodValue = 7;
-      bid.getFloor = function() {
+      bid.getFloor = function () {
         return { floor: floorMethodValue };
       };
 
@@ -971,14 +971,14 @@ describe('connatixBidAdapter', function () {
     });
 
     it('Should return 0 if the getFloor method is defined and it crash when call it', function () {
-      bid.getFloor = function() {
+      bid.getFloor = function () {
         throw new Error('error');
       };
       const floor = connatixGetBidFloor(bid);
       expect(floor).to.equal(0);
     });
   });
-  describe('getUserSyncs with message event listener', function() {
+  describe('getUserSyncs with message event listener', function () {
     const CNX_IDS_EXPIRY = 24 * 30 * 60 * 60 * 1000;
     const CNX_IDS_LOCAL_STORAGE_COOKIES_KEY = 'cnx_user_ids';
     const ALL_PROVIDERS_RESOLVED_EVENT = 'cnx_all_identity_providers_resolved';
@@ -989,7 +989,7 @@ describe('connatixBidAdapter', function () {
       }
     };
 
-    function messageHandler(event) {
+    function messageHandler (event) {
       if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
         return;
       }

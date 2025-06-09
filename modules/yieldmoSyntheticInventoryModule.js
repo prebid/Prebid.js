@@ -3,7 +3,7 @@ import { isGptPubadsDefined } from '../src/utils.js';
 
 export const MODULE_NAME = 'Yieldmo Synthetic Inventory Module';
 
-export function init(config) {
+export function init (config) {
   validateConfig(config);
 
   if (!isGptPubadsDefined()) {
@@ -23,7 +23,7 @@ export function init(config) {
   });
 }
 
-export function validateConfig(config) {
+export function validateConfig (config) {
   if (!('placementId' in config)) {
     throw new Error(`${MODULE_NAME}: placementId required`);
   }
@@ -32,7 +32,7 @@ export function validateConfig(config) {
   }
 }
 
-function googletagCmd(config, containerName, googletag) {
+function googletagCmd (config, containerName, googletag) {
   const gamContainer = window.document.createElement('div');
   gamContainer.id = containerName;
   window.document.body.appendChild(gamContainer);

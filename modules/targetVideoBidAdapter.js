@@ -21,7 +21,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid && bid.params && bid.params.placementId);
   },
 
@@ -31,7 +31,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const requests = [];
     const sdk = {
       source: SOURCE,
@@ -150,7 +150,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, { bidderRequest, ...bidRequest }) {
+  interpretResponse: function (serverResponse, { bidderRequest, ...bidRequest }) {
     serverResponse = serverResponse.body;
     const currency = serverResponse.cur;
     const bids = [];

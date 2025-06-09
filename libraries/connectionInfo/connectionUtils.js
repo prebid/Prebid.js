@@ -3,7 +3,7 @@
  *
  * @returns {number} - Type of connection.
  */
-export function getConnectionType() {
+export function getConnectionType () {
   const connection = navigator.connection || navigator.webkitConnection;
   if (!connection) {
     return 0;

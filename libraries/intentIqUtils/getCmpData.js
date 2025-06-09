@@ -7,7 +7,7 @@ import { allConsent } from '../../src/consentHandler.js';
  * - `uspString` (string): USP consent string if available.
  * - `gppString` (string): GPP consent string if available.
  */
-export function getCmpData() {
+export function getCmpData () {
   const consentData = allConsent.getConsentData();
 
   return {

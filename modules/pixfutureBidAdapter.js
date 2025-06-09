@@ -20,7 +20,7 @@ export const spec = {
   gvlid: GVLID,
   hostname: 'https://gosrv.pixfuture.com',
 
-  getHostname() {
+  getHostname () {
     let ret = this.hostname;
     try {
       ret = storageManager.getDataFromLocalStorage('ov_pixbidder_host') || ret;
@@ -29,12 +29,12 @@ export const spec = {
     return ret;
   },
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return !!(bid.sizes && bid.bidId && bid.params &&
                 (bid.params.pix_id && (typeof bid.params.pix_id === 'string')));
   },
 
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     const tags = validBidRequests.map(bidToTag);
     const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
@@ -200,7 +200,7 @@ export const spec = {
   }
 };
 
-function newBid(serverBid, rtbBid, placementId, uuid) {
+function newBid (serverBid, rtbBid, placementId, uuid) {
   const bid = {
     requestId: uuid,
     cpm: rtbBid.cpm,
@@ -225,7 +225,7 @@ function newBid(serverBid, rtbBid, placementId, uuid) {
 }
 
 // Functions related optional parameters
-function bidToTag(bid) {
+function bidToTag (bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
   tag.primary_size = tag.sizes[0];

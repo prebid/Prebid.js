@@ -10,7 +10,7 @@ const GVLID = 1216;
 const ENDPOINT_URL = `http://pbc-rtb.startappnetwork.com/1.3/2.5/getbid?account=pbc`;
 
 const converter = ortbConverter({
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     if (imp?.banner?.format?.[0]) {
@@ -20,7 +20,7 @@ const converter = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const publisherId = bidderRequest?.bids?.[0]?.params?.publisherId;
     if (request?.site) {
@@ -35,7 +35,7 @@ const converter = ortbConverter({
 
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const isValidBidType = bid?.ext?.prebid?.type === context?.mediaType;
 
     if (context.mediaType === NATIVE) {

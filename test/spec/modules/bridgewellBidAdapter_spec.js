@@ -164,7 +164,7 @@ describe('bridgewellBidAdapter', function () {
       }
     });
 
-    it('should attach valid params to the tag, part2', function() {
+    it('should attach valid params to the tag, part2', function () {
       const bidderRequest = {
         refererInfo: {
           page: 'https://www.bridgewell.com/',
@@ -1215,7 +1215,7 @@ describe('bridgewellBidAdapter', function () {
         'netRevenue': true,
         'currency': 'NTD'
       }];
-      const reducer = function(accumulator, currentValue) {
+      const reducer = function (accumulator, currentValue) {
         if (currentValue.consumed) accumulator++;
         return accumulator;
       };

@@ -11,15 +11,15 @@ const sampleConfig = {
   }
 }
 
-describe('growthCodeRtdProvider', function() {
-  beforeEach(function() {
+describe('growthCodeRtdProvider', function () {
+  beforeEach(function () {
     config.resetConfig();
   });
 
   afterEach(function () {
   });
 
-  describe('growthCodeRtdSubmodule', function() {
+  describe('growthCodeRtdSubmodule', function () {
     it('test bad config instantiates', function () {
       const ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
         return (url, cbObj) => {
@@ -79,7 +79,7 @@ describe('growthCodeRtdProvider', function() {
       ajaxStub.restore();
     });
 
-    it('test alterBid data merge into ortb2 data (bidder)', function() {
+    it('test alterBid data merge into ortb2 data (bidder)', function () {
       const gcData =
         {
           'client_a':

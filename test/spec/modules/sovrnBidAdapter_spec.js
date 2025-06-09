@@ -26,7 +26,7 @@ const baseBidderRequest = {
   }
 }
 
-describe('sovrnBidAdapter', function() {
+describe('sovrnBidAdapter', function () {
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(baseBidRequest)).to.equal(true)
@@ -65,7 +65,7 @@ describe('sovrnBidAdapter', function() {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
     })
 
-    it('should return true when minduration is not passed', function() {
+    it('should return true when minduration is not passed', function () {
       const width = 300
       const height = 250
       const mimes = ['video/mp4', 'application/javascript']
@@ -90,7 +90,7 @@ describe('sovrnBidAdapter', function() {
   })
 
   describe('buildRequests', function () {
-    describe('basic bid parameters', function() {
+    describe('basic bid parameters', function () {
       const request = spec.buildRequests([baseBidRequest], baseBidderRequest)
       const payload = JSON.parse(request.data)
 
@@ -102,7 +102,7 @@ describe('sovrnBidAdapter', function() {
         expect(request.url).to.equal(ENDPOINT)
       })
 
-      it('sets the proper banner object', function() {
+      it('sets the proper banner object', function () {
         const bannerBidRequest = {
           ...baseBidRequest,
           mediaTypes: {
@@ -118,7 +118,7 @@ describe('sovrnBidAdapter', function() {
         expect(impression.banner.h).to.equal(1)
       })
 
-      it('sets the proper video object with sizes defined', function() {
+      it('sets the proper video object with sizes defined', function () {
         const width = 300
         const height = 250
         const mimes = ['video/mp4', 'application/javascript']
@@ -152,7 +152,7 @@ describe('sovrnBidAdapter', function() {
         expect(impression.video.startdelay).to.equal(startdelay)
       })
 
-      it('sets the proper video object wihtout sizes defined but video sizes defined', function() {
+      it('sets the proper video object wihtout sizes defined but video sizes defined', function () {
         const width = 360
         const height = 240
         const mimes = ['video/mp4', 'application/javascript']
@@ -188,12 +188,12 @@ describe('sovrnBidAdapter', function() {
         expect(impression.video.startdelay).to.equal(startdelay)
       })
 
-      it('gets correct site info', function() {
+      it('gets correct site info', function () {
         expect(payload.site.page).to.equal('http://example.com/page.html')
         expect(payload.site.domain).to.equal('example.com')
       })
 
-      it('sets correct timeout', function() {
+      it('sets correct timeout', function () {
         const bidderRequest = {
           ...baseBidderRequest,
           bidderCode: 'sovrn',
@@ -206,7 +206,7 @@ describe('sovrnBidAdapter', function() {
         expect(payload.tmax).to.equal(3000)
       })
 
-      it('forwards auction level tid', function() {
+      it('forwards auction level tid', function () {
         const bidderRequest = {
           ...baseBidderRequest,
           ortb2: {
@@ -221,7 +221,7 @@ describe('sovrnBidAdapter', function() {
         expect(payload.source?.tid).to.equal('1d1a030790a475')
       })
 
-      it('forwards impression level tid', function() {
+      it('forwards impression level tid', function () {
         const bidRequest = {
           ...baseBidRequest,
           ortb2Imp: {
@@ -289,7 +289,7 @@ describe('sovrnBidAdapter', function() {
         expect(payload.imp[0].ext.ae).to.be.undefined
       })
 
-      it('includes the ad unit code in the request', function() {
+      it('includes the ad unit code in the request', function () {
         const impression = payload.imp[0]
         expect(impression.adunitcode).to.equal('adunit-code')
       })
@@ -299,7 +299,7 @@ describe('sovrnBidAdapter', function() {
       })
     })
 
-    it('accepts a single array as a size', function() {
+    it('accepts a single array as a size', function () {
       const singleSizeBidRequest = {
         ...baseBidRequest,
         params: {
@@ -526,7 +526,7 @@ describe('sovrnBidAdapter', function() {
       expect(regs.gpp_sid).to.include(8)
     })
 
-    it('should add schain if present', function() {
+    it('should add schain if present', function () {
       const schainRequest = {
         ...baseBidRequest,
         schain: {
@@ -548,7 +548,7 @@ describe('sovrnBidAdapter', function() {
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     })
 
-    it('should add eids to the bid request', function() {
+    it('should add eids to the bid request', function () {
       const criteoIdRequest = {
         ...baseBidRequest,
         userIdAsEids: [
@@ -590,14 +590,14 @@ describe('sovrnBidAdapter', function() {
       expect(ext.prebid_criteoid).to.equal('A_CRITEO_ID')
     })
 
-    it('should ignore empty segments', function() {
+    it('should ignore empty segments', function () {
       const request = spec.buildRequests([baseBidRequest], baseBidderRequest)
       const payload = JSON.parse(request.data)
 
       expect(payload.imp[0].ext).to.be.undefined
     })
 
-    it('should pass the segments param value as trimmed deal ids array', function() {
+    it('should pass the segments param value as trimmed deal ids array', function () {
       const segmentsRequest = {
         ...baseBidRequest,
         params: {
@@ -610,7 +610,7 @@ describe('sovrnBidAdapter', function() {
       expect(deals[0]).to.equal('test1')
       expect(deals[1]).to.equal('test2')
     })
-    it('should use the floor provided from the floor module if present', function() {
+    it('should use the floor provided from the floor module if present', function () {
       const floorBid = {
         ...baseBidRequest,
         getFloor: () => ({currency: 'USD', floor: 1.10}),
@@ -624,7 +624,7 @@ describe('sovrnBidAdapter', function() {
 
       expect(payload.imp[0].bidfloor).to.equal(1.10)
     })
-    it('should use the floor from the param if there is no floor from the floor module', function() {
+    it('should use the floor from the param if there is no floor from the floor module', function () {
       const floorBid = {
         ...baseBidRequest,
         getFloor: () => ({})
@@ -638,7 +638,7 @@ describe('sovrnBidAdapter', function() {
 
       expect(impression.bidfloor).to.equal(2.00)
     })
-    it('floor should be undefined if there is no floor from the floor module and params', function() {
+    it('floor should be undefined if there is no floor from the floor module and params', function () {
       const floorBid = {
         ...baseBidRequest
       }
@@ -650,7 +650,7 @@ describe('sovrnBidAdapter', function() {
 
       expect(impression.bidfloor).to.be.undefined
     })
-    it('floor should be undefined if there is incorrect floor value from the floor module', function() {
+    it('floor should be undefined if there is incorrect floor value from the floor module', function () {
       const floorBid = {
         ...baseBidRequest,
         getFloor: () => ({currency: 'USD', floor: 'incorrect_value'}),
@@ -663,7 +663,7 @@ describe('sovrnBidAdapter', function() {
 
       expect(impression.bidfloor).to.be.undefined
     })
-    it('floor should be undefined if there is incorrect floor value from the params', function() {
+    it('floor should be undefined if there is incorrect floor value from the params', function () {
       const floorBid = {
         ...baseBidRequest,
         getFloor: () => ({})
@@ -678,7 +678,7 @@ describe('sovrnBidAdapter', function() {
       expect(impression.bidfloor).to.be.undefined
     })
     describe('First Party Data', function () {
-      it('should provide first party data if provided', function() {
+      it('should provide first party data if provided', function () {
         const ortb2 = {
           site: {
             keywords: 'test keyword'
@@ -714,7 +714,7 @@ describe('sovrnBidAdapter', function() {
         expect(payload.imp[0].ext.data.pbadslot).to.equal('homepage-top-rect')
         expect(payload.imp[0].ext.data.adUnitSpecificAttribute).to.equal('123')
       })
-      it('should not overwrite deals when impression fpd is present', function() {
+      it('should not overwrite deals when impression fpd is present', function () {
         const fpdBid = {
           ...baseBidRequest,
           params: {
@@ -1137,7 +1137,7 @@ describe('sovrnBidAdapter', function() {
     })
   })
 
-  describe('getUserSyncs ', function() {
+  describe('getUserSyncs ', function () {
     const syncOptions = { iframeEnabled: true, pixelEnabled: false }
     const iframeDisabledSyncOptions = { iframeEnabled: false, pixelEnabled: false }
     const serverResponse = [
@@ -1188,7 +1188,7 @@ describe('sovrnBidAdapter', function() {
       }
     ]
 
-    it('should return if iid present on server response & iframe syncs enabled', function() {
+    it('should return if iid present on server response & iframe syncs enabled', function () {
       const expectedReturnStatement = {
         type: 'iframe',
         url: 'https://ce.lijit.com/beacon?informer=13487408',
@@ -1198,7 +1198,7 @@ describe('sovrnBidAdapter', function() {
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })
 
-    it('should include gdpr consent string if present', function() {
+    it('should include gdpr consent string if present', function () {
       const gdprConsent = {
         gdprApplies: 1,
         consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
@@ -1213,7 +1213,7 @@ describe('sovrnBidAdapter', function() {
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })
 
-    it('should include us privacy string if present', function() {
+    it('should include us privacy string if present', function () {
       const uspString = '1NYN'
       const expectedReturnStatement = {
         type: 'iframe',
@@ -1225,7 +1225,7 @@ describe('sovrnBidAdapter', function() {
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })
 
-    it('should include gpp consent string if present', function() {
+    it('should include gpp consent string if present', function () {
       const gppConsent = {
         applicableSections: [1, 2],
         gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
@@ -1240,7 +1240,7 @@ describe('sovrnBidAdapter', function() {
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })
 
-    it('should include all privacy strings if present', function() {
+    it('should include all privacy strings if present', function () {
       const gdprConsent = {
         gdprApplies: 1,
         consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
@@ -1261,19 +1261,19 @@ describe('sovrnBidAdapter', function() {
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })
 
-    it('should not return if iid missing on server response', function() {
+    it('should not return if iid missing on server response', function () {
       const returnStatement = spec.getUserSyncs(syncOptions, [])
 
       expect(returnStatement).to.be.empty
     })
 
-    it('should not return if iframe syncs disabled', function() {
+    it('should not return if iframe syncs disabled', function () {
       const returnStatement = spec.getUserSyncs(iframeDisabledSyncOptions, serverResponse)
 
       expect(returnStatement).to.be.empty
     })
 
-    it('should include pixel syncs', function() {
+    it('should include pixel syncs', function () {
       const pixelEnabledOptions = { iframeEnabled: false, pixelEnabled: true }
       const otherResponce = {
         ...serverResponse,
@@ -1307,7 +1307,7 @@ describe('sovrnBidAdapter', function() {
     })
   })
 
-  describe('prebid 3 upgrade', function() {
+  describe('prebid 3 upgrade', function () {
     const bidRequest = {
       ...baseBidRequest,
       params: {
@@ -1325,13 +1325,13 @@ describe('sovrnBidAdapter', function() {
     const request = spec.buildRequests([bidRequest], baseBidderRequest)
     const payload = JSON.parse(request.data)
 
-    it('gets sizes from mediaTypes.banner', function() {
+    it('gets sizes from mediaTypes.banner', function () {
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}])
       expect(payload.imp[0].banner.w).to.equal(1)
       expect(payload.imp[0].banner.h).to.equal(1)
     })
 
-    it('gets correct site info', function() {
+    it('gets correct site info', function () {
       expect(payload.site.page).to.equal('http://example.com/page.html')
       expect(payload.site.domain).to.equal('example.com')
     })

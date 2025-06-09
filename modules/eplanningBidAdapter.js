@@ -33,11 +33,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return Boolean(bid.params.ci) || Boolean(bid.params.t);
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const method = 'GET';
     const dfpClientId = '1';
     const sec = 'ROS';
@@ -112,7 +112,7 @@ export const spec = {
       adUnitToBidId: spaces.map,
     };
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const response = serverResponse.body;
     let bidResponses = [];
 
@@ -150,7 +150,7 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     const response = !isEmpty(serverResponses) && serverResponses[0].body;
 
@@ -175,19 +175,19 @@ export const spec = {
   },
 };
 
-function getUserAgent() {
+function getUserAgent () {
   return window.navigator.userAgent;
 }
-function getInnerWidth() {
+function getInnerWidth () {
   return getWinDimensions().innerWidth;
 }
-function isMobileUserAgent() {
+function isMobileUserAgent () {
   return getUserAgent().match(/(mobile)|(ip(hone|ad))|(android)|(blackberry)|(nokia)|(phone)|(opera\smini)/i);
 }
-function isMobileDevice() {
+function isMobileDevice () {
   return (getInnerWidth() <= 1024) || window.orientation || mobileUserAgent;
 }
-function getUrlConfig(bidRequests) {
+function getUrlConfig (bidRequests) {
   if (isTestRequest(bidRequests)) {
     return getTestConfig(bidRequests.filter(br => br.params.t));
   }
@@ -203,7 +203,7 @@ function getUrlConfig(bidRequests) {
 
   return config;
 }
-function isTestRequest(bidRequests) {
+function isTestRequest (bidRequests) {
   for (let i = 0; i < bidRequests.length; i++) {
     if (bidRequests[i].params.t) {
       return true;
@@ -211,7 +211,7 @@ function isTestRequest(bidRequests) {
   }
   return false;
 }
-function getTestConfig(bidRequests) {
+function getTestConfig (bidRequests) {
   let isv;
   bidRequests.forEach(br => isv = isv || br.params.isv);
   return {
@@ -220,7 +220,7 @@ function getTestConfig(bidRequests) {
   };
 }
 
-function compareSizesByPriority(size1, size2) {
+function compareSizesByPriority (size1, size2) {
   var priorityOrderForSizesAsc = isMobileDevice() ? PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC : PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC;
   var index1 = priorityOrderForSizesAsc.indexOf(size1);
   var index2 = priorityOrderForSizesAsc.indexOf(size2);
@@ -235,11 +235,11 @@ function compareSizesByPriority(size1, size2) {
   }
 }
 
-function getSizesSortedByPriority(sizes) {
+function getSizesSortedByPriority (sizes) {
   return parseSizesInput(sizes).sort(compareSizesByPriority);
 }
 
-function getSize(bid, first) {
+function getSize (bid, first) {
   var arraySizes = bid.sizes && bid.sizes.length ? getSizesSortedByPriority(bid.sizes) : [];
   if (arraySizes.length) {
     return first ? arraySizes[0] : arraySizes.join(',');
@@ -248,7 +248,7 @@ function getSize(bid, first) {
   }
 }
 
-function getSpacesStruct(bids) {
+function getSpacesStruct (bids) {
   let e = {};
   bids.forEach(bid => {
     let size = getSize(bid, true);
@@ -259,7 +259,7 @@ function getSpacesStruct(bids) {
   return e;
 }
 
-function getFirstSizeVast(sizes) {
+function getFirstSizeVast (sizes) {
   if (sizes == undefined || !Array.isArray(sizes)) {
     return undefined;
   }
@@ -269,11 +269,11 @@ function getFirstSizeVast(sizes) {
   return (Array.isArray(size) && size.length == 2) ? size : undefined;
 }
 
-function cleanName(name) {
+function cleanName (name) {
   return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 
-function getFloorStr(bid) {
+function getFloorStr (bid) {
   if (typeof bid.getFloor === 'function') {
     let bidFloor = bid.getFloor({
       currency: DOLLAR_CODE,
@@ -288,7 +288,7 @@ function getFloorStr(bid) {
   return '';
 }
 
-function getSpaces(bidRequests, ml) {
+function getSpaces (bidRequests, ml) {
   let impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
   // Only one type of auction is supported at a time
   if (impType) {
@@ -322,7 +322,7 @@ function getSpaces(bidRequests, ml) {
   return es;
 }
 
-function getVs(bid) {
+function getVs (bid) {
   let s;
   let vs = '';
   if (storage.hasLocalStorage()) {
@@ -334,7 +334,7 @@ function getVs(bid) {
   return vs;
 }
 
-function getViewabilityData(bid) {
+function getViewabilityData (bid) {
   let r = storage.getDataFromLocalStorage(STORAGE_RENDER_PREFIX + bid.adUnitCode) || 0;
   let v = storage.getDataFromLocalStorage(STORAGE_VIEW_PREFIX + bid.adUnitCode) || 0;
   let ratio = r > 0 ? (v / r) : 0;
@@ -344,7 +344,7 @@ function getViewabilityData(bid) {
   };
 }
 
-function getCharset() {
+function getCharset () {
   try {
     return window.top.document.charset || window.top.document.characterSet;
   } catch (e) {
@@ -352,7 +352,7 @@ function getCharset() {
   }
 }
 
-function waitForElementsPresent(elements) {
+function waitForElementsPresent (elements) {
   const observer = new MutationObserver(function (mutationList, observer) {
     let index;
     let adView;
@@ -393,14 +393,14 @@ function waitForElementsPresent(elements) {
   });
 }
 
-function registerViewability(div, name) {
+function registerViewability (div, name) {
   visibilityHandler({
     name: name,
     div: div
   });
 }
 
-function _mapAdUnitPathToElementId(adUnitCode) {
+function _mapAdUnitPathToElementId (adUnitCode) {
   if (isGptPubadsDefined()) {
     // eslint-disable-next-line no-undef
     const adSlots = googletag.pubads().getSlots();
@@ -417,12 +417,12 @@ function _mapAdUnitPathToElementId(adUnitCode) {
   return null;
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
+function _getAdSlotHTMLElement (adUnitCode) {
   return document.getElementById(adUnitCode) ||
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
 
-function registerViewabilityAllBids(bids) {
+function registerViewabilityAllBids (bids) {
   let elementsNotPresent = [];
   bids.forEach(bid => {
     let div = _getAdSlotHTMLElement(bid.adUnitCode);
@@ -437,7 +437,7 @@ function registerViewabilityAllBids(bids) {
   }
 }
 
-function getViewabilityTracker() {
+function getViewabilityTracker () {
   let TIME_PARTITIONS = 5;
   let VIEWABILITY_TIME = 1000;
   let VIEWABILITY_MIN_RATIO = 0.5;
@@ -445,8 +445,8 @@ function getViewabilityTracker() {
   let observer;
   let visibilityAds = {};
 
-  function intersectionCallback(entries) {
-    entries.forEach(function(entry) {
+  function intersectionCallback (entries) {
+    entries.forEach(function (entry) {
       var adBox = entry.target;
       if (entry.isIntersecting) {
         if (entry.intersectionRatio >= VIEWABILITY_MIN_RATIO && entry.boundingClientRect && entry.boundingClientRect.height > 0 && entry.boundingClientRect.width > 0) {
@@ -458,11 +458,11 @@ function getViewabilityTracker() {
     });
   }
 
-  function observedElementIsVisible(element) {
+  function observedElementIsVisible (element) {
     return visibilityAds[element.id] && document.visibilityState && document.visibilityState === 'visible';
   }
 
-  function defineObserver() {
+  function defineObserver () {
     if (!observer) {
       var observerConfig = {
         root: null,
@@ -472,7 +472,7 @@ function getViewabilityTracker() {
       observer = new IntersectionObserver(intersectionCallback.bind(this), observerConfig);
     }
   }
-  function processIntervalVisibilityStatus(elapsedVisibleIntervals, element, callback) {
+  function processIntervalVisibilityStatus (elapsedVisibleIntervals, element, callback) {
     let visibleIntervals = observedElementIsVisible(element) ? (elapsedVisibleIntervals + 1) : 0;
     if (visibleIntervals === TIME_PARTITIONS) {
       stopObserveViewability(element)
@@ -482,16 +482,16 @@ function getViewabilityTracker() {
     }
   }
 
-  function stopObserveViewability(element) {
+  function stopObserveViewability (element) {
     delete visibilityAds[element.id];
     observer.unobserve(element);
   }
 
-  function observeAds(element) {
+  function observeAds (element) {
     observer.observe(element);
   }
 
-  function initAndVerifyVisibility(element, callback) {
+  function initAndVerifyVisibility (element, callback) {
     if (element) {
       defineObserver();
       observeAds(element);
@@ -506,7 +506,7 @@ function getViewabilityTracker() {
   return publicApi;
 };
 
-function visibilityHandler(obj) {
+function visibilityHandler (obj) {
   if (obj.div) {
     registerAuction(STORAGE_RENDER_PREFIX + obj.name);
     getViewabilityTracker().onView(obj.div, registerAuction.bind(undefined, STORAGE_VIEW_PREFIX + obj.name));
@@ -524,7 +524,7 @@ function cutUrl (url) {
   return url;
 }
 
-function registerAuction(storageID) {
+function registerAuction (storageID) {
   let value;
   try {
     value = storage.getDataFromLocalStorage(storageID);

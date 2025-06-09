@@ -39,7 +39,7 @@ let completeObject = {
 let upgradedObject = null;
 
 let adxpremiumAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsType }), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         auctionInit(args);
@@ -68,7 +68,7 @@ let adxpremiumAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analyticsTy
 // DFP support
 let googletag = window.googletag || {};
 googletag.cmd = googletag.cmd || [];
-googletag.cmd.push(function() {
+googletag.cmd.push(function () {
   googletag.pubads().addEventListener('slotRenderEnded', args => {
     clearSlot(args.slot.getSlotElementId());
   });
@@ -79,7 +79,7 @@ let bidResponsesMapper = {};
 let bidRequestsMapper = {};
 let bidMapper = {};
 
-function auctionInit(args) {
+function auctionInit (args) {
   // Clear events
   completeObject.events = [];
   // Allow new requests
@@ -99,7 +99,7 @@ function auctionInit(args) {
   }
   completeObject.device_type = deviceType();
 }
-function bidRequested(args) {
+function bidRequested (args) {
   let tmpObject = {
     type: 'REQUEST',
     bidder_code: args.bidderCode,
@@ -115,7 +115,7 @@ function bidRequested(args) {
   bidRequestsMapper[args.bidderRequestId] = completeObject.events.push(tmpObject) - 1;
 }
 
-function bidResponse(args) {
+function bidResponse (args) {
   let tmpObject = {
     type: 'RESPONSE',
     bidder_code: args.bidderCode,
@@ -132,7 +132,7 @@ function bidResponse(args) {
   bidResponsesMapper[args.requestId] = completeObject.events.push(tmpObject) - 1;
 }
 
-function bidWon(args) {
+function bidWon (args) {
   let eventIndex = bidResponsesMapper[args.requestId];
   if (eventIndex !== undefined) {
     if (requestDelivered) {
@@ -171,7 +171,7 @@ function bidWon(args) {
   }
 }
 
-function bidTimeout(args) {
+function bidTimeout (args) {
   let timeoutObject = deepClone(completeObject);
   timeoutObject.events = [];
   let usedRequestIds = [];
@@ -193,13 +193,13 @@ function bidTimeout(args) {
   }
 }
 
-function auctionEnd(args) {
+function auctionEnd (args) {
   logInfo('AdxPremium Analytics - Auction Ended at ' + Date.now());
   if (timeoutBased) { setTimeout(function () { requestSent = true; sendEvent(completeObject); }, 3500); } else { sendEventFallback(); }
 }
 
 // Methods
-function deviceType() {
+function deviceType () {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
     return 'tablet';
   }
@@ -209,7 +209,7 @@ function deviceType() {
   return 'desktop';
 }
 
-function clearSlot(elementId) {
+function clearSlot (elementId) {
   if (elementIds.includes(elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
   if (elementIds.length == 0 && !requestSent && !timeoutBased) {
     requestSent = true;
@@ -218,18 +218,18 @@ function clearSlot(elementId) {
   }
 }
 
-export function testSend() {
+export function testSend () {
   sendEvent(completeObject);
   logInfo('AdxPremium Analytics - Sending without any conditions, used for testing');
 }
 
-function sendEventFallback() {
+function sendEventFallback () {
   setTimeout(function () {
     if (!requestSent) { requestSent = true; sendEvent(completeObject); logInfo('AdxPremium Analytics - Sending event using fallback method.'); }
   }, 2000);
 }
 
-function sendEvent(completeObject) {
+function sendEvent (completeObject) {
   if (!adxpremiumAnalyticsAdapter.enabled) return;
   requestDelivered = true;
   try {

@@ -5,7 +5,7 @@
 
 let wrappersActive = false;
 
-export function configureTimerInterceptors(debugLog = function() {}, generateStackTraces = false) {
+export function configureTimerInterceptors (debugLog = function () {}, generateStackTraces = false) {
   if (wrappersActive) throw new Error(`Timer wrappers are already in place.`);
   wrappersActive = true;
   let theseWrappersActive = true;
@@ -16,7 +16,7 @@ export function configureTimerInterceptors(debugLog = function() {}, generateSta
   let timers = [];
 
   const waitOnTimersResolves = [];
-  function checkWaits() {
+  function checkWaits () {
     if (timers.length === 0) waitOnTimersResolves.forEach((r) => r());
   }
   const waitAllActiveTimers = () => timers.length === 0 ? Promise.resolve() : new Promise((resolve) => waitOnTimersResolves.push(resolve));

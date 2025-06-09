@@ -32,7 +32,7 @@ const PUB_COMMON_ID = 'PublisherCommonId';
  * @param {string} type storage type override
  * @returns {string|null} a string if item exists
  */
-function readValue(name, type) {
+function readValue (name, type) {
   if (type === COOKIE) {
     return storage.getCookie(name);
   } else if (type === LOCAL_STORAGE) {
@@ -47,7 +47,7 @@ function readValue(name, type) {
   }
 }
 
-function getIdCallback(pubcid, pixelUrl) {
+function getIdCallback (pubcid, pixelUrl) {
   return function (callback, getStoredId) {
     if (pixelUrl) {
       queuePixelCallback(pixelUrl, pubcid, () => {
@@ -59,7 +59,7 @@ function getIdCallback(pubcid, pixelUrl) {
   }
 }
 
-function queuePixelCallback(pixelUrl, id = '', callback) {
+function queuePixelCallback (pixelUrl, id = '', callback) {
   if (!pixelUrl) {
     return;
   }
@@ -74,7 +74,7 @@ function queuePixelCallback(pixelUrl, id = '', callback) {
   };
 }
 
-function hasOptedOut() {
+function hasOptedOut () {
   return !!((storage.cookiesAreEnabled() && readValue(OPTOUT_NAME, COOKIE)) ||
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE)));
 }
@@ -95,7 +95,7 @@ export const sharedIdSystemSubmodule = {
    * @param {SubmoduleConfig} config
    * @returns {{pubcid:string}}
    */
-  decode(value, config) {
+  decode (value, config) {
     if (hasOptedOut()) {
       logInfo('PubCommonId decode: Has opted-out');
       return undefined;
@@ -156,7 +156,7 @@ export const sharedIdSystemSubmodule = {
    * @param {Object} storedId existing id
    * @returns {IdResponse|undefined}
    */
-  extendId: function(config = {}, consentData, storedId) {
+  extendId: function (config = {}, consentData, storedId) {
     if (hasOptedOut()) {
       logInfo('PubCommonId: Has opted-out');
       return {id: undefined};
@@ -179,7 +179,7 @@ export const sharedIdSystemSubmodule = {
 
   domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
   eids: {
-    'pubcid'(values, config) {
+    'pubcid' (values, config) {
       const eid = {
         source: 'pubcid.org',
         uids: values.map(id => ({id, atype: 1}))

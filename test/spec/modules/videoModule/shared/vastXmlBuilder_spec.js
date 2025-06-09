@@ -39,7 +39,7 @@ describe('getVastNode', function () {
     expect(vastNode).to.be.equal('<VAST version=\"4.0\">body</VAST>');
   });
 
-  it('should omit version when missing', function() {
+  it('should omit version when missing', function () {
     const vastNode = getVastNode('body');
     expect(vastNode).to.be.equal('<VAST>body</VAST>');
   });
@@ -51,7 +51,7 @@ describe('getAdNode', function () {
     expect(adNode).to.be.equal('<Ad id=\"adId123\">body</Ad>');
   });
 
-  it('should omit id when missing', function() {
+  it('should omit id when missing', function () {
     const adNode = getAdNode('body');
     expect(adNode).to.be.equal('<Ad>body</Ad>');
   });
@@ -70,7 +70,7 @@ describe('getAdSystemNode', function () {
     expect(adSystemNode).to.be.equal('<AdSystem version=\"5.0\">testSysName</AdSystem>');
   });
 
-  it('should omit version when missing', function() {
+  it('should omit version when missing', function () {
     const adSystemNode = getAdSystemNode('testSysName');
     expect(adSystemNode).to.be.equal('<AdSystem>testSysName</AdSystem>');
   });
@@ -89,7 +89,7 @@ describe('getImpressionNode', function () {
     expect(impressionNode).to.be.equal('<Impression id=\"impresionId123\"><![CDATA[http://wwww.testUrl.com/adImpression.jpg]]></Impression>');
   });
 
-  it('should omit id when missing', function() {
+  it('should omit id when missing', function () {
     const impressionNode = getImpressionNode('http://wwww.testUrl.com/adImpression.jpg');
     expect(impressionNode).to.be.equal('<Impression><![CDATA[http://wwww.testUrl.com/adImpression.jpg]]></Impression>');
   });

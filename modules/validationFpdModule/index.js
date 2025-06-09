@@ -16,7 +16,7 @@ let optout;
  * @param {*} data to test against
  * @returns {Boolean} is data empty
  */
-function isEmptyData(data) {
+function isEmptyData (data) {
   let check = true;
 
   if (typeof data === 'object' && !isEmpty(data)) {
@@ -36,7 +36,7 @@ function isEmptyData(data) {
  * @param {Number} i index of object value in the data array (for printing warning)
  * @returns {Boolean} is requirements fulfilled
  */
-function getRequiredData(obj, required, parent, i) {
+function getRequiredData (obj, required, parent, i) {
   let check = true;
 
   required.forEach(key => {
@@ -55,7 +55,7 @@ function getRequiredData(obj, required, parent, i) {
  * @param {Object} mapping object containing type definition and if should be array bool
  * @returns {Boolean} is type fulfilled
  */
-function typeValidation(data, mapping) {
+function typeValidation (data, mapping) {
   let check = false;
 
   switch (mapping.type) {
@@ -83,7 +83,7 @@ function typeValidation(data, mapping) {
  * @param {String} parent parent path for logging warnings
  * @returns {Array} validated/filtered data
  */
-export function filterArrayData(arr, child, path, parent) {
+export function filterArrayData (arr, child, path, parent) {
   arr = arr.filter((index, i) => {
     let check = typeValidation(index, {type: child.type, isArray: child.isArray});
 
@@ -141,7 +141,7 @@ export function filterArrayData(arr, child, path, parent) {
  * @param {String} parent parent path for logging warnings
  * @returns {Object} validated/filtered data
  */
-export function validateFpd(fpd, path = '', parent = '') {
+export function validateFpd (fpd, path = '', parent = '') {
   if (!fpd) return {};
 
   // Filter out imp property if exists
@@ -193,7 +193,7 @@ export function validateFpd(fpd, path = '', parent = '') {
  * @param {Object} data global and bidder config data
  * @returns {Object} validated data
  */
-function runValidations(data) {
+function runValidations (data) {
   return {
     global: validateFpd(data.global),
     bidder: Object.fromEntries(Object.entries(data.bidder).map(([bidder, conf]) => [bidder, validateFpd(conf)]))
@@ -206,7 +206,7 @@ function runValidations(data) {
  * @param {Object} data ortb2 data
  * @returns {Object} processed data
  */
-export function processFpd(fpdConf, data) {
+export function processFpd (fpdConf, data) {
   // Checks for existsnece of pubcid optout cookie/storage
   // if exists, filters user data out
   optout = (STORAGE.cookiesAreEnabled() && STORAGE.getCookie('_pubcid_optout')) ||

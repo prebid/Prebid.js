@@ -10,7 +10,7 @@
  *                                           Can include: 'asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'.
  * @returns {string|null} The serialized supply chain string or null if the nodes are not present.
  */
-export function serializeSupplyChain(schain, nodesProperties) {
+export function serializeSupplyChain (schain, nodesProperties) {
   if (!schain?.nodes) return null;
 
   const header = `${schain.ver},${schain.complete}!`;

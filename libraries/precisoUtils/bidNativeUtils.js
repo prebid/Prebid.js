@@ -30,7 +30,7 @@ export const OPENRTB = {
  * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
  * @returns {object} Prebid native bidObject
  */
-export function interpretNativeBid(serverBid) {
+export function interpretNativeBid (serverBid) {
   return {
     requestId: serverBid.impid,
     mediaType: NATIVE,
@@ -54,7 +54,7 @@ export function interpretNativeBid(serverBid) {
  * @returns {object} Prebid bidObject.native
  */
 
-export function interpretNativeAd(adm) {
+export function interpretNativeAd (adm) {
   try {
     const native = JSON.parse(adm).native;
     if (native) {

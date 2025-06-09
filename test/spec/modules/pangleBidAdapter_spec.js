@@ -146,7 +146,7 @@ describe('pangle bid adapter', function () {
       expect(bids).to.be.an('array').that.is.not.empty;
       validateBidOnIndex(0);
 
-      function validateBidOnIndex(index) {
+      function validateBidOnIndex (index) {
         expect(bids[index]).to.have.property('currency', 'USD');
         expect(bids[index]).to.have.property('requestId', RESPONSE.body.seatbid[0].bid[index].id);
         expect(bids[index]).to.have.property('cpm', RESPONSE.body.seatbid[0].bid[index].price);
@@ -192,7 +192,7 @@ describe('pangle bid adapter', function () {
   });
 });
 
-describe('Pangle Adapter with video', function() {
+describe('Pangle Adapter with video', function () {
   const videoBidRequest = [
     {
       bidId: '2820132fe18114',
@@ -248,8 +248,8 @@ describe('Pangle Adapter with video', function() {
     }
   };
 
-  describe('Video: buildRequests', function() {
-    it('should create a POST request for video bid', function() {
+  describe('Video: buildRequests', function () {
+    it('should create a POST request for video bid', function () {
       const requests = spec.buildRequests(videoBidRequest, bidderRequest);
       expect(requests[0].method).to.equal('POST');
     });
@@ -376,13 +376,13 @@ describe('pangle multi-format ads', function () {
       ]
     }
   };
-  it('should set mediaType to banner', function() {
+  it('should set mediaType to banner', function () {
     const request = spec.buildRequests(multiRequest, bidderRequest)[0];
     const interpretedResponse = spec.interpretResponse(bannerResponse, request);
     const bid = interpretedResponse[0];
     expect(bid.mediaType).to.equal('banner');
   })
-  it('should set mediaType to video', function() {
+  it('should set mediaType to video', function () {
     const request = spec.buildRequests(multiRequest, bidderRequest)[0];
     const interpretedResponse = spec.interpretResponse(videoResponse, request);
     const bid = interpretedResponse[0];

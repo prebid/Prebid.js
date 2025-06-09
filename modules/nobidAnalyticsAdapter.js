@@ -37,7 +37,7 @@ function isExpired (data, retentionSeconds) {
   return false;
 }
 function sendEvent (event, eventType) {
-  function resolveEndpoint() {
+  function resolveEndpoint () {
     var ret = 'https://carbon-nv.servenobids.com/admin/status';
     var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
     env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
@@ -114,7 +114,7 @@ function auctionInit (event) {
   }
 }
 let nobidAnalytics = Object.assign(adapter({url, analyticsType}), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         auctionInit(args);
@@ -199,7 +199,7 @@ window.nobidCarbonizer = {
   },
   carbonizeAdunits: function (adunits, skipTestGroup) {
     function processBlockedBidders (blockedBidders) {
-      function sendOptimizerData() {
+      function sendOptimizerData () {
         let optData = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME);
         storage.removeDataFromLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME);
         if (isJson(optData)) {

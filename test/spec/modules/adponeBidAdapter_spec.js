@@ -80,7 +80,7 @@ describe('adponeBidAdapter', function () {
       bid.adUnitCode = 'adunit-code';
     });
 
-    it('returns false when bidder not set to "adpone"', function() {
+    it('returns false when bidder not set to "adpone"', function () {
       const invalidBid = {
         bidder: 'enopda',
         adUnitCode: 'adunit-code',
@@ -95,7 +95,7 @@ describe('adponeBidAdapter', function () {
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
     });
 
-    it('returns false when placementId is not set in params', function() {
+    it('returns false when placementId is not set in params', function () {
       const invalidBid = {
         bidder: 'adpone',
         adUnitCode: 'adunit-code',
@@ -148,7 +148,7 @@ describe('adponeBidAdapter', function () {
       };
     });
 
-    it('validate_response_params', function() {
+    it('validate_response_params', function () {
       const newResponse = spec.interpretResponse(serverResponse, bidRequest);
       expect(newResponse[0].id).to.be.equal('613673EF-A07C-4486-8EE9-3FC71A7DC73D');
       expect(newResponse[0].requestId).to.be.equal('1234');
@@ -200,10 +200,10 @@ describe('adponeBidAdapter', function () {
   });
 
   describe('test onBidWon function', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('exists and is a function', () => {

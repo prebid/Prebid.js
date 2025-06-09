@@ -16,7 +16,7 @@ import {createBid} from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
 
-function mkBid(bid, status = STATUS.GOOD) {
+function mkBid (bid, status = STATUS.GOOD) {
   return Object.assign(createBid(status), bid);
 }
 
@@ -251,7 +251,7 @@ describe('targeting tests', function () {
     hook.ready();
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
 
     useBidCache = true;
@@ -321,10 +321,10 @@ describe('targeting tests', function () {
     beforeEach(function () {
       bidsReceived = [bid1, bid2, bid3].map(deepClone);
 
-      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function () {
         return bidsReceived;
       });
-      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function () {
         return ['/123456/header-bid-tag-0'];
       });
       bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
@@ -332,7 +332,7 @@ describe('targeting tests', function () {
       logErrorStub = sinon.stub(utils, 'logError');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       config.resetConfig();
       logWarnStub.restore();
       logErrorStub.restore();
@@ -347,8 +347,8 @@ describe('targeting tests', function () {
 
       let getAdUnitsStub;
 
-      before(function() {
-        getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function() {
+      before(function () {
+        getAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnits').callsFake(function () {
           return [
             {
               'code': adUnitCode,
@@ -358,11 +358,11 @@ describe('targeting tests', function () {
         });
       });
 
-      after(function() {
+      after(function () {
         getAdUnitsStub.restore();
       });
 
-      afterEach(function() {
+      afterEach(function () {
         delete adServerTargeting.test_type;
       });
 
@@ -376,7 +376,7 @@ describe('targeting tests', function () {
         ['array-of-boolean', [true, false], 'true,false']
       ];
       pairs.forEach(([type, value, result]) => {
-        it(`accepts ${type}`, function() {
+        it(`accepts ${type}`, function () {
           adServerTargeting.test_type = value;
 
           const targeting = targetingInstance.getAllTargeting([adUnitCode]);
@@ -389,7 +389,7 @@ describe('targeting tests', function () {
     describe('when hb_deal is present in bid.adserverTargeting', function () {
       let bid4;
 
-      beforeEach(function() {
+      beforeEach(function () {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
         bid4.cpm = 0;
@@ -398,7 +398,7 @@ describe('targeting tests', function () {
         bidsReceived.push(bid4);
       });
 
-      after(function() {
+      after(function () {
         config.setConfig({
           targetingControls: {
             alwaysIncludeDeals: false
@@ -469,7 +469,7 @@ describe('targeting tests', function () {
     describe('when bidLimit is present in setConfig', function () {
       let bid4;
 
-      beforeEach(function() {
+      beforeEach(function () {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting['hb_bidder'] = bid4.bidder = bid4.bidderCode = 'appnexus';
         bid4.cpm = 2.25;
@@ -555,7 +555,7 @@ describe('targeting tests', function () {
       let bid4;
       let bidderSettingsStorage;
 
-      before(function() {
+      before(function () {
         bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
       });
 
@@ -571,12 +571,12 @@ describe('targeting tests', function () {
         bidsReceived = [bid4];
       });
 
-      after(function() {
+      after(function () {
         $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
         enableSendAllBids = false;
       })
 
-      it('targeting should not include a 0 cpm by default', function() {
+      it('targeting should not include a 0 cpm by default', function () {
         bid4.adserverTargeting = {};
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
         expect(targeting['/123456/header-bid-tag-0']).to.deep.equal({});
@@ -600,7 +600,7 @@ describe('targeting tests', function () {
     describe('targetingControls.allowTargetingKeys', function () {
       let bid4;
 
-      beforeEach(function() {
+      beforeEach(function () {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting = {
           hb_deal: '4321',
@@ -677,7 +677,7 @@ describe('targeting tests', function () {
         expect(targetingResult()).to.include.all.keys(...expandKey(TARGETING_KEYS.SOURCE));
       });
 
-      it('should keep default and native keys', function() {
+      it('should keep default and native keys', function () {
         config.setConfig({
           targetingControls: {
             addTargetingKeys: ['SOURCE']
@@ -713,7 +713,7 @@ describe('targeting tests', function () {
     describe('targetingControls.allowSendAllBidsTargetingKeys', function () {
       let bid4;
 
-      beforeEach(function() {
+      beforeEach(function () {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting = {
           hb_deal: '4321',
@@ -756,7 +756,7 @@ describe('targeting tests', function () {
     describe('targetingControls.alwaysIncludeDeals', function () {
       let bid4;
 
-      beforeEach(function() {
+      beforeEach(function () {
         bid4 = utils.deepClone(bid1);
         bid4.adserverTargeting = {
           hb_deal: '4321',
@@ -876,7 +876,7 @@ describe('targeting tests', function () {
     });
 
     describe('targetingControls.alwaysIncludeDeals with enableSendAllBids', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         enableSendAllBids = true;
       });
 
@@ -1048,10 +1048,10 @@ describe('targeting tests', function () {
     beforeEach(function () {
       bidsReceived = [bid2, bid1].map(deepClone);
 
-      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function () {
         return bidsReceived;
       });
-      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function () {
         return ['/123456/header-bid-tag-0'];
       });
       bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
@@ -1080,10 +1080,10 @@ describe('targeting tests', function () {
 
     beforeEach(function () {
       enableSendAllBids = false;
-      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function() {
+      amBidsReceivedStub = sandbox.stub(auctionManager, 'getBidsReceived').callsFake(function () {
         return [];
       });
-      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function() {
+      amGetAdUnitsStub = sandbox.stub(auctionManager, 'getAdUnitCodes').callsFake(function () {
         return ['/123456/header-bid-tag-0'];
       });
       bidExpiryStub = sandbox.stub(filters, 'isBidNotExpired').returns(true);
@@ -1123,7 +1123,7 @@ describe('targeting tests', function () {
         expect(bids[1].adId).to.equal('adid-2');
       });
 
-      it('should honor useBidCache', function() {
+      it('should honor useBidCache', function () {
         useBidCache = true;
 
         auctionManagerStub.returns([
@@ -1149,7 +1149,7 @@ describe('targeting tests', function () {
         expect(bids[0].latestTargetedAuctionId).to.equal(2);
       });
 
-      it('should use bidCacheFilterFunction', function() {
+      it('should use bidCacheFilterFunction', function () {
         auctionManagerStub.returns([
           createBidReceived({bidder: 'appnexus', cpm: 7, auctionId: 1, responseTimestamp: 100, adUnitCode: 'code-0', adId: 'adid-1', mediaType: 'banner'}),
           createBidReceived({bidder: 'appnexus', cpm: 5, auctionId: 2, responseTimestamp: 102, adUnitCode: 'code-0', adId: 'adid-2', mediaType: 'banner'}),
@@ -1319,7 +1319,7 @@ describe('targeting tests', function () {
     });
   });
 
-  describe('sortByDealAndPriceBucketOrCpm', function() {
+  describe('sortByDealAndPriceBucketOrCpm', function () {
     it('will properly sort bids when some bids have deals and some do not', function () {
       let bids = [{
         adserverTargeting: {
@@ -1504,7 +1504,7 @@ describe('targeting tests', function () {
       }
     });
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.createSandbox();
       sandbox.stub(targetingInstance, 'resetPresetTargetingAST');
       apnTagStub = sandbox.stub(window.apntag, 'setKeywords');
@@ -1513,7 +1513,7 @@ describe('targeting tests', function () {
       sandbox.restore();
     });
 
-    it('should set single addUnit code', function() {
+    it('should set single addUnit code', function () {
       let adUnitCode = 'testdiv-abc-ad-123456-0';
       sandbox.stub(targetingInstance, 'getAllTargeting').returns({
         'testdiv1-abc-ad-123456-0': {hb_bidder: 'appnexus'}
@@ -1526,7 +1526,7 @@ describe('targeting tests', function () {
       expect(apnTagStub.getCall(0).args[1]).to.deep.equal({HB_BIDDER: 'appnexus'});
     });
 
-    it('should set array of addUnit codes', function() {
+    it('should set array of addUnit codes', function () {
       let adUnitCodes = ['testdiv1-abc-ad-123456-0', 'testdiv2-abc-ad-123456-0']
       sandbox.stub(targetingInstance, 'getAllTargeting').returns({
         'testdiv1-abc-ad-123456-0': {hb_bidder: 'appnexus'},
@@ -1542,12 +1542,12 @@ describe('targeting tests', function () {
   });
 
   describe('getGPTSlotsForAdUnits', () => {
-    function mockSlot(path, elId) {
+    function mockSlot (path, elId) {
       return {
-        getAdUnitPath() {
+        getAdUnitPath () {
           return path;
         },
-        getSlotElementId() {
+        getSlotElementId () {
           return elId;
         }
       }

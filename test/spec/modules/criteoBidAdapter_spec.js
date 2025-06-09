@@ -73,7 +73,7 @@ describe('The Criteo bidding adapter', function () {
 
       const gppConsent = {
         gppString: 'gpp_string',
-        applicableSections: [ 1, 2 ]
+        applicableSections: [1, 2]
       };
 
       const gdprConsent = {
@@ -330,7 +330,7 @@ describe('The Criteo bidding adapter', function () {
       }, 0);
     });
 
-    it('should write cookie only on TLD+1 level', function(done) {
+    it('should write cookie only on TLD+1 level', function (done) {
       const cookies = {};
 
       const userSyncs = spec.getUserSyncs(syncOptionsIframeEnabled, undefined, undefined, undefined);
@@ -2007,7 +2007,7 @@ describe('The Criteo bidding adapter', function () {
       },
     };
 
-    function mockResponse(winningBidId, mediaType) {
+    function mockResponse (winningBidId, mediaType) {
       return {
         id: 'test-requestId',
         seatbid: [

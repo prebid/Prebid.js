@@ -11,7 +11,7 @@ const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';
 const ENCODED_ZEOTAP_COOKIE = btoa(JSON.stringify(ZEOTAP_COOKIE));
 
-function getConfigMock() {
+function getConfigMock () {
   return {
     userSync: {
       syncDelay: 0,
@@ -22,7 +22,7 @@ function getConfigMock() {
   }
 }
 
-function getAdUnitMock(code = 'adUnit-code') {
+function getAdUnitMock (code = 'adUnit-code') {
   return {
     code,
     mediaTypes: {banner: {}, native: {}},
@@ -37,30 +37,30 @@ function getAdUnitMock(code = 'adUnit-code') {
   };
 }
 
-function unsetCookie() {
+function unsetCookie () {
   storage.setCookie(ZEOTAP_COOKIE_NAME, '');
 }
 
-function unsetLocalStorage() {
+function unsetLocalStorage () {
   storage.setDataInLocalStorage(ZEOTAP_COOKIE_NAME, '');
 }
 
-describe('Zeotap ID System', function() {
-  describe('Zeotap Module invokes StorageManager with appropriate arguments', function() {
+describe('Zeotap ID System', function () {
+  describe('Zeotap Module invokes StorageManager with appropriate arguments', function () {
     let getStorageManagerSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       getStorageManagerSpy = sinon.spy(storageManager, 'getStorageManager');
     });
 
-    it('when a stored Zeotap ID exists it is added to bids', function() {
+    it('when a stored Zeotap ID exists it is added to bids', function () {
       getStorage();
       expect(getStorageManagerSpy.calledOnce).to.be.true;
       sinon.assert.calledWith(getStorageManagerSpy, {moduleType: MODULE_TYPE_UID, moduleName: 'zeotapIdPlus'});
     });
   });
 
-  describe('test method: getId calls storage methods to fetch ID', function() {
+  describe('test method: getId calls storage methods to fetch ID', function () {
     let cookiesAreEnabledStub;
     let getCookieStub;
     let localStorageIsEnabledStub;
@@ -82,12 +82,12 @@ describe('Zeotap ID System', function() {
       unsetLocalStorage();
     });
 
-    it('should check if cookies are enabled', function() {
+    it('should check if cookies are enabled', function () {
       let id = zeotapIdPlusSubmodule.getId();
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
     });
 
-    it('should call getCookie if cookies are enabled', function() {
+    it('should call getCookie if cookies are enabled', function () {
       cookiesAreEnabledStub.returns(true);
       let id = zeotapIdPlusSubmodule.getId();
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
@@ -95,7 +95,7 @@ describe('Zeotap ID System', function() {
       sinon.assert.calledWith(getCookieStub, 'IDP');
     });
 
-    it('should check for localStorage if cookies are disabled', function() {
+    it('should check for localStorage if cookies are disabled', function () {
       cookiesAreEnabledStub.returns(false);
       localStorageIsEnabledStub.returns(true)
       let id = zeotapIdPlusSubmodule.getId();
@@ -107,13 +107,13 @@ describe('Zeotap ID System', function() {
     });
   });
 
-  describe('test method: getId', function() {
+  describe('test method: getId', function () {
     afterEach(() => {
       unsetCookie();
       unsetLocalStorage();
     });
 
-    it('provides the stored Zeotap id if a cookie exists', function() {
+    it('provides the stored Zeotap id if a cookie exists', function () {
       storage.setCookie(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
       let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
@@ -121,7 +121,7 @@ describe('Zeotap ID System', function() {
       });
     });
 
-    it('provides the stored Zeotap id if cookie is absent but present in local storage', function() {
+    it('provides the stored Zeotap id if cookie is absent but present in local storage', function () {
       storage.setDataInLocalStorage(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
       let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
@@ -129,14 +129,14 @@ describe('Zeotap ID System', function() {
       });
     });
 
-    it('returns undefined if both cookie and local storage are empty', function() {
+    it('returns undefined if both cookie and local storage are empty', function () {
       let id = zeotapIdPlusSubmodule.getId();
       expect(id).to.be.undefined
     })
   });
 
-  describe('test method: decode', function() {
-    it('provides the Zeotap ID (IDP) from a stored object', function() {
+  describe('test method: decode', function () {
+    it('provides the Zeotap ID (IDP) from a stored object', function () {
       let zeotapId = {
         id: ENCODED_ZEOTAP_COOKIE,
       };
@@ -146,7 +146,7 @@ describe('Zeotap ID System', function() {
       });
     });
 
-    it('provides the Zeotap ID (IDP) from a stored string', function() {
+    it('provides the Zeotap ID (IDP) from a stored string', function () {
       let zeotapId = ENCODED_ZEOTAP_COOKIE;
 
       expect(zeotapIdPlusSubmodule.decode(zeotapId)).to.deep.equal({
@@ -155,10 +155,10 @@ describe('Zeotap ID System', function() {
     });
   });
 
-  describe('requestBids hook', function() {
+  describe('requestBids hook', function () {
     let adUnits;
 
-    beforeEach(function() {
+    beforeEach(function () {
       adUnits = [getAdUnitMock()];
       storage.setCookie(
         ZEOTAP_COOKIE_NAME,
@@ -169,13 +169,13 @@ describe('Zeotap ID System', function() {
       config.setConfig(getConfigMock());
     });
 
-    afterEach(function() {
+    afterEach(function () {
       unsetCookie();
       unsetLocalStorage();
     });
 
-    it('when a stored Zeotap ID exists it is added to bids', function(done) {
-      startAuctionHook(function() {
+    it('when a stored Zeotap ID exists it is added to bids', function (done) {
+      startAuctionHook(function () {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.IDP');
@@ -198,7 +198,7 @@ describe('Zeotap ID System', function() {
     before(() => {
       attachIdSystem(zeotapIdPlusSubmodule);
     });
-    it('zeotapIdPlus', function() {
+    it('zeotapIdPlus', function () {
       const userId = {
         IDP: 'some-random-id-value'
       };

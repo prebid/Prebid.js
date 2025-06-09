@@ -4,7 +4,7 @@ import * as utils from '../../src/utils.js';
  * get device
  * @return {boolean}
  */
-export function getDevice() {
+export function getDevice () {
   let check = false;
   (function (a) {
     let reg1 = new RegExp(
@@ -53,6 +53,6 @@ export function getDevice() {
  *
  * @returns {Array} eg: "['widthxheight']"
  */
-export function getScreenSize() {
+export function getScreenSize () {
   return utils.parseSizesInput([window.screen.width, window.screen.height]);
 }

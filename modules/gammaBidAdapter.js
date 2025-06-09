@@ -24,7 +24,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.siteId || bid.params.zoneId);
   },
 
@@ -34,7 +34,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const serverRequests = [];
     const bidderRequestReferer = bidderRequest?.refererInfo?.page || '';
     let ENDPOINT;
@@ -55,7 +55,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     serverResponse = serverResponse.body;
 
     const bids = [];
@@ -74,7 +74,7 @@ export const spec = {
  * @param bid
  * @return aUrl
  */
-function getAdUrlByRegion(bid) {
+function getAdUrlByRegion (bid) {
   let ENDPOINT;
 
   if (bid.params.region && ENDPOINTS[bid.params.region]) {
@@ -112,7 +112,7 @@ function getAdUrlByRegion(bid) {
  * @param serverBid
  * @return Bid
  */
-function newBid(serverBid) {
+function newBid (serverBid) {
   const bid = {
     ad: serverBid.seatbid[0].bid[0].adm,
     cpm: serverBid.seatbid[0].bid[0].price,

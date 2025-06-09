@@ -42,7 +42,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return !!(bid && bid.params && bid.params.placementId && bid.params.publisherId);
   },
 
@@ -53,7 +53,7 @@ export const spec = {
    * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     // Save a placement id to send it to the ad server when fetching the user syncs
     this.syncStore.placementId = this.syncStore.placementId || bidRequests[0].params.placementId;
     return ID_REQUEST.buildServerRequests(bidRequests, bidderRequest);
@@ -66,7 +66,7 @@ export const spec = {
    * @param {{ortbRequest:Object}} bidderRequest
    * @return {Array} An array of bids which were nested inside the server.
    */
-  interpretResponse(serverResponse, { ortbRequest }) {
+  interpretResponse (serverResponse, { ortbRequest }) {
     return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
   },
 
@@ -77,7 +77,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
       return [];
     }
@@ -143,7 +143,7 @@ export const CONVERTER = ortbConverter({
       ]
     }
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.secure = bidRequest.ortb2Imp?.secure ?? 1;
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
@@ -168,7 +168,7 @@ export const CONVERTER = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
@@ -186,7 +186,7 @@ export const CONVERTER = ortbConverter({
     });
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     if (!bid.adm || !bid.price || bid.hasOwnProperty('errorCode')) {
       return;
     }
@@ -223,7 +223,7 @@ export const CONVERTER = ortbConverter({
   },
   overrides: {
     imp: {
-      banner(fillImpBanner, imp, bidRequest, context) {
+      banner (fillImpBanner, imp, bidRequest, context) {
         // override to disregard banner.sizes if usePrebidSizes is false
         if (!bidRequest.mediaTypes[BANNER]) return;
         if (config.getConfig('improvedigital.usePrebidSizes') === false) {
@@ -232,7 +232,7 @@ export const CONVERTER = ortbConverter({
         }
         fillImpBanner(imp, bidRequest, context);
       },
-      video(fillImpVideo, imp, bidRequest, context) {
+      video (fillImpVideo, imp, bidRequest, context) {
         // override to use video params from both mediaTypes.video and bidRequest.params.video
         if (!bidRequest.mediaTypes[VIDEO]) return;
         const video = Object.assign(
@@ -252,7 +252,7 @@ export const CONVERTER = ortbConverter({
 })
 
 const ID_REQUEST = {
-  buildServerRequests(bidRequests, bidderRequest) {
+  buildServerRequests (bidRequests, bidderRequest) {
     const globalExtendMode = config.getConfig('improvedigital.extend') === true;
     const requests = [];
     const singleRequestMode = config.getConfig('improvedigital.singleRequest') === true;
@@ -260,7 +260,7 @@ const ID_REQUEST = {
     const extendBids = [];
     const adServerBids = [];
 
-    function adServerUrl(extendMode, publisherId) {
+    function adServerUrl (extendMode, publisherId) {
       if (extendMode) {
         return EXTEND_URL;
       }
@@ -273,7 +273,7 @@ const ID_REQUEST = {
       return urlSegments.join('/');
     }
 
-    function formatRequest(bidRequests, publisherId, extendMode) {
+    function formatRequest (bidRequests, publisherId, extendMode) {
       const ortbRequest = CONVERTER.toORTB({bidRequests, bidderRequest, context: {extendMode}});
       return {
         method: 'POST',
@@ -317,7 +317,7 @@ const ID_REQUEST = {
     return requests;
   },
 
-  isExtendModeEnabled(globalExtendMode, bidParams) {
+  isExtendModeEnabled (globalExtendMode, bidParams) {
     const extendMode = typeof bidParams.extend === 'boolean' ? bidParams.extend : globalExtendMode;
     if (extendMode && !spec.syncStore.extendMode) {
       spec.syncStore.extendMode = true;
@@ -325,7 +325,7 @@ const ID_REQUEST = {
     return extendMode;
   },
 
-  isOutstreamVideo(bidRequest) {
+  isOutstreamVideo (bidRequest) {
     return deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream';
   },
 
@@ -333,7 +333,7 @@ const ID_REQUEST = {
 
 const ID_OUTSTREAM = {
   RENDERER_URL: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
-  createRenderer(bidRequest) {
+  createRenderer (bidRequest) {
     const renderer = Renderer.install({
       id: bidRequest.adUnitCode,
       url: this.RENDERER_URL,
@@ -348,7 +348,7 @@ const ID_OUTSTREAM = {
     return renderer;
   },
 
-  render(bid) {
+  render (bid) {
     bid.renderer.push(() => {
       window.ANOutstreamVideo.renderAd({
         sizes: [bid.width, bid.height],
@@ -359,7 +359,7 @@ const ID_OUTSTREAM = {
     });
   },
 
-  handleRendererEvents(bid, id, eventName) {
+  handleRendererEvents (bid, id, eventName) {
     bid.renderer.handleVideoEvent({ id, eventName });
   },
 };

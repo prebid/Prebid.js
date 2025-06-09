@@ -11,7 +11,7 @@ describe('category translation', function () {
     getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
   });
 
-  afterEach(function() {
+  afterEach(function () {
     getLocalStorageStub.restore();
     config.resetConfig();
   });
@@ -39,7 +39,7 @@ describe('category translation', function () {
     expect(bid.meta.adServerCatId).to.equal(1);
   });
 
-  it('should set adserverCatId to undefined if not found in mapping file', function() {
+  it('should set adserverCatId to undefined if not found in mapping file', function () {
     config.setConfig({
       'adpod': {
         'brandCategoryExclusion': true

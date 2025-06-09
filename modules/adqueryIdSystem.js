@@ -27,7 +27,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @param {String} param
  * @param {String} defaultVal
  */
-function paramOrDefault(param, defaultVal, arg) {
+function paramOrDefault (param, defaultVal, arg) {
   if (isFn(param)) {
     return param(arg);
   } else if (isStr(param)) {
@@ -56,7 +56,7 @@ export const adqueryIdSubmodule = {
    * @param {{value:string}} value
    * @returns {{qid:Object}}
    */
-  decode(value) {
+  decode (value) {
     return {qid: value}
   },
   /**
@@ -65,7 +65,7 @@ export const adqueryIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     logMessage('adqueryIdSubmodule getId');
 
     let qid = storage.getDataFromLocalStorage('qid');

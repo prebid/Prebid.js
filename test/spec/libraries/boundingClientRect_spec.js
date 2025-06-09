@@ -25,7 +25,7 @@ describe('getBoundingClientRect', () => {
   });
 
   it('should fire getBoundingClientRect on element again if new auction was started', (done) => {
-    const onAuctionDone = function() {
+    const onAuctionDone = function () {
       getBoundingClientRect(element);
       expect(getBoundingClientRectSpy.callCount).to.equal(2);
       done();

@@ -30,7 +30,7 @@ const RX_CONNECTOR_MOCK = {
 const TIMEOUT = 10;
 const RX_CONNECTOR_IS_READY_EVENT = new CustomEvent('rxConnectorIsReady', { detail: { [CUSTOMER]: RX_CONNECTOR_MOCK }, bubbles: true });
 
-function buildInitConfig(version, customer) {
+function buildInitConfig (version, customer) {
   return {
     name: 'contxtful',
     params: {
@@ -43,7 +43,7 @@ function buildInitConfig(version, customer) {
   };
 }
 
-function fakeGetElementById(width, height, x, y) {
+function fakeGetElementById (width, height, x, y) {
   const obj = { x, y, width, height };
 
   return {
@@ -773,7 +773,7 @@ describe('contxtfulRtdProvider', function () {
       }, TIMEOUT);
     })
 
-    function getFakeRequestBidConfigObj() {
+    function getFakeRequestBidConfigObj () {
       return {
         adUnits: [
           { code: 'code1', ortb2Imp: { ext: { data: { divId: 'divId1' } } } },
@@ -786,7 +786,7 @@ describe('contxtfulRtdProvider', function () {
       };
     }
 
-    function InitDivStubPositions(config, withIframe, isVisible, forceGetElementById = true) {
+    function InitDivStubPositions (config, withIframe, isVisible, forceGetElementById = true) {
       let fakeElem = fakeGetElementById(100, 100, 30, 30);
       if (isVisible) {
         fakeElem.checkVisibility = function () { return true };

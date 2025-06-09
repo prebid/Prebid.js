@@ -142,7 +142,7 @@ export const spec = {
 
     const userSyncs = [];
 
-    function checkGppStatus(gppConsent) {
+    function checkGppStatus (gppConsent) {
       if (gppConsent && Array.isArray(gppConsent.applicableSections)) {
         return gppConsent.applicableSections.every(sec => typeof sec === 'number' && sec <= 5);
       }
@@ -180,11 +180,11 @@ export const spec = {
 
 let usersSynced = false;
 
-function hasBannerMediaType(bidRequest) {
+function hasBannerMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
 
-function getDevice(data) {
+function getDevice (data) {
   let dnt = data.dnt;
   if (!dnt) {
     dnt = getDNT() ? 1 : 0;
@@ -200,7 +200,7 @@ function getDevice(data) {
   }
 }
 
-function getByKey(collection, key) {
+function getByKey (collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
     result = deepAccess(collection[i], key);
     if (result) {

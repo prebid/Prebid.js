@@ -55,7 +55,7 @@ export const teadsIdSubmodule = {
    * @param {string} value
    * @returns {{teadsId:string}}
    */
-  decode(value) {
+  decode (value) {
     return {teadsId: value}
   },
   /**
@@ -65,7 +65,7 @@ export const teadsIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(submoduleConfig, consentData) {
+  getId (submoduleConfig, consentData) {
     const resp = function (callback) {
       const url = buildAnalyticsTagUrl(submoduleConfig, consentData);
 
@@ -104,7 +104,7 @@ export const teadsIdSubmodule = {
  * @param consentData
  * @returns {string}
  */
-export function buildAnalyticsTagUrl(submoduleConfig, consentData) {
+export function buildAnalyticsTagUrl (submoduleConfig, consentData) {
   const pubId = getPublisherId(submoduleConfig);
   const teadsViewerId = getTeadsViewerId();
   const status = getGdprStatus(consentData?.gdpr);
@@ -136,7 +136,7 @@ export function buildAnalyticsTagUrl(submoduleConfig, consentData) {
  * @returns {string}
  * @param submoduleConfig
  */
-export function getPublisherId(submoduleConfig) {
+export function getPublisherId (submoduleConfig) {
   const pubId = submoduleConfig?.params?.pubId;
   const prefix = 'PUB_';
   if (isNumber(pubId)) {
@@ -153,7 +153,7 @@ export function getPublisherId(submoduleConfig) {
  * @param consentData
  * @returns {number}
  */
-export function getGdprStatus(consentData) {
+export function getGdprStatus (consentData) {
   const gdprApplies = consentData?.gdprApplies;
   if (gdprApplies === true) {
     return gdprStatus.GDPR_APPLIES_PUBLISHER;
@@ -169,7 +169,7 @@ export function getGdprStatus(consentData) {
  * @param consentData
  * @returns {string}
  */
-export function getGdprConsentString(consentData) {
+export function getGdprConsentString (consentData) {
   const consentString = consentData?.consentString;
   if (isStr(consentString)) {
     return consentString;
@@ -183,7 +183,7 @@ export function getGdprConsentString(consentData) {
  * @param status
  * @returns {number}
  */
-function getGdprReasonFromStatus(status) {
+function getGdprReasonFromStatus (status) {
   switch (status) {
     case gdprStatus.GDPR_DOESNT_APPLY:
       return gdprReason.GDPR_DOESNT_APPLY;
@@ -201,7 +201,7 @@ function getGdprReasonFromStatus(status) {
  * @param ccpaConsentString
  * @returns {string|*}
  */
-export function getCcpaConsentString(ccpaConsentString) {
+export function getCcpaConsentString (ccpaConsentString) {
   if (isStr(ccpaConsentString)) {
     return ccpaConsentString;
   } else {
@@ -214,7 +214,7 @@ export function getCcpaConsentString(ccpaConsentString) {
  * @param {number} maxAge
  * @returns {string}
  */
-export function getCookieExpirationDate(maxAge) {
+export function getCookieExpirationDate (maxAge) {
   return new Date(timestamp() + maxAge).toUTCString()
 }
 
@@ -222,7 +222,7 @@ export function getCookieExpirationDate(maxAge) {
  * Get cookie from Cookie or Local Storage
  * @returns {string}
  */
-function getTeadsViewerId() {
+function getTeadsViewerId () {
   const teadsViewerId = readCookie()
   if (isStr(teadsViewerId)) {
     return teadsViewerId
@@ -231,7 +231,7 @@ function getTeadsViewerId() {
   }
 }
 
-function readCookie() {
+function readCookie () {
   return storage.cookiesAreEnabled(null) ? storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null) : null;
 }
 
@@ -240,7 +240,7 @@ function readCookie() {
  * @param days
  * @returns {number}
  */
-export function getTimestampFromDays(days) {
+export function getTimestampFromDays (days) {
   return days * 24 * 60 * 60 * 1000;
 }
 submodule('userId', teadsIdSubmodule);

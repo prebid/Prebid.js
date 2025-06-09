@@ -34,7 +34,7 @@ export const experianRtdObj = {
    * @param {SubmoduleConfig} config
    * @param {UserConsentData} userConsent
    */
-  getBidRequestData(reqBidsConfigObj, done, config, userConsent) {
+  getBidRequestData (reqBidsConfigObj, done, config, userConsent) {
     const dataEnvelope = storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null);
     const stale = storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY, null);
     const expired = storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, null);
@@ -59,7 +59,7 @@ export const experianRtdObj = {
     return true;
   },
 
-  alterBids(reqBidsConfigObj, config) {
+  alterBids (reqBidsConfigObj, config) {
     const dataEnvelope = safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null));
     if (dataEnvelope == null) {
       return;
@@ -71,8 +71,8 @@ export const experianRtdObj = {
       }
     })
   },
-  requestDataEnvelope(config, userConsent) {
-    function storeDataEnvelopeResponse(response) {
+  requestDataEnvelope (config, userConsent) {
+    function storeDataEnvelopeResponse (response) {
       const responseJson = safeJSONParse(response);
       if (responseJson != null) {
         storage.setDataInLocalStorage(EXPERIAN_RTID_STALE_KEY, responseJson.staleAt, null);
@@ -90,7 +90,7 @@ export const experianRtdObj = {
     const fullUrl = queryString == null ? `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`
     ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
   },
-  extractConsentQueryString(config, userConsent) {
+  extractConsentQueryString (config, userConsent) {
     const queryObj = {};
 
     if (userConsent != null) {
@@ -126,7 +126,7 @@ export const experianRtdObj = {
    * @param {UserConsentData} userConsent
    * @return {boolean} false to remove sub module
    */
-  init(config, userConsent) {
+  init (config, userConsent) {
     return isStr(deepAccess(config, 'params.accountId'));
   }
 }

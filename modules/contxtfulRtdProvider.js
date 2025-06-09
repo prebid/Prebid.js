@@ -40,7 +40,7 @@ const CONTXTFUL_DEFER_DEFAULT = 0;
 
 // Functions
 let _sm;
-function sm() {
+function sm () {
   return _sm ??= generateUUID();
 }
 
@@ -56,11 +56,11 @@ let rxApi = null;
  * @param { String } requester
  * @return { { Object } }
  */
-function getRxEngineReceptivity(requester) {
+function getRxEngineReceptivity (requester) {
   return rxApi?.receptivity(requester);
 }
 
-function getItemFromSessionStorage(key) {
+function getItemFromSessionStorage (key) {
   try {
     return storageManager.getDataFromSessionStorage(key);
   } catch (error) {
@@ -68,7 +68,7 @@ function getItemFromSessionStorage(key) {
   }
 }
 
-function loadSessionReceptivity(requester) {
+function loadSessionReceptivity (requester) {
   let sessionStorageValue = getItemFromSessionStorage(requester);
   if (!sessionStorageValue) {
     return null;
@@ -95,7 +95,7 @@ function loadSessionReceptivity(requester) {
  * @param {Function} method
  * @returns A batch
  */
-function prepareBatch(requesters, method) {
+function prepareBatch (requesters, method) {
   return requesters.reduce((acc, requester) => {
     const receptivity = method(requester);
     if (!isEmpty(receptivity)) {
@@ -111,7 +111,7 @@ function prepareBatch(requesters, method) {
  * @param { { params: { version: String, customer: String, hostname: String } } } config
  * @return { Boolean }
  */
-function init(config) {
+function init (config) {
   logInfo(MODULE, 'init', config);
   rxApi = null;
 
@@ -135,7 +135,7 @@ function init(config) {
  * @return { { version: String, customer: String, hostname: String } }
  * @throws params.{name} should be a non-empty string
  */
-export function extractParameters(config) {
+export function extractParameters (config) {
   const version = config?.params?.version;
   if (!isStr(version) || isEmptyStr(version)) {
     throw Error(`${MODULE}: params.version should be a non-empty string`);
@@ -157,7 +157,7 @@ export function extractParameters(config) {
  * This will load the external resources for the sub module.
  * @param { String } config
  */
-function initCustomer(config) {
+function initCustomer (config) {
   const { version, customer, hostname, defer } = extractParameters(config);
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
@@ -181,7 +181,7 @@ function initCustomer(config) {
  * @param { String } tagId
  * @param { String } prebidConfig
  */
-function addConnectorEventListener(tagId, prebidConfig) {
+function addConnectorEventListener (tagId, prebidConfig) {
   window.addEventListener(
     'rxConnectorIsReady',
     async ({ detail: { [tagId]: rxConnector } }) => {
@@ -210,7 +210,7 @@ function addConnectorEventListener(tagId, prebidConfig) {
  * @param {*} _userConsent
  * @return {{ code: { ReceptivityState: String } }}
  */
-function getTargetingData(adUnits, config, _userConsent) {
+function getTargetingData (adUnits, config, _userConsent) {
   try {
     if (String(config?.params?.adServerTargeting) === 'false') {
       return {};
@@ -237,7 +237,7 @@ function getTargetingData(adUnits, config, _userConsent) {
   }
 }
 
-function getVisibilityStateElement(domElement, windowTop) {
+function getVisibilityStateElement (domElement, windowTop) {
   if ('checkVisibility' in domElement) {
     return domElement.checkVisibility();
   }
@@ -246,7 +246,7 @@ function getVisibilityStateElement(domElement, windowTop) {
   return elementCss.display !== 'none';
 }
 
-function getElementFromTopWindowRecurs(element, currentWindow) {
+function getElementFromTopWindowRecurs (element, currentWindow) {
   try {
     if (getWindowTop() === currentWindow) {
       return element;
@@ -265,7 +265,7 @@ function getElementFromTopWindowRecurs(element, currentWindow) {
   }
 }
 
-function getDivIdPosition(divId) {
+function getDivIdPosition (divId) {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return {};
   }
@@ -321,7 +321,7 @@ function getDivIdPosition(divId) {
   return position;
 }
 
-function tryGetDivIdPosition(divIdMethod) {
+function tryGetDivIdPosition (divIdMethod) {
   let divId = divIdMethod();
   if (divId) {
     const divIdPosition = getDivIdPosition(divId);
@@ -332,7 +332,7 @@ function tryGetDivIdPosition(divIdMethod) {
   return undefined;
 }
 
-function tryMultipleDivIdPositions(adUnit) {
+function tryMultipleDivIdPositions (adUnit) {
   let divMethods = [
     // ortb2\
     () => {
@@ -354,7 +354,7 @@ function tryMultipleDivIdPositions(adUnit) {
   }
 }
 
-function tryGetAdUnitPosition(adUnit) {
+function tryGetAdUnitPosition (adUnit) {
   let adUnitPosition = {};
   adUnit.ortb2Imp = adUnit.ortb2Imp || {};
 
@@ -378,7 +378,7 @@ function tryGetAdUnitPosition(adUnit) {
   return undefined;
 }
 
-function getAdUnitPositions(bidReqConfig) {
+function getAdUnitPositions (bidReqConfig) {
   const adUnits = bidReqConfig.adUnits || [];
   let adUnitPositions = {};
 
@@ -398,8 +398,8 @@ function getAdUnitPositions(bidReqConfig) {
  * @param {Object} config Configuration for Contxtful RTD module
  * @param {Object} userConsent
  */
-function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
-  function onReturn() {
+function getBidRequestData (reqBidsConfigObj, onDone, config, userConsent) {
+  function onReturn () {
     onDone();
   }
   logInfo(MODULE, 'getBidRequestData');
@@ -456,15 +456,15 @@ function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
   onReturn();
 }
 
-function getUiEvents() {
+function getUiEvents () {
   return {
     position: lastCursorPosition,
     screen: getScreen(),
   };
 }
 
-function getScreen() {
-  function getInnerSize() {
+function getScreen () {
+  function getInnerSize () {
     const { innerWidth, innerHeight } = getWinDimensions();
 
     let w = innerWidth;
@@ -475,7 +475,7 @@ function getScreen() {
     }
   }
 
-  function getDocumentSize() {
+  function getDocumentSize () {
     const windowDimensions = getWinDimensions();
 
     let w = windowDimensions.document.body.clientWidth;
@@ -501,8 +501,8 @@ function getScreen() {
 
 let lastCursorPosition;
 
-function observeLastCursorPosition() {
-  function pointerEventToPosition(event) {
+function observeLastCursorPosition () {
+  function pointerEventToPosition (event) {
     lastCursorPosition = {
       x: event.clientX,
       y: event.clientY,
@@ -510,7 +510,7 @@ function observeLastCursorPosition() {
     };
   }
 
-  function touchEventToPosition(event) {
+  function touchEventToPosition (event) {
     let touch = event.touches.item(0);
     if (!touch) {
       return;
@@ -528,13 +528,13 @@ function observeLastCursorPosition() {
 }
 
 let listeners = {};
-function addListener(name, listener) {
+function addListener (name, listener) {
   listeners[name] = listener;
 
   window.addEventListener(name, listener);
 }
 
-function removeListeners() {
+function removeListeners () {
   for (const name in listeners) {
     window.removeEventListener(name, listeners[name]);
     delete listeners[name];

@@ -2,7 +2,7 @@
  * get page title
  * @returns {string}
  */
-export function getPageTitle(win = window) {
+export function getPageTitle (win = window) {
   try {
     const ogTitle = win.top.document.querySelector('meta[property="og:title"]');
     return win.top.document.title || (ogTitle && ogTitle.content) || '';
@@ -16,7 +16,7 @@ export function getPageTitle(win = window) {
  * get page description
  * @returns {string}
  */
-export function getPageDescription(win = window) {
+export function getPageDescription (win = window) {
   let element;
 
   try {
@@ -34,7 +34,7 @@ export function getPageDescription(win = window) {
  * get page keywords
  * @returns {string}
  */
-export function getPageKeywords(win = window) {
+export function getPageKeywords (win = window) {
   let element;
 
   try {
@@ -50,7 +50,7 @@ export function getPageKeywords(win = window) {
  * get connection downlink
  * @returns {number}
  */
-export function getConnectionDownLink(win = window) {
+export function getConnectionDownLink (win = window) {
   const nav = win.navigator || {};
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined;
 }
@@ -60,7 +60,7 @@ export function getConnectionDownLink(win = window) {
  * @param bidderRequest
  * @returns {string}
  */
-export function getReferrer(bidRequest = {}, bidderRequest = {}) {
+export function getReferrer (bidRequest = {}, bidderRequest = {}) {
   let pageUrl;
   if (bidRequest.params && bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;

@@ -26,19 +26,19 @@ const OBSERVER_CONFIG = {
 const _logInfo = createLogInfo(LOG_PRE_FIX);
 const _logError = createLogError(LOG_PRE_FIX);
 
-function createLogInfo(prefix) {
+function createLogInfo (prefix) {
   return function (...strings) {
     logInfo(prefix + ' ', ...strings);
   }
 }
 
-function createLogError(prefix) {
+function createLogError (prefix) {
   return function (...strings) {
     logError(prefix + ' ', ...strings);
   }
 }
 
-function getEmail(value) {
+function getEmail (value) {
   const matched = value.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi);
   if (!matched) {
     return null;
@@ -47,7 +47,7 @@ function getEmail(value) {
   return matched[0];
 }
 
-function bodyAction(mutations, observer) {
+function bodyAction (mutations, observer) {
   _logInfo('BODY observer on debounce called');
   // If the email is found in the input element, disconnect the observer
   if (email) {
@@ -66,7 +66,7 @@ function bodyAction(mutations, observer) {
   }
 }
 
-function targetAction(mutations, observer) {
+function targetAction (mutations, observer) {
   _logInfo('Target observer called');
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
@@ -83,7 +83,7 @@ function targetAction(mutations, observer) {
   }
 }
 
-function addInputElementsElementListner() {
+function addInputElementsElementListner () {
   if (doesInputElementsHaveEmail()) {
     _logInfo('Email found in input elements ' + email);
     _logInfo('Post data on email found in target without');
@@ -100,7 +100,7 @@ function addInputElementsElementListner() {
   }
 }
 
-function addFormInputElementsElementListner(id) {
+function addFormInputElementsElementListner (id) {
   _logInfo('Adding input element listeners');
   if (doesFormInputElementsHaveEmail(id)) {
     _logInfo('Email found in input elements ' + email);
@@ -113,7 +113,7 @@ function addFormInputElementsElementListner(id) {
   input.addEventListener('blur', event => processInputChange(event));
 }
 
-function removeInputElementsElementListner() {
+function removeInputElementsElementListner () {
   _logInfo('Removing input element listeners');
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
@@ -123,7 +123,7 @@ function removeInputElementsElementListner() {
   }
 }
 
-function processInputChange(event) {
+function processInputChange (event) {
   const value = event.target.value;
   _logInfo(`Modified Value of input ${event.target.value}`);
   email = getEmail(value);
@@ -134,7 +134,7 @@ function processInputChange(event) {
   }
 }
 
-function debounce(func, wait, immediate) {
+function debounce (func, wait, immediate) {
   var timeout;
   return function () {
     const context = this;
@@ -154,7 +154,7 @@ function debounce(func, wait, immediate) {
   };
 };
 
-function handleTargetElement() {
+function handleTargetElement () {
   const targetObserver = new MutationObserver(debounce(targetAction, conf.debounce, false));
 
   const targetElement = document.getElementById(conf.target);
@@ -172,7 +172,7 @@ function handleTargetElement() {
   }
 }
 
-function handleBodyElements() {
+function handleBodyElements () {
   email = getEmail(document.body.innerHTML);
   if (email !== null) {
     _logInfo('Email found in body ' + email);
@@ -187,7 +187,7 @@ function handleBodyElements() {
   }
 }
 
-function doesInputElementsHaveEmail() {
+function doesInputElementsHaveEmail () {
   const inputs = document.getElementsByTagName('input');
 
   for (let index = 0; index < inputs.length; ++index) {
@@ -200,7 +200,7 @@ function doesInputElementsHaveEmail() {
   return false;
 }
 
-function doesFormInputElementsHaveEmail(formElementId) {
+function doesFormInputElementsHaveEmail (formElementId) {
   const input = document.getElementById(formElementId);
   if (input) {
     email = getEmail(input.value);
@@ -211,7 +211,7 @@ function doesFormInputElementsHaveEmail(formElementId) {
   return false;
 }
 
-function syncCallback() {
+function syncCallback () {
   return {
     success: function () {
       _logInfo('Data synced successfully.');
@@ -222,7 +222,7 @@ function syncCallback() {
   }
 }
 
-function postData() {
+function postData () {
   (getGlobal()).refreshUserIds();
   const userIds = (getGlobal()).getUserIds();
   if (Object.keys(userIds).length === 0) {
@@ -238,7 +238,7 @@ function postData() {
   ajax(conf.url, syncCallback(), payloadString, {method: 'POST', withCredentials: true});
 }
 
-function associateIds() {
+function associateIds () {
   if (window.MutationObserver || window.WebKitMutationObserver) {
     if (conf.target) {
       handleTargetElement();
@@ -252,7 +252,7 @@ function associateIds() {
   }
 }
 
-export function setConfig(config) {
+export function setConfig (config) {
   if (!config) {
     _logError('Required confirguration not provided');
     return;

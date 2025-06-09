@@ -10,7 +10,7 @@ const VENDOR_ID = 794;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: VENDOR_ID,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(
       bid &&
@@ -83,7 +83,7 @@ export const spec = {
       };
     });
   },
-  interpretResponse: function interpretResponse(serverResponse, request) {
+  interpretResponse: function interpretResponse (serverResponse, request) {
     if (!serverResponse || !serverResponse.body || !serverResponse.body.seatbid) {
       return [];
     }
@@ -143,13 +143,13 @@ export const spec = {
   }
 };
 
-function encodeQueryData(data) {
-  return Object.keys(data).map(function(key) {
+function encodeQueryData (data) {
+  return Object.keys(data).map(function (key) {
     return [key, data[key]].map(encodeURIComponent).join('=');
   }).join('&');
 }
 
-function kubientGetConsentGiven(gdprConsent) {
+function kubientGetConsentGiven (gdprConsent) {
   let consentGiven = 0;
   if (typeof gdprConsent !== 'undefined') {
     consentGiven = deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;
@@ -157,7 +157,7 @@ function kubientGetConsentGiven(gdprConsent) {
   return consentGiven;
 }
 
-function kubientGetSyncInclude(config) {
+function kubientGetSyncInclude (config) {
   try {
     let kubientSync = {};
     if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {

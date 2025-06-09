@@ -12,7 +12,7 @@ const TEST_SAS_ID = 'test-sas-id';
 const TEST_AD_SERVER_BASE_URL = 'https://mocha.test.adserver.com';
 const TEST_CONSENT_STRING = 'test-consent-string';
 
-function decodeFullUrl(url) {
+function decodeFullUrl (url) {
   return decodeURIComponent(url);
 }
 

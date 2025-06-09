@@ -319,13 +319,13 @@ describe('adtargetBidAdapter', () => {
       bidServerResponseCheck();
     });
 
-    function bidServerResponseCheck() {
+    function bidServerResponseCheck () {
       const result = spec.interpretResponse({ body: serverResponse }, { adapterRequest });
 
       expect(result).to.deep.equal(eqResponse);
     }
 
-    function nobidServerResponseCheck() {
+    function nobidServerResponseCheck () {
       const noBidServerResponse = { bids: [] };
       const noBidResult = spec.interpretResponse({ body: noBidServerResponse }, { adapterRequest });
 

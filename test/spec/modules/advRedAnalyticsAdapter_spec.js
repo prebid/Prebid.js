@@ -57,7 +57,7 @@ describe('AdvRed Analytics Adapter', function () {
       expect(advRedAnalytics.getOptions().url).to.equal(custom_endpoint);
     });
 
-    it('bid won event', function() {
+    it('bid won event', function () {
       let publisherId = '1234567890';
       advRedAnalytics.enableAnalytics({
         provider: 'advRed',

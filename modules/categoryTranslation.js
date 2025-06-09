@@ -25,7 +25,7 @@ const DEFAULT_IAB_TO_FW_MAPPING_KEY = 'iabToFwMappingkey';
 const DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB = 'iabToFwMappingkeyPub';
 const refreshInDays = 1;
 
-export const registerAdserver = hook('async', function(adServer) {
+export const registerAdserver = hook('async', function (adServer) {
   let url;
   if (adServer === 'freewheel') {
     url = DEFAULT_TRANSLATION_FILE_URL;
@@ -35,7 +35,7 @@ export const registerAdserver = hook('async', function(adServer) {
 
 ready.then(() => registerAdserver());
 
-export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook(fn, adUnitCode, bid, reject) {
+export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook (fn, adUnitCode, bid, reject) {
   if (!bid) {
     return fn.call(this, adUnitCode, bid, reject); // if no bid, call original and let it display warnings
   }
@@ -67,7 +67,7 @@ export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation
   fn.call(this, adUnitCode, bid, reject);
 });
 
-export function initTranslation(url, localStorageKey) {
+export function initTranslation (url, localStorageKey) {
   setupBeforeHookFnOnce(addBidResponse, getAdserverCategoryHook, 50);
   let mappingData = storage.getDataFromLocalStorage(localStorageKey);
   try {
@@ -95,7 +95,7 @@ export function initTranslation(url, localStorageKey) {
   }
 }
 
-function setConfig(config) {
+function setConfig (config) {
   if (config.translationFile) {
     // if publisher has defined the translation file, preload that file here
     initTranslation(config.translationFile, DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB);

@@ -134,32 +134,32 @@ export const spec = {
 };
 
 export const domainLogger = {
-  invalidSiteError(value) {
+  invalidSiteError (value) {
     logError(
       `Michao Bid Adapter: Invalid site ID. Expected number, got ${typeof value}. Value: ${value}`
     );
   },
 
-  invalidPlacementError(value) {
+  invalidPlacementError (value) {
     logError(
       `Michao Bid Adapter: Invalid placement. Expected string, got ${typeof value}. Value: ${value}`
     );
   },
 
-  invalidPartnerError(value) {
+  invalidPartnerError (value) {
     logError(
       `Michao Bid Adapter: Invalid partner ID. Expected number, got ${typeof value}. Value: ${value}`
     );
   },
 
-  invalidTestParamError(value) {
+  invalidTestParamError (value) {
     logError(
       `Michao Bid Adapter: Invalid test parameter. Expected boolean, got ${typeof value}. Value: ${value}`
     );
   },
 };
 
-function buildRequest(bidRequests, bidderRequest) {
+function buildRequest (bidRequests, bidderRequest) {
   const openRTBBidRequest = converter.toORTB({
     bidRequests: bidRequests,
     bidderRequest,
@@ -173,7 +173,7 @@ function buildRequest(bidRequests, bidderRequest) {
   };
 }
 
-function generateGdprParams(gdprConsent) {
+function generateGdprParams (gdprConsent) {
   let gdprParams = '';
 
   if (typeof gdprConsent === 'object') {
@@ -187,7 +187,7 @@ function generateGdprParams(gdprConsent) {
   return gdprParams;
 }
 
-function generateBillableUrls(bid) {
+function generateBillableUrls (bid) {
   const billingUrls = [];
   const cpm = bid.originalCpm || bid.cpm;
 
@@ -206,7 +206,7 @@ function generateBillableUrls(bid) {
 }
 
 const converter = ortbConverter({
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const bidRequest = context.bidRequests[0];
     const openRTBBidRequest = buildRequest(imps, bidderRequest, context);
     openRTBBidRequest.cur = [ENV.DEFAULT_CURRENCY];
@@ -232,7 +232,7 @@ const converter = ortbConverter({
     return openRTBBidRequest;
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(
       imp,
@@ -247,7 +247,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     const { bidRequest } = context;
     if (

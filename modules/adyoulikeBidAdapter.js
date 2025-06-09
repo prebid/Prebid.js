@@ -226,7 +226,7 @@ export const spec = {
 }
 
 /* Get hostname from bids */
-function getHostname(bidderRequest) {
+function getHostname (bidderRequest) {
   let dcHostname = ((bidderRequest) || []).find(bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
@@ -235,7 +235,7 @@ function getHostname(bidderRequest) {
 }
 
 /* Get mediatype from bidRequest */
-function getMediatype(bidRequest) {
+function getMediatype (bidRequest) {
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     return BANNER;
   }
@@ -248,11 +248,11 @@ function getMediatype(bidRequest) {
 }
 
 /* Get Floor price information */
-function getFloor(bidRequest, size, mediaType) {
+function getFloor (bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [ size.width, size.height ]
+    size: [size.width, size.height]
   });
 
   if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
@@ -261,7 +261,7 @@ function getFloor(bidRequest, size, mediaType) {
 }
 
 /* Get information on page refresh */
-function getPageRefreshed() {
+function getPageRefreshed () {
   try {
     if (performance && performance.navigation) {
       return performance.navigation.type === performance.navigation.TYPE_RELOAD;
@@ -271,7 +271,7 @@ function getPageRefreshed() {
 }
 
 /* Create endpoint url */
-function createEndpoint(bidRequests, bidderRequest, hasVideo) {
+function createEndpoint (bidRequests, bidderRequest, hasVideo) {
   let host = getHostname(bidRequests);
   const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
@@ -283,7 +283,7 @@ function createEndpoint(bidRequests, bidderRequest, hasVideo) {
 }
 
 /* Create endpoint query string */
-function createEndpointQS(bidderRequest) {
+function createEndpointQS (bidderRequest) {
   const qs = {};
   if (bidderRequest) {
     const ref = bidderRequest.refererInfo;
@@ -316,7 +316,7 @@ function createEndpointQS(bidderRequest) {
   return qs;
 }
 
-function getSizeArray(bid) {
+function getSizeArray (bid) {
   let inputSize = bid.sizes || [];
 
   if (bid.mediaTypes && bid.mediaTypes.banner) {
@@ -335,7 +335,7 @@ function getSizeArray(bid) {
 }
 
 /* Get parsed size from request size */
-function getSize(sizesArray) {
+function getSize (sizesArray) {
   const parsed = {};
   // the main requested size is the first one
   const size = sizesArray[0];
@@ -358,12 +358,12 @@ function getSize(sizesArray) {
   return parsed;
 }
 
-function getInternalImgUrl(uid) {
+function getInternalImgUrl (uid) {
   if (!uid) return '';
   return 'https://blobs.omnitagjs.com/blobs/' + uid.substr(16, 2) + '/' + uid.substr(16) + '/' + uid;
 }
 
-function getImageUrl(config, resource, width, height) {
+function getImageUrl (config, resource, width, height) {
   let url = '';
   if (resource && resource.Kind) {
     switch (resource.Kind) {
@@ -395,7 +395,7 @@ function getImageUrl(config, resource, width, height) {
   return url;
 }
 
-function getTrackers(eventsArray, jsTrackers) {
+function getTrackers (eventsArray, jsTrackers) {
   const result = [];
 
   if (!eventsArray) return result;
@@ -409,7 +409,7 @@ function getTrackers(eventsArray, jsTrackers) {
   return result;
 }
 
-function getNativeAssets(response, nativeConfig) {
+function getNativeAssets (response, nativeConfig) {
   if (typeof response.Native === 'object') {
     return response.Native;
   }
@@ -445,7 +445,7 @@ function getNativeAssets(response, nativeConfig) {
     native.impressionTrackers.push(impressionUrl, insertionUrl);
   }
 
-  Object.keys(nativeConfig).map(function(key, index) {
+  Object.keys(nativeConfig).map(function (key, index) {
     switch (key) {
       case 'title':
         native[key] = textsJson.TITLE;
@@ -508,7 +508,7 @@ function getNativeAssets(response, nativeConfig) {
 }
 
 /* Create bid from response */
-function createBid(response, bidRequests) {
+function createBid (response, bidRequests) {
   if (!response || (!response.Ad && !response.Native && !response.Vast)) {
     return;
   }

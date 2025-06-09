@@ -1,6 +1,6 @@
 import {ERROR_NO_AD} from './constants.js';
 
-export function render({ad, adUrl, width, height, instl}, {mkFrame}, win) {
+export function render ({ad, adUrl, width, height, instl}, {mkFrame}, win) {
   if (!ad && !adUrl) {
     throw {
       reason: ERROR_NO_AD,

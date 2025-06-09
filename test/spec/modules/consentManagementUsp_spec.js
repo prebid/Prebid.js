@@ -14,7 +14,7 @@ import {defer} from '../../../src/utils/promise.js';
 
 let expect = require('chai').expect;
 
-function createIFrameMarker() {
+function createIFrameMarker () {
   var ifr = document.createElement('iframe');
   ifr.width = 0;
   ifr.height = 0;
@@ -85,27 +85,27 @@ describe('consentManagement', function () {
         sinon.assert.callCount(utils.logInfo, 3);
       });
 
-      it('should not exit the consent manager if config.usp is not an object', function() {
+      it('should not exit the consent manager if config.usp is not an object', function () {
         setConsentConfig({});
         expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
       });
 
-      it('should not produce any USP metadata', function() {
+      it('should not produce any USP metadata', function () {
         setConsentConfig({});
         let consentMeta = uspDataHandler.getConsentMeta();
         expect(consentMeta).to.be.undefined;
       });
 
-      it('should exit the consent manager if only config.gdpr is an object', function() {
+      it('should exit the consent manager if only config.gdpr is an object', function () {
         setConsentConfig({ gdpr: { cmpApi: 'iab' } });
         expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
         sinon.assert.callCount(utils.logInfo, 3);
       });
 
-      it('should exit consentManagementUsp module if config is "undefined"', function() {
+      it('should exit consentManagementUsp module if config is "undefined"', function () {
         setConsentConfig(undefined);
         expect(consentAPI).to.be.equal('iab');
         expect(consentTimeout).to.be.equal(50);
@@ -241,7 +241,7 @@ describe('consentManagement', function () {
       beforeEach(function () {
         didHookReturn = false;
         ifr = createIFrameMarker();
-        window.__uspapi = function() {};
+        window.__uspapi = function () {};
       });
 
       afterEach(function () {
@@ -334,7 +334,7 @@ describe('consentManagement', function () {
         window.removeEventListener('message', uspapiMessageHandler);
       });
 
-      function uspapiMessageHandler(event) {
+      function uspapiMessageHandler (event) {
         if (event && event.data) {
           const data = event.data;
           if (data.__uspapiCall) {
@@ -360,7 +360,7 @@ describe('consentManagement', function () {
       testIFramedPage('with/JSON response', false);
       // testIFramedPage('with/String response', true);
 
-      function testIFramedPage(testName, messageFormatString) {
+      function testIFramedPage (testName, messageFormatString) {
         it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
           stringifyResponse = messageFormatString;
           mockApi.callsFake((cmd) => {
@@ -394,14 +394,14 @@ describe('consentManagement', function () {
       });
     });
 
-    describe('test without iframe locater', function() {
+    describe('test without iframe locater', function () {
       let uspapiStub = sinon.stub();
 
       beforeEach(function () {
         didHookReturn = false;
         sinon.stub(utils, 'logError');
         sinon.stub(utils, 'logWarn');
-        window.__uspapi = function() {};
+        window.__uspapi = function () {};
       });
 
       afterEach(function () {
@@ -414,7 +414,7 @@ describe('consentManagement', function () {
         resetConsentData();
       });
 
-      it('Workflow for normal page withoout iframe locater', function() {
+      it('Workflow for normal page withoout iframe locater', function () {
         let testConsentData = {
           uspString: '1NY'
         };
@@ -444,7 +444,7 @@ describe('consentManagement', function () {
         ifr = createIFrameMarker();
         sandbox.stub(utils, 'logError');
         sandbox.stub(utils, 'logWarn');
-        window.__uspapi = function() {};
+        window.__uspapi = function () {};
       });
 
       afterEach(function () {

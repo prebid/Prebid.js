@@ -10,7 +10,7 @@ const TRACKING_END_POINT = 'https://tracking.doceree.com'
 export const spec = {
   code: BIDDER_CODE,
   url: '',
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
   isBidRequestValid: (bid) => {
     const { placementId } = bid.params;
@@ -30,7 +30,7 @@ export const spec = {
     const { page, domain, token } = config.getConfig('doceree.context')
     const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)))
 
-    validBidRequests.forEach(function(validBidRequest) {
+    validBidRequests.forEach(function (validBidRequest) {
       const { publisherUrl, placementId, gdpr, gdprConsent } = validBidRequest.params;
       const url = publisherUrl || page
       let queryString = '';
@@ -72,7 +72,7 @@ export const spec = {
     };
     return [bidResponse];
   },
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     if (timeoutData == null || !timeoutData.length) {
       return;
     }

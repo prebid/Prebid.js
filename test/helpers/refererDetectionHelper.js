@@ -7,14 +7,14 @@
  * @param {boolean} [ancestorOrigins]
  * @returns {Object}
  */
-export function buildWindowTree(urls, topReferrer = null, canonicalUrl = null, ancestorOrigins = false) {
+export function buildWindowTree (urls, topReferrer = null, canonicalUrl = null, ancestorOrigins = false) {
   /**
    * Find the origin from a given fully-qualified URL.
    *
    * @param {string} url The fully qualified URL
    * @returns {string|null}
    */
-  function getOrigin(url) {
+  function getOrigin (url) {
     const originRegex = new RegExp('^(https?://[^/]+/?)');
 
     const result = originRegex.exec(url);

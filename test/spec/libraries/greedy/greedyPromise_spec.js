@@ -98,7 +98,7 @@ describe('GreedyPromise', () => {
       describe(t, () => {
         describe('when mixed with deferrals', () => {
           beforeEach(() => {
-            makePromise = function(ctor, value, fail = false, delay = 0) {
+            makePromise = function (ctor, value, fail = false, delay = 0) {
               // eslint-disable-next-line new-cap
               return new ctor((resolve, reject) => {
                 setTimeout(() => fail ? reject(value) : resolve(value), delay)
@@ -116,7 +116,7 @@ describe('GreedyPromise', () => {
             const {actual = {}, expected = {}} = {};
             return new Promise((resolve) => {
               let pending = 2;
-              function collect(dest, slot) {
+              function collect (dest, slot) {
                 return function (value) {
                   dest[slot] = value;
                   pending--;
@@ -144,7 +144,7 @@ describe('GreedyPromise', () => {
 
         describe('when all promises involved are greedy', () => {
           beforeEach(() => {
-            makePromise = function(ctor, value, fail = false, delay = 0) {
+            makePromise = function (ctor, value, fail = false, delay = 0) {
               // eslint-disable-next-line new-cap
               return new ctor((resolve, reject) => {
                 const run = () => fail ? reject(value) : resolve(value);

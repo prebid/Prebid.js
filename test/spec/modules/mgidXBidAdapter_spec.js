@@ -491,7 +491,7 @@ describe('MGIDXBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    afterEach(function() {
+    afterEach(function () {
       config.setConfig({userSync: {syncsPerBidder: USERSYNC_DEFAULT_CONFIG.syncsPerBidder}});
     });
     it('should do nothing on getUserSyncs without inputs', function () {

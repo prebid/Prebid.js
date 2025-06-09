@@ -1,6 +1,6 @@
 import {auctionManager} from '../../src/auctionManager.js';
 
-export function weakStore(get) {
+export function weakStore (get) {
   const store = new WeakMap();
   return function (id, init = {}) {
     const obj = get(id);

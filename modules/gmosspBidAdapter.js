@@ -157,11 +157,11 @@ export const spec = {
 
 };
 
-function getCurrencyType(bidderRequest) {
+function getCurrencyType (bidderRequest) {
   return getCurrencyFromBidderRequest(bidderRequest) || 'JPY';
 }
 
-function getUrlInfo(refererInfo) {
+function getUrlInfo (refererInfo) {
   let canonicalLink = refererInfo.canonicalUrl;
 
   if (!canonicalLink) {
@@ -181,7 +181,7 @@ function getUrlInfo(refererInfo) {
   };
 }
 
-function getMetaElements() {
+function getMetaElements () {
   try {
     return getWindowTop.document.getElementsByTagName('meta');
   } catch (e) {

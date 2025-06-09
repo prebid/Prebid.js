@@ -1,15 +1,15 @@
 import { AD_BREAK_END, AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, SETUP_COMPLETE } from '../../libraries/video/constants/events.js'
 import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
 
-export function AdQueueCoordinator(videoCore, pbEvents) {
+export function AdQueueCoordinator (videoCore, pbEvents) {
   const storage = {};
 
-  function registerProvider(divId) {
+  function registerProvider (divId) {
     storage[divId] = [];
     videoCore.onEvents([SETUP_COMPLETE], onSetupComplete, divId);
   }
 
-  function queueAd(adTagUrl, divId, options = {}) {
+  function queueAd (adTagUrl, divId, options = {}) {
     const queue = storage[divId];
     if (queue) {
       queue.push({adTagUrl, options});
@@ -24,17 +24,17 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
     queueAd
   };
 
-  function onSetupComplete(eventName, eventPayload) {
+  function onSetupComplete (eventName, eventPayload) {
     const divId = eventPayload.divId;
     videoCore.offEvents([SETUP_COMPLETE], onSetupComplete, divId);
     loadQueuedAd(divId);
   }
 
-  function onAdBreakEnd(eventName, eventPayload) {
+  function onAdBreakEnd (eventName, eventPayload) {
     loadQueuedAd(eventPayload.divId);
   }
 
-  function loadQueuedAd(divId) {
+  function loadQueuedAd (divId) {
     videoCore.offEvents([AD_BREAK_END], onAdBreakEnd, divId);
     const adQueue = storage[divId];
     if (!adQueue) {
@@ -51,7 +51,7 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
     loadAd(divId, queuedAd.adTagUrl, queuedAd.options);
   }
 
-  function loadAd(divId, adTagUrl, options) {
+  function loadAd (divId, adTagUrl, options) {
     triggerEvent(AUCTION_AD_LOAD_ATTEMPT, adTagUrl, options);
     if (options.prefetchedVastXml) {
       videoCore.setAdXml(options.prefetchedVastXml, divId, options);
@@ -60,7 +60,7 @@ export function AdQueueCoordinator(videoCore, pbEvents) {
     }
   }
 
-  function triggerEvent(eventName, adTagUrl, options) {
+  function triggerEvent (eventName, adTagUrl, options) {
     const payload = Object.assign({ adTagUrl }, options);
     pbEvents.emit(getExternalVideoEventName(eventName), getExternalVideoEventPayload(eventName, payload));
   }

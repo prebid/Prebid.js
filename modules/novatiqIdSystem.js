@@ -37,7 +37,7 @@ export const novatiqIdSubmodule = {
    * @function
    * @returns {{novatiq: {snowflake: string}}}
    */
-  decode(novatiqId, config) {
+  decode (novatiqId, config) {
     let responseObj = {
       novatiq: {
         snowflake: novatiqId
@@ -62,7 +62,7 @@ export const novatiqIdSubmodule = {
    * @param {SubmoduleConfig} config
    * @returns {string}
    */
-  getId(config) {
+  getId (config) {
     const configParams = config.params || {};
     const urlParams = this.getUrlParams(configParams);
     const srcId = this.getSrcId(configParams, urlParams);
@@ -76,7 +76,7 @@ export const novatiqIdSubmodule = {
     return this.sendSyncRequest(useCallbacks, sharedId, srcId, urlParams);
   },
 
-  sendSyncRequest(useCallbacks, sharedId, sspid, urlParams) {
+  sendSyncRequest (useCallbacks, sharedId, sspid, urlParams) {
     const syncUrl = this.getSyncUrl(sharedId, sspid, urlParams);
     const url = syncUrl.url;
     const novatiqId = syncUrl.novatiqId;
@@ -97,13 +97,13 @@ export const novatiqIdSubmodule = {
     }
   },
 
-  sendAsyncSyncRequest(novatiqId, url) {
+  sendAsyncSyncRequest (novatiqId, url) {
     logInfo('NOVATIQ Setting up ASYNC sync request');
 
     const resp = function (callback) {
       logInfo('NOVATIQ *** Calling ASYNC sync request');
 
-      function onSuccess(response, responseObj) {
+      function onSuccess (response, responseObj) {
         let syncrc;
         var novatiqIdJson = { syncResponse: 0 };
         syncrc = responseObj.status;
@@ -127,7 +127,7 @@ export const novatiqIdSubmodule = {
     return {callback: resp};
   },
 
-  sendSimpleSyncRequest(novatiqId, url) {
+  sendSimpleSyncRequest (novatiqId, url) {
     logInfo('NOVATIQ Sending SIMPLE sync request');
 
     ajax(url, undefined, undefined, { method: 'GET', withCredentials: false });
@@ -135,7 +135,7 @@ export const novatiqIdSubmodule = {
     logInfo('NOVATIQ snowflake: ' + novatiqId);
   },
 
-  getNovatiqId(urlParams) {
+  getNovatiqId (urlParams) {
     // standard uuid format
     let uuidFormat = [1e7] + -1e3 + -4e3 + -8e3 + -1e11;
     if (urlParams.useStandardUuid === false) {
@@ -148,7 +148,7 @@ export const novatiqIdSubmodule = {
     );
   },
 
-  getSyncUrl(sharedId, sspid, urlParams) {
+  getSyncUrl (sharedId, sspid, urlParams) {
     let novatiqId = this.getNovatiqId(urlParams);
 
     let url = 'https://spadsync.com/sync?' + urlParams.novatiqId + '=' + novatiqId;
@@ -175,7 +175,7 @@ export const novatiqIdSubmodule = {
     }
   },
 
-  getUrlParams(configParams) {
+  getUrlParams (configParams) {
     let urlParams = {
       novatiqId: 'snowflake',
       useStandardUuid: false,
@@ -201,15 +201,15 @@ export const novatiqIdSubmodule = {
     return urlParams;
   },
 
-  useCallbacks(configParams) {
+  useCallbacks (configParams) {
     return typeof configParams.useCallbacks != 'undefined' && configParams.useCallbacks === true;
   },
 
-  useSharedId(configParams) {
+  useSharedId (configParams) {
     return typeof configParams.useSharedId != 'undefined' && configParams.useSharedId === true;
   },
 
-  getCookieOrStorageID(configParams) {
+  getCookieOrStorageID (configParams) {
     let cookieOrStorageID = '_pubcid';
 
     if (typeof configParams.sharedIdName != 'undefined' && configParams.sharedIdName != null && configParams.sharedIdName != '') {
@@ -221,7 +221,7 @@ export const novatiqIdSubmodule = {
   },
 
   // return null if we aren't supposed to use one or we are but there isn't one present
-  getSharedId(configParams) {
+  getSharedId (configParams) {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       let cookieOrStorageID = this.getCookieOrStorageID(configParams);
@@ -245,7 +245,7 @@ export const novatiqIdSubmodule = {
     return sharedId;
   },
 
-  getSrcId(configParams, urlParams) {
+  getSrcId (configParams, urlParams) {
     if (urlParams.useSspId == false) {
       logInfo('NOVATIQ Configured to NOT use sspid');
       return '';
@@ -267,7 +267,7 @@ export const novatiqIdSubmodule = {
   },
   eids: {
     'novatiq': {
-      getValue: function(data) {
+      getValue: function (data) {
         if (data.snowflake.id === undefined) {
           return data.snowflake;
         }

@@ -7,7 +7,7 @@ const ENDPOINT = 'https://layer.rtb.admatic.com.tr/pb';
 
 describe('admaticBidAdapter', () => {
   const adapter = newBidder(spec);
-  let validRequest = [ {
+  let validRequest = [{
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
       'domain': 'https://www.admatic.com.tr',
@@ -241,7 +241,7 @@ describe('admaticBidAdapter', () => {
       'cur': 'USD',
       'bidder': 'admatic'
     }
-  } ];
+  }];
   let bidderRequest = {
     'refererInfo': {
       'page': 'https://www.admatic.com.tr',
@@ -555,7 +555,7 @@ describe('admaticBidAdapter', () => {
     });
   });
 
-  describe('isBidRequestValid', function() {
+  describe('isBidRequestValid', function () {
     let bid = {
       'refererInfo': {
         'page': 'https://www.admatic.com.tr',
@@ -577,11 +577,11 @@ describe('admaticBidAdapter', () => {
       'ortb2': { 'badv': ['admatic.com.tr'] }
     };
 
-    it('should return true when required params found', function() {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function() {
+    it('should return false when required params are not passed', function () {
       let bid2 = {};
       bid2.params = {
         'someIncorrectParam': 0
@@ -794,7 +794,7 @@ describe('admaticBidAdapter', () => {
   });
 
   describe('interpretResponse', function () {
-    it('should get correct bid responses', function() {
+    it('should get correct bid responses', function () {
       let bids = { body: {
         data: [
           {

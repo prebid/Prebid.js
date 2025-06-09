@@ -213,7 +213,7 @@ describe('a4gAdapterTests', function () {
       ];
 
       let resultKeys = Object.keys(result[0]);
-      resultKeys.forEach(function(key) {
+      resultKeys.forEach(function (key) {
         expect(requiredKeys.indexOf(key) !== -1).to.equal(true);
       });
     })

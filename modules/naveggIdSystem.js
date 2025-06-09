@@ -22,7 +22,7 @@ const BASE_URL = 'https://id.navegg.com/uid/';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-function getIdFromAPI() {
+function getIdFromAPI () {
   const resp = function (callback) {
     ajaxBuilder()(
       BASE_URL,
@@ -58,32 +58,32 @@ function getIdFromAPI() {
 /**
  * @returns {string | null}
  */
-function readNvgIdFromCookie() {
+function readNvgIdFromCookie () {
   return storage.cookiesAreEnabled ? (storage.findSimilarCookies('nvg') ? storage.findSimilarCookies('nvg')[0] : null) : null;
 }
 /**
  * @returns {string | null}
  */
-function readNavIdFromCookie() {
+function readNavIdFromCookie () {
   return storage.cookiesAreEnabled() ? (storage.findSimilarCookies('nav') ? storage.findSimilarCookies('nav')[0] : null) : null;
 }
 /**
  * @returns {string | null}
  */
-function readOldNaveggIdFromCookie() {
+function readOldNaveggIdFromCookie () {
   return storage.cookiesAreEnabled() ? storage.getCookie(OLD_NAVEGG_ID) : null;
 }
 /**
  * @returns {string | null}
  */
-function getOldCookie() {
+function getOldCookie () {
   const oldCookie = readOldNaveggIdFromCookie() || readNvgIdFromCookie() || readNavIdFromCookie();
   return oldCookie;
 }
 /**
  * @returns {string | null}
  */
-function getNaveggIdFromLocalStorage() {
+function getNaveggIdFromLocalStorage () {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(NAVEGG_ID) : null;
 }
 
@@ -100,7 +100,7 @@ export const naveggIdSubmodule = {
    * @param { Object | string | undefined } value
    * @return { Object | string | undefined }
    */
-  decode(value) {
+  decode (value) {
     const naveggIdVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return naveggIdVal ? {
       'naveggId': naveggIdVal.split('|')[0]
@@ -113,7 +113,7 @@ export const naveggIdSubmodule = {
    * @param {SubmoduleConfig} config
    * @return {{id: string | undefined } | undefined}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const resp = getIdFromAPI()
     return {callback: resp}
   },

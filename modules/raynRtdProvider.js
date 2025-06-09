@@ -43,7 +43,7 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME,
 });
 
-function init(moduleConfig, userConsent) {
+function init (moduleConfig, userConsent) {
   return true;
 }
 
@@ -54,7 +54,7 @@ function init(moduleConfig, userConsent) {
  * @param {number} maxTier
  * @return {Array}
  */
-export function generateOrtbDataObject(segtax, segment, maxTier) {
+export function generateOrtbDataObject (segtax, segment, maxTier) {
   const segmentIds = [];
 
   try {
@@ -84,7 +84,7 @@ export function generateOrtbDataObject(segtax, segment, maxTier) {
  * @param {Array} personaIds
  * @return {Array}
  */
-export function generatePersonaOrtbDataObject(segtax, personaIds) {
+export function generatePersonaOrtbDataObject (segtax, personaIds) {
   const segmentIds = [];
 
   try {
@@ -109,7 +109,7 @@ export function generatePersonaOrtbDataObject(segtax, personaIds) {
  * @param {string} stringValue
  * @returns {string}
  */
-export function generateChecksum(stringValue) {
+export function generateChecksum (stringValue) {
   const l = stringValue.length;
   let i = 0;
   let h = 0;
@@ -123,7 +123,7 @@ export function generateChecksum(stringValue) {
  * @param {string} key
  * @return {Object}
  */
-export function readSegments(key) {
+export function readSegments (key) {
   try {
     return JSON.parse(storage.getDataFromLocalStorage(key));
   } catch (error) {
@@ -140,7 +140,7 @@ export function readSegments(key) {
  * @param {Array} segments
  * @return {void}
  */
-export function setSegmentsAsBidderOrtb2(bidConfig, bidders, integrationConfig, segments, checksum) {
+export function setSegmentsAsBidderOrtb2 (bidConfig, bidders, integrationConfig, segments, checksum) {
   const raynOrtb2 = {};
 
   const raynContentData = [];
@@ -183,7 +183,7 @@ export function setSegmentsAsBidderOrtb2(bidConfig, bidders, integrationConfig, 
  * @param {Object} userConsent
  * @return {void}
  */
-function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
+function alterBidRequests (reqBidsConfigObj, callback, config, userConsent) {
   try {
     const checksum = generateChecksum(window.location.href);
 

@@ -9,27 +9,27 @@ export const server = mockFetchServer();
 /**
  * An (incomplete) replica of nise's fakeServer, but backing fetch used in ajax.js (rather than XHR).
  */
-function mockFetchServer() {
+function mockFetchServer () {
   const sandbox = sinon.createSandbox();
   const bodies = new WeakMap();
   const requests = [];
   const {DONE, UNSENT} = XMLHttpRequest;
 
-  function makeRequest(resource, options) {
+  function makeRequest (resource, options) {
     const requestBody = options?.body || bodies.get(resource);
     const request = new Request(resource, options);
     bodies.set(request, requestBody);
     return request;
   }
 
-  function mockXHR(resource, options) {
+  function mockXHR (resource, options) {
     let resolve, reject;
     const promise = new GreedyPromise((res, rej) => {
       resolve = res;
       reject = rej;
     });
 
-    function error(reason = new TypeError('Failed to fetch')) {
+    function error (reason = new TypeError('Failed to fetch')) {
       mockReq.status = 0;
       reject(reason);
     }
@@ -51,16 +51,16 @@ function mockFetchServer() {
       status: 0,
       statusText: '',
       requestHeaders: new Proxy(request.headers, {
-        get(target, prop) {
+        get (target, prop) {
           return typeof prop === 'string' && target.has(prop) ? target.get(prop) : {}[prop];
         },
-        has(target, prop) {
+        has (target, prop) {
           return typeof prop === 'string' && target.has(prop);
         },
-        ownKeys(target) {
+        ownKeys (target) {
           return Array.from(target.keys());
         },
-        getOwnPropertyDescriptor(target, prop) {
+        getOwnPropertyDescriptor (target, prop) {
           if (typeof prop === 'string' && target.has(prop)) {
             return {
               enumerable: true,
@@ -72,16 +72,16 @@ function mockFetchServer() {
         }
       }),
       withCredentials: request.credentials === 'include',
-      setStatus(status) {
+      setStatus (status) {
         // nise replaces invalid status with 200
         status = typeof status === 'number' ? status : 200;
         mockReq.status = status;
         mockReq.statusText = fakeXhr.FakeXMLHttpRequest.statusCodes[status] || '';
       },
-      setResponseHeaders(headers) {
+      setResponseHeaders (headers) {
         responseHeaders = headers;
       },
-      setResponseBody(body) {
+      setResponseBody (body) {
         if (mockReq.status === 0) {
           error();
           return;
@@ -105,7 +105,7 @@ function mockFetchServer() {
         })
         resolve(resp);
       },
-      respond(status = 200, headers, body) {
+      respond (status = 200, headers, body) {
         mockReq.setStatus(status);
         mockReq.setResponseHeaders(headers);
         mockReq.setResponseBody(body);
@@ -118,7 +118,7 @@ function mockFetchServer() {
   let enabled = false;
   let timeoutsEnabled = false;
 
-  function enable() {
+  function enable () {
     if (!enabled) {
       sandbox.stub(dep, 'fetch').callsFake((resource, options) => {
         const req = mockXHR(resource, options);
@@ -142,7 +142,7 @@ function mockFetchServer() {
 
   const responders = [];
 
-  function respondWith() {
+  function respondWith () {
     let response, urlMatcher, methodMatcher;
     urlMatcher = methodMatcher = () => true;
     switch (arguments.length) {
@@ -180,7 +180,7 @@ function mockFetchServer() {
     });
   }
 
-  function resetState() {
+  function resetState () {
     requests.length = 0;
     responders.length = 0;
     timeoutsEnabled = false;
@@ -189,17 +189,17 @@ function mockFetchServer() {
   return {
     requests,
     enable,
-    restore() {
+    restore () {
       resetState();
       sandbox.restore();
       enabled = false;
     },
-    reset() {
+    reset () {
       sandbox.resetHistory();
       resetState();
     },
     respondWith,
-    respond() {
+    respond () {
       if (arguments.length > 0) {
         respondWith.apply(null, arguments);
       }
@@ -220,10 +220,10 @@ function mockFetchServer() {
      * if they are timed out later, during unrelated tests, the log messages might interfere with their
      * assertions
      */
-    get autoTimeout() {
+    get autoTimeout () {
       return timeoutsEnabled;
     },
-    set autoTimeout(val) {
+    set autoTimeout (val) {
       timeoutsEnabled = !!val;
     }
   };

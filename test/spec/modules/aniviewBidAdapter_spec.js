@@ -236,7 +236,7 @@ describe('Aniview Bid Adapter', function () {
     describe('Video format', function () {
       let bidRequests, bidderResponse;
 
-      beforeEach(function() {
+      beforeEach(function () {
         const videoBidRequest = MOCK.bidRequest();
 
         bidRequests = spec.buildRequests(videoBidRequest.bids, videoBidRequest);
@@ -321,7 +321,7 @@ describe('Aniview Bid Adapter', function () {
     describe('Banner format', function () {
       let bidRequests, bidderResponse;
 
-      beforeEach(function() {
+      beforeEach(function () {
         const bannerBidRequest = MOCK.bidRequest();
 
         // Converting video bid request to banner bid request
@@ -374,7 +374,7 @@ describe('Aniview Bid Adapter', function () {
   describe('getUserSyncs', function () {
     let bidRequest, bidderResponse;
 
-    beforeEach(function() {
+    beforeEach(function () {
       const videoBidRequest = MOCK.bidRequest();
 
       bidRequest = spec.buildRequests(videoBidRequest.bids, videoBidRequest);

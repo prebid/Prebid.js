@@ -14,7 +14,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @param {Array} allowedStorage - Array of allowed storage types ('html5' or 'cookie').
  * @return {string|null} - The retrieved data or null if an error occurs.
  */
-export function readData(key, allowedStorage) {
+export function readData (key, allowedStorage) {
   try {
     if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
       return storage.getDataFromLocalStorage(key);
@@ -36,7 +36,7 @@ export function readData(key, allowedStorage) {
  * @param {Array} allowedStorage - An array of allowed storage types: 'html5' for Local Storage and/or 'cookie' for Cookies.
  * @param {Object} firstPartyData - Contains user consent data; if isOptedOut is true, data will not be stored (except for FIRST_PARTY_KEY).
  */
-export function storeData(key, value, allowedStorage, firstPartyData) {
+export function storeData (key, value, allowedStorage, firstPartyData) {
   try {
     if (firstPartyData?.isOptedOut && key !== FIRST_PARTY_KEY) {
       return;
@@ -61,7 +61,7 @@ export function storeData(key, value, allowedStorage, firstPartyData) {
  * @param key
  */
 
-export function removeDataByKey(key, allowedStorage) {
+export function removeDataByKey (key, allowedStorage) {
   try {
     if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
       storage.removeDataFromLocalStorage(key);
@@ -82,7 +82,7 @@ export function removeDataByKey(key, allowedStorage) {
  * @param {Array<string>} params - An array containing storage type preferences, e.g., ['html5', 'cookie'].
  * @return {Array<string>} - Returns an array with allowed storage types. Defaults to ['html5'] if no valid options are provided.
  */
-export function defineStorageType(params) {
+export function defineStorageType (params) {
   if (!params || !Array.isArray(params)) return ['html5']; // use locale storage be default
   const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
   return filteredArr.length ? filteredArr : ['html5'];
@@ -92,7 +92,7 @@ export function defineStorageType(params) {
  * Parse json if possible, else return null
  * @param data
  */
-export function tryParse(data) {
+export function tryParse (data) {
   try {
     return JSON.parse(data);
   } catch (err) {

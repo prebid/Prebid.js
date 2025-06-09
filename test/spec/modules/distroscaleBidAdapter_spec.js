@@ -2,18 +2,18 @@ import { expect } from 'chai';
 import { spec } from 'modules/distroscaleBidAdapter.js';
 import * as utils from 'src/utils.js';
 
-describe('distroscaleBidAdapter', function() {
+describe('distroscaleBidAdapter', function () {
   const DSNAME = 'distroscale';
 
-  describe('isBidRequestValid', function() {
-    it('with no param', function() {
+  describe('isBidRequestValid', function () {
+    it('with no param', function () {
       expect(spec.isBidRequestValid({
         bidder: DSNAME,
         params: {}
       })).to.equal(false);
     });
 
-    it('with pubid param', function() {
+    it('with pubid param', function () {
       expect(spec.isBidRequestValid({
         bidder: DSNAME,
         params: {
@@ -22,7 +22,7 @@ describe('distroscaleBidAdapter', function() {
       })).to.equal(true);
     });
 
-    it('with pubid and zoneid params', function() {
+    it('with pubid and zoneid params', function () {
       expect(spec.isBidRequestValid({
         bidder: DSNAME,
         params: {
@@ -33,7 +33,7 @@ describe('distroscaleBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     const CONSENT_STRING = 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw';
     const BID_REQUESTS = [{
       'bidder': DSNAME,
@@ -73,7 +73,7 @@ describe('distroscaleBidAdapter', function() {
       }
     };
 
-    it('basic', function() {
+    it('basic', function () {
       const request = spec.buildRequests(BID_REQUESTS, BIDDER_REQUEST);
       expect(request.method).to.equal('POST');
       expect(request.url).to.have.string('https://hb.jsrdn.com/hb?from=pbjs');
@@ -104,7 +104,7 @@ describe('distroscaleBidAdapter', function() {
       expect(request.data.imp[0].ext.zoneid).to.equal(BID_REQUESTS[0].params.zoneid || '');
     });
 
-    it('gdpr', function() {
+    it('gdpr', function () {
       const request = spec.buildRequests(BID_REQUESTS, BIDDER_REQUEST);
       expect(request.data).to.exist;
       expect(request.data.regs).to.exist;
@@ -114,7 +114,7 @@ describe('distroscaleBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     const REQUEST = {
       'method': 'POST',
       'url': 'https://hb.jsrdn.com/hb?from=pbjs',
@@ -185,7 +185,7 @@ describe('distroscaleBidAdapter', function() {
       }
     }];
 
-    it('valid bid response for banner ad', function() {
+    it('valid bid response for banner ad', function () {
       const result = spec.interpretResponse(RESPONSE, REQUEST);
       const bid = RESPONSE.body.seatbid[0].bid[0];
       expect(result).to.have.lengthOf(1);
@@ -202,7 +202,7 @@ describe('distroscaleBidAdapter', function() {
       expect(result[0].meta.advertiserDomains).to.exist;
     });
 
-    it('advertiserDomains is included when sent by server', function() {
+    it('advertiserDomains is included when sent by server', function () {
       const ADOMAIN = ['advertiser_adomain'];
       let RESPONSE_CLONE = utils.deepClone(RESPONSE);
       RESPONSE_CLONE.body.seatbid[0].bid[0].adomain = utils.deepClone(ADOMAIN); ;

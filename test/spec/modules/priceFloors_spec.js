@@ -121,21 +121,21 @@ describe('the price floors module', function () {
     adUnitId: 'tr_test_div_1',
   };
 
-  function getAdUnitMock(code = 'adUnit-code') {
+  function getAdUnitMock (code = 'adUnit-code') {
     return {
       code,
       mediaTypes: {banner: { sizes: [[300, 200], [300, 600]] }, native: {}},
       bids: [{bidder: 'someBidder', adUnitCode: code}, {bidder: 'someOtherBidder', adUnitCode: code}]
     };
   }
-  beforeEach(function() {
+  beforeEach(function () {
     clock = sinon.useFakeTimers();
     sandbox = sinon.sandbox.create();
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
 
-  afterEach(function() {
+  afterEach(function () {
     clock.restore();
     handleSetFloorsConfig({enabled: false});
     sandbox.restore();
@@ -157,7 +157,7 @@ describe('the price floors module', function () {
   describe('getFloorDataFromAdUnits', () => {
     let adUnits;
 
-    function setFloorValues(rule) {
+    function setFloorValues (rule) {
       adUnits.forEach((au, i) => {
         au.floors = {
           values: {
@@ -651,17 +651,17 @@ describe('the price floors module', function () {
     });
   });
 
-  describe('updateAdUnitsForAuction', function() {
+  describe('updateAdUnitsForAuction', function () {
     let inputFloorData;
     let adUnits;
 
-    beforeEach(function() {
+    beforeEach(function () {
       adUnits = [getAdUnitMock()];
       inputFloorData = utils.deepClone(minFloorConfigLow);
       inputFloorData.skipRate = 0.5;
     });
 
-    it('should set the skipRate to the skipRate from the data property before using the skipRate from floorData directly', function() {
+    it('should set the skipRate to the skipRate from the data property before using the skipRate from floorData directly', function () {
       utils.deepSetValue(inputFloorData, 'data', {
         skipRate: 0.7
       });
@@ -671,14 +671,14 @@ describe('the price floors module', function () {
       expect(skipRate).to.equal(0.7);
     });
 
-    it('should set the skipRate to the skipRate from floorData directly if it does not exist in the data property of floorData', function() {
+    it('should set the skipRate to the skipRate from floorData directly if it does not exist in the data property of floorData', function () {
       updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
 
       const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
       expect(skipRate).to.equal(0.5);
     });
 
-    it('should set the skipRate in the bid floorData to undefined if both skipRate and skipRate in the data property are undefined', function() {
+    it('should set the skipRate in the bid floorData to undefined if both skipRate and skipRate in the data property are undefined', function () {
       inputFloorData.skipRate = undefined;
       utils.deepSetValue(inputFloorData, 'data', {
         skipRate: undefined,
@@ -690,16 +690,16 @@ describe('the price floors module', function () {
     });
   });
 
-  describe('createFloorsDataForAuction', function() {
+  describe('createFloorsDataForAuction', function () {
     let adUnits;
     let floorConfig;
 
-    beforeEach(function() {
+    beforeEach(function () {
       adUnits = [getAdUnitMock()];
       floorConfig = utils.deepClone(basicFloorConfig);
     });
 
-    it('should return skipRate as 0 if both skipRate and skipRate in the data property are undefined', function() {
+    it('should return skipRate as 0 if both skipRate and skipRate in the data property are undefined', function () {
       floorConfig.skipRate = undefined;
       floorConfig.data.skipRate = undefined;
       handleSetFloorsConfig(floorConfig);
@@ -710,7 +710,7 @@ describe('the price floors module', function () {
       expect(floorData.skipped).to.equal(false);
     });
 
-    it('should properly set skipRate if it is available in the data property', function() {
+    it('should properly set skipRate if it is available in the data property', function () {
       // this will force skipped to be true
       floorConfig.skipRate = 101;
       floorConfig.data.skipRate = 201;
@@ -722,7 +722,7 @@ describe('the price floors module', function () {
       expect(floorData.skipped).to.equal(true);
     });
 
-    it('should should use the skipRate if its not available in the data property ', function() {
+    it('should should use the skipRate if its not available in the data property ', function () {
       // this will force skipped to be true
       floorConfig.skipRate = 101;
       handleSetFloorsConfig(floorConfig);
@@ -733,7 +733,7 @@ describe('the price floors module', function () {
       expect(floorData.skipped).to.equal(true);
     });
 
-    it('should have skippedReason set to "not_found" if there is no valid floor data', function() {
+    it('should have skippedReason set to "not_found" if there is no valid floor data', function () {
       floorConfig.data = {}
       handleSetFloorsConfig(floorConfig);
 
@@ -741,7 +741,7 @@ describe('the price floors module', function () {
       expect(floorData.skippedReason).to.equal(FLOOR_SKIPPED_REASON.NOT_FOUND);
     });
 
-    it('should have skippedReason set to "random" if there is floor data and skipped is true', function() {
+    it('should have skippedReason set to "random" if there is floor data and skipped is true', function () {
       // this will force skipped to be true
       floorConfig.skipRate = 101;
       handleSetFloorsConfig(floorConfig);
@@ -769,7 +769,7 @@ describe('the price floors module', function () {
     let actualFieldMatchingFunctions = fieldMatchingFunctions;
     const defaultAllowedFields = [...allowedFields];
     const defaultMatchingFunctions = {...fieldMatchingFunctions};
-    afterEach(function() {
+    afterEach(function () {
       exposedAdUnits = undefined;
       actualAllowedFields = [...defaultAllowedFields];
       actualFieldMatchingFunctions = {...defaultMatchingFunctions};
@@ -792,7 +792,7 @@ describe('the price floors module', function () {
         floorProvider: undefined
       });
     });
-    it('should not do floor stuff if floors.data is defined by noFloorSignalBidders[]', function() {
+    it('should not do floor stuff if floors.data is defined by noFloorSignalBidders[]', function () {
       handleSetFloorsConfig({
         ...basicFloorConfig,
         data: {
@@ -813,7 +813,7 @@ describe('the price floors module', function () {
         noFloorSignaled: true
       })
     });
-    it('should not do floor stuff if floors.enforcement is defined by noFloorSignalBidders[]', function() {
+    it('should not do floor stuff if floors.enforcement is defined by noFloorSignalBidders[]', function () {
       handleSetFloorsConfig({ ...basicFloorConfig,
         enforcement: {
           enforceJS: true,
@@ -835,7 +835,7 @@ describe('the price floors module', function () {
         noFloorSignaled: true
       })
     });
-    it('should not do floor stuff and use first floors.data.noFloorSignalBidders if its defined betwen enforcement.noFloorSignalBidders', function() {
+    it('should not do floor stuff and use first floors.data.noFloorSignalBidders if its defined betwen enforcement.noFloorSignalBidders', function () {
       handleSetFloorsConfig({ ...basicFloorConfig,
         enforcement: {
           enforceJS: true,
@@ -860,7 +860,7 @@ describe('the price floors module', function () {
         noFloorSignaled: true
       })
     });
-    it('it shouldn`t return floor stuff for bidder in the noFloorSignalBidders list', function() {
+    it('it shouldn`t return floor stuff for bidder in the noFloorSignalBidders list', function () {
       handleSetFloorsConfig({ ...basicFloorConfig,
         enforcement: {
           enforceJS: true,
@@ -886,7 +886,7 @@ describe('the price floors module', function () {
         noFloorSignaled: true
       });
     })
-    it('it should return floor stuff if we defined wrong bidder name in data.noFloorSignalBidders', function() {
+    it('it should return floor stuff if we defined wrong bidder name in data.noFloorSignalBidders', function () {
       handleSetFloorsConfig({ ...basicFloorConfig,
         enforcement: {
           enforceJS: true,
@@ -987,7 +987,7 @@ describe('the price floors module', function () {
       beforeEach(() => {
         adUnits = ['au1', 'au2'].map(getAdUnitMock);
       })
-      function expectFloors(floors) {
+      function expectFloors (floors) {
         runStandardAuction(adUnits);
         adUnits.forEach((au, i) => {
           au.bids.forEach(bid => {
@@ -2250,7 +2250,7 @@ describe('the price floors module', function () {
       indexStub.restore();
     });
 
-    function runBidResponse(bidResp = basicBidResponse) {
+    function runBidResponse (bidResp = basicBidResponse) {
       let next = (adUnitCode, bid) => {
         returnedBidResponse = bid;
       };

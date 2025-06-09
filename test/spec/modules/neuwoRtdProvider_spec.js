@@ -24,7 +24,7 @@ const TAX_ID = '441'
  * Object generator, like above, written using alternative techniques
  * @returns object with predefined (expected) bidsConfig fields
  */
-function bidsConfiglike() {
+function bidsConfiglike () {
   return Object.assign({}, {
     ortb2Fragments: { global: {} }
   })

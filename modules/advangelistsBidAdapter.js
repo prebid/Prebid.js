@@ -16,7 +16,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['saambaa'],
-  isBidRequestValid(bidRequest) {
+  isBidRequestValid (bidRequest) {
     if (typeof bidRequest !== 'undefined') {
       if (bidRequest.bidder !== BIDDER_CODE && typeof bidRequest.params === 'undefined') { return false; }
       if (bidRequest === '' || bidRequest.params.placement === '' || bidRequest.params.pubid === '') { return false; }
@@ -24,7 +24,7 @@ export const spec = {
     } else { return false; }
   },
 
-  buildRequests(bids, bidderRequest) {
+  buildRequests (bids, bidderRequest) {
     let requests = [];
     let videoBids = bids.filter(bid => isVideoBidValid(bid));
     let bannerBids = bids.filter(bid => isBannerBidValid(bid));
@@ -50,7 +50,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse(serverResponse, { bidRequest }) {
+  interpretResponse (serverResponse, { bidRequest }) {
     let response = serverResponse.body;
     if (response !== null && isEmpty(response) === false) {
       if (isVideoBid(bidRequest)) {

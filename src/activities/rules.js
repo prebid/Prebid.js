@@ -1,14 +1,14 @@
 import {prefixLog} from '../utils.js';
 import {ACTIVITY_PARAM_COMPONENT} from './params.js';
 
-export function ruleRegistry(logger = prefixLog('Activity control:')) {
+export function ruleRegistry (logger = prefixLog('Activity control:')) {
   const registry = {};
 
-  function getRules(activity) {
+  function getRules (activity) {
     return registry[activity] = registry[activity] || [];
   }
 
-  function runRule(activity, name, rule, params) {
+  function runRule (activity, name, rule, params) {
     let res;
     try {
       res = rule(params);
@@ -22,7 +22,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const dupes = {};
   const DEDUPE_INTERVAL = 1000;
 
-  function logResult({activity, name, allow, reason, component}) {
+  function logResult ({activity, name, allow, reason, component}) {
     const msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`;
     const deduping = dupes.hasOwnProperty(msg);
     if (deduping) {
@@ -54,7 +54,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      * @param {number} [priority=10] - Rule priority; lower number means higher priority.
      * @returns {function(): void} - A function that unregisters the rule when called.
      */
-    function registerActivityControl(activity, ruleName, rule, priority = 10) {
+    function registerActivityControl (activity, ruleName, rule, priority = 10) {
       const rules = getRules(activity);
       const pos = rules.findIndex(([itemPriority]) => priority < itemPriority);
       const entry = [priority, ruleName, rule];
@@ -71,7 +71,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      * @param {{}} params activity parameters; should be generated through the `activityParams` utility.
      * @return {boolean} true for allow, false for deny.
      */
-    function isActivityAllowed(activity, params) {
+    function isActivityAllowed (activity, params) {
       let lastPriority, foundAllow;
       for (const [priority, name, rule] of getRules(activity)) {
         if (lastPriority !== priority && foundAllow) break;

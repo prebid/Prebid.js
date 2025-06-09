@@ -57,7 +57,7 @@ describe('adnuntiusBidAdapter', function () {
   let ENDPOINT_URL_SEGMENTS;
   let ENDPOINT_URL_CONSENT;
 
-  function resetExpectedUrls() {
+  function resetExpectedUrls () {
     const winDimensions = getWinDimensions();
     screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
     viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
@@ -69,7 +69,7 @@ describe('adnuntiusBidAdapter', function () {
     ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
   }
 
-  function expectUrlsEqual(actual, expected) {
+  function expectUrlsEqual (actual, expected) {
     const a = utils.parseUrl(actual);
     const e = utils.parseUrl(expected);
     expect(a.protocol + '://' + a.host + a.pathname).to.equal(e.protocol + '://' + e.host + e.pathname);
@@ -1095,7 +1095,7 @@ describe('adnuntiusBidAdapter', function () {
       delete bidderRequests[0].params.targeting;
     });
 
-    function countMatches(actualArray, expectedValue) {
+    function countMatches (actualArray, expectedValue) {
       return actualArray.filter(val => {
         return JSON.stringify(val) === JSON.stringify(expectedValue);
       }).length;

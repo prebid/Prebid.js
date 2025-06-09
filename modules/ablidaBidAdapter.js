@@ -82,7 +82,7 @@ export const spec = {
     const bidResponses = [];
     const response = serverResponse.body;
 
-    response.forEach(function(bid) {
+    response.forEach(function (bid) {
       bid.ttl = 60
       bidResponses.push(bid);
     });
@@ -94,7 +94,7 @@ export const spec = {
   }
 };
 
-function getDevice() {
+function getDevice () {
   const ua = navigator.userAgent;
   if ((/(ipad|xoom|sch-i800|playbook|silk|tablet|kindle)|(android(?!.*mobi))/i).test(ua)) {
     return 'tablet';

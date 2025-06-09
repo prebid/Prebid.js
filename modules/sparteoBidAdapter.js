@@ -21,7 +21,7 @@ const converter = ortbConverter({
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
     ttl: TTL // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
     deepSetValue(request, 'site.publisher.ext.params.pbjsVersion', '$prebid.version$');
@@ -36,7 +36,7 @@ const converter = ortbConverter({
 
     return request;
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
@@ -44,7 +44,7 @@ const converter = ortbConverter({
 
     return imp;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     context.mediaType = deepAccess(bid, 'ext.prebid.type');
 
     const response = buildBidResponse(bid, context);

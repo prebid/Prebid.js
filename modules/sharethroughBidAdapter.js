@@ -277,7 +277,7 @@ export const sharethroughAdapterSpec = {
   onSetTargeting: (bid) => {},
 };
 
-function getBidRequestFloor(bid) {
+function getBidRequestFloor (bid) {
   let floor = null;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
@@ -292,12 +292,12 @@ function getBidRequestFloor(bid) {
   return floor !== null ? floor : bid.params.floor;
 }
 
-function getProtocol() {
+function getProtocol () {
   return window.location.protocol;
 }
 
 // stub for ?? operator
-function nullish(input, def) {
+function nullish (input, def) {
   return input === null || input === undefined ? def : input;
 }
 

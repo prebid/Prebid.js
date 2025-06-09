@@ -13,11 +13,11 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.account && bid.params.location && (bid.params.format || bid.mediaTypes.banner.sizes));
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     if (validBidRequests.length === 0) {
       return null;
     }
@@ -62,8 +62,8 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(serverResponse, request) {
-    const serverAds = serverResponse.body.reduce(function(map, ad) {
+  interpretResponse: function (serverResponse, request) {
+    const serverAds = serverResponse.body.reduce(function (map, ad) {
       map[ad.slotName] = ad;
       return map;
     }, {});
@@ -79,7 +79,7 @@ export const spec = {
       .map(item => adResponse(item.bid, item.ad));
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.iframeEnabled && serverResponses.length > 0) {
       const account = serverResponses[0].account;
       if (account) {
@@ -95,7 +95,7 @@ export const spec = {
   }
 };
 
-function adResponse(bid, ad) {
+function adResponse (bid, ad) {
   const price = getPrice(ad);
   const adDetails = getAdDetails(ad);
   const markup = getAdMarkup(ad);
@@ -132,7 +132,7 @@ function adResponse(bid, ad) {
   return bidResponse;
 }
 
-function cleanTargets(target) {
+function cleanTargets (target) {
   const targets = {};
   if (target) {
     Object.keys(target).forEach(function (key) {
@@ -152,7 +152,7 @@ function cleanTargets(target) {
   return targets;
 }
 
-function bidToSlotName(bid) {
+function bidToSlotName (bid) {
   if (bid.params.format) {
     return bid.params.location + '-' + bid.params.format;
   }
@@ -168,25 +168,25 @@ function bidToSlotName(bid) {
   }
 }
 
-function getAccount(validBidRequests) {
+function getAccount (validBidRequests) {
   return validBidRequests[0].params.account;
 }
 
-function getEids(validBidRequests) {
+function getEids (validBidRequests) {
   if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
     return validBidRequests[0].userIdAsEids;
   }
 }
 
-function getbaseAdResponse(response) {
+function getbaseAdResponse (response) {
   return Object.assign({ netRevenue: true, ttl: 360 }, response);
 }
 
-function isAdheseAd(ad) {
+function isAdheseAd (ad) {
   return !ad.origin || ad.origin === 'JERLICIA';
 }
 
-function getAdMarkup(ad) {
+function getAdMarkup (ad) {
   if (!isAdheseAd(ad) || (ad.ext === 'js' && ad.body !== undefined && ad.body !== '' && ad.body.match(/<script|<SCRIPT|<html|<HTML|<\?xml/))) {
     return ad.body
   } else {
@@ -194,14 +194,14 @@ function getAdMarkup(ad) {
   }
 }
 
-function getPrice(ad) {
+function getPrice (ad) {
   if (ad.extension && ad.extension.prebid && ad.extension.prebid.cpm) {
     return ad.extension.prebid.cpm;
   }
   return { amount: 0, currency: 'USD' };
 }
 
-function getAdDetails(ad) {
+function getAdDetails (ad) {
   let creativeId = '';
   let dealId = '';
   let originData = {};
@@ -235,7 +235,7 @@ function getAdDetails(ad) {
   return { creativeId: creativeId, dealId: dealId, originData: originData, origin: origin, originInstance: originInstance };
 }
 
-function base64urlEncode(s) {
+function base64urlEncode (s) {
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 

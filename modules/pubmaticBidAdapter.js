@@ -61,7 +61,7 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: DEFAULT_TTL
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
     const { adUnitCode, mediaTypes, rtd } = bidRequest;
     const imp = buildImp(bidRequest, context);
@@ -89,7 +89,7 @@ const converter = ortbConverter({
     });
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     if (blockedIabCategories.length || request.bcat) {
       const validatedBCategories = validateBlockedCategories([...(blockedIabCategories || []), ...(request.bcat || [])]);
@@ -110,7 +110,7 @@ const converter = ortbConverter({
     }
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse.meta) bidResponse.meta.mediaType = bidResponse.mediaType;
     updateResponseWithCustomFields(bidResponse, bid, context);
@@ -139,7 +139,7 @@ const converter = ortbConverter({
     }
     return bidResponse;
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response (buildResponse, bidResponses, ortbResponse, context) {
     return buildResponse(bidResponses, ortbResponse, context);
   },
   overrides: {
@@ -153,7 +153,7 @@ const converter = ortbConverter({
   }
 });
 
-export function _calculateBidCpmAdjustment(bid) {
+export function _calculateBidCpmAdjustment (bid) {
   if (!bid) return;
 
   const { originalCurrency, currency, cpm, originalCpm, meta } = bid;
@@ -253,7 +253,7 @@ const setImpFields = imp => {
   if (imp.ext?.data && Object.keys(imp.ext.data).length === 0) delete imp.ext.data
 }
 
-function removeGranularFloor(imp, mediaTypes) {
+function removeGranularFloor (imp, mediaTypes) {
   mediaTypes.forEach(mt => {
     if (imp[mt]?.ext && imp[mt].ext.bidfloor === imp.bidfloor && imp[mt].ext.bidfloorcur === imp.bidfloorcur) {
       delete imp[mt].ext;
@@ -565,7 +565,7 @@ const getConnectionType = () => {
 
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
-  bootstrapPlayer: function(bid) {
+  bootstrapPlayer: function (bid) {
     const config = {
       code: bid.adUnitCode,
       vastXml: bid.vastXml || null,
@@ -585,7 +585,7 @@ const BB_RENDERER = {
     else logWarn(`${LOG_WARN_PREFIX}: Couldn't find a renderer with ${rendererId}`);
   },
 
-  newRenderer: function(rendererCode, adUnitCode) {
+  newRenderer: function (rendererCode, adUnitCode) {
     const rendererUrl = RENDERER_URL.replace('$RENDERER', rendererCode);
     const renderer = Renderer.install({ url: rendererUrl, loaded: false, adUnitCode });
     try {
@@ -596,16 +596,16 @@ const BB_RENDERER = {
     return renderer;
   },
 
-  outstreamRender: function(bid) {
+  outstreamRender: function (bid) {
     bid.renderer.push(() => BB_RENDERER.bootstrapPlayer(bid));
   },
 
-  getRendererId: function(pub, renderer) {
+  getRendererId: function (pub, renderer) {
     return `${pub}-${renderer}`; // NB convention!
   }
 };
 
-function _parseSlotParam(paramName, paramValue) {
+function _parseSlotParam (paramName, paramValue) {
   if (!isStr(paramValue)) {
     paramValue && logWarn(LOG_WARN_PREFIX + 'Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
@@ -621,7 +621,7 @@ function _parseSlotParam(paramName, paramValue) {
   return parsers[paramName]?.() || paramValue;
 }
 
-function isNonEmptyArray(test) {
+function isNonEmptyArray (test) {
   if (isArray(test) === true) {
     if (test.length > 0) {
       return true;

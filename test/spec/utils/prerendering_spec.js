@@ -33,7 +33,7 @@ describe('delayIfPrerendering', () => {
     beforeEach(() => {
       sandbox.stub(document, 'prerendering').get(() => true);
     });
-    function prerenderingDone() {
+    function prerenderingDone () {
       document.dispatchEvent(new Event('prerenderingchange'));
     }
 

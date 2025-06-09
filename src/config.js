@@ -59,7 +59,7 @@ const GRANULARITY_OPTIONS = {
 
 const ALL_TOPICS = '*';
 
-function attachProperties(config, useDefaultValues = true) {
+function attachProperties (config, useDefaultValues = true) {
   const values = useDefaultValues ? {
     priceGranularity: GRANULARITY_OPTIONS.MEDIUM,
     customPriceBucket: {},
@@ -68,11 +68,11 @@ function attachProperties(config, useDefaultValues = true) {
     auctionOptions: {}
   } : {}
 
-  function getProp(name) {
+  function getProp (name) {
     return values[name];
   }
 
-  function setProp(name, val) {
+  function setProp (name, val) {
     if (!values.hasOwnProperty(name)) {
       Object.defineProperty(config, name, {enumerable: true});
     }
@@ -81,7 +81,7 @@ function attachProperties(config, useDefaultValues = true) {
 
   const props = {
     publisherDomain: {
-      set(val) {
+      set (val) {
         if (val != null) {
           logWarn('publisherDomain is deprecated and has no effect since v7 - use pageUrl instead')
         }
@@ -89,7 +89,7 @@ function attachProperties(config, useDefaultValues = true) {
       }
     },
     priceGranularity: {
-      set(val) {
+      set (val) {
         if (validatePriceGranularity(val)) {
           if (typeof val === 'string') {
             setProp('priceGranularity', (hasGranularity(val)) ? val : GRANULARITY_OPTIONS.MEDIUM);
@@ -103,7 +103,7 @@ function attachProperties(config, useDefaultValues = true) {
     },
     customPriceBucket: {},
     mediaTypePriceGranularity: {
-      set(val) {
+      set (val) {
         val != null && setProp('mediaTypePriceGranularity', Object.keys(val).reduce((aggregate, item) => {
           if (validatePriceGranularity(val[item])) {
             if (typeof val === 'string') {
@@ -120,7 +120,7 @@ function attachProperties(config, useDefaultValues = true) {
       }
     },
     bidderSequence: {
-      set(val) {
+      set (val) {
         if (VALID_ORDERS[val]) {
           setProp('bidderSequence', val);
         } else {
@@ -129,7 +129,7 @@ function attachProperties(config, useDefaultValues = true) {
       }
     },
     auctionOptions: {
-      set(val) {
+      set (val) {
         if (validateauctionOptions(val)) {
           setProp('auctionOptions', val);
         }
@@ -149,11 +149,11 @@ function attachProperties(config, useDefaultValues = true) {
 
   return config;
 
-  function hasGranularity(val) {
+  function hasGranularity (val) {
     return Object.keys(GRANULARITY_OPTIONS).find(option => val === GRANULARITY_OPTIONS[option]);
   }
 
-  function validatePriceGranularity(val) {
+  function validatePriceGranularity (val) {
     if (!val) {
       logError('Prebid Error: no value passed to `setPriceGranularity()`');
       return false;
@@ -171,7 +171,7 @@ function attachProperties(config, useDefaultValues = true) {
     return true;
   }
 
-  function validateauctionOptions(val) {
+  function validateauctionOptions (val) {
     if (!isPlainObject(val)) {
       logWarn('Auction Options must be an object')
       return false
@@ -201,14 +201,14 @@ function attachProperties(config, useDefaultValues = true) {
   }
 }
 
-export function newConfig() {
+export function newConfig () {
   let listeners = [];
   let defaults;
   let config;
   let bidderConfig;
   let currBidder = null;
 
-  function resetConfig() {
+  function resetConfig () {
     defaults = {};
 
     let newConfig = attachProperties({
@@ -256,7 +256,7 @@ export function newConfig() {
    * Returns base config with bidder overrides (if there is currently a bidder)
    * @private
    */
-  function _getConfig() {
+  function _getConfig () {
     if (currBidder && bidderConfig && isPlainObject(bidderConfig[currBidder])) {
       const curr = bidderConfig[currBidder];
       const topics = new Set([...Object.keys(config), ...Object.keys(curr)]);
@@ -274,7 +274,7 @@ export function newConfig() {
     return { ...config };
   }
 
-  function _getRestrictedConfig() {
+  function _getRestrictedConfig () {
     // This causes reading 'ortb2' to throw an error; with prebid 7, that will almost
     // always be the incorrect way to access FPD configuration (https://github.com/prebid/Prebid.js/issues/7651)
     // code that needs the ortb2 config should explicitly use `getAnyConfig`
@@ -298,7 +298,7 @@ export function newConfig() {
      * If called with callback parameter, or a string and a callback parameter,
      * subscribes to configuration updates. See `subscribe` function for usage.
      */
-    return function getConfig(...args) {
+    return function getConfig (...args) {
       if (args.length <= 1 && typeof args[0] !== 'function') {
         const option = args[0];
         return option ? deepAccess(accessor(), option) : _getConfig();
@@ -312,7 +312,7 @@ export function newConfig() {
     /*
      * Like getConfig, except that it returns a deepClone of the result.
      */
-    return function readConfig(...args) {
+    return function readConfig (...args) {
       let res = wrapee(...args);
       if (res && typeof res === 'object') {
         res = deepClone(res);
@@ -324,7 +324,7 @@ export function newConfig() {
   /**
    * Internal API for modules (such as prebid-server) that might need access to all bidder config
    */
-  function getBidderConfig() {
+  function getBidderConfig () {
     return bidderConfig;
   }
 
@@ -332,7 +332,7 @@ export function newConfig() {
    * Sets configuration given an object containing key-value pairs and calls
    * listeners that were added by the `subscribe` function
    */
-  function setConfig(options) {
+  function setConfig (options) {
     if (!isPlainObject(options)) {
       logError('setConfig options must be an object');
       return;
@@ -362,7 +362,7 @@ export function newConfig() {
    * Sets configuration defaults which setConfig values can be applied on top of
    * @param {object} options
    */
-  function setDefaults(options) {
+  function setDefaults (options) {
     if (!isPlainObject(defaults)) {
       logError('defaults must be an object');
       return;
@@ -397,7 +397,7 @@ export function newConfig() {
    * unsubscribe(); // no longer listening
    *
    */
-  function subscribe(topic, listener, options = {}) {
+  function subscribe (topic, listener, options = {}) {
     let callback = listener;
 
     if (typeof topic !== 'string') {
@@ -425,7 +425,7 @@ export function newConfig() {
     }
 
     // save and call this function to remove the listener
-    return function unsubscribe() {
+    return function unsubscribe () {
       listeners.splice(listeners.indexOf(nl), 1);
     };
   }
@@ -433,7 +433,7 @@ export function newConfig() {
   /*
    * Calls listeners that were added by the `subscribe` function
    */
-  function callSubscribers(options) {
+  function callSubscribers (options) {
     const TOPICS = Object.keys(options);
 
     // call subscribers of a specific topic, passing only that configuration
@@ -449,7 +449,7 @@ export function newConfig() {
       .forEach(listener => listener.callback(options));
   }
 
-  function setBidderConfig(config, mergeFlag = false) {
+  function setBidderConfig (config, mergeFlag = false) {
     try {
       check(config);
       config.bidders.forEach(bidder => {
@@ -471,7 +471,7 @@ export function newConfig() {
       logError(e);
     }
 
-    function check(obj) {
+    function check (obj) {
       if (!isPlainObject(obj)) {
         throw 'setBidderConfig bidder options must be an object';
       }
@@ -484,7 +484,7 @@ export function newConfig() {
     }
   }
 
-  function mergeConfig(obj) {
+  function mergeConfig (obj) {
     if (!isPlainObject(obj)) {
       logError('mergeConfig input must be an object');
       return;
@@ -496,14 +496,14 @@ export function newConfig() {
     return mergedConfig;
   }
 
-  function mergeBidderConfig(obj) {
+  function mergeBidderConfig (obj) {
     return setBidderConfig(obj, true);
   }
 
   /**
    * Internal functions for core to execute some synchronous code while having an active bidder set.
    */
-  function runWithBidder(bidder, fn) {
+  function runWithBidder (bidder, fn) {
     currBidder = bidder;
     try {
       return fn();
@@ -511,9 +511,9 @@ export function newConfig() {
       resetBidder();
     }
   }
-  function callbackWithBidder(bidder) {
-    return function(cb) {
-      return function(...args) {
+  function callbackWithBidder (bidder) {
+    return function (cb) {
+      return function (...args) {
         if (typeof cb === 'function') {
           return runWithBidder(bidder, cb.bind(this, ...args))
         } else {
@@ -523,11 +523,11 @@ export function newConfig() {
     }
   }
 
-  function getCurrentBidder() {
+  function getCurrentBidder () {
     return currBidder;
   }
 
-  function resetBidder() {
+  function resetBidder () {
     currBidder = null;
   }
 

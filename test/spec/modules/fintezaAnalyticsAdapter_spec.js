@@ -7,7 +7,7 @@ import { EVENTS } from 'src/constants.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 
-function setCookie(name, value, expires) {
+function setCookie (name, value, expires) {
   document.cookie = name + '=' + value +
     '; path=/' +
     (expires ? ('; expires=' + expires.toUTCString()) : '') +

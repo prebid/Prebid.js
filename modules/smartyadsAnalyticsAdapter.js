@@ -29,7 +29,7 @@ let smartyadsAdapter = Object.assign({},
     analyticsType: ANALYTICS_TYPE,
   }),
   {
-    track({ eventType, args }) {
+    track ({ eventType, args }) {
       switch (eventType) {
         case AUCTION_INIT:
         case AUCTION_TIMEOUT:
@@ -84,7 +84,7 @@ const auctionHandler = (eventType, data) => {
 }
 
 const bidHandler = (eventType, bid) => {
-  let bids = bid.length ? bid : [ bid ];
+  let bids = bid.length ? bid : [bid];
 
   for (const bidObj of bids) {
     let bidToSend;
@@ -114,7 +114,7 @@ const onBidderError = (data) => {
     error: data.error,
     bidderRequests: data?.bidderRequests?.length
       ? data.bidderRequests.filter(request => request.bidderCode === BIDDER_CODE)
-      : [ data.bidderRequest ]
+      : [data.bidderRequest]
   });
 }
 

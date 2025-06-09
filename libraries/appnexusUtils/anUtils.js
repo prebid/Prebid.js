@@ -4,7 +4,7 @@
  */
 import {deepClone, isPlainObject} from '../../src/utils.js';
 
-export function convertCamelToUnderscore(value) {
+export function convertCamelToUnderscore (value) {
   return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) {
     return '_' + y.toLowerCase();
   }).replace(/^_/, '');
@@ -30,7 +30,7 @@ export const appnexusAliases = [
 /**
  * Creates an array of n length and fills each item with the given value
  */
-export function fill(value, length) {
+export function fill (value, length) {
   let newArray = [];
 
   for (let i = 0; i < length; i++) {

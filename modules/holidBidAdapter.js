@@ -136,7 +136,7 @@ export const spec = {
   },
 
   // User syncs: supports both image and iframe syncing with privacy parameters if available
-  getUserSyncs(optionsType, serverResponse, gdprConsent, uspConsent) {
+  getUserSyncs (optionsType, serverResponse, gdprConsent, uspConsent) {
     const syncs = [
       {
         type: 'image',
@@ -184,7 +184,7 @@ export const spec = {
   },
 
   // On bid win, trigger win notification via an image pixel if available
-  onBidWon(bid) {
+  onBidWon (bid) {
     const wurl = getWurl(bid.requestId);
     if (wurl) {
       logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
@@ -195,7 +195,7 @@ export const spec = {
 };
 
 // Create a unique impression object with bid id as the identifier
-function getImp(bid) {
+function getImp (bid) {
   const imp = buildStoredRequest(bid);
   imp.id = bid.bidId; // Ensure imp.id is unique to match the bid response correctly
   const sizes =
@@ -218,7 +218,7 @@ function getImp(bid) {
 }
 
 // Build stored request object using bid parameters
-function buildStoredRequest(bid) {
+function buildStoredRequest (bid) {
   return {
     ext: {
       prebid: {
@@ -231,7 +231,7 @@ function buildStoredRequest(bid) {
 }
 
 // Helper: Extract unique bidders from responses for user syncs
-function getBidders(responses) {
+function getBidders (responses) {
   const bidders = responses
     .map((res) => Object.keys(res.body.ext?.responsetimemillis || {}))
     .flat();
@@ -242,17 +242,17 @@ function getBidders(responses) {
 }
 
 // Win URL helper functions
-function addWurl(requestId, wurl) {
+function addWurl (requestId, wurl) {
   if (isStr(requestId)) {
     wurlMap[requestId] = wurl;
   }
 }
 
-function removeWurl(requestId) {
+function removeWurl (requestId) {
   delete wurlMap[requestId];
 }
 
-function getWurl(requestId) {
+function getWurl (requestId) {
   if (isStr(requestId)) {
     return wurlMap[requestId];
   }

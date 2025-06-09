@@ -23,7 +23,7 @@ import {deepAccess, deepClone, deepEqual, deepSetValue} from '../../src/utils.js
  * @param {Array[TransformationRule]} rules
  * @return {function(*, ...[*]): ObjectGuard}
  */
-export function objectGuard(rules) {
+export function objectGuard (rules) {
   const root = {};
   const writeRules = [];
 
@@ -43,9 +43,9 @@ export function objectGuard(rules) {
 
   const wpTransformer = objectTransformer(writeRules);
 
-  function mkGuard(obj, tree, applies) {
+  function mkGuard (obj, tree, applies) {
     return new Proxy(obj, {
-      get(target, prop, receiver) {
+      get (target, prop, receiver) {
         const val = Reflect.get(target, prop, receiver);
         if (tree.hasOwnProperty(prop)) {
           const {children, rule} = tree[prop];
@@ -60,13 +60,13 @@ export function objectGuard(rules) {
     });
   }
 
-  function mkVerify(transformResult) {
+  function mkVerify (transformResult) {
     return function () {
       transformResult.forEach(fn => fn());
     }
   }
 
-  return function guard(obj, ...args) {
+  return function guard (obj, ...args) {
     const session = {};
     return {
       obj: mkGuard(obj, root.children || {}, sessionedApplies(session, ...args)),
@@ -79,10 +79,10 @@ export function objectGuard(rules) {
  * @param {TransformationRuleDef} ruleDef
  * @return {TransformationRule}
  */
-export function writeProtectRule(ruleDef) {
+export function writeProtectRule (ruleDef) {
   return Object.assign({
     wp: true,
-    run(root, path, object, property, applies) {
+    run (root, path, object, property, applies) {
       const origHasProp = object && object.hasOwnProperty(property);
       const original = origHasProp ? object[property] : undefined;
       const origCopy = origHasProp && original != null && typeof original === 'object' ? deepClone(original) : original;

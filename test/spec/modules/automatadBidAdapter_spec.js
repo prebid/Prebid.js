@@ -83,7 +83,7 @@ describe('automatadBidAdapter', function () {
       expect(spec.isBidRequestValid(bidRequestAllParams)).to.equal(true)
     })
 
-    it('should return true if only required params present', function() {
+    it('should return true if only required params present', function () {
       expect(spec.isBidRequestValid(bidRequestRequiredParams)).to.equal(true)
     })
 
@@ -93,10 +93,10 @@ describe('automatadBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequestRequiredParams ], { refererInfo: { } })
+    let req = spec.buildRequests([bidRequestRequiredParams], { refererInfo: { } })
     let rdata
 
-    it('should have withCredentials option as true', function() {
+    it('should have withCredentials option as true', function () {
       expect(req.options.withCredentials).to.equal(true)
     })
 
@@ -179,11 +179,11 @@ describe('automatadBidAdapter', function () {
       }]
       let result = spec.interpretResponse(multipleBidResponse[0]).map(bid => {
         const {requestId} = bid;
-        return [ requestId ];
+        return [requestId];
       });
 
       assert.equal(result.length, 2);
-      assert.deepEqual(result, [[ 'imp1' ], [ 'imp2' ]]);
+      assert.deepEqual(result, [['imp1'], ['imp2']]);
     })
 
     it('handles empty bid response', function () {

@@ -19,7 +19,7 @@ const cache = {
 };
 
 const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endpoint'}), {
-  track({eventType, args}) {
+  track ({eventType, args}) {
     const time = timestamp();
     logInfo('ADN_EVENT:', [eventType, args]);
 
@@ -32,7 +32,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
         logInfo('ADN_BID_REQUESTED:', args);
         cache.auctions[args.auctionId].timeStamp = args.start;
 
-        args.bids.forEach(function(bidReq) {
+        args.bids.forEach(function (bidReq) {
           cache.auctions[args.auctionId].gdprApplies = args.gdprConsent ? args.gdprConsent.gdprApplies : undefined;
           cache.auctions[args.auctionId].gdprConsent = args.gdprConsent ? args.gdprConsent.consentString : undefined;
 
@@ -150,7 +150,7 @@ adnAnalyticsAdapter.enableAnalytics = function (config) {
   adnAnalyticsAdapter.originEnableAnalytics(config);
 };
 
-adnAnalyticsAdapter.sendEvents = function() {
+adnAnalyticsAdapter.sendEvents = function () {
   const sentRequests = getSentRequests();
   const events = {
     publisherId: initOptions.publisherId,
@@ -172,7 +172,7 @@ adnAnalyticsAdapter.sendEvents = function() {
   ajax(initOptions.endPoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
 };
 
-function getSentRequests() {
+function getSentRequests () {
   const sentRequests = [];
   const gdpr = [];
   const auctionIds = [];
@@ -205,7 +205,7 @@ function getSentRequests() {
   return {gdpr: gdpr, auctionIds: auctionIds, sentRequests: sentRequests};
 }
 
-function getResponses(gdpr, auctionIds) {
+function getResponses (gdpr, auctionIds) {
   const responses = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
@@ -227,7 +227,7 @@ function getResponses(gdpr, auctionIds) {
   return responses;
 }
 
-function getWins(gdpr, auctionIds) {
+function getWins (gdpr, auctionIds) {
   const wins = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
@@ -268,7 +268,7 @@ function getWins(gdpr, auctionIds) {
   return wins;
 }
 
-function getGdprPos(gdpr, auction) {
+function getGdprPos (gdpr, auction) {
   let gdprPos;
   for (gdprPos = 0; gdprPos < gdpr.length; gdprPos++) {
     if (gdpr[gdprPos].gdprApplies === auction.gdprApplies &&
@@ -284,7 +284,7 @@ function getGdprPos(gdpr, auction) {
   return gdprPos;
 }
 
-function getAuctionIdPos(auIds, auId) {
+function getAuctionIdPos (auIds, auId) {
   let auctionIdPos;
   for (auctionIdPos = 0; auctionIdPos < auIds.length; auctionIdPos++) {
     if (auIds[auctionIdPos] === auId) {
@@ -299,7 +299,7 @@ function getAuctionIdPos(auIds, auId) {
   return auctionIdPos;
 }
 
-function getResponseObject(auction, bid, gdprPos, auctionIdPos) {
+function getResponseObject (auction, bid, gdprPos, auctionIdPos) {
   return {
     adUnit: bid.adUnit,
     adUnitId: bid.adUnitId,
@@ -324,7 +324,7 @@ function getResponseObject(auction, bid, gdprPos, auctionIdPos) {
   };
 }
 
-function getTimeouts(gdpr, auctionIds) {
+function getTimeouts (gdpr, auctionIds) {
   const timeouts = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
@@ -346,7 +346,7 @@ function getTimeouts(gdpr, auctionIds) {
   return timeouts;
 }
 
-function getAdRenderFailed(auctionIds) {
+function getAdRenderFailed (auctionIds) {
   const adRenderFails = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
@@ -376,7 +376,7 @@ function getAdRenderFailed(auctionIds) {
   return adRenderFails;
 }
 
-function getBidAdUnits() {
+function getBidAdUnits () {
   const bidAdUnits = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {

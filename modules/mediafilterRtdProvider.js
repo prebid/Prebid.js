@@ -26,7 +26,7 @@ export const MediaFilter = {
   /**
    * Registers the Media Filter as a submodule of real-time data.
    */
-  register: function() {
+  register: function () {
     submodule('realTimeData', {
       'name': 'mediafilter',
       'init': this.generateInitHandler()
@@ -37,7 +37,7 @@ export const MediaFilter = {
    * Sets up the Media Filter by initializing event listeners and loading the external script.
    * @param {object} configuration - The configuration object.
    */
-  setup: function(configuration) {
+  setup: function (configuration) {
     this.setupEventListener(configuration.configurationHash);
     this.setupScript(configuration.configurationHash);
   },
@@ -46,7 +46,7 @@ export const MediaFilter = {
    * Sets up an event listener for Media Filter messages.
    * @param {string} configurationHash - The configuration hash.
    */
-  setupEventListener: function(configurationHash) {
+  setupEventListener: function (configurationHash) {
     window.addEventListener('message', this.generateEventHandler(configurationHash));
   },
 
@@ -54,7 +54,7 @@ export const MediaFilter = {
    * Loads the Media Filter script based on the provided configuration hash.
    * @param {string} configurationHash - The configuration hash.
    */
-  setupScript: function(configurationHash) {
+  setupScript: function (configurationHash) {
     loadExternalScript(MEDIAFILTER_BASE_URL.concat(configurationHash), MODULE_TYPE_RTD, 'mediafilter', () => {
     });
   },
@@ -64,7 +64,7 @@ export const MediaFilter = {
    * @param {string} configurationHash - The configuration hash.
    * @returns {function} The generated event handler.
    */
-  generateEventHandler: function(configurationHash) {
+  generateEventHandler: function (configurationHash) {
     return (windowEvent) => {
       if (windowEvent.data.type === MEDIAFILTER_EVENT_TYPE.concat('.', configurationHash)) {
         events.emit(EVENTS.BILLABLE_EVENT, {
@@ -81,7 +81,7 @@ export const MediaFilter = {
    * Generates an initialization handler for Media Filter.
    * @returns {function} The generated init handler.
    */
-  generateInitHandler: function() {
+  generateInitHandler: function () {
     return (configuration) => {
       try {
         this.setup(configuration);

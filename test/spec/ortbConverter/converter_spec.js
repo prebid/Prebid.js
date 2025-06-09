@@ -47,7 +47,7 @@ describe('pbjs-ortb converter', () => {
     processors = {
       [REQUEST]: {
         req: {
-          fn(ortbRequest, bidderRequest, context) {
+          fn (ortbRequest, bidderRequest, context) {
             ortbRequest.id = `req${reqCnt++}`;
             if (context.ctx) {
               ortbRequest.ctx = context.ctx;
@@ -57,7 +57,7 @@ describe('pbjs-ortb converter', () => {
       },
       [IMP]: {
         imp: {
-          fn(imp, bidRequest, context) {
+          fn (imp, bidRequest, context) {
             imp.id = `imp${impCnt++}`;
             imp.bidId = bidRequest.id;
             if (context.ctx) {
@@ -71,7 +71,7 @@ describe('pbjs-ortb converter', () => {
       },
       [BID_RESPONSE]: {
         resp: {
-          fn(bidResponse, bid, context) {
+          fn (bidResponse, bid, context) {
             bidResponse.impid = bid.impid;
             bidResponse.bidId = context.imp.bidId;
             if (context.ctx) {
@@ -86,7 +86,7 @@ describe('pbjs-ortb converter', () => {
       },
       [RESPONSE]: {
         resp: {
-          fn(response, ortbResponse, context) {
+          fn (response, ortbResponse, context) {
             response.marker = true;
             if (context.ctx) {
               response.ctx = context.ctx;
@@ -97,7 +97,7 @@ describe('pbjs-ortb converter', () => {
     }
   });
 
-  function makeConverter(options = {}) {
+  function makeConverter (options = {}) {
     options = Object.assign({
       processors: () => processors
     }, options);
@@ -195,7 +195,7 @@ describe('pbjs-ortb converter', () => {
 
   it('allows filtering imps with `imp`', () => {
     const cvt = makeConverter({
-      imp(buildImp, bidRequest, context) {
+      imp (buildImp, bidRequest, context) {
         if (bidRequest.id === 112) {
           return buildImp(bidRequest, context);
         }
@@ -206,7 +206,7 @@ describe('pbjs-ortb converter', () => {
 
   it('does not include imps that have no id', () => {
     const cvt = makeConverter({
-      imp(buildImp, bidRequest, context) {
+      imp (buildImp, bidRequest, context) {
         const imp = buildImp(bidRequest, context);
         delete imp.id;
         return imp;
@@ -217,7 +217,7 @@ describe('pbjs-ortb converter', () => {
 
   it('allows overriding of response building with bidResponse', () => {
     const cvt = makeConverter({
-      bidResponse(buildResponse, bid, context) {
+      bidResponse (buildResponse, bid, context) {
         return Object.assign({
           extraArg: context.bidRequest.id,
           extraCtx: context.ctx
@@ -238,7 +238,7 @@ describe('pbjs-ortb converter', () => {
 
   it('allows filtering of responses with `bidResponse`', () => {
     const cvt = makeConverter({
-      bidResponse(buildBidResponse, bid, context) {
+      bidResponse (buildBidResponse, bid, context) {
         if (context.seatbid.seat === 'mockBidder1' && context.imp.id === 'imp0') {
           return buildBidResponse(bid, context);
         }
@@ -252,7 +252,7 @@ describe('pbjs-ortb converter', () => {
 
   it('allows overriding of request building with `request`', () => {
     const cvt = makeConverter({
-      request(buildRequest, imps, bidderRequest, context) {
+      request (buildRequest, imps, bidderRequest, context) {
         return {
           request: buildRequest(imps, bidderRequest, context),
           extraArg: bidderRequest.id,
@@ -268,7 +268,7 @@ describe('pbjs-ortb converter', () => {
 
   it('allows overriding of response building with `response`', () => {
     const cvt = makeConverter({
-      response(buildResponse, bidResponses, ortbResponse, context) {
+      response (buildResponse, bidResponses, ortbResponse, context) {
         return {
           response: buildResponse(bidResponses, ortbResponse, context),
           extraArg: ortbResponse.id,

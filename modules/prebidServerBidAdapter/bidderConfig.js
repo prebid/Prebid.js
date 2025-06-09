@@ -11,7 +11,7 @@ import {ORTB_EIDS_PATHS} from '../../src/activities/redactor.js';
  * This returns bidder config (from `bidder`) where arrays are replaced with what you get from merging them with `global`,
  * so that the result of merging in PBS is the same as in JS.
  */
-export function getPBSBidderConfig({global, bidder}) {
+export function getPBSBidderConfig ({global, bidder}) {
   return Object.fromEntries(
     Object.entries(bidder).map(([bidderCode, bidderConfig]) => {
       return [bidderCode, replaceArrays(bidderConfig, mergeDeep({}, global, bidderConfig))]
@@ -19,7 +19,7 @@ export function getPBSBidderConfig({global, bidder}) {
   )
 }
 
-function replaceArrays(config, mergedConfig) {
+function replaceArrays (config, mergedConfig) {
   return Object.fromEntries(
     Object.entries(config).map(([key, value]) => {
       const mergedValue = mergedConfig[key];
@@ -44,12 +44,12 @@ function replaceArrays(config, mergedConfig) {
  *      `bidders` is a list of all the bidders that refer to that specific EID object, or false if that EID object is defined globally.
  *   - `conflicts` is a set containing all EID sources that appear in multiple, otherwise different, EID objects.
  */
-export function extractEids({global, bidder}) {
+export function extractEids ({global, bidder}) {
   const entries = [];
   const bySource = {};
   const conflicts = new Set()
 
-  function getEntry(eid) {
+  function getEntry (eid) {
     let entry = entries.find((candidate) => deepEqual(candidate.eid, eid));
     if (entry == null) {
       entry = {eid, bidders: new Set()}
@@ -95,7 +95,7 @@ export function extractEids({global, bidder}) {
  *  - `bidder` is a map from bidder code to EID objects that are specific to that bidder, and cannot be restricted through `permissions`
  *  - `permissions` is a list of EID permissions as expected by PBS.
  */
-export function consolidateEids({eids, conflicts = new Set()}) {
+export function consolidateEids ({eids, conflicts = new Set()}) {
   const globalEntries = [];
   const bidderEntries = [];
   const byBidder = {};
@@ -121,11 +121,11 @@ export function consolidateEids({eids, conflicts = new Set()}) {
   }
 }
 
-function replaceEids({global, bidder}, requestedBidders) {
+function replaceEids ({global, bidder}, requestedBidders) {
   const consolidated = consolidateEids(extractEids({global, bidder}));
   global = deepClone(global);
   bidder = deepClone(bidder);
-  function removeEids(target) {
+  function removeEids (target) {
     delete target?.user?.eids;
     delete target?.user?.ext?.eids;
   }
@@ -148,7 +148,7 @@ function replaceEids({global, bidder}, requestedBidders) {
   return {global, bidder}
 }
 
-export function premergeFpd(ortb2Fragments, requestedBidders) {
+export function premergeFpd (ortb2Fragments, requestedBidders) {
   if (ortb2Fragments == null || Object.keys(ortb2Fragments.bidder || {}).length === 0) {
     return ortb2Fragments;
   } else {

@@ -152,7 +152,7 @@ registerBidder(spec);
  * @param validBidRequests
  * @returns {Array|*} userIdAsEids
  */
-function getUserIdAsEids(validBidRequests) {
+function getUserIdAsEids (validBidRequests) {
   if (validBidRequests && validBidRequests.length > 0 && validBidRequests[0].userIdAsEids &&
     validBidRequests[0].userIdAsEids.length > 0) {
     return validBidRequests[0].userIdAsEids;
@@ -168,7 +168,7 @@ function getUserIdAsEids(validBidRequests) {
  * @param sizes
  * @returns {Object} floor
  */
-function _getFloor(bid, currencyPar, sizes) {
+function _getFloor (bid, currencyPar, sizes) {
   const curMediaType = bid.mediaTypes && bid.mediaTypes.video ? 'video' : 'banner';
   let floor = 0;
   const currency = currencyPar || 'RUB';

@@ -355,7 +355,7 @@ describe('Opera Ads Bid Adapter', function () {
       });
     });
 
-    it('test getBidFloor', function() {
+    it('test getBidFloor', function () {
       const bidRequests = [
         {
           adUnitCode: 'test-div',
@@ -367,7 +367,7 @@ describe('Opera Ads Bid Adapter', function () {
             publisherId: 'pub12345678',
             endpointId: 'ep12345678'
           },
-          getFloor: function() {
+          getFloor: function () {
             return {
               currency: 'USD',
               floor: 0.1

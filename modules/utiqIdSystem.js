@@ -25,7 +25,7 @@ export const storage = getStorageManager({
  * Get the "atid" from html5 local storage to make it available to the UserId module.
  * @returns {{utiq: (*|string)}}
  */
-function getUtiqFromStorage() {
+function getUtiqFromStorage () {
   let utiqPass;
   let utiqPassStorage = JSON.parse(
     storage.getDataFromLocalStorage('utiqPass')
@@ -83,7 +83,7 @@ export const utiqIdSubmodule = {
    * @function
    * @returns {{utiq: string} | null}
    */
-  decode(bidId) {
+  decode (bidId) {
     logInfo(`${LOG_PREFIX}: Decoded ID value ${JSON.stringify(bidId)}`);
     return bidId.utiq ? bidId : null;
   },

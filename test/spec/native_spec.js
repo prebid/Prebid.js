@@ -187,7 +187,7 @@ describe('native.js', function () {
   let triggerPixelStub;
   let insertHtmlIntoIframeStub;
 
-  function deps(adUnit) {
+  function deps (adUnit) {
     return { index: stubAuctionIndex({ adUnits: [adUnit] }) };
   }
 
@@ -400,22 +400,22 @@ describe('native.js', function () {
 
     Object.entries({
       'returns native data': {
-        renderDataHook(next, bidResponse) {
+        renderDataHook (next, bidResponse) {
           next.bail({
             native: getNativeRenderingData(bidResponse, adUnit),
             rendererVersion: 'native-render-version'
           });
         },
-        renderSourceHook(next) {
+        renderSourceHook (next) {
           next.bail('mock-native-renderer');
         },
         withRenderer: true
       },
       'does not return native data': {
-        renderDataHook(next) {
+        renderDataHook (next) {
           next.bail({})
         },
-        renderSourceHook(next) {
+        renderSourceHook (next) {
           next.bail('mock-display-renderer');
         },
         withRenderer: false
@@ -431,7 +431,7 @@ describe('native.js', function () {
           getCreativeRendererSource.getHooks({hook: renderSourceHook}).remove();
         });
 
-        function checkRenderer(message) {
+        function checkRenderer (message) {
           if (withRenderer) {
             expect(message.renderer).to.eql('mock-native-renderer')
             expect(message.rendererVersion).to.eql(PUC_MIN_VERSION);
@@ -648,7 +648,7 @@ describe('native.js', function () {
       { event: 1, method: 1, url: 'https://sampleurl.com' },
       { event: 1, method: 2, url: 'https://sampleurljs.com' }
     ],
-    imptrackers: [ 'https://sample-imp.com' ]
+    imptrackers: ['https://sample-imp.com']
   }
   describe('toLegacyResponse', () => {
     it('returns assets in legacy format for ortb responses', () => {
@@ -1297,7 +1297,7 @@ describe('fireImpressionTrackers', () => {
     fetchURL = sinon.stub();
   })
 
-  function runTrackers(resp) {
+  function runTrackers (resp) {
     fireImpressionTrackers(resp, {runMarkup, fetchURL})
   }
 
@@ -1354,7 +1354,7 @@ describe('fireClickTrackers', () => {
     fetchURL = sinon.stub();
   });
 
-  function runTrackers(resp, assetId = null) {
+  function runTrackers (resp, assetId = null) {
     fireClickTrackers(resp, assetId, {fetchURL});
   }
 

@@ -19,7 +19,7 @@ const CURRENCY = 'EUR';
 /**
  * @description get coppa value from config
  */
-function getCoppa() {
+function getCoppa () {
   return config.getConfig('coppa') === true ? 1 : 0;
 }
 
@@ -27,7 +27,7 @@ function getCoppa() {
  * Retrieves the effective connection type from the browser's Navigator API.
  * @returns {string} The effective connection type or 'unsupported' if unavailable.
  */
-export function getEffectiveConnectionType() {
+export function getEffectiveConnectionType () {
   /**
    * The effective connection type obtained from the browser's Navigator API.
    * @type {string|undefined}
@@ -47,13 +47,13 @@ export function getEffectiveConnectionType() {
  * @param {Array} validBidRequests - Array of valid bid requests
  * @returns {Array|undefined} - Array of user IDs as EIDs, or undefined if not found
  */
-export function getUserIds(validBidRequests) {
+export function getUserIds (validBidRequests) {
   /** @type {Object} */
   if (validBidRequests?.[0]?.userIdAsEids) {
     return validBidRequests[0].userIdAsEids;
   }
 }
-export function getMetaList(name) {
+export function getMetaList (name) {
   if (!name || name.length === 0) return []
 
   return [
@@ -84,7 +84,7 @@ export function getMetaList(name) {
   ]
 }
 
-export function getOneMetaValue(query) {
+export function getOneMetaValue (query) {
   const metaEl = document.querySelector(query)
 
   if (metaEl && metaEl.content) {
@@ -94,7 +94,7 @@ export function getOneMetaValue(query) {
   return null;
 }
 
-export function getMetaValue(name) {
+export function getMetaValue (name) {
   const metaList = getMetaList(name)
   for (let i = 0; i < metaList.length; i++) {
     const meta = metaList[i];
@@ -106,7 +106,7 @@ export function getMetaValue(name) {
   return ''
 }
 
-export function getKeywords() {
+export function getKeywords () {
   const metaKeywords = getMetaValue(META_KEYWORDS)
   if (metaKeywords) {
     const keywords = [

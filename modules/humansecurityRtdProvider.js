@@ -45,7 +45,7 @@ let hmnsData = { };
 /**
  * Submodule registration
  */
-function main() {
+function main () {
   submodule('realTimeData', /** @type {RtdSubmodule} */ ({
     name: SUBMODULE_NAME,
 
@@ -68,7 +68,7 @@ function main() {
  * Injects HUMAN Security script on the page to facilitate pre-bid signal collection.
  * @param {SubmoduleConfig} config
  */
-function load(config) {
+function load (config) {
   // By default, this submodule loads the generic implementation script
   // only identified by the referrer information. In the future, if publishers
   // want to have analytics where their websites are grouped, they can request
@@ -99,7 +99,7 @@ function load(config) {
  * The callback to loadExternalScript
  * Establishes the bridge between this RTD submodule and the loaded implementation
  */
-function onImplLoaded() {
+function onImplLoaded () {
   // We then get a hold on this script using the knowledge of this session ID
   const wnd = getWindowSelf();
   const impl = wnd[`sonar_${sessionId}`];
@@ -120,7 +120,7 @@ function onImplLoaded() {
  * to update the token information or report errors
  * @param {Object} msg
  */
-function onImplMessage(msg) {
+function onImplMessage (msg) {
   if (typeof msg !== 'object') {
     return;
   }
@@ -154,7 +154,7 @@ function onImplMessage(msg) {
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
  */
-function onGetBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+function onGetBidRequestData (reqBidsConfigObj, callback, config, userConsent) {
   // Add device.ext.hmns to the global ORTB data for all vendors to use
   // At the time of writing this submodule, "hmns" is an object defined
   // internally by humansecurity, and it currently contains "v1" field

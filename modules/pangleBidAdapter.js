@@ -24,13 +24,13 @@ const MEDIA_TYPES = {
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: BIDDER_CODE })
 
-export function isValidUuid(uuid) {
+export function isValidUuid (uuid) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     uuid
   );
 }
 
-function getPangleCookieId() {
+function getPangleCookieId () {
   let sid = storage.cookiesAreEnabled() && storage.getCookie(PANGLE_COOKIE);
 
   if (!sid || !isValidUuid(sid)) {
@@ -41,7 +41,7 @@ function getPangleCookieId() {
   return sid;
 }
 
-function setPangleCookieId(sid) {
+function setPangleCookieId (sid) {
   if (storage.cookiesAreEnabled()) {
     const expires = new Date(timestamp() + COOKIE_EXP).toGMTString();
 
@@ -49,7 +49,7 @@ function setPangleCookieId(sid) {
   }
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   const data = converter.toORTB({
     bidRequests,
     bidderRequest,
@@ -87,15 +87,15 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function isVideoBid(bid) {
+function isVideoBid (bid) {
   return !!deepAccess(bid, 'mediaTypes.video');
 }
 
-function isBannerBid(bid) {
+function isBannerBid (bid) {
   return !!deepAccess(bid, 'mediaTypes.banner');
 }
 
-function renderOutstream(bid) {
+function renderOutstream (bid) {
   bid.renderer.push(() => {
     window.outstreamPlayer({ bid, codeId: bid.adUnitCode });
   });
@@ -107,7 +107,7 @@ const converter = ortbConverter({
     ttl: DEFAULT_BID_TTL,
     currency: DEFAULT_CURRENCY,
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const { bidRequest } = context;
     let bidResponse;
     if (bid.mtype === MEDIA_TYPES.Video) {
@@ -153,7 +153,7 @@ export const spec = {
     return Boolean(bid.params.token);
   },
 
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const reqArr = [];
     const videoBids = bidRequests.filter((bid) => isVideoBid(bid));
     const bannerBids = bidRequests.filter((bid) => isBannerBid(bid));
@@ -166,7 +166,7 @@ export const spec = {
     return reqArr;
   },
 
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     const bids = converter.fromORTB({
       response: response.body,
       request: request.data,

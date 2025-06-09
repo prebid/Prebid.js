@@ -44,7 +44,7 @@ export const spec = {
    * @param {BidRequest} bid The bid to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid && bid.params && bid.params.pid && bid.params.tid);
   },
 
@@ -54,7 +54,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests - an array of bids.
    * @return ServerRequest[]
    */
-  buildRequests: function(bidRequests) {
+  buildRequests: function (bidRequests) {
     return bidRequests.map(bidRequest => {
       let giBidRequest = buildGiBidRequest(bidRequest);
       return {
@@ -72,7 +72,7 @@ export const spec = {
    * @param {object} serverResponse A response from the GetIntent's server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     let responseBody = serverResponse.body;
     const bids = [];
     if (responseBody && responseBody.no_bid !== 1) {
@@ -104,7 +104,7 @@ export const spec = {
 
 };
 
-function buildUrl(bid) {
+function buildUrl (bid) {
   return 'https://' + BID_HOST + (bid.is_video ? BID_VIDEO_PATH : BID_BANNER_PATH);
 }
 
@@ -114,7 +114,7 @@ function buildUrl(bid) {
  * @param {BidRequest} bidRequest
  * @return {object} GI bid request
  */
-function buildGiBidRequest(bidRequest) {
+function buildGiBidRequest (bidRequest) {
   let giBidRequest = {
     bid_id: bidRequest.bidId,
     pid: bidRequest.params.pid, // required
@@ -144,7 +144,7 @@ function buildGiBidRequest(bidRequest) {
   return giBidRequest;
 }
 
-function getBidFloor(bidRequest, currency) {
+function getBidFloor (bidRequest, currency) {
   let floorInfo = {};
 
   if (isFn(bidRequest.getFloor)) {
@@ -161,7 +161,7 @@ function getBidFloor(bidRequest, currency) {
   };
 }
 
-function addVideo(videoParams, mediaTypesVideoParams, giBidRequest) {
+function addVideo (videoParams, mediaTypesVideoParams, giBidRequest) {
   videoParams = videoParams || {};
   mediaTypesVideoParams = mediaTypesVideoParams || {};
 
@@ -185,7 +185,7 @@ function addVideo(videoParams, mediaTypesVideoParams, giBidRequest) {
   }
 }
 
-function addOptional(params, request, props) {
+function addOptional (params, request, props) {
   for (let i = 0; i < props.length; i++) {
     if (params.hasOwnProperty(props[i])) {
       request[props[i]] = params[props[i]];
@@ -197,7 +197,7 @@ function addOptional(params, request, props) {
  * @param {String} s The string representing a size (e.g. "300x250").
  * @return {Number[]} An array with two elements: [width, height] (e.g.: [300, 250]).
  */
-function parseSize(s) {
+function parseSize (s) {
   return s.split('x').map(Number);
 }
 
@@ -207,7 +207,7 @@ function parseSize(s) {
  * @return {String} The string with sizes, e.g. array of sizes [[50, 50], [80, 80]] becomes "50x50,80x80" string.
  */
 function produceSize (sizes) {
-  function sizeToStr(s) {
+  function sizeToStr (s) {
     if (Array.isArray(s) && s.length === 2 && isInteger(s[0]) && isInteger(s[1])) {
       return s.join('x');
     } else {

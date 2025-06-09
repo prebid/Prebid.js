@@ -282,7 +282,7 @@ describe('permutiveRtdProvider', function () {
       })
     })
 
-    it('should include ortb2 user data transformation for IAB audience taxonomy', function() {
+    it('should include ortb2 user data transformation for IAB audience taxonomy', function () {
       const moduleConfig = getConfig()
       const bidderConfig = {}
       const acBidders = moduleConfig.params.acBidders

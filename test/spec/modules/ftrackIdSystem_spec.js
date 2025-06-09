@@ -235,7 +235,7 @@ describe('FTRACK ID System', () => {
       expect(window.localStorage.getItem('ftrack-rtd_exp')).to.not.be.ok;
 
       ftrackIdSubmodule.getId(configMock, consentDataMock, null).callback(() => {});
-      return new Promise(function(resolve, reject) {
+      return new Promise(function (resolve, reject) {
         window.testTimer = function () {
           // Sinon fake server is NOT changing the readyState to 4, so instead
           // we are forcing the callback to run and just passing in the expected Object

@@ -92,7 +92,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('fetchContextData', function () {
     it('should return fetched context data', async function () {
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
         callbacks.success(mockResponse);
       });
 
@@ -110,7 +110,7 @@ describe('Mobian RTD Submodule', function () {
 
   describe('getContextData', function () {
     it('should return formatted context data', async function () {
-      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function (url, callbacks) {
         callbacks.success(mockResponse);
       });
 

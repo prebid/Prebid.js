@@ -164,7 +164,7 @@ var sizeMap = {
 _each(sizeMap, (item, key) => sizeMap[item] = key);
 
 export const converter = ortbConverter({
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const {bidRequests} = context;
     const data = buildRequest(imps, bidderRequest, context);
     data.cur = ['USD'];
@@ -204,7 +204,7 @@ export const converter = ortbConverter({
     }
     return data;
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     // skip banner-only requests
     const bidRequestType = bidType(bidRequest);
     if (bidRequestType.includes(BANNER) && bidRequestType.length == 1) return;
@@ -227,7 +227,7 @@ export const converter = ortbConverter({
 
     return imp;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
@@ -392,7 +392,7 @@ export const spec = {
     return requests;
   },
 
-  getOrderedParams: function(params) {
+  getOrderedParams: function (params) {
     const containsTgV = /^tg_v/
     const containsTgI = /^tg_i/
     const containsUId = /^eid_|^tpid_/
@@ -441,15 +441,15 @@ export const spec = {
    * @param {Object[]} aSlotUrlParams - example [{p1: 'foo', p2: 'test'}, {p2: 'test'}, {p1: 'bar', p2: 'test'}]
    * @return {Object} - example {p1: 'foo;;bar', p2: 'test'}
    */
-  combineSlotUrlParams: function(aSlotUrlParams) {
+  combineSlotUrlParams: function (aSlotUrlParams) {
     // if only have params for one slot, return those params
     if (aSlotUrlParams.length === 1) {
       return aSlotUrlParams[0];
     }
 
     // reduce param values from all slot objects into an array of values in a single object
-    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function(oCombinedParams, oSlotUrlParams, iIndex) {
-      Object.keys(oSlotUrlParams).forEach(function(param) {
+    const oCombinedSlotUrlParams = aSlotUrlParams.reduce(function (oCombinedParams, oSlotUrlParams, iIndex) {
+      Object.keys(oSlotUrlParams).forEach(function (param) {
         if (!oCombinedParams.hasOwnProperty(param)) {
           oCombinedParams[param] = new Array(aSlotUrlParams.length); // initialize array;
         }
@@ -463,7 +463,7 @@ export const spec = {
     // convert arrays into semicolon delimited strings
     const re = new RegExp('^([^;]*)(;\\1)+$'); // regex to test for duplication
 
-    Object.keys(oCombinedSlotUrlParams).forEach(function(param) {
+    Object.keys(oCombinedSlotUrlParams).forEach(function (param) {
       const sValues = oCombinedSlotUrlParams[param].join(';');
       // consolidate param values into one value if they are all the same
       const match = sValues.match(re);
@@ -478,7 +478,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @returns {Object} - object key values named and formatted as slot params
    */
-  createSlotParams: function(bidRequest, bidderRequest) {
+  createSlotParams: function (bidRequest, bidderRequest) {
     bidRequest.startTime = new Date().getTime();
 
     const params = bidRequest.params;
@@ -782,7 +782,7 @@ export const spec = {
   }
 };
 
-function _getScreenResolution() {
+function _getScreenResolution () {
   return [window.screen.width, window.screen.height].join('x');
 }
 
@@ -791,7 +791,7 @@ function _getScreenResolution() {
  * @param bidderRequest
  * @returns {string}
  */
-function _getPageUrl(bidRequest, bidderRequest) {
+function _getPageUrl (bidRequest, bidderRequest) {
   let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
@@ -801,7 +801,7 @@ function _getPageUrl(bidRequest, bidderRequest) {
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }
 
-function _renderCreative(script, impId) {
+function _renderCreative (script, impId) {
   return `<html>
 <head><script type='text/javascript'>inDapIF=true;</script></head>
 <body style='margin : 0; padding: 0;'>
@@ -813,14 +813,14 @@ function _renderCreative(script, impId) {
 </html>`;
 }
 
-function hideGoogleAdsDiv(adUnit) {
+function hideGoogleAdsDiv (adUnit) {
   const el = adUnit.querySelector("div[id^='google_ads']");
   if (el) {
     el.style.setProperty('display', 'none');
   }
 }
 
-function hideSmartAdServerIframe(adUnit) {
+function hideSmartAdServerIframe (adUnit) {
   const el = adUnit.querySelector("script[id^='sas_script']");
   const nextSibling = el && el.nextSibling;
   if (nextSibling && nextSibling.localName === 'iframe') {
@@ -828,7 +828,7 @@ function hideSmartAdServerIframe(adUnit) {
   }
 }
 
-function renderBid(bid) {
+function renderBid (bid) {
   // hide existing ad units
   const adUnitElement = document.getElementById(bid.adUnitCode);
   hideGoogleAdsDiv(adUnitElement);
@@ -860,7 +860,7 @@ function renderBid(bid) {
   });
 }
 
-function outstreamRenderer(rtbBid) {
+function outstreamRenderer (rtbBid) {
   const renderer = Renderer.install({
     id: rtbBid.adId,
     url: rubiConf.rendererUrl || DEFAULT_RENDERER_URL,
@@ -878,7 +878,7 @@ function outstreamRenderer(rtbBid) {
   return renderer;
 }
 
-function parseSizes(bid, mediaType) {
+function parseSizes (bid, mediaType) {
   let params = bid.params;
   if (mediaType === VIDEO) {
     let size = [];
@@ -910,7 +910,7 @@ function parseSizes(bid, mediaType) {
   return masSizeOrdering(sizes);
 }
 
-function applyFPD(bidRequest, mediaType, data) {
+function applyFPD (bidRequest, mediaType, data) {
   const BID_FPD = {
     user: {ext: {data: {...bidRequest.params.visitor}}},
     site: {ext: {data: {...bidRequest.params.inventory}}}
@@ -926,7 +926,7 @@ function applyFPD(bidRequest, mediaType, data) {
   const dsa = deepAccess(fpd, 'regs.ext.dsa');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6, 7]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
-  const validate = function(prop, key, parentName) {
+  const validate = function (prop, key, parentName) {
     if (key === 'data' && Array.isArray(prop)) {
       return prop.filter(name => name.segment && deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
         SEGTAX[parentName].indexOf(deepAccess(name, 'ext.segtax')) !== -1).map(value => {
@@ -946,7 +946,7 @@ function applyFPD(bidRequest, mediaType, data) {
       }).toString() : prop.toString();
     }
   };
-  const addBannerData = function(obj, name, key, isParent = true) {
+  const addBannerData = function (obj, name, key, isParent = true) {
     let val = validate(obj, key, name);
     let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
@@ -1060,7 +1060,7 @@ function applyFPD(bidRequest, mediaType, data) {
   }
 }
 
-function addDesiredSegtaxes(bidderRequest, target) {
+function addDesiredSegtaxes (bidderRequest, target) {
   if (rubiConf.readTopics === false) {
     return;
   }
@@ -1072,7 +1072,7 @@ function addDesiredSegtaxes(bidderRequest, target) {
   siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
 }
 
-function iterateOverSegmentData(target, char, segments) {
+function iterateOverSegmentData (target, char, segments) {
   return (topic) => {
     const taxonomy = Number(topic.ext?.segtax);
     if (segments.includes(taxonomy)) {
@@ -1085,7 +1085,7 @@ function iterateOverSegmentData(target, char, segments) {
  * @param sizes
  * @returns {*}
  */
-function mapSizes(sizes) {
+function mapSizes (sizes) {
   return parseSizesInput(sizes)
   // map sizes while excluding non-matches
     .reduce((result, size) => {
@@ -1103,7 +1103,7 @@ function mapSizes(sizes) {
  * @param {BidRequest} bidRequest
  * @returns {boolean}
  */
-export function classifiedAsVideo(bidRequest) {
+export function classifiedAsVideo (bidRequest) {
   let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
   let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
   let isBidOnMultiformat = typeof deepAccess(bidRequest, `params.bidonmultiformat`) !== 'undefined';
@@ -1130,7 +1130,7 @@ export function classifiedAsVideo(bidRequest) {
  * @param log boolean. whether we should log errors/warnings for invalid bids
  * @returns {string|undefined} Returns an array containing one of 'video' or 'banner' or 'native' if resolves to a type.
  */
-function bidType(bid, log = false) {
+function bidType (bid, log = false) {
   // Is it considered video ad unit by rubicon
   let bidTypes = [];
   if (classifiedAsVideo(bid)) {
@@ -1181,7 +1181,7 @@ function bidType(bid, log = false) {
 
 export const resetRubiConf = () => rubiConf = {};
 export const resetImpIdMap = () => impIdMap = {};
-export function masSizeOrdering(sizes) {
+export function masSizeOrdering (sizes) {
   const MAS_SIZE_PRIORITY = [15, 2, 9];
 
   return sizes.sort((first, second) => {
@@ -1204,7 +1204,7 @@ export function masSizeOrdering(sizes) {
   });
 }
 
-export function determineRubiconVideoSizeId(bid) {
+export function determineRubiconVideoSizeId (bid) {
   // If we have size_id in the bid then use it
   let rubiconSizeId = parseInt(deepAccess(bid, 'params.video.size_id'));
   if (!isNaN(rubiconSizeId)) {
@@ -1219,7 +1219,7 @@ export function determineRubiconVideoSizeId(bid) {
  * @param {Object} config
  * @returns {{ranges: {ranges: Object[]}}}
  */
-export function getPriceGranularity(config) {
+export function getPriceGranularity (config) {
   return {
     ranges: {
       low: [{max: 5.00, increment: 0.50}],
@@ -1241,7 +1241,7 @@ export function getPriceGranularity(config) {
 }
 
 // Function to validate the required video params
-export function hasValidVideoParams(bid) {
+export function hasValidVideoParams (bid) {
   let isValid = true;
   // incase future javascript changes the string represenation of the array or number classes!
   let arrayType = Object.prototype.toString.call([]);
@@ -1253,7 +1253,7 @@ export function hasValidVideoParams(bid) {
     linearity: numberType
   }
   // loop through each param and verify it has the correct
-  Object.keys(requiredParams).forEach(function(param) {
+  Object.keys(requiredParams).forEach(function (param) {
     if (Object.prototype.toString.call(deepAccess(bid, 'mediaTypes.video.' + param)) !== requiredParams[param]) {
       isValid = false;
       logError('Rubicon: mediaTypes.video.' + param + ' is required and must be of type: ' + requiredParams[param]);
@@ -1266,7 +1266,7 @@ export function hasValidVideoParams(bid) {
  * Make sure the required params are present
  * @param {Object} schain
  */
-export function hasValidSupplyChainParams(schain) {
+export function hasValidSupplyChainParams (schain) {
   let isValid = false;
   const requiredFields = ['asi', 'sid', 'hp'];
   if (!schain.nodes) return isValid;
@@ -1284,7 +1284,7 @@ export function hasValidSupplyChainParams(schain) {
  * @param {String} param
  * @returns {String}
  */
-export function encodeParam(key, param) {
+export function encodeParam (key, param) {
   if (key === 'rp_schain') return `rp_schain=${param}`;
   return `${key}=${encodeURIComponent(param)}`;
 }
@@ -1295,13 +1295,13 @@ export function encodeParam(key, param) {
  * @param {number} size
  * @returns {Array}
  */
-function partitionArray(array, size) {
+function partitionArray (array, size) {
   return array.map((e, i) => (i % size === 0) ? array.slice(i, i + size) : null).filter((e) => e)
 }
 
 var hasSynced = false;
 
-export function resetUserSync() {
+export function resetUserSync () {
   hasSynced = false;
 }
 
@@ -1312,7 +1312,7 @@ export function resetUserSync() {
  * @param {*} bidRequest
  * @param {*} imp
  */
-function setBidFloors(bidRequest, imp) {
+function setBidFloors (bidRequest, imp) {
   if (imp.bidfloorcur != 'USD') {
     delete imp.bidfloor;
     delete imp.bidfloorcur;
@@ -1328,7 +1328,7 @@ function setBidFloors(bidRequest, imp) {
   }
 }
 
-function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
+function addOrtbFirstPartyData (data, nonBannerRequests, ortb2) {
   let fpd = {};
   const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords))
   nonBannerRequests.forEach(bidRequest => {

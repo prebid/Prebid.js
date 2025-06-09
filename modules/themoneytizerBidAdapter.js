@@ -94,7 +94,7 @@ export const spec = {
     return s;
   },
 
-  onTimeout: function onTimeout(timeoutData) {
+  onTimeout: function onTimeout (timeoutData) {
     logInfo('The Moneytizer - Timeout from adapter', timeoutData);
   },
 };

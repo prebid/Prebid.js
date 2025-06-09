@@ -64,7 +64,7 @@ export const spec = {
   },
 };
 
-function newBidRequest(bidRequest, bidderRequest) {
+function newBidRequest (bidRequest, bidderRequest) {
   const bid = {
     adUnitCode: bidRequest.adUnitCode,
     bidId: bidRequest.bidId,

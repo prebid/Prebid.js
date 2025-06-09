@@ -10,7 +10,7 @@ import {deepAccess, getBidIdParameter, isArray, logError} from '../src/utils.js'
 const BIDDER_CODE = 'anyclip';
 const ENDPOINT = 'https://prebid.anyclip.com';
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (bid && typeof bid.params !== 'object') {
     logError('Params is not defined or is incorrect in the bidder settings');
     return false;

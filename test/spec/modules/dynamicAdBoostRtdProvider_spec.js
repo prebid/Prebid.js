@@ -1,7 +1,7 @@
 import { subModuleObj as rtdProvider } from 'modules/dynamicAdBoostRtdProvider.js';
 import { expect } from 'chai';
 
-describe('markViewed tests', function() {
+describe('markViewed tests', function () {
   let sandbox;
   const mockObserver = {
     unobserve: sinon.spy()
@@ -15,19 +15,19 @@ describe('markViewed tests', function() {
     target: makeElement('target_id')
   };
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   })
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore()
   })
 
-  it('markViewed returns a function', function() {
+  it('markViewed returns a function', function () {
     expect(rtdProvider.markViewed(mockEntry, mockObserver)).to.be.a('function')
   });
 
-  it('markViewed unobserves', function() {
+  it('markViewed unobserves', function () {
     const func = rtdProvider.markViewed(mockEntry, mockObserver);
     func();
     expect(mockObserver.unobserve.calledOnce).to.be.true;

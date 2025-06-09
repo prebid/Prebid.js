@@ -32,7 +32,7 @@ export const spec = {
    * @param {object} bid the ucfunnel bid to validate
    * @return boolean for whether or not a bid is valid
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const isVideoMediaType = (bid.mediaTypes && bid.mediaTypes.video != null);
     const videoContext = (bid.mediaTypes && bid.mediaTypes.video != null) ? bid.mediaTypes.video.videoContext : '';
 
@@ -52,7 +52,7 @@ export const spec = {
    * @param {*} bidderRequest
    * @return {ServerRequest}
    */
-  buildRequests: function(bids, bidderRequest) {
+  buildRequests: function (bids, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     bids = convertOrtbRequestToProprietaryNative(bids);
 
@@ -143,7 +143,7 @@ export const spec = {
     return [bid];
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent) {
     let gdprApplies = (gdprConsent && gdprConsent.gdprApplies) ? '1' : '';
     let apiVersion = (gdprConsent) ? gdprConsent.apiVersion : '';
     let consentString = (gdprConsent) ? gdprConsent.consentString : '';
@@ -162,7 +162,7 @@ export const spec = {
 };
 registerBidder(spec);
 
-function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent) {
+function getCookieSyncParameter (gdprApplies, apiVersion, consentString, uspConsent) {
   let param = '?';
   if (gdprApplies == '1') {
     param = param + 'gdpr=1&';
@@ -178,7 +178,7 @@ function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConse
   return (param == '?') ? '' : param;
 }
 
-function parseSizes(bid) {
+function parseSizes (bid) {
   let params = bid.params;
   if (bid.mediaType === VIDEO) {
     let size = [];
@@ -193,7 +193,7 @@ function parseSizes(bid) {
   return bid.sizes;
 }
 
-function getSupplyChain(schain) {
+function getSupplyChain (schain) {
   var supplyChain = '';
   if (schain != null && schain.nodes) {
     supplyChain = schain.ver + ',' + schain.complete;
@@ -215,7 +215,7 @@ function getSupplyChain(schain) {
   return supplyChain;
 }
 
-function getMediaType(mediaTypes) {
+function getMediaType (mediaTypes) {
   if (mediaTypes != null && mediaTypes.banner) {
     return 'banner';
   } else if (mediaTypes != null && mediaTypes.video) {
@@ -226,7 +226,7 @@ function getMediaType(mediaTypes) {
   return 'banner';
 }
 
-function getFloor(bid, size, mediaTypes) {
+function getFloor (bid, size, mediaTypes) {
   if (bid.params.bidfloor) {
     return bid.params.bidfloor;
   }
@@ -234,7 +234,7 @@ function getFloor(bid, size, mediaTypes) {
     var bidFloor = bid.getFloor({
       currency: CURRENCY,
       mediaType: getMediaType(mediaTypes),
-      size: (size) ? [ size[0], size[1] ] : '*',
+      size: (size) ? [size[0], size[1]] : '*',
     });
     if (bidFloor?.currency === CURRENCY) {
       return bidFloor.floor;
@@ -243,13 +243,13 @@ function getFloor(bid, size, mediaTypes) {
   return undefined;
 }
 
-function addBidData(bidData, key, value) {
+function addBidData (bidData, key, value) {
   if (value) {
     bidData[key] = value;
   }
 }
 
-function getFormat(size) {
+function getFormat (size) {
   let formatList = []
   for (var i = 0; i < size.length; i++) {
     formatList.push(size[i].join(','));
@@ -257,7 +257,7 @@ function getFormat(size) {
   return (formatList.length > 0) ? formatList.join(';') : '';
 }
 
-function getRequestData(bid, bidderRequest) {
+function getRequestData (bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
@@ -338,7 +338,7 @@ function getRequestData(bid, bidderRequest) {
   return bidData;
 }
 
-function addUserId(bidData, userId) {
+function addUserId (bidData, userId) {
   bidData['eids'] = '';
   _each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {

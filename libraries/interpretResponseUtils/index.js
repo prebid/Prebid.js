@@ -1,6 +1,6 @@
 import {logError} from '../../src/utils.js';
 
-export function interpretResponseUtil(serverResponse, {bidderRequest}, eachBidCallback) {
+export function interpretResponseUtil (serverResponse, {bidderRequest}, eachBidCallback) {
   const bids = [];
   if (!serverResponse.body || serverResponse.body.error) {
     let errorMessage = `in response for ${bidderRequest.bidderCode} adapter`;

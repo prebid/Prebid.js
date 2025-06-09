@@ -25,7 +25,7 @@ const SESSION_COOKIE_NAME = '_svsid';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-function getSession(configParams) {
+function getSession (configParams) {
   let session = null;
   if (typeof configParams.sv_session === 'string') {
     session = configParams.sv_session;
@@ -35,20 +35,20 @@ function getSession(configParams) {
   return session;
 }
 
-function setCookie(name, value, expires) {
+function setCookie (name, value, expires) {
   let expTime = new Date();
   expTime.setTime(expTime.getTime() + expires * 1000 * 60);
   storage.setCookie(name, value, expTime.toUTCString(), 'Lax');
 }
 
-function setSession(storage, response) {
+function setSession (storage, response) {
   logInfo('Merkle setting ' + `${SESSION_COOKIE_NAME}`);
   if (response && response[SESSION_COOKIE_NAME] && typeof response[SESSION_COOKIE_NAME] === 'string') {
     setCookie(SESSION_COOKIE_NAME, response[SESSION_COOKIE_NAME], storage.expires);
   }
 }
 
-function constructUrl(configParams) {
+function constructUrl (configParams) {
   const session = getSession(configParams);
   let url = configParams.endpoint + `?sv_domain=${configParams.sv_domain}&sv_pubid=${configParams.sv_pubid}&ssp_ids=${configParams.ssp_ids.join()}`;
   if (session) {
@@ -58,7 +58,7 @@ function constructUrl(configParams) {
   return url;
 }
 
-function generateId(configParams, configStorage) {
+function generateId (configParams, configStorage) {
   const url = constructUrl(configParams);
 
   const resp = function (callback) {
@@ -105,7 +105,7 @@ export const merkleIdSubmodule = {
    * @param {string} value
    * @returns {{eids:Array}}
    */
-  decode(value) {
+  decode (value) {
     // Legacy support for a single id
     const id = (value && value.pam_id && typeof value.pam_id.id === 'string') ? value.pam_id : undefined;
     logInfo('Merkle id ' + JSON.stringify(id));
@@ -128,7 +128,7 @@ export const merkleIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     logInfo('User ID - merkleId generating id');
 
     const configParams = (config && config.params) || {};
@@ -207,16 +207,16 @@ export const merkleIdSubmodule = {
   eids: {
     'merkleId': {
       atype: 3,
-      getSource: function(data) {
+      getSource: function (data) {
         if (data?.ext?.ssp) {
           return `${data.ext.ssp}.merkleinc.com`
         }
         return 'merkleinc.com'
       },
-      getValue: function(data) {
+      getValue: function (data) {
         return data.id;
       },
-      getUidExt: function(data) {
+      getUidExt: function (data) {
         if (data.keyID) {
           return {
             keyID: data.keyID

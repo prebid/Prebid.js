@@ -295,13 +295,13 @@ describe('buzzoolaBidAdapter', () => {
     const noBidServerResponse = [];
     const emptyResponse = '';
 
-    function nobidServerResponseCheck(request, response = noBidServerResponse) {
+    function nobidServerResponseCheck (request, response = noBidServerResponse) {
       const noBidResult = spec.interpretResponse({body: response}, {data: request});
 
       expect(noBidResult.length).to.equal(0);
     }
 
-    function bidServerResponseCheck(response, request, fields) {
+    function bidServerResponseCheck (response, request, fields) {
       const result = spec.interpretResponse({body: response}, {data: request});
 
       expect(result).to.deep.equal(response);

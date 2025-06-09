@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/responsiveAdsBidAdapter.js';
 import * as utils from 'src/utils.js';
 
-describe('responsiveAdsBidAdapter', function() {
+describe('responsiveAdsBidAdapter', function () {
   let bidRequests;
   let bidderRequest;
   let sandbox;
@@ -37,8 +37,8 @@ describe('responsiveAdsBidAdapter', function() {
     sandbox.restore();
   });
 
-  describe('Check if bid is valid', function() {
-    it('Should accept valid bid', function() {
+  describe('Check if bid is valid', function () {
+    it('Should accept valid bid', function () {
       const validBid = {
         bidder: 'responsiveads',
         params: {},
@@ -48,7 +48,7 @@ describe('responsiveAdsBidAdapter', function() {
       expect(isValid).to.equal(true);
     });
 
-    it('Should not reject bid if missing placementId', function() {
+    it('Should not reject bid if missing placementId', function () {
       const validBid = {
         bidder: 'responsiveads',
         params: {}
@@ -60,7 +60,7 @@ describe('responsiveAdsBidAdapter', function() {
   });
 
   describe('Build requests', function () {
-    it('Should not bit on safeframe', function() {
+    it('Should not bit on safeframe', function () {
       utils.isSafeFrameWindow.restore();
       sandbox.stub(utils, 'isSafeFrameWindow').returns(true);
 
@@ -76,7 +76,7 @@ describe('responsiveAdsBidAdapter', function() {
       expect(requests).to.be.null;
     });
 
-    it('Should use POST and have URL', function() {
+    it('Should use POST and have URL', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
 
       expect(request.method).to.exist;
@@ -84,14 +84,14 @@ describe('responsiveAdsBidAdapter', function() {
       expect(request.url).to.exist;
     });
 
-    it('Should add adapter version', function() {
+    it('Should add adapter version', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.ext.prebid.adapterVersion).to.exist;
     });
   });
 
-  describe('Handling responses', function() {
-    it('Should return complete bid response', function() {
+  describe('Handling responses', function () {
+    it('Should return complete bid response', function () {
       const serverResponse = {
         body: {
           id: 'response-id',

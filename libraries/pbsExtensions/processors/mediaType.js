@@ -11,7 +11,7 @@ export const SUPPORTED_MEDIA_TYPES = {
 /**
  * Sets bidResponse.mediaType, using ORTB 2.6 `seatbid.bid[].mtype`, falling back to `ext.prebid.type`, falling back to 'banner'.
  */
-export function extPrebidMediaType(bidResponse, bid, context) {
+export function extPrebidMediaType (bidResponse, bid, context) {
   let mediaType = context.mediaType;
   if (!mediaType) {
     mediaType = ORTB_MTYPES.hasOwnProperty(bid.mtype) ? ORTB_MTYPES[bid.mtype] : bid.ext?.prebid?.type

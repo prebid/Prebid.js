@@ -168,7 +168,7 @@ export const id5IdSubmodule = {
    * @param {SubmoduleConfig|undefined} config
    * @returns {(Object|undefined)}
    */
-  decode(value, config) {
+  decode (value, config) {
     if (value && value.ids !== undefined) {
       const responseObj = {};
       const eids = {};
@@ -250,7 +250,7 @@ export const id5IdSubmodule = {
    * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
-  getId(submoduleConfig, consentData, cacheIdObj) {
+  getId (submoduleConfig, consentData, cacheIdObj) {
     if (!validateConfig(submoduleConfig)) {
       return undefined;
     }
@@ -285,7 +285,7 @@ export const id5IdSubmodule = {
    * @param {Object} cacheIdObj - existing id, if any
    * @return {IdResponse} A response object that contains id.
    */
-  extendId(config, consentData, cacheIdObj) {
+  extendId (config, consentData, cacheIdObj) {
     if (!hasWriteConsentToLocalStorage(consentData?.gdpr)) {
       logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.');
       return cacheIdObj;
@@ -299,13 +299,13 @@ export const id5IdSubmodule = {
   },
   primaryIds: ['id5id', 'trueLinkId'],
   eids: DEFAULT_EIDS,
-  _reset() {
+  _reset () {
     this.eids = DEFAULT_EIDS;
   }
 };
 
 export class IdFetchFlow {
-  constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData, gppData) {
+  constructor (submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData, gppData) {
     this.submoduleConfig = submoduleConfig;
     this.gdprConsentData = gdprConsentData;
     this.cacheIdObj = cacheIdObj;
@@ -317,7 +317,7 @@ export class IdFetchFlow {
    * Calls the ID5 Servers to fetch an ID5 ID
    * @returns {Promise<IdResponse>} The result of calling the server side
    */
-  async execute() {
+  async execute () {
     const configCallPromise = this.#callForConfig();
     if (this.#isExternalModule()) {
       try {
@@ -331,29 +331,29 @@ export class IdFetchFlow {
     }
   }
 
-  #isExternalModule() {
+  #isExternalModule () {
     return typeof this.submoduleConfig.params.externalModuleUrl === 'string';
   }
 
-  async #externalModuleFlow(configCallPromise) {
+  async #externalModuleFlow (configCallPromise) {
     await loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
     const fetchFlowConfig = await configCallPromise;
 
     return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData, this.gppData);
   }
 
-  #getExternalIntegration() {
+  #getExternalIntegration () {
     return window.id5Prebid && window.id5Prebid.integration;
   }
 
-  async #regularFlow(configCallPromise) {
+  async #regularFlow (configCallPromise) {
     const fetchFlowConfig = await configCallPromise;
     const extensionsData = await this.#callForExtensions(fetchFlowConfig.extensionsCall);
     const fetchCallResponse = await this.#callId5Fetch(fetchFlowConfig.fetchCall, extensionsData);
     return this.#processFetchCallResponse(fetchCallResponse);
   }
 
-  async #callForConfig() {
+  async #callForConfig () {
     let url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
     const response = await fetch(url, {
       method: 'POST',
@@ -371,7 +371,7 @@ export class IdFetchFlow {
     return dynamicConfig;
   }
 
-  async #callForExtensions(extensionsCallConfig) {
+  async #callForExtensions (extensionsCallConfig) {
     if (extensionsCallConfig === undefined) {
       return undefined;
     }
@@ -387,7 +387,7 @@ export class IdFetchFlow {
     return extensions;
   }
 
-  async #callId5Fetch(fetchCallConfig, extensionsData) {
+  async #callId5Fetch (fetchCallConfig, extensionsData) {
     const fetchUrl = fetchCallConfig.url;
     const additionalData = fetchCallConfig.overrides || {};
     const body = JSON.stringify({
@@ -404,7 +404,7 @@ export class IdFetchFlow {
     return fetchResponse;
   }
 
-  #createFetchRequestData() {
+  #createFetchRequestData () {
     const params = this.submoduleConfig.params;
     const hasGdpr = (this.gdprConsentData && typeof this.gdprConsentData.gdprApplies === 'boolean' && this.gdprConsentData.gdprApplies) ? 1 : 0;
     const referer = getRefererInfo();
@@ -459,7 +459,7 @@ export class IdFetchFlow {
     return data;
   }
 
-  #processFetchCallResponse(fetchCallResponse) {
+  #processFetchCallResponse (fetchCallResponse) {
     try {
       if (fetchCallResponse.privacy) {
         if (window.id5Bootstrap && window.id5Bootstrap.setPrivacy) {
@@ -473,7 +473,7 @@ export class IdFetchFlow {
   }
 }
 
-async function loadExternalModule(url) {
+async function loadExternalModule (url) {
   return new PbPromise((resolve, reject) => {
     if (window.id5Prebid) {
       // Already loaded
@@ -488,7 +488,7 @@ async function loadExternalModule(url) {
   });
 }
 
-function validateConfig(config) {
+function validateConfig (config) {
   if (!config || !config.params || !config.params.partner) {
     logError(LOG_PREFIX + 'partner required to be defined');
     return false;
@@ -519,7 +519,7 @@ function validateConfig(config) {
   return true;
 }
 
-function incrementNb(cachedObj) {
+function incrementNb (cachedObj) {
   if (cachedObj && cachedObj.nbPage !== undefined) {
     return cachedObj.nbPage + 1;
   } else {
@@ -532,7 +532,7 @@ function incrementNb(cachedObj) {
  * @param {ConsentData} consentData
  * @returns {boolean}
  */
-function hasWriteConsentToLocalStorage(consentData) {
+function hasWriteConsentToLocalStorage (consentData) {
   const hasGdpr = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
   const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`);
   const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`);

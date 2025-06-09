@@ -23,7 +23,7 @@ describe('imRtdProvider', function () {
       }
     ]
   };
-  const onDone = function() { return true };
+  const onDone = function () { return true };
   const moduleConfig = {
     params: {
       cid: 5126,
@@ -110,7 +110,7 @@ describe('imRtdProvider', function () {
       const config = {
         params: {
           overwrites: {
-            testBidder: function() {
+            testBidder: function () {
               return 'testString';
             }
           }
@@ -145,7 +145,7 @@ describe('imRtdProvider', function () {
       const config = {
         params: {
           overwrites: {
-            testBidder: function() { return true }
+            testBidder: function () { return true }
           }
         }
       };
@@ -155,7 +155,7 @@ describe('imRtdProvider', function () {
 
   describe('getRealTimeData', function () {
     it('should initalise and return when empty params', function () {
-      expect(getRealTimeData({}, function() {}, {})).to.equal(undefined)
+      expect(getRealTimeData({}, function () {}, {})).to.equal(undefined)
     });
 
     it('should initalise and return with config', function () {

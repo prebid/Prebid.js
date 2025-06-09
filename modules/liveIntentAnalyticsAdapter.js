@@ -18,7 +18,7 @@ let partnerIdFromUserIdConfig;
 let sendAuctionInitEvents;
 
 let liAnalytics = Object.assign(adapter({URL, ANALYTICS_TYPE}), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         if (sendAuctionInitEvents) {
@@ -32,7 +32,7 @@ let liAnalytics = Object.assign(adapter({URL, ANALYTICS_TYPE}), {
   }
 });
 
-function handleAuctionInitEvent(auctionInitEvent) {
+function handleAuctionInitEvent (auctionInitEvent) {
   const liveIntentIdsPresent = checkLiveIntentIdsPresent(auctionInitEvent.bidderRequests)
 
   // This is for old integration that enable or disable the user id module
@@ -55,7 +55,7 @@ function handleAuctionInitEvent(auctionInitEvent) {
   sendData('auction-init', filteredData);
 }
 
-function handleBidWonEvent(bidWonEvent) {
+function handleBidWonEvent (bidWonEvent) {
   const auction = auctionManager.index.getAuction({auctionId: bidWonEvent.auctionId});
   const liveIntentIdsPresent = checkLiveIntentIdsPresent(auction?.getBidRequests())
 
@@ -87,16 +87,16 @@ function handleBidWonEvent(bidWonEvent) {
   sendData('bid-won', filteredData);
 }
 
-function encodeBoolean(value) {
+function encodeBoolean (value) {
   return value === undefined ? undefined : value ? 'y' : 'n'
 }
 
-function checkLiveIntentIdsPresent(bidRequests) {
+function checkLiveIntentIdsPresent (bidRequests) {
   const eids = bidRequests?.flatMap(r => r?.bids).flatMap(b => b?.userIdAsEids);
   return !!eids.find(eid => eid?.source === 'liveintent.com') || !!eids.flatMap(e => e?.uids).find(u => u?.ext?.provider === 'liveintent.com')
 }
 
-function sendData(path, data) {
+function sendData (path, data) {
   const fields = Object.entries(data);
   if (fields.length > 0) {
     const params = fields.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&');
@@ -104,7 +104,7 @@ function sendData(path, data) {
   }
 }
 
-function ignoreUndefined(data) {
+function ignoreUndefined (data) {
   const filteredData = Object.entries(data).filter(([key, value]) => isNumber(value) || value);
   return Object.fromEntries(filteredData);
 }

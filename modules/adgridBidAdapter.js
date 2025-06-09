@@ -31,7 +31,7 @@ export const STORAGE = getStorageManager({
  * Get the agdridId from local storage
  * @return {object | false } false if localstorageNotEnabled
  */
-export function getLocalStorage() {
+export function getLocalStorage () {
   if (!STORAGE.localStorageIsEnabled()) {
     logInfo(`localstorage not enabled for Adgrid`);
     return false;
@@ -54,14 +54,14 @@ const converter = ortbConverter({
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
     ttl: 90, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     imp = enrichImp(imp, bidRequest);
     if (bidRequest.params.domainId) deepSetValue(imp, 'ext.adgrid.domainId', bidRequest.params.domainId);
     if (bidRequest.params.placement) deepSetValue(imp, 'ext.adgrid.placement', bidRequest.params.placement);
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     let request = buildRequest(imps, bidderRequest, context);
     const amxId = getAmxId(STORAGE, BIDDER_CODE);
     request = enrichRequest(request, amxId, bidderRequest, PAGE_VIEW_ID, BIDDER_VERSION);
@@ -75,7 +75,7 @@ const converter = ortbConverter({
  * @param {BidRequest} bid The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (!bid || !bid.params) return false;
   if (typeof bid.params.domainId !== 'number') return false;
   if (typeof bid.params.placement !== 'string') return false;
@@ -87,7 +87,7 @@ function isBidRequestValid(bid) {
  *
  * @return ServerRequest Info describing the request to the server.
  */
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   const data = converter.toORTB({ bidRequests, bidderRequest })
   return {
     method: 'POST',
@@ -102,7 +102,7 @@ function buildRequests(bidRequests, bidderRequest) {
  * @param {ServerResponse} serverResponse A successful response from the server.
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
-function interpretResponse(serverResponse) {
+function interpretResponse (serverResponse) {
   const respBody = serverResponse.body;
   if (!respBody || !Array.isArray(respBody.seatbid)) {
     return [];

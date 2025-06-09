@@ -42,7 +42,7 @@ let _moduleParams = {};
  * and send response to reconciliation ad tag
  * @param {Event} e
  */
-function handleAdMessage(e) {
+function handleAdMessage (e) {
   let data = {};
   let adUnitId = '';
   let adDeliveryId = '';
@@ -116,7 +116,7 @@ function handleAdMessage(e) {
  * @param {Window} win nested iframe window object
  * @param {Window} topWin top window
  */
-export function getTopIFrameWin(win, topWin) {
+export function getTopIFrameWin (win, topWin) {
   topWin = topWin || window;
 
   if (!win) {
@@ -137,7 +137,7 @@ export function getTopIFrameWin(win, topWin) {
  * get all slots on page
  * @return {Object[]} slot GoogleTag slots
  */
-function getAllSlots() {
+function getAllSlots () {
   return isGptPubadsDefined() && window.googletag.pubads().getSlots();
 }
 
@@ -146,7 +146,7 @@ function getAllSlots() {
  * @param {string} code placement id
  * @return {?Object}
  */
-function getSlotByCode(code) {
+function getSlotByCode (code) {
   const slots = getAllSlots();
   if (!slots || !slots.length) {
     return null;
@@ -164,7 +164,7 @@ function getSlotByCode(code) {
  * @param {Window} win
  * @return {?Object}
  */
-export function getSlotByWin(win) {
+export function getSlotByWin (win) {
   const slots = getAllSlots();
 
   if (!slots || !slots.length) {
@@ -192,7 +192,7 @@ export function getSlotByWin(win) {
  * Init Reconciliation post messages listeners to handle
  * impressions messages from ad creative
  */
-function initListeners() {
+function initListeners () {
   window.addEventListener('message', handleAdMessage, false);
 }
 
@@ -200,7 +200,7 @@ function initListeners() {
  * Send init event to log
  * @param {Array} adUnits
  */
-function trackInit(adUnits) {
+function trackInit (adUnits) {
   track.trackPost(
     _moduleParams.initUrl,
     {
@@ -218,12 +218,12 @@ function trackInit(adUnits) {
  * @param {Object} data
  */
 export const track = {
-  trackPost(url, data) {
+  trackPost (url, data) {
     const ajax = ajaxBuilder();
 
     ajax(
       url,
-      function() {},
+      function () {},
       JSON.stringify(data),
       {
         method: 'POST',
@@ -237,7 +237,7 @@ export const track = {
  * @param {string[]} adUnitsCodes
  * @return {Object} key-value object with custom targetings
  */
-function getReconciliationData(adUnitsCodes) {
+function getReconciliationData (adUnitsCodes) {
   const dataToReturn = {};
   const adUnitsToTrack = [];
 
@@ -283,7 +283,7 @@ export const reconciliationSubmodule = {
   init: init,
 };
 
-function init(moduleConfig) {
+function init (moduleConfig) {
   const params = moduleConfig.params;
   if (params && params.publisherMemberId) {
     _moduleParams = Object.assign({}, DEFAULT_PARAMS, params);

@@ -93,7 +93,7 @@ describe('SharedId System', function () {
     afterEach(() => {
       config.resetConfig();
     });
-    it('pubCommonId', function() {
+    it('pubCommonId', function () {
       const userId = {
         pubcid: 'some-random-id-value'
       };

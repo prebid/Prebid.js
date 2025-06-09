@@ -51,7 +51,7 @@ class NodalsAiRtdProvider {
    * @param {Object} config - Configuration object for the module.
    * @param {Object} userConsent - User consent object for GDPR or other purposes.
    */
-  init(config, userConsent) {
+  init (config, userConsent) {
     const params = config?.params || {};
     if (
       this.#isValidConfig(params) &&
@@ -80,7 +80,7 @@ class NodalsAiRtdProvider {
    * @param {Object} userConsent - User consent object.
    * @returns {Object} - Targeting data.
    */
-  getTargetingData(adUnitArray, config, userConsent) {
+  getTargetingData (adUnitArray, config, userConsent) {
     let targetingData = {};
     if (!this.#hasRequiredUserConsent(userConsent)) {
       return targetingData;
@@ -103,7 +103,7 @@ class NodalsAiRtdProvider {
     return targetingData;
   }
 
-  getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+  getBidRequestData (reqBidsConfigObj, callback, config, userConsent) {
     if (!this.#hasRequiredUserConsent(userConsent)) {
       callback();
       return;
@@ -132,7 +132,7 @@ class NodalsAiRtdProvider {
     }
   }
 
-  onBidResponseEvent(bidResponse, config, userConsent) {
+  onBidResponseEvent (bidResponse, config, userConsent) {
     if (!this.#hasRequiredUserConsent(userConsent)) {
       return;
     }
@@ -153,7 +153,7 @@ class NodalsAiRtdProvider {
     }
   }
 
-  onAuctionEndEvent(auctionDetails, config, userConsent) {
+  onAuctionEndEvent (auctionDetails, config, userConsent) {
     if (!this.#hasRequiredUserConsent(userConsent)) {
       return;
     }
@@ -175,7 +175,7 @@ class NodalsAiRtdProvider {
   }
 
   // Private methods
-  #getData() {
+  #getData () {
     const storedData = this.#readFromStorage();
     if (storedData === null) {
       this.#fetchData();
@@ -188,7 +188,7 @@ class NodalsAiRtdProvider {
     return storedData;
   }
 
-  #initialiseEngine(config) {
+  #initialiseEngine (config) {
     const engine = this.#getEngine();
     if (!engine) {
       logInfo(`Engine v${ENGINE_VESION} not found`);
@@ -203,11 +203,11 @@ class NodalsAiRtdProvider {
     }
   }
 
-  #getEngine() {
+  #getEngine () {
     return window?.$nodals?.adTargetingEngine[ENGINE_VESION];
   }
 
-  #setOverrides(params) {
+  #setOverrides (params) {
     if (params?.storage?.ttl && typeof params.storage.ttl === 'number') {
       this.#overrides.storageTTL = params.storage.ttl;
     }
@@ -215,7 +215,7 @@ class NodalsAiRtdProvider {
     this.#overrides.endpointOrigin = params?.endpoint?.origin;
   }
 
-  #getRuntimeFacts() {
+  #getRuntimeFacts () {
     return {
       'page.url': getRefererInfo().page,
       'prebid.version': '$prebid.version$',
@@ -228,7 +228,7 @@ class NodalsAiRtdProvider {
    * @returns {boolean} - True if parameters are valid, false otherwise.
    */
 
-  #isValidConfig(params) {
+  #isValidConfig (params) {
     // Basic validation logic
     if (typeof params === 'object' && params?.propertyId) {
       return true;
@@ -243,7 +243,7 @@ class NodalsAiRtdProvider {
    * @returns {boolean} - True if the user consent is valid, false otherwise.
    */
 
-  #hasRequiredUserConsent(userConsent) {
+  #hasRequiredUserConsent (userConsent) {
     if (userConsent.gdpr === undefined || userConsent.gdpr?.gdprApplies === false) {
       return true;
     }
@@ -259,7 +259,7 @@ class NodalsAiRtdProvider {
     return true;
   }
 
-  #readFromStorage() {
+  #readFromStorage () {
     const key = this.#overrides?.storageKey || this.STORAGE_KEY;
     if (
       this.storage.hasLocalStorage() &&
@@ -295,7 +295,7 @@ class NodalsAiRtdProvider {
    * @param {Object} data - The data to store.
    */
 
-  #writeToStorage(key, data) {
+  #writeToStorage (key, data) {
     if (
       this.storage.hasLocalStorage() &&
       this.storage.localStorageIsEnabled()
@@ -316,14 +316,14 @@ class NodalsAiRtdProvider {
    * @returns {boolean} - True if the data is stale, false otherwise.
    */
 
-  #dataIsStale(dataEnvelope) {
+  #dataIsStale (dataEnvelope) {
     const currentTime = Date.now();
     const dataTime = dataEnvelope.createdAt || 0;
     const staleThreshold = this.#overrides?.storageTTL ?? dataEnvelope?.data?.meta?.ttl ?? STORAGE_TTL;
     return currentTime - dataTime >= (staleThreshold * 1000);
   }
 
-  #getEndpointUrl(userConsent) {
+  #getEndpointUrl (userConsent) {
     const endpointOrigin =
       this.#overrides.endpointOrigin || PUB_ENDPOINT_ORIGIN;
     const parameterMap = {
@@ -349,7 +349,7 @@ class NodalsAiRtdProvider {
    * Initiates the request to fetch rule data from the publisher endpoint.
    */
 
-  #fetchData() {
+  #fetchData () {
     if (this.#dataFetchInProgress) {
       return;
     }
@@ -375,7 +375,7 @@ class NodalsAiRtdProvider {
     ajax(endpointUrl, callback, null, options);
   }
 
-  #addToCommandQueue(cmd, payload) {
+  #addToCommandQueue (cmd, payload) {
     window.$nodals = window.$nodals || {};
     window.$nodals.cmdQueue = window.$nodals.cmdQueue || [];
     window.$nodals.cmdQueue.push({ cmd, runtimeFacts: this.#getRuntimeFacts(), data: payload });
@@ -387,7 +387,7 @@ class NodalsAiRtdProvider {
    * @returns {Object} - Processed data from the response.
    */
 
-  #handleServerResponse(response, req) {
+  #handleServerResponse (response, req) {
     let data;
     try {
       data = JSON.parse(response);
@@ -398,11 +398,11 @@ class NodalsAiRtdProvider {
     this.#loadAdLibraries(data.deps || []);
   }
 
-  #handleServerError(error, req) {
+  #handleServerError (error, req) {
     logError(`Publisher endpoint response error: ${error}`);
   }
 
-  #loadAdLibraries(deps) {
+  #loadAdLibraries (deps) {
     // eslint-disable-next-line no-unused-vars
     for (const [key, value] of Object.entries(deps)) {
       if (typeof value === 'string') {

@@ -46,7 +46,7 @@ describe('cross-domain creative', () => {
     renderAd = (...args) => renderer(win)(...args);
   })
 
-  function waitFor(predicate, timeout = 1000) {
+  function waitFor (predicate, timeout = 1000) {
     let timedOut = false;
     return new Promise((resolve, reject) => {
       let to = setTimeout(() => {
@@ -54,7 +54,7 @@ describe('cross-domain creative', () => {
         reject(new Error('timeout'))
       }, timeout)
       resolve = (orig => () => { clearTimeout(to); orig() })(resolve);
-      function check() {
+      function check () {
         if (!timedOut) {
           setTimeout(() => {
             if (predicate()) {
@@ -108,7 +108,7 @@ describe('cross-domain creative', () => {
     })
     it('posts to first restricted parent, if __pb_locator__ cannot be found', () => {
       Object.defineProperty(win.parent.parent.parent, 'frames', {
-        get() {
+        get () {
           throw new DOMException();
         }
       });
@@ -139,7 +139,7 @@ describe('cross-domain creative', () => {
   })
 
   describe('listens and', () => {
-    function reply(msg, index = 0) {
+    function reply (msg, index = 0) {
       messages[index].transfer[0].postMessage(JSON.stringify(msg));
     }
 

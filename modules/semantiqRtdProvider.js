@@ -85,7 +85,7 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
   const requestUrl = `${KEYWORDS_URL}?${searchParams.toString()}`;
 
   const callbacks = {
-    success(responseText, response) {
+    success (responseText, response) {
       try {
         if (response.status !== 200) {
           throw new Error('Invalid response status');
@@ -103,7 +103,7 @@ const getKeywords = (params) => new Promise((resolve, reject) => {
         reject(error);
       }
     },
-    error(error) {
+    error (error) {
       reject(error);
     }
   }

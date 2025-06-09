@@ -80,7 +80,7 @@ export const spec = {
   },
 };
 
-function bidResponseAvailable(bidRequest, bidResponse) {
+function bidResponseAvailable (bidRequest, bidResponse) {
   const idToImpMap = {};
   const idToBidMap = {};
   if (!bidResponse['body']) {
@@ -128,7 +128,7 @@ function bidResponseAvailable(bidRequest, bidResponse) {
   return bids;
 }
 
-function impression(slot) {
+function impression (slot) {
   let bidFloorFromModule
   if (typeof slot.getFloor === 'function') {
     const floorInfo = slot.getFloor({
@@ -153,7 +153,7 @@ function impression(slot) {
   return imp
 }
 
-function nativeImpression(slot) {
+function nativeImpression (slot) {
   if (slot.nativeParams) {
     const assets = [];
     addAsset(
@@ -195,13 +195,13 @@ function nativeImpression(slot) {
   return null;
 }
 
-function addAsset(assets, asset) {
+function addAsset (assets, asset) {
   if (asset) {
     assets.push(asset);
   }
 }
 
-function titleAsset(id, params, defaultLen) {
+function titleAsset (id, params, defaultLen) {
   if (params) {
     return {
       id,
@@ -214,7 +214,7 @@ function titleAsset(id, params, defaultLen) {
   return null;
 }
 
-function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
+function imageAsset (id, params, type, defaultMinWidth, defaultMinHeight) {
   return params
     ? {
       id,
@@ -228,7 +228,7 @@ function imageAsset(id, params, type, defaultMinWidth, defaultMinHeight) {
     : null;
 }
 
-function dataAsset(id, params, type, defaultLen) {
+function dataAsset (id, params, type, defaultLen) {
   return params
     ? {
       id,
@@ -241,7 +241,7 @@ function dataAsset(id, params, type, defaultLen) {
     : null;
 }
 
-function bannerImpression(slot) {
+function bannerImpression (slot) {
   var sizes = slot.mediaTypes.banner.sizes || slot.sizes;
   return {
     format: sizes.map((s) => ({ w: s[0], h: s[1] })),
@@ -250,7 +250,7 @@ function bannerImpression(slot) {
   }
 }
 
-function site(bidRequests, bidderRequest) {
+function site (bidRequests, bidderRequest) {
   const pubId =
     bidRequests && bidRequests.length > 0
       ? bidRequests[0].params.publisherId
@@ -272,7 +272,7 @@ function site(bidRequests, bidderRequest) {
   return undefined;
 }
 
-function app(bidderRequest) {
+function app (bidderRequest) {
   const pubId =
     bidderRequest && bidderRequest.length > 0
       ? bidderRequest[0].params.publisherId
@@ -291,17 +291,17 @@ function app(bidderRequest) {
   return undefined;
 }
 
-function isMobile() {
+function isMobile () {
   return /(ios|ipod|ipad|iphone|android)/i.test(global.navigator.userAgent);
 }
 
-function isConnectedTV() {
+function isConnectedTV () {
   return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(
     global.navigator.userAgent
   );
 }
 
-function device() {
+function device () {
   return {
     ua: navigator.userAgent,
     language:
@@ -313,7 +313,7 @@ function device() {
   };
 }
 
-function parse(rawResponse) {
+function parse (rawResponse) {
   try {
     if (rawResponse) {
       if (typeof rawResponse === 'object') {
@@ -328,7 +328,7 @@ function parse(rawResponse) {
   return null;
 }
 
-function nativeResponse(imp, bid) {
+function nativeResponse (imp, bid) {
   if (imp && imp['native']) {
     const nativeAd = parse(bid.adm);
     const keys = {};

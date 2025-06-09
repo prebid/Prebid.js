@@ -18,7 +18,7 @@ export const BIDDER_ENDPOINT_URL = 'https://d5p.de17a.com/dogfight/prebid';
 export const USERSYNC_URL = 'https://userservice.de17a.com/getuid/prebid';
 
 /** -- isBidRequestValid -- */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (!bid) return false;
 
   if (bid.bidder !== BIDDER_CODE) return false;
@@ -34,7 +34,7 @@ function isBidRequestValid(bid) {
 }
 
 /** -- Build requests -- */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   /** == shared == */
   // -- build id
   const id = bidderRequest.bidderRequestId;
@@ -85,7 +85,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 }
 
-function buildOpenRTBRequest(validBidRequest, bidderRequest, id, site, device, user, tmax, regs) {
+function buildOpenRTBRequest (validBidRequest, bidderRequest, id, site, device, user, tmax, regs) {
   // build cur
   const currency = getCurrencyFromBidderRequest(bidderRequest) || deepAccess(validBidRequest, 'params.currency');
   const cur = currency && [currency];
@@ -120,7 +120,7 @@ function buildOpenRTBRequest(validBidRequest, bidderRequest, id, site, device, u
   };
 }
 
-function buildImpression(bid, currency) {
+function buildImpression (bid, currency) {
   const impression = {
     id: bid.bidId,
     tagid: bid.params.tagId,
@@ -140,7 +140,7 @@ function buildImpression(bid, currency) {
   return impression;
 }
 
-function buildImpressionBanner(bid, bannerMediaType) {
+function buildImpressionBanner (bid, bannerMediaType) {
   const bannerSizes = (bannerMediaType && bannerMediaType.sizes) || bid.sizes;
   return {
     format: _map(bannerSizes, ([width, height]) => ({ w: width, h: height })),
@@ -148,7 +148,7 @@ function buildImpressionBanner(bid, bannerMediaType) {
 }
 
 /** -- Interpret response -- */
-function interpretResponse(serverResponse) {
+function interpretResponse (serverResponse) {
   if (!serverResponse.body) {
     logWarn('Response body is invalid, return !!');
     return [];
@@ -191,7 +191,7 @@ function interpretResponse(serverResponse) {
 }
 
 /** -- On Bid Won -- */
-function onBidWon(bid) {
+function onBidWon (bid) {
   let cpm = bid.cpm;
   if (bid.currency && bid.currency !== bid.originalCurrency && typeof bid.getCpmInNewCurrency === 'function') {
     cpm = bid.getCpmInNewCurrency(bid.originalCurrency);
@@ -202,7 +202,7 @@ function onBidWon(bid) {
 }
 
 /** -- Get user syncs -- */
-function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent) {
   const syncs = []
 
   if (syncOptions.pixelEnabled) {
@@ -225,7 +225,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
 }
 
 /** -- Get bid floor -- */
-export function getBidFloor(bid, mediaType, size, currency) {
+export function getBidFloor (bid, mediaType, size, currency) {
   if (isFn(bid.getFloor)) {
     const bidFloorCurrency = currency || 'USD';
     const bidFloor = bid.getFloor({currency: bidFloorCurrency, mediaType: mediaType, size: size});

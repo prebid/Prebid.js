@@ -255,7 +255,7 @@ describe('Taboola Adapter', function () {
       const bidRequest = {
         ...defaultBidRequest,
         params: {...commonBidRequest.params},
-        getFloor: function() {
+        getFloor: function () {
           return {
             currency: 'USD',
             floor: 2.7,
@@ -276,7 +276,7 @@ describe('Taboola Adapter', function () {
       const bidRequest = {
         ...defaultBidRequest,
         params: {...commonBidRequest.params, ...optionalParams},
-        getFloor: function() {
+        getFloor: function () {
           return {
             currency: 'USD',
             floor: 2.7,
@@ -1466,7 +1466,7 @@ describe('Taboola Adapter', function () {
       expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}, {type: 'image', url: usersyncUrl}]);
     });
 
-    it('should pass consent tokens values', function() {
+    it('should pass consent tokens values', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'GDPR_CONSENT'}, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=GDPR_CONSENT&us_privacy=USP_CONSENT`
       }]);

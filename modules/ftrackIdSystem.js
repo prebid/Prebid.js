@@ -109,7 +109,7 @@ export const ftrackIdSubmodule = {
           CCampID: '148556'
         };
         window.D9r = {
-          callback: function(response) {
+          callback: function (response) {
             if (response) {
               storage.setDataInLocalStorage(`${FTRACK_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString());
               storage.setDataInLocalStorage(`${FTRACK_STORAGE_NAME}`, JSON.stringify(response));
@@ -166,7 +166,7 @@ export const ftrackIdSubmodule = {
    * @param {SubmoduleConfig} config from HTML
    * @returns {true|false}
    */
-  isConfigOk: function(config) {
+  isConfigOk: function (config) {
     if (!config.storage || !config.storage.type || !config.storage.name) {
       utils.logError(LOG_PREFIX + 'config.storage required to be set.');
       return false;
@@ -189,7 +189,7 @@ export const ftrackIdSubmodule = {
     return true;
   },
 
-  isThereConsent: function(consentData) {
+  isThereConsent: function (consentData) {
     let consentValue = true;
     const {gdpr, usp} = consentData ?? {};
     /*
@@ -231,14 +231,14 @@ export const ftrackIdSubmodule = {
     'ftrackId': {
       source: 'flashtalking.com',
       atype: 1,
-      getValue: function(data) {
+      getValue: function (data) {
         let value = '';
         if (data && data.ext && data.ext.DeviceID) {
           value = data.ext.DeviceID;
         }
         return value;
       },
-      getUidExt: function(data) {
+      getUidExt: function (data) {
         return data && data.ext;
       }
     },

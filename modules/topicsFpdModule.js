@@ -16,7 +16,7 @@ const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
 let iframeLoadedURL = [];
 
-export function reset() {
+export function reset () {
   LOAD_TOPICS_INITIALISE = false;
   iframeLoadedURL = [];
 }
@@ -33,7 +33,7 @@ const TAXONOMIES = {
   '4': 603
 }
 
-function partitionBy(field, items) {
+function partitionBy (field, items) {
   return items.reduce((partitions, item) => {
     const key = item[field];
     if (!partitions.hasOwnProperty(key)) partitions[key] = [];
@@ -45,18 +45,18 @@ function partitionBy(field, items) {
 /**
  * function to get list of loaded Iframes calling Topics API
  */
-function getLoadedIframeURL() {
+function getLoadedIframeURL () {
   return iframeLoadedURL;
 }
 
 /**
  * function to set/push iframe in the list which is loaded to called topics API.
  */
-function setLoadedIframeURL(url) {
+function setLoadedIframeURL (url) {
   return iframeLoadedURL.push(url);
 }
 
-export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
+export function getTopicsData (name, topics, taxonomies = TAXONOMIES) {
   return Object.entries(partitionBy('taxonomyVersion', topics))
     .filter(([taxonomyVersion]) => {
       if (!taxonomies.hasOwnProperty(taxonomyVersion)) {
@@ -83,11 +83,11 @@ export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
     );
 }
 
-function isTopicsSupported(doc = document) {
+function isTopicsSupported (doc = document) {
   return 'browsingTopics' in doc && doc.featurePolicy.allowsFeature('browsing-topics')
 }
 
-export function getTopics(doc = document) {
+export function getTopics (doc = document) {
   let topics = null;
 
   try {
@@ -106,7 +106,7 @@ export function getTopics(doc = document) {
 
 const topicsData = getTopics().then((topics) => getTopicsData(getRefererInfo().domain, topics));
 
-export function processFpd(config, {global}, {data = topicsData} = {}) {
+export function processFpd (config, {global}, {data = topicsData} = {}) {
   if (!LOAD_TOPICS_INITIALISE) {
     loadTopicsForBidders();
     LOAD_TOPICS_INITIALISE = true;
@@ -127,7 +127,7 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
 /**
  * function to fetch the cached topic data from storage for bidders and return it
  */
-export function getCachedTopics() {
+export function getCachedTopics () {
   let cachedTopicData = [];
   const topics = config.getConfig('userSync.topics');
   const bidderList = topics?.bidders || [];
@@ -154,7 +154,7 @@ export function getCachedTopics() {
  * Receive messages from iframe loaded for bidders to fetch topic
  * @param {MessageEvent} evt
  */
-export function receiveMessage(evt) {
+export function receiveMessage (evt) {
   if (evt && evt.data) {
     try {
       let data = safeJSONParse(evt.data);
@@ -172,7 +172,7 @@ Function to store Topics data received from iframe in storage(name: "prebid:topi
  * @param {string} bidder
  * @param {object} topics
  */
-export function storeInLocalStorage(bidder, topics) {
+export function storeInLocalStorage (bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   const topicsObj = {
     [lastUpdated]: new Date().getTime()
@@ -186,7 +186,7 @@ export function storeInLocalStorage(bidder, topics) {
   coreStorage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
 }
 
-function isCachedDataExpired(storedTime, cacheTime) {
+function isCachedDataExpired (storedTime, cacheTime) {
   const _MS_PER_DAY = 1000 * 60 * 60 * 24;
   const currentTime = new Date().getTime();
   const daysDifference = Math.ceil((currentTime - storedTime) / _MS_PER_DAY);
@@ -196,21 +196,21 @@ function isCachedDataExpired(storedTime, cacheTime) {
 /**
  * Function to get random bidders based on count passed with array of bidders
  */
-function getRandomBidders(arr, count) {
+function getRandomBidders (arr, count) {
   return ([...arr].sort(() => 0.5 - Math.random())).slice(0, count)
 }
 
 /**
  * function to add listener for message receiving from IFRAME
  */
-function listenMessagesFromTopicIframe() {
+function listenMessagesFromTopicIframe () {
   window.addEventListener('message', receiveMessage, false);
 }
 
 /**
  * function to load the iframes of the bidder to load the topics data
  */
-export function loadTopicsForBidders(doc = document) {
+export function loadTopicsForBidders (doc = document) {
   if (!isTopicsSupported(doc)) return;
   const topics = config.getConfig('userSync.topics');
 

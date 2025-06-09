@@ -1,6 +1,6 @@
 import { logError } from '../../src/utils.js';
 
-export function getBidFromResponse(respItem, LOG_ERROR_MESS) {
+export function getBidFromResponse (respItem, LOG_ERROR_MESS) {
   if (!respItem) {
     logError(LOG_ERROR_MESS.emptySeatbid);
   } else if (!respItem.bid) {

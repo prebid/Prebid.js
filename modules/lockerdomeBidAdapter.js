@@ -5,10 +5,10 @@ import {getBidIdParameter} from '../src/utils.js';
 export const spec = {
   code: 'lockerdome',
   supportedMediaTypes: [BANNER],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.adUnitId;
   },
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     let schain;
 
     const adUnitBidRequests = bidRequests.map(function (bid) {
@@ -51,11 +51,11 @@ export const spec = {
       data: payloadString
     };
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse || !serverResponse.body || !serverResponse.body.bids) {
       return [];
     }
-    return serverResponse.body.bids.map(function(bid) {
+    return serverResponse.body.bids.map(function (bid) {
       return {
         requestId: bid.requestId,
         cpm: bid.cpm,

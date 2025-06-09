@@ -40,7 +40,7 @@ export const addBidResponseHook = timedBidResponseHook('dsa', function (fn, adUn
   }
 });
 
-function toggleHooks(enabled) {
+function toggleHooks (enabled) {
   if (enabled && expiryHandle == null) {
     getHook('addBidResponse').before(addBidResponseHook);
     expiryHandle = auctionManager.onExpiry(auction => {
@@ -55,7 +55,7 @@ function toggleHooks(enabled) {
   }
 }
 
-export function reset() {
+export function reset () {
   toggleHooks(false);
   dsaAuctions = {};
 }

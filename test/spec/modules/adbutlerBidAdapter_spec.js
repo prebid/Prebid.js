@@ -100,7 +100,7 @@ describe('AdButler adapter', function () {
       });
 
       describe('with extra params', function () {
-        beforeEach(function() {
+        beforeEach(function () {
           validBidRequests[0].params.extra = {
             foo: 'bar',
           };
@@ -131,7 +131,7 @@ describe('AdButler adapter', function () {
     let serverResponse;
 
     describe('with no body', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         serverResponse = {
           body: null,
         };
@@ -145,7 +145,7 @@ describe('AdButler adapter', function () {
     });
 
     describe('with an incorrect size', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         serverResponse = {
           body: {
             status: 'SUCCESS',
@@ -167,7 +167,7 @@ describe('AdButler adapter', function () {
     });
 
     describe('with a failed status', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         serverResponse = {
           body: {
             status: 'NO_ELIGIBLE_ADS',
@@ -187,7 +187,7 @@ describe('AdButler adapter', function () {
     });
 
     describe('with low CPM', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         serverResponse = {
           body: {
             status: 'SUCCESS',
@@ -211,11 +211,11 @@ describe('AdButler adapter', function () {
       });
 
       describe('with no minimum CPM', function () {
-        beforeEach(function() {
+        beforeEach(function () {
           delete validBidRequests[0].params.minCPM;
         });
 
-        it('returns a bid', function() {
+        it('returns a bid', function () {
           const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
 
           expect(bids).to.be.length(1);
@@ -224,7 +224,7 @@ describe('AdButler adapter', function () {
     });
 
     describe('with high CPM', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         serverResponse = {
           body: {
             status: 'SUCCESS',
@@ -249,11 +249,11 @@ describe('AdButler adapter', function () {
       });
 
       describe('with no maximum CPM', function () {
-        beforeEach(function() {
+        beforeEach(function () {
           delete validBidRequests[0].params.maxCPM;
         });
 
-        it('returns a bid', function() {
+        it('returns a bid', function () {
           const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
 
           expect(bids).to.be.length(1);
@@ -262,7 +262,7 @@ describe('AdButler adapter', function () {
     });
 
     describe('with a valid ad', function () {
-      beforeEach(function() {
+      beforeEach(function () {
         serverResponse = {
           body: {
             status: 'SUCCESS',
@@ -294,7 +294,7 @@ describe('AdButler adapter', function () {
       });
 
       describe('for a bid request without banner media type', function () {
-        beforeEach(function() {
+        beforeEach(function () {
           delete validBidRequests[0].mediaTypes.banner;
         });
 
@@ -306,7 +306,7 @@ describe('AdButler adapter', function () {
       });
 
       describe('with advertiser meta', function () {
-        beforeEach(function() {
+        beforeEach(function () {
           serverResponse.body.advertiser = {
             id: 123,
             name: 'Advertiser Name',

@@ -19,18 +19,18 @@ const PREBIDJS_VERSION = '$prebid.version$';
 const DEFAULT_TTL = 300;
 const DEFAULT_CUR = 'USD';
 
-function getFormat(s) {
+function getFormat (s) {
   const parseSize = ([w, h]) => ({ w: parseInt(w, 10), h: parseInt(h, 10) });
   return Array.isArray(s) && s.length === 2 && !Array.isArray(s[0])
     ? [parseSize(s)]
     : s.map(parseSize);
 }
 
-function getType(b) {
+function getType (b) {
   return b?.mediaTypes?.banner ? BANNER : false;
 }
 
-function getBidfloor(b) {
+function getBidfloor (b) {
   return isFn(b.getFloor)
     ? b.getFloor({
       size: '*',
@@ -40,13 +40,13 @@ function getBidfloor(b) {
     : false;
 }
 
-function getTtl(b) {
+function getTtl (b) {
   const t = config.getConfig('adtrgtme.ttl');
   const validate = (t) => (isNumber(t) && t > 0 && t < 3000 ? t : DEFAULT_TTL);
   return t ? validate(t) : validate(b?.params?.ttl);
 }
 
-function createORTB(bR, bid) {
+function createORTB (bR, bid) {
   if (!bR || !bid) return;
 
   const { currency = bid.params?.bidOverride?.cur || DEFAULT_CUR } =
@@ -104,7 +104,7 @@ function createORTB(bR, bid) {
   return oR;
 }
 
-function appendImp(bid, oRtb) {
+function appendImp (bid, oRtb) {
   if (!oRtb || !bid) return;
 
   const type = getType(bid);
@@ -142,7 +142,7 @@ function appendImp(bid, oRtb) {
   oRtb.imp.push(impObject);
 }
 
-function createRequest({ data, options, bidderRequest }) {
+function createRequest ({ data, options, bidderRequest }) {
   return {
     url: `${config.getConfig('adtrgtme.endpoint') || BIDDER_URL}${
       data.site?.id || ''
@@ -268,7 +268,7 @@ export const spec = {
         }
       });
     }
-    function addConsentParams(url) {
+    function addConsentParams (url) {
       if (gdprConsent) {
         url += `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${
           encodeURIComponent(gdprConsent.consentString) || ''

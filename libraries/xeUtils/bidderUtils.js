@@ -1,7 +1,7 @@
 import {deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput, isPlainObject} from '../../src/utils.js';
 import {getAdUnitSizes} from '../sizeUtils/sizeUtils.js';
 
-export function getBidFloor(bid, currency = 'USD') {
+export function getBidFloor (bid, currency = 'USD') {
   if (!isFn(bid.getFloor)) {
     return null;
   }
@@ -19,7 +19,7 @@ export function getBidFloor(bid, currency = 'USD') {
   return null;
 }
 
-export function isBidRequestValid(bid) {
+export function isBidRequestValid (bid) {
   if (bid && typeof bid.params !== 'object') {
     logError('Params is not defined or is incorrect in the bidder settings');
     return false;
@@ -38,7 +38,7 @@ export function isBidRequestValid(bid) {
   return true;
 }
 
-export function buildRequests(validBidRequests, bidderRequest, endpoint) {
+export function buildRequests (validBidRequests, bidderRequest, endpoint) {
   const {refererInfo = {}, gdprConsent = {}, uspConsent} = bidderRequest;
   const requests = validBidRequests.map(req => {
     const request = {};
@@ -106,7 +106,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
   };
 }
 
-export function interpretResponse(serverResponse, {bidderRequest}) {
+export function interpretResponse (serverResponse, {bidderRequest}) {
   const response = [];
   if (!isArray(deepAccess(serverResponse, 'body.data'))) {
     return response;
@@ -130,7 +130,7 @@ export function interpretResponse(serverResponse, {bidderRequest}) {
   return response;
 }
 
-export function getUserSyncs(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+export function getUserSyncs (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
   const syncs = [];
   const pixels = deepAccess(serverResponses, '0.body.data.0.ext.pixels');
 

@@ -145,7 +145,7 @@ describe('pxyzBidAdapter', function () {
   describe('interpretResponse', function () {
     let response = {
       'id': 'bidd_id',
-      'seatbid': [ {
+      'seatbid': [{
         'bid': [
           {
             'id': '4434762738980910431',
@@ -153,7 +153,7 @@ describe('pxyzBidAdapter', function () {
             'price': 1,
             'adid': '91673066',
             'adm': '<script src=\'pgxyz\'></script>',
-            'adomain': [ 'pg.xyz' ],
+            'adomain': ['pg.xyz'],
             'iurl': 'http://pgxyz.com/cr?id=91673066',
             'cid': 'c_id',
             'crid': 'c_rid',

@@ -28,11 +28,11 @@ const TRACKING_ENDPOINT = TRACKING_BASE + 'hbx/';
 const POST_TRACKING_ENDPOINT = TRACKING_BASE + 'e';
 const AMUID_KEY = '__amuidpb';
 
-function getLocation(request) {
+function getLocation (request) {
   return parseUrl(request.refererInfo?.topmostLocation || window.location.href);
 }
 
-function getTimeoutSize(timeoutData) {
+function getTimeoutSize (timeoutData) {
   if (timeoutData.sizes == null || timeoutData.sizes.length === 0) {
     return [0, 0];
   }
@@ -48,7 +48,7 @@ const largestSize = (sizes, mediaTypes) => {
   return allSizes.sort((a, b) => b[0] * b[1] - a[0] * a[1])[0];
 };
 
-function flatMap(input, mapFn) {
+function flatMap (input, mapFn) {
   if (input == null) {
     return [];
   }
@@ -59,7 +59,7 @@ function flatMap(input, mapFn) {
 
 const isVideoADM = (html) => html != null && VAST_RXP.test(html);
 
-function getMediaType(bid) {
+function getMediaType (bid) {
   if (isVideoADM(bid.adm)) {
     return VIDEO;
   }
@@ -69,7 +69,7 @@ function getMediaType(bid) {
 
 const nullOrType = (value, type) => value == null || typeof value === type; // eslint-disable-line valid-typeof
 
-function getID(loc) {
+function getID (loc) {
   const host = loc.hostname.split('.');
   const short = host
     .slice(host.length - (SIMPLE_TLD_TEST.test(loc.hostname) ? 3 : 2))
@@ -79,7 +79,7 @@ function getID(loc) {
 
 const enc = encodeURIComponent;
 
-function getUIDSafe() {
+function getUIDSafe () {
   try {
     return storage.getDataFromLocalStorage(AMUID_KEY);
   } catch (e) {
@@ -87,7 +87,7 @@ function getUIDSafe() {
   }
 }
 
-function setUIDSafe(uid) {
+function setUIDSafe (uid) {
   try {
     storage.setDataInLocalStorage(AMUID_KEY, uid);
   } catch (e) {
@@ -95,7 +95,7 @@ function setUIDSafe(uid) {
   }
 }
 
-function nestedQs(qsData) {
+function nestedQs (qsData) {
   const out = [];
   Object.keys(qsData || {}).forEach((key) => {
     out.push(enc(key) + '=' + enc(String(qsData[key])));
@@ -104,7 +104,7 @@ function nestedQs(qsData) {
   return enc(out.join('&'));
 }
 
-function createBidMap(bids) {
+function createBidMap (bids) {
   const out = {};
   _each(bids, (bid) => {
     out[bid.bidId] = convertRequest(bid);
@@ -123,7 +123,7 @@ const trackEvent = (eventName, data) =>
 
 const DEFAULT_MIN_FLOOR = 0;
 
-function ensureFloor(floorValue) {
+function ensureFloor (floorValue) {
   return typeof floorValue === 'number' &&
     isFinite(floorValue) &&
     floorValue > 0.0
@@ -131,7 +131,7 @@ function ensureFloor(floorValue) {
     : DEFAULT_MIN_FLOOR;
 }
 
-function getFloor(bid) {
+function getFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.floor', DEFAULT_MIN_FLOOR);
   }
@@ -150,11 +150,11 @@ function getFloor(bid) {
   }
 }
 
-function refInfo(bidderRequest, subKey, defaultValue) {
+function refInfo (bidderRequest, subKey, defaultValue) {
   return deepAccess(bidderRequest, 'refererInfo.' + subKey, defaultValue);
 }
 
-function convertRequest(bid) {
+function convertRequest (bid) {
   const size = largestSize(bid.sizes, bid.mediaTypes) || [0, 0];
   const isVideoBid = bid.mediaType === VIDEO || VIDEO in bid.mediaTypes;
   const av = isVideoBid || size[1] > 100;
@@ -195,7 +195,7 @@ function convertRequest(bid) {
   return params;
 }
 
-function resolveSize(bid, request, bidId) {
+function resolveSize (bid, request, bidId) {
   if (bid.w != null && bid.w > 1 && bid.h != null && bid.h > 1) {
     return [bid.w, bid.h];
   }
@@ -208,7 +208,7 @@ function resolveSize(bid, request, bidId) {
   return [bidRequest.aw, bidRequest.ah];
 }
 
-function isSyncEnabled(syncConfigP, syncType) {
+function isSyncEnabled (syncConfigP, syncType) {
   if (syncConfigP == null) return false;
 
   const syncConfig = syncConfigP[syncType];
@@ -229,7 +229,7 @@ function isSyncEnabled(syncConfigP, syncType) {
 const SYNC_IMAGE = 1;
 const SYNC_IFRAME = 2;
 
-function getSyncSettings() {
+function getSyncSettings () {
   const syncConfig = config.getConfig('userSync');
   if (syncConfig == null) {
     return {
@@ -263,7 +263,7 @@ function getSyncSettings() {
   return settings;
 }
 
-function values(source) {
+function values (source) {
   if (Object.values != null) {
     return Object.values(source);
   }
@@ -273,7 +273,7 @@ function values(source) {
   });
 }
 
-function getGpp(bidderRequest) {
+function getGpp (bidderRequest) {
   if (bidderRequest?.gppConsent != null) {
     return bidderRequest.gppConsent;
   }
@@ -283,7 +283,7 @@ function getGpp(bidderRequest) {
   );
 }
 
-function buildReferrerInfo(bidderRequest) {
+function buildReferrerInfo (bidderRequest) {
   if (bidderRequest.refererInfo == null) {
     return { r: '', t: false, c: '', l: 0, s: [] };
   }
@@ -315,14 +315,14 @@ export const spec = {
   gvlid: 737,
   supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return (
       nullOrType(deepAccess(bid, 'params.endpoint', null), 'string') &&
       nullOrType(deepAccess(bid, 'params.tagId', null), 'string')
     );
   },
 
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const loc = getLocation(bidderRequest);
     const tagId = deepAccess(bidRequests[0], 'params.tagId', null);
     const testMode = deepAccess(bidRequests[0], 'params.testMode', 0);
@@ -395,7 +395,7 @@ export const spec = {
     };
   },
 
-  getUserSyncs(
+  getUserSyncs (
     syncOptions,
     serverResponses,
     gdprConsent,
@@ -452,7 +452,7 @@ export const spec = {
     return output;
   },
 
-  interpretResponse(serverResponse, request) {
+  interpretResponse (serverResponse, request) {
     const response = serverResponse.body;
     if (response == null || typeof response === 'string') {
       return [];
@@ -511,7 +511,7 @@ export const spec = {
     });
   },
 
-  onSetTargeting(targetingData) {
+  onSetTargeting (targetingData) {
     if (targetingData == null) {
       return;
     }
@@ -530,7 +530,7 @@ export const spec = {
     });
   },
 
-  onTimeout(timeoutData) {
+  onTimeout (timeoutData) {
     if (timeoutData == null || !timeoutData.length) {
       return;
     }
@@ -581,7 +581,7 @@ export const spec = {
     });
   },
 
-  onBidWon(bidWinData) {
+  onBidWon (bidWinData) {
     if (bidWinData == null) {
       return;
     }

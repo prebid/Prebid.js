@@ -135,7 +135,7 @@ export const getPayload = (auctionIds, options) => {
 const agmaAnalytics = Object.assign(adapter({ analyticsType }), {
   auctionIds: [],
   timer: null,
-  track(data) {
+  track (data) {
     const { eventType, args } = data;
     if (eventType === this.options.triggerEvent && args && args.auctionId) {
       this.auctionIds.push(args.auctionId);
@@ -146,7 +146,7 @@ const agmaAnalytics = Object.assign(adapter({ analyticsType }), {
       }
     }
   },
-  processBatch() {
+  processBatch () {
     const currentBatch = [...this.auctionIds];
     const payload = getPayload(currentBatch, this.options);
     this.auctionIds = [];
@@ -156,7 +156,7 @@ const agmaAnalytics = Object.assign(adapter({ analyticsType }), {
     }
     this.send(payload);
   },
-  send(payload) {
+  send (payload) {
     if (!payload) {
       return;
     }

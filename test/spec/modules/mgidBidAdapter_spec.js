@@ -33,7 +33,7 @@ describe('Mgid bid adapter', function () {
   const mgid_ver = spec.VERSION;
   const utcOffset = (new Date()).getTimezoneOffset().toString();
 
-  it('should expose gvlid', function() {
+  it('should expose gvlid', function () {
     expect(spec.gvlid).to.equal(358)
   });
 
@@ -824,7 +824,7 @@ describe('Mgid bid adapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    afterEach(function() {
+    afterEach(function () {
       config.setConfig({userSync: {syncsPerBidder: USERSYNC_DEFAULT_CONFIG.syncsPerBidder}});
     });
     it('should do nothing on getUserSyncs without inputs', function () {
@@ -875,7 +875,7 @@ describe('Mgid bid adapter', function () {
   });
 
   describe('getUserSyncs with img from ext.cm and gdpr + usp + coppa + gpp', function () {
-    afterEach(function() {
+    afterEach(function () {
       config.setConfig({coppa: undefined})
     });
     it('should return img (pixels) objects with gdpr + usp + coppa + gpp', function () {
@@ -891,10 +891,10 @@ describe('Mgid bid adapter', function () {
   });
 
   describe('on bidWon', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('should replace nurl and burl for native', function () {
@@ -916,7 +916,7 @@ describe('Mgid bid adapter', function () {
     });
   });
 
-  describe('price floor module', function() {
+  describe('price floor module', function () {
     let bidRequest;
     let bidRequests0 = {
       adUnitCode: 'div',
@@ -932,11 +932,11 @@ describe('Mgid bid adapter', function () {
       },
       sizes: [[300, 250]],
     }
-    beforeEach(function() {
+    beforeEach(function () {
       bidRequest = [utils.deepClone(bidRequests0)];
     });
 
-    it('obtain floor from getFloor', function() {
+    it('obtain floor from getFloor', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'USD',
@@ -948,7 +948,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
       expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
-    it('obtain floor from params', function() {
+    it('obtain floor from params', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'USD',
@@ -962,7 +962,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
 
-    it('undefined currency -> USD', function() {
+    it('undefined currency -> USD', function () {
       bidRequest[0].params.currency = 'EUR'
       bidRequest[0].getFloor = () => {
         return {
@@ -974,7 +974,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
       expect(payload.imp[0]).to.have.property('bidfloorcur', 'USD');
     });
-    it('altered currency', function() {
+    it('altered currency', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'EUR',
@@ -986,7 +986,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.have.property('bidfloor', 1.23);
       expect(payload.imp[0]).to.have.property('bidfloorcur', 'EUR');
     });
-    it('altered currency, same as in request', function() {
+    it('altered currency, same as in request', function () {
       bidRequest[0].params.cur = 'EUR'
       bidRequest[0].getFloor = () => {
         return {
@@ -1000,7 +1000,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
 
-    it('bad floor value', function() {
+    it('bad floor value', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'USD',
@@ -1013,7 +1013,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
 
-    it('empty floor object', function() {
+    it('empty floor object', function () {
       bidRequest[0].getFloor = () => {
         return {};
       };
@@ -1023,7 +1023,7 @@ describe('Mgid bid adapter', function () {
       expect(payload.imp[0]).to.not.have.property('bidfloorcur');
     });
 
-    it('undefined floor result', function() {
+    it('undefined floor result', function () {
       bidRequest[0].getFloor = () => {};
 
       const payload = JSON.parse(spec.buildRequests(bidRequest).data);

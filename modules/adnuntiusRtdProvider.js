@@ -10,14 +10,14 @@ import { config as sourceConfig } from '../src/config.js';
 
 const GVLID = 855;
 
-function init(config, userConsent) {
+function init (config, userConsent) {
   if (!config.params || !config.params.providers) return false
   logInfo(userConsent)
   return true;
 }
 
 // Make sure that ajax has a function as callback
-function prepProvider(provider) {
+function prepProvider (provider) {
   // Map parameter to something that adnuntius endpoint understands.
   const mappedParameters = {
     siteId: 's',
@@ -43,7 +43,7 @@ function prepProvider(provider) {
   });
 }
 
-function setGlobalConfig(config, segments) {
+function setGlobalConfig (config, segments) {
   const ortbSegments = {
     ortb2: {
       user: {
@@ -64,7 +64,7 @@ function setGlobalConfig(config, segments) {
   }
 }
 
-function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
+function alterBidRequests (reqBidsConfigObj, callback, config, userConsent) {
   const gdpr = userConsent && userConsent.gdpr;
   let allowedToRun = true
   if (gdpr) {
@@ -92,7 +92,7 @@ export const adnuntiusSubmodule = {
   setGlobalConfig: setGlobalConfig,
 };
 
-export function beforeInit() {
+export function beforeInit () {
   submodule('realTimeData', adnuntiusSubmodule);
 }
 

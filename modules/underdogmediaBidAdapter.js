@@ -29,7 +29,7 @@ let USER_SYNCED = false;
 logMessage(`Initializing UDM Adapter. PBJS Version: ${prebidVersion} with adapter version: ${UDM_ADAPTER_VERSION}  Updated 2023 01 26`);
 
 // helper function for testing user syncs
-export function resetUserSync() {
+export function resetUserSync () {
   USER_SYNCED = false;
 }
 
@@ -215,16 +215,16 @@ export const spec = {
   },
 };
 
-function _getMinSize(bidParamSizes) {
+function _getMinSize (bidParamSizes) {
   return bidParamSizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min)
 }
 
-function _getAdSlotHTMLElement(adUnitCode) {
+function _getAdSlotHTMLElement (adUnitCode) {
   return document.getElementById(adUnitCode) ||
     document.getElementById(_mapAdUnitPathToElementId(adUnitCode));
 }
 
-function _mapAdUnitPathToElementId(adUnitCode) {
+function _mapAdUnitPathToElementId (adUnitCode) {
   if (isGptPubadsDefined()) {
     // eslint-disable-next-line no-undef
     const adSlots = googletag.pubads().getSlots();
@@ -246,11 +246,11 @@ function _mapAdUnitPathToElementId(adUnitCode) {
   return null;
 }
 
-function _isViewabilityMeasurable(element) {
+function _isViewabilityMeasurable (element) {
   return !_isIframe() && element !== null
 }
 
-function _isIframe() {
+function _isIframe () {
   try {
     return getWindowSelf() !== getWindowTop();
   } catch (e) {
@@ -258,7 +258,7 @@ function _isIframe() {
   }
 }
 
-function _getViewability(element, topWin, {
+function _getViewability (element, topWin, {
   w,
   h
 } = {}) {
@@ -270,7 +270,7 @@ function _getViewability(element, topWin, {
     : 0
 }
 
-function makeNotification(bid, mid, bidParam) {
+function makeNotification (bid, mid, bidParam) {
   let url = mid.notification_url;
 
   const versionIndex = url.indexOf(';version=')
@@ -292,7 +292,7 @@ function makeNotification(bid, mid, bidParam) {
   return '<script async src="' + url + '"></script>';
 }
 
-function getUrlVars() {
+function getUrlVars () {
   var vars = {};
   var hash;
   var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');

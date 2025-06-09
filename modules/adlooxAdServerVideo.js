@@ -17,7 +17,7 @@ const MODULE = 'adlooxAdserverVideo';
 
 const URL_VAST = 'https://j.adlooxtracking.com/ads/vast/tag.php';
 
-export function buildVideoUrl(options, callback) {
+export function buildVideoUrl (options, callback) {
   logInfo(MODULE, 'buildVideoUrl', options);
 
   if (!isFn(callback)) {
@@ -67,7 +67,7 @@ registerVideoSupport('adloox', {
   buildVideoUrl: buildVideoUrl
 });
 
-function track(options, callback) {
+function track (options, callback) {
   callback(options.url);
 
   const bid = deepClone(options.bid);
@@ -79,11 +79,11 @@ function track(options, callback) {
   });
 }
 
-function VASTWrapper(options, callback) {
+function VASTWrapper (options, callback) {
   const chain = [];
 
-  function process(result) {
-    function getAd(xml) {
+  function process (result) {
+    function getAd (xml) {
       if (!xml || xml.documentElement.tagName != 'VAST') {
         logError(MODULE, 'not a VAST tag, using non-wrapped tracking');
         return;
@@ -96,27 +96,27 @@ function VASTWrapper(options, callback) {
       }
 
       // get first Ad (VAST may be an Ad Pod so sort on sequence and pick lowest sequence number)
-      const ad = Array.prototype.slice.call(ads).sort(function(a, b) {
+      const ad = Array.prototype.slice.call(ads).sort(function (a, b) {
         return parseInt(a.getAttribute('sequence'), 10) - parseInt(b.getAttribute('sequence'), 10);
       }).shift();
 
       return ad;
     }
 
-    function getWrapper(ad) {
+    function getWrapper (ad) {
       return ad.querySelector('VASTAdTagURI');
     }
 
-    function durationToSeconds(duration) {
+    function durationToSeconds (duration) {
       return Date.parse('1970-01-01 ' + duration + 'Z') / 1000;
     }
 
-    function blobify() {
+    function blobify () {
       if (!(chain.length > 0 && options.blob !== false)) return;
 
       const urls = [];
 
-      function toBlob(r) {
+      function toBlob (r) {
         const text = new XMLSerializer().serializeToString(r.xml);
         const url = URL.createObjectURL(new Blob([text], { type: r.type }));
         urls.push(url);
@@ -135,7 +135,7 @@ function VASTWrapper(options, callback) {
       const epoch = timestamp() - new Date().getTimezoneOffset() * 60 * 1000;
       const expires0 = options.bid.ttl * 1000 - (epoch - options.bid.responseTimestamp);
       const expires = Math.max(30 * 1000, expires0);
-      setTimeout(function() { urls.forEach(u => URL.revokeObjectURL(u)) }, expires);
+      setTimeout(function () { urls.forEach(u => URL.revokeObjectURL(u)) }, expires);
     }
 
     if (!result) {
@@ -174,22 +174,22 @@ function VASTWrapper(options, callback) {
     if (skipd) skip = durationToSeconds(skipd.trim());
 
     const args = [
-      [ 'client', '%%client%%' ],
-      [ 'platform_id', '%%platformid%%' ],
-      [ 'scriptname', 'adl_%%clientid%%' ],
-      [ 'tag_id', '%%tagid%%' ],
-      [ 'fwtype', 4 ],
-      [ 'vast', options.url ],
-      [ 'id11', 'video' ],
-      [ 'id12', '$ADLOOX_WEBSITE' ],
-      [ 'id18', (!skip || skip >= duration) ? 'fd' : 'od' ],
-      [ 'id19', 'na' ],
-      [ 'id20', 'na' ]
+      ['client', '%%client%%'],
+      ['platform_id', '%%platformid%%'],
+      ['scriptname', 'adl_%%clientid%%'],
+      ['tag_id', '%%tagid%%'],
+      ['fwtype', 4],
+      ['vast', options.url],
+      ['id11', 'video'],
+      ['id12', '$ADLOOX_WEBSITE'],
+      ['id18', (!skip || skip >= duration) ? 'fd' : 'od'],
+      ['id19', 'na'],
+      ['id20', 'na']
     ];
-    if (version && version != 3) args.push([ 'version', version ]);
-    if (vpaid) args.push([ 'vpaid', 1 ]);
-    if (duration != 15) args.push([ 'duration', duration ]);
-    if (skip) args.push([ 'skip', skip ]);
+    if (version && version != 3) args.push(['version', version]);
+    if (vpaid) args.push(['vpaid', 1]);
+    if (duration != 15) args.push(['duration', duration]);
+    if (skip) args.push(['skip', skip]);
 
     logInfo(MODULE, `processed VAST tag chain of depth ${chain.depth}, running callback`);
 
@@ -201,14 +201,14 @@ function VASTWrapper(options, callback) {
     }, callback);
   }
 
-  function fetch(url, withoutcredentials) {
+  function fetch (url, withoutcredentials) {
     logInfo(MODULE, `fetching VAST ${url}`);
 
     ajax(url, {
-      success: function(responseText, q) {
+      success: function (responseText, q) {
         process({ type: q.getResponseHeader('content-type'), xml: q.responseXML });
       },
-      error: function(statusText, q) {
+      error: function (statusText, q) {
         if (!withoutcredentials) {
           logWarn(MODULE, `unable to download (${statusText}), suspected CORS withCredentials problem, retrying without`);
           return fetch(url, true);

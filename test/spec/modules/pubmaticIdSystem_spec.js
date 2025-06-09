@@ -33,7 +33,7 @@ describe('pubmaticIdSystem', () => {
 
   describe('getId', () => {
     it('should call endpoint and handle valid response', () => {
-      const completeCallback = sinon.spy(function() {});
+      const completeCallback = sinon.spy(function () {});
 
       const { callback } = pubmaticIdSubmodule.getId(utils.mergeDeep({}, validCookieConfig));
 

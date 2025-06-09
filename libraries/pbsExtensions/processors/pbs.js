@@ -46,14 +46,14 @@ export const PBS_PROCESSORS = {
     },
     bidderCode: {
       // sets bidderCode from on seatbid.seat
-      fn(bidResponse, bid, context) {
+      fn (bidResponse, bid, context) {
         bidResponse.bidderCode = context.seatbid.seat;
         bidResponse.adapterCode = deepAccess(bid, 'ext.prebid.meta.adaptercode') || context.bidRequest?.bidder || bidResponse.bidderCode;
       }
     },
     pbsBidId: {
       // sets bidResponse.pbsBidId from ext.prebid.bidid
-      fn(bidResponse, bid) {
+      fn (bidResponse, bid) {
         const bidId = deepAccess(bid, 'ext.prebid.bidid');
         if (isStr(bidId)) {
           bidResponse.pbsBidId = bidId;
@@ -62,7 +62,7 @@ export const PBS_PROCESSORS = {
     },
     adserverTargeting: {
       // sets bidResponse.adserverTargeting from ext.prebid.targeting
-      fn(bidResponse, bid) {
+      fn (bidResponse, bid) {
         const targeting = deepAccess(bid, 'ext.prebid.targeting');
         if (isPlainObject(targeting)) {
           bidResponse.adserverTargeting = targeting;
@@ -71,7 +71,7 @@ export const PBS_PROCESSORS = {
     },
     extPrebidMeta: {
       // sets bidResponse.meta from ext.prebid.meta
-      fn(bidResponse, bid) {
+      fn (bidResponse, bid) {
         bidResponse.meta = mergeDeep({}, deepAccess(bid, 'ext.prebid.meta'), bidResponse.meta);
       }
     },
@@ -83,7 +83,7 @@ export const PBS_PROCESSORS = {
   [RESPONSE]: {
     serverSideStats: {
       // updates bidderRequest and bidRequests with serverErrors from ext.errors and serverResponseTimeMs from ext.responsetimemillis
-      fn(response, ortbResponse, context) {
+      fn (response, ortbResponse, context) {
         Object.entries({
           errors: 'serverErrors',
           responsetimemillis: 'serverResponseTimeMs'

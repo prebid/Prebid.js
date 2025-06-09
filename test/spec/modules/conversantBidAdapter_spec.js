@@ -13,7 +13,7 @@ import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.js'
 import {BANNER} from '../../../src/mediaTypes';
 
-describe('Conversant adapter tests', function() {
+describe('Conversant adapter tests', function () {
   const siteId = '108060';
   const versionPattern = /^\d+\.\d+\.\d+(.)*$/;
   const bidRequests = [
@@ -223,7 +223,7 @@ describe('Conversant adapter tests', function() {
     hook.ready();
   });
 
-  it('Verify basic properties', function() {
+  it('Verify basic properties', function () {
     expect(spec.code).to.equal('conversant');
     expect(spec.aliases).to.be.an('array').with.lengthOf(2);
     expect(spec.aliases[0]).to.equal('cnvr');
@@ -232,7 +232,7 @@ describe('Conversant adapter tests', function() {
     expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
 
-  it('Verify isBidRequestValid', function() {
+  it('Verify isBidRequestValid', function () {
     expect(spec.isBidRequestValid({})).to.be.false;
     expect(spec.isBidRequestValid({params: {}})).to.be.false;
     expect(spec.isBidRequestValid({params: {site_id: '123'}})).to.be.true;
@@ -252,7 +252,7 @@ describe('Conversant adapter tests', function() {
     expect(spec.isBidRequestValid(simpleVideo)).to.be.true;
   });
 
-  describe('Verify buildRequest', function() {
+  describe('Verify buildRequest', function () {
     let page, bidderRequest, request, payload;
     before(() => {
       page = 'http://test.com?a=b&c=123';
@@ -281,7 +281,7 @@ describe('Conversant adapter tests', function() {
       payload = request.data;
     });
 
-    it('Verify common elements', function() {
+    it('Verify common elements', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
 
@@ -461,13 +461,13 @@ describe('Conversant adapter tests', function() {
     expect(payload.source.ext.schain.nodes[0].asi).equals(schain.nodes[0].asi);
   });
 
-  it('Verify override url', function() {
+  it('Verify override url', function () {
     const testUrl = 'https://someurl?name=value';
     const request = spec.buildRequests([{params: {white_label_url: testUrl}}], {});
     expect(request.url).to.equal(testUrl);
   });
 
-  describe('Verify interpretResponse', function() {
+  describe('Verify interpretResponse', function () {
     let bid, request, response;
 
     before(() => {
@@ -475,7 +475,7 @@ describe('Conversant adapter tests', function() {
       response = spec.interpretResponse(bidResponses, request).bids;
     });
 
-    it('Banner', function() {
+    it('Banner', function () {
       expect(response).to.be.an('array').with.lengthOf(4);
       bid = response[0];
       expect(bid).to.have.property('requestId', 'bid000');
@@ -491,7 +491,7 @@ describe('Conversant adapter tests', function() {
 
     // There is no bid001 because cpm is $0
 
-    it('Banner multiple sizes', function() {
+    it('Banner multiple sizes', function () {
       bid = response[1];
       expect(bid).to.have.property('requestId', 'bid002');
       expect(bid).to.have.property('cpm', 2.99);
@@ -518,7 +518,7 @@ describe('Conversant adapter tests', function() {
         expect(bid).to.have.property('netRevenue', true);
       });
 
-      it('Empty Video', function() {
+      it('Empty Video', function () {
         bid = response[3];
         expect(bid).to.have.property('vastXml', '<?xml><VAST></VAST>');
       });
@@ -591,8 +591,8 @@ describe('Conversant adapter tests', function() {
     }
   })
 
-  describe('Extended ID', function() {
-    it('Verify unifiedid and liveramp', function() {
+  describe('Extended ID', function () {
+    it('Verify unifiedid and liveramp', function () {
       // clone bidRequests
       let requests = utils.deepClone(bidRequests);
 
@@ -607,14 +607,14 @@ describe('Conversant adapter tests', function() {
     });
   });
 
-  describe('price floor module', function() {
+  describe('price floor module', function () {
     let bidRequest;
-    beforeEach(function() {
+    beforeEach(function () {
       bidRequest = [utils.deepClone(bidRequests[0])];
       delete bidRequest[0].params.bidfloor;
     });
 
-    it('obtain floor from getFloor', function() {
+    it('obtain floor from getFloor', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'USD',
@@ -626,7 +626,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[0]).to.have.property('bidfloor', 3.21);
     });
 
-    it('obtain floor from params', function() {
+    it('obtain floor from params', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'USD',
@@ -639,7 +639,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[0]).to.have.property('bidfloor', 0.6);
     });
 
-    it('unsupported currency', function() {
+    it('unsupported currency', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'EUR',
@@ -651,7 +651,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
-    it('bad floor value', function() {
+    it('bad floor value', function () {
       bidRequest[0].getFloor = () => {
         return {
           currency: 'USD',
@@ -663,7 +663,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
-    it('empty floor object', function() {
+    it('empty floor object', function () {
       bidRequest[0].getFloor = () => {
         return {};
       };
@@ -672,7 +672,7 @@ describe('Conversant adapter tests', function() {
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
-    it('undefined floor result', function() {
+    it('undefined floor result', function () {
       bidRequest[0].getFloor = () => {};
 
       const payload = spec.buildRequests(bidRequest, {}).data;
@@ -680,7 +680,7 @@ describe('Conversant adapter tests', function() {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const syncurl_iframe = 'https://sync.dotomi.com:8080/iframe';
     const syncurl_image = 'https://sync.dotomi.com:8080/pixel';
     const cnvrResponse = {ext: {psyncs: [syncurl_image], fsyncs: [syncurl_iframe]}};
@@ -688,11 +688,11 @@ describe('Conversant adapter tests', function() {
     beforeEach(function () {
       sandbox = sinon.sandbox.create();
     });
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
     });
 
-    it('empty params', function() {
+    it('empty params', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined))
         .to.deep.equal([]);
       expect(spec.getUserSyncs({ iframeEnabled: true }, {ext: {}}, undefined, undefined))
@@ -705,14 +705,14 @@ describe('Conversant adapter tests', function() {
         .to.deep.equal([{type: 'iframe', url: syncurl_iframe}, {type: 'image', url: syncurl_image}]);
     });
 
-    it('URL building', function() {
+    it('URL building', function () {
       expect(spec.getUserSyncs({pixelEnabled: true}, {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}, undefined, undefined))
         .to.deep.equal([{type: 'image', url: `${syncurl_image}?sid=1234`}]);
       expect(spec.getUserSyncs({pixelEnabled: true}, {ext: {psyncs: [`${syncurl_image}?sid=1234`]}}, undefined, '1NYN'))
         .to.deep.equal([{type: 'image', url: `${syncurl_image}?sid=1234&us_privacy=1NYN`}]);
     });
 
-    it('GDPR', function() {
+    it('GDPR', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, {gdprApplies: true, consentString: 'consentstring'}, undefined))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?gdpr=1&gdpr_consent=consentstring` }]);
       expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, {gdprApplies: false, consentString: 'consentstring'}, undefined))
@@ -728,7 +728,7 @@ describe('Conversant adapter tests', function() {
         .to.deep.equal([{ type: 'image', url: `${syncurl_image}?gdpr=1&gdpr_consent=` }]);
     });
 
-    it('US_Privacy', function() {
+    it('US_Privacy', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, cnvrResponse, undefined, '1NYN'))
         .to.deep.equal([{ type: 'iframe', url: `${syncurl_iframe}?us_privacy=1NYN` }]);
       expect(spec.getUserSyncs({ pixelEnabled: true }, cnvrResponse, undefined, '1NYN'))

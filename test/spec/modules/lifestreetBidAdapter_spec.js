@@ -2,12 +2,12 @@ import { expect } from 'chai';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { spec } from 'modules/lifestreetBidAdapter.js';
 
-describe('lifestreetBidAdapter', function() {
+describe('lifestreetBidAdapter', function () {
   let bidRequests;
   let videoBidRequests;
   let bidResponses;
   let videoBidResponses;
-  beforeEach(function() {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'lifestreet',
@@ -78,9 +78,9 @@ describe('lifestreetBidAdapter', function() {
       }
     };
   });
-  describe('implementation', function() {
-    describe('Bid validations', function() {
-      it('valid bid case', function() {
+  describe('implementation', function () {
+    describe('Bid validations', function () {
+      it('valid bid case', function () {
         const validBid = {
           bidder: 'lifestreet',
           params: {
@@ -92,11 +92,11 @@ describe('lifestreetBidAdapter', function() {
         expect(spec.isBidRequestValid(validBid)).to.equal(true);
       });
 
-      it('invalid bid case', function() {
+      it('invalid bid case', function () {
         expect(spec.isBidRequestValid()).to.equal(false);
       });
 
-      it('invalid bid case: slot not passed', function() {
+      it('invalid bid case: slot not passed', function () {
         var validBid = {
           bidder: 'lifestreet',
           params: {
@@ -107,7 +107,7 @@ describe('lifestreetBidAdapter', function() {
         expect(spec.isBidRequestValid(validBid)).to.equal(false);
       });
 
-      it('invalid bid case: adkey not passed', function() {
+      it('invalid bid case: adkey not passed', function () {
         const validBid = {
           bidder: 'lifestreet',
           params: {
@@ -118,7 +118,7 @@ describe('lifestreetBidAdapter', function() {
         expect(spec.isBidRequestValid(validBid)).to.equal(false);
       });
 
-      it('invalid bid case: ad_size is not passed', function() {
+      it('invalid bid case: ad_size is not passed', function () {
         const validBid = {
           bidder: 'lifestreet',
           params: {
@@ -172,7 +172,7 @@ describe('lifestreetBidAdapter', function() {
         expect(request.url).to.have.string(`__consent=${consentString}`);
       });
 
-      it('should add US privacy string to request', function() {
+      it('should add US privacy string to request', function () {
         let consentString = '1YA-';
         let bidderRequest = {
           bidderCode: 'lifestreet',
@@ -188,8 +188,8 @@ describe('lifestreetBidAdapter', function() {
       });
     });
 
-    describe('server response', function() {
-      it('should return valid proper values', function() {
+    describe('server response', function () {
+      it('should return valid proper values', function () {
         const request = spec.buildRequests(bidRequests);
         const response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
@@ -202,26 +202,26 @@ describe('lifestreetBidAdapter', function() {
         expect(response[0].ttl).to.equal(bidResponses.body.ttl);
       });
 
-      it('should return proper mediaType for BANNER', function() {
+      it('should return proper mediaType for BANNER', function () {
         const request = spec.buildRequests(bidRequests);
         const [response] = spec.interpretResponse(bidResponses, request);
         expect(response.mediaType).to.equal(BANNER);
       });
 
-      it('should return proper mediaType for VIDEO', function() {
+      it('should return proper mediaType for VIDEO', function () {
         const request = spec.buildRequests(videoBidRequests);
         const [response] = spec.interpretResponse(videoBidResponses, request);
         expect(response.mediaType).to.equal(VIDEO);
       });
 
-      it('should return a VAST XML for VIDEO', function() {
+      it('should return a VAST XML for VIDEO', function () {
         const request = spec.buildRequests(videoBidRequests);
         const [response] = spec.interpretResponse(videoBidResponses, request);
         expect(response.vastXml).to.be.a('string');
         expect(response.vastXml).to.have.string('iframe');
       });
 
-      it('should return an ad content for BANNER', function() {
+      it('should return an ad content for BANNER', function () {
         const request = spec.buildRequests(bidRequests);
         const [response] = spec.interpretResponse(bidResponses, request);
         expect(response.ad).to.be.a('string');

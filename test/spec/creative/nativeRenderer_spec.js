@@ -61,7 +61,7 @@ describe('Native creative renderer', () => {
   });
 
   describe('getReplacer', () => {
-    function expectReplacements(replacer, replacements) {
+    function expectReplacements (replacer, replacements) {
       Object.entries(replacements).forEach(([placeholder, repl]) => {
         expect(replacer(`.${placeholder}.${placeholder}.`)).to.eql(`.${repl}.${repl}.`);
       })
@@ -208,7 +208,7 @@ describe('Native creative renderer', () => {
       document.body.removeChild(frame);
     })
 
-    function runRender() {
+    function runRender () {
       return render({adId, native: nativeData}, {sendMessage, exc}, win, getMarkup)
     }
 

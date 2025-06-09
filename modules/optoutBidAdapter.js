@@ -5,11 +5,11 @@ import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'optout';
 
-function getDomain(bidderRequest) {
+function getDomain (bidderRequest) {
   return deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || deepAccess(window, 'location.href');
 }
 
-function getCurrency() {
+function getCurrency () {
   let cur = config.getConfig('currency');
   if (cur === undefined) {
     cur = {
@@ -23,11 +23,11 @@ function getCurrency() {
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.publisher && !!bid.params.adslot;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       let endPoint = 'https://adscience-nocookie.nl/prebid/display';
       let consentString = '';

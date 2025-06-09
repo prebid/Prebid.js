@@ -32,7 +32,7 @@ const MODULE_NAME = 'quantcastId';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
+export function firePixel (clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
   // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
   if (!window._qevents && clientId && clientId != '') {
     var fpa = storage.getCookie(QUANTCAST_FPA);
@@ -73,7 +73,7 @@ export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
   }
 };
 
-export function hasGDPRConsent(gdprConsent) {
+export function hasGDPRConsent (gdprConsent) {
   // Check for GDPR consent for purpose 1 and 10, and drop request if consent has not been given
   // Remaining consent checks are performed server-side.
   if (gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies) {
@@ -85,7 +85,7 @@ export function hasGDPRConsent(gdprConsent) {
   return true;
 }
 
-export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOSES) {
+export function checkTCFv2 (vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOSES) {
   var gdprApplies = vendorData.gdprApplies;
   var purposes = vendorData.purpose;
   var vendors = vendorData.vendor;
@@ -97,7 +97,7 @@ export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOS
     return true;
   }
 
-  return requiredPurposes.map(function(purpose) {
+  return requiredPurposes.map(function (purpose) {
     var purposeConsent = purposes.consents ? purposes.consents[purpose] : false;
     var purposeInterest = purposes.legitimateInterests ? purposes.legitimateInterests[purpose] : false;
 
@@ -138,7 +138,7 @@ export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOS
     }
 
     return false;
-  }).reduce(function(a, b) {
+  }).reduce(function (a, b) {
     return a && b;
   }, true);
 }
@@ -147,7 +147,7 @@ export function checkTCFv2(vendorData, requiredPurposes = QC_TCF_REQUIRED_PURPOS
  * tests if us_privacy consent string is present, us_privacy applies, and notice_given / do-not-sell is set to yes
  * @returns {boolean}
  */
-export function hasCCPAConsent(usPrivacyConsent) {
+export function hasCCPAConsent (usPrivacyConsent) {
   if (
     usPrivacyConsent &&
     typeof usPrivacyConsent === 'string' &&
@@ -179,7 +179,7 @@ export const quantcastIdSubmodule = {
    * @function
    * @returns {{quantcastId: string} | undefined}
    */
-  decode(value) {
+  decode (value) {
     return value;
   },
 
@@ -188,7 +188,7 @@ export const quantcastIdSubmodule = {
    * @function
    * @returns {{id: {quantcastId: string} | undefined}}}
    */
-  getId(config) {
+  getId (config) {
     // Consent signals are currently checked on the server side.
     let fpa = storage.getCookie(QUANTCAST_FPA);
 

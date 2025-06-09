@@ -33,7 +33,7 @@ describe('pilotxAdapter', function () {
       banner.sizes = []
       expect(spec.isBidRequestValid(banner)).to.equal(false);
     });
-    it('should return false for no size and empty params', function() {
+    it('should return false for no size and empty params', function () {
       const emptySizes = {
         bidder: 'pilotx',
         adUnitCode: 'adunit-test',
@@ -46,7 +46,7 @@ describe('pilotxAdapter', function () {
       };
       expect(spec.isBidRequestValid(emptySizes)).to.equal(false);
     })
-    it('should return true for no size and valid size params', function() {
+    it('should return true for no size and valid size params', function () {
       const emptySizes = {
         bidder: 'pilotx',
         adUnitCode: 'adunit-test',
@@ -59,7 +59,7 @@ describe('pilotxAdapter', function () {
       };
       expect(spec.isBidRequestValid(emptySizes)).to.equal(true);
     })
-    it('should return false for no size items', function() {
+    it('should return false for no size items', function () {
       const emptySizes = {
         bidder: 'pilotx',
         adUnitCode: 'adunit-test',

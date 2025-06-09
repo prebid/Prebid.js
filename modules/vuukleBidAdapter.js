@@ -11,13 +11,13 @@ const VENDOR_ID = 1004;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: VENDOR_ID,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return true
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     bidderRequest = bidderRequest || {};
     const requests = bidRequests.map(function (bid) {
       const parseSized = parseSizesInput(bid.sizes);
@@ -63,7 +63,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse || !serverResponse.body || !serverResponse.body.ad) {
       return [];
     }
@@ -89,7 +89,7 @@ export const spec = {
 }
 registerBidder(spec);
 
-function vuukleGetConsentGiven(gdprConsent) {
+function vuukleGetConsentGiven (gdprConsent) {
   let consentGiven = 0;
   if (typeof gdprConsent !== 'undefined') {
     consentGiven = deepAccess(gdprConsent, `vendorData.vendor.consents.${VENDOR_ID}`) ? 1 : 0;

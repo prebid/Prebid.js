@@ -37,14 +37,14 @@ export const getLowEntropySUA = lowEntropySUAAccessor();
  */
 export const getHighEntropySUA = highEntropySUAAccessor();
 
-export function lowEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
+export function lowEntropySUAAccessor (uaData = window.navigator?.userAgentData) {
   const sua = (uaData && LOW_ENTROPY_HINTS.some(h => typeof uaData[h] !== 'undefined')) ? Object.freeze(uaDataToSUA(SUA_SOURCE_LOW_ENTROPY, uaData)) : null;
   return function () {
     return sua;
   }
 }
 
-export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData) {
+export function highEntropySUAAccessor (uaData = window.navigator?.userAgentData) {
   const cache = {};
   const keys = new WeakMap();
   return function (hints = HIGH_ENTROPY_HINTS) {
@@ -75,8 +75,8 @@ export function highEntropySUAAccessor(uaData = window.navigator?.userAgentData)
  * @param uaData https://developer.mozilla.org/en-US/docs/Web/API/NavigatorUAData/
  * @return {{}}
  */
-export function uaDataToSUA(source, uaData) {
-  function toBrandVersion(brand, version) {
+export function uaDataToSUA (source, uaData) {
+  function toBrandVersion (brand, version) {
     const bv = {brand};
     if (isStr(version) && !isEmptyStr(version)) {
       bv.version = version.split('.');

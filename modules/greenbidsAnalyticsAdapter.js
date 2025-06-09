@@ -33,7 +33,7 @@ export const BIDDER_STATUS = {
 
 const analyticsOptions = {};
 
-export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
+export const isSampled = function (greenbidsId, samplingRate, exploratorySamplingSplit) {
   const isSamplingForced = getParameterByName('greenbids_force_sampling');
   if (isSamplingForced) {
     logInfo('Greenbids Analytics: sampling flag detected, forcing analytics');
@@ -57,7 +57,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
   cachedAuctions: {},
   exploratorySamplingSplit: 0.9,
 
-  initConfig(config) {
+  initConfig (config) {
     analyticsOptions.options = deepClone(config.options);
     /**
      * Required option: pbuid
@@ -98,7 +98,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
 
     return true;
   },
-  sendEventMessage(endPoint, data) {
+  sendEventMessage (endPoint, data) {
     logInfo(`AJAX: ${endPoint}: ` + JSON.stringify(data));
 
     ajax(`${analyticsOptions.server}${endPoint}`, null, JSON.stringify(data), {
@@ -110,7 +110,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
    * @param {string} auctionId
    * @returns {Message}
    */
-  createCommonMessage(auctionId) {
+  createCommonMessage (auctionId) {
     const cachedAuction = this.getCachedAuction(auctionId);
     return {
       version: ANALYTICS_VERSION,
@@ -128,7 +128,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
    * @param {Bid} bid
    * @param {BIDDER_STATUS} status
    */
-  serializeBidResponse(bid, status) {
+  serializeBidResponse (bid, status) {
     return {
       bidder: bid.bidder,
       isTimeout: (status === BIDDER_STATUS.TIMEOUT),
@@ -145,7 +145,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
    * @param {Bid} bid Bid to add to the payload
    * @param {BIDDER_STATUS} status Bidding status
    */
-  addBidResponseToMessage(message, bid, status) {
+  addBidResponseToMessage (message, bid, status) {
     const adUnitCode = bid.adUnitCode.toLowerCase();
     const adUnitIndex = message.adUnits.findIndex((adUnit) => {
       return adUnit.code === adUnitCode;
@@ -170,7 +170,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       }
     }
   },
-  createBidMessage(auctionEndArgs) {
+  createBidMessage (auctionEndArgs) {
     const {auctionId, timestamp, auctionEnd, adUnits, bidsReceived, noBids} = auctionEndArgs;
     const cachedAuction = this.getCachedAuction(auctionId);
     const message = this.createCommonMessage(auctionId);
@@ -202,7 +202,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
 
     return message;
   },
-  getCachedAuction(auctionId) {
+  getCachedAuction (auctionId) {
     this.cachedAuctions[auctionId] = this.cachedAuctions[auctionId] || {
       timeoutBids: [],
       greenbidsId: null,
@@ -211,7 +211,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     };
     return this.cachedAuctions[auctionId];
   },
-  handleAuctionInit(auctionInitArgs) {
+  handleAuctionInit (auctionInitArgs) {
     const cachedAuction = this.getCachedAuction(auctionInitArgs.auctionId);
     try {
       cachedAuction.greenbidsId = auctionInitArgs.adUnits[0].ortb2Imp.ext.greenbids.greenbidsId;
@@ -221,7 +221,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     }
     cachedAuction.isSampled = isSampled(cachedAuction.greenbidsId, analyticsOptions.options.greenbidsSampling, this.exploratorySamplingSplit);
   },
-  handleAuctionEnd(auctionEndArgs) {
+  handleAuctionEnd (auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
     const isFilteringForced = getParameterByName('greenbids_force_filtering');
     if (!isFilteringForced) {
@@ -230,20 +230,20 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       )
     };
   },
-  handleBidTimeout(timeoutBids) {
+  handleBidTimeout (timeoutBids) {
     timeoutBids.forEach((bid) => {
       const cachedAuction = this.getCachedAuction(bid.auctionId);
       cachedAuction.timeoutBids.push(bid);
     });
   },
-  handleBillable(billableArgs) {
+  handleBillable (billableArgs) {
     const cachedAuction = this.getCachedAuction(billableArgs.auctionId);
     /* Filter Greenbids Billable Events only */
     if (billableArgs.vendor === 'greenbidsRtdProvider') {
       cachedAuction.billingId = billableArgs.billingId || 'unknown_billing_id';
     }
   },
-  track({eventType, args}) {
+  track ({eventType, args}) {
     try {
       if (eventType === AUCTION_INIT) {
         this.handleAuctionInit(args);
@@ -266,14 +266,14 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       logWarn('There was an error handling event ' + eventType);
     }
   },
-  getAnalyticsOptions() {
+  getAnalyticsOptions () {
     return analyticsOptions;
   },
 });
 
 greenbidsAnalyticsAdapter.originEnableAnalytics = greenbidsAnalyticsAdapter.enableAnalytics;
 
-greenbidsAnalyticsAdapter.enableAnalytics = function(config) {
+greenbidsAnalyticsAdapter.enableAnalytics = function (config) {
   this.initConfig(config);
   if (typeof config.options.sampling === 'number') {
     // Set sampling to 1 to prevent prebid analytics integrated sampling to happen

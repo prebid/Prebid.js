@@ -222,7 +222,7 @@ export const spec = {
   }
 };
 
-function buildRequest(validBidRequests, bidderRequest) {
+function buildRequest (validBidRequests, bidderRequest) {
   let bid = validBidRequests;
   logInfo('buildRequest: ', bid);
 

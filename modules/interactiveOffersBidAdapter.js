@@ -31,7 +31,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let ret = true;
     if (bid && bid.params) {
       if (!bid.params.partnerId) {
@@ -48,7 +48,7 @@ export const spec = {
     }
     return ret;
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let aux = parseRequestPrebidjsToOpenRTB(bidderRequest, bidderRequest);
     let payload = aux.payload;
     return {
@@ -59,7 +59,7 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(response, request) {
+  interpretResponse: function (response, request) {
     let bidResponses = [];
     if (response.body) {
       if (!response.body.length) {
@@ -71,7 +71,7 @@ export const spec = {
   }
 };
 
-function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
+function parseRequestPrebidjsToOpenRTB (prebidRequest, bidderRequest) {
   let ret = {
     payload: {},
     partnerId: null
@@ -113,7 +113,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
   openRTBRequest.user = deepClone(DEFAULT['OpenRTBBidRequestUser']);
 
   openRTBRequest.imp = [];
-  prebidRequest.bids.forEach(function(bid) {
+  prebidRequest.bids.forEach(function (bid) {
     if (!ret.partnerId) {
       ret.partnerId = bid.params.partnerId;
     }
@@ -128,13 +128,13 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
     openRTBRequest.site.publisher.id = openRTBRequest.site.publisher.id || 0;
     openRTBRequest.tmax = openRTBRequest.tmax || bid.params.tmax || 0;
 
-    Object.keys(bid.mediaTypes).forEach(function(mediaType) {
+    Object.keys(bid.mediaTypes).forEach(function (mediaType) {
       if (mediaType == 'banner') {
         imp.banner = deepClone(DEFAULT['OpenRTBBidRequestImpBanner']);
         imp.banner.w = 0;
         imp.banner.h = 0;
         imp.banner.format = [];
-        bid.mediaTypes[mediaType].sizes.forEach(function(adSize) {
+        bid.mediaTypes[mediaType].sizes.forEach(function (adSize) {
           if (!imp.banner.w) {
             imp.banner.w = adSize[0];
             imp.banner.h = adSize[1];
@@ -148,13 +148,13 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
   ret.payload = openRTBRequest;
   return ret;
 }
-function parseResponseOpenRTBToPrebidjs(openRTBResponse) {
+function parseResponseOpenRTBToPrebidjs (openRTBResponse) {
   let prebidResponse = [];
-  openRTBResponse.forEach(function(response) {
+  openRTBResponse.forEach(function (response) {
     if (response.seatbid && response.seatbid.forEach) {
-      response.seatbid.forEach(function(seatbid) {
+      response.seatbid.forEach(function (seatbid) {
         if (seatbid.bid && seatbid.bid.forEach) {
-          seatbid.bid.forEach(function(bid) {
+          seatbid.bid.forEach(function (bid) {
             let prebid = deepClone(DEFAULT['PrebidBid']);
             prebid.requestId = bid.impid;
             prebid.ad = bid.adm;

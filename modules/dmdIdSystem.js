@@ -32,7 +32,7 @@ export const dmdIdSubmodule = {
    * @param {(Object|string)} value
    * @returns {(Object|undefined)}
    */
-  decode(value) {
+  decode (value) {
     return value && typeof value === 'string'
       ? { 'dmdId': value }
       : undefined;
@@ -46,7 +46,7 @@ export const dmdIdSubmodule = {
    * @param {Object} cacheIdObj - existing id, if any
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData, cacheIdObj) {
+  getId (config, consentData, cacheIdObj) {
     const configParams = (config && config.params) || {};
     if (
       !configParams ||

@@ -35,7 +35,7 @@ export const spec = {
     }
     return valid;
   },
-  interpretResponse: function(bidResponse, bidRequest) {
+  interpretResponse: function (bidResponse, bidRequest) {
     let responses = [];
     if (bidResponse && bidResponse.body) {
       try {
@@ -118,7 +118,7 @@ export const spec = {
   }
 
 };
-function _checkMediaType(bid) {
+function _checkMediaType (bid) {
   let videoRegex = new RegExp(/VAST\s+version/);
   let mediaType;
   if (bid.adm && bid.adm.indexOf('deepintent_wrapper') >= 0) {
@@ -129,7 +129,7 @@ function _checkMediaType(bid) {
   return mediaType;
 }
 
-function clean(obj) {
+function clean (obj) {
   for (let propName in obj) {
     if (obj[propName] === null || obj[propName] === undefined) {
       delete obj[propName];
@@ -137,7 +137,7 @@ function clean(obj) {
   }
 }
 
-function buildImpression(bid) {
+function buildImpression (bid) {
   let impression = {};
   const floor = getFloor(bid);
   impression = {
@@ -158,7 +158,7 @@ function buildImpression(bid) {
   return impression;
 }
 
-function getFloor(bidRequest) {
+function getFloor (bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return bidRequest.params?.bidfloor;
   }
@@ -175,7 +175,7 @@ function getFloor(bidRequest) {
   return null;
 }
 
-function _buildVideo(bid) {
+function _buildVideo (bid) {
   const videoObj = {};
   const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bid, 'params.video', {});
@@ -206,7 +206,7 @@ function _buildVideo(bid) {
   return videoObj;
 };
 
-function buildCustomParams(bid) {
+function buildCustomParams (bid) {
   if (bid.params && bid.params.custom) {
     return {
       deepintent: bid.params.custom
@@ -216,7 +216,7 @@ function buildCustomParams(bid) {
     return {}
   }
 }
-function buildUser(bid) {
+function buildUser (bid) {
   if (bid && bid.params && bid.params.user) {
     return {
       id: bid.params.user.id && typeof bid.params.user.id == 'string' ? bid.params.user.id : undefined,
@@ -229,7 +229,7 @@ function buildUser(bid) {
   }
 }
 
-function injectEids(openRtbBidRequest, validBidRequests) {
+function injectEids (openRtbBidRequest, validBidRequests) {
   const bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(openRtbBidRequest, 'user.eids', bidUserIdAsEids);
@@ -237,7 +237,7 @@ function injectEids(openRtbBidRequest, validBidRequests) {
   }
 }
 
-function buildBanner(bid) {
+function buildBanner (bid) {
   if (deepAccess(bid, 'mediaTypes.banner')) {
     // Get Sizes from MediaTypes Object, Will always take first size, will be overrided by params for exact w,h
     if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
@@ -259,7 +259,7 @@ function buildBanner(bid) {
   }
 }
 
-function buildSite(bidderRequest) {
+function buildSite (bidderRequest) {
   let site = {};
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     site.page = bidderRequest.refererInfo.page;
@@ -268,7 +268,7 @@ function buildSite(bidderRequest) {
   return site;
 }
 
-function buildDevice() {
+function buildDevice () {
   return {
     ua: navigator.userAgent,
     js: 1,

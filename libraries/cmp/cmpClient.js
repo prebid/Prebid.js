@@ -44,7 +44,7 @@ export const MODE_CALLBACK = 2;
  * @param win
  * @returns {CMPClient} CMP invocation function (or null if no CMP was found).
  */
-export function cmpClient(
+export function cmpClient (
   {
     apiName,
     apiVersion,
@@ -58,7 +58,7 @@ export function cmpClient(
   const callName = `${apiName}Call`;
   const cmpDataPkgName = `${apiName}Return`;
 
-  function handleMessage(event) {
+  function handleMessage (event) {
     const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
     if (json?.[cmpDataPkgName]?.callId) {
       const payload = json[cmpDataPkgName];
@@ -69,7 +69,7 @@ export function cmpClient(
     }
   }
 
-  function findCMP() {
+  function findCMP () {
     let f = win;
     let cmpFrame;
     let isDirect = false;
@@ -108,12 +108,12 @@ export function cmpClient(
     return;
   }
 
-  function resolveParams(params) {
+  function resolveParams (params) {
     params = Object.assign({version: apiVersion}, params);
     return apiArgs.map(arg => [arg, params[arg]])
   }
 
-  function wrapCallback(callback, resolve, reject, preamble) {
+  function wrapCallback (callback, resolve, reject, preamble) {
     const haveCb = typeof callback === 'function';
 
     return function (result, success) {
@@ -129,7 +129,7 @@ export function cmpClient(
   let client;
 
   if (isDirect) {
-    client = function invokeCMPDirect(params = {}) {
+    client = function invokeCMPDirect (params = {}) {
       return new PbPromise((resolve, reject) => {
         const ret = cmpFrame[apiName](...resolveParams({
           ...params,
@@ -143,7 +143,7 @@ export function cmpClient(
   } else {
     win.addEventListener('message', handleMessage, false);
 
-    client = function invokeCMPFrame(params, once = false) {
+    client = function invokeCMPFrame (params, once = false) {
       return new PbPromise((resolve, reject) => {
         // call CMP via postMessage
         const callId = Math.random().toString();
@@ -162,7 +162,7 @@ export function cmpClient(
   }
   return Object.assign(client, {
     isDirect,
-    close() {
+    close () {
       !isDirect && win.removeEventListener('message', handleMessage);
     }
   })

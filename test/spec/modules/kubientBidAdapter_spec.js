@@ -3,8 +3,8 @@ import { spec } from 'modules/kubientBidAdapter.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import {config} from '../../../src/config';
 
-function encodeQueryData(data) {
-  return Object.keys(data).map(function(key) {
+function encodeQueryData (data) {
+  return Object.keys(data).map(function (key) {
     return [key, data[key]].map(encodeURIComponent).join('=');
   }).join('&');
 }
@@ -17,7 +17,7 @@ describe('KubientAdapter', function () {
     params: {
       zoneid: '5678'
     },
-    getFloor: function(params) {
+    getFloor: function (params) {
       return {
         floor: 0,
         currency: 'USD'
@@ -51,7 +51,7 @@ describe('KubientAdapter', function () {
     params: {
       zoneid: '5676'
     },
-    getFloor: function(params) {
+    getFloor: function (params) {
       return {
         floor: 1.0,
         currency: 'USD'

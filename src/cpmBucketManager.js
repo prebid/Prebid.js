@@ -49,7 +49,7 @@ const _autoPriceConfig = {
   }]
 };
 
-function getPriceBucketString(cpm, customConfig, granularityMultiplier = 1) {
+function getPriceBucketString (cpm, customConfig, granularityMultiplier = 1) {
   let cpmFloat = parseFloat(cpm);
   if (isNaN(cpmFloat)) {
     cpmFloat = '';
@@ -65,7 +65,7 @@ function getPriceBucketString(cpm, customConfig, granularityMultiplier = 1) {
   };
 }
 
-function getCpmStringValue(cpm, config, granularityMultiplier) {
+function getCpmStringValue (cpm, config, granularityMultiplier) {
   let cpmStr = '';
   if (!isValidPriceConfig(config)) {
     return cpmStr;
@@ -101,7 +101,7 @@ function getCpmStringValue(cpm, config, granularityMultiplier) {
   return cpmStr;
 }
 
-function isValidPriceConfig(config) {
+function isValidPriceConfig (config) {
   if (isEmpty(config) || !config.buckets || !Array.isArray(config.buckets)) {
     return false;
   }
@@ -114,7 +114,7 @@ function isValidPriceConfig(config) {
   return isValid;
 }
 
-function getCpmTarget(cpm, bucket, granularityMultiplier) {
+function getCpmTarget (cpm, bucket, granularityMultiplier) {
   const precision = typeof bucket.precision !== 'undefined' ? bucket.precision : _defaultPrecision;
   const increment = bucket.increment * granularityMultiplier;
   const bucketMin = bucket.min * granularityMultiplier;

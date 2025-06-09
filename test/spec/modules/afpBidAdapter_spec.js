@@ -44,7 +44,7 @@ const commonParamsForInImage = Object.assign({}, commonParams, {
   imageHeight,
 })
 const configByPlaceType = {
-  get [IN_IMAGE_BANNER_TYPE]() {
+  get [IN_IMAGE_BANNER_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeBanner,
       params: Object.assign({}, commonParamsForInImage, {
@@ -52,7 +52,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [IN_IMAGE_MAX_BANNER_TYPE]() {
+  get [IN_IMAGE_MAX_BANNER_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeBanner,
       params: Object.assign({}, commonParamsForInImage, {
@@ -60,7 +60,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [IN_CONTENT_BANNER_TYPE]() {
+  get [IN_CONTENT_BANNER_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeBanner,
       params: Object.assign({}, commonParams, {
@@ -68,7 +68,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [IN_CONTENT_VIDEO_TYPE]() {
+  get [IN_CONTENT_VIDEO_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeVideo,
       params: Object.assign({}, commonParams, {
@@ -76,7 +76,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [OUT_CONTENT_VIDEO_TYPE]() {
+  get [OUT_CONTENT_VIDEO_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeVideo,
       params: Object.assign({}, commonParams, {
@@ -84,7 +84,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [IN_CONTENT_STORY_TYPE]() {
+  get [IN_CONTENT_STORY_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeBanner,
       params: Object.assign({}, commonParams, {
@@ -92,7 +92,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [ACTION_SCROLLER_TYPE]() {
+  get [ACTION_SCROLLER_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeBanner,
       params: Object.assign({}, commonParams, {
@@ -100,7 +100,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [ACTION_SCROLLER_LIGHT_TYPE]() {
+  get [ACTION_SCROLLER_LIGHT_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeBanner,
       params: Object.assign({}, commonParams, {
@@ -108,7 +108,7 @@ const configByPlaceType = {
       }),
     })
   },
-  get [JUST_BANNER_TYPE]() {
+  get [JUST_BANNER_TYPE] () {
     return cloneDeep({
       mediaTypes: mediaTypeBanner,
       params: Object.assign({}, commonParams, {
@@ -133,24 +133,24 @@ const getTransformedConfig = ({mediaTypes, params}) => {
 }
 const validBidRequests = Object.keys(configByPlaceType).map(key => getTransformedConfig(configByPlaceType[key]))
 
-describe('AFP Adapter', function() {
-  describe('isBidRequestValid method', function() {
-    describe('returns true', function() {
+describe('AFP Adapter', function () {
+  describe('isBidRequestValid method', function () {
+    describe('returns true', function () {
       describe('when config has all mandatory params', () => {
         Object.keys(configByPlaceType).forEach(placeType => {
-          it(`and ${placeType} config has the correct value`, function() {
+          it(`and ${placeType} config has the correct value`, function () {
             const isBidRequestValid = spec.isBidRequestValid(configByPlaceType[placeType])
             expect(isBidRequestValid).to.equal(true)
           })
         })
       })
     })
-    describe('returns false', function() {
+    describe('returns false', function () {
       const checkMissingParams = (placesTypes, missingParams) =>
         placesTypes.forEach(placeType =>
           missingParams.forEach(missingParam => {
             const config = configByPlaceType[placeType]
-            it(`${placeType} does not have the ${missingParam}.`, function() {
+            it(`${placeType} does not have the ${missingParam}.`, function () {
               unset(config, missingParam)
               const isBidRequestValid = spec.isBidRequestValid(config)
               expect(isBidRequestValid).to.equal(false)
@@ -158,19 +158,19 @@ describe('AFP Adapter', function() {
           })
         )
 
-      describe('when params are not correct', function() {
+      describe('when params are not correct', function () {
         checkMissingParams(Object.keys(configByPlaceType), ['params.placeId', 'params.placeType'])
         checkMissingParams([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE],
           ['params.imageUrl', 'params.imageWidth', 'params.imageHeight'])
 
-        it('does not have a the correct placeType.', function() {
+        it('does not have a the correct placeType.', function () {
           const config = configByPlaceType[IN_IMAGE_BANNER_TYPE]
           config.params.placeType = 'something'
           const isBidRequestValid = spec.isBidRequestValid(config)
           expect(isBidRequestValid).to.equal(false)
         })
       })
-      describe('when video mediaType object is not correct.', function() {
+      describe('when video mediaType object is not correct.', function () {
         checkMissingParams([IN_CONTENT_VIDEO_TYPE, OUT_CONTENT_VIDEO_TYPE],
           [`mediaTypes.${VIDEO}.playerSize`, `mediaTypes.${VIDEO}`])
         checkMissingParams([
@@ -186,48 +186,48 @@ describe('AFP Adapter', function() {
     })
   })
 
-  describe('buildRequests method', function() {
+  describe('buildRequests method', function () {
     const request = spec.buildRequests(validBidRequests, bidderRequest)
 
-    it('Url should be correct', function() {
+    it('Url should be correct', function () {
       expect(request.url).to.equal(SSP_ENDPOINT)
     })
 
-    it('Method should be correct', function() {
+    it('Method should be correct', function () {
       expect(request.method).to.equal(REQUEST_METHOD)
     })
 
-    describe('Common data request should be correct', function() {
-      it('pageUrl should be correct', function() {
+    describe('Common data request should be correct', function () {
+      it('pageUrl should be correct', function () {
         expect(request.data.pageUrl).to.equal(pageUrl)
       })
-      it('bidRequests should be array', function() {
+      it('bidRequests should be array', function () {
         expect(Array.isArray(request.data.bidRequests)).to.equal(true)
       })
 
       request.data.bidRequests.forEach((bid, index) => {
-        describe(`bid with ${validBidRequests[index].params.placeType} should be correct`, function() {
-          it('bidId should be correct', function() {
+        describe(`bid with ${validBidRequests[index].params.placeType} should be correct`, function () {
+          it('bidId should be correct', function () {
             expect(bid.bidId).to.equal(bidId)
           })
-          it('placeId should be correct', function() {
+          it('placeId should be correct', function () {
             expect(bid.placeId).to.equal(placeId)
           })
-          it('transactionId should be correct', function() {
+          it('transactionId should be correct', function () {
             expect(bid.transactionId).to.equal(transactionId)
           })
-          it('sizes should be correct', function() {
+          it('sizes should be correct', function () {
             expect(bid.sizes).to.equal(sizes)
           })
 
           if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(validBidRequests[index].params.placeType)) {
-            it('imageUrl should be correct', function() {
+            it('imageUrl should be correct', function () {
               expect(bid.imageUrl).to.equal(imageUrl)
             })
-            it('imageWidth should be correct', function() {
+            it('imageWidth should be correct', function () {
               expect(bid.imageWidth).to.equal(Math.floor(imageWidth))
             })
-            it('imageHeight should be correct', function() {
+            it('imageHeight should be correct', function () {
               expect(bid.imageHeight).to.equal(Math.floor(imageHeight))
             })
           }
@@ -236,8 +236,8 @@ describe('AFP Adapter', function() {
     })
   })
 
-  describe('interpretResponse method', function() {
-    it('should return a void array, when the server response are not correct.', function() {
+  describe('interpretResponse method', function () {
+    it('should return a void array, when the server response are not correct.', function () {
       const request = { data: JSON.stringify({}) }
       const serverResponse = {
         body: {}
@@ -246,16 +246,16 @@ describe('AFP Adapter', function() {
       expect(Array.isArray(bids)).to.equal(true)
       expect(bids.length).to.equal(0)
     })
-    it('should return a void array, when the server response have not got bids.', function() {
+    it('should return a void array, when the server response have not got bids.', function () {
       const request = { data: JSON.stringify({}) }
       const serverResponse = { body: { bids: [] } }
       const bids = spec.interpretResponse(serverResponse, request)
       expect(Array.isArray(bids)).to.equal(true)
       expect(bids.length).to.equal(0)
     })
-    describe('when the server response return a bids', function() {
+    describe('when the server response return a bids', function () {
       Object.keys(configByPlaceType).forEach(placeType => {
-        it(`should return a bid with ${placeType} placeType`, function() {
+        it(`should return a bid with ${placeType} placeType`, function () {
           const cpm = 10
           const currency = 'RUB'
           const creativeId = '123'

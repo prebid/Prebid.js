@@ -106,7 +106,7 @@ describe('openwebAdapter', function () {
         'mediaTypes': {
           'banner': {
             'sizes': [
-              [ 300, 250 ]
+              [300, 250]
             ]
           },
           'video': {
@@ -180,7 +180,7 @@ describe('openwebAdapter', function () {
       expect(request.data.bids[0].plcmt).to.equal(1);
     });
 
-    it('sends the is_wrapper parameter to ENDPOINT via POST', function() {
+    it('sends the is_wrapper parameter to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('is_wrapper');
@@ -248,7 +248,7 @@ describe('openwebAdapter', function () {
       expect(request.data.bids[2].mediaType.split(',')).to.include.members([VIDEO, NATIVE, BANNER])
     });
 
-    it('should respect syncEnabled option', function() {
+    it('should respect syncEnabled option', function () {
       config.setConfig({
         userSync: {
           syncEnabled: false,
@@ -311,7 +311,7 @@ describe('openwebAdapter', function () {
       expect(request.data.params).to.have.property('cs_method', 'pixel');
     });
 
-    it('should respect total exclusion', function() {
+    it('should respect total exclusion', function () {
       config.setConfig({
         userSync: {
           syncEnabled: true,
@@ -389,7 +389,7 @@ describe('openwebAdapter', function () {
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
     });
 
-    it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function() {
+    it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function () {
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
@@ -403,7 +403,7 @@ describe('openwebAdapter', function () {
       expect(request.data.bids[0]).to.have.property('floorPrice', 3.32);
     });
 
-    it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function() {
+    it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function () {
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
@@ -417,7 +417,7 @@ describe('openwebAdapter', function () {
       expect(request.data.bids[0]).to.have.property('floorPrice', 1.5);
     });
 
-    it('should check sua param in bid request', function() {
+    it('should check sua param in bid request', function () {
       const sua = {
         'platform': {
           'brand': 'macOS',
@@ -426,15 +426,15 @@ describe('openwebAdapter', function () {
         'browsers': [
           {
             'brand': 'Chromium',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Google Chrome',
-            'version': [ '106', '0', '5249', '119' ]
+            'version': ['106', '0', '5249', '119']
           },
           {
             'brand': 'Not;A=Brand',
-            'version': [ '99', '0', '0', '0' ]
+            'version': ['99', '0', '0', '0']
           }
         ],
         'mobile': 0,
@@ -448,20 +448,20 @@ describe('openwebAdapter', function () {
           'sua': {
             'platform': {
               'brand': 'macOS',
-              'version': [ '12', '4', '0' ]
+              'version': ['12', '4', '0']
             },
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '106', '0', '5249', '119' ]
+                'version': ['106', '0', '5249', '119']
               },
               {
                 'brand': 'Not;A=Brand',
-                'version': [ '99', '0', '0', '0' ]
+                'version': ['99', '0', '0', '0']
               }
             ],
             'mobile': 0,
@@ -479,13 +479,13 @@ describe('openwebAdapter', function () {
       expect(request.data.bids[0].sua).to.not.exist;
     });
 
-    describe('COPPA Param', function() {
-      it('should set coppa equal 0 in bid request if coppa is set to false', function() {
+    describe('COPPA Param', function () {
+      it('should set coppa equal 0 in bid request if coppa is set to false', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.data.bids[0].coppa).to.be.equal(0);
       });
 
-      it('should set coppa equal 1 in bid request if coppa is set to true', function() {
+      it('should set coppa equal 1 in bid request if coppa is set to true', function () {
         const bid = utils.deepClone(bidRequests[0]);
         bid.ortb2 = {
           'regs': {
@@ -640,7 +640,7 @@ describe('openwebAdapter', function () {
     });
   })
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const imageSyncResponse = {
       body: {
         params: {
@@ -661,7 +661,7 @@ describe('openwebAdapter', function () {
       }
     };
 
-    it('should register all img urls from the response', function() {
+    it('should register all img urls from the response', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -679,7 +679,7 @@ describe('openwebAdapter', function () {
       ]);
     });
 
-    it('should register the iframe url from the response', function() {
+    it('should register the iframe url from the response', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [iframeSyncResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -689,7 +689,7 @@ describe('openwebAdapter', function () {
       ]);
     });
 
-    it('should register both image and iframe urls from the responses', function() {
+    it('should register both image and iframe urls from the responses', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [iframeSyncResponse, imageSyncResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -711,26 +711,26 @@ describe('openwebAdapter', function () {
       ]);
     });
 
-    it('should handle an empty response', function() {
+    it('should handle an empty response', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
     });
 
-    it('should handle when user syncs are disabled', function() {
+    it('should handle when user syncs are disabled', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
   })
 
-  describe('onBidWon', function() {
-    beforeEach(function() {
+  describe('onBidWon', function () {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 
-    it('Should trigger pixel if bid nurl', function() {
+    it('Should trigger pixel if bid nurl', function () {
       const bid = {
         'bidder': spec.code,
         'adUnitCode': 'adunit-code',

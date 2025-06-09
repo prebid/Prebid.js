@@ -80,14 +80,14 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   gvlid: GVLID,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(
       (bid.params.placement_id && isStr(bid.params.placement_id)) ||
       (bid.params.group_id && isStr(bid.params.group_id))
     );
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     const site = getSiteObj();
@@ -139,7 +139,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const response = serverResponse.body;
     const bidResponses = [];
 
@@ -211,7 +211,7 @@ export const spec = {
     return pixels;
   },
 
-  getUrlPixelMetric(eventName, bid) {
+  getUrlPixelMetric (eventName, bid) {
     const disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
     if (disabledSending) return;
 
@@ -221,7 +221,7 @@ export const spec = {
     triggerPixel(url);
   },
 
-  _getUrlPixelMetric(eventName, bids) {
+  _getUrlPixelMetric (eventName, bids) {
     if (!Array.isArray(bids)) bids = [bids];
 
     const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
@@ -258,14 +258,14 @@ export const spec = {
     return url;
   },
 
-  onTimeout(bids) {
+  onTimeout (bids) {
     for (const bid of bids) {
       this.getUrlPixelMetric(EVENTS.BID_TIMEOUT, bid);
     };
   },
 };
 
-function getExtNextMilImp(bid) {
+function getExtNextMilImp (bid) {
   if (typeof window?.nmmRefreshCounts[bid.adUnitCode] === 'number') ++window.nmmRefreshCounts[bid.adUnitCode];
   const nextMilImp = {
     impId: bid.bidId,
@@ -280,7 +280,7 @@ function getExtNextMilImp(bid) {
   return nextMilImp;
 }
 
-export function getImp(bid, id, mediaTypes) {
+export function getImp (bid, id, mediaTypes) {
   const {banner, video} = mediaTypes;
   const imp = {
     id: bid.bidId,
@@ -304,7 +304,7 @@ export function getImp(bid, id, mediaTypes) {
   return imp;
 };
 
-export function getImpBanner(imp, banner) {
+export function getImpBanner (imp, banner) {
   if (!banner) return;
 
   if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
@@ -321,7 +321,7 @@ export function getImpBanner(imp, banner) {
   setImpPos(imp.banner, banner?.pos);
 };
 
-export function getImpVideo(imp, video) {
+export function getImpVideo (imp, video) {
   if (!video) return;
 
   if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
@@ -344,11 +344,11 @@ export function getImpVideo(imp, video) {
   setImpPos(imp.video, video?.pos);
 };
 
-export function setImpPos(obj, pos) {
+export function setImpPos (obj, pos) {
   if (typeof pos === 'number' && pos >= 0 && pos <= 7) obj.pos = pos;
 };
 
-export function setConsentStrings(postBody = {}, bidderRequest) {
+export function setConsentStrings (postBody = {}, bidderRequest) {
   const gdprConsent = bidderRequest?.gdprConsent;
   const uspConsent = bidderRequest?.uspConsent;
   let gppConsent = bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent;
@@ -384,7 +384,7 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
   };
 };
 
-export function setOrtb2Parameters(postBody, ortb2 = {}) {
+export function setOrtb2Parameters (postBody, ortb2 = {}) {
   for (let parameter of ALLOWED_ORTB2_PARAMETERS) {
     const value = deepAccess(ortb2, parameter);
     if (value) deepSetValue(postBody, parameter, value);
@@ -393,7 +393,7 @@ export function setOrtb2Parameters(postBody, ortb2 = {}) {
   if (postBody.wlang) delete postBody.wlangb
 }
 
-export function setEids(postBody = {}, bids = []) {
+export function setEids (postBody = {}, bids = []) {
   let isFind = false;
   _each(bids, bid => {
     if (isFind || !isArray(bid.userIdAsEids) || !bid.userIdAsEids.length) return;
@@ -405,7 +405,7 @@ export function setEids(postBody = {}, bids = []) {
   });
 }
 
-export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gppConsent = {}, type = '') {
+export function replaceUsersyncMacros (url, gdprConsent = {}, uspConsent = '', gppConsent = {}, type = '') {
   const { consentString = '', gdprApplies = false } = gdprConsent;
   const gdpr = Number(gdprApplies);
   url = url
@@ -419,7 +419,7 @@ export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gp
   return url;
 }
 
-function getCurrency(bid = {}) {
+function getCurrency (bid = {}) {
   const currency = config?.getConfig('currency')?.adServerCurrency || DEFAULT_CURRENCY;
   const cur = [];
   const types = ['banner', 'video'];
@@ -448,7 +448,7 @@ function getCurrency(bid = {}) {
   return {cur, mediaTypes};
 }
 
-export function getPlacementId(bid) {
+export function getPlacementId (bid) {
   const groupId = getBidIdParameter('group_id', bid.params);
   const placementId = getBidIdParameter('placement_id', bid.params);
   if (!groupId) return placementId;
@@ -464,7 +464,7 @@ export function getPlacementId(bid) {
   return `g${groupId};${sizes.map(size => size.join('x')).join('|')};${host}`;
 }
 
-function getTopWindow(curWindow, nesting = 0) {
+function getTopWindow (curWindow, nesting = 0) {
   if (nesting > 10) {
     return curWindow;
   };
@@ -478,7 +478,7 @@ function getTopWindow(curWindow, nesting = 0) {
   };
 }
 
-function getSiteObj() {
+function getSiteObj () {
   const refInfo = (getRefererInfo && getRefererInfo()) || {};
 
   let language = navigator.language;
@@ -499,7 +499,7 @@ function getSiteObj() {
   };
 }
 
-function getDeviceObj() {
+function getDeviceObj () {
   const { width, height } = getViewportSize();
   return {
     w: width,
@@ -509,7 +509,7 @@ function getDeviceObj() {
   };
 }
 
-export function getSourceObj(validBidRequests, bidderRequest) {
+export function getSourceObj (validBidRequests, bidderRequest) {
   const schain = validBidRequests?.[0]?.schain ||
     (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
 
@@ -522,7 +522,7 @@ export function getSourceObj(validBidRequests, bidderRequest) {
   return source;
 }
 
-function getSua() {
+function getSua () {
   let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 

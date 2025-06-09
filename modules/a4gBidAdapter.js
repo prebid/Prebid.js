@@ -18,17 +18,17 @@ const SIZE_SEPARATOR = 'x';
 
 export const spec = {
   code: A4G_BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return bid.params && !!bid.params.zoneId;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let deliveryUrl = '';
     const idParams = [];
     const sizeParams = [];
     const zoneIds = [];
 
-    _each(validBidRequests, function(bid) {
+    _each(validBidRequests, function (bid) {
       if (!deliveryUrl && typeof bid.params.deliveryUrl === 'string') {
         deliveryUrl = bid.params.deliveryUrl;
       }
@@ -64,9 +64,9 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(serverResponses, request) {
+  interpretResponse: function (serverResponses, request) {
     const bidResponses = [];
-    _each(serverResponses.body, function(response) {
+    _each(serverResponses.body, function (response) {
       if (response.cpm > 0) {
         const bidResponse = {
           requestId: response.id,

@@ -5,7 +5,7 @@ import {buildWindowTree} from '../../helpers/refererDetectionHelper';
 import {detectReferer} from '../../../src/refererDetection';
 
 describe('viantOrtbBidAdapter', function () {
-  function testBuildRequests(bidRequests, bidderRequestBase) {
+  function testBuildRequests (bidRequests, bidderRequestBase) {
     let clonedBidderRequest = deepClone(bidderRequestBase);
     clonedBidderRequest.bids = bidRequests;
     let requests = spec.buildRequests(bidRequests, clonedBidderRequest);
@@ -13,7 +13,7 @@ describe('viantOrtbBidAdapter', function () {
   }
 
   describe('isBidRequestValid', function () {
-    function makeBid() {
+    function makeBid () {
       return {
         'bidder': 'viant',
         'params': {
@@ -69,7 +69,7 @@ describe('viantOrtbBidAdapter', function () {
 
     describe('video', function () {
       describe('and request config uses mediaTypes', () => {
-        function makeBid() {
+        function makeBid () {
           return {
             'bidder': 'viant',
             'params': {
@@ -113,7 +113,7 @@ describe('viantOrtbBidAdapter', function () {
 
     describe('native', function () {
       describe('and request config uses mediaTypes', () => {
-        function makeBid() {
+        function makeBid () {
           return {
             'bidder': 'viant',
             'params': {
@@ -321,7 +321,7 @@ describe('viantOrtbBidAdapter', function () {
 
   if (FEATURES.VIDEO) {
     describe('buildRequests-video', function () {
-      function makeBid() {
+      function makeBid () {
         return {
           'bidder': 'viant',
           'params': {

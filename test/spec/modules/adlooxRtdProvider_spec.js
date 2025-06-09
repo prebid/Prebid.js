@@ -24,7 +24,7 @@ describe('Adloox RTD Provider', function () {
     },
     mediaTypes: {
       banner: {
-        sizes: [ [300, 250] ]
+        sizes: [[300, 250]]
       }
     },
     bids: [
@@ -101,7 +101,7 @@ describe('Adloox RTD Provider', function () {
     });
 
     it('should reject non-array of integers with value greater than zero config.params.thresholds', function (done) {
-      const ret = rtdProvider.init({ params: { thresholds: [ 70, null ] } });
+      const ret = rtdProvider.init({ params: { thresholds: [70, null] } });
 
       expect(ret).is.false;
 
@@ -149,7 +149,7 @@ describe('Adloox RTD Provider', function () {
 
     it('should fetch segments', function (done) {
       const req = {
-        adUnitCodes: [ adUnit.code ],
+        adUnitCodes: [adUnit.code],
         ortb2Fragments: {
           global: {
             site: {
@@ -169,7 +169,7 @@ describe('Adloox RTD Provider', function () {
       };
       const adUnitWithSegments = utils.deepClone(adUnit);
       const getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
-        adUnits: [ adUnitWithSegments ]
+        adUnits: [adUnitWithSegments]
       });
 
       const ret = rtdProvider.init(CONFIG);
@@ -191,24 +191,24 @@ describe('Adloox RTD Provider', function () {
       rtdProvider.getBidRequestData(req, callback, CONFIG, null);
 
       const request = server.requests[0];
-      const response = { unused: false, _: [ { d: 77 } ] };
+      const response = { unused: false, _: [{ d: 77 }] };
       request.respond(200, { 'content-type': 'application/json' }, JSON.stringify(response));
     });
 
     it('should set ad server targeting', function (done) {
       const adUnitWithSegments = utils.deepClone(adUnit);
-      utils.deepSetValue(adUnitWithSegments, 'ortb2Imp.ext.data.adloox_rtd.dis', [ 50, 60 ]);
+      utils.deepSetValue(adUnitWithSegments, 'ortb2Imp.ext.data.adloox_rtd.dis', [50, 60]);
       const getGlobalStub = sinon.stub(prebidGlobal, 'getGlobal').returns({
-        adUnits: [ adUnitWithSegments ]
+        adUnits: [adUnitWithSegments]
       });
 
-      const auction = { adUnits: [ adUnitWithSegments ] };
+      const auction = { adUnits: [adUnitWithSegments] };
       const getAuctionStub = sinon.stub(auctionManager.index, 'getAuction').returns({
-        adUnits: [ adUnitWithSegments ],
+        adUnits: [adUnitWithSegments],
         getFPD: () => { return { global: { site: { ext: { data: { adloox_rtd: { ok: true } } } } } } }
       });
 
-      const targetingData = rtdProvider.getTargetingData([ adUnitWithSegments.code ], CONFIG, null, auction);
+      const targetingData = rtdProvider.getTargetingData([adUnitWithSegments.code], CONFIG, null, auction);
       expect(Object.keys(targetingData).length).is.equal(1);
       expect(Object.keys(targetingData[adUnit.code]).length).is.equal(2);
       expect(targetingData[adUnit.code].adl_ok).is.equal(1);

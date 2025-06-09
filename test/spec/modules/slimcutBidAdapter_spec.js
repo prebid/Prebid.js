@@ -9,14 +9,14 @@ import {
 } from 'src/adapters/bidderFactory.js';
 const ENDPOINT = 'https://sb.freeskreen.com/pbr';
 const AD_SCRIPT = '<script type="text/javascript" class="slimcut" async="true" src="https://static.freeskreen.com/publisher/83/freeskreen.min.js"></script>"';
-describe('slimcutBidAdapter', function() {
+describe('slimcutBidAdapter', function () {
   const adapter = newBidder(spec);
-  describe('inherited functions', function() {
-    it('exists and is a function', function() {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
-  describe('isBidRequestValid', function() {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'slimcut',
       'params': {
@@ -31,10 +31,10 @@ describe('slimcutBidAdapter', function() {
       'bidderRequestId': 'b41642f1aee381',
       'auctionId': '4e156668c977d7'
     };
-    it('should return true when required params found', function() {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-    it('should return false when placementId is not valid (letters)', function() {
+    it('should return false when placementId is not valid (letters)', function () {
       let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
@@ -42,7 +42,7 @@ describe('slimcutBidAdapter', function() {
       };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
-    it('should return false when placementId < 0', function() {
+    it('should return false when placementId < 0', function () {
       let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
@@ -50,14 +50,14 @@ describe('slimcutBidAdapter', function() {
       };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
-    it('should return false when required params are not passed', function() {
+    it('should return false when required params are not passed', function () {
       let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     let bidRequests = [{
       'bidder': 'teads',
       'params': {
@@ -78,12 +78,12 @@ describe('slimcutBidAdapter', function() {
       'bidderRequestId': 'b41642f1aee381',
       'timeout': 3000
     };
-    it('sends bid request to ENDPOINT via POST', function() {
+    it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderResquestDefault);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
     });
-    it('should send GDPR to endpoint', function() {
+    it('should send GDPR to endpoint', function () {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {
         'auctionId': '4e156668c977d7',
@@ -102,7 +102,7 @@ describe('slimcutBidAdapter', function() {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
     });
-    it('should add referer info to payload', function() {
+    it('should add referer info to payload', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
@@ -149,7 +149,7 @@ describe('slimcutBidAdapter', function() {
       expect(urls.length).to.equal(0);
     });
   });
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     let bids = {
       'body': {
         'responses': [{
@@ -167,7 +167,7 @@ describe('slimcutBidAdapter', function() {
         }]
       }
     };
-    it('should get correct bid response', function() {
+    it('should get correct bid response', function () {
       let expectedResponse = [{
         'cpm': 0.5,
         'width': 300,
@@ -186,7 +186,7 @@ describe('slimcutBidAdapter', function() {
       let result = spec.interpretResponse(bids);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
-    it('handles nobid responses', function() {
+    it('handles nobid responses', function () {
       let bids = {
         'body': {
           'responses': []

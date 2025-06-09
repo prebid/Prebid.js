@@ -470,7 +470,7 @@ export const spec = {
   }
 };
 
-function strIsAppnexusViewabilityScript(str) {
+function strIsAppnexusViewabilityScript (str) {
   if (!str || str === '') return false;
 
   let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
@@ -482,7 +482,7 @@ function strIsAppnexusViewabilityScript(str) {
   return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
 }
 
-function formatRequest(payload, bidderRequest) {
+function formatRequest (payload, bidderRequest) {
   let request = [];
   let options = {
     withCredentials: true
@@ -528,7 +528,7 @@ function formatRequest(payload, bidderRequest) {
   return request;
 }
 
-function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
+function newRenderer (adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
@@ -561,7 +561,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * @param bidderRequest
  * @return Bid
  */
-function newBid(serverBid, rtbBid, bidderRequest) {
+function newBid (serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const adId = getUniqueIdentifierStr();
   const bid = {
@@ -594,7 +594,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   }
 
   // temporary function; may remove at later date if/when adserver fully supports dchain
-  function setupDChain(rtbBid) {
+  function setupDChain (rtbBid) {
     let dchain = {
       ver: '1.0',
       complete: 0,
@@ -833,7 +833,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   return bid;
 }
 
-function bidToTag(bid) {
+function bidToTag (bid) {
   const tag = {};
   Object.keys(bid.params).forEach(paramKey => {
     let convertedKey = convertCamelToUnderscore(paramKey);
@@ -1049,7 +1049,7 @@ function bidToTag(bid) {
 }
 
 /* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
+function transformSizes (requestSizes) {
   let sizes = [];
   let sizeObj = {};
 
@@ -1071,7 +1071,7 @@ function transformSizes(requestSizes) {
   return sizes;
 }
 
-function getContextFromPlacement(ortbPlacement) {
+function getContextFromPlacement (ortbPlacement) {
   if (!ortbPlacement) {
     return;
   }
@@ -1087,7 +1087,7 @@ function getContextFromPlacement(ortbPlacement) {
   }
 }
 
-function getContextFromStartDelay(ortbStartDelay) {
+function getContextFromStartDelay (ortbStartDelay) {
   if (typeof ortbStartDelay === 'undefined') {
     return;
   }
@@ -1101,7 +1101,7 @@ function getContextFromStartDelay(ortbStartDelay) {
   }
 }
 
-function getContextFromPlcmt(ortbPlcmt, ortbStartDelay) {
+function getContextFromPlcmt (ortbPlcmt, ortbStartDelay) {
   if (!ortbPlcmt) {
     return;
   }
@@ -1124,32 +1124,32 @@ function getContextFromPlcmt(ortbPlcmt, ortbStartDelay) {
   }
 }
 
-function hasUserInfo(bid) {
+function hasUserInfo (bid) {
   return !!bid.params.user;
 }
 
-function hasMemberId(bid) {
+function hasMemberId (bid) {
   return !!parseInt(bid.params.member, 10);
 }
 
-function hasAppDeviceInfo(bid) {
+function hasAppDeviceInfo (bid) {
   if (bid.params) {
     return !!bid.params.app
   }
 }
 
-function hasAppId(bid) {
+function hasAppId (bid) {
   if (bid.params && bid.params.app) {
     return !!bid.params.app.id
   }
   return !!bid.params.app
 }
 
-function hasDebug(bid) {
+function hasDebug (bid) {
   return !!bid.debug
 }
 
-function hasAdPod(bid) {
+function hasAdPod (bid) {
   return (
     bid.mediaTypes &&
     bid.mediaTypes.video &&
@@ -1157,7 +1157,7 @@ function hasAdPod(bid) {
   );
 }
 
-function hasOmidSupport(bid) {
+function hasOmidSupport (bid) {
   let hasOmid = false;
   const bidderParams = bid.params;
   const videoParams = bid.params.video;
@@ -1175,7 +1175,7 @@ function hasOmidSupport(bid) {
  * total adpod duration and the range of duration seconds. Sets minduration/
  * maxduration video property according to requireExactDuration configuration
  */
-function createAdPodRequest(tags, adPodBid) {
+function createAdPodRequest (tags, adPodBid) {
   const { durationRangeSec, requireExactDuration } = adPodBid.mediaTypes.video;
 
   const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
@@ -1203,7 +1203,7 @@ function createAdPodRequest(tags, adPodBid) {
   return request;
 }
 
-function getAdPodPlacementNumber(videoParams) {
+function getAdPodPlacementNumber (videoParams) {
   const { adPodDurationSec, durationRangeSec, requireExactDuration } = videoParams;
   const minAllowedDuration = Math.min(...durationRangeSec);
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration);
@@ -1213,16 +1213,16 @@ function getAdPodPlacementNumber(videoParams) {
     : numberOfPlacements;
 }
 
-function setVideoProperty(tag, key, value) {
+function setVideoProperty (tag, key, value) {
   if (isEmpty(tag.video)) { tag.video = {}; }
   tag.video[key] = value;
 }
 
-function getRtbBid(tag) {
+function getRtbBid (tag) {
   return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
 }
 
-function buildNativeRequest(params) {
+function buildNativeRequest (params) {
   const request = {};
 
   // map standard prebid native asset identifier to /ut parameters
@@ -1262,7 +1262,7 @@ function buildNativeRequest(params) {
  * This function hides google div container for outstream bids to remove unwanted space on page. Appnexus renderer creates a new iframe outside of google iframe to render the outstream creative.
  * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
+function hidedfpContainer (elementId) {
   try {
     const el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
     if (el[0]) {
@@ -1273,7 +1273,7 @@ function hidedfpContainer(elementId) {
   }
 }
 
-function hideSASIframe(elementId) {
+function hideSASIframe (elementId) {
   try {
     // find script tag with id 'sas_script'. This ensures it only works if you're using Smart Ad Server.
     const el = document.getElementById(elementId).querySelectorAll("script[id^='sas_script']");
@@ -1285,7 +1285,7 @@ function hideSASIframe(elementId) {
   }
 }
 
-function outstreamRender(bid, doc) {
+function outstreamRender (bid, doc) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
   // push to render queue because ANOutstreamVideo may not be loaded yet
@@ -1302,11 +1302,11 @@ function outstreamRender(bid, doc) {
   });
 }
 
-function handleOutstreamRendererEvents(bid, id, eventName) {
+function handleOutstreamRendererEvents (bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
 }
 
-function parseMediaType(rtbBid) {
+function parseMediaType (rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType === VIDEO) {
     return VIDEO;
@@ -1317,7 +1317,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return (bid.params.reserve) ? bid.params.reserve : null;
   }
@@ -1334,7 +1334,7 @@ function getBidFloor(bid) {
 }
 
 // Convert device data to a format that AppNexus expects
-function convertORTB2DeviceDataToAppNexusDeviceObject(ortb2DeviceData) {
+function convertORTB2DeviceDataToAppNexusDeviceObject (ortb2DeviceData) {
   const _device = {
     useragent: ortb2DeviceData.ua,
     devicetype: ORTB2_DEVICE_TYPE_MAP.get(ortb2DeviceData.devicetype),

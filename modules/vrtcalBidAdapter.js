@@ -142,7 +142,7 @@ export const spec = {
     }
     return bidResponses;
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (!bid.nurl) { return false; }
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
@@ -152,7 +152,7 @@ export const spec = {
     return true;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;

@@ -32,10 +32,10 @@ export const spec = {
   gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.placement);
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
 
@@ -134,17 +134,17 @@ export const spec = {
       };
     });
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     logMessage('STV: serverResponse', serverResponse);
     logMessage('STV: bidRequest', bidRequest);
     return interpretResponse(serverResponse, bidRequest, (bidRequest, response) => null); // we don't use any renderer
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     return handleSyncUrls(syncOptions, serverResponses, gdprConsent);
   }
 }
 
-function stvObjectToQueryString(obj, prefix) {
+function stvObjectToQueryString (obj, prefix) {
   let str = [];
   let p;
   for (p in obj) {
@@ -159,7 +159,7 @@ function stvObjectToQueryString(obj, prefix) {
   return str.join('&');
 }
 
-function serializeSChain(schain) {
+function serializeSChain (schain) {
   let ret = '';
 
   ret += encodeURIComponent(schain.ver);
@@ -188,7 +188,7 @@ function serializeSChain(schain) {
   return ret;
 }
 
-function serializeUids(bidRequest) {
+function serializeUids (bidRequest) {
   let uids = [];
 
   if (bidRequest.userIdAsEids === undefined || !Array.isArray(bidRequest.userIdAsEids)) {

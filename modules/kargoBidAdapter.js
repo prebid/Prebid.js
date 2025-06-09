@@ -59,7 +59,7 @@ let sessionId,
   lastPageUrl,
   requestCounter;
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (!bid || !bid.params) {
     return false;
   }
@@ -67,7 +67,7 @@ function isBidRequestValid(bid) {
   return !!bid.params.placementId;
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const currencyObj = config.getConfig(CURRENCY.KEY);
   const currency = (currencyObj && currencyObj.adServerCurrency) ? currencyObj.adServerCurrency : null;
   const impressions = [];
@@ -195,7 +195,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 }
 
-function interpretResponse(response, bidRequest) {
+function interpretResponse (response, bidRequest) {
   const bids = response.body;
   const fledgeAuctionConfigs = [];
   const bidResponses = [];
@@ -258,7 +258,7 @@ function interpretResponse(response, bidRequest) {
   }
 }
 
-function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
+function getUserSyncs (syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   const syncs = [];
   const seed = _generateRandomUUID();
   const clientId = getClientId();
@@ -288,7 +288,7 @@ function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   return syncs;
 }
 
-function onTimeout(timeoutData) {
+function onTimeout (timeoutData) {
   if (timeoutData == null) {
     return;
   }
@@ -298,21 +298,21 @@ function onTimeout(timeoutData) {
   });
 }
 
-function getExtensions(ortb2, refererInfo) {
+function getExtensions (ortb2, refererInfo) {
   const ext = {};
   if (ortb2) ext.ortb2 = ortb2;
   if (refererInfo) ext.refererInfo = refererInfo;
   return ext;
 }
 
-function _generateRandomUUID() {
+function _generateRandomUUID () {
   try {
     // crypto.getRandomValues is supported everywhere but Opera Mini for years
     var buffer = new Uint8Array(16);
     crypto.getRandomValues(buffer);
     buffer[6] = (buffer[6] & ~176) | 64;
     buffer[8] = (buffer[8] & ~64) | 128;
-    var hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
+    var hex = Array.prototype.map.call(new Uint8Array(buffer), function (x) {
       return ('00' + x.toString(16)).slice(-2);
     }).join('');
     return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
@@ -321,7 +321,7 @@ function _generateRandomUUID() {
   }
 }
 
-function _getCrb() {
+function _getCrb () {
   let localStorageCrb = getCrbFromLocalStorage();
   if (Object.keys(localStorageCrb).length) {
     return localStorageCrb;
@@ -329,14 +329,14 @@ function _getCrb() {
   return getCrbFromCookie();
 }
 
-function _getSessionId() {
+function _getSessionId () {
   if (!sessionId) {
     sessionId = _generateRandomUUID();
   }
   return sessionId;
 }
 
-function getCrbFromCookie() {
+function getCrbFromCookie () {
   try {
     const crb = JSON.parse(STORAGE.getCookie(CERBERUS.KEY));
     if (crb && crb.v) {
@@ -351,7 +351,7 @@ function getCrbFromCookie() {
   }
 }
 
-function getCrbFromLocalStorage() {
+function getCrbFromLocalStorage () {
   try {
     return JSON.parse(atob(getLocalStorageSafely(CERBERUS.KEY)));
   } catch (e) {
@@ -359,7 +359,7 @@ function getCrbFromLocalStorage() {
   }
 }
 
-function getLocalStorageSafely(key) {
+function getLocalStorageSafely (key) {
   try {
     return STORAGE.getDataFromLocalStorage(key);
   } catch (e) {
@@ -367,7 +367,7 @@ function getLocalStorageSafely(key) {
   }
 }
 
-function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
+function getUserIds (tdidAdapter, usp, gdpr, eids, gpp) {
   const crb = spec._getCrb();
   const userIds = {
     crbIDs: crb.syncIds || {}
@@ -430,12 +430,12 @@ function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
   return userIds;
 }
 
-function getClientId() {
+function getClientId () {
   const crb = spec._getCrb();
   return crb.clientId;
 }
 
-function getAllMetadata(bidderRequest) {
+function getAllMetadata (bidderRequest) {
   return {
     pageURL: bidderRequest?.refererInfo?.page,
     rawCRB: STORAGE.getCookie(CERBERUS.KEY),
@@ -443,7 +443,7 @@ function getAllMetadata(bidderRequest) {
   };
 }
 
-function getRequestCount() {
+function getRequestCount () {
   if (lastPageUrl === window.location.pathname) {
     return ++requestCounter;
   }
@@ -451,7 +451,7 @@ function getRequestCount() {
   return requestCounter = 0;
 }
 
-function sendTimeoutData(auctionId, auctionTimeout) {
+function sendTimeoutData (auctionId, auctionTimeout) {
   const params = { aid: auctionId, ato: auctionTimeout };
   const timeoutRequestUrl = buildUrl({
     protocol: 'https',
@@ -468,7 +468,7 @@ function sendTimeoutData(auctionId, auctionTimeout) {
   });
 }
 
-function getImpression(bid) {
+function getImpression (bid) {
   const imp = {
     id: bid.bidId,
     tid: bid.ortb2Imp?.ext?.tid,

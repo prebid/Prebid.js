@@ -17,7 +17,7 @@ import { submodule } from '../src/hook.js';
 const bidderCode = 'mygaruId';
 const syncUrl = 'https://ident.mygaru.com/v2/id';
 
-export function buildUrl(opts) {
+export function buildUrl (opts) {
   const queryPairs = [];
   for (let key in opts) {
     if (opts[key] !== undefined) {
@@ -27,7 +27,7 @@ export function buildUrl(opts) {
   return `${syncUrl}?${queryPairs.join('&')}`;
 }
 
-function requestRemoteIdAsync(url) {
+function requestRemoteIdAsync (url) {
   return new Promise((resolve) => {
     ajax(
       url,
@@ -66,7 +66,7 @@ export const mygaruIdSubmodule = {
    * @function
    * @returns {{id: string} | null}
    */
-  decode(id) {
+  decode (id) {
     return id;
   },
   /**
@@ -76,7 +76,7 @@ export const mygaruIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {{id: string | undefined}}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const gdprApplies = consentData?.gdpr?.gdprApplies === true ? 1 : 0;
     const gdprConsentString = gdprApplies ? consentData.gdpr.consentString : undefined;
     const url = buildUrl({

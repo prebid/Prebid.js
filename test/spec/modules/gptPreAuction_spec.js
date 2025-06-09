@@ -34,7 +34,7 @@ describe('GPT pre-auction module', () => {
   const mockTargeting = {'/123456/header-bid-tag-0': {'hb_deal_rubicon': '1234', 'hb_deal': '1234', 'hb_pb': '0.53', 'hb_adid': '148018fe5e', 'hb_bidder': 'rubicon', 'foobar': '300x250', 'hb_pb_rubicon': '0.53', 'hb_adid_rubicon': '148018fe5e', 'hb_bidder_rubicon': 'rubicon', 'hb_deal_appnexus': '4321', 'hb_pb_appnexus': '0.1', 'hb_adid_appnexus': '567891011', 'hb_bidder_appnexus': 'appnexus'}}
 
   const mockAuctionManager = {
-    findBidByAdId(adId) {
+    findBidByAdId (adId) {
       const bidsMap = {
         '148018fe5e': {
           auctionId: mocksAuctions[0].auctionId
@@ -46,7 +46,7 @@ describe('GPT pre-auction module', () => {
       return bidsMap[adId];
     },
     index: {
-      getAuction({ auctionId }) {
+      getAuction ({ auctionId }) {
         return mocksAuctions.find(auction => auction.auctionId === auctionId);
       }
     }

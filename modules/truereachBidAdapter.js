@@ -80,7 +80,7 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
 
     var gdprParams = '';
@@ -103,7 +103,7 @@ export const spec = {
 
 };
 
-function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
+function buildCommonQueryParamsFromBids (validBidRequests, bidderRequest) {
   let adW = 0;
   let adH = 0;
   let adSizes = Array.isArray(validBidRequests[0].params.sizes) ? validBidRequests[0].params.sizes : validBidRequests[0].sizes;

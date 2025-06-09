@@ -41,7 +41,7 @@ describe('IdImportLibrary Tests', function () {
   });
 
   describe('setConfig', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
     });
@@ -105,7 +105,7 @@ describe('IdImportLibrary Tests', function () {
     let mutationObserverStub;
     let userId;
     let refreshUserIdSpy;
-    beforeEach(function() {
+    beforeEach(function () {
       let sandbox = sinon.createSandbox();
       refreshUserIdSpy = sinon.stub(getGlobal(), 'refreshUserIds');
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
@@ -233,7 +233,7 @@ describe('IdImportLibrary Tests', function () {
     let mutationObserverStub;
     let userId;
     let jsonSpy;
-    beforeEach(function() {
+    beforeEach(function () {
       let sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver');

@@ -22,7 +22,7 @@ const sidTTLMins_ = 30;
  * @param {Object} bid
  * @returns {(number|null)}
  */
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return null;
   }
@@ -41,7 +41,7 @@ function getBidFloor(bid) {
  * Own miscellaneous support functions:
  */
 
-function setIds_(clientId, sessionId) {
+function setIds_ (clientId, sessionId) {
   let dd = null;
   try {
     dd = window.location.hostname.match(/[^.]*\.[^.]{2,3}(?:\.[^.]{2,3})?$/mg);
@@ -72,7 +72,7 @@ const defaultGenIds_ = [
   { id: '_jxcomp' }
 ];
 
-function fetchIds_(cfg) {
+function fetchIds_ (cfg) {
   let ret = {
     client_id_c: '',
     client_id_ls: '',
@@ -92,7 +92,7 @@ function fetchIds_(cfg) {
     if (tmp) ret.session_id_ls = tmp;
 
     let arr = cfg.genids ? cfg.genids : defaultGenIds_;
-    arr.forEach(function(o) {
+    arr.forEach(function (o) {
       tmp = storage.getCookie(o.ck ? o.ck : o.id);
       if (tmp) ret.jxeids[o.id] = tmp;
     });
@@ -102,7 +102,7 @@ function fetchIds_(cfg) {
 
 // device in the payload had been a simple string ('desktop', 'mobile')
 // Now changed to an object. yes the backend is able to handle it.
-function getDevice_() {
+function getDevice_ () {
   const device = config.getConfig('device') || {};
   device.w = device.w || getWinDimensions().innerWidth;
   device.h = device.h || getWinDimensions().innerHeight;
@@ -112,7 +112,7 @@ function getDevice_() {
   return device;
 }
 
-function jxOutstreamRender_(bidAd) {
+function jxOutstreamRender_ (bidAd) {
   bidAd.renderer.push(() => {
     window.JixieOutstreamVideo.init({
       sizes: [bidAd.width, bidAd.height],
@@ -124,7 +124,7 @@ function jxOutstreamRender_(bidAd) {
   });
 }
 
-function createRenderer_(bidAd, scriptUrl, createFcn) {
+function createRenderer_ (bidAd, scriptUrl, createFcn) {
   const renderer = Renderer.install({
     id: bidAd.adUnitCode,
     url: scriptUrl,
@@ -140,7 +140,7 @@ function createRenderer_(bidAd, scriptUrl, createFcn) {
   return renderer;
 }
 
-function getMiscDims_() {
+function getMiscDims_ () {
   let ret = {
     pageurl: '',
     domain: '',
@@ -174,7 +174,7 @@ export const internal = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
       return false;
     }
@@ -183,12 +183,12 @@ export const spec = {
     }
     return true;
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const currencyObj = config.getConfig('currency');
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 
     let bids = [];
-    validBidRequests.forEach(function(one) {
+    validBidRequests.forEach(function (one) {
       let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
       let tmp = {
         bidId: one.bidId,
@@ -244,11 +244,11 @@ export const spec = {
     });
   },
 
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     logError('jixie adapter timed out for the auction.', timeoutData);
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (bid.trackingUrl) {
       internal.ajax(bid.trackingUrl, null, {}, {
         withCredentials: true,
@@ -261,10 +261,10 @@ export const spec = {
     );
   },
 
-  interpretResponse: function(response, bidRequest) {
+  interpretResponse: function (response, bidRequest) {
     if (response && response.body && isArray(response.body.bids)) {
       const bidResponses = [];
-      response.body.bids.forEach(function(oneBid) {
+      response.body.bids.forEach(function (oneBid) {
         let bnd = {};
         Object.assign(bnd, oneBid);
         if (oneBid.osplayer) {
@@ -297,12 +297,12 @@ export const spec = {
     } else { return []; }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses.length || !serverResponses[0].body || !serverResponses[0].body.userSyncs) {
       return false;
     }
     let syncs = [];
-    serverResponses[0].body.userSyncs.forEach(function(sync) {
+    serverResponses[0].body.userSyncs.forEach(function (sync) {
       if (syncOptions.iframeEnabled) {
         syncs.push(sync.uf ? { url: sync.uf, type: 'iframe' } : { url: sync.up, type: 'image' });
       } else if (syncOptions.pixelEnabled && sync.up) {

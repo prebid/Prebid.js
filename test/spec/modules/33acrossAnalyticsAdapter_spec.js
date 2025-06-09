@@ -324,7 +324,7 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
     });
 
-    context('when two auctions overlap', function() {
+    context('when two auctions overlap', function () {
       it('sends a report for each auction', function () {
         const endpoint = faker.internet.url();
         this.enableAnalytics({ endpoint });
@@ -643,7 +643,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 const adUnitCodes = ['/19968336/header-bid-tag-0', '/19968336/header-bid-tag-1', '/17118521/header-bid-tag-2'];
 const adSlotElementIds = ['ad-slot-div-0', 'ad-slot-div-1', 'ad-slot-div-2'];
 
-function performStandardAuction({ exclude = [], useSlotElementIds = false } = {}) {
+function performStandardAuction ({ exclude = [], useSlotElementIds = false } = {}) {
   const mockEvents = getMockEvents();
   const { prebid, gam } = mockEvents;
   const [auction] = prebid;
@@ -687,7 +687,7 @@ function performStandardAuction({ exclude = [], useSlotElementIds = false } = {}
   }
 }
 
-function mapToBids(auctions) {
+function mapToBids (auctions) {
   return auctions.flatMap(
     auction => auction.adUnits.flatMap(
       au => au.bids
@@ -695,8 +695,8 @@ function mapToBids(auctions) {
   );
 }
 
-function getLocalAssert() {
-  function isValidAnalyticsReport(report) {
+function getLocalAssert () {
+  function isValidAnalyticsReport (report) {
     assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
     if ('usPrivacy' in report) {
       assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
@@ -723,14 +723,14 @@ function getLocalAssert() {
     assert.isAbove(report.auctions.length, 0);
     report.auctions.forEach(isValidAuction);
   }
-  function isValidAuction(auction) {
+  function isValidAuction (auction) {
     assert.hasAllKeys(auction, ['adUnits', 'auctionId', 'userIds']);
     assert.isArray(auction.adUnits);
     assert.isString(auction.auctionId);
     assert.isArray(auction.userIds);
     auction.adUnits.forEach(isValidAdUnit);
   }
-  function isValidAdUnit(adUnit) {
+  function isValidAdUnit (adUnit) {
     assert.hasAllKeys(adUnit, ['transactionId', 'adUnitCode', 'slotId', 'mediaTypes', 'sizes', 'bids']);
     assert.isString(adUnit.transactionId);
     assert.isString(adUnit.adUnitCode);
@@ -742,7 +742,7 @@ function getLocalAssert() {
     adUnit.sizes.forEach(isValidSizeString);
     adUnit.bids.forEach(isValidBid);
   }
-  function isValidBid(bid) {
+  function isValidBid (bid) {
     assert.containsAllKeys(bid, ['bidder', 'bidId', 'source', 'status', 'hasWon']);
     if ('bidResponse' in bid) {
       isValidBidResponse(bid.bidResponse);
@@ -753,7 +753,7 @@ function getLocalAssert() {
     assert.oneOf(bid.status, ['pending', 'timeout', 'targetingSet', 'rendered', 'success', 'rejected', 'no-bid', 'error']);
     assert.oneOf(bid.hasWon, [0, 1]);
   }
-  function isValidBidResponse(bidResponse) {
+  function isValidBidResponse (bidResponse) {
     assert.containsAllKeys(bidResponse, ['mediaType', 'size', 'cur', 'cpm', 'cpmFloor']);
     if ('cpmOrig' in bidResponse) {
       assert.isNumber(bidResponse.cpmOrig);
@@ -764,14 +764,14 @@ function getLocalAssert() {
     assert.isNumber(bidResponse.cpm);
     assert.isNumber(bidResponse.cpmFloor);
   }
-  function isValidMediaType(mediaType) {
+  function isValidMediaType (mediaType) {
     assert.oneOf(mediaType, ['banner', 'video', 'native']);
   }
-  function isValidSizeString(size) {
+  function isValidSizeString (size) {
     assert.match(size, /[0-9]+x[0-9]+/);
   }
 
-  function calledOnceWithStringJsonEquivalent(sinonSpy, ...args) {
+  function calledOnceWithStringJsonEquivalent (sinonSpy, ...args) {
     sinon.assert.calledOnce(sinonSpy);
     args.forEach((arg, i) => {
       const stubCallArgs = sinonSpy.firstCall.args[i]
@@ -798,7 +798,7 @@ function getLocalAssert() {
   }
 };
 
-function createReportWithThreeBidWonEvents() {
+function createReportWithThreeBidWonEvents () {
   return {
     pid: 'test-pid',
     src: 'pbjs',
@@ -875,7 +875,7 @@ function createReportWithThreeBidWonEvents() {
   };
 }
 
-function getMockEvents() {
+function getMockEvents () {
   const auctionId = 'auction-000';
   const userId = {
     '33acrossId': {

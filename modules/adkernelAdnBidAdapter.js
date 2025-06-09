@@ -10,11 +10,11 @@ const DEFAULT_PROTOCOLS = [2, 3, 5, 6];
 const DEFAULT_APIS = [1, 2];
 const GVLID = 14;
 
-function isRtbDebugEnabled(refInfo) {
+function isRtbDebugEnabled (refInfo) {
   return refInfo.topmostLocation?.indexOf('adk_debug=true') !== -1;
 }
 
-function buildImp(bidRequest) {
+function buildImp (bidRequest) {
   let imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode
@@ -51,14 +51,14 @@ function buildImp(bidRequest) {
  * @param sizes
  * @return Array[Array[Number]]
  */
-function canonicalizeSizesArray(sizes) {
+function canonicalizeSizesArray (sizes) {
   if (sizes.length === 2 && !isArray(sizes[0])) {
     return [sizes];
   }
   return sizes;
 }
 
-function buildRequestParams(tags, bidderRequest) {
+function buildRequestParams (tags, bidderRequest) {
   let {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
   let req = {
     id: bidderRequest.bidderRequestId,
@@ -84,7 +84,7 @@ function buildRequestParams(tags, bidderRequest) {
   return req;
 }
 
-function buildSite(refInfo) {
+function buildSite (refInfo) {
   const result = {
     page: refInfo.page,
     secure: ~~(refInfo.page && refInfo.page.startsWith('https')),
@@ -97,7 +97,7 @@ function buildSite(refInfo) {
   return result;
 }
 
-function buildBid(tag) {
+function buildBid (tag) {
   let bid = {
     requestId: tag.impid,
     cpm: tag.bid,
@@ -123,7 +123,7 @@ function buildBid(tag) {
   return bid;
 }
 
-function fillBidMeta(bid, tag) {
+function fillBidMeta (bid, tag) {
   if (isStr(tag.agencyName)) {
     deepSetValue(bid, 'meta.agencyName', tag.agencyName);
   }
@@ -150,7 +150,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['engagesimply', 'adpluto_dsp'],
 
-  isBidRequestValid: function(bidRequest) {
+  isBidRequestValid: function (bidRequest) {
     return 'params' in bidRequest &&
       (typeof bidRequest.params.host === 'undefined' || typeof bidRequest.params.host === 'string') &&
       typeof bidRequest.params.pubId === 'number' &&
@@ -158,7 +158,7 @@ export const spec = {
       ('banner' in bidRequest.mediaTypes || 'video' in bidRequest.mediaTypes);
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     let dispatch = bidRequests.map(buildImp)
       .reduce((acc, curr, index) => {
         let bidRequest = bidRequests[index];
@@ -184,7 +184,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     let response = serverResponse.body;
     if (!response.tags) {
       return [];
@@ -195,7 +195,7 @@ export const spec = {
     return response.tags.map(buildBid);
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (!serverResponses || serverResponses.length === 0) {
       return [];
     }
@@ -209,7 +209,7 @@ export const spec = {
   }
 };
 
-function buildSyncs(serverResponses, propName, type) {
+function buildSyncs (serverResponses, propName, type) {
   return serverResponses.filter(rps => rps.body && rps.body[propName])
     .map(rsp => rsp.body[propName])
     .reduce((a, b) => a.concat(b), [])

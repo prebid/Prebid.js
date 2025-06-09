@@ -57,7 +57,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       expect(prebidmanagerAnalytics.getOptions().url).to.equal(custom_url);
     });
 
-    it('bid won event', function() {
+    it('bid won event', function () {
       let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       prebidmanagerAnalytics.enableAnalytics({
         provider: 'prebidmanager',

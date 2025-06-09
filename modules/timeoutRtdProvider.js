@@ -18,7 +18,7 @@ export const timeoutRtdFunctions = {
   handleTimeoutIncrement
 };
 
-const entries = Object.entries || function(obj) {
+const entries = Object.entries || function (obj) {
   const ownProps = Object.keys(obj);
   let i = ownProps.length;
   let resArray = new Array(i);
@@ -26,7 +26,7 @@ const entries = Object.entries || function(obj) {
   return resArray;
 };
 
-function getDeviceType() {
+function getDeviceType () {
   const userAgent = window.navigator.userAgent.toLowerCase();
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(userAgent))) {
     return 5; // tablet
@@ -37,13 +37,13 @@ function getDeviceType() {
   return 2; // personal computer
 }
 
-function checkVideo(adUnits) {
+function checkVideo (adUnits) {
   return adUnits.some((adUnit) => {
     return adUnit.mediaTypes && adUnit.mediaTypes.video;
   });
 }
 
-function getConnectionSpeed() {
+function getConnectionSpeed () {
   const connection = window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection || {}
   const connectionType = connection.type || connection.effectiveType;
 
@@ -72,7 +72,7 @@ function getConnectionSpeed() {
  * @param {Object} rules
  * @return {number}
  */
-function calculateTimeoutModifier(adUnits, rules) {
+function calculateTimeoutModifier (adUnits, rules) {
   logInfo('Timeout rules', rules);
   let timeoutModifier = 0;
   let toAdd = 0;
@@ -125,13 +125,13 @@ function calculateTimeoutModifier(adUnits, rules) {
  * @param {Object} config
  * @param {Object} userConsent
  */
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+function getBidRequestData (reqBidsConfigObj, callback, config, userConsent) {
   logInfo('Timeout rtd config', config);
   const timeoutUrl = deepAccess(config, 'params.endpoint.url');
   if (timeoutUrl) {
     logInfo('Timeout url', timeoutUrl);
     ajax.ajaxBuilder()(timeoutUrl, {
-      success: function(response) {
+      success: function (response) {
         try {
           const rules = JSON.parse(response);
           timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules);
@@ -140,7 +140,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
         }
         callback();
       },
-      error: function(errorStatus) {
+      error: function (errorStatus) {
         logError('Timeout request error!', errorStatus);
         callback();
       }
@@ -159,7 +159,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
  * @param {Object} reqBidsConfigObj
  * @param {Object} rules
  */
-function handleTimeoutIncrement(reqBidsConfigObj, rules) {
+function handleTimeoutIncrement (reqBidsConfigObj, rules) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   const timeoutModifier = timeoutRtdFunctions.calculateTimeoutModifier(adUnits, rules);
   const bidderTimeout = reqBidsConfigObj.timeout || getGlobal().getConfig('bidderTimeout');
@@ -177,7 +177,7 @@ export const timeoutSubmodule = {
   getBidRequestData,
 };
 
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', timeoutSubmodule);
 }
 

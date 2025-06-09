@@ -91,7 +91,7 @@ export let init = () => {
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
     window.googletag.cmd.push(() => {
-      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
+      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function (event) {
         impressionViewableHandler(globalModuleConfig, event.slot, event);
       });
     });

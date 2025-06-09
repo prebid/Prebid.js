@@ -34,10 +34,10 @@ export const spec = {
   gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.placement);
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let payload = {};
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
@@ -163,12 +163,12 @@ export const spec = {
       };
     });
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     logMessage('DSPx: serverResponse', serverResponse);
     logMessage('DSPx: bidRequest', bidRequest);
     return interpretResponse(serverResponse, bidRequest, (bidRequest, response) => newRenderer(bidRequest, response));
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     return handleSyncUrls(syncOptions, serverResponses, gdprConsent);
   }
 }
@@ -178,7 +178,7 @@ export const spec = {
  *
  * @param bid
  */
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   logMessage('[DSPx][outstreamRender] bid:', bid);
   const embedCode = createOutstreamEmbedCode(bid);
   try {
@@ -217,7 +217,7 @@ function outstreamRender(bid) {
  * @param bid
  * @returns {DocumentFragment}
  */
-function createOutstreamEmbedCode(bid) {
+function createOutstreamEmbedCode (bid) {
   const fragment = window.document.createDocumentFragment();
   let div = window.document.createElement('div');
   div.innerHTML = deepAccess(bid, 'renderer.config.code', '');
@@ -250,7 +250,7 @@ function createOutstreamEmbedCode(bid) {
  * @param response
  * @returns {Renderer}
  */
-function newRenderer(bidRequest, response) {
+function newRenderer (bidRequest, response) {
   logMessage('[DSPx] newRenderer', bidRequest, response);
   const renderer = Renderer.install({
     id: response.renderer.id || response.bid_id,

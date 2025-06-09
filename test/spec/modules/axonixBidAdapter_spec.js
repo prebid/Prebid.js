@@ -287,12 +287,12 @@ describe('AxonixBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('considers corner cases', function() {
+    it('considers corner cases', function () {
       expect(spec.interpretResponse(null)).to.be.an('array').that.is.empty;
       expect(spec.interpretResponse()).to.be.an('array').that.is.empty;
     });
 
-    it('ignores unparseable responses', function() {
+    it('ignores unparseable responses', function () {
       expect(spec.interpretResponse('invalid')).to.be.an('array').that.is.empty;
       expect(spec.interpretResponse(['invalid'])).to.be.an('array').that.is.empty;
       expect(spec.interpretResponse({ body: [{ invalid: 'object' }] })).to.be.an('array').that.is.empty;

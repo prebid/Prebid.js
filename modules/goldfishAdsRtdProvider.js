@@ -59,7 +59,7 @@ const getTargetingDataFromApi = (key) => {
       }
     }
     const callbacks = {
-      success(responseText, response) {
+      success (responseText, response) {
         try {
           const output = manageCallbackResponse(response);
           resolve(output);
@@ -67,7 +67,7 @@ const getTargetingDataFromApi = (key) => {
           reject(e);
         }
       },
-      error(error) {
+      error (error) {
         reject(error);
       }
     };

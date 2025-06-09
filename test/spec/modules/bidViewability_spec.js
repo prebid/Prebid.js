@@ -10,11 +10,11 @@ import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterMana
 import parse from 'url-parse';
 
 const GPT_SLOT = {
-  getAdUnitPath() {
+  getAdUnitPath () {
     return '/harshad/Jan/2021/';
   },
 
-  getSlotElementId() {
+  getSlotElementId () {
     return 'DIV-1';
   }
 };
@@ -42,35 +42,35 @@ const PBJS_WINNING_BID = {
   ]
 };
 
-describe('#bidViewability', function() {
+describe('#bidViewability', function () {
   let gptSlot;
   let pbjsWinningBid;
 
-  beforeEach(function() {
+  beforeEach(function () {
     gptSlot = Object.assign({}, GPT_SLOT);
     pbjsWinningBid = Object.assign({}, PBJS_WINNING_BID);
   });
 
-  describe('isBidAdUnitCodeMatchingSlot', function() {
-    it('match found by GPT Slot getAdUnitPath', function() {
+  describe('isBidAdUnitCodeMatchingSlot', function () {
+    it('match found by GPT Slot getAdUnitPath', function () {
       expect(bidViewability.isBidAdUnitCodeMatchingSlot(pbjsWinningBid, gptSlot)).to.equal(true);
     });
 
-    it('match found by GPT Slot getSlotElementId', function() {
+    it('match found by GPT Slot getSlotElementId', function () {
       pbjsWinningBid.adUnitCode = 'DIV-1';
       expect(bidViewability.isBidAdUnitCodeMatchingSlot(pbjsWinningBid, gptSlot)).to.equal(true);
     });
 
-    it('match not found', function() {
+    it('match not found', function () {
       pbjsWinningBid.adUnitCode = 'DIV-10';
       expect(bidViewability.isBidAdUnitCodeMatchingSlot(pbjsWinningBid, gptSlot)).to.equal(false);
     });
   });
 
-  describe('getMatchingWinningBidForGPTSlot', function() {
+  describe('getMatchingWinningBidForGPTSlot', function () {
     let winningBidsArray;
     let sandbox
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       // mocking winningBidsArray
       winningBidsArray = [];
@@ -81,14 +81,14 @@ describe('#bidViewability', function() {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
     })
 
-    it('should find a match by using customMatchFunction provided in config', function() {
+    it('should find a match by using customMatchFunction provided in config', function () {
       // Needs config to be passed with customMatchFunction
       let bidViewabilityConfig = {
-        customMatchFunction(bid, slot) {
+        customMatchFunction (bid, slot) {
           return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
         }
       };
@@ -99,10 +99,10 @@ describe('#bidViewability', function() {
       expect(wb).to.deep.equal(newWinningBid);
     });
 
-    it('should NOT find a match by using customMatchFunction provided in config', function() {
+    it('should NOT find a match by using customMatchFunction provided in config', function () {
       // Needs config to be passed with customMatchFunction
       let bidViewabilityConfig = {
-        customMatchFunction(bid, slot) {
+        customMatchFunction (bid, slot) {
           return ('AD-' + slot.getAdUnitPath()) === bid.adUnitCode;
         }
       };
@@ -111,7 +111,7 @@ describe('#bidViewability', function() {
       expect(wb).to.equal(null);
     });
 
-    it('should find a match by using default matching function', function() {
+    it('should find a match by using default matching function', function () {
       // Needs config to be passed without customMatchFunction
       // Needs pbjs.getWinningBids to be implemented with match
       winningBidsArray.push(PBJS_WINNING_BID);
@@ -119,7 +119,7 @@ describe('#bidViewability', function() {
       expect(wb).to.deep.equal(PBJS_WINNING_BID);
     });
 
-    it('should NOT find a match by using default matching function', function() {
+    it('should NOT find a match by using default matching function', function () {
       // Needs config to be passed without customMatchFunction
       // Needs pbjs.getWinningBids to be implemented without match; winningBidsArray is set to empty in beforeEach
       let wb = bidViewability.getMatchingWinningBidForGPTSlot({}, gptSlot);
@@ -127,26 +127,26 @@ describe('#bidViewability', function() {
     });
   });
 
-  describe('fireViewabilityPixels', function() {
+  describe('fireViewabilityPixels', function () {
     let sandbox;
     let triggerPixelSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
     });
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
     });
 
-    it('DO NOT fire pixels if NOT mentioned in module config', function() {
+    it('DO NOT fire pixels if NOT mentioned in module config', function () {
       let moduleConfig = {};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       expect(triggerPixelSpy.callCount).to.equal(0);
     });
 
-    it('fire pixels if mentioned in module config', function() {
+    it('fire pixels if mentioned in module config', function () {
       let moduleConfig = {firePixels: true};
       bidViewability.fireViewabilityPixels(moduleConfig, PBJS_WINNING_BID);
       PBJS_WINNING_BID.vurls.forEach((url, i) => {
@@ -182,7 +182,7 @@ describe('#bidViewability', function() {
       });
     });
 
-    it('GDPR: should include the GDPR keys when GDPR Consent is available', function() {
+    it('GDPR: should include the GDPR keys when GDPR Consent is available', function () {
       let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
       gdprDataHandlerStub.returns({
         gdprApplies: true,
@@ -238,7 +238,7 @@ describe('#bidViewability', function() {
     })
   });
 
-  describe('impressionViewableHandler', function() {
+  describe('impressionViewableHandler', function () {
     let sandbox;
     let triggerPixelSpy;
     let eventsEmitSpy;
@@ -257,7 +257,7 @@ describe('#bidViewability', function() {
       }
     ];
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
       eventsEmitSpy = sandbox.spy(events, ['emit']);
@@ -273,11 +273,11 @@ describe('#bidViewability', function() {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
     })
 
-    it('matching winning bid is found', function() {
+    it('matching winning bid is found', function () {
       let moduleConfig = {
         firePixels: true
       };
@@ -298,7 +298,7 @@ describe('#bidViewability', function() {
       expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
     });
 
-    it('matching winning bid is NOT found', function() {
+    it('matching winning bid is NOT found', function () {
       // fire pixels should NOT be called
       expect(triggerPixelSpy.callCount).to.equal(0);
       // adapterManager.callBidViewableBidder is NOT called
@@ -307,7 +307,7 @@ describe('#bidViewability', function() {
       expect(eventsEmitSpy.callCount).to.equal(0);
     });
 
-    it('should call the triggerBilling function if the viewable bid has deferBilling set to true', function() {
+    it('should call the triggerBilling function if the viewable bid has deferBilling set to true', function () {
       let moduleConfig = {};
       const bid = {
         ...PBJS_WINNING_BID,

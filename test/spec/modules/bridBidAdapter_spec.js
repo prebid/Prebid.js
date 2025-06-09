@@ -2,7 +2,7 @@ import { spec } from '../../../modules/bridBidAdapter.js'
 import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
 import { deepClone } from '../../../src/utils.js';
 
-describe('Brid Bid Adapter', function() {
+describe('Brid Bid Adapter', function () {
   const videoRequest = [{
     bidder: 'brid',
     params: {
@@ -17,7 +17,7 @@ describe('Brid Bid Adapter', function() {
     }
   }];
 
-  it('Test the bid validation function', function() {
+  it('Test the bid validation function', function () {
     const validBid = spec.isBidRequestValid(videoRequest[0]);
     const invalidBid = spec.isBidRequestValid(null);
 
@@ -38,7 +38,7 @@ describe('Brid Bid Adapter', function() {
     expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal(12345);
   });
 
-  it('Test the request schain sending', function() {
+  it('Test the request schain sending', function () {
     const globalSchain = {
       ver: '1.0',
       complete: 1,

@@ -361,13 +361,13 @@ describe('contxtful bid adapter', function () {
       const mockObjects = [];
 
       // Mock HTMLCanvasElement (constructor name contains 'HTML' and 'Canvas')
-      function HTMLCanvasElement() {}
+      function HTMLCanvasElement () {}
       const mockCanvas = Object.create(HTMLCanvasElement.prototype);
       Object.defineProperty(mockCanvas, 'constructor', { value: HTMLCanvasElement });
       testObj.mockCanvas = mockCanvas;
 
       // Mock CSSStyleDeclaration (constructor name contains 'CSS')
-      function CSSStyleDeclaration() {}
+      function CSSStyleDeclaration () {}
       const mockStyle = Object.create(CSSStyleDeclaration.prototype);
       Object.defineProperty(mockStyle, 'constructor', { value: CSSStyleDeclaration });
       testObj.mockStyle = mockStyle;
@@ -414,7 +414,7 @@ describe('contxtful bid adapter', function () {
         cpm: 1.25,
         renderer: {
           url: 'https://example.com/renderer.js',
-          handlers: { onLoad: function() {} }
+          handlers: { onLoad: function () {} }
         },
         ad: '<div>Ad content</div>',
         meta: {

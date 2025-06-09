@@ -42,13 +42,13 @@ const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(ma
 const expectOptout = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidOptoutContainer(token));
 const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
 
-describe('EUID module', function() {
+describe('EUID module', function () {
   let suiteSandbox, restoreSubtleToUndefined = false;
 
   const configureEuidResponse = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
   const configureEuidCstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
 
-  before(function() {
+  before(function () {
     uninstallTcfControl();
     hook.ready();
     suiteSandbox = sinon.sandbox.create();
@@ -67,29 +67,29 @@ describe('EUID module', function() {
       publicKey: {}
     }));
   });
-  after(function() {
+  after(function () {
     suiteSandbox.restore();
     if (restoreSubtleToUndefined) window.crypto.subtle = undefined;
   });
-  beforeEach(function() {
+  beforeEach(function () {
     init(config);
     setSubmoduleRegistry([euidIdSubmodule]);
   });
-  afterEach(function() {
+  afterEach(function () {
     $$PREBID_GLOBAL$$.requestBids.removeAll();
     config.resetConfig();
     cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);
     coreStorage.removeDataFromLocalStorage(moduleCookieName);
   });
 
-  it('When a server-only token value is provided in config, it is available to the auction.', async function() {
+  it('When a server-only token value is provided in config, it is available to the auction.', async function () {
     setGdprApplies(true);
     config.setConfig(makePrebidConfig(null, {value: makeEuidIdentityContainer(initialToken)}));
     const bid = await runAuction();
     expectToken(bid, initialToken);
   });
 
-  it('When a server-only token is provided in the module storage cookie but consent is not available, it is not available to the auction.', async function() {
+  it('When a server-only token is provided in the module storage cookie but consent is not available, it is not available to the auction.', async function () {
     setGdprApplies();
     coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
     config.setConfig({userSync: {auctionDelay: auctionDelayMs, userIds: [{name: 'euid'}]}});
@@ -97,7 +97,7 @@ describe('EUID module', function() {
     expectNoIdentity(bid);
   });
 
-  it('When a server-only token is provided in the module storage cookie, it is available to the auction.', async function() {
+  it('When a server-only token is provided in the module storage cookie, it is available to the auction.', async function () {
     setGdprApplies(true);
     coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
     config.setConfig({userSync: {auctionDelay: auctionDelayMs, userIds: [{name: 'euid'}]}});
@@ -105,7 +105,7 @@ describe('EUID module', function() {
     expectToken(bid, legacyToken);
   })
 
-  it('When a valid response body is provided in config, it is available to the auction', async function() {
+  it('When a valid response body is provided in config, it is available to the auction', async function () {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, false, false);
     config.setConfig(makePrebidConfig({euidToken}));
@@ -113,7 +113,7 @@ describe('EUID module', function() {
     expectToken(bid, initialToken);
   })
 
-  it('When a valid response body is provided via cookie, it is available to the auction', async function() {
+  it('When a valid response body is provided via cookie, it is available to the auction', async function () {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, false, false);
     cookieHelpers.setPublisherCookie(publisherCookieName, euidToken);
@@ -130,7 +130,7 @@ describe('EUID module', function() {
     expect(server.requests[0]?.url).to.have.string('https://prod.euid.eu/');
   });
 
-  it('When an expired token is provided and the API responds in time, the refreshed token is provided to the auction.', async function() {
+  it('When an expired token is provided and the API responds in time, the refreshed token is provided to the auction.', async function () {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
     configureEuidResponse(200, makeSuccessResponseBody(refreshedToken));
@@ -141,7 +141,7 @@ describe('EUID module', function() {
   });
 
   if (FEATURES.UID2_CSTG) {
-    it('Should use client side generated EUID token in the auction.', async function() {
+    it('Should use client side generated EUID token in the auction.', async function () {
       setGdprApplies(true);
       const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
       configureEuidCstgResponse(200, makeSuccessResponseBody(clientSideGeneratedToken));
@@ -151,7 +151,7 @@ describe('EUID module', function() {
       const bid = await runAuction();
       expectToken(bid, clientSideGeneratedToken);
     });
-    it('Should receive an optout response when the user has opted out.', async function() {
+    it('Should receive an optout response when the user has opted out.', async function () {
       setGdprApplies(true);
       const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
       configureEuidCstgResponse(200, makeOptoutResponseBody(optoutToken));
@@ -167,7 +167,7 @@ describe('EUID module', function() {
     before(() => {
       attachIdSystem(euidIdSubmodule);
     });
-    it('euid', function() {
+    it('euid', function () {
       const userId = {
         euid: {'id': 'Sample_AD_Token'}
       };

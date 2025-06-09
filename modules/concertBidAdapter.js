@@ -22,7 +22,7 @@ export const spec = {
    *
    * @param {BidRequest} bid The bid params to validate.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (!bid.params.partnerId) {
       logWarn('Missing partnerId bid parameter');
       return false;
@@ -38,7 +38,7 @@ export const spec = {
    * @param {Object} bidderRequest - the bidder request object
    * @return {ServerRequest} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     logMessage(validBidRequests);
     logMessage(bidderRequest);
 
@@ -106,7 +106,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     logMessage(serverResponse);
     logMessage(bidRequest);
 
@@ -145,7 +145,7 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    */
-  onTimeout: function(data) {
+  onTimeout: function (data) {
     logMessage('concert bidder timed out');
     logMessage(data);
   },
@@ -154,7 +154,7 @@ export const spec = {
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} bid The bid that won the auction
    */
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     logMessage('concert bidder won bid');
     logMessage(bid);
   },
@@ -167,7 +167,7 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 /**
  * Check or generate a UID for the current user.
  */
-function getUid(bidderRequest, validBidRequests) {
+function getUid (bidderRequest, validBidRequests) {
   if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return false;
   }
@@ -191,7 +191,7 @@ function getUid(bidderRequest, validBidRequests) {
   return uid;
 }
 
-function getUserIdsFromEids(bid) {
+function getUserIdsFromEids (bid) {
   const sourceMapping = {
     'sharedid.org': 'sharedId',
     'pubcid.org': 'pubcId',
@@ -214,7 +214,7 @@ function getUserIdsFromEids(bid) {
 /**
  * Whether the user has opted out of personalization.
  */
-function hasOptedOutOfPersonalization() {
+function hasOptedOutOfPersonalization () {
   const CONCERT_NO_PERSONALIZATION_KEY = 'c_nap';
 
   return storage.getDataFromLocalStorage(CONCERT_NO_PERSONALIZATION_KEY) === 'true';
@@ -225,7 +225,7 @@ function hasOptedOutOfPersonalization() {
  *
  * @param {Object} bidderRequest Object which contains any data consent signals
  */
-function consentAllowsPpid(bidderRequest) {
+function consentAllowsPpid (bidderRequest) {
   let uspConsentAllows = true;
 
   // if a us privacy string was provided, but they explicitly opted out
@@ -246,7 +246,7 @@ function consentAllowsPpid(bidderRequest) {
   return uspConsentAllows && gdprConsentAllows;
 }
 
-function getOffset(el) {
+function getOffset (el) {
   if (el) {
     const rect = getBoundingClientRect(el);
     const viewport = getViewportCoordinates();
@@ -257,7 +257,7 @@ function getOffset(el) {
   }
 }
 
-function getTdid(bidderRequest, validBidRequests) {
+function getTdid (bidderRequest, validBidRequests) {
   if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return null;
   }

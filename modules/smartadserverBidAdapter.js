@@ -44,7 +44,7 @@ export const spec = {
    *
    * @param {*} schain object
    */
-  serializeSupplyChain: function(schain) {
+  serializeSupplyChain: function (schain) {
     if (!schain || !schain.nodes) return null;
     const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
     return `${schain.ver},${schain.complete}!` +
@@ -60,7 +60,7 @@ export const spec = {
    * @param {*} bannerSizes Array of size array (ex. [[300, 250]]).
    * @returns
    */
-  adaptBannerSizes: function(bannerSizes) {
+  adaptBannerSizes: function (bannerSizes) {
     return bannerSizes.map(size => ({
       w: size[0],
       h: size[1]
@@ -73,7 +73,7 @@ export const spec = {
    * @param {*} payload Payload that will be sent in the ServerRequest
    * @param {*} videoMediaType Video media type
    */
-  fillPayloadForVideoBidRequest: function(payload, videoMediaType, videoParams) {
+  fillPayloadForVideoBidRequest: function (payload, videoMediaType, videoParams) {
     const playerSize = videoMediaType.playerSize[0];
     const map = {
       maxbitrate: 'vbrmax',
@@ -113,7 +113,7 @@ export const spec = {
    * @param {number} value
    * @returns object with the property or empty
    */
-  getValuableProperty: function(property, value) {
+  getValuableProperty: function (property, value) {
     return typeof property === 'string' && isInteger(value) && value
       ? { [property]: value } : {};
   },
@@ -124,7 +124,7 @@ export const spec = {
    * @param {*} videoParams
    * @returns protocol from either videoMediaType or videoParams
    */
-  getProtocolForVideoBidRequest: function(videoMediaType, videoParams) {
+  getProtocolForVideoBidRequest: function (videoMediaType, videoParams) {
     if (videoParams !== undefined && videoParams.protocol) {
       return videoParams.protocol;
     } else if (videoMediaType !== undefined) {
@@ -141,7 +141,7 @@ export const spec = {
    * @param {*} videoParams
    * @returns positive integer value of startdelay
    */
-  getStartDelayForVideoBidRequest: function(videoMediaType, videoParams) {
+  getStartDelayForVideoBidRequest: function (videoMediaType, videoParams) {
     if (videoParams?.startDelay) {
       return videoParams.startDelay;
     } else if (videoMediaType?.startdelay) {
@@ -161,7 +161,7 @@ export const spec = {
    * @param {string} domain Endpoint domain .
    * @returns {ServerRequest} Info describing the request to the server.
    */
-  createServerRequest: function(payload, domain) {
+  createServerRequest: function (payload, domain) {
     return {
       method: 'POST',
       url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
@@ -339,7 +339,7 @@ export const spec = {
         url: serverResponses[0].body.cSyncUrl
       });
     } else if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body.dspPixels !== undefined) {
-      serverResponses[0].body.dspPixels.forEach(function(pixel) {
+      serverResponses[0].body.dspPixels.forEach(function (pixel) {
         syncs.push({
           type: 'image',
           url: pixel

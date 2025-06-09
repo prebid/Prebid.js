@@ -3,12 +3,12 @@ import {AuctionIndex} from '../../../../src/auctionIndex.js';
 describe('auction index', () => {
   let index, auctions;
 
-  function mockAuction(id, adUnits, bidderRequests, ortb2) {
+  function mockAuction (id, adUnits, bidderRequests, ortb2) {
     return {
-      getAuctionId() { return id },
-      getAdUnits() { return adUnits; },
-      getBidRequests() { return bidderRequests; },
-      getFPD() {
+      getAuctionId () { return id },
+      getAdUnits () { return adUnits; },
+      getBidRequests () { return bidderRequests; },
+      getFPD () {
         return { global: { ortb2 } }
       }
     }

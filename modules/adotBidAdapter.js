@@ -92,7 +92,7 @@ const DEFAULT_CURRENCY = 'USD';
  * @param {string} data
  * @returns {object|null} Parsed object or null
  */
-function tryParse(data) {
+function tryParse (data) {
   try {
     return JSON.parse(data);
   } catch (err) {
@@ -107,7 +107,7 @@ function tryParse(data) {
  * @param {BidderRequest} bidderRequest
  * @returns {Site|null} Formatted Site OpenRtb object or null
  */
-function getOpenRTBSiteObject(bidderRequest) {
+function getOpenRTBSiteObject (bidderRequest) {
   const refererInfo = (bidderRequest && bidderRequest.refererInfo) || null;
 
   const domain = refererInfo ? refererInfo.domain : window.location.hostname;
@@ -133,7 +133,7 @@ function getOpenRTBSiteObject(bidderRequest) {
  *
  * @returns {Device} Formatted Device OpenRtb object or null
  */
-function getOpenRTBDeviceObject() {
+function getOpenRTBDeviceObject () {
   return { ua: navigator.userAgent, language: navigator.language };
 }
 
@@ -143,7 +143,7 @@ function getOpenRTBDeviceObject() {
  * @param {BidderRequest} bidderRequest
  * @returns {User|null} Formatted User OpenRtb object or null
  */
-function getOpenRTBUserObject(bidderRequest) {
+function getOpenRTBUserObject (bidderRequest) {
   if (!bidderRequest || !bidderRequest.gdprConsent || !isStr(bidderRequest.gdprConsent.consentString)) return null;
 
   return {
@@ -159,7 +159,7 @@ function getOpenRTBUserObject(bidderRequest) {
  * @param {BidderRequest} bidderRequest
  * @returns {Regs|null} Formatted Regs OpenRtb object or null
  */
-function getOpenRTBRegsObject(bidderRequest) {
+function getOpenRTBRegsObject (bidderRequest) {
   if (!bidderRequest || !bidderRequest.gdprConsent || !isBoolean(bidderRequest.gdprConsent.gdprApplies)) return null;
   return { ext: { gdpr: bidderRequest.gdprConsent.gdprApplies } };
 }
@@ -169,7 +169,7 @@ function getOpenRTBRegsObject(bidderRequest) {
  *
  * @returns {Ext|null} Formatted Ext OpenRtb object or null
  */
-function getOpenRTBExtObject() {
+function getOpenRTBExtObject () {
   return {
     adot: { adapter_version: ADAPTER_VERSION },
     should_use_gzip: true
@@ -182,7 +182,7 @@ function getOpenRTBExtObject() {
  * @param {MediaType} mediaTypes Prebid MediaTypes
  * @returns {string|null} Mediatype or null if not found
  */
-function getMediaType(mediaTypes) {
+function getMediaType (mediaTypes) {
   if (mediaTypes.banner) return 'banner';
   if (mediaTypes.video) return 'video';
   if (mediaTypes.native) return 'native';
@@ -196,7 +196,7 @@ function getMediaType(mediaTypes) {
  * @param {BidderRequest} bidderRequest
  * @returns {OpenRtbBanner} OpenRtb banner object
  */
-function buildBanner(banner, bidderRequest) {
+function buildBanner (banner, bidderRequest) {
   const pos = bidderRequest.position || 0;
   const format = (banner.sizes || []).map(([w, h]) => ({ w, h }));
   return { format, pos };
@@ -208,7 +208,7 @@ function buildBanner(banner, bidderRequest) {
  * @param {Video} video MediaType Video Object
  * @returns {Object} Size as { w: number; h: number }
  */
-function getVideoSize(video) {
+function getVideoSize (video) {
   const sizes = video.playerSize || [];
   const format = sizes.length > 0 ? sizes[0] : [];
 
@@ -224,7 +224,7 @@ function getVideoSize(video) {
  * @param {Video} video MediaType Video Object
  * @returns {OpenRtbVideo} OpenRtb video object
  */
-function buildVideo(video) {
+function buildVideo (video) {
   const { w, h } = getVideoSize(video);
 
   return {
@@ -253,7 +253,7 @@ function buildVideo(video) {
  * @param {NativeMedia} native Native Mediatype
  * @returns {OpenRtbNativeAssets}
  */
-function cleanNativeMedia(native) {
+function cleanNativeMedia (native) {
   if (native.type !== 'image') return native;
 
   return {
@@ -272,7 +272,7 @@ function cleanNativeMedia(native) {
  * @param {NativeMedia} native Native Mediatype
  * @returns {OpenRtbNative}
  */
-function buildNative(native) {
+function buildNative (native) {
   native = cleanNativeMedia(native);
 
   const assets = Object.keys(native)
@@ -318,7 +318,7 @@ function buildNative(native) {
  * @param {BidderRequest} bidderRequest PrebidJS Bidder Request
  * @returns {Imp} OpenRtb Impression
  */
-function buildImpFromAdUnit(adUnit, bidderRequest) {
+function buildImpFromAdUnit (adUnit, bidderRequest) {
   const { bidId, mediaTypes, params, adUnitCode } = adUnit;
   const mediaType = getMediaType(mediaTypes);
 
@@ -348,7 +348,7 @@ function buildImpFromAdUnit(adUnit, bidderRequest) {
  * @param {VideoMedia} video
  * @returns {boolean}
  */
-function isValidVideo(video) {
+function isValidVideo (video) {
   if (REQUIRED_VIDEO_PARAMS.some((param) => video[param] === undefined)) return false;
   return true;
 }
@@ -360,7 +360,7 @@ function isValidVideo(video) {
  * @param {Bid} bid
  * @returns {boolean}
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   const video = bid.mediaTypes.video;
   return !video || isValidVideo(video);
 }
@@ -374,7 +374,7 @@ function isBidRequestValid(bid) {
  *
  * @returns {OpenRTBBidRequest} OpenRTB bid request
  */
-function buildBidRequest(adUnits, bidderRequest, requestId) {
+function buildBidRequest (adUnits, bidderRequest, requestId) {
   const data = {
     id: requestId,
     imp: adUnits.map((adUnit) => buildImpFromAdUnit(adUnit, bidderRequest)).filter((item) => !!item),
@@ -397,7 +397,7 @@ function buildBidRequest(adUnits, bidderRequest, requestId) {
  * @param {string} requestId Request ID
  * @returns {AjaxRequest}
  */
-function buildAjaxRequest(adUnits, bidderRequest, bidderUrl, requestId) {
+function buildAjaxRequest (adUnits, bidderRequest, bidderUrl, requestId) {
   return {
     method: BID_METHOD,
     url: bidderUrl,
@@ -411,7 +411,7 @@ function buildAjaxRequest(adUnits, bidderRequest, bidderUrl, requestId) {
  * @param {Array<BidRequest>} validBidRequests
  * @returns {Dictionnary}
  */
-function splitAdUnits(validBidRequests) {
+function splitAdUnits (validBidRequests) {
   return validBidRequests.reduce((adUnits, adUnit) => {
     const bidderRequestId = adUnit.bidderRequestId;
     if (!adUnits[bidderRequestId]) {
@@ -429,7 +429,7 @@ function splitAdUnits(validBidRequests) {
  * @param {BidderRequest} bidderRequest
  * @returns {Array<AjaxRequest>}
  */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   const adUnits = splitAdUnits(validBidRequests);
@@ -447,7 +447,7 @@ function buildRequests(validBidRequests, bidderRequest) {
  *
  * @returns {NativeAssets} Native PrebidJS
  */
-function buildNativeBidData(bid) {
+function buildNativeBidData (bid) {
   const { adm, price } = bid;
   const parsedAdm = tryParse(adm);
   const { assets, link: { url, clicktrackers }, imptrackers, jstracker } = parsedAdm.native;
@@ -473,7 +473,7 @@ function buildNativeBidData(bid) {
  * @param {string} mediaType
  * @returns {any|null}
  */
-function buildRenderer(bid, mediaType) {
+function buildRenderer (bid, mediaType) {
   if (!(mediaType === VIDEO &&
     bid.ext &&
     bid.ext.adot &&
@@ -524,7 +524,7 @@ function buildRenderer(bid, mediaType) {
  * @param {string} mediaType
  * @returns {Object}
  */
-function buildCreativeBidData(bid, mediaType) {
+function buildCreativeBidData (bid, mediaType) {
   const adm = bid.adm ? replaceAuctionPrice(bid.adm, bid.price) : null;
   const nurl = (!bid.adm && bid.nurl) ? replaceAuctionPrice(bid.nurl, bid.price) : null;
 
@@ -546,7 +546,7 @@ function buildCreativeBidData(bid, mediaType) {
  * @param {Imp} imp OpenRtb Imp
  * @returns {boolean}
  */
-function isBidImpInvalid(bid, imp) {
+function isBidImpInvalid (bid, imp) {
   return !bid || !imp;
 }
 
@@ -558,7 +558,7 @@ function isBidImpInvalid(bid, imp) {
  * @param {Imp} imp
  * @returns {PrebidJSResponse}
  */
-function buildBidResponse(bid, bidResponse, imp) {
+function buildBidResponse (bid, bidResponse, imp) {
   if (isBidImpInvalid(bid, imp)) return null;
   const mediaType = bid.ext.adot.media_type;
   const baseBid = {
@@ -585,7 +585,7 @@ function buildBidResponse(bid, bidResponse, imp) {
  * @param {Object} bidRequest
  * @returns {Imp} OpenRtb Imp
  */
-function getImpfromBid(bid, bidRequest) {
+function getImpfromBid (bid, bidRequest) {
   if (!bidRequest || !bidRequest.imp) return null;
   const imps = bidRequest.imp;
   return ((imps) || []).find((imp) => imp.id === bid.impid);
@@ -597,7 +597,7 @@ function getImpfromBid(bid, bidRequest) {
  * @param {OpenRtbBidResponse} response
  * @returns {boolean}
  */
-function isValidResponse(response) {
+function isValidResponse (response) {
   return isPlainObject(response) &&
     isPlainObject(response.body) &&
     isStr(response.body.cur) &&
@@ -610,7 +610,7 @@ function isValidResponse(response) {
  * @param {Object} request
  * @returns {boolean}
  */
-function isValidRequest(request) {
+function isValidRequest (request) {
   return isPlainObject(request) &&
     isPlainObject(request.data) &&
     isArray(request.data.imp);
@@ -623,7 +623,7 @@ function isValidRequest(request) {
  * @param {Object} request
  * @returns {PrebidJSResponse}
  */
-function interpretResponse(serverResponse, request) {
+function interpretResponse (serverResponse, request) {
   if (!isValidResponse(serverResponse) || !isValidRequest(request)) return [];
 
   const bidsResponse = serverResponse.body;
@@ -651,7 +651,7 @@ function interpretResponse(serverResponse, request) {
  *
  * @returns {number} Floor price
  */
-function getFloor(adUnit, size, mediaType, currency) {
+function getFloor (adUnit, size, mediaType, currency) {
   if (!isFn(adUnit.getFloor)) return 0;
 
   const floorResult = adUnit.getFloor({ currency, mediaType, size });
@@ -669,7 +669,7 @@ function getFloor(adUnit, size, mediaType, currency) {
  *
  * @returns {number} Lower floor.
  */
-function getMainFloor(adUnit, formats, mediaType, currency) {
+function getMainFloor (adUnit, formats, mediaType, currency) {
   if (!formats) return getFloor(adUnit, '*', mediaType, currency);
 
   return formats.reduce((bidFloor, format) => {

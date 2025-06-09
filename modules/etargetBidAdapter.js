@@ -21,7 +21,7 @@ const countryMap = {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
     return !!(bid.params.refid && bid.params.country);
   },
@@ -70,7 +70,7 @@ export const spec = {
       gdpr: gdprObject
     };
 
-    function getMetaData() {
+    function getMetaData () {
       var mts = {};
       var hmetas = document.getElementsByTagName('meta');
       var wnames = ['title', 'og:title', 'description', 'og:description', 'og:url', 'base', 'keywords'];
@@ -99,7 +99,7 @@ export const spec = {
       return mts;
     }
 
-    function formRequestUrl(reqData) {
+    function formRequestUrl (reqData) {
       var key;
       var url = [];
 
@@ -153,7 +153,7 @@ export const spec = {
 
     return bidRespones;
 
-    function verifySize(adItem, validSizes) {
+    function verifySize (adItem, validSizes) {
       for (var j = 0, k = validSizes.length; j < k; j++) {
         if (adItem.width == validSizes[j][0] &&
             adItem.height == validSizes[j][1]) {
@@ -164,7 +164,7 @@ export const spec = {
     }
   }
 };
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return null;
   }

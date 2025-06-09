@@ -18,7 +18,7 @@ import {
 import {server} from 'test/mocks/xhr.js';
 import {deepClone} from '../../../src/utils.js';
 
-describe('jwplayerRtdProvider', function() {
+describe('jwplayerRtdProvider', function () {
   const testIdForSuccess = 'test_id_for_success';
   const testIdForFailure = 'test_id_for_failure';
   const validSegments = ['test_seg_1', 'test_seg_2'];
@@ -111,19 +111,19 @@ describe('jwplayerRtdProvider', function() {
         request = server.requests[0]
       });
 
-      it('should not write to cache when response is malformed', function() {
+      it('should not write to cache when response is malformed', function () {
         request.respond('{]');
         const targetingInfo = getVatFromCache(testIdForFailure);
         expect(targetingInfo).to.be.null;
       });
 
-      it('should not write to cache when playlist is absent', function() {
+      it('should not write to cache when playlist is absent', function () {
         request.respond({});
         const targetingInfo = getVatFromCache(testIdForFailure);
         expect(targetingInfo).to.be.null;
       });
 
-      it('should not write to cache when playlist is empty', function() {
+      it('should not write to cache when playlist is empty', function () {
         request.respond(
           200,
           responseHeader,
@@ -135,7 +135,7 @@ describe('jwplayerRtdProvider', function() {
         expect(targetingInfo).to.be.null;
       });
 
-      it('should not write to cache when request errors', function() {
+      it('should not write to cache when request errors', function () {
         request.error();
         const targetingInfo = getVatFromCache(testIdForFailure);
         expect(targetingInfo).to.be.null;
@@ -234,7 +234,7 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      const jwplayerMock = function(playerID) {
+      const jwplayerMock = function (playerID) {
         if (playerID === validPlayerID) {
           return playerInstanceMock;
         } else {
@@ -677,13 +677,13 @@ describe('jwplayerRtdProvider', function() {
       expect(targeting).to.deep.equal(config);
     });
 
-    it('should include banner ad units that specify jwTargeting', function() {
+    it('should include banner ad units that specify jwTargeting', function () {
       const adUnit = { mediaTypes: { banner: {} }, ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.deep.equal(config);
     });
 
-    it('should include outstream ad units that specify jwTargeting', function() {
+    it('should include outstream ad units that specify jwTargeting', function () {
       const adUnit = { mediaTypes: { video: { context: 'outstream' } }, ortb2Imp: { ext: { data: { jwTargeting: {} } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.deep.equal(config);
@@ -723,7 +723,7 @@ describe('jwplayerRtdProvider', function() {
     })
   });
 
-  describe('Get content id', function() {
+  describe('Get content id', function () {
     it('prefixes jw_ to the media id', function () {
       const mediaId = 'mediaId';
       const contentId = getContentId(mediaId);
@@ -830,7 +830,7 @@ describe('jwplayerRtdProvider', function() {
       expect(copy).to.eql(ortb2);
     });
 
-    it('should create a structure compliant with the oRTB 2 spec', function() {
+    it('should create a structure compliant with the oRTB 2 spec', function () {
       const ortb2 = {}
       const expectedId = 'expectedId';
       const expectedUrl = 'expectedUrl';
@@ -1732,7 +1732,7 @@ describe('jwplayerRtdProvider', function() {
         expect(bidRequestSpy.calledOnce).to.be.true;
       });
 
-      it('executes callback only after requests in adUnit complete', function() {
+      it('executes callback only after requests in adUnit complete', function () {
         fetchTargetingInformation({
           mediaIDs: validMediaIDs
         });
@@ -1797,7 +1797,7 @@ describe('jwplayerRtdProvider', function() {
               }
             }
           },
-          bids: [ bid ]
+          bids: [bid]
         };
         const expectedContentId = 'jw_' + adUnit.ortb2Imp.ext.data.jwTargeting.mediaID;
         const expectedTargeting = {
@@ -1806,7 +1806,7 @@ describe('jwplayerRtdProvider', function() {
           }
         };
 
-        jwplayerSubmodule.getBidRequestData({ adUnits: [ adUnit ] }, bidRequestSpy);
+        jwplayerSubmodule.getBidRequestData({ adUnits: [adUnit] }, bidRequestSpy);
         expect(bidRequestSpy.calledOnce).to.be.true;
         expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
         expect(bid.rtd.jwplayer.targeting).to.not.have.property('segments');
@@ -1821,11 +1821,11 @@ describe('jwplayerRtdProvider', function() {
         const adUnitWithMediaId = {
           code: adUnitCode,
           mediaID: testIdForSuccess,
-          bids: [ bid1 ]
+          bids: [bid1]
         };
         const adUnitEmpty = {
           code: 'test_ad_unit_empty',
-          bids: [ bid2 ]
+          bids: [bid2]
         };
 
         const adUnitEmptyfpd = {
@@ -1835,7 +1835,7 @@ describe('jwplayerRtdProvider', function() {
               id: 'sthg'
             }
           },
-          bids: [ bid3 ]
+          bids: [bid3]
         };
 
         jwplayerSubmodule.getBidRequestData({ adUnits: [adUnitWithMediaId, adUnitEmpty, adUnitEmptyfpd] }, bidRequestSpy);

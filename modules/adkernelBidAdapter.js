@@ -258,7 +258,7 @@ registerBidder(spec);
  * @param bidRequests {BidRequest[]}
  * @param refererInfo {refererInfo}
  */
-function groupImpressionsByHostZone(bidRequests, refererInfo) {
+function groupImpressionsByHostZone (bidRequests, refererInfo) {
   let secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
   return Object.values(
     bidRequests.map(bidRequest => buildImps(bidRequest, secure))
@@ -278,7 +278,7 @@ function groupImpressionsByHostZone(bidRequests, refererInfo) {
  *  @param bidRequest {BidRequest}
  *  @param secure {boolean}
  */
-function buildImps(bidRequest, secure) {
+function buildImps (bidRequest, secure) {
   let imp = {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
@@ -351,14 +351,14 @@ function buildImps(bidRequest, secure) {
   return result;
 }
 
-function initImpBidfloor(imp, bid, sizes, mediaType) {
+function initImpBidfloor (imp, bid, sizes, mediaType) {
   let bidfloor = getBidFloor(bid, mediaType, sizes);
   if (bidfloor) {
     imp.bidfloor = bidfloor;
   }
 }
 
-function getDefinedParamsOrEmpty(object, params) {
+function getDefinedParamsOrEmpty (object, params) {
   if (object === undefined) {
     return {};
   }
@@ -371,7 +371,7 @@ function getDefinedParamsOrEmpty(object, params) {
  * @param bidderCode {string}
  * @returns {boolean}
  */
-function isSyncMethodAllowed(syncRule, bidderCode) {
+function isSyncMethodAllowed (syncRule, bidderCode) {
   if (!syncRule) {
     return false;
   }
@@ -385,7 +385,7 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
  * @param bidderCode {string}
  * @returns {number|undefined}
  */
-function getAllowedSyncMethod(bidderCode) {
+function getAllowedSyncMethod (bidderCode) {
   if (!config.getConfig('userSync.syncEnabled')) {
     return;
   }
@@ -402,7 +402,7 @@ function getAllowedSyncMethod(bidderCode) {
  * @param fpd {Object}
  * @returns {{device: Object}}
  */
-function makeDevice(fpd) {
+function makeDevice (fpd) {
   let device = mergeDeep({
     'ip': 'caller',
     'ipv6': 'caller',
@@ -422,7 +422,7 @@ function makeDevice(fpd) {
  * @param fpd {Object}
  * @returns {{site: Object}|{app: Object}}
  */
-function makeSiteOrApp(bidderRequest, fpd) {
+function makeSiteOrApp (bidderRequest, fpd) {
   let {refererInfo} = bidderRequest;
   let appConfig = config.getConfig('app');
   if (isEmpty(appConfig)) {
@@ -438,7 +438,7 @@ function makeSiteOrApp(bidderRequest, fpd) {
  * @param fpd {Object}
  * @returns {{user: Object} | undefined}
  */
-function makeUser(bidderRequest, fpd) {
+function makeUser (bidderRequest, fpd) {
   let {gdprConsent} = bidderRequest;
   let user = fpd.user || {};
   if (gdprConsent && gdprConsent.consentString !== undefined) {
@@ -458,7 +458,7 @@ function makeUser(bidderRequest, fpd) {
  * @param bidderRequest {BidderRequest}
  * @returns {{regs: Object} | undefined}
  */
-function makeRegulations(bidderRequest) {
+function makeRegulations (bidderRequest) {
   let {gdprConsent, uspConsent, gppConsent} = bidderRequest;
   let regs = {};
   if (gdprConsent) {
@@ -488,7 +488,7 @@ function makeRegulations(bidderRequest) {
  * @param fpd {Object} First party data
  * @returns
  */
-function makeBaseRequest(bidderRequest, imps, fpd) {
+function makeBaseRequest (bidderRequest, imps, fpd) {
   let request = {
     'id': bidderRequest.bidderRequestId,
     'imp': imps,
@@ -508,7 +508,7 @@ function makeBaseRequest(bidderRequest, imps, fpd) {
  * Initialize sync capabilities
  * @param bidderRequest {BidderRequest}
  */
-function makeSyncInfo(bidderRequest) {
+function makeSyncInfo (bidderRequest) {
   let {bidderCode} = bidderRequest;
   let syncMethod = getAllowedSyncMethod(bidderCode);
   if (syncMethod) {
@@ -525,7 +525,7 @@ function makeSyncInfo(bidderRequest) {
  * @param schain {Object=} Supply chain config
  * @return {Object} Complete rtb request
  */
-function buildRtbRequest(imps, bidderRequest, schain) {
+function buildRtbRequest (imps, bidderRequest, schain) {
   let fpd = bidderRequest.ortb2 || {};
 
   let req = mergeDeep(
@@ -546,7 +546,7 @@ function buildRtbRequest(imps, bidderRequest, schain) {
  * Get browser language
  * @returns {String}
  */
-function getLanguage() {
+function getLanguage () {
   const language = navigator.language ? 'language' : 'userLanguage';
   return navigator[language].split('-')[0];
 }
@@ -554,7 +554,7 @@ function getLanguage() {
 /**
  * Creates site description object
  */
-function createSite(refInfo, fpd) {
+function createSite (refInfo, fpd) {
   let site = {
     'domain': refInfo.domain,
     'page': refInfo.page
@@ -568,7 +568,7 @@ function createSite(refInfo, fpd) {
   return site;
 }
 
-function getExtendedUserIds(bidderRequest) {
+function getExtendedUserIds (bidderRequest) {
   let eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
   if (isArray(eids)) {
     return eids;
@@ -579,7 +579,7 @@ function getExtendedUserIds(bidderRequest) {
  *  Format creative with optional nurl call
  *  @param bid rtb Bid object
  */
-function formatAdMarkup(bid) {
+function formatAdMarkup (bid) {
   let adm = bid.adm;
   if ('nurl' in bid) {
     adm += createTrackPixelHtml(`${bid.nurl}&px=1`);
@@ -590,7 +590,7 @@ function formatAdMarkup(bid) {
 /**
  * Basic validates to comply with platform requirements
  */
-function validateNativeAdUnit(adUnit) {
+function validateNativeAdUnit (adUnit) {
   return validateNativeImageSize(adUnit.image) && validateNativeImageSize(adUnit.icon) &&
     !deepAccess(adUnit, 'privacyLink.required') && // not supported yet
     !deepAccess(adUnit, 'privacyIcon.required'); // not supported yet
@@ -599,7 +599,7 @@ function validateNativeAdUnit(adUnit) {
 /**
  * Validates image asset size definition
  */
-function validateNativeImageSize(img) {
+function validateNativeImageSize (img) {
   if (!img) {
     return true;
   }
@@ -615,7 +615,7 @@ function validateNativeImageSize(img) {
 /**
  * Creates native ad for native 1.2 response
  */
-function buildNativeAd(adm) {
+function buildNativeAd (adm) {
   let resp = JSON.parse(adm);
   // temporary workaround for top-level native object wrapper
   if ('native' in resp) {
@@ -624,6 +624,6 @@ function buildNativeAd(adm) {
   return resp;
 }
 
-function stripMultiformatSuffix(impid) {
+function stripMultiformatSuffix (impid) {
   return impid.substr(0, impid.length - MULTI_FORMAT_SUFFIX.length - 1);
 }

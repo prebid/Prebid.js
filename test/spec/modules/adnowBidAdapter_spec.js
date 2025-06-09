@@ -3,7 +3,7 @@ import { spec } from 'modules/adnowBidAdapter.js';
 
 describe('adnowBidAdapter', function () {
   describe('isBidRequestValid', function () {
-    it('Should return true', function() {
+    it('Should return true', function () {
       expect(spec.isBidRequestValid({
         bidder: 'adnow',
         params: {
@@ -12,7 +12,7 @@ describe('adnowBidAdapter', function () {
       })).to.equal(true);
     });
 
-    it('Should return false when required params is not passed', function() {
+    it('Should return false when required params is not passed', function () {
       expect(spec.isBidRequestValid({
         bidder: 'adnow',
         params: {}
@@ -20,8 +20,8 @@ describe('adnowBidAdapter', function () {
     });
   });
 
-  describe('buildRequests', function() {
-    it('Common settings', function() {
+  describe('buildRequests', function () {
+    it('Common settings', function () {
       const bidRequestData = [{
         bidId: 'bid12345',
         params: {
@@ -83,14 +83,14 @@ describe('adnowBidAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     const request = {
       bidRequest: {
         bidId: 'bid12345'
       }
     };
 
-    it('Response with native bid', function() {
+    it('Response with native bid', function () {
       const response = {
         currency: 'USD',
         cpm: 0.5,
@@ -126,7 +126,7 @@ describe('adnowBidAdapter', function () {
       expect(nativePart.image.width).to.be.equal(200);
     });
 
-    it('Response with banner bid', function() {
+    it('Response with banner bid', function () {
       const response = {
         currency: 'USD',
         cpm: 0.5,
@@ -147,7 +147,7 @@ describe('adnowBidAdapter', function () {
       expect(bid.ad).to.be.equal('<div>Banner</div>');
     });
 
-    it('Response with no bid should return an empty array', function() {
+    it('Response with no bid should return an empty array', function () {
       const noBidResponses = [
         false,
         {},

@@ -799,7 +799,7 @@ describe('nextMillenniumBidAdapterTests', () => {
   });
 
   const bidRequestDataGI = getBidRequestDataGI();
-  function getBidRequestDataGI(adUnitCodes = ['test-banner-gi', 'test-banner-gi', 'test-video-gi']) {
+  function getBidRequestDataGI (adUnitCodes = ['test-banner-gi', 'test-banner-gi', 'test-video-gi']) {
     return [
       {
         adUnitCode: adUnitCodes[0],
@@ -862,7 +862,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     ];
   }
 
-  describe('check parameters group_id or placement_id', function() {
+  describe('check parameters group_id or placement_id', function () {
     let numberTest = 0
     for (let test of bidRequestDataGI) {
       it(`test - ${++numberTest}`, () => {
@@ -892,7 +892,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     };
   });
 
-  describe('Check ext.next_mil_imps', function() {
+  describe('Check ext.next_mil_imps', function () {
     const expectedNextMilImps = [
       {
         impId: 'bid1234',
@@ -924,7 +924,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     };
   });
 
-  describe('function spec._getUrlPixelMetric', function() {
+  describe('function spec._getUrlPixelMetric', function () {
     const dataForTests = [
       {
         title: 'Check function of getting URL for sending statistics data - 1',

@@ -21,7 +21,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
     emptyUrl,
     analyticsType
   }), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     if (typeof args !== 'undefined') {
       if (eventType === EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
@@ -45,7 +45,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
   }
 });
 
-function mapBidRequests(params) {
+function mapBidRequests (params) {
   let arr = [];
   if (typeof params.bids !== 'undefined' && params.bids.length) {
     params.bids.forEach(function (bid) {
@@ -65,7 +65,7 @@ function mapBidRequests(params) {
   return arr;
 }
 
-function mapBidResponse(bidResponse, status) {
+function mapBidResponse (bidResponse, status) {
   if (status !== 'win') {
     let bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
     Object.assign(bid, {
@@ -109,7 +109,7 @@ function mapBidResponse(bidResponse, status) {
   }
 }
 
-function send(data, status) {
+function send (data, status) {
   let location = getWindowLocation();
   if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
     Object.assign(data.auctionInit, { host: location.host, path: location.pathname, search: location.search });

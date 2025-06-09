@@ -466,7 +466,7 @@ describe('Equativ bid adapter tests', () => {
           }
         }
       };
-      const request = spec.buildRequests([ DEFAULT_BANNER_BID_REQUESTS[0] ], bidRequest)[0];
+      const request = spec.buildRequests([DEFAULT_BANNER_BID_REQUESTS[0]], bidRequest)[0];
 
       expect(request.data.user.buyeruid).to.deep.eq(bidRequest.ortb2.user.buyeruid);
 
@@ -579,7 +579,7 @@ describe('Equativ bid adapter tests', () => {
       delete missingRequiredVideoRequest.mediaTypes.video.mimes;
       delete missingRequiredVideoRequest.mediaTypes.video.placement;
 
-      const bidRequests = [ missingRequiredVideoRequest ];
+      const bidRequests = [missingRequiredVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -599,7 +599,7 @@ describe('Equativ bid adapter tests', () => {
           video: {}
         }
       };
-      const bidRequests = [ emptyVideoRequest ];
+      const bidRequests = [emptyVideoRequest];
       const bidderRequest = { ...DEFAULT_VIDEO_BIDDER_REQUEST, bids: bidRequests };
 
       // ACT
@@ -641,7 +641,7 @@ describe('Equativ bid adapter tests', () => {
             native: {}
           }
         };
-        const bidRequests = [ emptyNativeRequest ];
+        const bidRequests = [emptyNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT
@@ -661,7 +661,7 @@ describe('Equativ bid adapter tests', () => {
 
         // removing just "assets" for this test
         delete missingRequiredNativeRequest.nativeOrtbRequest.assets;
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // this value comes from native.js, part of the ortbConverter library
@@ -686,7 +686,7 @@ describe('Equativ bid adapter tests', () => {
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.plcmttype;
         delete missingRequiredNativeRequest.mediaTypes.native.ortb.privacy;
 
-        const bidRequests = [ missingRequiredNativeRequest ];
+        const bidRequests = [missingRequiredNativeRequest];
         const bidderRequest = { ...DEFAULT_NATIVE_BIDDER_REQUEST, bids: bidRequests };
 
         // ACT

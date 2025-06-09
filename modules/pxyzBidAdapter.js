@@ -140,7 +140,7 @@ export const spec = {
   }
 }
 
-function newBid(bid, currency) {
+function newBid (bid, currency) {
   const { adomain } = bid;
   return {
     requestId: bid.impid,
@@ -159,7 +159,7 @@ function newBid(bid, currency) {
   };
 }
 
-function mapImpression(bid) {
+function mapImpression (bid) {
   return {
     id: bid.bidId,
     banner: mapBanner(bid),
@@ -177,7 +177,7 @@ function mapImpression(bid) {
   };
 }
 
-function mapBanner(bid) {
+function mapBanner (bid) {
   return {
     w: parseInt(bid.sizes[0][0], 10),
     h: parseInt(bid.sizes[0][1], 10),
@@ -185,7 +185,7 @@ function mapBanner(bid) {
   };
 }
 
-function mapSizes(bidSizes) {
+function mapSizes (bidSizes) {
   const format = [];
   bidSizes.forEach(size => {
     format.push({
@@ -196,11 +196,11 @@ function mapSizes(bidSizes) {
   return format;
 }
 
-function isMobile() {
+function isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
-function isConnectedTV() {
+function isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 

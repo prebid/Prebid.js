@@ -172,7 +172,7 @@ describe('Adyoulike Adapter', function () {
       {
         'video': {
           'context': 'instream',
-          'playerSize': [[ 640, 480 ]]
+          'playerSize': [[640, 480]]
         }
       },
       ortb2Imp: {
@@ -636,7 +636,7 @@ describe('Adyoulike Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    it('Should expand short native image config type', function() {
+    it('Should expand short native image config type', function () {
       const request = spec.buildRequests(bidRequestWithNativeImageType, bidderRequest);
       const payload = JSON.parse(request.data);
 
@@ -654,7 +654,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_0'].Native).deep.equal(sentNativeImageType);
     });
 
-    it('Should target video enpoint for video mediatype', function() {
+    it('Should target video enpoint for video mediatype', function () {
       const request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
       expect(request.url).to.contain(getEndpoint());
     });
@@ -890,7 +890,7 @@ describe('Adyoulike Adapter', function () {
       expect(result).to.deep.equal(videoResult);
     });
 
-    it('should expose gvlid', function() {
+    it('should expose gvlid', function () {
       expect(spec.gvlid).to.equal(259)
     })
   });
@@ -900,16 +900,16 @@ describe('Adyoulike Adapter', function () {
 
     const emptySync = [];
 
-    describe('with iframe enabled', function() {
+    describe('with iframe enabled', function () {
       const userSyncConfig = { iframeEnabled: true };
 
-      it('should not add parameters if not provided', function() {
+      it('should not add parameters if not provided', function () {
         expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}`
         }]);
       });
 
-      it('should add GDPR parameters if provided', function() {
+      it('should add GDPR parameters if provided', function () {
         expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&gdpr=1&gdpr_consent=`
         }]);
@@ -922,24 +922,24 @@ describe('Adyoulike Adapter', function () {
         }]);
       });
 
-      it('should add CCPA parameters if provided', function() {
+      it('should add CCPA parameters if provided', function () {
         expect(spec.getUserSyncs(userSyncConfig, {}, undefined, 'foo?')).to.deep.equal([{
           type: 'iframe', url: `${syncurl_iframe}&us_privacy=foo%3F`
         }]);
       });
 
-      describe('COPPA', function() {
+      describe('COPPA', function () {
         let sandbox;
 
-        this.beforeEach(function() {
+        this.beforeEach(function () {
           sandbox = sinon.sandbox.create();
         });
 
-        this.afterEach(function() {
+        this.afterEach(function () {
           sandbox.restore();
         });
 
-        it('should add coppa parameters if provided', function() {
+        it('should add coppa parameters if provided', function () {
           sandbox.stub(config, 'getConfig').callsFake(key => {
             const config = {
               'coppa': true
@@ -953,8 +953,8 @@ describe('Adyoulike Adapter', function () {
         });
       });
 
-      describe('GPP', function() {
-        it('should not apply if not gppConsent.gppString', function() {
+      describe('GPP', function () {
+        it('should not apply if not gppConsent.gppString', function () {
           const gppConsent = { gppString: '', applicableSections: [123] };
           const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
           expect(result).to.deep.equal([{
@@ -962,7 +962,7 @@ describe('Adyoulike Adapter', function () {
           }]);
         });
 
-        it('should not apply if not gppConsent.applicableSections', function() {
+        it('should not apply if not gppConsent.applicableSections', function () {
           const gppConsent = { gppString: '', applicableSections: undefined };
           const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
           expect(result).to.deep.equal([{
@@ -970,7 +970,7 @@ describe('Adyoulike Adapter', function () {
           }]);
         });
 
-        it('should not apply if empty gppConsent.applicableSections', function() {
+        it('should not apply if empty gppConsent.applicableSections', function () {
           const gppConsent = { gppString: '', applicableSections: [] };
           const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
           expect(result).to.deep.equal([{
@@ -978,7 +978,7 @@ describe('Adyoulike Adapter', function () {
           }]);
         });
 
-        it('should apply if all above are available', function() {
+        it('should apply if all above are available', function () {
           const gppConsent = { gppString: 'foo?', applicableSections: [123] };
           const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
           expect(result).to.deep.equal([{
@@ -986,7 +986,7 @@ describe('Adyoulike Adapter', function () {
           }]);
         });
 
-        it('should support multiple sections', function() {
+        it('should support multiple sections', function () {
           const gppConsent = { gppString: 'foo', applicableSections: [123, 456] };
           const result = spec.getUserSyncs(userSyncConfig, {}, undefined, undefined, gppConsent);
           expect(result).to.deep.equal([{
@@ -996,10 +996,10 @@ describe('Adyoulike Adapter', function () {
       });
     });
 
-    describe('with iframe disabled', function() {
+    describe('with iframe disabled', function () {
       const userSyncConfig = { iframeEnabled: false };
 
-      it('should return empty list of syncs', function() {
+      it('should return empty list of syncs', function () {
         expect(spec.getUserSyncs(userSyncConfig, {}, undefined, undefined)).to.deep.equal(emptySync);
         expect(spec.getUserSyncs(userSyncConfig, {}, {gdprApplies: true, consentString: 'foo'}, 'bar')).to.deep.equal(emptySync);
       });

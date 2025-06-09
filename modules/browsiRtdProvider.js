@@ -60,18 +60,18 @@ let _ic = {};
 /** @type {null|number} */
 let TIMESTAMP = null;
 
-export function setTimestamp() {
+export function setTimestamp () {
   TIMESTAMP = timestamp();
 }
 
-export function initAnalytics() {
+export function initAnalytics () {
   getGlobal().enableAnalytics({
     provider: 'browsi',
     options: {}
   })
 }
 
-export function sendPageviewEvent(eventType) {
+export function sendPageviewEvent (eventType) {
   if (eventType === 'PAGEVIEW') {
     window.addEventListener('browsi_pageview', () => {
       events.emit(EVENTS.BILLABLE_EVENT, {
@@ -83,7 +83,7 @@ export function sendPageviewEvent(eventType) {
   }
 }
 
-function sendModuleInitEvent(rsn) {
+function sendModuleInitEvent (rsn) {
   events.emit(EVENTS.BROWSI_INIT, {
     moduleName: MODULE_NAME,
     sk: _moduleParams.siteKey,
@@ -94,7 +94,7 @@ function sendModuleInitEvent(rsn) {
   });
 }
 
-function sendBrowsiDataEvent(data) {
+function sendBrowsiDataEvent (data) {
   events.emit(EVENTS.BROWSI_DATA, {
     moduleName: MODULE_NAME,
     pvid: PVID || data.pvid,
@@ -112,12 +112,12 @@ function sendBrowsiDataEvent(data) {
  * collect required data from page
  * send data to browsi server to get predictions
  */
-export function collectData() {
+export function collectData () {
   const predictorData = getPredictorData(storage, _moduleParams, TIMESTAMP, PVID);
   getPredictionsFromServer(`//${_moduleParams.url}/prebid/v2?${toUrlParams(predictorData)}`);
 }
 
-export function setBrowsiData(data) {
+export function setBrowsiData (data) {
   _browsiData = data;
   if (!PVID) { PVID = data.pvid; }
   if (isFn(_dataReadyCallback)) {
@@ -131,7 +131,7 @@ export function setBrowsiData(data) {
  * call callback when data is ready
  * @param {function} callback
  */
-function waitForData(callback) {
+function waitForData (callback) {
   if (_browsiData) {
     _dataReadyCallback = null;
     callback();
@@ -144,7 +144,7 @@ function waitForData(callback) {
  * add browsi script to page
  * @param {Object} data
  */
-export function addBrowsiTag(data) {
+export function addBrowsiTag (data) {
   let script = loadExternalScript(data.u, MODULE_TYPE_RTD, 'browsi');
   script.async = true;
   script.setAttribute('data-sitekey', _moduleParams.siteKey);
@@ -165,7 +165,7 @@ export function addBrowsiTag(data) {
  * add browsitag to window object
  * @param {Object} data
  */
-function setWindowBrowsiTag(data) {
+function setWindowBrowsiTag (data) {
   if (data.eap) {
     window.browsitag = window.browsitag || {};
     window.browsitag.cmd = window.browsitag.cmd || [];
@@ -175,13 +175,13 @@ function setWindowBrowsiTag(data) {
   }
 }
 
-function getBrowsiTagServerData(identifier) {
+function getBrowsiTagServerData (identifier) {
   const uc = identifier || 'placeholder';
   const rtd = getServerData([uc]);
   return Object.assign(rtd[uc], { isPartialData: true });
 }
 
-function getOnPageData(auc) {
+function getOnPageData (auc) {
   try {
     const dataMap = {};
     auc.forEach(uc => {
@@ -193,7 +193,7 @@ function getOnPageData(auc) {
   }
 }
 
-function getServerData(auc) {
+function getServerData (auc) {
   logInfo(`Browsi RTD provider is fetching data for ${auc}`);
   try {
     const _pg = (_browsiData && _browsiData.pg) || {};
@@ -230,7 +230,7 @@ function getServerData(auc) {
  * @param {number} _c
  * @return {number}
  */
-export function getCurrentData(prediction, _c) {
+export function getCurrentData (prediction, _c) {
   if (!prediction || !isNumber(_c)) {
     return -1;
   }
@@ -257,7 +257,7 @@ export function getCurrentData(prediction, _c) {
  * @param {number} p
  * @return {Object} key:value
  */
-function getKVObject(k, p) {
+function getKVObject (k, p) {
   if (p < 0) return {};
   return { [k]: p };
 }
@@ -266,7 +266,7 @@ function getKVObject(k, p) {
  * XMLHttpRequest to get data form browsi server
  * @param {string} url server url with query params
  */
-function getPredictionsFromServer(url) {
+function getPredictionsFromServer (url) {
   let ajax = ajaxBuilder();
 
   ajax(url,
@@ -301,7 +301,7 @@ function getPredictionsFromServer(url) {
   );
 }
 
-function mergeAdUnitData(rtdData = {}, onPageData = {}) {
+function mergeAdUnitData (rtdData = {}, onPageData = {}) {
   const mergedData = {};
   Object.keys({ ...rtdData, ...onPageData }).forEach((key) => {
     mergedData[key] = { ...onPageData[key], ...rtdData[key] };
@@ -309,7 +309,7 @@ function mergeAdUnitData(rtdData = {}, onPageData = {}) {
   return mergedData;
 }
 
-function getAdUnitCodes(bidObj) {
+function getAdUnitCodes (bidObj) {
   let adUnitCodes = bidObj.adUnitCodes;
   let adUnits = bidObj.adUnits || getGlobal().adUnits || [];
   if (adUnitCodes) {
@@ -320,11 +320,11 @@ function getAdUnitCodes(bidObj) {
   return { adUnitCodes, adUnits };
 }
 
-function isOnPageDataApiReady() {
+function isOnPageDataApiReady () {
   return !!(window[API_KEY]?.get);
 }
 
-function onDataReady() {
+function onDataReady () {
   return new Promise((resolve) => {
     waitForData(() => {
       if (isOnPageDataApiReady()) {
@@ -340,7 +340,7 @@ function onDataReady() {
   });
 }
 
-function onTimeout(config, timeout) {
+function onTimeout (config, timeout) {
   return new Promise((resolve) => {
     if (!config.waitForIt || !timeout) {
       return resolve();
@@ -351,7 +351,7 @@ function onTimeout(config, timeout) {
   });
 }
 
-function setBidRequestsData(bidObj, callback, config, userConsent, timeout) {
+function setBidRequestsData (bidObj, callback, config, userConsent, timeout) {
   Promise.race([onDataReady(), onTimeout(config, timeout)])
     .then(() => {
       const pr = _browsiData && _browsiData.pr;
@@ -375,7 +375,7 @@ function setBidRequestsData(bidObj, callback, config, userConsent, timeout) {
     });
 }
 
-function getGptTargeting(uc) {
+function getGptTargeting (uc) {
   try {
     const sg = !!(_browsiData && _browsiData.sg);
     if (!sg) return {};
@@ -399,7 +399,7 @@ function getGptTargeting(uc) {
   }
 }
 
-function getTargetingData(uc, c, us, a) {
+function getTargetingData (uc, c, us, a) {
   const targetingData = getGptTargeting(uc);
   const auctionId = a.auctionId;
   const sendAdRequestEvent = (_browsiData && _browsiData['bet'] === 'AD_REQUEST');
@@ -422,7 +422,7 @@ function getTargetingData(uc, c, us, a) {
   return targetingData;
 }
 
-function init(moduleConfig) {
+function init (moduleConfig) {
   _moduleParams = moduleConfig.params;
   _moduleParams.siteKey = moduleConfig.params.siteKey || moduleConfig.params.sitekey;
   _moduleParams.pubKey = moduleConfig.params.pubKey || moduleConfig.params.pubkey;
@@ -456,7 +456,7 @@ export const browsiSubmodule = {
   getBidRequestData: setBidRequestsData
 };
 
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', browsiSubmodule);
 }
 registerSubModule();

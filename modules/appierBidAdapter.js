@@ -81,7 +81,7 @@ export const spec = {
   /**
    * Get the hostname of the server we want to use.
    */
-  getApiServer() {
+  getApiServer () {
     // we may use different servers for different farms (geographical regions)
     // if a server is specified explicitly, use it. otherwise, use farm specific server.
     let server = config.getConfig('appier.server');

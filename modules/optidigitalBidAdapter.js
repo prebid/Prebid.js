@@ -29,7 +29,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined' && bid.params.placementId && bid.params.publisherId) {
       isValid = true;
@@ -44,7 +44,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0 || !bidderRequest || !bidderRequest.bids) {
       return [];
     }
@@ -132,7 +132,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     serverResponse = serverResponse.body;
 
@@ -166,7 +166,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     let syncurl = '';
     if (!isSynced) {
       // Attaching GDPR Consent Params in UserSync url
@@ -193,7 +193,7 @@ export const spec = {
   },
 };
 
-function buildImp(bidRequest, ortb2) {
+function buildImp (bidRequest, ortb2) {
   let imp = {};
   imp = {
     sizes: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
@@ -232,7 +232,7 @@ function buildImp(bidRequest, ortb2) {
   return imp;
 }
 
-function getAdContainer(container) {
+function getAdContainer (container) {
   if (document.getElementById(container)) {
     return document.getElementById(container);
   }
@@ -256,13 +256,13 @@ function _getFloor (bid, sizes, currency) {
   return floor !== null ? floor : bid.params.floor;
 }
 
-function _getEids(bidRequest) {
+function _getEids (bidRequest) {
   if (deepAccess(bidRequest, 'userIdAsEids')) {
     return bidRequest.userIdAsEids;
   }
 }
 
-export function resetSync() {
+export function resetSync () {
   isSynced = false;
 }
 

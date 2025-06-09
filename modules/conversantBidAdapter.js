@@ -29,7 +29,7 @@ const GVLID = 24;
 const BIDDER_CODE = 'conversant';
 const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
-function setSiteId(bidRequest, request) {
+function setSiteId (bidRequest, request) {
   if (bidRequest.params.site_id) {
     if (request.site) {
       request.site.id = bidRequest.params.site_id;
@@ -56,7 +56,7 @@ const converter = ortbConverter({
 
     return request;
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const data = {
       secure: 1,
@@ -81,13 +81,13 @@ const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     return bidResponse;
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response (buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
     return response;
   },
   overrides: {
     imp: {
-      banner(fillBannerImp, imp, bidRequest, context) {
+      banner (fillBannerImp, imp, bidRequest, context) {
         if (bidRequest.mediaTypes && !bidRequest.mediaTypes.banner) return;
         if (bidRequest.params.position) {
           // fillBannerImp looks for mediaTypes.banner.pos so put it under the right name here
@@ -95,7 +95,7 @@ const converter = ortbConverter({
         }
         fillBannerImp(imp, bidRequest, context);
       },
-      video(fillVideoImp, imp, bidRequest, context) {
+      video (fillVideoImp, imp, bidRequest, context) {
         if (bidRequest.mediaTypes && !bidRequest.mediaTypes.video) return;
         const videoData = {};
         copyOptProperty(bidRequest.params?.position, videoData, 'pos');
@@ -122,7 +122,7 @@ export const spec = {
    * @param {BidRequest} bid - The bid params to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
       logWarn(BIDDER_CODE + ': Missing bid parameters');
       return false;
@@ -147,7 +147,7 @@ export const spec = {
     return true;
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const payload = converter.toORTB({bidderRequest, bidRequests});
     const result = {
       method: 'POST',
@@ -163,7 +163,7 @@ export const spec = {
    * @param bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const ortbBids = converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
     return ortbBids;
   },
@@ -171,7 +171,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     let params = {};
     const syncs = [];
 
@@ -217,7 +217,7 @@ export const spec = {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a video bid
  */
-function isVideoRequest(bid) {
+function isVideoRequest (bid) {
   return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
@@ -228,7 +228,7 @@ function isVideoRequest(bid) {
  * @param {object} dst - destination object
  * @param {string} dstName - destination property name
  */
-function copyOptProperty(src, dst, dstName) {
+function copyOptProperty (src, dst, dstName) {
   if (src) {
     dst[dstName] = src;
   }
@@ -240,7 +240,7 @@ function copyOptProperty(src, dst, dstName) {
  * @param bid A valid bid object
  * @returns {*|number} floor price
  */
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   let floor = getBidIdParameter('bidfloor', bid.params);
 
   if (!floor && isFn(bid.getFloor)) {
@@ -258,7 +258,7 @@ function getBidFloor(bid) {
   return floor
 }
 
-function makeBidUrl(bid) {
+function makeBidUrl (bid) {
   let bidurl = URL;
   if (bid.params.white_label_url) {
     bidurl = bid.params.white_label_url;

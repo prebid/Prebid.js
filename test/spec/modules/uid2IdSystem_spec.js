@@ -71,17 +71,17 @@ const cstgApiUrl = `${apiUrl}/client-generate`;
 
 const testCookieAndLocalStorage = (description, test, only = false) => {
   const describeFn = only ? describe.only : describe;
-  describeFn(`Using cookies: ${description}`, async function() {
-    before(function() {
+  describeFn(`Using cookies: ${description}`, async function () {
+    before(function () {
       useLocalStorage = false;
     });
     await test();
   });
-  describeFn(`Using local storage: ${description}`, async function() {
-    before(function() {
+  describeFn(`Using local storage: ${description}`, async function () {
+    before(function () {
       useLocalStorage = true;
     });
-    after(function() {
+    after(function () {
       useLocalStorage = false;
     });
     await test();
@@ -128,11 +128,11 @@ describe(`UID2 module`, function () {
   // Runs the provided test twice - once with a successful API mock, once with one which returns a server error
   const testApiSuccessAndFailure = (act, apiUrl, testDescription, failTestDescription, only = false, responseToken = refreshedToken) => {
     const testFn = only ? it.only : it;
-    testFn(`API responds successfully: ${testDescription}`, async function() {
+    testFn(`API responds successfully: ${testDescription}`, async function () {
       configureUid2ApiSuccessResponse(apiUrl, responseToken);
       await act(true);
     });
-    testFn(`API responds with an error: ${failTestDescription ?? testDescription}`, async function() {
+    testFn(`API responds with an error: ${failTestDescription ?? testDescription}`, async function () {
       configureUid2ApiFailResponse(apiUrl);
       await act(false);
     });
@@ -150,7 +150,7 @@ describe(`UID2 module`, function () {
     setSubmoduleRegistry([uid2IdSubmodule]);
   });
 
-  afterEach(async function() {
+  afterEach(async function () {
     $$PREBID_GLOBAL$$.requestBids.removeAll();
     config.resetConfig();
     testSandbox.restore();
@@ -168,7 +168,7 @@ describe(`UID2 module`, function () {
     debugOutput('----------------- END TEST ------------------');
   });
 
-  describe('Configuration', function() {
+  describe('Configuration', function () {
     it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token}));
@@ -184,7 +184,7 @@ describe(`UID2 module`, function () {
     });
   });
 
-  it('When a legacy value is provided directly in configuration, it is passed on', async function() {
+  it('When a legacy value is provided directly in configuration, it is passed on', async function () {
     const valueConfig = makePrebidConfig();
     valueConfig.userSync.userIds[0].value = {uid2: {id: legacyToken}}
     config.setConfig(valueConfig);
@@ -198,14 +198,14 @@ describe(`UID2 module`, function () {
   // This should cover older integrations where the server is setting this legacy cookie and expecting the module to pass it on.
   describe('When a legacy cookie exists', function () {
     // Creates a test which sets the legacy cookie, configures the UID2 module with provided params, runs an
-    const createLegacyTest = function(params, bidAssertions, addConsent = false) {
-      return async function() {
+    const createLegacyTest = function (params, bidAssertions, addConsent = false) {
+      return async function () {
         coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
         if (addConsent) setGdprApplies();
         config.setConfig(makePrebidConfig(params));
 
         const bid = await runAuction();
-        bidAssertions.forEach(function(assertion) { assertion(bid); });
+        bidAssertions.forEach(function (assertion) { assertion(bid); });
       }
     };
 
@@ -214,9 +214,9 @@ describe(`UID2 module`, function () {
     it('and a server cookie config is used without a valid server cookie, it should provide the legacy cookie',
       createLegacyTest(serverCookieConfigParams, [expectLegacyToken]));
     it('and a server cookie is used with a valid server cookie configured using the new param name, it should provide the server cookie',
-      async function() { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(serverCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
+      async function () { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(serverCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
     it('and a server cookie is used with a valid server cookie, it should provide the server cookie',
-      async function() { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(newServerCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
+      async function () { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(newServerCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
     it('and a token is provided in config, it should provide the config token',
       createLegacyTest({uid2Token: apiHelpers.makeTokenResponse(initialToken)}, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken]));
     it('and GDPR applies, no identity should be provided to the auction',
@@ -229,7 +229,7 @@ describe(`UID2 module`, function () {
       expect(result?.id).to.not.exist;
     });
 
-    it('multiple runs do not change the value', async function() {
+    it('multiple runs do not change the value', async function () {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       config.setConfig(makePrebidConfig(legacyConfigParams));
 
@@ -262,11 +262,11 @@ describe(`UID2 module`, function () {
     },
   ]
 
-  scenarios.forEach(function(scenario) {
-    testCookieAndLocalStorage(scenario.name, function() {
-      describe(`When an expired token which can be refreshed is provided`, function() {
-        describe('When the refresh is available in time', function() {
-          testApiSuccessAndFailure(async function(apiSucceeds) {
+  scenarios.forEach(function (scenario) {
+    testCookieAndLocalStorage(scenario.name, function () {
+      describe(`When an expired token which can be refreshed is provided`, function () {
+        describe('When the refresh is available in time', function () {
+          testApiSuccessAndFailure(async function (apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
             apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
             const bid = await runAuction();
@@ -275,7 +275,7 @@ describe(`UID2 module`, function () {
             else expectNoIdentity(bid);
           }, refreshApiUrl, 'it should be used in the auction', 'the auction should have no uid2');
 
-          testApiSuccessAndFailure(async function(apiSucceeds) {
+          testApiSuccessAndFailure(async function (apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
             apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
 
@@ -287,14 +287,14 @@ describe(`UID2 module`, function () {
             }
           }, refreshApiUrl, 'the refreshed token should be stored in the module storage', 'the module storage should not be set');
         });
-        describe(`when the response doesn't arrive before the auction timer`, function() {
-          testApiSuccessAndFailure(async function() {
+        describe(`when the response doesn't arrive before the auction timer`, function () {
+          testApiSuccessAndFailure(async function () {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
             const bid = await runAuction();
             expectNoIdentity(bid);
           }, refreshApiUrl, 'it should run the auction');
 
-          testApiSuccessAndFailure(async function(apiSucceeds) {
+          testApiSuccessAndFailure(async function (apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
             const promise = apiHelpers.respondAfterDelay(auctionDelayMs * 2, server);
 
@@ -306,8 +306,8 @@ describe(`UID2 module`, function () {
             else expectGlobalToHaveNoUid2();
           }, refreshApiUrl, 'it should update the userId after the auction', 'there should be no global identity');
         })
-        describe('and there is a refreshed token in the module cookie', function() {
-          it('the refreshed value from the cookie is used', async function() {
+        describe('and there is a refreshed token in the module cookie', function () {
+          it('the refreshed value from the cookie is used', async function () {
             const initialIdentity = apiHelpers.makeTokenResponse(initialToken, true, true);
             const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
             const moduleCookie = {originalToken: initialIdentity, latestToken: refreshedIdentity};
@@ -320,14 +320,14 @@ describe(`UID2 module`, function () {
         })
       });
 
-      describe(`When a current token is provided`, function() {
-        it('it should use the token in the auction', async function() {
+      describe(`When a current token is provided`, function () {
+        it('it should use the token in the auction', async function () {
           scenario.setConfig(apiHelpers.makeTokenResponse(initialToken));
           const bid = await runAuction();
           expectToken(bid, initialToken);
         });
 
-        it('and GDPR applies, the token should not be used', async function() {
+        it('and GDPR applies, the token should not be used', async function () {
           setGdprApplies();
           scenario.setConfig(apiHelpers.makeTokenResponse(initialToken));
           const bid = await runAuction();
@@ -335,17 +335,17 @@ describe(`UID2 module`, function () {
         })
       });
 
-      describe(`When a current token which should be refreshed is provided, and the auction is set to run immediately`, function() {
-        beforeEach(function() {
+      describe(`When a current token which should be refreshed is provided, and the auction is set to run immediately`, function () {
+        beforeEach(function () {
           scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true), {auctionDelay: 0, syncDelay: 1});
         });
-        testApiSuccessAndFailure(async function() {
+        testApiSuccessAndFailure(async function () {
           apiHelpers.respondAfterDelay(10, server);
           const bid = await runAuction();
           expectToken(bid, initialToken);
         }, refreshApiUrl, 'it should not be refreshed before the auction runs');
 
-        testApiSuccessAndFailure(async function(success) {
+        testApiSuccessAndFailure(async function (success) {
           const promise = apiHelpers.respondAfterDelay(1, server);
           await runAuction();
           await promise;
@@ -356,7 +356,7 @@ describe(`UID2 module`, function () {
           }
         }, refreshApiUrl, 'the refreshed token should be stored in the module cookie after the auction runs', 'the module cookie should only have the original token');
 
-        it('it should use the current token in the auction', async function() {
+        it('it should use the current token in the auction', async function () {
           const bid = await runAuction();
           expectToken(bid, initialToken);
         });
@@ -392,9 +392,9 @@ describe(`UID2 module`, function () {
           setInvalidConfig: (extraConfig) => config.setConfig(makePrebidConfig({ ...cstgConfigParams, phoneHash: '614332222111' }, extraConfig))
         },
       ]
-      scenarios.forEach(function(scenario) {
-        describe(`And ${scenario.name}`, function() {
-          describe(`When invalid identity is provided`, function() {
+      scenarios.forEach(function (scenario) {
+        describe(`And ${scenario.name}`, function () {
+          describe(`When invalid identity is provided`, function () {
             it('the auction should have no uid2', async function () {
               scenario.setInvalidConfig()
               const bid = await runAuction();
@@ -404,8 +404,8 @@ describe(`UID2 module`, function () {
             })
           });
 
-          describe('When valid identity is provided, and the auction is set to run immediately', function() {
-            it('it should ignores token provided in config, and the auction should have no uid2', async function() {
+          describe('When valid identity is provided, and the auction is set to run immediately', function () {
+            it('it should ignores token provided in config, and the auction should have no uid2', async function () {
               scenario.setConfig({ uid2Token: apiHelpers.makeTokenResponse(initialToken), auctionDelay: 0, syncDelay: 1 });
               const bid = await runAuction();
               expectNoIdentity(bid);
@@ -413,7 +413,7 @@ describe(`UID2 module`, function () {
               expectModuleStorageEmptyOrMissing();
             })
 
-            it('it should ignores token provided in server-set cookie', async function() {
+            it('it should ignores token provided in server-set cookie', async function () {
               cookieHelpers.setPublisherCookie(publisherCookieName, initialToken);
               scenario.setConfig({ ...newServerCookieConfigParams, auctionDelay: 0, syncDelay: 1 })
               const bid = await runAuction();
@@ -422,8 +422,8 @@ describe(`UID2 module`, function () {
               expectModuleStorageEmptyOrMissing();
             })
 
-            describe('When the token generated in time', function() {
-              testApiSuccessAndFailure(async function(apiSucceeds) {
+            describe('When the token generated in time', function () {
+              testApiSuccessAndFailure(async function (apiSucceeds) {
                 scenario.setConfig();
                 apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
                 const bid = await runAuction();
@@ -432,7 +432,7 @@ describe(`UID2 module`, function () {
                 else expectNoIdentity(bid);
               }, cstgApiUrl, 'it should be used in the auction', 'the auction should have no uid2', false, clientSideGeneratedToken);
 
-              testApiSuccessAndFailure(async function(apiSucceeds) {
+              testApiSuccessAndFailure(async function (apiSucceeds) {
                 scenario.setConfig();
                 apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
 
@@ -447,7 +447,7 @@ describe(`UID2 module`, function () {
           });
         });
       });
-      it('Should receive an optout response when the user has opted out.', async function() {
+      it('Should receive an optout response when the user has opted out.', async function () {
         const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
         configureUid2CstgResponse(200, makeOptoutResponseBody(optoutToken));
         config.setConfig(makePrebidConfig({ uid2Token, ...cstgConfigParams, email: 'optout@test.com' }));
@@ -456,14 +456,14 @@ describe(`UID2 module`, function () {
         const bid = await runAuction();
         expectOptout(bid, optoutToken);
       });
-      describe(`when the response doesn't arrive before the auction timer`, function() {
-        testApiSuccessAndFailure(async function() {
+      describe(`when the response doesn't arrive before the auction timer`, function () {
+        testApiSuccessAndFailure(async function () {
           config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
           const bid = await runAuction();
           expectNoIdentity(bid);
         }, cstgApiUrl, 'it should run the auction', undefined, false, clientSideGeneratedToken);
 
-        testApiSuccessAndFailure(async function(apiSucceeds) {
+        testApiSuccessAndFailure(async function (apiSucceeds) {
           config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
           const promise = apiHelpers.respondAfterDelay(auctionDelayMs * 2, server);
 
@@ -476,10 +476,10 @@ describe(`UID2 module`, function () {
         }, cstgApiUrl, 'it should update the userId after the auction', 'there should be no global identity', false, clientSideGeneratedToken);
       })
 
-      describe('when there is a token in the module cookie', function() {
-        describe('when originalIdentity matches', function() {
-          describe('When the storedToken is valid', function() {
-            it('it should use the stored token in the auction', async function() {
+      describe('when there is a token in the module cookie', function () {
+        describe('when originalIdentity matches', function () {
+          describe('When the storedToken is valid', function () {
+            it('it should use the stored token in the auction', async function () {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
               const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
@@ -489,8 +489,8 @@ describe(`UID2 module`, function () {
             });
           })
 
-          describe('When the storedToken is expired and can be refreshed ', function() {
-            testApiSuccessAndFailure(async function(apiSucceeds) {
+          describe('When the storedToken is expired and can be refreshed ', function () {
+            testApiSuccessAndFailure(async function (apiSucceeds) {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true);
               const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
@@ -504,8 +504,8 @@ describe(`UID2 module`, function () {
             }, refreshApiUrl, 'it should use refreshed token in the auction', 'the auction should have no uid2');
           })
 
-          describe('When the storedToken is expired for refresh', function() {
-            testApiSuccessAndFailure(async function(apiSucceeds) {
+          describe('When the storedToken is expired for refresh', function () {
+            testApiSuccessAndFailure(async function (apiSucceeds) {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true, true);
               const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
@@ -520,7 +520,7 @@ describe(`UID2 module`, function () {
           })
         })
 
-        it('when originalIdentity not match, the auction should has no uid2', async function() {
+        it('when originalIdentity not match, the auction should has no uid2', async function () {
           const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
           const moduleCookie = {originalIdentity: makeOriginalIdentity('123@test.com'), latestToken: refreshedIdentity};
           coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
@@ -557,8 +557,8 @@ describe(`UID2 module`, function () {
           cstgOptions: { subscriptionId: '', serverPublicKey: cstgConfigParams.serverPublicKey }
         },
       ]
-      invalidConfigs.forEach(function(scenario) {
-        describe(`When ${scenario.name}`, function() {
+      invalidConfigs.forEach(function (scenario) {
+        describe(`When ${scenario.name}`, function () {
           it('should not generate token using identity', async () => {
             config.setConfig(makePrebidConfig({ ...scenario.cstgOptions, email: 'test@email.com' }));
             const bid = await runAuction();
@@ -578,7 +578,7 @@ describe(`UID2 module`, function () {
       ];
       testCases.forEach((testCase) => {
         describe('it should normalize the email and generate token on normalized email', async () => {
-          testApiSuccessAndFailure(async function(apiSucceeds) {
+          testApiSuccessAndFailure(async function (apiSucceeds) {
             config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: testCase.originalEmail }));
             apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
 
@@ -642,7 +642,7 @@ describe(`UID2 module`, function () {
     })
   });
   describe('eid', () => {
-    it('uid2', function() {
+    it('uid2', function () {
       const userId = {
         uid2: {'id': 'Sample_AD_Token'}
       };
@@ -657,7 +657,7 @@ describe(`UID2 module`, function () {
       });
     });
 
-    it('uid2 with ext', function() {
+    it('uid2 with ext', function () {
       const userId = {
         uid2: {'id': 'Sample_AD_Token', 'ext': {'provider': 'some.provider.com'}}
       };

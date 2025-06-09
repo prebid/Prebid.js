@@ -57,7 +57,7 @@ const guard = new Set();
  * This data is used to determine if beacons should be sent to adagio.
  * The sampling data
  */
-const _SESSION = (function() {
+const _SESSION = (function () {
   /**
    * @type {SessionData}
    */
@@ -128,13 +128,13 @@ const _SESSION = (function() {
         });
       });
     },
-    get: function() {
+    get: function () {
       return data.session;
     }
   };
 })();
 
-const _FEATURES = (function() {
+const _FEATURES = (function () {
   /**
    * @type {Features}
    */
@@ -145,11 +145,11 @@ const _FEATURES = (function() {
 
   return {
     // reset is used for testing purpose
-    reset: function() {
+    reset: function () {
       features.initialized = false;
       features.data = {};
     },
-    get: function() {
+    get: function () {
       const w = getBestWindowForAdagio();
 
       if (!features.initialized) {
@@ -168,19 +168,19 @@ const _FEATURES = (function() {
 })();
 
 export const _internal = {
-  getAdagioNs: function() {
+  getAdagioNs: function () {
     return _ADAGIO;
   },
 
-  getSession: function() {
+  getSession: function () {
     return _SESSION;
   },
 
-  getFeatures: function() {
+  getFeatures: function () {
     return _FEATURES;
   },
 
-  getGuard: function() {
+  getGuard: function () {
     return guard;
   },
 
@@ -203,7 +203,7 @@ export const _internal = {
    * @param {string} storageValue - The value stored in the localStorage.
    * @returns {Session}
    */
-  getSessionFromLocalStorage: function(storageValue) {
+  getSessionFromLocalStorage: function (storageValue) {
     const _default = {
       new: true,
       rnd: Math.random()
@@ -220,7 +220,7 @@ export const _internal = {
    * @param {string} storageValue - The value stored in the localStorage.
    * @returns {AbTest}
    */
-  getAbTestFromLocalStorage: function(storageValue) {
+  getAbTestFromLocalStorage: function (storageValue) {
     const obj = this.getObjFromStorageValue(storageValue);
 
     return (!obj || !obj.abTest) ? null : obj.abTest;
@@ -232,8 +232,8 @@ export const _internal = {
    * @param {string} storageValue - The value stored in the localStorage.
    * @returns {Object}
    */
-  getObjFromStorageValue: function(storageValue) {
-    return JSON.parse(storageValue, function(name, value) {
+  getObjFromStorageValue: function (storageValue) {
+    return JSON.parse(storageValue, function (name, value) {
       if (name.charAt(0) !== '_' || name === '') {
         return value;
       }
@@ -241,7 +241,7 @@ export const _internal = {
   }
 };
 
-function loadAdagioScript(config) {
+function loadAdagioScript (config) {
   storage.localStorageIsEnabled(isValid => {
     if (!isValid) {
       return;
@@ -260,7 +260,7 @@ function loadAdagioScript(config) {
  * @param {Object} _userConsent
  * @returns {boolean}
  */
-function init(config, _userConsent) {
+function init (config, _userConsent) {
   if (!isStr(config.params?.organizationId) || !isStr(config.params?.site)) {
     logError('organizationId is required and must be a string.');
     return false;
@@ -284,7 +284,7 @@ function init(config, _userConsent) {
  * @param {*} config
  * @param {*} _userConsent
  */
-function onBidRequest(bidderRequest, config, _userConsent) {
+function onBidRequest (bidderRequest, config, _userConsent) {
   // setTimeout trick to ensure that the `bidderRequest.params` values updated by a bidder adapter are taken into account.
   // @todo: Check why we have to do it like this, and if there is a better way. Check how the event is dispatched in rtdModule/index.js
   setTimeout(() => {
@@ -316,7 +316,7 @@ function onBidRequest(bidderRequest, config, _userConsent) {
  * @param {*} callback
  * @param {*} config
  */
-function onGetBidRequestData(bidReqConfig, callback, config) {
+function onGetBidRequestData (bidReqConfig, callback, config) {
   const configParams = deepAccess(config, 'params', {});
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const features = _internal.getFeatures().get();
@@ -426,7 +426,7 @@ submodule('realTimeData', adagioRtdSubmodule);
  * @param {*} config - The RTD module configuration.
  * @returns {void}
  */
-function storeRequestInAdagioNS(bid, config) {
+function storeRequestInAdagioNS (bid, config) {
   try {
     const { bidder, adUnitCode, mediaTypes, params, auctionId, bidderRequestsCount, ortb2, ortb2Imp } = bid;
 
@@ -462,7 +462,7 @@ function storeRequestInAdagioNS(bid, config) {
   }
 }
 
-function getElementFromTopWindow(element, currentWindow) {
+function getElementFromTopWindow (element, currentWindow) {
   try {
     if (getWindowTop() === currentWindow) {
       if (!element.getAttribute('id')) {
@@ -486,7 +486,7 @@ function getElementFromTopWindow(element, currentWindow) {
   }
 };
 
-function getSlotPosition(divId) {
+function getSlotPosition (divId) {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
@@ -550,7 +550,7 @@ function getSlotPosition(divId) {
   return `${position.x}x${position.y}`;
 }
 
-function getPageDimensions() {
+function getPageDimensions () {
   if (isSafeFrameWindow() || !canAccessWindowTop()) {
     return '';
   }
@@ -569,7 +569,7 @@ function getPageDimensions() {
   return `${pageWidth}x${pageHeight}`;
 }
 
-function getViewPortDimensions() {
+function getViewPortDimensions () {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
@@ -595,7 +595,7 @@ function getViewPortDimensions() {
   return `${viewportDims.w}x${viewportDims.h}`;
 }
 
-function getTimestampUTC() {
+function getTimestampUTC () {
   // timestamp returned in seconds
   return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
 }
@@ -607,7 +607,7 @@ function getTimestampUTC() {
  * @param {*} config
  * @returns {void}
  */
-function registerEventsForAdServers(config) {
+function registerEventsForAdServers (config) {
   const GPT_EVENTS = new Set([
     'impressionViewable',
     'slotRenderEnded',

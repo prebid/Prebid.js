@@ -106,14 +106,14 @@ describe('Performax adapter', function () {
 
   describe('isBidRequestValid', function () {
     let bid = {};
-    it('should return false when missing "tagid" param', function() {
+    it('should return false when missing "tagid" param', function () {
       bid.params = {slotId: 'param'};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
-    it('should return true when tagid is correct', function() {
+    it('should return true when tagid is correct', function () {
       bid.params = {tagid: 'sample'};
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });

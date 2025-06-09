@@ -60,7 +60,7 @@ const PARAMS_NAMES = {
   adType: 'adType'
 };
 
-function getIntentIqConfig() {
+function getIntentIqConfig () {
   return config.getConfig('userSync.userIds')?.find(m => m.name === 'intentIqId');
 }
 
@@ -89,7 +89,7 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({url: DEFAULT_URL, anal
     reportMethod: null,
     additionalParams: null
   },
-  track({eventType, args}) {
+  track ({eventType, args}) {
     switch (eventType) {
       case BID_WON:
         bidWon(args);
@@ -109,7 +109,7 @@ const {
   BID_REQUESTED
 } = EVENTS;
 
-function initAdapterConfig() {
+function initAdapterConfig () {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
   let iiqConfig = getIntentIqConfig()
 
@@ -133,7 +133,7 @@ function initAdapterConfig() {
   }
 }
 
-function initReadLsIds() {
+function initReadLsIds () {
   try {
     iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = null;
     iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(
@@ -164,7 +164,7 @@ function initReadLsIds() {
   }
 }
 
-function bidWon(args, isReportExternal) {
+function bidWon (args, isReportExternal) {
   if (!iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) {
     initAdapterConfig();
   }
@@ -193,7 +193,7 @@ function bidWon(args, isReportExternal) {
   return false;
 }
 
-function parseReportingMethod(reportMethod) {
+function parseReportingMethod (reportMethod) {
   if (typeof reportMethod === 'string') {
       switch (reportMethod.toUpperCase()) {
           case 'GET':
@@ -207,8 +207,8 @@ function parseReportingMethod(reportMethod) {
   return 'GET';
 }
 
-function defineGlobalVariableName() {
-  function reportExternalWin(args) {
+function defineGlobalVariableName () {
+  function reportExternalWin (args) {
     return bidWon(args, true);
   }
 
@@ -218,11 +218,11 @@ function defineGlobalVariableName() {
   window[`intentIqAnalyticsAdapter_${partnerId}`] = { reportExternalWin };
 }
 
-function getRandom(start, end) {
+function getRandom (start, end) {
   return Math.floor((Math.random() * (end - start + 1)) + start);
 }
 
-export function preparePayload(data) {
+export function preparePayload (data) {
   let result = getDefaultDataObject();
   readData(FIRST_PARTY_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner, allowedStorage, storage);
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
@@ -248,7 +248,7 @@ export function preparePayload(data) {
   return result;
 }
 
-function fillEidsData(result) {
+function fillEidsData (result) {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsIdsInitialized) {
     result[PARAMS_NAMES.hadEidsInLocalStorage] = iiqAnalyticsAnalyticsAdapter.initOptions.eidl && iiqAnalyticsAnalyticsAdapter.initOptions.eidl > 0;
     result[PARAMS_NAMES.auctionEidsLength] = iiqAnalyticsAnalyticsAdapter.initOptions.eidl || -1;
@@ -311,7 +311,7 @@ function prepareData (data, result) {
   result.partnerAuctionId = 'BW';
 }
 
-function extractPlacementId(data) {
+function extractPlacementId (data) {
   if (data.placementId) {
     return data.placementId;
   }
@@ -325,7 +325,7 @@ function extractPlacementId(data) {
   return null;
 }
 
-function getDefaultDataObject() {
+function getDefaultDataObject () {
   return {
     'inbbl': false,
     'pbjsver': prebidVersion,
@@ -341,7 +341,7 @@ function getDefaultDataObject() {
   }
 }
 
-function constructFullUrl(data) {
+function constructFullUrl (data) {
   let report = [];
   const reportMethod = iiqAnalyticsAnalyticsAdapter.initOptions.reportMethod;
   const currentBrowserLowerCase = detectBrowser();

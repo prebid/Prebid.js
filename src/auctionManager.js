@@ -34,7 +34,7 @@ import {getMinBidCacheTTL, onMinBidCacheTTLChange} from './bidTTL.js';
  *
  * @returns {AuctionManager} auctionManagerInstance
  */
-export function newAuctionManager() {
+export function newAuctionManager () {
   const _auctions = ttlCollection({
     startTime: (au) => au.end.then(() => au.getAuctionEnd()),
     ttl: (au) => getMinBidCacheTTL() == null ? null : au.end.then(() => {
@@ -48,13 +48,13 @@ export function newAuctionManager() {
     onExpiry: _auctions.onExpiry
   };
 
-  function getAuction(auctionId) {
+  function getAuction (auctionId) {
     for (const auction of _auctions) {
       if (auction.getAuctionId() === auctionId) return auction;
     }
   }
 
-  auctionManager.addWinningBid = function(bid) {
+  auctionManager.addWinningBid = function (bid) {
     const metrics = useMetrics(bid.metrics);
     metrics.checkpoint('bidWon');
     metrics.timeBetween('auctionEnd', 'bidWon', 'adserver.pending');
@@ -77,7 +77,7 @@ export function newAuctionManager() {
     getNoBids: {},
     getAdUnits: {},
     getBidsReceived: {
-      pre(auction) {
+      pre (auction) {
         return auction.getAuctionStatus() === AUCTION_COMPLETED;
       }
     },
@@ -96,31 +96,31 @@ export function newAuctionManager() {
     }
   })
 
-  function allBidsReceived() {
+  function allBidsReceived () {
     return _auctions.toArray().flatMap(au => au.getBidsReceived())
   }
 
-  auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
+  auctionManager.getAllBidsForAdUnitCode = function (adUnitCode) {
     return allBidsReceived()
       .filter(bid => bid && bid.adUnitCode === adUnitCode)
   };
 
-  auctionManager.createAuction = function(opts) {
+  auctionManager.createAuction = function (opts) {
     const auction = newAuction(opts);
     _addAuction(auction);
     return auction;
   };
 
-  auctionManager.findBidByAdId = function(adId) {
+  auctionManager.findBidByAdId = function (adId) {
     return allBidsReceived()
       .find(bid => bid.adId === adId);
   };
 
-  auctionManager.getStandardBidderAdServerTargeting = function() {
+  auctionManager.getStandardBidderAdServerTargeting = function () {
     return getStandardBidderSettings()[JSON_MAPPING.ADSERVER_TARGETING];
   };
 
-  auctionManager.setStatusForBids = function(adId, status) {
+  auctionManager.setStatusForBids = function (adId, status) {
     let bid = auctionManager.findBidByAdId(adId);
     if (bid) bid.status = status;
 
@@ -130,16 +130,16 @@ export function newAuctionManager() {
     }
   }
 
-  auctionManager.getLastAuctionId = function() {
+  auctionManager.getLastAuctionId = function () {
     const auctions = _auctions.toArray();
     return auctions.length && auctions[auctions.length - 1].getAuctionId()
   };
 
-  auctionManager.clearAllAuctions = function() {
+  auctionManager.clearAllAuctions = function () {
     _auctions.clear();
   }
 
-  function _addAuction(auction) {
+  function _addAuction (auction) {
     _auctions.add(auction);
   }
 

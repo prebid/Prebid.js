@@ -479,7 +479,7 @@ describe('stackadaptBidAdapter', function () {
     });
   }
 
-  describe('isBidRequestValid()', function() {
+  describe('isBidRequestValid()', function () {
     const bannerBidderRequest = {
       'bidder': 'stackadapt',
       'params': {
@@ -991,14 +991,14 @@ describe('stackadaptBidAdapter', function () {
       }
     }
 
-    function validateExtFirstPartyData(ext) {
+    function validateExtFirstPartyData (ext) {
       expect(ext.data.firstPartyKey).to.equal('firstPartyValue');
       expect(ext.data.firstPartyKey2).to.eql(['value', 'value2']);
       expect(ext.custom).to.equal('custom_data');
       expect(ext.custom_kvp.customKey).to.equal('customValue');
     }
 
-    it('should set site first party data', function() {
+    it('should set site first party data', function () {
       const ortb2 = {
         site: {
           ext: extFirstPartyData,
@@ -1013,7 +1013,7 @@ describe('stackadaptBidAdapter', function () {
       expect(ortbRequest.site.search).to.equal('test search')
     });
 
-    it('should set user first party data', function() {
+    it('should set user first party data', function () {
       const ortb2 = {
         user: {
           ext: extFirstPartyData,
@@ -1028,7 +1028,7 @@ describe('stackadaptBidAdapter', function () {
       expect(ortbRequest.user.yob).to.equal(1998)
     });
 
-    it('should set imp first party data', function() {
+    it('should set imp first party data', function () {
       const clonedBidderRequest = deepClone(bidderRequest);
       const clonedBidRequests = deepClone(bidRequests);
       const metric = { type: 'viewability', value: 0.8 };
@@ -1047,7 +1047,7 @@ describe('stackadaptBidAdapter', function () {
       expect(ortbRequest.imp[0].clickbrowser).to.equal(1)
     });
 
-    it('should set app first party data', function() {
+    it('should set app first party data', function () {
       const ortb2 = {
         app: {
           ext: extFirstPartyData,
@@ -1062,7 +1062,7 @@ describe('stackadaptBidAdapter', function () {
       expect(ortbRequest.app.ver).to.equal('v1.0')
     });
 
-    it('should set device first party data', function() {
+    it('should set device first party data', function () {
       const ortb2 = {
         device: {
           ext: extFirstPartyData,
@@ -1077,7 +1077,7 @@ describe('stackadaptBidAdapter', function () {
       expect(ortbRequest.device.os).to.equal('ios')
     });
 
-    it('should set pmp first party data', function() {
+    it('should set pmp first party data', function () {
       const ortb2 = {
         pmp: {
           ext: extFirstPartyData,

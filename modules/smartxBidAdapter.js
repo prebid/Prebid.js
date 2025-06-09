@@ -340,13 +340,13 @@ export const spec = {
             try {
               renderer.setRender(createOutstreamConfig);
               renderer.setEventHandlers({
-                impression: function impression() {
+                impression: function impression () {
                   return logMessage('SmartX outstream video impression event');
                 },
-                loaded: function loaded() {
+                loaded: function loaded () {
                   return logMessage('SmartX outstream video loaded event');
                 },
-                ended: function ended() {
+                ended: function ended () {
                   return logMessage('SmartX outstream renderer video event');
                 }
               });
@@ -363,7 +363,7 @@ export const spec = {
   }
 }
 
-function createOutstreamConfig(bid) {
+function createOutstreamConfig (bid) {
   let confMinAdWidth = getBidIdParameter('minAdWidth', bid.renderer.config.outstream_options) || 290;
   let confMaxAdWidth = getBidIdParameter('maxAdWidth', bid.renderer.config.outstream_options) || 900;
   let confStartOpen = getBidIdParameter('startOpen', bid.renderer.config.outstream_options)
@@ -381,7 +381,7 @@ function createOutstreamConfig(bid) {
     maxAdWidth: confMaxAdWidth,
     coreSetup: {},
     layoutSettings: {},
-    onCappedCallback: function() {
+    onCappedCallback: function () {
       try {
         window.sc_smartIntxtNoad();
       } catch (f) {}
@@ -420,7 +420,7 @@ function createOutstreamConfig(bid) {
 
   const divID = '[id="' + elementId + '"]';
 
-  var playerListener = function callback(event) {
+  var playerListener = function callback (event) {
     switch (event) {
       case 'AdError':
         try {
@@ -457,7 +457,7 @@ function createOutstreamConfig(bid) {
  * @param bid A valid bid object
  * @returns {*|number} floor price
  */
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   let floor = getBidIdParameter('bidfloor', bid.params);
   let floorcur = getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
 

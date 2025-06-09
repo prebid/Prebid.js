@@ -7,11 +7,11 @@ startAuction.before((next, auctionConfig) => {
   next(auctionConfig);
 });
 
-export function clearCache() {
+export function clearCache () {
   cache.clear();
 }
 
-export function getBoundingClientRect(element) {
+export function getBoundingClientRect (element) {
   let clientRect;
   if (cache.has(element)) {
     clientRect = cache.get(element);

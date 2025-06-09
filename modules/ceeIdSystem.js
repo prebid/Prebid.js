@@ -32,7 +32,7 @@ export const readId = tokenName => storage.getDataFromLocalStorage(tokenName) ||
  * @param {Object} requestData The data to be sent in the request body.
  * @returns {Promise<string>} A promise that resolves to the fetched token.
  */
-export function fetchCeeIdToken(requestData) {
+export function fetchCeeIdToken (requestData) {
   return new Promise((resolve, reject) => {
     ajax(
       'https://ceeid.eu/api/token/generate',
@@ -77,7 +77,7 @@ export const ceeIdSubmodule = {
    * @param {string} value
    * @returns {(Object)}
    */
-  decode(value) {
+  decode (value) {
     return typeof value === 'string' ? { 'ceeId': value } : undefined;
   },
 
@@ -86,7 +86,7 @@ export const ceeIdSubmodule = {
    * @function getId
    * @returns {(IdResponse|undefined)}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const { params = {}, storage = {} } = config;
     const { name: storedCeeIdToken } = storage;
     const { publisherId, type, value, cookieName } = params;

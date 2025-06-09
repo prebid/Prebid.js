@@ -41,7 +41,7 @@ export const spec = {
 
   buildRequests,
 
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     if (!response.body) {
       response.body = {nbr: 0};
     }
@@ -64,7 +64,7 @@ export const spec = {
   }
 }
 
-function buildRequests(bids, bidderRequest) {
+function buildRequests (bids, bidderRequest) {
   let videoBids = bids.filter(bid => isVideoBid(bid));
   let bannerBids = bids.filter(bid => isBannerBid(bid));
   let nativeBids = bids.filter(bid => isNativeBid(bid));
@@ -78,7 +78,7 @@ function buildRequests(bids, bidderRequest) {
   return requests;
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   const data = converter.toORTB({bidRequests, bidderRequest, context: {mediaType}});
   if (bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
     if (!data.regs) data.regs = {};
@@ -116,15 +116,15 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function isVideoBid(bid) {
+function isVideoBid (bid) {
   return deepAccess(bid, 'mediaTypes.video');
 }
 
-function isBannerBid(bid) {
+function isBannerBid (bid) {
   return deepAccess(bid, 'mediaTypes.banner');
 }
 
-function isNativeBid(bid) {
+function isNativeBid (bid) {
   return deepAccess(bid, 'mediaTypes.native');
 }
 

@@ -1,4 +1,4 @@
-export function getBidFloor(bid, mediaType, sizes) {
+export function getBidFloor (bid, mediaType, sizes) {
   var floor;
   var size = sizes.length === 1 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {

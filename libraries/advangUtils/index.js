@@ -3,53 +3,53 @@ import { config } from '../../src/config.js';
 
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
-export function isBannerBid(bid) {
+export function isBannerBid (bid) {
   return deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
 }
 
-export function isVideoBid(bid) {
+export function isVideoBid (bid) {
   return deepAccess(bid, 'mediaTypes.video');
 }
 
-export function getBannerBidFloor(bid) {
+export function getBannerBidFloor (bid) {
   let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'banner', size: '*' }) : {};
   return floorInfo?.floor || getBannerBidParam(bid, 'bidfloor');
 }
 
-export function getVideoBidFloor(bid) {
+export function getVideoBidFloor (bid) {
   let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: 'video', size: '*' }) : {};
   return floorInfo.floor || getVideoBidParam(bid, 'bidfloor');
 }
 
-export function isVideoBidValid(bid) {
+export function isVideoBidValid (bid) {
   return isVideoBid(bid) && getVideoBidParam(bid, 'pubid') && getVideoBidParam(bid, 'placement');
 }
 
-export function isBannerBidValid(bid) {
+export function isBannerBidValid (bid) {
   return isBannerBid(bid) && getBannerBidParam(bid, 'pubid') && getBannerBidParam(bid, 'placement');
 }
 
-export function getVideoBidParam(bid, key) {
+export function getVideoBidParam (bid, key) {
   return deepAccess(bid, 'params.video.' + key) || deepAccess(bid, 'params.' + key);
 }
 
-export function getBannerBidParam(bid, key) {
+export function getBannerBidParam (bid, key) {
   return deepAccess(bid, 'params.banner.' + key) || deepAccess(bid, 'params.' + key);
 }
 
-export function isMobile() {
+export function isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
-export function isConnectedTV() {
+export function isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-export function getDoNotTrack() {
+export function getDoNotTrack () {
   return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNoTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
-export function findAndFillParam(o, key, value) {
+export function findAndFillParam (o, key, value) {
   try {
     if (typeof value === 'function') {
       o[key] = value();
@@ -59,7 +59,7 @@ export function findAndFillParam(o, key, value) {
   } catch (ex) {}
 }
 
-export function getOsVersion() {
+export function getOsVersion () {
   let clientStrings = [
     { s: 'Android', r: /Android/ },
     { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
@@ -80,13 +80,13 @@ export function getOsVersion() {
   return cs ? cs.s : 'unknown';
 }
 
-export function getFirstSize(sizes) {
+export function getFirstSize (sizes) {
   return (sizes && sizes.length) ? sizes[0] : { w: undefined, h: undefined };
 }
 
-export function parseSizes(sizes) {
+export function parseSizes (sizes) {
   return parseSizesInput(sizes).map(size => {
-    let [ width, height ] = size.split('x');
+    let [width, height] = size.split('x');
     return {
       w: parseInt(width, 10) || undefined,
       h: parseInt(height, 10) || undefined
@@ -94,23 +94,23 @@ export function parseSizes(sizes) {
   });
 }
 
-export function getVideoSizes(bid) {
+export function getVideoSizes (bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
-export function getBannerSizes(bid) {
+export function getBannerSizes (bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
-export function getTopWindowReferrer(bidderRequest) {
+export function getTopWindowReferrer (bidderRequest) {
   return bidderRequest?.refererInfo?.ref || '';
 }
 
-export function getTopWindowLocation(bidderRequest) {
+export function getTopWindowLocation (bidderRequest) {
   return parseUrl(bidderRequest?.refererInfo?.page, {decodeSearchAsString: true});
 }
 
-export function getVideoTargetingParams(bid, VIDEO_TARGETING) {
+export function getVideoTargetingParams (bid, VIDEO_TARGETING) {
   const result = {};
   const excludeProps = ['playerSize', 'context', 'w', 'h'];
   Object.keys(Object(bid.mediaTypes.video))
@@ -126,7 +126,7 @@ export function getVideoTargetingParams(bid, VIDEO_TARGETING) {
   return result;
 }
 
-export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getSizes, getBidFloor, BIDDER_CODE, ADAPTER_VERSION) {
+export function createRequestData (bid, bidderRequest, isVideo, getBidParam, getSizes, getBidFloor, BIDDER_CODE, ADAPTER_VERSION) {
   let topLocation = getTopWindowLocation(bidderRequest);
   let topReferrer = getTopWindowReferrer(bidderRequest);
   let paramSize = getBidParam(bid, 'size');
@@ -171,14 +171,14 @@ export function createRequestData(bid, bidderRequest, isVideo, getBidParam, getS
   const secure = topLocation.protocol.indexOf('https') === 0 ? 1 : 0;
   o.device['dnt'] = getDoNotTrack() ? 1 : 0;
 
-  findAndFillParam(o.site, 'name', function() {
+  findAndFillParam(o.site, 'name', function () {
     return global.top.document.title;
   });
 
-  findAndFillParam(o.device, 'h', function() {
+  findAndFillParam(o.device, 'h', function () {
     return global.screen.height;
   });
-  findAndFillParam(o.device, 'w', function() {
+  findAndFillParam(o.device, 'w', function () {
     return global.screen.width;
   });
 

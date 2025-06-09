@@ -69,7 +69,7 @@ const NO_USP_CONSENT = {
 
 const UNDEFINED_USER_CONSENT = {};
 
-function mockSurveyLoaded(surveyConf) {
+function mockSurveyLoaded (surveyConf) {
   const commands = window._brandmetrics || [];
   commands.forEach(command => {
     if (command.cmd === '_addeventlistener') {
@@ -81,7 +81,7 @@ function mockSurveyLoaded(surveyConf) {
   });
 }
 
-function mockCreativeInView(creativeInViewConf) {
+function mockCreativeInView (creativeInViewConf) {
   const commands = window._brandmetrics || [];
   commands.forEach(command => {
     if (command.cmd === '_addeventlistener') {

@@ -5,7 +5,7 @@ var expect = require('chai').expect;
 describe('s2sTesting', function () {
   describe('s2sTesting.getSource', function () {
     // helper function to set random number and get the source
-    function getExpectedSource(randNumber, sourceWeights, sources) {
+    function getExpectedSource (randNumber, sourceWeights, sources) {
       // set random number for testing
       s2sTesting.globalRand = randNumber;
       return s2sTesting.getSource(sourceWeights, sources);

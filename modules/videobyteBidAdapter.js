@@ -124,7 +124,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -163,7 +163,7 @@ export const spec = {
 }
 
 // BUILD REQUESTS: VIDEO
-function buildRequestData(bidRequest, bidderRequest) {
+function buildRequestData (bidRequest, bidderRequest) {
   const {params} = bidRequest;
 
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
@@ -269,7 +269,7 @@ function buildRequestData(bidRequest, bidderRequest) {
   return openrtbRequest;
 }
 
-function validateVideo(bidRequest) {
+function validateVideo (bidRequest) {
   if (!bidRequest.params) {
     return false;
   }
@@ -308,7 +308,7 @@ function validateVideo(bidRequest) {
   return true;
 }
 
-function isSecure() {
+function isSecure () {
   return document.location.protocol === 'https:';
 }
 

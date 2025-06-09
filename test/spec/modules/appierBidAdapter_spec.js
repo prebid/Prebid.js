@@ -44,14 +44,14 @@ describe('AppierAdapter', function () {
     });
   });
 
-  describe('buildRequests', function() {
-    it('should return an empty list when there are no bid requests', function() {
+  describe('buildRequests', function () {
+    it('should return an empty list when there are no bid requests', function () {
       const fakeBidRequests = [];
       const fakeBidderRequest = {};
       expect(spec.buildRequests(fakeBidRequests, fakeBidderRequest)).to.be.an('array').that.is.empty;
     });
 
-    it('should generate a POST bid request with method, url, and data fields', function() {
+    it('should generate a POST bid request with method, url, and data fields', function () {
       const bid = {
         'bidder': 'appier',
         'params': {
@@ -87,7 +87,7 @@ describe('AppierAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     const bid = {
       'bidder': 'appier',
       'params': {
@@ -101,7 +101,7 @@ describe('AppierAdapter', function () {
     };
     const fakeBidRequests = [bid];
 
-    it('should return an empty aray to indicate no valid bids', function() {
+    it('should return an empty aray to indicate no valid bids', function () {
       const fakeServerResponse = {};
 
       const bidResponses = spec.interpretResponse(fakeServerResponse, fakeBidRequests);
@@ -109,7 +109,7 @@ describe('AppierAdapter', function () {
       expect(bidResponses).is.an('array').that.is.empty;
     });
 
-    it('should generate correct response array for bidder', function() {
+    it('should generate correct response array for bidder', function () {
       const fakeBidResult = {
         'requestId': '30b31c1838de1e',
         'cpm': 0.0029346001,
@@ -134,8 +134,8 @@ describe('AppierAdapter', function () {
     });
   });
 
-  describe('getApiServer', function() {
-    it('should use the server specified by setConfig(appier.server)', function() {
+  describe('getApiServer', function () {
+    it('should use the server specified by setConfig(appier.server)', function () {
       config.setConfig({
         'appier': {'server': 'fake_server'}
       });
@@ -145,7 +145,7 @@ describe('AppierAdapter', function () {
       expect(server).equals('fake_server');
     });
 
-    it('should retrieve a farm specific hostname if server is not specpfied', function() {
+    it('should retrieve a farm specific hostname if server is not specpfied', function () {
       config.setConfig({
         'appier': {'farm': 'tw'}
       });
@@ -155,7 +155,7 @@ describe('AppierAdapter', function () {
       expect(server).equals(API_SERVERS_MAP['tw']);
     });
 
-    it('if farm is not recognized, use the default farm', function() {
+    it('if farm is not recognized, use the default farm', function () {
       config.setConfig({
         'appier': {'farm': 'no_this_farm'}
       });
@@ -165,7 +165,7 @@ describe('AppierAdapter', function () {
       expect(server).equals(API_SERVERS_MAP['default']);
     });
 
-    it('if farm is not specified, use the default farm', function() {
+    it('if farm is not specified, use the default farm', function () {
       config.setConfig({
         'appier': {}
       });

@@ -9,13 +9,13 @@ let cachedClientRef
 /**
  * This function is used in tests.
  */
-export function resetSubmodule() {
+export function resetSubmodule () {
   cachedClientRef = undefined
 }
 
 window.liQHub = window.liQHub ?? []
 
-function initializeClient(configParams) {
+function initializeClient (configParams) {
   // Only initialize once.
   if (cachedClientRef != null) return cachedClientRef
 
@@ -66,7 +66,7 @@ function initializeClient(configParams) {
     idCookieSettings = {}
   }
 
-  function loadConsent() {
+  function loadConsent () {
     const consent = {}
     const usPrivacyString = uspDataHandler.getConsentData();
     if (usPrivacyString != null) {
@@ -113,8 +113,8 @@ function initializeClient(configParams) {
  * @returns {Array}
  */
 
-function resolve(configParams, clientRef, callback) {
-  function onFailure(error) {
+function resolve (configParams, clientRef, callback) {
+  function onFailure (error) {
     logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
     callback();
   }
@@ -147,7 +147,7 @@ export const liveIntentExternalIdSubmodule = {
    * Decode the stored id value for passing to bid requests.
    * @function
    */
-  decode(value, config) {
+  decode (value, config) {
     const configParams = config?.params ?? {};
     setUpTreatment(configParams);
 
@@ -161,13 +161,13 @@ export const liveIntentExternalIdSubmodule = {
    * Performs action to obtain id and return a value in the callback's response argument.
    * @function
    */
-  getId(config) {
+  getId (config) {
     const configParams = config?.params ?? {};
     setUpTreatment(configParams);
 
     const clientRef = initializeClient(configParams)
 
-    return { callback: function(cb) { resolve(configParams, clientRef, cb); } };
+    return { callback: function (cb) { resolve(configParams, clientRef, cb); } };
   },
   primaryIds: PRIMARY_IDS,
   eids

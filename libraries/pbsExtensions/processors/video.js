@@ -1,7 +1,7 @@
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {deepAccess} from '../../../src/utils.js';
 
-export function setBidResponseVideoCache(bidResponse, bid) {
+export function setBidResponseVideoCache (bidResponse, bid) {
   if (bidResponse.mediaType === VIDEO) {
     // try to get cache values from 'response.ext.prebid.cache'
     // else try 'bid.ext.prebid.targeting' as fallback

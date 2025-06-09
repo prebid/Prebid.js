@@ -118,7 +118,7 @@ describe('GetIntent Adapter Tests:', function () {
     expect(serverRequest.data.skippable).to.equal('ALLOW');
   });
 
-  it('Verify bid floor without price floors module', function() {
+  it('Verify bid floor without price floors module', function () {
     const bidRequestWithFloor = deepClone(bidRequests[0]);
     bidRequestWithFloor.params.floor = 10
     bidRequestWithFloor.params.cur = 'USD'
@@ -129,7 +129,7 @@ describe('GetIntent Adapter Tests:', function () {
     expect(serverRequest.data.floor).to.equal(10);
   });
 
-  it('Verify bid floor with price floors module', function() {
+  it('Verify bid floor with price floors module', function () {
     const bidRequestWithFloor = deepClone(bidRequests[0]);
     bidRequestWithFloor.params.floor = 10
     bidRequestWithFloor.params.cur = 'USD'

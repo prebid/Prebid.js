@@ -97,7 +97,7 @@ export function addContextToRequests (reqBidsConfig) {
  * Loads Qortex header tag using data passed from module config object
  * @param {Object} config module config obtained during init
  */
-export function loadScriptTag(config) {
+export function loadScriptTag (config) {
   const code = 'qortex';
   const groupId = config.params.groupId;
   const src = 'https://tags.qortex.ai/bootstrapper'
@@ -139,7 +139,7 @@ export function loadScriptTag(config) {
 /**
  * Request contextual data about page (after checking for allow) and begin listening for postMessages from publisher
  */
-export function initializeBidEnrichment() {
+export function initializeBidEnrichment () {
   if (shouldAllowBidEnrichment()) {
     requestContextData()
   }
@@ -149,7 +149,7 @@ export function initializeBidEnrichment() {
 /**
  * Call Qortex code on page for available contextual information about current environment
  */
-export function requestContextData() {
+export function requestContextData () {
   if (qortexSessionInfo.currentSiteContext) {
     logMessage('Context data already retrieved.');
   } else {
@@ -161,7 +161,7 @@ export function requestContextData() {
  * Helper function to set initial values when they are obtained by init
  * @param {Object} config module config obtained during init
  */
-export function initializeModuleData(config) {
+export function initializeModuleData (config) {
   const {groupId, bidders, enableBidEnrichment} = config.params;
   qortexSessionInfo.bidEnrichmentDisabled = enableBidEnrichment !== null ? !enableBidEnrichment : true;
   qortexSessionInfo.bidderArray = bidders;
@@ -175,14 +175,14 @@ export function initializeModuleData(config) {
 /**
  * Allows setting of contextual data
  */
-export function setContextData(value) {
+export function setContextData (value) {
   qortexSessionInfo.currentSiteContext = value
 }
 
 /**
  * Allows setting of group configuration data
  */
-export function setGroupConfigData(value) {
+export function setGroupConfigData (value) {
   qortexSessionInfo.groupConfig = value
 }
 
@@ -190,7 +190,7 @@ export function setGroupConfigData(value) {
  * Unique id generator creating an identifier through datetime and random number
  * @returns {string}
  */
-function generateSessionId() {
+function generateSessionId () {
   const randomInt = window.crypto.getRandomValues(new Uint32Array(1));
   const currentDateTime = Math.floor(Date.now() / 1000);
   return 'QX' + randomInt.toString() + 'X' + currentDateTime.toString()
@@ -201,7 +201,7 @@ function generateSessionId() {
  * @param {number} percentageValue 0-100 number for percentage check.
  * @returns {Boolean}
  */
-function checkPercentageOutcome(percentageValue) {
+function checkPercentageOutcome (percentageValue) {
   return (percentageValue ?? 0) > (Math.random() * 100);
 }
 
@@ -209,7 +209,7 @@ function checkPercentageOutcome(percentageValue) {
  * Check for allowing functionality of bid enrichment capabilities.
  * @returns {Boolean}
  */
-function shouldAllowBidEnrichment() {
+function shouldAllowBidEnrichment () {
   if (qortexSessionInfo.bidEnrichmentDisabled) {
     logWarn('Bid enrichment disabled at prebid config')
     return false;
@@ -222,7 +222,7 @@ function shouldAllowBidEnrichment() {
  * @param {string} msg message string to be passed to CX-BID-ENRICH target on current page
  * @param {Object} data optional parameter object with additional data to send with post
  */
-function postBidEnrichmentMessage(msg, data) {
+function postBidEnrichmentMessage (msg, data) {
   window.postMessage({
     target: 'CX-BID-ENRICH',
     message: msg,
@@ -235,7 +235,7 @@ function postBidEnrichmentMessage(msg, data) {
  * Receives messages passed through postMessage method to QORTEX-PREBIDJS-RTD-MODULE on current page
  * @param {Object} evt data object holding Event information
  */
-export function windowPostMessageReceived(evt) {
+export function windowPostMessageReceived (evt) {
   const data = evt.data;
   if (typeof data.target !== 'undefined' && data.target === 'QORTEX-PREBIDJS-RTD-MODULE') {
     if (shouldAllowBidEnrichment()) {

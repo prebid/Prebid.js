@@ -26,7 +26,7 @@ export const gravitoIdSystemSubmodule = {
    * @function
    * @returns { {id: {gravitompId: string}} | undefined }
    */
-  getId: function() {
+  getId: function () {
     const newId = storage.getCookie(cookieKey);
     if (!newId) {
       return undefined;
@@ -43,7 +43,7 @@ export const gravitoIdSystemSubmodule = {
    * @param { {gravitompId: string} } value
    * @returns { {gravitompId: {string} } | undefined }
    */
-  decode: function(value) {
+  decode: function (value) {
     if (value && typeof value === 'object') {
       var result = {};
       if (value.gravitompId) {

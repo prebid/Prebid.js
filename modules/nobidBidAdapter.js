@@ -23,21 +23,21 @@ window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
 window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
-function log(msg, obj) {
+function log (msg, obj) {
   logInfo('-NoBid- ' + msg, obj)
 }
-function nobidSetCookie(cname, cvalue, hours) {
+function nobidSetCookie (cname, cvalue, hours) {
   var d = new Date();
   d.setTime(d.getTime() + (hours * 60 * 60 * 1000));
   var expires = 'expires=' + d.toUTCString();
   storage.setCookie(cname, cvalue, expires);
 }
-function nobidGetCookie(cname) {
+function nobidGetCookie (cname) {
   return storage.getCookie(cname);
 }
-function nobidBuildRequests(bids, bidderRequest) {
-  var serializeState = function(divIds, siteId, adunits) {
-    var filterAdUnitsByIds = function(divIds, adUnits) {
+function nobidBuildRequests (bids, bidderRequest) {
+  var serializeState = function (divIds, siteId, adunits) {
+    var filterAdUnitsByIds = function (divIds, adUnits) {
       var filtered = [];
       if (!divIds.length) {
         filtered = adUnits;
@@ -54,7 +54,7 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return filtered;
     }
-    var gdprConsent = function(bidderRequest) {
+    var gdprConsent = function (bidderRequest) {
       var gdprConsent = {};
       if (bidderRequest && bidderRequest.gdprConsent) {
         gdprConsent = {
@@ -65,14 +65,14 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return gdprConsent;
     }
-    var uspConsent = function(bidderRequest) {
+    var uspConsent = function (bidderRequest) {
       var uspConsent = '';
       if (bidderRequest && bidderRequest.uspConsent) {
         uspConsent = bidderRequest.uspConsent;
       }
       return uspConsent;
     }
-    var gppConsent = function(bidderRequest) {
+    var gppConsent = function (bidderRequest) {
       let gppConsent = null;
       if (bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent?.applicableSections) {
         gppConsent = {};
@@ -85,13 +85,13 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return gppConsent;
     }
-    var schain = function(bids) {
+    var schain = function (bids) {
       if (bids && bids.length > 0) {
         return bids[0].schain
       }
       return null;
     }
-    var coppa = function() {
+    var coppa = function () {
       if (config.getConfig('coppa') === true) {
         return {'coppa': true};
       }
@@ -100,7 +100,7 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return null;
     }
-    var topLocation = function(bidderRequest) {
+    var topLocation = function (bidderRequest) {
       var ret = '';
       if (bidderRequest?.refererInfo?.page) {
         ret = bidderRequest.refererInfo.page;
@@ -110,7 +110,7 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return encodeURIComponent(ret.replace(/\%/g, ''));
     }
-    var timestamp = function() {
+    var timestamp = function () {
       var date = new Date();
       var zp = function (val) { return (val <= 9 ? '0' + val : '' + val); }
       var d = date.getDate();
@@ -121,7 +121,7 @@ function nobidBuildRequests(bids, bidderRequest) {
       var s = date.getSeconds();
       return '' + y + '-' + zp(m) + '-' + zp(d) + ' ' + zp(h) + ':' + zp(min) + ':' + zp(s);
     };
-    var clientDim = function() {
+    var clientDim = function () {
       try {
         const winDimensions = getWinDimensions();
         var width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
@@ -131,7 +131,7 @@ function nobidBuildRequests(bids, bidderRequest) {
         logWarn('Could not parse screen dimensions, error details:', e);
       }
     }
-    var getEIDs = function(eids) {
+    var getEIDs = function (eids) {
       if (isArray(eids) && eids.length > 0) {
         let src = [];
         eids.forEach((eid) => {
@@ -175,8 +175,8 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (bidderRequest && bidderRequest.ortb2) state['ortb2'] = bidderRequest.ortb2;
     return state;
   };
-  function newAdunit(adunitObject, adunits) {
-    var getAdUnit = function(divid, adunits) {
+  function newAdunit (adunitObject, adunits) {
+    var getAdUnit = function (divid, adunits) {
       for (var i = 0; i < adunits.length; i++) {
         if (adunits[i].d === divid) {
           return adunits[i];
@@ -184,7 +184,7 @@ function nobidBuildRequests(bids, bidderRequest) {
       }
       return false;
     }
-    var removeByAttrValue = function(array, attribute, value) {
+    var removeByAttrValue = function (array, attribute, value) {
       for (var i = array.length - 1; i >= 0; i--) {
         var entry = array[i];
         if (entry[attribute] && entry[attribute] === value) {
@@ -285,8 +285,8 @@ function nobidBuildRequests(bids, bidderRequest) {
     return false;
   }
 }
-function nobidInterpretResponse(response, bidRequest) {
-  var findBid = function(divid, bids) {
+function nobidInterpretResponse (response, bidRequest) {
+  var findBid = function (divid, bids) {
     for (var i = 0; i < bids.length; i++) {
       if (bids[i].adUnitCode == divid) {
         return bids[i];
@@ -294,10 +294,10 @@ function nobidInterpretResponse(response, bidRequest) {
     }
     return false;
   }
-  var setRefreshLimit = function(response) {
+  var setRefreshLimit = function (response) {
     if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
   }
-  var setUserBlock = function(response) {
+  var setUserBlock = function (response) {
     if (response && typeof response.ublock !== 'undefined') {
       nobidSetCookie('_ublock', '1', response.ublock);
     }
@@ -341,7 +341,7 @@ function nobidInterpretResponse(response, bidRequest) {
   }
   return bidResponses;
 };
-window.nobid.renderTag = function(doc, id, win) {
+window.nobid.renderTag = function (doc, id, win) {
   log('nobid.renderTag()', id);
   var bid = window.nobid.bidResponses['' + id];
   if (bid && bid.adm2) {
@@ -383,7 +383,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     log('isBidRequestValid', bid);
     if (bid?.params?.siteId) return true;
     return false;
@@ -395,8 +395,8 @@ export const spec = {
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
-    function resolveEndpoint() {
+  buildRequests: function (validBidRequests, bidderRequest) {
+    function resolveEndpoint () {
       var ret = 'https://ads.servenobid.com/';
       var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
       env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
@@ -406,7 +406,7 @@ export const spec = {
       else if (env == 'qa') ret = 'https://qa-ads.nobid.com/';
       return ret;
     }
-    var buildEndpoint = function() {
+    var buildEndpoint = function () {
       return resolveEndpoint() + 'adreq?cb=' + Math.floor(Math.random() * 11000);
     }
     log('validBidRequests', validBidRequests);
@@ -439,7 +439,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     log('interpretResponse -> serverResponse', serverResponse);
     log('interpretResponse -> bidRequest', bidRequest);
     return nobidInterpretResponse(serverResponse.body, bidRequest);
@@ -452,7 +452,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent) {
     if (syncOptions.iframeEnabled) {
       let params = '';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -499,12 +499,12 @@ export const spec = {
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {Object} data Containing timeout specific data
    */
-  onTimeout: function(data) {
+  onTimeout: function (data) {
     window.nobid.timeoutTotal++;
     log('Timeout total: ' + window.nobid.timeoutTotal, data);
     return window.nobid.timeoutTotal;
   },
-  onBidWon: function(data) {
+  onBidWon: function (data) {
     window.nobid.bidWonTotal++;
     log('BidWon total: ' + window.nobid.bidWonTotal, data);
     return window.nobid.bidWonTotal;

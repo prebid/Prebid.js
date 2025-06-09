@@ -7,7 +7,7 @@ const BIDDER_CODE = 'admaru';
 const DEFAULT_BID_TTL = 360;
 const SYNC_URL = 'https://p2.admaru.net/UserSync/sync'
 
-function parseBid(rawBid, currency) {
+function parseBid (rawBid, currency) {
   const bid = {};
 
   bid.cpm = rawBid.price;

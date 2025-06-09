@@ -35,7 +35,7 @@ export const spec = {
     return validateParams(bidRequest);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    const [ sharedParams ] = validBidRequests;
+    const [sharedParams] = validBidRequests;
     const testMode = sharedParams.params.testMode;
     const bidsToSend = prepareBids(validBidRequests, sharedParams, bidderRequest);
 
@@ -94,7 +94,7 @@ registerBidder(spec);
  * @param schainObject {Object}
  * @returns {string}
  */
-function getSupplyChain(schainObject) {
+function getSupplyChain (schainObject) {
   if (isEmpty(schainObject)) {
     return '';
   }
@@ -116,7 +116,7 @@ function getSupplyChain(schainObject) {
  * @param val {string}
  * @returns {string}
  */
-function getEncodedValIfNotEmpty(val) {
+function getEncodedValIfNotEmpty (val) {
   return !isEmpty(val) ? encodeURIComponent(val) : '';
 }
 
@@ -124,7 +124,7 @@ function getEncodedValIfNotEmpty(val) {
  * get device type
  * @returns {string}
  */
-function getDeviceType() {
+function getDeviceType () {
   const ua = navigator.userAgent;
   if (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i
     .test(ua.toLowerCase())) {
@@ -147,7 +147,7 @@ function getDeviceType() {
  * @param mediaType {string}
  * @returns {Number}
  */
-function getFloorPrice(bid, mediaType) {
+function getFloorPrice (bid, mediaType) {
   let floor = 0;
 
   if (isFn(bid.getFloor)) {
@@ -168,7 +168,7 @@ function getFloorPrice(bid, mediaType) {
  * @param mediaType {string}
  * @returns {Array}
  */
-function getSizesArray(bid, mediaType) {
+function getSizesArray (bid, mediaType) {
   let sizes = []
 
   if (deepAccess(bid, `mediaTypes.${mediaType}.sizes`)) {
@@ -186,7 +186,7 @@ function getSizesArray(bid, mediaType) {
  * @param bidderCode {string}
  * @returns {string}
  */
-function getSyncMethod(filterSettings, bidderCode) {
+function getSyncMethod (filterSettings, bidderCode) {
   const iframeConfigs = ['all', 'iframe'];
   const pixelConfig = 'image';
   if (filterSettings && iframeConfigs.some(config => isSyncMethodAllowed(filterSettings[config], bidderCode))) {
@@ -203,7 +203,7 @@ function getSyncMethod(filterSettings, bidderCode) {
  * @param bidderCode {string}
  * @returns {boolean}
  */
-function isSyncMethodAllowed(filterSetting, bidderCode) {
+function isSyncMethodAllowed (filterSetting, bidderCode) {
   if (!filterSetting) {
     return false;
   }
@@ -216,7 +216,7 @@ function isSyncMethodAllowed(filterSetting, bidderCode) {
  * @param testMode {boolean}
  * @returns {string}
  */
-function getBidderEndpoint(testMode) {
+function getBidderEndpoint (testMode) {
   return testMode ? BIDDER_TEST_ENDPOINT : BIDDER_ENDPOINT;
 }
 
@@ -226,7 +226,7 @@ function getBidderEndpoint(testMode) {
  * @param bidderRequest {bidderRequest}
  * @returns {Array}
  */
-function generateBidParams(validBidRequests, bidderRequest) {
+function generateBidParams (validBidRequests, bidderRequest) {
   const bidsArray = [];
 
   if (validBidRequests.length) {
@@ -244,7 +244,7 @@ function generateBidParams(validBidRequests, bidderRequest) {
  * @param bidderRequest {bidderRequest}
  * @returns {Object} bid specific params object
  */
-function generateBidParameters(bid, bidderRequest) {
+function generateBidParameters (bid, bidderRequest) {
   const {params} = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const sizesArray = getSizesArray(bid, mediaType);
@@ -288,7 +288,7 @@ function generateBidParameters(bid, bidderRequest) {
  * @param bid {bid}
  * @returns {boolean}
  */
-function isBanner(bid) {
+function isBanner (bid) {
   return bid.mediaTypes && bid.mediaTypes.banner;
 }
 
@@ -298,7 +298,7 @@ function isBanner(bid) {
  * @param bidderRequest {bidderRequest}
  * @returns {object} the common params object
  */
-function generateSharedParams(sharedParams, bidderRequest) {
+function generateSharedParams (sharedParams, bidderRequest) {
   const {bidderCode} = bidderRequest;
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const domain = window.location.hostname;
@@ -372,7 +372,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
  * @param bidRequest {bidRequest}
  * @returns {boolean}
  */
-function validateParams(bidRequest) {
+function validateParams (bidRequest) {
   let isValid = true;
 
   if (!bidRequest.params) {
@@ -395,14 +395,14 @@ function validateParams(bidRequest) {
  * @param bidderRequest {bidderRequest}
  * @returns {Object}
  */
-function prepareBids(validBidRequests, sharedParams, bidderRequest) {
+function prepareBids (validBidRequests, sharedParams, bidderRequest) {
   return {
     params: generateSharedParams(sharedParams, bidderRequest),
     bids: generateBidParams(validBidRequests, bidderRequest)
   }
 }
 
-function getPlaybackMethod(bid) {
+function getPlaybackMethod (bid) {
   const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
 
   if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
@@ -412,7 +412,7 @@ function getPlaybackMethod(bid) {
   }
 }
 
-function populateVideoParams(params, bid) {
+function populateVideoParams (params, bid) {
   const linearity = deepAccess(bid, `mediaTypes.video.linearity`);
   const maxDuration = deepAccess(bid, `mediaTypes.video.maxduration`);
   const minDuration = deepAccess(bid, `mediaTypes.video.minduration`);
@@ -453,7 +453,7 @@ function populateVideoParams(params, bid) {
  * @param bids {Array}
  * @returns {Array}
  */
-function parseBidResponses(bids) {
+function parseBidResponses (bids) {
   return bids.map(bid => {
     const bidResponse = {
       cpm: bid.cpm,

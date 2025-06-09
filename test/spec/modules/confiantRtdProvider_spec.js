@@ -13,24 +13,24 @@ const {
 } = confiantModule;
 
 describe('Confiant RTD module', function () {
-  describe('setupPage()', function() {
-    it('should return false if propertId is not present in config', function() {
+  describe('setupPage()', function () {
+    it('should return false if propertId is not present in config', function () {
       expect(setupPage({})).to.be.false;
       expect(setupPage({ params: {} })).to.be.false;
       expect(setupPage({ params: { propertyId: '' } })).to.be.false;
     });
 
-    it('should return true if expected parameters are present', function() {
+    it('should return true if expected parameters are present', function () {
       expect(setupPage({ params: { propertyId: 'clientId' } })).to.be.true;
     });
   });
 
-  describe('Module initialization', function() {
+  describe('Module initialization', function () {
     let insertElementStub;
-    beforeEach(function() {
+    beforeEach(function () {
       insertElementStub = sinon.stub(utils, 'insertElement');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.insertElement.restore();
     });
 
@@ -42,7 +42,7 @@ describe('Confiant RTD module', function () {
       sinon.assert.calledOnce(mockWindow.addEventListener);
     });
 
-    it('should fire BillableEvent as a result for message in comm window', function() {
+    it('should fire BillableEvent as a result for message in comm window', function () {
       let listenerCallback;
       const mockWindow = { addEventListener: (a, cb) => (listenerCallback = cb) };
       let billableEventsCounter = 0;
@@ -78,7 +78,7 @@ describe('Confiant RTD module', function () {
     });
   });
 
-  describe('Sumbodule execution', function() {
+  describe('Sumbodule execution', function () {
     let submoduleStub;
     let insertElementStub;
     beforeEach(function () {
@@ -90,7 +90,7 @@ describe('Confiant RTD module', function () {
       submoduleStub.restore();
     });
 
-    function initModule() {
+    function initModule () {
       registerConfiantSubmodule();
 
       expect(submoduleStub.calledOnceWith('realTimeData')).to.equal(true);

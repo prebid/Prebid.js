@@ -237,7 +237,7 @@ describe('AudienceRun bid adapter tests', function () {
       expect(payload.userId).to.deep.equal(bid.userIdAsEids);
     });
 
-    it('should add schain object if available', function() {
+    it('should add schain object if available', function () {
       const bid = Object.assign({}, bidRequest)
       bid.schain = {
         ver: '1.0',

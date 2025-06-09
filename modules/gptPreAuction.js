@@ -18,15 +18,15 @@ const MODULE_NAME = 'GPT Pre-Auction';
 export let _currentConfig = {};
 let hooksAdded = false;
 
-export function getSegments(fpd, sections, segtax) {
+export function getSegments (fpd, sections, segtax) {
   return getSegmentsFn(fpd, sections, segtax);
 }
 
-export function getSignals(fpd) {
+export function getSignals (fpd) {
   return getSignalsFn(fpd);
 }
 
-export function getSignalsArrayByAuctionsIds(auctionIds, index = auctionManager.index) {
+export function getSignalsArrayByAuctionsIds (auctionIds, index = auctionManager.index) {
   const signals = auctionIds
     .map(auctionId => index.getAuction({ auctionId })?.getFPD()?.global)
     .map(getSignals)
@@ -35,7 +35,7 @@ export function getSignalsArrayByAuctionsIds(auctionIds, index = auctionManager.
   return signals;
 }
 
-export function getSignalsIntersection(signals) {
+export function getSignalsIntersection (signals) {
   const result = {};
   taxonomies.forEach((taxonomy) => {
     const allValues = signals
@@ -52,7 +52,7 @@ export function getSignalsIntersection(signals) {
   return result;
 }
 
-export function getAuctionsIdsFromTargeting(targeting, am = auctionManager) {
+export function getAuctionsIdsFromTargeting (targeting, am = auctionManager) {
   return Object.values(targeting)
     .flatMap(x => Object.entries(x))
     .filter((entry) => entry[0] === TARGETING_KEYS.AD_ID || entry[0].startsWith(TARGETING_KEYS.AD_ID + '_'))
@@ -165,7 +165,7 @@ export const appendPbAdSlot = adUnit => {
   return true;
 };
 
-function warnDeprecation(adUnit) {
+function warnDeprecation (adUnit) {
   logWarn(`pbadslot is deprecated and will soon be removed, use gpid instead`, adUnit)
 }
 

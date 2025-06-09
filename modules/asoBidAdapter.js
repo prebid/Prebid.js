@@ -104,7 +104,7 @@ const converter = ortbConverter({
     ttl: TTL
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     imp.tagid = bidRequest.adUnitCode;
@@ -112,7 +112,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
     if (bidderRequest.gdprConsent) {
@@ -129,7 +129,7 @@ const converter = ortbConverter({
     return request;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     context.mediaType = deepAccess(bid, 'ext.prebid.type');
     return buildBidResponse(bid, context);
   },
@@ -137,18 +137,18 @@ const converter = ortbConverter({
   overrides: {
     request: {
       // We don't need extra data
-      gdprAddtlConsent(setAddtlConsent, ortbRequest, bidderRequest) {
+      gdprAddtlConsent (setAddtlConsent, ortbRequest, bidderRequest) {
       }
     }
   }
 });
 
-function getEndpoint(bidRequest) {
+function getEndpoint (bidRequest) {
   const serverUrl = bidRequest.params.server || DEFAULT_SERVER_URL;
   return serverUrl + DEFAULT_SERVER_PATH + '?zid=' + bidRequest.params.zone + '&pbjs=' + VERSION;
 }
 
-function getConsentsIds(gdprConsent) {
+function getConsentsIds (gdprConsent) {
   const consents = deepAccess(gdprConsent, 'vendorData.purpose.consents', []);
   let consentsIds = [];
 

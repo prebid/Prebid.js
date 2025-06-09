@@ -47,7 +47,7 @@ let liveConnect = null;
 /**
  * This function is used in tests.
  */
-export function reset() {
+export function reset () {
   if (window && window.liQ_instances) {
     window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag));
     window.liQ_instances = [];
@@ -60,11 +60,11 @@ export function reset() {
 /**
  * This function is used in tests.
  */
-export function setEventFiredFlag() {
+export function setEventFiredFlag () {
   eventFired = true;
 }
 
-function parseLiveIntentCollectorConfig(collectConfig) {
+function parseLiveIntentCollectorConfig (collectConfig) {
   const config = {};
   collectConfig = collectConfig || {};
   collectConfig.appId && (config.appId = collectConfig.appId);
@@ -82,7 +82,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
  * @returns {Array}
  */
 
-function initializeLiveConnect(configParams) {
+function initializeLiveConnect (configParams) {
   if (liveConnect) {
     return liveConnect;
   }
@@ -149,7 +149,7 @@ function initializeLiveConnect(configParams) {
   return liveConnect;
 }
 
-function tryFireEvent() {
+function tryFireEvent () {
   if (!eventFired && liveConnect) {
     const eventDelay = liveConnect.config.fireEventDelay || DEFAULT_DELAY;
     setTimeout(() => {
@@ -171,10 +171,10 @@ export const liveIntentIdSubmodule = {
    */
   name: MODULE_NAME,
   gvlid: GVLID,
-  setModuleMode(mode) {
+  setModuleMode (mode) {
     this.moduleMode = mode;
   },
-  getInitializer() {
+  getInitializer () {
     return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode);
   },
 
@@ -189,7 +189,7 @@ export const liveIntentIdSubmodule = {
    * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
-  decode(value, config) {
+  decode (value, config) {
     const configParams = (config && config.params) || {};
     setUpTreatment(configParams);
 
@@ -207,7 +207,7 @@ export const liveIntentIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     const configParams = (config && config.params) || {};
     setUpTreatment(configParams);
 
@@ -216,7 +216,7 @@ export const liveIntentIdSubmodule = {
       return;
     }
     tryFireEvent();
-    const result = function(callback) {
+    const result = function (callback) {
       liveConnect.resolve(
         response => {
           callback(response);

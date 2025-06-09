@@ -4,7 +4,7 @@ import {config} from 'src/config.js';
 describe('PBS - ortb ext.prebid.aliases', () => {
   let aliasRegistry, bidderRegistry;
 
-  function setAliases(bidderRequest) {
+  function setAliases (bidderRequest) {
     const req = {}
     setRequestExtPrebidAliases(req, bidderRequest, {}, {
       am: {
@@ -32,7 +32,7 @@ describe('PBS - ortb ext.prebid.aliases', () => {
     it('bidder sets skipPbsAliasing', () => {
       aliasRegistry['alias'] = 'bidder';
       bidderRegistry['alias'] = {
-        getSpec() {
+        getSpec () {
           return {
             skipPbsAliasing: true
           }
@@ -42,10 +42,10 @@ describe('PBS - ortb ext.prebid.aliases', () => {
     });
   });
 
-  function initAlias(spec = {}) {
+  function initAlias (spec = {}) {
     aliasRegistry['alias'] = 'bidder';
     bidderRegistry['alias'] = {
-      getSpec() {
+      getSpec () {
         return spec
       }
     };

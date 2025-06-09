@@ -6,7 +6,7 @@ import {Renderer} from 'src/Renderer.js'
 import {adapter} from 'modules/unrulyBidAdapter.js'
 
 describe('UnrulyAdapter', function () {
-  function createOutStreamExchangeBid({
+  function createOutStreamExchangeBid ({
     adUnitCode = 'placement2',
     statusCode = 1,
     requestId = 'foo',
@@ -42,7 +42,7 @@ describe('UnrulyAdapter', function () {
     }
   }
 
-  function createOutStreamExchangeAuctionConfig() {
+  function createOutStreamExchangeAuctionConfig () {
     return {
       'seller': 'https://nexxen.tech',
       'decisionLogicURL': 'https://nexxen.tech/padecisionlogic',
@@ -692,7 +692,7 @@ describe('UnrulyAdapter', function () {
       let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
       expect(result[0].data).to.deep.equal(expectedResult);
     });
-    describe('Protected Audience Support', function() {
+    describe('Protected Audience Support', function () {
       it('should return an array with 2 items and enabled protected audience', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',

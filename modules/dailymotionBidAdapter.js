@@ -18,7 +18,7 @@ const dailymotionOrtbConverter = ortbConverter({
     netRevenue: true,
     ttl: 600,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     if (typeof bidRequest.getFloor === 'function') {
@@ -50,7 +50,7 @@ function isArrayFilled (_array) {
  * @param {BidRequest} bidRequest A valid bid requests that should be sent to the Server.
  * @return video metadata
  */
-function getVideoMetadata(bidRequest, bidderRequest) {
+function getVideoMetadata (bidRequest, bidderRequest) {
   const videoParams = deepAccess(bidRequest, 'params.video', {});
 
   // As per oRTB 2.5 spec, "A bid request must not contain both an App and a Site object."
@@ -145,7 +145,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
  *
  * @return boolean True if user sync is enabled
  */
-function isUserSyncEnabled() {
+function isUserSyncEnabled () {
   const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled');
 
   if (!syncEnabled) return false;
@@ -196,7 +196,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests = [], bidderRequest) {
+  buildRequests: function (validBidRequests = [], bidderRequest) {
     const ortbData = dailymotionOrtbConverter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     // check consent to be able to read user cookie
     const allowCookieReading =

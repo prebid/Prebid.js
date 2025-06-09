@@ -7,7 +7,7 @@ import adapterManager from '../src/adapterManager.js';
 import { logMessage } from '../src/utils.js';
 
 // Object.entries polyfill
-const entries = Object.entries || function(obj) {
+const entries = Object.entries || function (obj) {
   const ownProps = Object.keys(obj);
   let i = ownProps.length;
   let resArray = new Array(i); // preallocate the Array
@@ -33,7 +33,7 @@ let scaleableAnalytics = Object.assign({},
   }),
   {
     // Override AnalyticsAdapter functions by supplying custom methods
-    track({ eventType, args }) {
+    track ({ eventType, args }) {
       switch (eventType) {
         case AUCTION_INIT:
           onAuctionInit(args);
@@ -61,7 +61,7 @@ scaleableAnalytics.enableAnalytics = config => {
 
   scaleableAnalytics.originEnableAnalytics(config);
 
-  scaleableAnalytics.enableAnalytics = function _enable() {
+  scaleableAnalytics.enableAnalytics = function _enable () {
     return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
   };
 }

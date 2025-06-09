@@ -1,7 +1,7 @@
 import {cmpClient, MODE_CALLBACK, MODE_RETURN} from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
-  function mockWindow(props = {}) {
+  function mockWindow (props = {}) {
     let listeners = [];
     const win = {
       addEventListener: sinon.stub().callsFake((evt, listener) => {
@@ -127,7 +127,7 @@ describe('cmpClient', () => {
           mkClient({apiArgs: ['parameter', 'command']})({
             command: 'mockCmd',
             parameter: 'mockParam',
-            callback() {}
+            callback () {}
           });
           sinon.assert.calledWith(mockApiFn, 'mockParam', 'mockCmd');
         });
@@ -150,7 +150,7 @@ describe('cmpClient', () => {
       });
     });
 
-    function mkClient(options) {
+    function mkClient (options) {
       return cmpClient(Object.assign({apiName: 'mockApi'}, options), win);
     }
 
@@ -250,7 +250,7 @@ describe('cmpClient', () => {
         describe('messages with same callID', () => {
           let callback, callId;
 
-          function runCallback(returnValue) {
+          function runCallback (returnValue) {
             win.postMessage({mockApiReturn: {callId, returnValue}});
           }
 

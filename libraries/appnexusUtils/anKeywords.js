@@ -12,7 +12,7 @@ const ORTB_SEG_PATHS = ['user.data'].concat(
   CLIENT_SECTIONS.map((prefix) => `${prefix}.content.data`)
 );
 
-function getValueString(param, val, defaultValue) {
+function getValueString (param, val, defaultValue) {
   if (val === undefined || val === null) {
     return defaultValue;
   }
@@ -34,7 +34,7 @@ function getValueString(param, val, defaultValue) {
  * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
  * @returns {Array<{key, value}>}
  */
-export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
+export function transformBidderParamKeywords (keywords, paramName = 'keywords') {
   const arrs = [];
 
   _each(keywords, (v, k) => {
@@ -68,7 +68,7 @@ export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
 
 // converts a comma separated list of keywords into the standard keyword object format used in appnexus bid params
 // 'genre=rock,genre=pop,pets=dog,music' goes to { 'genre': ['rock', 'pop'], 'pets': ['dog'], 'music': [''] }
-export function convertKeywordStringToANMap(keyStr) {
+export function convertKeywordStringToANMap (keyStr) {
   if (isStr(keyStr) && keyStr !== '') {
     // will split based on commas and will eat white space before/after the comma
     return convertKeywordsToANMap(keyStr.split(/\s*(?:,)\s*/));
@@ -81,7 +81,7 @@ export function convertKeywordStringToANMap(keyStr) {
  * @param {Array<String>} kwarray keywords as an array of strings
  * @return {{}} appnexus-style keyword map
  */
-function convertKeywordsToANMap(kwarray) {
+function convertKeywordsToANMap (kwarray) {
   const result = {};
   kwarray.forEach(kw => {
     // if = exists, then split
@@ -109,11 +109,11 @@ function convertKeywordsToANMap(kwarray) {
  * @param ortb2
  * @return {{}} appnexus-style keyword map using all keywords contained in ortb2
  */
-export function getANMapFromOrtbKeywords(ortb2) {
+export function getANMapFromOrtbKeywords (ortb2) {
   return convertKeywordsToANMap(getAllOrtbKeywords(ortb2));
 }
 
-export function getANKewyordParamFromMaps(...anKeywordMaps) {
+export function getANKewyordParamFromMaps (...anKeywordMaps) {
   return transformBidderParamKeywords(
     mergeDeep(...anKeywordMaps.map(kwMap => Object.fromEntries(
       Object.entries(kwMap || {})
@@ -122,7 +122,7 @@ export function getANKewyordParamFromMaps(...anKeywordMaps) {
   )
 }
 
-export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
+export function getANKeywordParam (ortb2, ...anKeywordsMaps) {
   return getANKewyordParamFromMaps(
     getANMapFromOrtbKeywords(ortb2),
     getANMapFromOrtbSegments(ortb2),
@@ -130,7 +130,7 @@ export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
   )
 }
 
-export function getANMapFromOrtbSegments(ortb2) {
+export function getANMapFromOrtbSegments (ortb2) {
   let ortbSegData = {};
   ORTB_SEG_PATHS.forEach(path => {
     let ortbSegsArrObj = deepAccess(ortb2, path) || [];

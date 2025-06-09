@@ -102,7 +102,7 @@ export const spec = {
 }
 
 /* Get parsed size from request size */
-function getSize(bid) {
+function getSize (bid) {
   let inputSize = bid.sizes || [];
 
   if (bid.mediaTypes?.banner) {
@@ -143,7 +143,7 @@ function getSize(bid) {
 }
 
 /* Create bid from response */
-function createBid(response, bidRequests) {
+function createBid (response, bidRequests) {
   if (!response || !response.mediaType ||
     (response.mediaType === 'video' && !response.vastXml) ||
     (response.mediaType === 'banner' && !response.ad)) {

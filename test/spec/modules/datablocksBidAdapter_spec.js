@@ -304,7 +304,7 @@ let bid_request = {
   }
 }
 
-describe('DatablocksAdapter', function() {
+describe('DatablocksAdapter', function () {
   before(() => {
     // stub out queue metric to avoid it polluting the global xhr mock during other tests
     sinon.stub(spec, 'queue_metric').callsFake(() => null);
@@ -314,7 +314,7 @@ describe('DatablocksAdapter', function() {
     spec.queue_metric.restore();
   });
 
-  describe('All needed functions are available', function() {
+  describe('All needed functions are available', function () {
     it(`isBidRequestValid is present and type function`, function () {
       expect(spec.isBidRequestValid).to.exist.and.to.be.a('function')
     });
@@ -372,50 +372,50 @@ describe('DatablocksAdapter', function() {
     });
   });
 
-  describe('get / store dbid', function() {
-    it('Should return true / undefined', function() {
+  describe('get / store dbid', function () {
+    it('Should return true / undefined', function () {
       expect(spec.store_dbid('12345')).to.be.true;
       expect(spec.get_dbid()).to.be.a('string');
     });
   })
 
-  describe('get / store syncs', function() {
-    it('Should return true / array', function() {
+  describe('get / store syncs', function () {
+    it('Should return true / array', function () {
       expect(spec.store_syncs([{id: 1, uid: 'test'}])).to.be.true;
       expect(spec.get_syncs()).to.be.a('object');
     });
   })
 
-  describe('get_viewability', function() {
-    it('Should return undefined', function() {
+  describe('get_viewability', function () {
+    it('Should return undefined', function () {
       expect(spec.get_viewability()).to.equal(undefined);
     });
   })
 
-  describe('get client info', function() {
-    it('Should return object', function() {
+  describe('get client info', function () {
+    it('Should return object', function () {
       let client_info = spec.get_client_info()
       expect(client_info).to.be.a('object');
       expect(client_info).to.have.all.keys('wiw', 'wih', 'saw', 'sah', 'scd', 'sw', 'sh', 'whl', 'wxo', 'wyo', 'wpr', 'is_bot', 'is_hid', 'vs');
     });
 
-    it('bot test should return boolean', function() {
+    it('bot test should return boolean', function () {
       let bot_test = new BotClientTests();
       expect(bot_test.doTests()).to.be.a('boolean');
     });
   })
 
-  describe('isBidRequestValid', function() {
-    it('Should return true when source_id and Host are set', function() {
+  describe('isBidRequestValid', function () {
+    it('Should return true when source_id and Host are set', function () {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
-    it('Should return false when host/source_id is not set', function() {
+    it('Should return false when host/source_id is not set', function () {
       let moddedBid = deepClone(bid);
       delete moddedBid.params.source_id;
       expect(spec.isBidRequestValid(moddedBid)).to.be.false;
     });
 
-    it('Should return true when viewability reporting is opted out', function() {
+    it('Should return true when viewability reporting is opted out', function () {
       let moddedBid = Object.assign({}, bid);
       moddedBid.params.vis_optout = true;
       spec.isBidRequestValid(moddedBid);
@@ -423,47 +423,47 @@ describe('DatablocksAdapter', function() {
     });
   })
 
-  describe('getUserSyncs', function() {
-    it('Should return array of syncs', function() {
+  describe('getUserSyncs', function () {
+    it('Should return array of syncs', function () {
       expect(spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [res_object], {gdprApplies: true, gdpr: 1, gdpr_consent: 'consent_string'}, {})).to.be.an('array');
     });
   });
 
-  describe('onSetTargeting', function() {
-    it('Should return undefined', function() {
+  describe('onSetTargeting', function () {
+    it('Should return undefined', function () {
       expect(spec.onSetTargeting()).to.equal(undefined);
     });
   });
 
-  describe('onBidWon', function() {
-    it('Should return undefined', function() {
+  describe('onBidWon', function () {
+    it('Should return undefined', function () {
       let won_bid = {params: [{source_id: 1}], requestId: 1, adUnitCode: 'unit', auctionId: 1, size: '300x250', cpm: 10, adserverTargeting: {hb_pb: 10}, timeToRespond: 10, ttl: 10};
       expect(spec.onBidWon(won_bid)).to.equal(undefined);
     });
   });
 
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     let request;
     before(() => {
       request = spec.buildRequests([bid, bid2, nativeBid], bidderRequest);
       expect(request).to.exist;
     })
 
-    it('Returns POST method', function() {
+    it('Returns POST method', function () {
       expect(request.method).to.exist;
       expect(request.method).to.equal('POST');
     });
 
-    it('Returns valid URL', function() {
+    it('Returns valid URL', function () {
       expect(request.url).to.exist;
       expect(request.url).to.equal('https://v5demo.datablocks.net/openrtb/?sid=7560');
     });
 
-    it('Creates an array of request objects', function() {
+    it('Creates an array of request objects', function () {
       expect(request.data.imp).to.be.an('array').that.is.not.empty;
     });
 
-    it('Should be a valid openRTB request', function() {
+    it('Should be a valid openRTB request', function () {
       let data = request.data;
 
       expect(data).to.be.an('object');
@@ -494,16 +494,16 @@ describe('DatablocksAdapter', function() {
       })
     });
 
-    it('Returns empty data if no valid requests are passed', function() {
+    it('Returns empty data if no valid requests are passed', function () {
       let test_request = spec.buildRequests([]);
       expect(test_request).to.be.an('array').that.is.empty;
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     let response = spec.interpretResponse(res_object, bid_request);
 
-    it('Returns an array of valid server responses if response object is valid', function() {
+    it('Returns an array of valid server responses if response object is valid', function () {
       expect(response).to.be.an('array').that.is.not.empty;
 
       response.forEach(bid => {
@@ -524,7 +524,7 @@ describe('DatablocksAdapter', function() {
         }
       })
 
-      it('Returns an empty array if invalid response is passed', function() {
+      it('Returns an empty array if invalid response is passed', function () {
         serverResponses = spec.interpretResponse('invalid_response');
         expect(serverResponses).to.be.an('array').that.is.empty;
       });

@@ -20,13 +20,13 @@ export const oxxionSubmodule = {
   getFilteredAdUnitsOnBidRates: getFilteredAdUnitsOnBidRates,
 };
 
-function init(config, userConsent) {
+function init (config, userConsent) {
   if (!config.params || !config.params.domain) { return false }
   if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') { return true }
   return false;
 }
 
-function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
+function getAdUnits (reqBidsConfigObj, callback, config, userConsent) {
   const moduleStarted = new Date();
   logInfo(LOG_PREFIX + 'started with ', config);
   if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') {
@@ -64,10 +64,10 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
 function getPromisifiedAjax (url, data = {}, options = {}) {
   return new Promise((resolve, reject) => {
     const callbacks = {
-      success(responseText, { response }) {
+      success (responseText, { response }) {
         resolve(JSON.parse(response));
       },
-      error(error) {
+      error (error) {
         reject(error);
       }
     };
@@ -134,7 +134,7 @@ function getRandomNumber (max = 10) {
   return Math.round(Math.random() * max);
 }
 
-function getRequestsList(reqBidsConfigObj) {
+function getRequestsList (reqBidsConfigObj) {
   let count = 0;
   return reqBidsConfigObj.adUnits.flatMap(({
     bids = [],

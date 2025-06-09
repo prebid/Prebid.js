@@ -19,7 +19,7 @@ const GVL_ID = 1317;
 const SYNC_URL = 'https://npid.amspbs.com/v0/user/sync';
 
 const converter = ortbConverter({
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.newspassid', {
       publisher: resolveNewpassidPublisherId(bidRequest),
@@ -80,12 +80,12 @@ export const spec = {
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
-  isBidRequestValid: function(bidRequest) {
+  isBidRequestValid: function (bidRequest) {
     const publisherId = resolveNewpassidPublisherId(bidRequest);
     return !!(bidRequest.params && publisherId && bidRequest.params.placementId);
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     // convert to ortb using the converter utility
     const data = converter.toORTB({ bidRequests, bidderRequest });
 
@@ -101,7 +101,7 @@ export const spec = {
     ];
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse.body;
     const bidResponses = [];
 
@@ -129,7 +129,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     if (!syncOptions.iframeEnabled) return []; // disable if iframe sync is disabled
     if (!hasPurpose1Consent(gdprConsent)) return []; // disable if no purpose1 consent
     if (config.getConfig('coppa') === true) return []; // disable syncs for coppa

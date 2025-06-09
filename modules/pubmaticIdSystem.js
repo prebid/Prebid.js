@@ -16,7 +16,7 @@ const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-function generateQueryStringParams(config, consentData) {
+function generateQueryStringParams (config, consentData) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -36,7 +36,7 @@ function generateQueryStringParams(config, consentData) {
   return params;
 }
 
-function buildUrl(config, consentData) {
+function buildUrl (config, consentData) {
   let baseUrl = `${API_URL}${config.params.publisherId}`;
   const params = generateQueryStringParams(config, consentData);
 
@@ -47,7 +47,7 @@ function buildUrl(config, consentData) {
   return baseUrl;
 }
 
-function deleteFromAllStorages(key) {
+function deleteFromAllStorages (key) {
   const cKeys = [key, `${key}_cst`, `${key}_last`, `${key}_exp`];
   cKeys.forEach((cKey) => {
     if (storage.getCookie(cKey)) {
@@ -63,7 +63,7 @@ function deleteFromAllStorages(key) {
   });
 }
 
-function getSuccessAndErrorHandler(callback) {
+function getSuccessAndErrorHandler (callback) {
   return {
     success: (response) => {
       let responseObj;
@@ -88,7 +88,7 @@ function getSuccessAndErrorHandler(callback) {
   };
 }
 
-function hasRequiredConfig(config) {
+function hasRequiredConfig (config) {
   if (!config || !config.storage || !config.params) {
     logError(LOG_PREFIX + 'config.storage and config.params should be passed.');
     return false;
@@ -120,13 +120,13 @@ function hasRequiredConfig(config) {
 export const pubmaticIdSubmodule = {
   name: MODULE_NAME,
   gvlid: GVLID,
-  decode(value) {
+  decode (value) {
     if (isStr(value.id) && !isEmptyStr(value.id)) {
       return { pubmaticId: value.id };
     }
     return undefined;
   },
-  getId(config, consentData) {
+  getId (config, consentData) {
     if (!hasRequiredConfig(config)) {
       return undefined;
     }

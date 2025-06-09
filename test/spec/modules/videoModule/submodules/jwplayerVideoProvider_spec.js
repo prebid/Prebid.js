@@ -16,7 +16,7 @@ import {
 
 import { PLAYBACK_MODE } from 'libraries/video/constants/constants.js';
 
-function getPlayerMock() {
+function getPlayerMock () {
   return makePlayerFactoryMock({
     getState: function () {},
     setup: function () { return this; },
@@ -41,7 +41,7 @@ function getPlayerMock() {
   })();
 }
 
-function makePlayerFactoryMock(playerMock_) {
+function makePlayerFactoryMock (playerMock_) {
   const playerFactory = function () {
     return playerMock_;
   }
@@ -49,7 +49,7 @@ function makePlayerFactoryMock(playerMock_) {
   return playerFactory;
 }
 
-function getUtilsMock() {
+function getUtilsMock () {
   return {
     getJwConfig: function () {},
     getPlayerHeight: function () {},
@@ -70,13 +70,13 @@ function getUtilsMock() {
 
 const sharedUtils = { videoEvents };
 
-function addDiv() {
+function addDiv () {
   const div = document.createElement('div');
   div.setAttribute('id', 'test');
   document.body.appendChild(div);
 }
 
-function removeDiv() {
+function removeDiv () {
   const div = document.getElementById('test');
   if (div) {
     div.remove();
@@ -505,7 +505,7 @@ describe('timeStateFactory', function () {
     timeState.clearState();
   });
 
-  it('should update state for VOD time event', function() {
+  it('should update state for VOD time event', function () {
     const position = 5;
     const test_duration = 30;
 
@@ -520,7 +520,7 @@ describe('timeStateFactory', function () {
     expect(playbackMode).to.be.equal(PLAYBACK_MODE.VOD);
   });
 
-  it('should update state for LIVE time events', function() {
+  it('should update state for LIVE time events', function () {
     const position = 0;
     const test_duration = 0;
 
@@ -535,7 +535,7 @@ describe('timeStateFactory', function () {
     expect(playbackMode).to.be.equal(PLAYBACK_MODE.LIVE);
   });
 
-  it('should update state for DVR time events', function() {
+  it('should update state for DVR time events', function () {
     const position = -5;
     const test_duration = -30;
 
@@ -857,10 +857,10 @@ describe('utils', function () {
     });
   });
 
-  describe('getPlaybackMethod', function() {
+  describe('getPlaybackMethod', function () {
     const getPlaybackMethod = utils.getPlaybackMethod;
 
-    it('should return autoplay with sound', function() {
+    it('should return autoplay with sound', function () {
       const playbackMethod = getPlaybackMethod({
         autoplay: true,
         mute: false
@@ -868,7 +868,7 @@ describe('utils', function () {
       expect(playbackMethod).to.equal(PLAYBACK_METHODS.AUTOPLAY);
     });
 
-    it('should return autoplay muted', function() {
+    it('should return autoplay muted', function () {
       const playbackMethod = getPlaybackMethod({
         autoplay: true,
         mute: true
@@ -884,7 +884,7 @@ describe('utils', function () {
       expect(playbackMethod).to.equal(PLAYBACK_METHODS.AUTOPLAY_MUTED);
     });
 
-    it('should return click to play', function() {
+    it('should return click to play', function () {
       let playbackMethod = getPlaybackMethod({ autoplay: false });
       expect(playbackMethod).to.equal(PLAYBACK_METHODS.CLICK_TO_PLAY);
 

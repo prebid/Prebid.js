@@ -23,20 +23,20 @@ describe('humansecurity RTD module', function () {
   const sonarStubId = `sonar_${stubUuid}`;
   const stubWindow = { [sonarStubId]: undefined };
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(utils, 'getWindowSelf').returns(stubWindow);
     sandbox.stub(utils, 'generateUUID').returns(stubUuid);
     sandbox.stub(refererDetection, 'getRefererInfo').returns({ domain: 'example.com' });
   });
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
   describe('Initialization step', function () {
     let sandbox2;
     let connectSpy;
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox2 = sinon.sandbox.create();
       connectSpy = sandbox.spy();
       // Once the impl script is loaded, it registers the API using session ID
@@ -102,7 +102,7 @@ describe('humansecurity RTD module', function () {
     let sandbox2;
     let callbackSpy;
     let reqBidsConfig;
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox2 = sinon.sandbox.create();
       callbackSpy = sandbox2.spy();
       reqBidsConfig = { ortb2Fragments: { bidder: {}, global: {} } };
@@ -160,10 +160,10 @@ describe('humansecurity RTD module', function () {
     });
   });
 
-  describe('Sumbodule execution', function() {
+  describe('Sumbodule execution', function () {
     let sandbox2;
     let submoduleStub;
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox2 = sinon.sandbox.create();
       submoduleStub = sandbox2.stub(hook, 'submodule');
     });
@@ -171,7 +171,7 @@ describe('humansecurity RTD module', function () {
       sandbox2.restore();
     });
 
-    function getModule() {
+    function getModule () {
       main();
 
       expect(submoduleStub.calledOnceWith('realTimeData')).to.equal(true);

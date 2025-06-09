@@ -241,11 +241,11 @@ describe('bidderFactory', () => {
         }).forEach(([t, allowed]) => {
           const expectation = allowed ? (val) => expect(val).to.exist : (val) => expect(val).to.not.exist;
 
-          function checkBidRequest(br) {
+          function checkBidRequest (br) {
             ['auctionId', 'transactionId'].forEach((prop) => expectation(br[prop]));
           }
 
-          function checkBidderRequest(br) {
+          function checkBidderRequest (br) {
             expectation(br.auctionId);
             br.bids.forEach(checkBidRequest);
           }
@@ -292,14 +292,14 @@ describe('bidderFactory', () => {
           const bidderRequest = {
             bidderCode: 'mockBidder',
             auctionId: 'aid',
-            getAID() { return this.auctionId },
+            getAID () { return this.auctionId },
             bids: [
               {
                 adUnitCode: 'mockAU',
                 bidId: 'bid',
                 transactionId: 'tid',
                 auctionId: 'aid',
-                getTIDs() {
+                getTIDs () {
                   return [this.auctionId, this.transactionId]
                 }
               }
@@ -644,7 +644,7 @@ describe('bidderFactory', () => {
       let logErrorSpy;
 
       beforeEach(function () {
-        ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
+        ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
           const fakeResponse = sinon.stub();
           fakeResponse.returns('headerContent');
           callbacks.success('response body', { getResponseHeader: fakeResponse });
@@ -739,7 +739,7 @@ describe('bidderFactory', () => {
           bidderRequest.bids[0].bidder = 'sampleBidder';
         })
 
-        function getAuctionBid() {
+        function getAuctionBid () {
           const bidder = newBidder(spec);
           spec.isBidRequestValid.returns(true);
           spec.buildRequests.returns({
@@ -753,7 +753,7 @@ describe('bidderFactory', () => {
           return addBidResponseStub.firstCall.args[1];
         }
 
-        function setDeferredBilling(deferredBilling = true) {
+        function setDeferredBilling (deferredBilling = true) {
           bidderRequest.bids.forEach(bid => { bid.deferBilling = deferredBilling });
         }
 
@@ -949,7 +949,7 @@ describe('bidderFactory', () => {
           status: 500,
           statusText: 'Internal Server Error'
         };
-        ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
+        ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
           callbacks.error('ajax call failed.', xhrErrorMock);
         });
         callBidderErrorStub = sinon.stub(adapterManager, 'callBidderError');
@@ -1097,12 +1097,12 @@ describe('bidderFactory', () => {
       aliasBidAdapterStub.restore();
     });
 
-    function newEmptySpec() {
+    function newEmptySpec () {
       return {
         code: CODE,
-        isBidRequestValid: function() { },
-        buildRequests: function() { },
-        interpretResponse: function() { },
+        isBidRequestValid: function () { },
+        buildRequests: function () { },
+        interpretResponse: function () { },
       };
     }
 
@@ -1139,7 +1139,7 @@ describe('bidderFactory', () => {
       expect(registerBidAdapterStub.thirdCall.args[1]).to.equal('bar')
     });
 
-    it('should register alias with their gvlid', function() {
+    it('should register alias with their gvlid', function () {
       const aliases = [
         {
           code: 'foo',
@@ -1161,7 +1161,7 @@ describe('bidderFactory', () => {
       expect(registerBidAdapterStub.getCall(3).args[0].getSpec().gvlid).to.equal(undefined);
     })
 
-    it('should register alias with skipPbsAliasing', function() {
+    it('should register alias with skipPbsAliasing', function () {
       const aliases = [
         {
           code: 'foo',
@@ -1222,7 +1222,7 @@ describe('bidderFactory', () => {
       addBidResponseStub = sinon.stub();
       addBidResponseStub.reject = sinon.stub();
       doneStub = sinon.stub();
-      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
         callbacks.success('response body', { getResponseHeader: fakeResponse });
@@ -1414,7 +1414,7 @@ describe('bidderFactory', () => {
       }));
     })
 
-    describe(' Check for alternateBiddersList ', function() {
+    describe(' Check for alternateBiddersList ', function () {
       let bidRequest;
       let bids1;
       let logWarnSpy;
@@ -1579,7 +1579,7 @@ describe('bidderFactory', () => {
       });
     });
 
-    describe('when interpretResponse returns BidderAuctionResponse', function() {
+    describe('when interpretResponse returns BidderAuctionResponse', function () {
       const bidRequest = {
         auctionId: 'aid',
         bids: [{
@@ -1600,7 +1600,7 @@ describe('bidderFactory', () => {
         }
       }
 
-      it('should unwrap bids', function() {
+      it('should unwrap bids', function () {
         const bidder = newBidder(spec);
         spec.interpretResponse.returns({
           bids: bids,
@@ -1619,14 +1619,14 @@ describe('bidderFactory', () => {
         sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
       })
 
-      describe('when response has PAAPI config', function() {
+      describe('when response has PAAPI config', function () {
         let paapiStub;
 
-        function paapiHook(next, ...args) {
+        function paapiHook (next, ...args) {
           paapiStub(...args);
         }
 
-        function runBidder(response) {
+        function runBidder (response) {
           const bidder = newBidder(spec);
           spec.interpretResponse.returns(response);
           bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
@@ -1689,7 +1689,7 @@ describe('bidderFactory', () => {
         }
       });
 
-      function mkResponse(props) {
+      function mkResponse (props) {
         return Object.assign({
           requestId: req.bidId,
           cpm: 1,
@@ -1701,7 +1701,7 @@ describe('bidderFactory', () => {
         }, props)
       }
 
-      function checkValid(bid) {
+      function checkValid (bid) {
         return isValid('au', bid, {index: stubAuctionIndex({bidRequests: [req]})});
       }
 
@@ -1750,7 +1750,7 @@ describe('bidderFactory', () => {
         getUserSyncs: sinon.stub()
       };
 
-      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
+      ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function (url, callbacks) {
         const fakeResponse = sinon.stub();
         fakeResponse.returns('headerContent');
         callbacks.success('response body', { getResponseHeader: fakeResponse });

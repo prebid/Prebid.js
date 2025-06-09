@@ -104,11 +104,11 @@ describe('Reconciliation Real time data submodule', function () {
         }
       }
 
-      it('should return null if called with null', function() {
+      it('should return null if called with null', function () {
         expect(getTopIFrameWin(null)).to.be.null;
       });
 
-      it('should return null if there is an error in frames chain', function() {
+      it('should return null if there is an error in frames chain', function () {
         const topWin = {};
         const iframe1Win = mockFrameWin(topWin, null); // break chain
         const iframe2Win = mockFrameWin(topWin, iframe1Win);
@@ -165,10 +165,10 @@ describe('Reconciliation Real time data submodule', function () {
         const adSlot = makeSlot({code: '/reconciliationAdunit', divId: adSlotElement.id});
         // Fix targeting methods
         adSlot.targeting = {};
-        adSlot.setTargeting = function(key, value) {
+        adSlot.setTargeting = function (key, value) {
           this.targeting[key] = [value];
         };
-        adSlot.getTargeting = function(key) {
+        adSlot.getTargeting = function (key) {
           return this.targeting[key];
         };
 

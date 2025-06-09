@@ -128,20 +128,20 @@ describe('ablidaBidAdapter', function () {
     });
   });
 
-  describe('onBidWon', function() {
-    beforeEach(function() {
+  describe('onBidWon', function () {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 
-    it('Should not trigger pixel if bid does not contain nurl', function() {
+    it('Should not trigger pixel if bid does not contain nurl', function () {
       const result = spec.onBidWon({});
       expect(utils.triggerPixel.callCount).to.equal(0)
     })
 
-    it('Should trigger pixel if bid nurl', function() {
+    it('Should trigger pixel if bid nurl', function () {
       const result = spec.onBidWon({
         nurl: 'https://example.com/some-tracker'
       });

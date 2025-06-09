@@ -23,8 +23,8 @@ export let storageCallbacks = [];
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
-export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = isActivityAllowed} = {}) {
-  function isValid(cb, storageType) {
+export function newStorageManager ({moduleName, moduleType} = {}, {isAllowed = isActivityAllowed} = {}) {
+  function isValid (cb, storageType) {
     let mod = moduleName;
     const curBidder = config.getCurrentBidder();
     if (curBidder && moduleType === MODULE_TYPE_BIDDER && adapterManager.aliasRegistry[curBidder] === moduleName) {
@@ -38,9 +38,9 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
     return cb(result);
   }
 
-  function schedule(operation, storageType, done) {
+  function schedule (operation, storageType, done) {
     if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
+      storageCallbacks.push(function () {
         let result = isValid(operation, storageType);
         done(result);
       });
@@ -78,7 +78,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
    * @param {function} [done]
    * @returns {(string|null)}
    */
-  const getCookie = function(name, done) {
+  const getCookie = function (name, done) {
     let cb = function (result) {
       if (result && result.valid) {
         let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
@@ -103,7 +103,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
     return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
-  function storageMethods(name) {
+  function storageMethods (name) {
     const capName = name.charAt(0).toUpperCase() + name.substring(1);
     const backend = () => window[name];
 
@@ -123,7 +123,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
 
     return {
       [`has${capName}`]: hasStorage,
-      [`${name}IsEnabled`](done) {
+      [`${name}IsEnabled`] (done) {
         let cb = function (result) {
           if (result && result.valid) {
             try {
@@ -140,7 +140,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
         }
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
       },
-      [`setDataIn${capName}`](key, value, done) {
+      [`setDataIn${capName}`] (key, value, done) {
         let cb = function (result) {
           if (result && result.valid && hasStorage()) {
             backend().setItem(key, value);
@@ -148,7 +148,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
         }
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
       },
-      [`getDataFrom${capName}`](key, done) {
+      [`getDataFrom${capName}`] (key, done) {
         let cb = function (result) {
           if (result && result.valid && hasStorage()) {
             return backend().getItem(key);
@@ -157,7 +157,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
         }
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
       },
-      [`removeDataFrom${capName}`](key, done) {
+      [`removeDataFrom${capName}`] (key, done) {
         let cb = function (result) {
           if (result && result.valid && hasStorage()) {
             backend().removeItem(key);
@@ -175,7 +175,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
    * @param {function} [done]
    * @returns {string[]}
    */
-  const findSimilarCookies = function(keyLike, done) {
+  const findSimilarCookies = function (keyLike, done) {
     let cb = function (result) {
       if (result && result.valid) {
         const all = [];
@@ -215,8 +215,8 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
  *  for `{moduleType: 'bidder', moduleName: bidderCode}`.
  *
  */
-export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
-  function err() {
+export function getStorageManager ({moduleType, moduleName, bidderCode} = {}) {
+  function err () {
     throw new Error(`Invalid invocation for getStorageManager: must set either bidderCode, or moduleType + moduleName`)
   }
   if (bidderCode) {
@@ -234,14 +234,14 @@ export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
  *
  * @param {string} moduleName Module name
  */
-export function getCoreStorageManager(moduleName) {
+export function getCoreStorageManager (moduleName) {
   return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_PREBID});
 }
 
 /**
  * Block all access to storage when deviceAccess = false
  */
-export function deviceAccessRule() {
+export function deviceAccessRule () {
   if (!hasDeviceAccess()) {
     return {allow: false}
   }
@@ -253,7 +253,7 @@ registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'deviceAccess config', deviceAcc
  *
  * // TODO: for backwards compat, the check is done on the adapter - rather than bidder's code.
  */
-export function storageAllowedRule(params, bs = bidderSettings) {
+export function storageAllowedRule (params, bs = bidderSettings) {
   if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
   let allow = bs.get(params[ACTIVITY_PARAM_ADAPTER_CODE], 'storageAllowed');
   if (!allow || allow === true) {
@@ -269,6 +269,6 @@ export function storageAllowedRule(params, bs = bidderSettings) {
 
 registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'bidderSettings.*.storageAllowed', storageAllowedRule);
 
-export function resetData() {
+export function resetData () {
   storageCallbacks = [];
 }

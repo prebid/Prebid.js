@@ -35,7 +35,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @returns {boolean} True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.placementId);
   },
   /**
@@ -44,7 +44,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest - bidder request object.
    * @returns {ServerRequest|ServerRequest[]} ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
       const placementId = params.placementId;
@@ -138,7 +138,7 @@ export const spec = {
    * @param {BidRequest} bidRequest
    * @returns {Bid[]} - An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     const response = serverResponse.body;
     const crid = response.crid || 0;
@@ -237,7 +237,7 @@ export const spec = {
    * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
    * @returns {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.iframeEnabled && !skipSync(gdprConsent)) {
       return [{
         type: 'iframe',
@@ -253,7 +253,7 @@ export const spec = {
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
  * @returns {string|null} - `"banner"` or `"video"` or `null`.
  */
-function getMediaType(bidRequest, enabledOldFormat = true) {
+function getMediaType (bidRequest, enabledOldFormat = true) {
   let hasBannerType = Boolean(deepAccess(bidRequest, 'mediaTypes.banner'));
   let hasVideoType = Boolean(deepAccess(bidRequest, 'mediaTypes.video'));
 
@@ -290,7 +290,7 @@ function getMediaType(bidRequest, enabledOldFormat = true) {
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
  * @returns {string} - strings like `"300x250"` or `"300x250,728x90"`.
  */
-function getBannerSizes(bidRequest, enabledOldFormat = true) {
+function getBannerSizes (bidRequest, enabledOldFormat = true) {
   let sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
 
   if (enabledOldFormat) {
@@ -306,7 +306,7 @@ function getBannerSizes(bidRequest, enabledOldFormat = true) {
  * @param  {boolean} [enabled1x1 = true] - default: `true`.
  * @returns {{w: number, h: number}} -
  */
-function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
+function getVideoSize (bidRequest, enabledOldFormat = true, enabled1x1 = true) {
   /**
    * @param  {Array<number, number> | Array<Array<number, number>>} sizes -
    * @return {{w: number, h: number} | null} -
@@ -352,7 +352,7 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
  * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
-function newRenderer(response) {
+function newRenderer (response) {
   const renderer = Renderer.install({
     id: response.uid,
     url: VIDEO_PLAYER_URL,
@@ -372,7 +372,7 @@ function newRenderer(response) {
  * Handles an outstream response after the library is loaded
  * @param {Object} bid
  */
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     window.DACIVTPREBID.renderPrebid(bid);
   });
@@ -383,7 +383,7 @@ function outstreamRender(bid) {
  * @param {Object} response -
  * @returns {Renderer} - Prebid Renderer object
  */
-function newCmerRenderer(response) {
+function newCmerRenderer (response) {
   const renderer = Renderer.install({
     id: response.uid,
     url: CMER_PLAYER_URL,
@@ -403,7 +403,7 @@ function newCmerRenderer(response) {
  * Handles an outstream response after the library is loaded
  * @param {Object} bid
  */
-function cmerRender(bid) {
+function cmerRender (bid) {
   bid.renderer.push(() => {
     window.CMERYONEPREBID.renderPrebid(bid);
   });
@@ -414,14 +414,14 @@ function cmerRender(bid) {
  * Data extracted from navigator's userAgent
  * @param {Object} gdprConsent Is the GDPR Consent object wrapping gdprApplies {boolean} and consentString {string} attributes.
  */
-function skipSync(gdprConsent) {
+function skipSync (gdprConsent) {
   return (getBrowser() === browserTypes.SAFARI || getOS() === osTypes.IOS) || gdprApplies(gdprConsent);
 }
 
 /**
  * Check if GDPR applies.
  */
-function gdprApplies(gdprConsent) {
+function gdprApplies (gdprConsent) {
   return gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies;
 }
 

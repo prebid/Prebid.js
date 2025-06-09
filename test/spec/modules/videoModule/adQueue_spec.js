@@ -39,7 +39,7 @@ describe('Ad Queue Coordinator', function () {
       const mockVideoCore = mockVideoCoreFactory();
       const mockEvents = mockEventsFactory();
       let setupComplete;
-      mockVideoCore.onEvents = function(events, callback, id) {
+      mockVideoCore.onEvents = function (events, callback, id) {
         if (events[0] === SETUP_COMPLETE && id === testId) {
           setupComplete = callback;
         }
@@ -63,7 +63,7 @@ describe('Ad Queue Coordinator', function () {
       const mockVideoCore = mockVideoCoreFactory();
       const mockEvents = mockEventsFactory();
       let setupComplete;
-      mockVideoCore.onEvents = function(events, callback, id) {
+      mockVideoCore.onEvents = function (events, callback, id) {
         if (events[0] === SETUP_COMPLETE && id === testId) {
           setupComplete = callback;
         }
@@ -81,7 +81,7 @@ describe('Ad Queue Coordinator', function () {
       const mockVideoCore = mockVideoCoreFactory();
       const mockEvents = mockEventsFactory();
       let setupComplete;
-      mockVideoCore.onEvents = function(events, callback, id) {
+      mockVideoCore.onEvents = function (events, callback, id) {
         if (events[0] === SETUP_COMPLETE && id === testId) {
           setupComplete = callback;
         }
@@ -106,7 +106,7 @@ describe('Ad Queue Coordinator', function () {
       let setupComplete;
       let adBreakEnd;
 
-      mockVideoCore.onEvents = function(events, callback, id) {
+      mockVideoCore.onEvents = function (events, callback, id) {
         if (events[0] === SETUP_COMPLETE && id === testId) {
           setupComplete = callback;
         }
@@ -162,7 +162,7 @@ describe('Ad Queue Coordinator', function () {
       let setupComplete;
       let adBreakEnd;
 
-      mockVideoCore.onEvents = function(events, callback, id) {
+      mockVideoCore.onEvents = function (events, callback, id) {
         if (events[0] === SETUP_COMPLETE && id === testId) {
           setupComplete = callback;
         }

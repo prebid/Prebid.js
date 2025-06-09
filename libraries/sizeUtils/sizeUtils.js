@@ -4,7 +4,7 @@
  * @param {object} adUnit one adUnit object from the normal list of adUnits
  * @returns {Array.<number[]>} array of arrays containing numeric sizes
  */
-export function getAdUnitSizes(adUnit) {
+export function getAdUnitSizes (adUnit) {
   if (!adUnit) {
     return;
   }
@@ -35,7 +35,7 @@ export function getAdUnitSizes(adUnit) {
  * @returns {Array.<Array.<number>>} - Normalized value.
  */
 
-export function normalizeBannerSizes(bidSizes) {
+export function normalizeBannerSizes (bidSizes) {
   let sizes = [];
   if (Array.isArray(bidSizes) && bidSizes.length === 2 && !Array.isArray(bidSizes[0])) {
     sizes.push({

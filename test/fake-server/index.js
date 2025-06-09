@@ -19,7 +19,7 @@ app.use(bodyParser.text({ type: 'text/plain' }));
 app.use(morgan('dev')); // used to log incoming requests
 
 // Allow Cross Origin request from 'test.localhost:9999'
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Origin', req.headers.origin);
   res.header('Access-Control-Allow-Credentials', true);
   next();

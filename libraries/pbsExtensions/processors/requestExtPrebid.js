@@ -2,7 +2,7 @@ import {deepSetValue, mergeDeep} from '../../../src/utils.js';
 import {config} from '../../../src/config.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 
-export function setRequestExtPrebid(ortbRequest, bidderRequest) {
+export function setRequestExtPrebid (ortbRequest, bidderRequest) {
   deepSetValue(
     ortbRequest,
     'ext.prebid',
@@ -22,7 +22,7 @@ export function setRequestExtPrebid(ortbRequest, bidderRequest) {
   }
 }
 
-export function setRequestExtPrebidChannel(ortbRequest) {
+export function setRequestExtPrebidChannel (ortbRequest) {
   deepSetValue(ortbRequest, 'ext.prebid.channel', Object.assign({
     name: 'pbjs',
     version: getGlobal().version

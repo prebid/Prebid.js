@@ -7,7 +7,7 @@ const BEDIGITECH_ENDPOINT = 'https://bid.bedigitech.com/bid/pub_bid.php';
 const BEDIGITECH_REQUEST_METHOD = 'GET';
 const BEDIGITECH_CURRENCY = 'USD';
 let requestId = '';
-function interpretResponse(placementResponse, bids) {
+function interpretResponse (placementResponse, bids) {
   const bid = {
     id: placementResponse.id,
     requestId: requestId || placementResponse.id,
@@ -55,10 +55,10 @@ export const spec = {
     });
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     let bids = [];
     if (isArray(serverResponse.body)) {
-      _each(serverResponse.body, function(placementResponse) {
+      _each(serverResponse.body, function (placementResponse) {
         interpretResponse(placementResponse, bids);
       });
     }

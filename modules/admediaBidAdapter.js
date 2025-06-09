@@ -96,8 +96,8 @@ export const spec = {
     }
     return validBidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
-  onTimeout: function(timeoutData) {},
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {},
+  onTimeout: function (timeoutData) {},
   onBidWon: function (bid) {}
 };
 

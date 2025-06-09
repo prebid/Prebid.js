@@ -33,7 +33,7 @@ describe('Generic analytics', () => {
       });
 
       describe('should not work if', () => {
-        afterEach(function() {
+        afterEach(function () {
           expect(adapter.enabled).to.equal(false, this.currentTest.title);
         });
 
@@ -178,7 +178,7 @@ describe('Generic analytics', () => {
             options: {
               handler,
               events: {
-                bidResponse(bid) {
+                bidResponse (bid) {
                   return bid;
                 }
               }
@@ -193,7 +193,7 @@ describe('Generic analytics', () => {
             options: {
               handler,
               events: {
-                bidResponse(bid) {
+                bidResponse (bid) {
                   return {
                     extra: 'data',
                     prop: bid.prop
@@ -211,10 +211,10 @@ describe('Generic analytics', () => {
             options: {
               handler,
               events: {
-                bidResponse(bid) {
+                bidResponse (bid) {
                   return bid;
                 },
-                auctionInit(auction) {
+                auctionInit (auction) {
                   throw new Error();
                 }
               }
@@ -231,10 +231,10 @@ describe('Generic analytics', () => {
             options: {
               handler,
               events: {
-                auctionInit(auction) {
+                auctionInit (auction) {
                   return auction;
                 },
-                bidResponse(bid) {}
+                bidResponse (bid) {}
               }
             }
           });

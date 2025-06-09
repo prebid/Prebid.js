@@ -27,11 +27,11 @@ export const mobkoiIdSubmodule = {
   name: MODULE_NAME,
   gvlid: GVL_ID,
 
-  decode(value) {
+  decode (value) {
     return value ? { [MODULE_NAME]: value } : undefined;
   },
 
-  getId(userSyncOptions, gdprConsent) {
+  getId (userSyncOptions, gdprConsent) {
     logInfo('Getting Equativ SAS ID.');
 
     if (!storage.cookiesAreEnabled()) {
@@ -85,7 +85,7 @@ export const mobkoiIdSubmodule = {
 submodule('userId', mobkoiIdSubmodule);
 
 export const utils = {
-  requestEquativSasId(syncUserOptions, gdprConsent, onCompleteCallback) {
+  requestEquativSasId (syncUserOptions, gdprConsent, onCompleteCallback) {
     logInfo('Start requesting Equativ SAS ID');
     const adServerBaseUrl = deepAccess(
       syncUserOptions,
@@ -101,7 +101,7 @@ export const utils = {
     /**
      * Listen for messages from the iframe
      */
-    window.addEventListener('message', function(event) {
+    window.addEventListener('message', function (event) {
       switch (event.data.type) {
         case 'MOBKOI_PIXEL_SYNC_COMPLETE':
           const sasUid = event.data.syncData;
@@ -126,7 +126,7 @@ export const utils = {
   /**
    * Build a pixel URL that will be placed in an iframe to fetch the Equativ SAS ID
    */
-  buildEquativPixelUrl(syncUserOptions, gdprConsent) {
+  buildEquativPixelUrl (syncUserOptions, gdprConsent) {
     logInfo('Generating Equativ SAS ID request URL');
     const adServerBaseUrl =
       deepAccess(

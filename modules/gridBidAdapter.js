@@ -67,14 +67,14 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: ['playwire', 'adlivetech', 'gridNM', { code: 'trustx', skipPbsAliasing: true }],
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return bid && Boolean(bid.params.uid || bid.params.secid);
   },
   /**
@@ -84,7 +84,7 @@ export const spec = {
    * @param {bidderRequest} bidderRequest bidder request object
    * @return {ServerRequest[]} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     if (!validBidRequests.length) {
       return null;
     }
@@ -482,12 +482,12 @@ export const spec = {
     }
   },
 
-  ajaxCall: function(url, cb, data, options) {
+  ajaxCall: function (url, cb, data, options) {
     options.browsingTopics = false;
     return ajax(url, cb, data, options);
   },
 
-  onDataDeletionRequest: function(data) {
+  onDataDeletionRequest: function (data) {
     spec.ajaxCall(USP_DELETE_DATA_HANDLER, null, null, {method: 'GET'});
   }
 };
@@ -519,7 +519,7 @@ function _getFloor (mediaTypes, bid) {
   return floor;
 }
 
-function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bidderCode) {
+function _addBidResponse (serverBid, bidRequest, bidResponses, RendererConst, bidderCode) {
   if (!serverBid) return;
   let errorMessage;
   if (!serverBid.adid) errorMessage = LOG_ERROR_MESS.noAdid + JSON.stringify(serverBid);
@@ -583,7 +583,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
   }
 }
 
-function createVideoRequest(videoParams, mediaType, bidSizes) {
+function createVideoRequest (videoParams, mediaType, bidSizes) {
   const { mind, maxd, size, playerSize, protocols, durationRangeSec = [], ...videoData } = { ...mediaType, ...videoParams };
   if (size && isStr(size)) {
     const sizeArray = size.split('x');
@@ -620,7 +620,7 @@ function createVideoRequest(videoParams, mediaType, bidSizes) {
   return videoData;
 }
 
-function createBannerRequest(bid, mediaType) {
+function createBannerRequest (bid, mediaType) {
   const sizes = mediaType.sizes || bid.sizes;
   if (!sizes || !sizes.length) return;
 
@@ -633,7 +633,7 @@ function createBannerRequest(bid, mediaType) {
   return result;
 }
 
-function makeNewUserIdInFPDStorage() {
+function makeNewUserIdInFPDStorage () {
   if (config.getConfig('localStorageWriteAllowed')) {
     const value = generateUUID().replace(/-/g, '');
 
@@ -643,11 +643,11 @@ function makeNewUserIdInFPDStorage() {
   return null;
 }
 
-function getUserIdFromFPDStorage() {
+function getUserIdFromFPDStorage () {
   return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
 }
 
-function reformatKeywords(pageKeywords) {
+function reformatKeywords (pageKeywords) {
   const formatedPageKeywords = {};
   Object.keys(pageKeywords).forEach((name) => {
     const keywords = pageKeywords[name];
@@ -692,7 +692,7 @@ function reformatKeywords(pageKeywords) {
   return Object.keys(formatedPageKeywords).length && formatedPageKeywords;
 }
 
-function canPublishResponse(price, savedPrice) {
+function canPublishResponse (price, savedPrice) {
   if (isNumber(savedPrice)) {
     return price > savedPrice || (price === savedPrice && Math.random() > 0.5);
   }
@@ -724,11 +724,11 @@ function createRenderer (bid, rendererParams, RendererConst) {
   return renderer;
 }
 
-export function resetUserSync() {
+export function resetUserSync () {
   hasSynced = false;
 }
 
-export function getSyncUrl() {
+export function getSyncUrl () {
   return SYNC_URL;
 }
 

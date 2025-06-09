@@ -3,51 +3,55 @@ import { cyrb53Hash } from '../../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
 
-function isValidIdentity(identity) {
+function isValidIdentity (identity) {
   return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
 }
 
 // Helper function to prepend message
-function prependMessage(message) {
+function prependMessage (message) {
   return `UID2 shared library - ${message}`;
 }
 
 // Wrapper function for logInfo
-function logInfoWrapper(logInfo, ...args) {
+function logInfoWrapper (logInfo, ...args) {
   logInfo(prependMessage(args[0]), ...args.slice(1));
 }
 
 // This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
 export class Uid2ApiClient {
-  constructor(opts, clientId, logInfo, logWarn) {
+  constructor (opts, clientId, logInfo, logWarn) {
     this._baseUrl = opts.baseUrl;
     this._clientVersion = clientId;
     this._logInfo = (...args) => logInfoWrapper(logInfo, ...args);
     this._logWarn = logWarn;
   }
 
-  createArrayBuffer(text) {
+  createArrayBuffer (text) {
     const arrayBuffer = new Uint8Array(text.length);
     for (let i = 0; i < text.length; i++) {
       arrayBuffer[i] = text.charCodeAt(i);
     }
     return arrayBuffer;
   }
-  hasStatusResponse(response) {
+
+  hasStatusResponse (response) {
     return typeof (response) === 'object' && response && response.status;
   }
-  isValidRefreshResponse(response) {
+
+  isValidRefreshResponse (response) {
     return this.hasStatusResponse(response) && (
       response.status === 'optout' || response.status === 'expired_token' || (response.status === 'success' && response.body && isValidIdentity(response.body))
     );
   }
-  ResponseToRefreshResult(response) {
+
+  ResponseToRefreshResult (response) {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
       return response;
     } else { return prependMessage(`Response didn't contain a valid status`); }
   }
-  callRefreshApi(refreshDetails) {
+
+  callRefreshApi (refreshDetails) {
     const url = this._baseUrl + '/v2/token/refresh';
     let resolvePromise;
     let rejectPromise;
@@ -105,37 +109,46 @@ export class Uid2ApiClient {
   }
 }
 export class Uid2StorageManager {
-  constructor(storage, preferLocalStorage, storageName, logInfo) {
+  constructor (storage, preferLocalStorage, storageName, logInfo) {
     this._storage = storage;
     this._preferLocalStorage = preferLocalStorage;
     this._storageName = storageName;
     this._logInfo = (...args) => logInfoWrapper(logInfo, ...args);
   }
-  readCookie(cookieName) {
+
+  readCookie (cookieName) {
     return this._storage.cookiesAreEnabled() ? this._storage.getCookie(cookieName) : null;
   }
-  readLocalStorage(key) {
+
+  readLocalStorage (key) {
     return this._storage.localStorageIsEnabled() ? this._storage.getDataFromLocalStorage(key) : null;
   }
-  readModuleCookie() {
+
+  readModuleCookie () {
     return this.parseIfContainsBraces(this.readCookie(this._storageName));
   }
-  writeModuleCookie(value) {
+
+  writeModuleCookie (value) {
     this._storage.setCookie(this._storageName, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
   }
-  readModuleStorage() {
+
+  readModuleStorage () {
     return this.parseIfContainsBraces(this.readLocalStorage(this._storageName));
   }
-  writeModuleStorage(value) {
+
+  writeModuleStorage (value) {
     this._storage.setDataInLocalStorage(this._storageName, JSON.stringify(value));
   }
-  readProvidedCookie(cookieName) {
+
+  readProvidedCookie (cookieName) {
     return JSON.parse(this.readCookie(cookieName));
   }
-  parseIfContainsBraces(value) {
+
+  parseIfContainsBraces (value) {
     return (value?.includes('{')) ? JSON.parse(value) : value;
   }
-  storeValue(value) {
+
+  storeValue (value) {
     if (this._preferLocalStorage) {
       this.writeModuleStorage(value);
     } else {
@@ -143,7 +156,7 @@ export class Uid2StorageManager {
     }
   }
 
-  getStoredValueWithFallback() {
+  getStoredValueWithFallback () {
     const preferredStorageLabel = this._preferLocalStorage ? 'local storage' : 'cookie';
     const preferredStorageGet = (this._preferLocalStorage ? this.readModuleStorage : this.readModuleCookie).bind(this);
     const preferredStorageSet = (this._preferLocalStorage ? this.writeModuleStorage : this.writeModuleCookie).bind(this);
@@ -173,7 +186,7 @@ export class Uid2StorageManager {
   }
 }
 
-function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn) {
+function refreshTokenAndStore (baseUrl, token, clientId, storageManager, _logInfo, _logWarn) {
   _logInfo('UID2 base url provided: ', baseUrl);
   const client = new Uid2ApiClient({baseUrl}, clientId, _logInfo, _logWarn);
   return client.callRefreshApi(token).then((response) => {
@@ -194,7 +207,7 @@ if (FEATURES.UID2_CSTG) {
   const SERVER_PUBLIC_KEY_PREFIX_LENGTH = 9;
 
   clientSideTokenGenerator = {
-    isCSTGOptionsValid(maybeOpts, _logWarn) {
+    isCSTGOptionsValid (maybeOpts, _logWarn) {
       if (typeof maybeOpts !== 'object' || maybeOpts === null) {
         _logWarn('CSTG is not being used, but is included in the Prebid.js bundle. You can reduce the bundle size by passing "--disable UID2_CSTG" to the Prebid.js build.');
         return false;
@@ -230,7 +243,7 @@ if (FEATURES.UID2_CSTG) {
       return true;
     },
 
-    getValidIdentity(opts, _logWarn) {
+    getValidIdentity (opts, _logWarn) {
       if (opts.emailHash) {
         if (!UID2DiiNormalization.isBase64Hash(opts.emailHash)) {
           _logWarn('CSTG opts.emailHash is invalid');
@@ -265,7 +278,7 @@ if (FEATURES.UID2_CSTG) {
       }
     },
 
-    isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn) {
+    isStoredTokenInvalid (cstgIdentity, storedTokens, _logInfo, _logWarn) {
       if (storedTokens) {
         if (storedTokens.latestToken === 'optout') {
           return true;
@@ -284,7 +297,7 @@ if (FEATURES.UID2_CSTG) {
       return false;
     },
 
-    async generateTokenAndStore(
+    async generateTokenAndStore (
       baseUrl,
       cstgOpts,
       cstgIdentity,
@@ -308,7 +321,7 @@ if (FEATURES.UID2_CSTG) {
       return tokens;
     },
 
-    isStoredTokenFromSameIdentity(storedTokens, identity) {
+    isStoredTokenFromSameIdentity (storedTokens, identity) {
       if (!storedTokens.originalIdentity) return false;
       return (
         cyrb53Hash(identity, storedTokens.originalIdentity.salt) ===
@@ -316,7 +329,7 @@ if (FEATURES.UID2_CSTG) {
       );
     },
 
-    encodeOriginalIdentity(identity) {
+    encodeOriginalIdentity (identity) {
       const identityValue = Object.values(identity)[0];
       const salt = Math.floor(Math.random() * Math.pow(2, 32));
       return {
@@ -331,7 +344,7 @@ if (FEATURES.UID2_CSTG) {
     static EMAIL_DOT = '.';
     static GMAIL_DOMAIN = 'gmail.com';
 
-    static isBase64Hash(value) {
+    static isBase64Hash (value) {
       if (!(value && value.length === 44)) {
         return false;
       }
@@ -343,11 +356,11 @@ if (FEATURES.UID2_CSTG) {
       }
     }
 
-    static isNormalizedPhone(phone) {
+    static isNormalizedPhone (phone) {
       return /^\+[0-9]{10,15}$/.test(phone);
     }
 
-    static normalizeEmail(email) {
+    static normalizeEmail (email) {
       if (!email || !email.length) return;
 
       const parsedEmail = email.trim().toLowerCase();
@@ -368,7 +381,7 @@ if (FEATURES.UID2_CSTG) {
       return parsedAddress ? `${parsedAddress}@${domain}` : undefined;
     }
 
-    static splitEmailIntoAddressAndDomain(email) {
+    static splitEmailIntoAddressAndDomain (email) {
       const parts = email.split('@');
       if (
         parts.length !== 2 ||
@@ -381,15 +394,15 @@ if (FEATURES.UID2_CSTG) {
       };
     }
 
-    static isGmail(domain) {
+    static isGmail (domain) {
       return domain === this.GMAIL_DOMAIN;
     }
 
-    static dropExtension(address, extensionSymbol = this.EMAIL_EXTENSION_SYMBOL) {
+    static dropExtension (address, extensionSymbol = this.EMAIL_EXTENSION_SYMBOL) {
       return address.split(extensionSymbol)[0];
     }
 
-    static normalizeAddressPart(address, shouldRemoveDot, shouldDropExtension) {
+    static normalizeAddressPart (address, shouldRemoveDot, shouldDropExtension) {
       let parsedAddress = address;
       if (shouldRemoveDot) { parsedAddress = parsedAddress.replaceAll(this.EMAIL_DOT, ''); }
       if (shouldDropExtension) parsedAddress = this.dropExtension(parsedAddress);
@@ -398,7 +411,7 @@ if (FEATURES.UID2_CSTG) {
   }
 
   class UID2CstgApiClient {
-    constructor(opts, logInfo, logWarn) {
+    constructor (opts, logInfo, logWarn) {
       this._baseUrl = opts.baseUrl;
       this._serverPublicKey = opts.cstg.serverPublicKey;
       this._subscriptionId = opts.cstg.subscriptionId;
@@ -406,11 +419,11 @@ if (FEATURES.UID2_CSTG) {
       this._logWarn = logWarn;
     }
 
-    hasStatusResponse(response) {
+    hasStatusResponse (response) {
       return typeof response === 'object' && response && response.status;
     }
 
-    isCstgApiSuccessResponse(response) {
+    isCstgApiSuccessResponse (response) {
       return (
         this.hasStatusResponse(response) &&
         response.status === 'success' &&
@@ -418,13 +431,13 @@ if (FEATURES.UID2_CSTG) {
       );
     }
 
-    isCstgApiOptoutResponse(response) {
+    isCstgApiOptoutResponse (response) {
       return (
         this.hasStatusResponse(response) &&
         response.status === 'optout');
     }
 
-    isCstgApiClientErrorResponse(response) {
+    isCstgApiClientErrorResponse (response) {
       return (
         this.hasStatusResponse(response) &&
         response.status === 'client_error' &&
@@ -432,7 +445,7 @@ if (FEATURES.UID2_CSTG) {
       );
     }
 
-    isCstgApiForbiddenResponse(response) {
+    isCstgApiForbiddenResponse (response) {
       return (
         this.hasStatusResponse(response) &&
         response.status === 'invalid_http_origin' &&
@@ -440,11 +453,11 @@ if (FEATURES.UID2_CSTG) {
       );
     }
 
-    stripPublicKeyPrefix(serverPublicKey) {
+    stripPublicKeyPrefix (serverPublicKey) {
       return serverPublicKey.substring(SERVER_PUBLIC_KEY_PREFIX_LENGTH);
     }
 
-    async generateCstgRequest(cstgIdentity) {
+    async generateCstgRequest (cstgIdentity) {
       if ('email_hash' in cstgIdentity || 'phone_hash' in cstgIdentity) {
         return cstgIdentity;
       }
@@ -458,7 +471,7 @@ if (FEATURES.UID2_CSTG) {
       }
     }
 
-    async generateToken(cstgIdentity) {
+    async generateToken (cstgIdentity) {
       const request = await this.generateCstgRequest(cstgIdentity);
       this._logInfo('Building CSTG request for', request);
       const box = await UID2CstgBox.build(
@@ -486,7 +499,7 @@ if (FEATURES.UID2_CSTG) {
       return this.callCstgApi(requestBody, box);
     }
 
-    async callCstgApi(requestBody, box) {
+    async callCstgApi (requestBody, box) {
       const url = this._baseUrl + '/v2/token/client-generate';
       let resolvePromise;
       let rejectPromise;
@@ -572,12 +585,12 @@ if (FEATURES.UID2_CSTG) {
 
   class UID2CstgBox {
     static _namedCurve = 'P-256';
-    constructor(clientPublicKey, sharedKey) {
+    constructor (clientPublicKey, sharedKey) {
       this._clientPublicKey = clientPublicKey;
       this._sharedKey = sharedKey;
     }
 
-    static async build(serverPublicKey) {
+    static async build (serverPublicKey) {
       const clientKeyPair = await UID2CstgCrypto.generateKeyPair(
         UID2CstgBox._namedCurve
       );
@@ -592,7 +605,7 @@ if (FEATURES.UID2_CSTG) {
       return new UID2CstgBox(clientKeyPair.publicKey, sharedKey);
     }
 
-    async encrypt(plaintext, additionalData) {
+    async encrypt (plaintext, additionalData) {
       const iv = window.crypto.getRandomValues(new Uint8Array(12));
       const ciphertext = await window.crypto.subtle.encrypt(
         {
@@ -606,7 +619,7 @@ if (FEATURES.UID2_CSTG) {
       return { iv, ciphertext };
     }
 
-    async decrypt(iv, ciphertext) {
+    async decrypt (iv, ciphertext) {
       return window.crypto.subtle.decrypt(
         {
           name: 'AES-GCM',
@@ -617,25 +630,25 @@ if (FEATURES.UID2_CSTG) {
       );
     }
 
-    get clientPublicKey() {
+    get clientPublicKey () {
       return this._clientPublicKey;
     }
   }
 
   class UID2CstgCrypto {
-    static base64ToBytes(base64) {
+    static base64ToBytes (base64) {
       const binString = atob(base64);
       return Uint8Array.from(binString, (m) => m.codePointAt(0));
     }
 
-    static bytesToBase64(bytes) {
+    static bytesToBase64 (bytes) {
       const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join(
         ''
       );
       return btoa(binString);
     }
 
-    static async generateKeyPair(namedCurve) {
+    static async generateKeyPair (namedCurve) {
       const params = {
         name: 'ECDH',
         namedCurve: namedCurve,
@@ -643,7 +656,7 @@ if (FEATURES.UID2_CSTG) {
       return window.crypto.subtle.generateKey(params, false, ['deriveKey']);
     }
 
-    static async importPublicKey(publicKey, namedCurve) {
+    static async importPublicKey (publicKey, namedCurve) {
       const params = {
         name: 'ECDH',
         namedCurve: namedCurve,
@@ -657,11 +670,11 @@ if (FEATURES.UID2_CSTG) {
       );
     }
 
-    static exportPublicKey(publicKey) {
+    static exportPublicKey (publicKey) {
       return window.crypto.subtle.exportKey('spki', publicKey);
     }
 
-    static async deriveKey(serverPublicKey, clientPrivateKey) {
+    static async deriveKey (serverPublicKey, clientPrivateKey) {
       return window.crypto.subtle.deriveKey(
         {
           name: 'ECDH',
@@ -677,7 +690,7 @@ if (FEATURES.UID2_CSTG) {
       );
     }
 
-    static async hash(value) {
+    static async hash (value) {
       const hash = await window.crypto.subtle.digest(
         'SHA-256',
         new TextEncoder().encode(value)
@@ -687,7 +700,7 @@ if (FEATURES.UID2_CSTG) {
   }
 }
 
-export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
+export function Uid2GetId (config, prebidStorageManager, _logInfo, _logWarn) {
   const logInfo = (...args) => logInfoWrapper(_logInfo, ...args);
 
   let suppliedToken = null;
@@ -786,7 +799,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   return { id: tokens };
 }
 
-export function extractIdentityFromParams(params) {
+export function extractIdentityFromParams (params) {
   const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
 
   for (let key of keysToCheck) {

@@ -17,7 +17,7 @@ describe('AppNexusAdapter', function () {
     });
   });
 
-  function expectKeywords(actual, expected) {
+  function expectKeywords (actual, expected) {
     expect(actual.length).to.equal(expected.length);
     actual.forEach(el => {
       const match = expected.find(ob => ob.key === el.key);
@@ -748,7 +748,7 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should add debug params from query', function () {
-      let getParamStub = sinon.stub(utils, 'getParameterByName').callsFake(function(par) {
+      let getParamStub = sinon.stub(utils, 'getParameterByName').callsFake(function (par) {
         if (par === 'apn_debug_dongle') return 'abcdef';
         if (par === 'apn_debug_member_id') return '1234';
         if (par === 'apn_debug_timeout') return '1000';
@@ -901,7 +901,7 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
-    it('adds ortb2 segments to auction request as keywords', function() {
+    it('adds ortb2 segments to auction request as keywords', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       const bidderRequest = {
         ortb2: {
@@ -1517,7 +1517,7 @@ describe('AppNexusAdapter', function () {
       });
 
       it('should set forced creative id if one adUnitCode passed', function () {
-        getParamStub.callsFake(function(par) {
+        getParamStub.callsFake(function (par) {
           if (par === 'ast_override_div') return 'adunit-code:1234';
           return '';
         });
@@ -1530,7 +1530,7 @@ describe('AppNexusAdapter', function () {
       });
 
       it('should set forced creative id if `ast_override_div` is set to override multiple adUnitCode', function () {
-        getParamStub.callsFake(function(par) {
+        getParamStub.callsFake(function (par) {
           if (par === 'ast_override_div') return 'adunit-code:1234,adUnit_code_2:5678';
           return '';
         });
@@ -1544,7 +1544,7 @@ describe('AppNexusAdapter', function () {
       });
 
       it('should not set forced creative id if `ast_override_div` is missing creativeId', function () {
-        getParamStub.callsFake(function(par) {
+        getParamStub.callsFake(function (par) {
           if (par === 'ast_override_div') return 'adunit-code';
           return '';
         });
@@ -1557,7 +1557,7 @@ describe('AppNexusAdapter', function () {
       });
 
       it('should not set forced creative id if `ast_override_div` is in the wrong format', function () {
-        getParamStub.callsFake(function(par) {
+        getParamStub.callsFake(function (par) {
           if (par === 'ast_override_div') return 'adunit-code;adUnit_code_2:5678';
           return '';
         }); ;
@@ -1570,7 +1570,7 @@ describe('AppNexusAdapter', function () {
       });
 
       it('should not set forced creative id if `ast_override_div` is missing', function () {
-        getParamStub.callsFake(function(par) {
+        getParamStub.callsFake(function (par) {
           return '';
         }); ;
 
@@ -2417,7 +2417,7 @@ describe('AppNexusAdapter', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     let syncOptions, gdprConsent;
 
     beforeEach(() => {

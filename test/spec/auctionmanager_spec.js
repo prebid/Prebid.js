@@ -55,7 +55,7 @@ const ADUNIT_CODE1 = 'adUnit-code-1';
  * @param {Object} [opts]
  * @returns {Bid}
  */
-function mockBid(opts) {
+function mockBid (opts) {
   let bidderCode = opts && opts.bidderCode;
 
   return {
@@ -73,7 +73,7 @@ function mockBid(opts) {
     'netRevenue': true,
     'ttl': 360,
     getSize: () => '300x250',
-    getIdentifiers() {
+    getIdentifiers () {
       return {
         src: this.source,
         bidder: this.bidderCode,
@@ -95,7 +95,7 @@ function mockBid(opts) {
  * @param {Object} [opts]
  * @returns {BidRequest}
  */
-function mockBidRequest(bid, opts) {
+function mockBidRequest (bid, opts) {
   if (!bid) {
     throw new Error('bid required');
   }
@@ -139,7 +139,7 @@ function mockBidRequest(bid, opts) {
   };
 }
 
-function mockBidder(bidderCode, bids) {
+function mockBidder (bidderCode, bids) {
   let spec = {
     code: bidderCode,
     isBidRequestValid: sinon.stub(),
@@ -158,8 +158,8 @@ function mockBidder(bidderCode, bids) {
 const TEST_BIDS = [mockBid()];
 const TEST_BID_REQS = TEST_BIDS.map(mockBidRequest);
 
-function mockAjaxBuilder() {
-  return function(url, callback) {
+function mockAjaxBuilder () {
+  return function (url, callback) {
     const fakeResponse = sinon.stub();
     fakeResponse.returns('headerContent');
     callback.success('response body', { getResponseHeader: fakeResponse });
@@ -200,7 +200,7 @@ describe('auctionmanager.js', function () {
 
       height: 300,
       width: 250,
-      getSize() {
+      getSize () {
         return this.height + 'x' + this.width;
       },
 
@@ -218,7 +218,7 @@ describe('auctionmanager.js', function () {
     };
 
     /* return the expected response for a given bid, filter by keys if given */
-    function getDefaultExpected(bid, keys) {
+    function getDefaultExpected (bid, keys) {
       var expected = {};
       expected[TARGETING_KEYS.BIDDER] = bid.bidderCode;
       expected[TARGETING_KEYS.AD_ID] = bid.adId;
@@ -710,7 +710,7 @@ describe('auctionmanager.js', function () {
       assert.equal(bid.sendStandardTargeting, false);
     });
 
-    it('suppressEmptyKeys=true', function() {
+    it('suppressEmptyKeys=true', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
         {
           standard: {
@@ -1028,7 +1028,7 @@ describe('auctionmanager.js', function () {
           ]
         }];
         adUnitCodes = [ADUNIT_CODE];
-        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function () {}, cbTimeout: 3000});
         bids = TEST_BIDS.slice();
         bidderRequests = bids.map(b => mockBidRequest(b, {auctionId: auction.getAuctionId()}));
         makeRequestsStub.returns(bidderRequests);
@@ -1045,8 +1045,8 @@ describe('auctionmanager.js', function () {
         auctionModule.newAuction.restore();
       });
 
-      function checkPbDg(cpm, expected, msg) {
-        return function() {
+      function checkPbDg (cpm, expected, msg) {
+        return function () {
           bids[0].cpm = cpm;
           auction.callBids();
 
@@ -1086,7 +1086,7 @@ describe('auctionmanager.js', function () {
       });
       it('should add the bidResponse to the collection before calling BID_RESPONSE', function () {
         let hasBid = false;
-        const eventHandler = function(bid) {
+        const eventHandler = function (bid) {
           const storedBid = auction.getBidsReceived().pop();
           hasBid = storedBid === bid;
         }
@@ -1110,7 +1110,7 @@ describe('auctionmanager.js', function () {
             };
           })
 
-          function getBid() {
+          function getBid () {
             let bid = Object.assign({},
               bids[0],
               {
@@ -1295,11 +1295,11 @@ describe('auctionmanager.js', function () {
     describe('when auction timeout is 20', function () {
       let eventsEmitSpy, auctionDone;
 
-      function respondToRequest(requestIndex) {
+      function respondToRequest (requestIndex) {
         server.requests[requestIndex].respond(200, {}, 'response body');
       }
 
-      function runAuction() {
+      function runAuction () {
         let bidRequests = bids.map(bid => mockBidRequest(bid, {auctionId: auction.getAuctionId()}));
         makeRequestsStub.returns(bidRequests);
         return new Promise((resolve) => {
@@ -1497,7 +1497,7 @@ describe('auctionmanager.js', function () {
         ]
       }];
       adUnitCodes = adUnits.map(({ code }) => code);
-      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function () {}, cbTimeout: 3000});
       let bidRequests = [
         mockBidRequest(bids[0], { auctionId: auction.getAuctionId() }),
         mockBidRequest(bids1[0], { auctionId: auction.getAuctionId(), adUnitCode: ADUNIT_CODE1 })
@@ -1655,7 +1655,7 @@ describe('auctionmanager.js', function () {
         ]
       }];
       adUnitCodes = adUnits.map(({ code }) => code);
-      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
+      auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function () {}, cbTimeout: 3000});
       createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
       indexAuctions = [auction];
@@ -1718,7 +1718,7 @@ describe('auctionmanager.js', function () {
           nativeOrtbRequest: ortbNativeRequest.ortb,
           mediaTypes: { native: { type: 'image' } }
         }];
-        auction = auctionModule.newAuction({adUnits, adUnitCodes: [ADUNIT_CODE], callback: function() {}, cbTimeout: 3000});
+        auction = auctionModule.newAuction({adUnits, adUnitCodes: [ADUNIT_CODE], callback: function () {}, cbTimeout: 3000});
         indexAuctions = [auction];
         const createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
@@ -1877,7 +1877,7 @@ describe('auctionmanager.js', function () {
     })
   })
 
-  function mockAuction(getBidRequests, start = 1) {
+  function mockAuction (getBidRequests, start = 1) {
     return {
       getBidRequests: getBidRequests,
       getAdUnits: () => getBidRequests().flatMap(br => br.bids).map(br => ({ code: br.adUnitCode, transactionId: br.transactionId, adUnitId: br.adUnitId, mediaTypes: br.mediaTypes })),
@@ -1921,7 +1921,7 @@ describe('auctionmanager.js', function () {
 
   describe('auction options / callbacks', () => {
     let ready;
-    function responsesReadyHook(next) {
+    function responsesReadyHook (next) {
       next(ready);
     }
 
@@ -1937,7 +1937,7 @@ describe('auctionmanager.js', function () {
       return ready;
     });
 
-    describe('auctionCallbacks', function() {
+    describe('auctionCallbacks', function () {
       let bids = TEST_BIDS;
       let bidRequests;
       let doneSpy;
@@ -2033,7 +2033,7 @@ describe('auctionmanager.js', function () {
       describe('when responsesReady defers', () => {
         let resolve, reject, promise, callbacks, bids;
 
-        function hook(next, ready) {
+        function hook (next, ready) {
           next(ready.then(() => promise));
         }
 
@@ -2086,7 +2086,7 @@ describe('auctionmanager.js', function () {
         const REJECTION_REASON = 'Bid rejected';
         const AU_CODE = 'au';
 
-        function rejectHook(fn, adUnitCode, bid, reject) {
+        function rejectHook (fn, adUnitCode, bid, reject) {
           reject(REJECTION_REASON);
           reject(REJECTION_REASON); // second call should do nothing
         }
@@ -2139,7 +2139,7 @@ describe('auctionmanager.js', function () {
         });
       })
     });
-    describe('auctionOptions', function() {
+    describe('auctionOptions', function () {
       let bidRequests;
       let doneSpy;
       let clock;
@@ -2153,7 +2153,7 @@ describe('auctionmanager.js', function () {
         doneSpy = sinon.spy();
         config.setConfig({
           'auctionOptions': {
-            secondaryBidders: [ secondaryBidder ]
+            secondaryBidders: [secondaryBidder]
           }
         });
 

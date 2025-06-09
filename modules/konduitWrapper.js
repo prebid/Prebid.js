@@ -24,7 +24,7 @@ export const errorMessages = {
 };
 
 // This function is copy from prebid core
-function formatQS(query) {
+function formatQS (query) {
   return Object
     .keys(query)
     .map(k => Array.isArray(query[k])
@@ -34,7 +34,7 @@ function formatQS(query) {
 }
 
 // This function is copy from prebid core
-function buildUrl(obj) {
+function buildUrl (obj) {
   return (obj.protocol || 'http') + '://' +
     (obj.host ||
       obj.hostname + (obj.port ? `:${obj.port}` : '')) +
@@ -43,17 +43,17 @@ function buildUrl(obj) {
     (obj.hash ? `#${obj.hash}` : '');
 }
 
-function addLogLabel(args) {
+function addLogLabel (args) {
   args = [].slice.call(args);
   args.unshift(`${MODULE_NAME}: `);
   return args;
 }
 
-function _logInfo() {
+function _logInfo () {
   logInfo(...addLogLabel(arguments));
 }
 
-function _logError() {
+function _logError () {
   logError(...addLogLabel(arguments));
 }
 
@@ -82,7 +82,7 @@ function sendRequest ({ host = SERVER_HOST, protocol = SERVER_PROTOCOL, method =
   );
 }
 
-function composeBidsProcessorRequestPayload(bid) {
+function composeBidsProcessorRequestPayload (bid) {
   return {
     auctionId: bid.auctionId,
     vastUrl: bid.vastUrl,
@@ -94,7 +94,7 @@ function composeBidsProcessorRequestPayload(bid) {
   };
 }
 
-function setDefaultKCpmToBid(bid, winnerBid, priceGranularity) {
+function setDefaultKCpmToBid (bid, winnerBid, priceGranularity) {
   bid.kCpm = bid.cpm;
 
   if (!bid.adserverTargeting) {
@@ -112,7 +112,7 @@ function setDefaultKCpmToBid(bid, winnerBid, priceGranularity) {
   }
 }
 
-function addKCpmToBid(kCpm, bid, winnerBid, priceGranularity) {
+function addKCpmToBid (kCpm, bid, winnerBid, priceGranularity) {
   if (isNumber(kCpm)) {
     bid.kCpm = kCpm;
     const priceStringsObj = getPriceBucketString(
@@ -133,7 +133,7 @@ function addKCpmToBid(kCpm, bid, winnerBid, priceGranularity) {
   }
 }
 
-function addKonduitCacheKeyToBid(cacheKey, bid, winnerBid) {
+function addKonduitCacheKeyToBid (cacheKey, bid, winnerBid) {
   if (isStr(cacheKey)) {
     bid.konduitCacheKey = cacheKey;
 
@@ -158,7 +158,7 @@ function addKonduitCacheKeyToBid(cacheKey, bid, winnerBid) {
  * @param {string} [options.timeout] - timeout for Konduit bids processor HTTP request
  * @param {function} [options.callback] - callback function to be executed on HTTP request end; the function is invoked with two parameters - error and bids
  */
-export function processBids(options = {}) {
+export function processBids (options = {}) {
   const konduitId = config.getConfig(KONDUIT_ID_CONFIG);
   options = options || {};
 

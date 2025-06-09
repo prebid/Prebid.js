@@ -6,12 +6,12 @@ import { server } from 'test/mocks/xhr.js';
 
 describe('The Konduit vast wrapper module', function () {
   const konduitId = 'test';
-  beforeEach(function() {
+  beforeEach(function () {
     config.setConfig({ konduit: { konduitId } });
   });
 
   describe('processBids function (send one bid)', () => {
-    beforeEach(function() {
+    beforeEach(function () {
       config.setConfig({ enableSendAllBids: false });
     });
 
@@ -124,7 +124,7 @@ describe('The Konduit vast wrapper module', function () {
     });
   });
   describe('processBids function (send all bids)', () => {
-    beforeEach(function() {
+    beforeEach(function () {
       config.setConfig({ enableSendAllBids: true });
     });
 
@@ -234,7 +234,7 @@ describe('The Konduit vast wrapper module', function () {
   });
 });
 
-function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, label) {
+function createBid (cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, label) {
   return {
     'bidderCode': 'appnexus',
     'width': 640,

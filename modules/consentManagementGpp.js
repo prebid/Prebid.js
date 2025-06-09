@@ -15,7 +15,7 @@ import {configParser} from '../libraries/consentManagement/cmUtils.js';
 export let consentConfig = {};
 
 class GPPError {
-  constructor(message, arg) {
+  constructor (message, arg) {
     this.message = message;
     this.args = arg == null ? [] : [arg];
   }
@@ -25,7 +25,7 @@ export class GPPClient {
   apiVersion = '1.1';
   static INST;
 
-  static get(mkCmp = cmpClient) {
+  static get (mkCmp = cmpClient) {
     if (this.INST == null) {
       const cmp = mkCmp({
         apiName: '__gpp',
@@ -46,7 +46,7 @@ export class GPPClient {
 
   initialized = false;
 
-  constructor(cmp) {
+  constructor (cmp) {
     this.cmp = cmp;
     [this.#resolve, this.#reject] = ['resolve', 'reject'].map(slot => (result) => {
       while (this.#pending.length) {
@@ -62,7 +62,7 @@ export class GPPClient {
    * @param pingData
    * @returns {Promise<{}>} a promise to GPP consent data
    */
-  init(pingData) {
+  init (pingData) {
     const ready = this.updateWhenReady(pingData);
     if (!this.initialized) {
       if (pingData.gppVersion !== this.apiVersion) {
@@ -94,7 +94,7 @@ export class GPPClient {
     return ready;
   }
 
-  refresh() {
+  refresh () {
     return this.cmp({command: 'ping'}).then(this.init.bind(this));
   }
 
@@ -104,7 +104,7 @@ export class GPPClient {
    * @param pingData
    * @returns {Promise<{}>} a promise to GPP consent data
    */
-  updateConsent(pingData) {
+  updateConsent (pingData) {
     return new PbPromise(resolve => {
       if (pingData == null || isEmpty(pingData)) {
         throw new GPPError('Received empty response from CMP', pingData);
@@ -121,7 +121,7 @@ export class GPPClient {
    *
    * @returns {Promise<{}>}
    */
-  nextUpdate() {
+  nextUpdate () {
     const def = defer();
     this.#pending.push(def);
     return def.promise;
@@ -134,16 +134,16 @@ export class GPPClient {
    * @param pingData
    * @returns {Promise<{}>}
    */
-  updateWhenReady(pingData) {
+  updateWhenReady (pingData) {
     return this.isCMPReady(pingData) ? this.updateConsent(pingData) : this.nextUpdate();
   }
 
-  isCMPReady(pingData) {
+  isCMPReady (pingData) {
     return pingData.signalStatus === 'ready';
   }
 }
 
-function lookupIabConsent() {
+function lookupIabConsent () {
   return new PbPromise((resolve) => resolve(GPPClient.get().refresh()))
 }
 
@@ -152,7 +152,7 @@ const cmpCallMap = {
   'iab': lookupIabConsent,
 };
 
-function parseConsentData(cmpData) {
+function parseConsentData (cmpData) {
   if (
     (cmpData?.applicableSections != null && !Array.isArray(cmpData.applicableSections)) ||
     (cmpData?.gppString != null && !isStr(cmpData.gppString)) ||
@@ -168,7 +168,7 @@ function parseConsentData(cmpData) {
   return toConsentData(cmpData);
 }
 
-export function toConsentData(gppData = {}) {
+export function toConsentData (gppData = {}) {
   return {
     gppString: gppData?.gppString,
     applicableSections: gppData?.applicableSections || [],
@@ -180,7 +180,7 @@ export function toConsentData(gppData = {}) {
 /**
  * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
  */
-export function resetConsentData() {
+export function resetConsentData () {
   consentConfig = {};
   gppDataHandler.reset();
   GPPClient.INST = null;
@@ -195,13 +195,13 @@ const parseConfig = configParser({
   cmpHandlers: cmpCallMap
 });
 
-export function setConsentConfig(config) {
+export function setConsentConfig (config) {
   consentConfig = parseConfig(config);
   return consentConfig.loadConsentData?.()?.catch?.(() => null);
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
-export function enrichFPDHook(next, fpd) {
+export function enrichFPDHook (next, fpd) {
   return next(fpd.then(ortb2 => {
     const consent = gppDataHandler.getConsentData();
     if (consent) {

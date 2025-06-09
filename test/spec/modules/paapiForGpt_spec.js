@@ -26,7 +26,7 @@ describe('paapiForGpt module', () => {
 
   describe('slotConfigurator', () => {
     let setGptConfig;
-    function mockGptSlot(auPath) {
+    function mockGptSlot (auPath) {
       return {
         setConfig: sinon.stub(),
         getAdUnitPath: () => auPath
@@ -121,13 +121,13 @@ describe('paapiForGpt module', () => {
       setTargetingHook = setTargetingHookFactory(setPaapiConfig);
       next = sinon.stub();
     });
-    function expectFilters(...filters) {
+    function expectFilters (...filters) {
       expect(setPaapiConfig.args.length).to.eql(filters.length)
       filters.forEach(filter => {
         sinon.assert.calledWith(setPaapiConfig, filter, 'mock-matcher')
       })
     }
-    function runHook(adUnit) {
+    function runHook (adUnit) {
       setTargetingHook(next, adUnit, 'mock-matcher');
       sinon.assert.calledWith(next, adUnit, 'mock-matcher');
     }

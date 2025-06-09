@@ -376,7 +376,7 @@ export const spec = {
   }
 }
 
-function _checkMediaType(bid, newBid) {
+function _checkMediaType (bid, newBid) {
   // Check Various ADM Aspects to Determine Media Type
   if (bid.ext && bid.ext['bidtype'] != undefined) {
     // this is the most explicity check
@@ -404,7 +404,7 @@ function _checkMediaType(bid, newBid) {
   }
 }
 
-function _parseNativeResponse(bid, newBid) {
+function _parseNativeResponse (bid, newBid) {
   newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
     var adm = '';
@@ -465,13 +465,13 @@ function _parseNativeResponse(bid, newBid) {
   }
 }
 
-function _getDomainFromURL(url) {
+function _getDomainFromURL (url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
 
-function _handleCustomParams(params, conf) {
+function _handleCustomParams (params, conf) {
   var key, value, entry;
   for (key in CUSTOM_PARAMS) {
     if (CUSTOM_PARAMS.hasOwnProperty(key)) {
@@ -497,7 +497,7 @@ function _handleCustomParams(params, conf) {
   return conf;
 }
 
-function _createOrtbTemplate(conf) {
+function _createOrtbTemplate (conf) {
   return {
     id: '' + new Date().getTime(),
     at: AUCTION_TYPE,
@@ -524,7 +524,7 @@ function _createOrtbTemplate(conf) {
   };
 }
 
-function _createImpressionObject(bid, conf) {
+function _createImpressionObject (bid, conf) {
   var impObj = {};
   var bannerObj;
   var videoObj;
@@ -578,7 +578,7 @@ function _createImpressionObject(bid, conf) {
             impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
 }
 
-function _parseSlotParam(paramName, paramValue) {
+function _parseSlotParam (paramName, paramValue) {
   if (!isStr(paramValue)) {
     paramValue && _logWarn('Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
@@ -598,7 +598,7 @@ function _parseSlotParam(paramName, paramValue) {
   }
 }
 
-function _parseAdSlot(bid) {
+function _parseAdSlot (bid) {
   _logInfo('parseAdSlot bid', bid);
   if (bid.adUnitCode) {
     bid.params.adUnit = bid.adUnitCode;
@@ -633,21 +633,21 @@ function _parseAdSlot(bid) {
   }
 }
 
-function _cleanSlotName(slotName) {
+function _cleanSlotName (slotName) {
   if (isStr(slotName)) {
     return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
   }
   return '';
 }
 
-function _initConf(refererInfo) {
+function _initConf (refererInfo) {
   return {
     pageURL: refererInfo?.page,
     refURL: refererInfo?.ref
   };
 }
 
-function _commonNativeRequestObject(nativeAsset, params) {
+function _commonNativeRequestObject (nativeAsset, params) {
   var key = nativeAsset.KEY;
   return {
     id: nativeAsset.ID,
@@ -660,7 +660,7 @@ function _commonNativeRequestObject(nativeAsset, params) {
   };
 }
 
-function _addFloorFromFloorModule(impObj, bid) {
+function _addFloorFromFloorModule (impObj, bid) {
   let bidFloor = -1; // indicates no floor
 
   // get lowest floor from floorModule
@@ -685,7 +685,7 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
-function _createNativeRequest(params) {
+function _createNativeRequest (params) {
   var nativeRequestObject = {
     assets: []
   };
@@ -815,7 +815,7 @@ function _createNativeRequest(params) {
   return nativeRequestObject;
 }
 
-function _createBannerRequest(bid) {
+function _createBannerRequest (bid) {
   var sizes = bid.mediaTypes.banner.sizes;
   var format = [];
   var bannerObj;
@@ -859,34 +859,34 @@ function _createBannerRequest(bid) {
 
 // various error levels are not always used
 // eslint-disable-next-line no-unused-vars
-function _logMessage(textValue, objectValue) {
+function _logMessage (textValue, objectValue) {
   objectValue = objectValue || '';
   logMessage(LOG_PREFIX + textValue, objectValue);
 }
 
-function _logInfo(textValue, objectValue) {
+function _logInfo (textValue, objectValue) {
   objectValue = objectValue || '';
   logInfo(LOG_PREFIX + textValue, objectValue);
 }
 
-function _logWarn(textValue, objectValue) {
+function _logWarn (textValue, objectValue) {
   objectValue = objectValue || '';
   logWarn(LOG_PREFIX + textValue, objectValue);
 }
 
-function _logError(textValue, objectValue) {
+function _logError (textValue, objectValue) {
   objectValue = objectValue || '';
   logError(LOG_PREFIX + textValue, objectValue);
 }
 
-function _checkVideoPlacement(videoData, adUnitCode) {
+function _checkVideoPlacement (videoData, adUnitCode) {
   // Check for video.placement property. If property is missing display log message.
   if (!deepAccess(videoData, 'placement')) {
     _logWarn(`${MSG_VIDEO_PLACEMENT_MISSING} for ${adUnitCode}`, adUnitCode);
   };
 }
 
-function _createVideoRequest(bid) {
+function _createVideoRequest (bid) {
   var videoData = mergeDeep(deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
@@ -919,7 +919,7 @@ function _createVideoRequest(bid) {
  * @param {object} test
  * @returns {boolean}
  */
-function _isNonEmptyArray(test) {
+function _isNonEmptyArray (test) {
   if (isArray(test) === true) {
     if (test.length > 0) {
       return true;
@@ -934,7 +934,7 @@ function _isNonEmptyArray(test) {
  * @param {object} bid the current bid
  * @returns
  */
-function _getEndpointURL(bid) {
+function _getEndpointURL (bid) {
   if (!isEmptyStr(bid?.params?.endpoint_url) && bid?.params?.endpoint_url != UNDEFINED) {
     return bid.params.endpoint_url;
   }
@@ -949,7 +949,7 @@ function _getEndpointURL(bid) {
  * @param {object} datatype
  * @returns {*}
  */
-function _checkParamDataType(key, value, datatype) {
+function _checkParamDataType (key, value, datatype) {
   var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
   var functionToExecute;
   switch (datatype) {
@@ -973,7 +973,7 @@ function _checkParamDataType(key, value, datatype) {
   return UNDEFINED;
 }
 
-function _isMobile() {
+function _isMobile () {
   if (navigator.userAgentData && navigator.userAgentData.mobile) {
     return true;
   } else {
@@ -981,18 +981,18 @@ function _isMobile() {
   }
 }
 
-function _isConnectedTV() {
+function _isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-function _isTablet() {
+function _isTablet () {
   return (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()));
 }
 
 /**
  * Very high level device detection, order matters
  */
-function _getDeviceType() {
+function _getDeviceType () {
   if (_isTablet()) {
     return 5;
   }

@@ -27,7 +27,7 @@ describe('PBS event trackers', () => {
       type: EVENT_TYPE_WIN
     }
   }).forEach(([t, {type, bid}]) => {
-    function getTracker() {
+    function getTracker () {
       return bidResponse.eventtrackers?.find(({event, method, url}) => url === 'tracker' && method === TRACKER_METHOD_IMG && event === type)
     }
 

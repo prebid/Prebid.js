@@ -12,7 +12,7 @@ const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 
 const GVLID = 1218
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
-const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
+const REQUIRED_VIDEO_PARAMS = ['mimes', 'protocols', 'context'];
 
 export const ERROR_CODES = {
   BID_SIZE_INVALID_FORMAT: 1,
@@ -34,7 +34,7 @@ const endpoints = {
   // }
 };
 
-export function setEndPoints(env = null, path = '') {
+export function setEndPoints (env = null, path = '') {
   switch (env) {
     case 'local':
       endpoints.request = `${LOCAL_BASE_URL}${path}/prebidjs/ortb/v2.6/bid/request`;
@@ -55,7 +55,7 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     logInfo('Building request');
     const request = buildRequest(imps, bidderRequest, context);
     deepSetValue(request, 'at', 1);
@@ -65,13 +65,13 @@ const converter = ortbConverter({
     deepSetValue(request, 'site.id', bidderRequest.bids[0].params.siteId);
     return request;
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     logInfo('Building imp bidRequest', bidRequest);
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'tagId', bidRequest.params.placementId);
     return imp;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const {bidRequest} = context;
     const bidResponse = buildBidResponse(bid, context);
     logInfo('Building bidResponse');
@@ -86,7 +86,7 @@ const converter = ortbConverter({
 });
 
 // AIDEM Custom FN
-function recur(obj) {
+function recur (obj) {
   var result = {}; var _tmp;
   for (var i in obj) {
     // enabledPlugin is too nested, also skip functions
@@ -107,7 +107,7 @@ function recur(obj) {
   return result;
 }
 
-function getRegs(bidderRequest) {
+function getRegs (bidderRequest) {
   let regs = {};
   const euConsentManagement = bidderRequest.gdprConsent;
   const usConsentManagement = bidderRequest.uspConsent;
@@ -132,7 +132,7 @@ function getRegs(bidderRequest) {
   return regs;
 }
 
-function setPrebidRequestEnvironment(payload) {
+function setPrebidRequestEnvironment (payload) {
   const __navigator = deepClone(recur(navigator));
   delete __navigator.plugins;
   deepSetValue(payload, 'environment.ri', getRefererInfo());
@@ -148,7 +148,7 @@ function setPrebidRequestEnvironment(payload) {
   deepSetValue(payload, 'environment.wpar.innerHeight', getWinDimensions().innerHeight);
 }
 
-function hasValidMediaType(bidRequest) {
+function hasValidMediaType (bidRequest) {
   const supported = hasBannerMediaType(bidRequest) || hasVideoMediaType(bidRequest);
   if (!supported) {
     logError('AIDEM Bid Adapter: media type not supported', { bidder: BIDDER_CODE, code: ERROR_CODES.MEDIA_TYPE_NOT_SUPPORTED });
@@ -156,15 +156,15 @@ function hasValidMediaType(bidRequest) {
   return supported;
 }
 
-function hasBannerMediaType(bidRequest) {
+function hasBannerMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
 
-function hasVideoMediaType(bidRequest) {
+function hasVideoMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 
-function hasValidBannerMediaType(bidRequest) {
+function hasValidBannerMediaType (bidRequest) {
   const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
   if (!sizes) {
     logError('AIDEM Bid Adapter: media type sizes missing', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
@@ -173,7 +173,7 @@ function hasValidBannerMediaType(bidRequest) {
   return true;
 }
 
-function hasValidVideoMediaType(bidRequest) {
+function hasValidVideoMediaType (bidRequest) {
   const sizes = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   if (!sizes) {
     logError('AIDEM Bid Adapter: media type playerSize missing', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
@@ -182,7 +182,7 @@ function hasValidVideoMediaType(bidRequest) {
   return true;
 }
 
-function hasValidVideoParameters(bidRequest) {
+function hasValidVideoParameters (bidRequest) {
   let valid = true;
   const adUnitsParameters = deepAccess(bidRequest, 'mediaTypes.video');
   const bidderParameter = deepAccess(bidRequest, 'params.video');
@@ -198,7 +198,7 @@ function hasValidVideoParameters(bidRequest) {
   return valid;
 }
 
-function passesRateLimit(bidRequest) {
+function passesRateLimit (bidRequest) {
   const rateLimit = deepAccess(bidRequest, 'params.rateLimit', 1);
   if (!isNumber(rateLimit) || rateLimit > 1 || rateLimit < 0) {
     logError('AIDEM Bid Adapter: invalid rateLimit (must be a number between 0 and 1)', { bidder: BIDDER_CODE, code: ERROR_CODES.INVALID_RATELIMIT });
@@ -213,7 +213,7 @@ function passesRateLimit(bidRequest) {
   return true;
 }
 
-function hasValidParameters(bidRequest) {
+function hasValidParameters (bidRequest) {
   // Assigned from AIDEM to a publisher website
   const siteId = deepAccess(bidRequest, 'params.siteId');
   const publisherId = deepAccess(bidRequest, 'params.publisherId');
@@ -235,7 +235,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
-  isBidRequestValid: function(bidRequest) {
+  isBidRequestValid: function (bidRequest) {
     logInfo('bid: ', bidRequest);
 
     // check if request has valid mediaTypes
@@ -261,7 +261,7 @@ export const spec = {
     return passesRateLimit(bidRequest);
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     logInfo('bidRequests: ', bidRequests);
     logInfo('bidderRequest: ', bidderRequest);
     const data = converter.toORTB({bidRequests, bidderRequest});
@@ -284,7 +284,7 @@ export const spec = {
     return ortbBids;
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     // Bidder specific code
     logInfo('onBidWon bid: ', bid);
     ajax(bid.burl);

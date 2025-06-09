@@ -34,17 +34,17 @@ const AUDIENCE_IDS = [
   {type: 17, bidKey: 'userId.uid2.id', source: 'uidapi.com'}
 ];
 
-function createCBT() {
+function createCBT () {
   const randomValue = Math.floor(Math.random() * Math.pow(10, 18)).toString(16);
   const date = new Date().getTime().toString(16);
   return randomValue + date;
 }
 
-function createBitSequenceFromMediaType(hi, code) {
+function createBitSequenceFromMediaType (hi, code) {
   return (hi ? -1 : 0) & code;
 }
 
-function convertMediaTypes(bid) {
+function convertMediaTypes (bid) {
   return createBitSequenceFromMediaType(bid.mediaTypes.banner, BANNER_CODE) |
     createBitSequenceFromMediaType(bid.mediaTypes.native, NATIVE_CODE) |
     createBitSequenceFromMediaType(bid.mediaTypes.video, VIDEO_CODE);
@@ -53,10 +53,10 @@ function convertMediaTypes(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid && bid.params && bid.params.spot && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native || bid.mediaTypes.video));
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -142,7 +142,7 @@ export const spec = {
     });
     return requests;
   },
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const body = serverResponse.body;
     const bidResponses = [];
 
@@ -169,7 +169,7 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {

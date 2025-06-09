@@ -32,7 +32,7 @@ export const deepintentDpesSubmodule = {
    * @param {{value:string}} value
    * @returns {{deepintentId:Object}}
    */
-  decode(value, config) {
+  decode (value, config) {
     return value ? { 'deepintentId': value } : undefined;
   },
 
@@ -44,7 +44,7 @@ export const deepintentDpesSubmodule = {
    * @param {Object} cacheIdObj - existing id, if any
    * @return {{id: string | undefined} | undefined}
    */
-  getId(config, consentData, cacheIdObj) {
+  getId (config, consentData, cacheIdObj) {
     return cacheIdObj;
   },
   eids: {

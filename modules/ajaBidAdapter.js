@@ -37,7 +37,7 @@ export const spec = {
    * @param {BidRequest} bidRequest
    * @returns {boolean}
    */
-  isBidRequestValid: function(bidRequest) {
+  isBidRequestValid: function (bidRequest) {
     return !!(bidRequest.params.asi);
   },
 
@@ -49,7 +49,7 @@ export const spec = {
    * @param {*} bidderRequest
    * @returns {ServerRequest|ServerRequest[]}
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequests = [];
     const pageUrl = bidderRequest?.refererInfo?.page || undefined;
 
@@ -96,7 +96,7 @@ export const spec = {
     return bidRequests;
   },
 
-  interpretResponse: function(bidderResponse) {
+  interpretResponse: function (bidderResponse) {
     const bidderResponseBody = bidderResponse.body;
 
     if (!bidderResponseBody.is_ad_return) {
@@ -137,7 +137,7 @@ export const spec = {
     return [bid];
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (!serverResponses.length) {
       return syncs;
@@ -171,7 +171,7 @@ export const spec = {
    * @param {Object} supplyChain
    * @returns {String | undefined}
    */
-  serializeSupplyChain: function(supplyChain) {
+  serializeSupplyChain: function (supplyChain) {
     if (!supplyChain || !supplyChain.nodes) return undefined
     const { ver, complete, nodes } = supplyChain
     return `${ver},${complete}!${spec.serializeSupplyChainNodes(nodes)}`
@@ -182,7 +182,7 @@ export const spec = {
    * @param {Array} nodes
    * @returns {String}
    */
-  serializeSupplyChainNodes: function(nodes) {
+  serializeSupplyChainNodes: function (nodes) {
     const fields = ['asi', 'sid', 'hp', 'rid', 'name', 'domain']
     return nodes.map((n) => {
       return fields.map((f) => {
@@ -192,7 +192,7 @@ export const spec = {
   }
 }
 
-function pickAdFormats(bidRequest) {
+function pickAdFormats (bidRequest) {
   let sizes = bidRequest.sizes || []
   sizes.push(...(bidRequest.mediaTypes?.banner?.sizes || []))
 

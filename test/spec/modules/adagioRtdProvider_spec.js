@@ -12,7 +12,7 @@ import { getGlobal } from '../../../src/prebidGlobal.js';
 describe('Adagio Rtd Provider', function () {
   const SUBMODULE_NAME = 'adagio';
 
-  function getElementByIdMock(width, height, x, y) {
+  function getElementByIdMock (width, height, x, y) {
     const obj = {
       x: x || 800,
       y: y || 300,
@@ -384,9 +384,9 @@ describe('Adagio Rtd Provider', function () {
       }
     };
 
-    function cb() {}
+    function cb () {}
 
-    beforeEach(function() {
+    beforeEach(function () {
       _internal.getFeatures().reset();
     });
 
@@ -394,7 +394,7 @@ describe('Adagio Rtd Provider', function () {
       expect(adagioRtdSubmodule.getBidRequestData).to.be.a('function');
     });
 
-    it('update the ortb2Fragments object with adg_rtd signals', function() {
+    it('update the ortb2Fragments object with adg_rtd signals', function () {
       const bidRequest = utils.deepClone(bidReqConfig);
 
       sandbox.stub(window.top.document, 'getElementById').returns(getElementByIdMock());
@@ -413,14 +413,14 @@ describe('Adagio Rtd Provider', function () {
       expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.adunit_position).to.match(/\d+x\d+/);
     });
 
-    describe('update the ortb2Fragments object a SafeFrame context', function() {
-      it('update', function() {
+    describe('update the ortb2Fragments object a SafeFrame context', function () {
+      it('update', function () {
         sandbox.stub(utils, 'isSafeFrameWindow').returns(true);
         sandbox.stub(utils, 'canAccessWindowTop').returns(false);
 
         window.$sf = {
           ext: {
-            geom() {
+            geom () {
               return {
                 win: {t: 23, r: 1920, b: 1200, l: 0, w: 1920, h: 1177},
                 self: {t: 210, r: 1159, b: 460, l: 859, w: 300, h: 250},
@@ -442,7 +442,7 @@ describe('Adagio Rtd Provider', function () {
         window.$sf = undefined;
       });
 
-      it('handle missformated $sf object and update', function() {
+      it('handle missformated $sf object and update', function () {
         sandbox.stub(utils, 'isSafeFrameWindow').returns(true);
         sandbox.stub(utils, 'canAccessWindowTop').returns(false);
 
@@ -466,8 +466,8 @@ describe('Adagio Rtd Provider', function () {
       });
     });
 
-    describe('update the ortb2Fragments object in a "inIframe" context', function() {
-      it('update when window.top is accessible', function() {
+    describe('update the ortb2Fragments object in a "inIframe" context', function () {
+      it('update when window.top is accessible', function () {
         sandbox.stub(utils, 'canAccessWindowTop').returns(true);
         sandbox.stub(utils, 'isSafeFrameWindow').returns(false);
         sandbox.stub(utils, 'inIframe').returns(true);
@@ -479,7 +479,7 @@ describe('Adagio Rtd Provider', function () {
         expect(ortb2ImpExt.adunit_position).equal('');
       });
 
-      it('catch error when window.top is accessible', function() {
+      it('catch error when window.top is accessible', function () {
         sandbox.stub(utils, 'canAccessWindowTop').returns(true);
         sandbox.stub(utils, 'isSafeFrameWindow').returns(false);
         sandbox.stub(window.document, 'getElementById').throws();
@@ -492,7 +492,7 @@ describe('Adagio Rtd Provider', function () {
       });
     });
 
-    it('update the ortb2Fragments object when window.top is not accessible', function() {
+    it('update the ortb2Fragments object when window.top is not accessible', function () {
       sandbox.stub(utils, 'canAccessWindowTop').returns(false);
       sandbox.stub(utils, 'isSafeFrameWindow').returns(false);
 
@@ -507,7 +507,7 @@ describe('Adagio Rtd Provider', function () {
       expect(ortb2ImpExt.adunit_position).equal('');
     });
 
-    describe('update the ortb2Imp.ext.data.placement if not present', function() {
+    describe('update the ortb2Imp.ext.data.placement if not present', function () {
       const config = {
         name: SUBMODULE_NAME,
         params: {
@@ -516,7 +516,7 @@ describe('Adagio Rtd Provider', function () {
         }
       };
 
-      it('update the placement value with the adUnit.code value', function() {
+      it('update the placement value with the adUnit.code value', function () {
         const configCopy = utils.deepClone(config);
         configCopy.params.placementSource = PLACEMENT_SOURCES.ADUNITCODE;
 
@@ -527,7 +527,7 @@ describe('Adagio Rtd Provider', function () {
         expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal('div-gpt-ad-1460505748561-0');
       });
 
-      it('update the placement value with the gpid value', function() {
+      it('update the placement value with the gpid value', function () {
         const configCopy = utils.deepClone(config);
         configCopy.params.placementSource = PLACEMENT_SOURCES.GPID;
 
@@ -540,7 +540,7 @@ describe('Adagio Rtd Provider', function () {
         expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal(gpid);
       });
 
-      it('update the placement value the legacy adUnit[].bids adagio.params.placement value', function() {
+      it('update the placement value the legacy adUnit[].bids adagio.params.placement value', function () {
         const placement = 'placement-value';
 
         const configCopy = utils.deepClone(config);
@@ -553,7 +553,7 @@ describe('Adagio Rtd Provider', function () {
         expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal(placement);
       });
 
-      it('it does not populate `ortb2Imp.ext.data.placement` if no fallback', function() {
+      it('it does not populate `ortb2Imp.ext.data.placement` if no fallback', function () {
         const configCopy = utils.deepClone(config);
         const bidRequest = utils.deepClone(bidReqConfig);
 
@@ -562,7 +562,7 @@ describe('Adagio Rtd Provider', function () {
         expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.not.exist;
       });
 
-      it('ensure we create the `ortb2Imp` object if it does not exist', function() {
+      it('ensure we create the `ortb2Imp` object if it does not exist', function () {
         const configCopy = utils.deepClone(config);
         configCopy.params.placementSource = PLACEMENT_SOURCES.ADUNITCODE;
 
@@ -576,7 +576,7 @@ describe('Adagio Rtd Provider', function () {
     });
   });
 
-  describe('submodule `onBidRequestEvent`', function() {
+  describe('submodule `onBidRequestEvent`', function () {
     const bidderRequest = {
       'bidderCode': 'adagio',
       'auctionId': '3de10dc0-fe75-480f-95cc-f15f2c4929fe',
@@ -682,7 +682,7 @@ describe('Adagio Rtd Provider', function () {
       'start': 1715613832796
     }
 
-    it('store a copy of computed property', function() {
+    it('store a copy of computed property', function () {
       const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
       sandbox.stub(Date, 'now').returns(12345);
 

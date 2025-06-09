@@ -208,7 +208,7 @@ describe('', function () {
       events.getEvents.restore();
     });
 
-    after(function() {
+    after(function () {
       sandbox.restore();
     });
 

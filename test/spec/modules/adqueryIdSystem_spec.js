@@ -65,7 +65,7 @@ describe('AdqueryIdSystem', function () {
     before(() => {
       attachIdSystem(adqueryIdSubmodule);
     });
-    it('qid', function() {
+    it('qid', function () {
       const userId = {
         qid: 'some-random-id-value'
       };

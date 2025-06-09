@@ -100,7 +100,7 @@ export const spec = {
    * @param {BidRequest} bid The bid request to validate.
    * @returns {boolean} True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const { params } = bid;
     if (!params) {
       return false;
@@ -119,7 +119,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest Bidder request object.
    * @returns {YandexServerRequest[]} Objects describing the requests to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const ortb2 = bidderRequest.ortb2;
@@ -215,7 +215,7 @@ export const spec = {
    * Register bidder specific code, which will execute if a bid from this bidder won the auction.
    * @param {Bid} bid The bid that won the auction.
    */
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     const nurl = addRTT(bid['nurl'], bid.timeToRespond);
 
     if (!nurl) {
@@ -229,7 +229,7 @@ export const spec = {
 /**
  * @param {YandexBidRequestParams} bidRequestParams
  */
-function extractPlacementIds(bidRequestParams) {
+function extractPlacementIds (bidRequestParams) {
   const { placementId } = bidRequestParams;
   const result = { pageId: null, impId: null };
 
@@ -266,7 +266,7 @@ function extractPlacementIds(bidRequestParams) {
 /**
  * @param {ExtendedBidRequest} bidRequest
  */
-function getBidfloor(bidRequest) {
+function getBidfloor (bidRequest) {
   const floors = [];
 
   if (typeof bidRequest.getFloor === 'function') {
@@ -288,7 +288,7 @@ function getBidfloor(bidRequest) {
 /**
  * @param {ExtendedBidRequest} bidRequest
  */
-function mapBanner(bidRequest) {
+function mapBanner (bidRequest) {
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     const sizes = bidRequest.sizes || bidRequest.mediaTypes.banner.sizes;
     const format = sizes.map((size) => ({
@@ -309,7 +309,7 @@ function mapBanner(bidRequest) {
  * Maps video parameters from bid request to OpenRTB video object.
  * @param {ExtendedBidRequest} bidRequest
  */
-function mapVideo(bidRequest) {
+function mapVideo (bidRequest) {
   const videoParams = deepAccess(bidRequest, 'mediaTypes.video');
   if (videoParams) {
       const { sizes, playerSize } = videoParams;
@@ -332,7 +332,7 @@ function mapVideo(bidRequest) {
 /**
  * @param {ExtendedBidRequest} bidRequest
  */
-function mapNative(bidRequest) {
+function mapNative (bidRequest) {
   const adUnitNativeAssets = deepAccess(bidRequest, 'mediaTypes.native');
   if (adUnitNativeAssets) {
     const assets = [];
@@ -356,7 +356,7 @@ function mapNative(bidRequest) {
   }
 }
 
-function mapAsset(assetCode, adUnitAssetParams, nativeAsset) {
+function mapAsset (assetCode, adUnitAssetParams, nativeAsset) {
   const [nativeAssetId, nativeAssetType] = nativeAsset;
   const asset = {
     id: nativeAssetId,
@@ -382,7 +382,7 @@ function mapAsset(assetCode, adUnitAssetParams, nativeAsset) {
   return asset;
 }
 
-function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
+function mapImageAsset (adUnitImageAssetParams, nativeAssetType) {
   const img = {
     type: nativeAssetType,
   };
@@ -411,7 +411,7 @@ function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
  * @param {YandexServerRequest} yandexServerRequest
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
-function interpretResponse(serverResponse, { bidRequest }) {
+function interpretResponse (serverResponse, { bidRequest }) {
   let response = serverResponse.body;
   if (!response.seatbid) {
     return [];
@@ -458,7 +458,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
   });
 }
 
-function interpretNativeAd(bidReceived, price, currency) {
+function interpretNativeAd (bidReceived, price, currency) {
   try {
     const { adm } = bidReceived;
     const { native } = JSON.parse(adm);
@@ -493,7 +493,7 @@ function interpretNativeAd(bidReceived, price, currency) {
   } catch (e) {}
 }
 
-function replaceAuctionPrice(url, price, currency) {
+function replaceAuctionPrice (url, price, currency) {
   if (!url) return;
 
   return url
@@ -501,7 +501,7 @@ function replaceAuctionPrice(url, price, currency) {
     .replace(/\${AUCTION_CURRENCY}/, currency);
 }
 
-function addRTT(url, rtt) {
+function addRTT (url, rtt) {
   if (!url) return;
 
   if (url.indexOf(`\${RTT}`) > -1) {

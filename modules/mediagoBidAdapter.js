@@ -70,7 +70,7 @@ export const getPmgUID = () => {
  * @param  {...string} keys 键名
  * @return {any}
  */
-function getProperty(obj, ...keys) {
+function getProperty (obj, ...keys) {
   let o = obj;
 
   for (let key of keys) {
@@ -116,7 +116,7 @@ const mediagoAdSize = normalAdSize;
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
  */
-function getItems(validBidRequests, bidderRequest) {
+function getItems (validBidRequests, bidderRequest) {
   let items = [];
   items = validBidRequests.map((req, i) => {
     let ret = {};
@@ -193,7 +193,7 @@ function getItems(validBidRequests, bidderRequest) {
  * get current time to UTC string
  * @returns utc string
  */
-export function getCurrentTimeToUTCString() {
+export function getCurrentTimeToUTCString () {
   const date = new Date();
   date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
   return date.toUTCString();
@@ -206,7 +206,7 @@ export function getCurrentTimeToUTCString() {
  * @param {Object} bidderRequest  The master bidRequest object
  * @return {Object}
  */
-function getParam(validBidRequests, bidderRequest) {
+function getParam (validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
 
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;

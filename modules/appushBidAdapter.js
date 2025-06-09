@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'appush';
 const AD_URL = 'https://hb.appush.com/pbjs';
 
-function isBidResponseValid(bid) {
+function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
     return false;
   }
@@ -25,7 +25,7 @@ function isBidResponseValid(bid) {
   }
 }
 
-function getPlacementReqData(bid) {
+function getPlacementReqData (bid) {
   const { params, bidId, mediaTypes } = bid;
   const schain = bid.schain || {};
   const { placementId, endpointId } = params;
@@ -74,7 +74,7 @@ function getPlacementReqData(bid) {
   return placement;
 }
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidfloor', 0);
   }

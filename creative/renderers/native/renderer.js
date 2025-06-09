@@ -1,6 +1,6 @@
 import {ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE, ORTB_ASSETS} from './constants.js';
 
-export function getReplacer(adId, {assets = [], ortb, nativeKeys = {}}) {
+export function getReplacer (adId, {assets = [], ortb, nativeKeys = {}}) {
   const assetValues = Object.fromEntries((assets).map(({key, value}) => [key, value]));
   let repl = Object.fromEntries(
     Object.entries(nativeKeys).flatMap(([name, key]) => {
@@ -35,7 +35,7 @@ export function getReplacer(adId, {assets = [], ortb, nativeKeys = {}}) {
   };
 }
 
-function loadScript(url, doc) {
+function loadScript (url, doc) {
   return new Promise((resolve, reject) => {
     const script = doc.createElement('script');
     script.onload = resolve;
@@ -45,17 +45,17 @@ function loadScript(url, doc) {
   });
 }
 
-function getRenderFrames(node) {
+function getRenderFrames (node) {
   return Array.from(node.querySelectorAll('iframe[srcdoc*="render"]'))
 }
 
-function getInnerHTML(node) {
+function getInnerHTML (node) {
   const clone = node.cloneNode(true);
   getRenderFrames(clone).forEach(node => node.parentNode.removeChild(node));
   return clone.innerHTML;
 }
 
-export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) {
+export function getAdMarkup (adId, nativeData, replacer, win, load = loadScript) {
   const {rendererUrl, assets, ortb, adTemplate} = nativeData;
   const doc = win.document;
   if (rendererUrl) {
@@ -72,7 +72,7 @@ export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) 
   }
 }
 
-export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
+export function render ({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
   const {head, body} = win.document;
   const resize = () => {
     // force redraw - for some reason this is needed to get the right dimensions
@@ -84,7 +84,7 @@ export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMark
       width: body.offsetWidth
     });
   }
-  function replaceMarkup(target, markup) {
+  function replaceMarkup (target, markup) {
     // do not remove the rendering logic if it's embedded in this window; things will break otherwise
     const renderFrames = getRenderFrames(target);
     Array.from(target.childNodes).filter(node => !renderFrames.includes(node)).forEach(node => target.removeChild(node));

@@ -10,7 +10,7 @@ export const s2sTesting = {
 s2sTesting.bidSource = {}; // store bidder sources determined from s2sConfig bidderControl
 s2sTesting.globalRand = Math.random(); // if 10% of bidderA and 10% of bidderB should be server-side, make it the same 10%
 
-s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
+s2sTesting.getSourceBidderMap = function (adUnits = [], allS2SBidders = []) {
   var sourceBidders = {[SERVER]: {}, [CLIENT]: {}};
 
   adUnits.forEach((adUnit) => {
@@ -45,7 +45,7 @@ s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
  * @function calculateBidSources determines the source for each s2s bidder based on bidderControl weightings.  these can be overridden at the adUnit level
  * @param s2sConfig server-to-server configuration
  */
-s2sTesting.calculateBidSources = function(s2sConfig = {}) {
+s2sTesting.calculateBidSources = function (s2sConfig = {}) {
   // calculate bid source (server/client) for each s2s bidder
 
   var bidderControl = s2sConfig.bidderControl || {};
@@ -60,7 +60,7 @@ s2sTesting.calculateBidSources = function(s2sConfig = {}) {
  * @param bidSources list of possible bid sources: "server", "client".  In theory could get the sources from the sourceWeights keys, but this is publisher config defined, so bidSources let's us constrain that.
  * @return the chosen source ("server" or "client"), or undefined if none chosen
  */
-s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
+s2sTesting.getSource = function (sourceWeights = {}, bidSources = [SERVER, CLIENT]) {
   var srcIncWeight = {}; // store incremental weights of each source
   var totWeight = 0;
   bidSources.forEach((source) => {
@@ -77,11 +77,11 @@ s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT
   }
 }
 
-function doingS2STesting(s2sConfig) {
+function doingS2STesting (s2sConfig) {
   return s2sConfig && s2sConfig.enabled && s2sConfig.testing;
 }
 
-function isTestingServerOnly(s2sConfig) {
+function isTestingServerOnly (s2sConfig) {
   return Boolean(doingS2STesting(s2sConfig) && s2sConfig.testServerOnly);
 }
 
@@ -120,7 +120,7 @@ partitionBidders.before(function (next, adUnits, s2sConfigs) {
   }, {[CLIENT]: [], [SERVER]: []}));
 });
 
-filterBidsForAdUnit.before(function(next, bids, s2sConfig) {
+filterBidsForAdUnit.before(function (next, bids, s2sConfig) {
   if (s2sConfig == null) {
     bids = bids.filter((bid) => !s2sTesting.clientTestBidders.size || bid.finalSource !== SERVER);
   } else {

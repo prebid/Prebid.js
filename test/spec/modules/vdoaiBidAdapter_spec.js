@@ -228,7 +228,7 @@ describe('vdoaiBidAdapter', function () {
       }
     }
     const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
-    it('Creates two ServerRequests', function() {
+    it('Creates two ServerRequests', function () {
       expect(serverRequests).to.exist
       expect(serverRequests).to.have.lengthOf(2)
     })
@@ -325,7 +325,7 @@ describe('vdoaiBidAdapter', function () {
   })
   describe('interpretBannerResponse', function () {
     let resObject = {
-      body: [ {
+      body: [{
         requestId: '123',
         cpm: 0.3,
         width: 320,
@@ -339,7 +339,7 @@ describe('vdoaiBidAdapter', function () {
           advertiserDomains: ['example.com'],
           mediaType: 'banner'
         }
-      } ]
+      }]
     };
     let serverResponses = spec.interpretResponse(resObject);
     it('Returns an array of valid server responses if response object is valid', function () {
@@ -368,7 +368,7 @@ describe('vdoaiBidAdapter', function () {
   });
   describe('interpretVideoResponse', function () {
     let resObject = {
-      body: [ {
+      body: [{
         requestId: '123',
         cpm: 0.3,
         width: 320,
@@ -382,7 +382,7 @@ describe('vdoaiBidAdapter', function () {
           advertiserDomains: ['example.com'],
           mediaType: 'video'
         }
-      } ]
+      }]
     };
     let serverResponses = spec.interpretResponse(resObject);
     it('Returns an array of valid server responses if response object is valid', function () {
@@ -409,7 +409,7 @@ describe('vdoaiBidAdapter', function () {
       });
     });
   });
-  describe('isBidRequestValid', function() {
+  describe('isBidRequestValid', function () {
     let bid = {
       bidId: '2dd581a2b6281d',
       bidder: 'vdoai',
@@ -425,18 +425,18 @@ describe('vdoaiBidAdapter', function () {
       transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62'
     };
 
-    it('should return true when required params found', function() {
+    it('should return true when required params found', function () {
       [bid, bid1, bid2, bid3].forEach(bid => {
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
     });
 
-    it('should return true when adUnitId is zero', function() {
+    it('should return true when adUnitId is zero', function () {
       bid.params.adUnitId = 0;
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function() {
+    it('should return false when required params are not passed', function () {
       let bidFailed = {
         bidder: 'vdoai',
         bidderRequestId: '145e1d6a7837c9',
@@ -452,7 +452,7 @@ describe('vdoaiBidAdapter', function () {
       expect(spec.isBidRequestValid(bidFailed)).to.equal(false);
     });
   });
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     let resObject = {
       requestId: '123',
       cpm: 0.3,
@@ -468,9 +468,9 @@ describe('vdoaiBidAdapter', function () {
         mediaType: 'banner'
       }
     };
-    it('should skip responses which do not contain required params', function() {
+    it('should skip responses which do not contain required params', function () {
       let bidResponses = {
-        body: [ {
+        body: [{
           cpm: 0.3,
           ttl: 1000,
           currency: 'USD',
@@ -478,36 +478,36 @@ describe('vdoaiBidAdapter', function () {
             advertiserDomains: ['example.com'],
             mediaType: 'banner'
           }
-        }, resObject ]
+        }, resObject]
       }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
-    it('should skip responses which do not contain advertiser domains', function() {
+    it('should skip responses which do not contain advertiser domains', function () {
       let resObjectWithoutAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithoutAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutAdvertiserDomains.meta.advertiserDomains;
       let bidResponses = {
-        body: [ resObjectWithoutAdvertiserDomains, resObject ]
+        body: [resObjectWithoutAdvertiserDomains, resObject]
       }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
-    it('should return responses which contain empty advertiser domains', function() {
+    it('should return responses which contain empty advertiser domains', function () {
       let resObjectWithEmptyAdvertiserDomains = Object.assign({}, resObject);
       resObjectWithEmptyAdvertiserDomains.meta = Object.assign({}, resObject.meta);
       resObjectWithEmptyAdvertiserDomains.meta.advertiserDomains = [];
       let bidResponses = {
-        body: [ resObjectWithEmptyAdvertiserDomains, resObject ]
+        body: [resObjectWithEmptyAdvertiserDomains, resObject]
       }
       expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObjectWithEmptyAdvertiserDomains, resObject]);
     });
-    it('should skip responses which do not contain meta media type', function() {
+    it('should skip responses which do not contain meta media type', function () {
       let resObjectWithoutMetaMediaType = Object.assign({}, resObject);
       resObjectWithoutMetaMediaType.meta = Object.assign({}, resObject.meta);
       delete resObjectWithoutMetaMediaType.meta.mediaType;
       let bidResponses = {
-        body: [ resObjectWithoutMetaMediaType, resObject ]
+        body: [resObjectWithoutMetaMediaType, resObject]
       }
-      expect(spec.interpretResponse(bidResponses)).to.deep.equal([ resObject ]);
+      expect(spec.interpretResponse(bidResponses)).to.deep.equal([resObject]);
     });
   });
   describe('getUserSyncs', function () {
@@ -714,7 +714,7 @@ describe('vdoaiBidAdapter', function () {
   });
 });
 
-function validateAdUnit(adUnit, bid) {
+function validateAdUnit (adUnit, bid) {
   expect(adUnit.id).to.equal(bid.params.adUnitId);
   expect(adUnit.bidId).to.equal(bid.bidId);
   expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());

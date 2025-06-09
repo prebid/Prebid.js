@@ -31,7 +31,7 @@ const VIQEO_ENDPOINT = 'https://ad.vqserve.com/ads/prebid';
 const RENDERER_URL = 'https://cdn.viqeo.tv/js/vq_starter.js';
 const DEFAULT_CURRENCY = 'USD';
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   const { floor, currency } = bid.params;
   const curr = currency || DEFAULT_CURRENCY;
   if (!isFn(bid.getFloor)) {
@@ -52,7 +52,7 @@ function getBidFloor(bid) {
   return { floor: floor || 0, currency: currency || DEFAULT_CURRENCY };
 }
 
-function getVideoTargetingParams({ mediaTypes: { video } }) {
+function getVideoTargetingParams ({ mediaTypes: { video } }) {
   const result = {};
   Object.keys(Object(video)).forEach((key) => {
     if (key === 'playerSize') {

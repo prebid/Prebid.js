@@ -116,7 +116,7 @@ export const spec = {
   },
 };
 
-function validateBidRequest(bid) {
+function validateBidRequest (bid) {
   return (
     _validateParams(bid) &&
     _validateBanner(bid) &&
@@ -124,7 +124,7 @@ function validateBidRequest(bid) {
   );
 }
 
-function getCompanyId(validBidRequests) {
+function getCompanyId (validBidRequests) {
   let companyId = validBidRequests[0].params.company_id;
 
   if (validBidRequests[0].params.test) {
@@ -135,18 +135,18 @@ function getCompanyId(validBidRequests) {
   return companyId;
 }
 
-function buildEndpointUrl(companyId) {
+function buildEndpointUrl (companyId) {
   return `${spec.ENDPOINT}?company_id=${companyId}`;
 }
 
-function parseServerResponse(serverResponse, bidRequest) {
+function parseServerResponse (serverResponse, bidRequest) {
   return converter.fromORTB({
     response: serverResponse.body,
     request: bidRequest.data,
   }).bids;
 }
 
-function filterValidBids(bids) {
+function filterValidBids (bids) {
   return bids
     .map((bid) => {
       if (bid.mtype === 2 && bid.adm) {
@@ -163,15 +163,15 @@ function filterValidBids(bids) {
     .filter((bid) => bid !== null);
 }
 
-function hasBannerMediaType(bidRequest) {
+function hasBannerMediaType (bidRequest) {
   return !!bidRequest.mediaTypes?.banner;
 }
 
-function hasVideoMediaType(bidRequest) {
+function hasVideoMediaType (bidRequest) {
   return !!bidRequest.mediaTypes?.video;
 }
 
-function _validateParams(bidRequest) {
+function _validateParams (bidRequest) {
   if (!bidRequest.params) {
     return false;
   }
@@ -193,7 +193,7 @@ function _validateParams(bidRequest) {
   return true;
 }
 
-function _validateBanner(bidRequest) {
+function _validateBanner (bidRequest) {
   if (!hasBannerMediaType(bidRequest)) {
     return true;
   }
@@ -207,7 +207,7 @@ function _validateBanner(bidRequest) {
   return true;
 }
 
-function _validateVideo(bidRequest) {
+function _validateVideo (bidRequest) {
   if (!hasVideoMediaType(bidRequest)) {
     return true;
   }

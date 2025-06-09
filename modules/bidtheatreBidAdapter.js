@@ -37,7 +37,7 @@ export const spec = {
 
     return isValid;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const seenUrls = new Set();
     const syncs = [];
 
@@ -67,7 +67,7 @@ export const spec = {
     }
     return syncs;
   },
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const data = converter.toORTB({bidRequests, bidderRequest});
 
     const cookieValue = storage.getCookie(BIDTHEATRE_COOKIE_NAME);
@@ -89,7 +89,7 @@ export const spec = {
       data
     }]
   },
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     if (!response || !response.body || !response.body.seatbid) {
       return [];
     }
@@ -107,11 +107,11 @@ export const spec = {
     const bids = converter.fromORTB({response: macroReplacedResponseBody, request: request.data}).bids;
     return bids;
   },
-  onTimeout: function(timeoutData) {},
-  onBidWon: function(bid) {},
-  onSetTargeting: function(bid) {},
+  onTimeout: function (timeoutData) {},
+  onBidWon: function (bid) {},
+  onSetTargeting: function (bid) {},
   // onBidderError: function({ error, bidderRequest }) {},
-  onAdRenderSucceeded: function(bid) {}
+  onAdRenderSucceeded: function (bid) {}
 }
 
 registerBidder(spec);

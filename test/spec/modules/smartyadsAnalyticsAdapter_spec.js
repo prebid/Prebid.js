@@ -398,7 +398,7 @@ describe('SmartyAds Analytics', function () {
       expect(message.auctionData.bidderRequests).to.have.length(1);
     });
 
-    it('test bidWon', function() {
+    it('test bidWon', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'smartyads',
         adapter: smartyadsAnalytics
@@ -417,7 +417,7 @@ describe('SmartyAds Analytics', function () {
       expect(message.bid).to.have.property('cpm').and.to.equal(bidWon.cpm);
     });
 
-    it('test adRender', function() {
+    it('test adRender', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'smartyads',
         adapter: smartyadsAnalytics

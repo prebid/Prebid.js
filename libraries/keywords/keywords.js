@@ -9,7 +9,7 @@ const ORTB_KEYWORDS_PATHS = ['user.keywords'].concat(
  * @param commaSeparatedKeywords any number of either keyword arrays, or comma-separated keyword strings
  * @returns an array with all unique keywords contained across all inputs
  */
-export function mergeKeywords(...commaSeparatedKeywords) {
+export function mergeKeywords (...commaSeparatedKeywords) {
   const keywords = new Set();
   commaSeparatedKeywords
     .filter(kwds => kwds)
@@ -23,7 +23,7 @@ export function mergeKeywords(...commaSeparatedKeywords) {
 /**
  * Get an array with all keywords contained in an ortb2 object.
  */
-export function getAllOrtbKeywords(ortb2, ...extraCommaSeparatedKeywords) {
+export function getAllOrtbKeywords (ortb2, ...extraCommaSeparatedKeywords) {
   return mergeKeywords(
     ...ORTB_KEYWORDS_PATHS.map(path => deepAccess(ortb2, path)),
     ...extraCommaSeparatedKeywords

@@ -18,7 +18,7 @@ let zetaParams;
 
 /// /////////// HELPER FUNCTIONS /////////////////////////////
 
-function sendEvent(eventType, event) {
+function sendEvent (eventType, event) {
   ajax(
     BASE_URL + '/' + eventType,
     null,
@@ -28,7 +28,7 @@ function sendEvent(eventType, event) {
 
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
-function adRenderSucceededHandler(args) {
+function adRenderSucceededHandler (args) {
   const page = config.getConfig('pageUrl') || args.doc?.location?.host + args.doc?.location?.pathname;
   const event = {
     zetaParams: zetaParams,
@@ -54,7 +54,7 @@ function adRenderSucceededHandler(args) {
   sendEvent(EVENTS.AD_RENDER_SUCCEEDED, event);
 }
 
-function auctionEndHandler(args) {
+function auctionEndHandler (args) {
   const event = {
     zetaParams: zetaParams,
     bidderRequests: args.bidderRequests?.map(br => ({
@@ -87,7 +87,7 @@ function auctionEndHandler(args) {
   sendEvent(EVENTS.AUCTION_END, event);
 }
 
-function bidTimeoutHandler(args) {
+function bidTimeoutHandler (args) {
   const event = {
     zetaParams: zetaParams,
     domain: args.find(t => t?.ortb2?.site?.domain)?.ortb2?.site?.domain,
@@ -111,7 +111,7 @@ function bidTimeoutHandler(args) {
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let zetaAdapter = Object.assign({}, baseAdapter, {
 
-  enableAnalytics(config = {}) {
+  enableAnalytics (config = {}) {
     if (config.options && config.options.sid) {
       zetaParams = config.options;
       baseAdapter.enableAnalytics.call(this, config);
@@ -121,12 +121,12 @@ let zetaAdapter = Object.assign({}, baseAdapter, {
     }
   },
 
-  disableAnalytics() {
+  disableAnalytics () {
     zetaParams = undefined;
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track ({eventType, args}) {
     switch (eventType) {
       case EVENTS.AD_RENDER_SUCCEEDED:
         adRenderSucceededHandler(args);

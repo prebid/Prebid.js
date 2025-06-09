@@ -17,16 +17,16 @@ export const spec = {
   code: 'tapnative',
   supportedMediaTypes: [BANNER, NATIVE],
   // Determines whether or not the given bid request is valid
-  isBidRequestValid: function(bidParam) {
+  isBidRequestValid: function (bidParam) {
     return !!(bidParam.params.placement_id);
   },
   // Make a server request from the list of BidRequests
-  buildRequests: function(bidRequests, serverRequest) {
+  buildRequests: function (bidRequests, serverRequest) {
     // Get Requests based on media types
     return getBannerRequest(bidRequests, serverRequest, ENDPOINT);
   },
   // Unpack the response from the server into a list of bids.
-  interpretResponse: function(serverResponse, serverRequest) {
+  interpretResponse: function (serverResponse, serverRequest) {
     let bidderResponse = {};
     const mType = JSON.parse(serverRequest.data)[0].MediaType;
     if (mType == BANNER) {

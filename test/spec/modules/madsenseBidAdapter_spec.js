@@ -172,7 +172,7 @@ describe('madsenseBidAdapter', function () {
   });
 });
 
-function validateBid(actualBid, expectedBid) {
+function validateBid (actualBid, expectedBid) {
   expect(actualBid).to.include({
     currency: 'USD',
     requestId: expectedBid.impid,

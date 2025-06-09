@@ -32,7 +32,7 @@ const LOG_PREFIX = 'User ID - dacId submodule: ';
 /**
  * @returns {{fuuid: string, uid: string}} -
  */
-function getCookieId() {
+function getCookieId () {
   return {
     fuuid: storage.getCookie(FUUID_COOKIE_NAME),
     uid: storage.getCookie(AONEID_COOKIE_NAME)
@@ -44,7 +44,7 @@ function getCookieId() {
  * @param {string} uid -
  * @returns {void} -
  */
-function setAoneidToCookie(uid) {
+function setAoneidToCookie (uid) {
   if (uid) {
     const expires = new Date(Date.now() + COOKIES_EXPIRES).toUTCString();
     storage.setCookie(
@@ -61,7 +61,7 @@ function setAoneidToCookie(uid) {
  * @param {string} fuuid -
  * @returns {string} -
  */
-function getApiUrl(oid, fuuid) {
+function getApiUrl (oid, fuuid) {
   return `${API_URL}?oid=${oid}&fu=${fuuid}`;
 }
 
@@ -70,7 +70,7 @@ function getApiUrl(oid, fuuid) {
  * @param {string} fuuid -
  * @returns {{callback: function}} -
  */
-function fetchAoneId(oid, fuuid) {
+function fetchAoneId (oid, fuuid) {
   return {
     callback: (callback) => {
       const ret = {
@@ -124,7 +124,7 @@ export const dacIdSystemSubmodule = {
    * @param { {fuuid: string, uid: string} } id
    * @returns { {dacId: {fuuid: string, dacId: string} } | undefined }
    */
-  decode(id) {
+  decode (id) {
     if (id && typeof id === 'object') {
       return {
         dacId: {
@@ -140,7 +140,7 @@ export const dacIdSystemSubmodule = {
    * @function
    * @returns { {id: {fuuid: string, uid: string}} | undefined }
    */
-  getId(config) {
+  getId (config) {
     const cookie = getCookieId();
 
     if (!cookie.fuuid) {

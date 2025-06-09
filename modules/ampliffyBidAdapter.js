@@ -7,7 +7,7 @@ const DEFAULT_ENDPOINT = 'bidder.ampliffy.com';
 const TTL = 600; // Time-to-Live - how long (in seconds) Prebid can use this bid.
 const LOG_PREFIX = 'AmpliffyBidder: ';
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   logInfo(LOG_PREFIX + 'isBidRequestValid: Code: ' + bid.adUnitCode + ': Param' + JSON.stringify(bid.params), bid.adUnitCode);
   if (bid.params) {
     if (!bid.params.placementId || !bid.params.format) return false;
@@ -26,7 +26,7 @@ function isBidRequestValid(bid) {
   return false;
 }
 
-function manageConsentArguments(bidderRequest) {
+function manageConsentArguments (bidderRequest) {
   let consent = null;
   if (bidderRequest?.gdprConsent) {
     consent = {
@@ -42,7 +42,7 @@ function manageConsentArguments(bidderRequest) {
   return consent;
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const bidRequests = [];
   for (const bidRequest of validBidRequests) {
     for (const sizes of bidRequest.sizes) {
@@ -63,7 +63,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
   return bidRequests;
 }
-export function getDefaultParams() {
+export function getDefaultParams () {
   return {
     ciu_szs: '1x1',
     gdfp_req: '1',
@@ -72,7 +72,7 @@ export function getDefaultParams() {
     unviewed_position_start: '1'
   };
 }
-export function mergeParams(params, extraParams) {
+export function mergeParams (params, extraParams) {
   if (extraParams) {
     for (const k in extraParams) {
       params[k] = extraParams[k];
@@ -80,7 +80,7 @@ export function mergeParams(params, extraParams) {
   }
   return params;
 }
-export function paramsToQueryString(params) {
+export function paramsToQueryString (params) {
   return Object.entries(params).filter(e => typeof e[1] !== 'undefined').map(e => {
     if (e[1]) return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]);
     else return encodeURIComponent(e[0]);
@@ -90,15 +90,15 @@ const getCacheBuster = () => Math.floor(Math.random() * (9999999999 - 1000000000
 
 // For testing purposes
 let currentUrl = null;
-export function getCurrentURL() {
+export function getCurrentURL () {
   if (!currentUrl) currentUrl = top.location.href;
   return currentUrl;
 }
-export function setCurrentURL(url) {
+export function setCurrentURL (url) {
   currentUrl = url;
 }
 const getCurrentURLEncoded = () => encodeURIComponent(getCurrentURL());
-function getServerURL(server, sizes, iu, queryParams) {
+function getServerURL (server, sizes, iu, queryParams) {
   const random = getCacheBuster();
   const size = sizes[0] + 'x' + sizes[1];
   let serverURL = '//' + server + '/gampad/ads';
@@ -110,7 +110,7 @@ function getServerURL(server, sizes, iu, queryParams) {
 
   return serverURL;
 }
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = [];
 
   const bidResponse = {};
@@ -186,7 +186,7 @@ const encodePrice = (price) => {
   return encodeURIComponent(`vch=${encodingKey}`);
 };
 
-function extractCT(xml) {
+function extractCT (xml) {
   let ct = null;
   try {
     try {
@@ -216,7 +216,7 @@ function extractCT(xml) {
   return ct;
 }
 
-function extractCPM(htmlContent, ct, cpm) {
+function extractCPM (htmlContent, ct, cpm) {
   const cpmMapDiv = htmlContent.querySelectorAll('[cpmMap]')[0];
   if (cpmMapDiv) {
     let cpmMapJSON = JSON.parse(cpmMapDiv.getAttribute('cpmMap'));
@@ -231,7 +231,7 @@ function extractCPM(htmlContent, ct, cpm) {
   return cpm;
 }
 
-function extractCurrency(htmlContent, currency) {
+function extractCurrency (htmlContent, currency) {
   const currencyDiv = htmlContent.querySelectorAll('[cpmCurrency]')[0];
   if (currencyDiv) {
     const currencyValue = currencyDiv.getAttribute('cpmCurrency');
@@ -242,7 +242,7 @@ function extractCurrency(htmlContent, currency) {
   return currency;
 }
 
-function extractCreativeURL(htmlContent, ct, cpm, bid) {
+function extractCreativeURL (htmlContent, ct, cpm, bid) {
   let creativeURL = null;
   const creativeMap = htmlContent.querySelectorAll('[creativeMap]')[0];
   if (creativeMap) {
@@ -263,7 +263,7 @@ function extractCreativeURL(htmlContent, ct, cpm, bid) {
   return creativeURL;
 }
 
-function extractSyncs(htmlContent) {
+function extractSyncs (htmlContent) {
   let userSyncsJSON = null;
   const userSyncs = htmlContent.querySelectorAll('[userSyncs]')[0];
   if (userSyncs) {
@@ -274,7 +274,7 @@ function extractSyncs(htmlContent) {
   return userSyncsJSON;
 }
 
-function extractTrackingURL(htmlContent, ret) {
+function extractTrackingURL (htmlContent, ret) {
   const trackingUrlDiv = htmlContent.querySelectorAll('[bidder-tracking-url]')[0];
   if (trackingUrlDiv) {
     const trackingUrl = trackingUrlDiv.getAttribute('bidder-tracking-url');
@@ -283,7 +283,7 @@ function extractTrackingURL(htmlContent, ret) {
   }
 }
 
-export function parseXML(xml, bid) {
+export function parseXML (xml, bid) {
   const ret = { cpm: 0.001, currency: 'EUR', creativeURL: null, bidUp: false };
   const ct = extractCT(xml);
   if (!ct) return ret;
@@ -309,7 +309,7 @@ export function parseXML(xml, bid) {
 
   return ret;
 }
-export function isAllowedToBidUp(html, currentURL) {
+export function isAllowedToBidUp (html, currentURL) {
   currentURL = currentURL.split('?')[0]; // Remove parameters
   let allowedToPush = false;
   try {
@@ -343,7 +343,7 @@ export function isAllowedToBidUp(html, currentURL) {
   return allowedToPush;
 }
 
-function getSyncData(options, syncs) {
+function getSyncData (options, syncs) {
   const ret = [];
   if (syncs?.length) {
     for (const sync of syncs) {
@@ -357,7 +357,7 @@ function getSyncData(options, syncs) {
   return ret;
 }
 
-function getUserSyncs(syncOptions, serverResponses) {
+function getUserSyncs (syncOptions, serverResponses) {
   const userSyncs = [];
   for (const serverResponse of serverResponses) {
     if (serverResponse.body) {
@@ -374,7 +374,7 @@ function getUserSyncs(syncOptions, serverResponses) {
   return userSyncs;
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   logInfo(`${LOG_PREFIX} WON AMPLIFFY`);
   if (bid.trackingUrl) {
     let url = bid.trackingUrl;
@@ -394,7 +394,7 @@ function onBidWon(bid) {
     });
   }
 }
-function onTimeOut() {
+function onTimeOut () {
   logInfo(LOG_PREFIX + 'TIMEOUT');
 }
 

@@ -5,7 +5,7 @@ import { newBidder } from 'src/adapters/bidderFactory';
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
-describe('colombiaBidAdapter', function() {
+describe('colombiaBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {

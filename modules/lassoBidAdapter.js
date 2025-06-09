@@ -13,11 +13,11 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.adUnitId);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     if (validBidRequests.length === 0) {
       return [];
     }
@@ -93,7 +93,7 @@ export const spec = {
     });
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const response = serverResponse && serverResponse.body;
     const bidResponses = [];
 
@@ -124,7 +124,7 @@ export const spec = {
     return bidResponses;
   },
 
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     if (timeoutData === null) {
       return;
     }
@@ -134,7 +134,7 @@ export const spec = {
     });
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     ajax(ENDPOINT_URL + '/won', null, JSON.stringify(bid), {
       method: 'POST',
       withCredentials: false
@@ -144,7 +144,7 @@ export const spec = {
   supportedMediaTypes: [BANNER]
 }
 
-function getBidRequestUrl(aimXR, params) {
+function getBidRequestUrl (aimXR, params) {
   let path = '/request';
   if (params && params.dtc) {
     path = '/dtc-request';
@@ -155,7 +155,7 @@ function getBidRequestUrl(aimXR, params) {
   return GET_IUD_URL + ENDPOINT_URL + path;
 }
 
-function getDeviceData() {
+function getDeviceData () {
   const win = window.top;
   const winDimensions = getWinDimensions();
   return {

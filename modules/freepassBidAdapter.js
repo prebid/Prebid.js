@@ -12,7 +12,7 @@ const converter = ortbConverter({
   }
 });
 
-function prepareUserInfo(user, freepassId) {
+function prepareUserInfo (user, freepassId) {
   let userInfo = user || {};
   let extendedUserInfo = userInfo.ext || {};
 
@@ -28,7 +28,7 @@ function prepareUserInfo(user, freepassId) {
   return userInfo;
 }
 
-function prepareDeviceInfo(device, freepassId) {
+function prepareDeviceInfo (device, freepassId) {
   let deviceInfo = device || {};
   let extendedDeviceInfo = deviceInfo.ext || {};
 
@@ -46,12 +46,12 @@ export const spec = {
   code: 'freepass',
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     logMessage('Validating bid: ', bid);
     return !(!bid.adUnitCode || !bid.params || !bid.params.publisherId);
   },
 
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     if (validBidRequests.length === 0) {
       logMessage('FreePass BidAdapter has no valid bid requests');
       return [];
@@ -104,7 +104,7 @@ export const spec = {
     };
   },
 
-  interpretResponse(serverResponse, bidRequest) {
+  interpretResponse (serverResponse, bidRequest) {
     logMessage('FreePass BidAdapter is interpreting server response: ', serverResponse);
     logMessage('FreePass BidAdapter is using bid request: ', bidRequest);
     const bids = converter.fromORTB({response: serverResponse.body, request: bidRequest.data}).bids;

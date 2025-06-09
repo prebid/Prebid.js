@@ -25,7 +25,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       hb_size: '640x480',
       hb_source: 'client',
     },
-    getStatusCode() {
+    getStatusCode () {
       return STATUS.GOOD;
     },
   };
@@ -53,7 +53,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       hb_size: '728x90',
       hb_source: 'server',
     },
-    getStatusCode() {
+    getStatusCode () {
       return STATUS.GOOD;
     },
   };

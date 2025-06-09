@@ -7,9 +7,9 @@ const validCpms = ['15.00', '14.00', '13.00', '10.00'];
 const customKeyRegex = /\d{2}\.\d{2}_\d{1,3}_\d{2}s/;
 const uuidRegex = /(\d|\w){8}-((\d|\w){4}-){3}(\d|\w){12}/;
 
-describe('longform ads using custom adserver translation file', function() {
+describe('longform ads using custom adserver translation file', function () {
   this.retries(3);
-  it('process the bids successfully', async function() {
+  it('process the bids successfully', async function () {
     await browser.url(protocol + '://' + host + ':9999/integrationExamples/longform/basic_w_custom_adserver_translation.html?pbjs_debug=true');
     await browser.pause(7000);
 

@@ -72,7 +72,7 @@ describe('adjustAlternateBids', () => {
     bs = null;
   });
 
-  function runAdjustment(cpm, bidderCode, adapterCode) {
+  function runAdjustment (cpm, bidderCode, adapterCode) {
     return adjustCpm(cpm, {bidderCode, adapterCode}, null, {bs: new ScopedSettings(() => bs)});
   }
 
@@ -92,7 +92,7 @@ describe('adjustAlternateBids', () => {
   it('should NOT fall back to the adapter adjustment fn when adjustAlternateBids is not true', () => {
     bs = {
       adapter: {
-        bidCpmAdjustment(cpm) {
+        bidCpmAdjustment (cpm) {
           return cpm * 2
         }
       }
@@ -104,12 +104,12 @@ describe('adjustAlternateBids', () => {
     bs = {
       adapter: {
         adjustAlternateBids: true,
-        bidCpmAdjustment(cpm) {
+        bidCpmAdjustment (cpm) {
           return cpm * 2
         }
       },
       bidder: {
-        bidCpmAdjustment(cpm) {
+        bidCpmAdjustment (cpm) {
           return cpm * 3
         }
       }

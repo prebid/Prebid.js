@@ -27,7 +27,7 @@ import {setFocusTimeout} from './focusTimeout.js';
  * @returns {(function(function(*): void): function(): void)} return.onExpiry - Register a callback to be run when an item has expired and is about to be
  *   removed from the collection. Returns an un-registration function
  */
-export function ttlCollection(
+export function ttlCollection (
   {
     startTime = timestamp,
     ttl = () => null,
@@ -43,7 +43,7 @@ export function ttlCollection(
     : (entry) => pendingPurge.splice(binarySearch(pendingPurge, entry, (el) => el.expiry), 0, entry)
   let nextPurge, task;
 
-  function reschedulePurge() {
+  function reschedulePurge () {
     task && clearTimeout(task);
     if (pendingPurge.length > 0) {
       const now = timestamp();
@@ -72,12 +72,12 @@ export function ttlCollection(
     }
   }
 
-  function mkEntry(item) {
+  function mkEntry (item) {
     const values = {};
     const thisCohort = currentCohort;
     let expiry;
 
-    function update() {
+    function update () {
       if (thisCohort === currentCohort && values.start != null && values.delta != null) {
         expiry = values.start + values.delta;
         markForPurge(entry);
@@ -92,7 +92,7 @@ export function ttlCollection(
       delta: ttl
     }).map(([field, getter]) => {
       let currentCall;
-      return function() {
+      return function () {
         const thisCall = currentCall = {};
         PbPromise.resolve(getter(item)).then((val) => {
           if (thisCall === currentCall) {
@@ -106,7 +106,7 @@ export function ttlCollection(
     const entry = {
       item,
       refresh,
-      get expiry() {
+      get expiry () {
         return expiry;
       },
     };
@@ -124,13 +124,13 @@ export function ttlCollection(
      * Add an item to this collection.
      * @param item
      */
-    add(item) {
+    add (item) {
       !items.has(item) && items.set(item, mkEntry(item));
     },
     /**
      * Clear this collection.
      */
-    clear() {
+    clear () {
       pendingPurge.length = 0;
       reschedulePurge();
       items.clear();
@@ -139,13 +139,13 @@ export function ttlCollection(
     /**
      * @returns {[]} all the items in this collection, in insertion order.
      */
-    toArray() {
+    toArray () {
       return Array.from(items.keys());
     },
     /**
      * Refresh the TTL for each item in this collection.
      */
-    refresh() {
+    refresh () {
       pendingPurge.length = 0;
       reschedulePurge();
       for (const entry of items.values()) {
@@ -158,7 +158,7 @@ export function ttlCollection(
      * @param cb a callback that takes the expired item as argument
      * @return an unregistration function.
      */
-    onExpiry(cb) {
+    onExpiry (cb) {
       callbacks.push(cb);
       return () => {
         const idx = callbacks.indexOf(cb);

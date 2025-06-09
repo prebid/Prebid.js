@@ -323,7 +323,7 @@ describe('Oxxion Analytics', function () {
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('oxxionMode');
     });
 
-    it('test bidWon', function() {
+    it('test bidWon', function () {
       window.OXXION_MODE = {'abtest': true};
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',

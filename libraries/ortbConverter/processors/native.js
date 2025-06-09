@@ -1,7 +1,7 @@
 import {isPlainObject, logWarn, mergeDeep} from '../../../src/utils.js';
 import {NATIVE} from '../../../src/mediaTypes.js';
 
-export function fillNativeImp(imp, bidRequest, context) {
+export function fillNativeImp (imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== NATIVE) return;
   let nativeReq = bidRequest.nativeOrtbRequest;
   if (nativeReq) {
@@ -17,7 +17,7 @@ export function fillNativeImp(imp, bidRequest, context) {
   }
 }
 
-export function fillNativeResponse(bidResponse, bid) {
+export function fillNativeResponse (bidResponse, bid) {
   if (bidResponse.mediaType === NATIVE) {
     let ortb;
     if (typeof bid.adm === 'string') {

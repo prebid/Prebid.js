@@ -43,7 +43,7 @@ let preloadStatus = 0;
  * Page initialization step which just preloads the script, to be available whenever we start processing the bids.
  * @param {string} scriptURL The script URL to preload
  */
-function pageInitStepPreloadScript(scriptURL) {
+function pageInitStepPreloadScript (scriptURL) {
   // TODO: this bypasses adLoader
   const linkElement = document.createElement('link');
   linkElement.rel = 'preload';
@@ -58,7 +58,7 @@ function pageInitStepPreloadScript(scriptURL) {
  * Page initialization step which adds the protector script to the whole page. With that, there is no need wrapping bids, and the coverage is better.
  * @param {string} scriptURL The script URL to add to the page for protection
  */
-function pageInitStepProtectPage(scriptURL) {
+function pageInitStepProtectPage (scriptURL) {
   loadExternalScript(scriptURL, MODULE_TYPE_RTD, 'clean.io');
 }
 
@@ -66,7 +66,7 @@ function pageInitStepProtectPage(scriptURL) {
  * Bid processing step which alters the ad HTML to contain bid-specific information, which can be used to identify the creative later.
  * @param {Object} bidResponse Bid response data
  */
-function bidWrapStepAugmentHtml(bidResponse) {
+function bidWrapStepAugmentHtml (bidResponse) {
   bidResponse.ad = `<!-- pbad://creativeId=${bidResponse.creativeId || ''}&bidderCode=${bidResponse.bidderCode || ''}&cpm=${bidResponse.cpm || ''} -->\n${bidResponse.ad}`;
 }
 
@@ -76,7 +76,7 @@ function bidWrapStepAugmentHtml(bidResponse) {
  * @param {number} requiredPreload
  * @param {Object} bidResponse
  */
-function bidWrapStepProtectByWrapping(scriptURL, requiredPreload, bidResponse) {
+function bidWrapStepProtectByWrapping (scriptURL, requiredPreload, bidResponse) {
   // Still prepend bid info, it's always helpful to have creative data in its payload
   bidWrapStepAugmentHtml(bidResponse);
 
@@ -117,7 +117,7 @@ class ConfigError extends Error { }
  * The function to be called upon module init. Depending on the passed config, initializes properly init/bid steps or throws ConfigError.
  * @param {Object} config
  */
-function readConfig(config) {
+function readConfig (config) {
   if (!config.params) {
     throw new ConfigError('Missing config parameters for clean.io RTD module provider.');
   }
@@ -157,7 +157,7 @@ function readConfig(config) {
  * The function to be called upon module init
  * Defined as a variable to be able to reset it naturally
  */
-let startBillableEvents = function() {
+let startBillableEvents = function () {
   // Upon clean.io submodule initialization, every winner bid is considered to be protected
   // and therefore, subjected to billing
   events.on(EVENTS.BID_WON, winnerBidResponse => {
@@ -177,7 +177,7 @@ let startBillableEvents = function() {
 /**
  * The function which performs submodule registration.
  */
-function beforeInit() {
+function beforeInit () {
   submodule('realTimeData', /** @type {RtdSubmodule} */ ({
     name: 'clean.io',
 

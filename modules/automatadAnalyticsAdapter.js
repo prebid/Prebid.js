@@ -200,11 +200,11 @@ const initializeQueue = () => {
 let baseAdapter = adapter({analyticsType: 'bundle'});
 let atmtdAdapter = Object.assign({}, baseAdapter, {
 
-  disableAnalytics() {
+  disableAnalytics () {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track ({eventType, args}) {
     const shouldNotPushToQueue = !self.qBeingUsed
     switch (eventType) {
       case EVENTS.AUCTION_INIT:

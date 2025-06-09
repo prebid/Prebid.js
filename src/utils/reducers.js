@@ -1,17 +1,17 @@
-export function simpleCompare(a, b) {
+export function simpleCompare (a, b) {
   if (a === b) return 0;
   return a < b ? -1 : 1;
 }
 
-export function keyCompare(key = (item) => item) {
+export function keyCompare (key = (item) => item) {
   return (a, b) => simpleCompare(key(a), key(b))
 }
 
-export function reverseCompare(compare = simpleCompare) {
+export function reverseCompare (compare = simpleCompare) {
   return (a, b) => -compare(a, b) || 0;
 }
 
-export function tiebreakCompare(...compares) {
+export function tiebreakCompare (...compares) {
   return function (a, b) {
     for (const cmp of compares) {
       const val = cmp(a, b);
@@ -21,11 +21,11 @@ export function tiebreakCompare(...compares) {
   }
 }
 
-export function minimum(compare = simpleCompare) {
+export function minimum (compare = simpleCompare) {
   return (min, item) => compare(item, min) < 0 ? item : min;
 }
 
-export function maximum(compare = simpleCompare) {
+export function maximum (compare = simpleCompare) {
   return minimum(reverseCompare(compare));
 }
 

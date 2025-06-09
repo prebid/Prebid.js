@@ -85,7 +85,7 @@ pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 // Allow publishers who enable user sync override to trigger their sync
 pbjsInstance.triggerUserSyncs = triggerUserSyncs;
 
-function checkDefinedPlacement(id) {
+function checkDefinedPlacement (id) {
   var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
     .reduce(flatten)
     .filter(uniques);
@@ -98,7 +98,7 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
-function validateSizes(sizes, targLength) {
+function validateSizes (sizes, targLength) {
   let cleanSizes = [];
   if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
     // check if an array of arrays or array of numbers
@@ -112,7 +112,7 @@ function validateSizes(sizes, targLength) {
 }
 
 // synchronize fields between mediaTypes[mediaType] and ortb2Imp[mediaType]
-export function syncOrtb2(adUnit, mediaType) {
+export function syncOrtb2 (adUnit, mediaType) {
   const ortb2Imp = deepAccess(adUnit, `ortb2Imp.${mediaType}`);
   const mediaTypes = deepAccess(adUnit, `mediaTypes.${mediaType}`);
 
@@ -147,7 +147,7 @@ export function syncOrtb2(adUnit, mediaType) {
   });
 }
 
-function validateBannerMediaType(adUnit) {
+function validateBannerMediaType (adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const banner = validatedAdUnit.mediaTypes.banner;
   const bannerSizes = banner.sizes == null ? null : validateSizes(banner.sizes);
@@ -191,7 +191,7 @@ function validateBannerMediaType(adUnit) {
   return validatedAdUnit;
 }
 
-function validateVideoMediaType(adUnit) {
+function validateVideoMediaType (adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const video = validatedAdUnit.mediaTypes.video;
   if (video.playerSize) {
@@ -215,13 +215,13 @@ function validateVideoMediaType(adUnit) {
   return validatedAdUnit;
 }
 
-function validateNativeMediaType(adUnit) {
-  function err(msg) {
+function validateNativeMediaType (adUnit) {
+  function err (msg) {
     logError(`Error in adUnit "${adUnit.code}": ${msg}. Removing native request from ad unit`, adUnit);
     delete validatedAdUnit.mediaTypes.native;
     return validatedAdUnit;
   }
-  function checkDeprecated(onDeprecated) {
+  function checkDeprecated (onDeprecated) {
     for (const key of ['sendTargetingKeys', 'types']) {
       if (native.hasOwnProperty(key)) {
         const res = onDeprecated(key);
@@ -264,7 +264,7 @@ function validateNativeMediaType(adUnit) {
   return validatedAdUnit;
 }
 
-function validateAdUnitPos(adUnit, mediaType) {
+function validateAdUnitPos (adUnit, mediaType) {
   let pos = adUnit?.mediaTypes?.[mediaType]?.pos;
 
   if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
@@ -277,7 +277,7 @@ function validateAdUnitPos(adUnit, mediaType) {
   return adUnit
 }
 
-function validateAdUnit(adUnit) {
+function validateAdUnit (adUnit) {
   const msg = (msg) => `adUnit.code '${adUnit.code}' ${msg}`;
 
   const mediaTypes = adUnit.mediaTypes;
@@ -349,7 +349,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
   return validatedAdUnits;
 }, 'checkAdUnitSetup');
 
-function fillAdUnitDefaults(adUnits) {
+function fillAdUnitDefaults (adUnits) {
   if (FEATURES.VIDEO) {
     adUnits.forEach(au => fillVideoDefaults(au))
   }
@@ -422,7 +422,7 @@ pbjsInstance.getConsentMetadata = function () {
   return allConsent.getConsentMeta()
 };
 
-function getBids(type) {
+function getBids (type) {
   const responses = auctionManager[type]()
     .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
@@ -574,7 +574,7 @@ pbjsInstance.removeAdUnit = function (adUnitCode) {
  * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-pbjsInstance.requestBids = (function() {
+pbjsInstance.requestBids = (function () {
   const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
@@ -600,7 +600,7 @@ pbjsInstance.requestBids = (function() {
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids(req = {}) {
+  return wrapHook(delegate, delayIfPrerendering(() => !config.getConfig('allowPrerendering'), function requestBids (req = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
@@ -624,7 +624,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
-  function auctionDone(bids, timedOut, auctionId) {
+  function auctionDone (bids, timedOut, auctionId) {
     if (typeof bidsBackHandler === 'function') {
       try {
         bidsBackHandler(bids, timedOut, auctionId);
@@ -712,12 +712,12 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   }
 }, 'startAuction');
 
-export function executeCallbacks(fn, reqBidsConfigObj) {
+export function executeCallbacks (fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
   runAll(enableAnalyticsCallbacks);
   fn.call(this, reqBidsConfigObj);
 
-  function runAll(queue) {
+  function runAll (queue) {
     var queued;
     while ((queued = queue.shift())) {
       queued();
@@ -1031,7 +1031,7 @@ pbjsInstance.que.push(() => listenMessagesFromCreative());
  * @alias module:pbjs.cmd.push
  * @alias module:pbjs.que.push
  */
-function quePush(command) {
+function quePush (command) {
   if (typeof command === 'function') {
     try {
       command.call();
@@ -1043,7 +1043,7 @@ function quePush(command) {
   }
 }
 
-function processQueue(queue) {
+function processQueue (queue) {
   queue.forEach(function (cmd) {
     if (typeof cmd.called === 'undefined') {
       try {

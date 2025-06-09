@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 import {hook} from '../../../src/hook.js';
 import AD_UNIT from 'test/fixtures/video/adUnit.json';
 
-describe('TargetVideo Ad Server Video', function() {
+describe('TargetVideo Ad Server Video', function () {
   before(() => {
     hook.ready();
   });

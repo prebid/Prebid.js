@@ -19,14 +19,14 @@ const TYPES = {
 
 const MAX_CALL_DEPTH = 20;
 
-export function GenericAnalytics() {
+export function GenericAnalytics () {
   const parent = AnalyticsAdapter({analyticsType: 'endpoint'});
   const {logError, logWarn} = prefixLog('Generic analytics:');
   let batch = [];
   let callDepth = 0;
   let options, handler, timer, translate;
 
-  function optionsAreValid(options) {
+  function optionsAreValid (options) {
     if (!options.url && !options.handler) {
       logError('options must specify either `url` or `handler`')
       return false;
@@ -60,7 +60,7 @@ export function GenericAnalytics() {
     return true;
   }
 
-  function processBatch() {
+  function processBatch () {
     const currentBatch = batch;
     batch = [];
     callDepth++;
@@ -85,7 +85,7 @@ export function GenericAnalytics() {
     }
   }
 
-  function translator(eventHandlers) {
+  function translator (eventHandlers) {
     if (!eventHandlers) {
       return (data) => data;
     }
@@ -103,10 +103,10 @@ export function GenericAnalytics() {
   return Object.assign(
     Object.create(parent),
     {
-      gvlid(config) {
+      gvlid (config) {
         return config?.options?.gvlid
       },
-      enableAnalytics(config) {
+      enableAnalytics (config) {
         if (optionsAreValid(config?.options || {})) {
           options = Object.assign({}, DEFAULTS, config.options);
           handler = options.handler || defaultHandler(options);
@@ -114,7 +114,7 @@ export function GenericAnalytics() {
           parent.enableAnalytics.call(this, config);
         }
       },
-      track(event) {
+      track (event) {
         const datum = translate(event);
         if (datum != null) {
           batch.push(datum);
@@ -133,10 +133,10 @@ export function GenericAnalytics() {
   )
 }
 
-export function defaultHandler({url, method, batchSize, ajax = ajaxBuilder()}) {
+export function defaultHandler ({url, method, batchSize, ajax = ajaxBuilder()}) {
   const callbacks = {
-    success() {},
-    error() {}
+    success () {},
+    error () {}
   }
   const extract = batchSize > 1 ? (events) => events : (events) => events[0];
   const serialize = method === 'GET' ? (data) => ({data: JSON.stringify(data)}) : (data) => JSON.stringify(data);

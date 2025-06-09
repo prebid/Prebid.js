@@ -20,7 +20,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   url: OTM_BID_URL,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -132,7 +132,7 @@ export const spec = {
  * @returns {null|*}
  * @private
  */
-function _getBidFloor(bid) {
+function _getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor ? bid.params.bidfloor : 0;
   }

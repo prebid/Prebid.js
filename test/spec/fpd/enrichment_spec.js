@@ -21,11 +21,11 @@ describe('FPD enrichment', () => {
     config.resetConfig();
   });
 
-  function fpd(ortb2 = {}) {
+  function fpd (ortb2 = {}) {
     return enrichFPD(Promise.resolve(ortb2));
   }
 
-  function mockWindow() {
+  function mockWindow () {
     return {
       innerHeight: 1,
       innerWidth: 1,
@@ -42,7 +42,7 @@ describe('FPD enrichment', () => {
     };
   }
 
-  function testWindows(getWindow, fn) {
+  function testWindows (getWindow, fn) {
     Object.entries({
       'top': ['getWindowTop', 'getWindowSelf'],
       'self': ['getWindowSelf', 'getWindowTop']
@@ -340,10 +340,10 @@ describe('FPD enrichment', () => {
     });
 
     Object.entries({
-      'not allowed'() {
+      'not allowed' () {
         isAllowed = false;
       },
-      'not supported'() {
+      'not supported' () {
         delete navigator.cookieDeprecationLabel
       }
     }).forEach(([t, setup]) => {

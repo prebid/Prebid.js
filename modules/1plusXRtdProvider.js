@@ -153,10 +153,10 @@ const getTargetingDataFromPapi = (papiUrl) => {
       }
     }
     const callbacks = {
-      success(responseText, response) {
+      success (responseText, response) {
         resolve(JSON.parse(response.response));
       },
-      error(error) {
+      error (error) {
         reject(error);
       }
     };

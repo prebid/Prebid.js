@@ -98,7 +98,7 @@ describe('adagio analytics adapter - adagio.js', () => {
 
       // Step 1-3: Send events
       Object.entries(testEvents).forEach(([ev, payload]) => events.emit(ev, payload));
-      function eventItem(eventName, args) {
+      function eventItem (eventName, args) {
         return sinon.match({
           action: 'pb-analytics-event',
           ts: sinon.match((val) => val !== undefined),
@@ -212,7 +212,7 @@ const AUCTION_INIT_ANOTHER = {
   'auctionId': AUCTION_ID,
   'timestamp': 1519767010567,
   'auctionStatus': 'inProgress',
-  'adUnits': [ {
+  'adUnits': [{
     'code': '/19968336/header-bid-tag-1',
     'mediaTypes': {
       'banner': {
@@ -229,7 +229,7 @@ const AUCTION_INIT_ANOTHER = {
       }
     },
     'sizes': [[640, 480]],
-    'bids': [ {
+    'bids': [{
       'bidder': 'another',
       'params': {
         'publisherId': '1001'
@@ -249,7 +249,7 @@ const AUCTION_INIT_ANOTHER = {
       'params': {
         'publisherId': '1001'
       },
-    }, ],
+    },],
     'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
     'ortb2Imp': {
       'ext': {
@@ -271,12 +271,12 @@ const AUCTION_INIT_ANOTHER = {
       }
     },
     'sizes': [[640, 480]],
-    'bids': [ {
+    'bids': [{
       'bidder': 'another',
       'params': {
         'publisherId': '1001'
       },
-    } ],
+    }],
     'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
     'ortb2Imp': {
       'ext': {
@@ -285,7 +285,7 @@ const AUCTION_INIT_ANOTHER = {
         }
       }
     },
-  } ],
+  }],
   'adUnitCodes': ['/19968336/header-bid-tag-1', '/19968336/footer-bid-tag-1'],
   'bidderRequests': [
     {
@@ -436,7 +436,7 @@ const AUCTION_INIT_ANOTHER = {
       'bidderCode': 'adagio',
       'auctionId': AUCTION_ID,
       'bidderRequestId': '1be65d7958826a',
-      'bids': [ {
+      'bids': [{
         'bidder': 'adagio',
         'params': {
           ...PARAMS_ADG
@@ -483,7 +483,7 @@ const AUCTION_INIT_CACHE = {
   'auctionId': AUCTION_ID_CACHE,
   'timestamp': 1519767010567,
   'auctionStatus': 'inProgress',
-  'adUnits': [ {
+  'adUnits': [{
     'code': '/19968336/header-bid-tag-1',
     'mediaTypes': {
       'banner': {
@@ -500,7 +500,7 @@ const AUCTION_INIT_CACHE = {
       }
     },
     'sizes': [[640, 480]],
-    'bids': [ {
+    'bids': [{
       'bidder': 'another',
       'params': {
         'publisherId': '1001'
@@ -510,7 +510,7 @@ const AUCTION_INIT_CACHE = {
       'params': {
         ...PARAMS_ADG
       },
-    }, ],
+    },],
     'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
     'ortb2Imp': {
       'ext': {
@@ -532,12 +532,12 @@ const AUCTION_INIT_CACHE = {
       }
     },
     'sizes': [[640, 480]],
-    'bids': [ {
+    'bids': [{
       'bidder': 'another',
       'params': {
         'publisherId': '1001'
       },
-    } ],
+    }],
     'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
     'ortb2Imp': {
       'ext': {
@@ -546,13 +546,13 @@ const AUCTION_INIT_CACHE = {
         }
       }
     },
-  } ],
+  }],
   'adUnitCodes': ['/19968336/header-bid-tag-1', '/19968336/footer-bid-tag-1'],
-  'bidderRequests': [ {
+  'bidderRequests': [{
     'bidderCode': 'another',
     'auctionId': AUCTION_ID_CACHE,
     'bidderRequestId': '1be65d7958826a',
-    'bids': [ {
+    'bids': [{
       'bidder': 'another',
       'params': {
         'publisherId': '1001',
@@ -611,7 +611,7 @@ const AUCTION_INIT_CACHE = {
     'bidderCode': 'adagio',
     'auctionId': AUCTION_ID_CACHE,
     'bidderRequestId': '1be65d7958826a',
-    'bids': [ {
+    'bids': [{
       'bidder': 'adagio',
       'params': {
         ...PARAMS_ADG
@@ -1168,10 +1168,10 @@ describe('adagio analytics adapter', () => {
       events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
       _internal.gamSlotCallback({
         slot: {
-          getAdUnitPath() {
+          getAdUnitPath () {
             return '/19968336/header-bid-tag-1'
           },
-          getSlotElementId() {
+          getSlotElementId () {
             return '/19968336/header-bid-tag-1'
           }
         },
@@ -1211,10 +1211,10 @@ describe('adagio analytics adapter', () => {
       events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
       _internal.gamSlotCallback({
         slot: {
-          getAdUnitPath() {
+          getAdUnitPath () {
             return '/19968336/header-bid-tag-1'
           },
-          getSlotElementId() {
+          getSlotElementId () {
             return '/19968336/header-bid-tag-1'
           }
         },

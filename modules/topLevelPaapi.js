@@ -28,11 +28,11 @@ config.getConfig('paapi', (cfg) => {
   }
 });
 
-function isPaapiBid(bid) {
+function isPaapiBid (bid) {
   return bid?.source === 'paapi';
 }
 
-function bidIfRenderable(bid) {
+function bidIfRenderable (bid) {
   if (bid && !bid.urn) {
     logWarn(MODULE_NAME, 'rendering in fenced frames is not supported. Consider using resolveToConfig: false', bid);
     return;
@@ -42,7 +42,7 @@ function bidIfRenderable(bid) {
 
 const forRenderStack = [];
 
-function renderPaapiHook(next, adId, forRender = true, override = PbPromise.resolve()) {
+function renderPaapiHook (next, adId, forRender = true, override = PbPromise.resolve()) {
   forRenderStack.push(forRender);
   const ids = parsePaapiAdId(adId);
   if (ids) {
@@ -60,7 +60,7 @@ function renderPaapiHook(next, adId, forRender = true, override = PbPromise.reso
   next(adId, forRender, override);
 }
 
-function renderOverrideHook(next, bidPm) {
+function renderOverrideHook (next, bidPm) {
   const forRender = forRenderStack.pop();
   if (moduleConfig?.overrideWinner) {
     bidPm = bidPm.then((bid) => {
@@ -82,7 +82,7 @@ function renderOverrideHook(next, bidPm) {
   next(bidPm);
 }
 
-export function getRenderingDataHook(next, bid, options) {
+export function getRenderingDataHook (next, bid, options) {
   if (isPaapiBid(bid)) {
     next.bail({
       width: bid.width,
@@ -94,7 +94,7 @@ export function getRenderingDataHook(next, bid, options) {
   }
 }
 
-export function markWinningBidHook(next, bid) {
+export function markWinningBidHook (next, bid) {
   if (isPaapiBid(bid)) {
     emit(EVENTS.BID_WON, bid);
     next.bail();
@@ -103,7 +103,7 @@ export function markWinningBidHook(next, bid) {
   }
 }
 
-function getBaseAuctionConfig() {
+function getBaseAuctionConfig () {
   if (moduleConfig?.auctionConfig) {
     return Object.assign({
       resolveToConfig: false
@@ -111,7 +111,7 @@ function getBaseAuctionConfig() {
   }
 }
 
-function onAuctionConfig(auctionId, auctionConfigs) {
+function onAuctionConfig (auctionId, auctionConfigs) {
   const base = getBaseAuctionConfig();
   if (base) {
     Object.entries(auctionConfigs).forEach(([adUnitCode, auctionConfig]) => {
@@ -123,7 +123,7 @@ function onAuctionConfig(auctionId, auctionConfigs) {
   }
 }
 
-export function parsePaapiSize(size) {
+export function parsePaapiSize (size) {
   /* From https://github.com/WICG/turtledove/blob/main/FLEDGE.md#12-interest-group-attributes:
    *  Each size has the format {width: widthVal, height: heightVal},
    *  where the values can have either pixel units (e.g. 100 or '100px') or screen dimension coordinates (e.g. 100sw or 100sh).
@@ -138,11 +138,11 @@ export function parsePaapiSize(size) {
   return null;
 }
 
-export function getPaapiAdId(auctionId, adUnitCode) {
+export function getPaapiAdId (auctionId, adUnitCode) {
   return `paapi:/${auctionId.replace(/:/g, '::')}/:/${adUnitCode.replace(/:/g, '::')}`;
 }
 
-export function parsePaapiAdId(adId) {
+export function parsePaapiAdId (adId) {
   const match = /^paapi:\/(.*)\/:\/(.*)$/.exec(adId);
   if (match) {
     return [match[1], match[2]].map(s => s.replace(/::/g, ':'));
@@ -157,7 +157,7 @@ export function parsePaapiAdId(adId) {
  * @param raa
  * @return {Promise<{[p: string]: any}>}
  */
-export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(...args)) {
+export function getPAAPIBids (filters, raa = (...args) => navigator.runAdAuction(...args)) {
   return Promise.all(
     Object.entries(expandFilters(filters))
       .map(([adUnitCode, auctionId]) => {
@@ -205,7 +205,7 @@ getGlobal().getPAAPIBids = (filters) => getPAAPIBids(filters);
 
 export const topLevelPAAPI = {
   name: MODULE_NAME,
-  init(params) {
+  init (params) {
     getPAAPIConfig = params.getPAAPIConfig;
     expandFilters = params.expandFilters;
   },

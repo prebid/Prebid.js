@@ -170,7 +170,7 @@ export const spec = {
   }
 };
 
-function storeData(data, name, stringify = true) {
+function storeData (data, name, stringify = true) {
   const value = stringify ? JSON.stringify(data) : data;
   if (storage.hasLocalStorage()) {
     storage.setDataInLocalStorage(name, value);
@@ -183,17 +183,17 @@ function storeData(data, name, stringify = true) {
   }
 }
 
-function getData(name, remove = true) {
+function getData (name, remove = true) {
   let data = [];
   return data;
 }
 
-function pixelSyncPossibility() {
+function pixelSyncPossibility () {
   const userSync = config.getConfig('userSync');
   return userSync && userSync.pixelEnabled && userSync.syncEnabled ? userSync.syncsPerBidder : -1;
 }
 
-function visibleOnLoad(element) {
+function visibleOnLoad (element) {
   if (element) {
     const topPos = getBoundingClientRect(element).top;
     return topPos < screen.height && topPos >= window.top.pageYOffset ? 1 : 0;
@@ -201,7 +201,7 @@ function visibleOnLoad(element) {
   return '';
 }
 
-function getLcuid() {
+function getLcuid () {
   let lcuid = getData(LS_KEYS.LC_UID, false)[0];
   if (!lcuid) {
     const random = ('4' + new Date().getTime() + String(Math.floor(Math.random() * 1000000000))).substring(0, 18);
@@ -211,17 +211,17 @@ function getLcuid() {
   return lcuid;
 }
 
-function encodedParamValue(value) {
+function encodedParamValue (value) {
   const requiredStringify = typeof deepClone(value) === 'object';
   return encodeURIComponent(requiredStringify ? JSON.stringify(value) : value);
 }
 
-function getEngineUrl() {
+function getEngineUrl () {
   const ENGINE_URL = 'https://engine.widespace.com/map/engine/dynadreq';
   return window.wisp && window.wisp.ENGINE_URL ? window.wisp.ENGINE_URL : ENGINE_URL;
 }
 
-function getTopWindowReferrer() {
+function getTopWindowReferrer () {
   try {
     return window.top.document.referrer;
   } catch (e) {

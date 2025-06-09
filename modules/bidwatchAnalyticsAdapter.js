@@ -23,11 +23,11 @@ let initOptions = {}
 let endpoint = 'https://default'
 let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
 
-function getAdapterNameForAlias(aliasName) {
+function getAdapterNameForAlias (aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
-function filterAttributes(arg, removead) {
+function filterAttributes (arg, removead) {
   let response = {};
   if (typeof arg == 'object') {
     if (typeof arg['bidderCode'] == 'string') {
@@ -53,7 +53,7 @@ function filterAttributes(arg, removead) {
   return response;
 }
 
-function cleanAuctionEnd(args) {
+function cleanAuctionEnd (args) {
   let response = {};
   let filteredObj;
   let objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
@@ -75,12 +75,12 @@ function cleanAuctionEnd(args) {
   return response;
 }
 
-function cleanCreatives(args) {
+function cleanCreatives (args) {
   let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
   return filterAttributes(stringArgs, false);
 }
 
-function enhanceMediaType(arg) {
+function enhanceMediaType (arg) {
   saveEvents['bidRequested'].forEach((bidRequested) => {
     if (bidRequested['auctionId'] == arg['auctionId'] && Array.isArray(bidRequested['bids'])) {
       bidRequested['bids'].forEach((bid) => {
@@ -91,21 +91,21 @@ function enhanceMediaType(arg) {
   return arg;
 }
 
-function addBidResponse(args) {
+function addBidResponse (args) {
   let eventType = BID_RESPONSE;
   let argsCleaned = cleanCreatives(args); ;
   if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
   allEvents[eventType].push(argsCleaned);
 }
 
-function addBidRequested(args) {
+function addBidRequested (args) {
   let eventType = BID_REQUESTED;
   let argsCleaned = filterAttributes(args, true);
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(argsCleaned);
 }
 
-function addTimeout(args) {
+function addTimeout (args) {
   let eventType = BID_TIMEOUT;
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
@@ -120,7 +120,7 @@ function addTimeout(args) {
   auctionEnd[eventType].push(argsCleaned);
 }
 
-export const dereferenceWithoutRenderer = function(args) {
+export const dereferenceWithoutRenderer = function (args) {
   if (args.renderer) {
     let tmp = args.renderer;
     delete args.renderer;
@@ -145,7 +145,7 @@ export const dereferenceWithoutRenderer = function(args) {
   return JSON.stringify(args);
 }
 
-function addAuctionEnd(args) {
+function addAuctionEnd (args) {
   let eventType = AUCTION_END;
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
@@ -154,7 +154,7 @@ function addAuctionEnd(args) {
   auctionEnd[eventType].push(argsCleaned);
 }
 
-function handleBidWon(args) {
+function handleBidWon (args) {
   args = enhanceMediaType(filterAttributes(JSON.parse(dereferenceWithoutRenderer(args)), true));
   let increment = args['cpm'];
   if (typeof saveEvents['auctionEnd'] == 'object') {
@@ -178,7 +178,7 @@ function handleBidWon(args) {
   ajax(endpoint + '.bidwatch.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
 }
 
-function handleAuctionEnd() {
+function handleAuctionEnd () {
   ajax(endpoint + '.bidwatch.io/analytics/auctions', function (data) {
     let list = JSON.parse(data);
     if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
@@ -197,7 +197,7 @@ function handleAuctionEnd() {
 }
 
 let bidwatchAnalytics = Object.assign(adapter({url, analyticsType}), {
-  track({
+  track ({
     eventType,
     args
   }) {

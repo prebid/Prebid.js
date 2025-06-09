@@ -25,8 +25,8 @@ const placementTypes = {
   'inImage': PLACEMENT_TYPE_IN_IMAGE
 };
 
-function buildBidRequests(validBidRequests) {
-  return _map(validBidRequests, function(validBidRequest) {
+function buildBidRequests (validBidRequests) {
+  return _map(validBidRequests, function (validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
@@ -41,7 +41,7 @@ function buildBidRequests(validBidRequests) {
   })
 }
 
-function buildBid(bidData) {
+function buildBid (bidData) {
   const bid = {
     requestId: bidData.bidId,
     cpm: bidData.price,
@@ -104,7 +104,7 @@ function buildBid(bidData) {
   return bid;
 }
 
-function wrapAd(bid, bidData) {
+function wrapAd (bid, bidData) {
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -139,7 +139,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return (
       !!bid.params.placeId &&
       !!bid.params.placement &&
@@ -158,7 +158,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
    */
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     const payload = {
       // TODO: is 'page' the right value here?
       url: bidderRequest.refererInfo.page,
@@ -190,12 +190,12 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let bidRequests = JSON.parse(bidRequest.data).bidRequests;
     const serverBody = serverResponse.body;
 
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
-      return _map(serverBody.bids, function(bid) {
+      return _map(serverBody.bids, function (bid) {
         let rawBid = ((bidRequests) || []).find(function (item) {
           return item.bidId === bid.bidId;
         });

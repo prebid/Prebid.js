@@ -33,7 +33,7 @@ export const growthCodeIdSubmodule = {
    * @param {{string}} value
    * @returns {{growthCodeId: {string}}|undefined}
    */
-  decode(value) {
+  decode (value) {
     return value && value !== '' ? { 'growthCodeId': value } : undefined;
   },
 
@@ -43,7 +43,7 @@ export const growthCodeIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     const configParams = (config && config.params) || {};
 
     let ids = [];

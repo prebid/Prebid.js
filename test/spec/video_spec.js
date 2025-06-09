@@ -23,7 +23,7 @@ describe('video.js', function () {
   });
 
   describe('fillVideoDefaults', () => {
-    function fillDefaults(videoMediaType = {}) {
+    function fillDefaults (videoMediaType = {}) {
       const adUnit = {mediaTypes: {video: videoMediaType}};
       fillVideoDefaults(adUnit);
       return adUnit.mediaTypes.video;

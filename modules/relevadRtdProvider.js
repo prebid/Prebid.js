@@ -35,7 +35,7 @@ export let serverData = {}; // Tracks data returned from Relevad RTD server
  * @param      {Object}    moduleConfig      Rtd module configuration
  * @param      {Object}    userConsent       user GDPR consent
  */
-export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
+export function getBidRequestData (reqBidsConfigObj, onDone, moduleConfig, userConsent) {
   moduleConfig.params = moduleConfig.params || {};
   moduleConfig.params.partnerid = moduleConfig.params.partnerid ? moduleConfig.params.partnerid : 1;
 
@@ -83,7 +83,7 @@ export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userCo
  * @param      {Object}  ortb2     The global ORTB structure
  * @param      {Object}  rtdData   Rtd segments and categories
  */
-export function setGlobalOrtb2(ortb2, rtdData) {
+export function setGlobalOrtb2 (ortb2, rtdData) {
   try {
     let addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(addOrtb2) && mergeDeep(ortb2, addOrtb2);
@@ -99,7 +99,7 @@ export function setGlobalOrtb2(ortb2, rtdData) {
  * @param  {string}      prefix  Site path prefix
  * @return {Object} ORTB2 fragment ready to be merged into global or bidder ORTB
  */
-function composeOrtb2Data(rtdData, prefix) {
+function composeOrtb2Data (rtdData, prefix) {
   const segments = rtdData.segments;
   const categories = rtdData.categories;
   const content = rtdData.content;
@@ -130,7 +130,7 @@ function composeOrtb2Data(rtdData, prefix) {
  * @param      {Object}  bidder     The bidder name
  * @param      {Object}  rtdData    RTD categories and segments
  */
-function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
+function setBidderSiteAndContent (bidderOrtbFragment, bidder, rtdData) {
   try {
     let addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(rtdData.segments) && deepSetValue(addOrtb2, 'user.ext.data.relevad_rtd', rtdData.segments);
@@ -153,7 +153,7 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
  * @param      {string}  minscore       The minimum value
  * @return     {Array<string>} Array of category names with scores greater or equal to minscore
  */
-function filterByScore(dict, minscore) {
+function filterByScore (dict, minscore) {
   if (dict && !isEmpty(dict)) {
     minscore = minscore && typeof minscore == 'number' ? minscore : 30;
     try {
@@ -173,7 +173,7 @@ function filterByScore(dict, minscore) {
  * @param      {string}  minscore  The minimum relevancy score
  * @return     {object}  Filtered RTD
  */
-function getFiltered(data, minscore) {
+function getFiltered (data, minscore) {
   let relevadData = {'segments': []};
 
   minscore = minscore && typeof minscore == 'number' ? minscore : 30;
@@ -209,7 +209,7 @@ function getFiltered(data, minscore) {
  * @param      {Object}  data          The Rtd data
  * @param      {Object}  moduleConfig  The Rtd module configuration
  */
-export function addRtdData(reqBids, data, moduleConfig) {
+export function addRtdData (reqBids, data, moduleConfig) {
   moduleConfig = moduleConfig || {};
   moduleConfig.params = moduleConfig.params || {};
   const globalMinScore = moduleConfig.params.hasOwnProperty('minscore') ? moduleConfig.params.minscore : 30;
@@ -293,7 +293,7 @@ export function addRtdData(reqBids, data, moduleConfig) {
  * @param      {JSON}  data  Bids information
  * @param      {object}  config  Configuraion
  */
-function sendBids(data, config) {
+function sendBids (data, config) {
   let dataJson = JSON.stringify(data);
 
   if (!config.dryrun) {
@@ -309,7 +309,7 @@ function sendBids(data, config) {
  * @param      {object}  config          Module configuration
  * @param      {object}  userConsent     User GDPR consent object
  */
-function onAuctionEnd(auctionDetails, config, userConsent) {
+function onAuctionEnd (auctionDetails, config, userConsent) {
   let adunitObj = {};
   let adunits = [];
 
@@ -349,7 +349,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
   sendBids(data, config);
 }
 
-export function init(config) {
+export function init (config) {
   return true;
 }
 

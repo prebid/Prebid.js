@@ -2,7 +2,7 @@ import {fillNativeImp, fillNativeResponse} from '../../../libraries/ortbConverte
 import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
 
 describe('pbjs -> ortb native requests', () => {
-  function toNative(bidRequest, context) {
+  function toNative (bidRequest, context) {
     const imp = {};
     fillNativeImp(imp, bidRequest, context);
     return imp;

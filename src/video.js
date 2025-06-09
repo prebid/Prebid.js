@@ -12,42 +12,42 @@ export const INSTREAM = 'instream';
  * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
  */
 export const ORTB_VIDEO_PARAMS = new Map([
-  [ 'mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') ],
-  [ 'minduration', isInteger ],
-  [ 'maxduration', isInteger ],
-  [ 'startdelay', isInteger ],
-  [ 'maxseq', isInteger ],
-  [ 'poddur', isInteger ],
-  [ 'protocols', isArrayOfNums ],
-  [ 'w', isInteger ],
-  [ 'h', isInteger ],
-  [ 'podid', isStr ],
-  [ 'podseq', isInteger ],
-  [ 'rqddurs', isArrayOfNums ],
-  [ 'placement', isInteger ], // deprecated, see plcmt
-  [ 'plcmt', isInteger ],
-  [ 'linearity', isInteger ],
-  [ 'skip', value => [1, 0].includes(value) ],
-  [ 'skipmin', isInteger ],
-  [ 'skipafter', isInteger ],
-  [ 'sequence', isInteger ], // deprecated
-  [ 'slotinpod', isInteger ],
-  [ 'mincpmpersec', isNumber ],
-  [ 'battr', isArrayOfNums ],
-  [ 'maxextended', isInteger ],
-  [ 'minbitrate', isInteger ],
-  [ 'maxbitrate', isInteger ],
-  [ 'boxingallowed', isInteger ],
-  [ 'playbackmethod', isArrayOfNums ],
-  [ 'playbackend', isInteger ],
-  [ 'delivery', isArrayOfNums ],
-  [ 'pos', isInteger ],
-  [ 'api', isArrayOfNums ],
-  [ 'companiontype', isArrayOfNums ],
-  [ 'poddedupe', isArrayOfNums ]
+  ['mimes', value => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string')],
+  ['minduration', isInteger],
+  ['maxduration', isInteger],
+  ['startdelay', isInteger],
+  ['maxseq', isInteger],
+  ['poddur', isInteger],
+  ['protocols', isArrayOfNums],
+  ['w', isInteger],
+  ['h', isInteger],
+  ['podid', isStr],
+  ['podseq', isInteger],
+  ['rqddurs', isArrayOfNums],
+  ['placement', isInteger], // deprecated, see plcmt
+  ['plcmt', isInteger],
+  ['linearity', isInteger],
+  ['skip', value => [1, 0].includes(value)],
+  ['skipmin', isInteger],
+  ['skipafter', isInteger],
+  ['sequence', isInteger], // deprecated
+  ['slotinpod', isInteger],
+  ['mincpmpersec', isNumber],
+  ['battr', isArrayOfNums],
+  ['maxextended', isInteger],
+  ['minbitrate', isInteger],
+  ['maxbitrate', isInteger],
+  ['boxingallowed', isInteger],
+  ['playbackmethod', isArrayOfNums],
+  ['playbackend', isInteger],
+  ['delivery', isArrayOfNums],
+  ['pos', isInteger],
+  ['api', isArrayOfNums],
+  ['companiontype', isArrayOfNums],
+  ['poddedupe', isArrayOfNums]
 ]);
 
-export function fillVideoDefaults(adUnit) {
+export function fillVideoDefaults (adUnit) {
   const video = adUnit?.mediaTypes?.video;
   if (video != null && video.plcmt == null) {
     if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
@@ -67,7 +67,7 @@ export function fillVideoDefaults(adUnit) {
  * @param {Function} onInvalidParam - The callback function to be called with key, value, and adUnit.
  * @returns {void}
  */
-export function validateOrtbVideoFields(adUnit, onInvalidParam) {
+export function validateOrtbVideoFields (adUnit, onInvalidParam) {
   const videoParams = adUnit?.mediaTypes?.video;
 
   if (!isPlainObject(videoParams)) {
@@ -106,7 +106,7 @@ export function validateOrtbVideoFields(adUnit, onInvalidParam) {
  * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`
  * @return {Boolean} If object is valid
  */
-export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
+export function isValidVideoBid (bid, {index = auctionManager.index} = {}) {
   const videoMediaType = index.getMediaTypes(bid)?.video;
   const context = videoMediaType && videoMediaType?.context;
   const useCacheKey = videoMediaType && videoMediaType?.useCacheKey;
@@ -117,7 +117,7 @@ export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
   return checkVideoBidSetup(bid, adUnit, videoMediaType, context, useCacheKey);
 }
 
-export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context, useCacheKey) {
+export const checkVideoBidSetup = hook('sync', function (bid, adUnit, videoMediaType, context, useCacheKey) {
   if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     const { url, useLocal } = config.getConfig('cache') || {};

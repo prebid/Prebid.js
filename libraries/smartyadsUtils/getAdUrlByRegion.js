@@ -4,7 +4,7 @@ const adUrls = {
   SGP: 'https://n6.smartyads.com/?c=o&m=prebid&secret_key=prebid_js'
 };
 
-export function getAdUrlByRegion(bid) {
+export function getAdUrlByRegion (bid) {
   let adUrl;
 
   if (bid.params.region && adUrls[bid.params.region]) {

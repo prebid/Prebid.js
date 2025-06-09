@@ -65,7 +65,7 @@ describe('Deepintent DPES System', () => {
     before(() => {
       attachIdSystem(deepintentDpesSubmodule);
     })
-    it('deepintentId', function() {
+    it('deepintentId', function () {
       const userId = {
         deepintentId: 'some-random-id-value'
       };

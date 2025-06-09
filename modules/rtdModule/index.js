@@ -194,10 +194,10 @@ let _userConsent;
  * @param {number} [submodule.gvlid] The Global Vendor List ID (GVLID) of the RTD submodule.
  * @returns {function(): void} A de-registration function that will unregister the module when called.
  */
-export function attachRealTimeDataProvider(submodule) {
+export function attachRealTimeDataProvider (submodule) {
   registeredSubModules.push(submodule);
   GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
-  return function detach() {
+  return function detach () {
     const idx = registeredSubModules.indexOf(submodule)
     if (idx >= 0) {
       registeredSubModules.splice(idx, 1);
@@ -211,7 +211,7 @@ export function attachRealTimeDataProvider(submodule) {
  */
 const setEventsListeners = (function () {
   let registered = false;
-  return function setEventsListeners() {
+  return function setEventsListeners () {
     if (!registered) {
       Object.entries({
         [EVENTS.AUCTION_INIT]: ['onAuctionInitEvent'],
@@ -236,7 +236,7 @@ const setEventsListeners = (function () {
   }
 })();
 
-export function init(config) {
+export function init (config) {
   const confListener = config.getConfig(MODULE_NAME, ({realTimeData}) => {
     if (!realTimeData.dataProviders) {
       logError('missing parameters for real time module');
@@ -252,7 +252,7 @@ export function init(config) {
   });
 }
 
-function getConsentData() {
+function getConsentData () {
   return {
     gdpr: gdprDataHandler.getConsentData(),
     usp: uspDataHandler.getConsentData(),
@@ -265,7 +265,7 @@ function getConsentData() {
  * call each sub module init function by config order
  * if no init function / init return failure / module not configured - remove it from submodules list
  */
-function initSubModules() {
+function initSubModules () {
   _userConsent = getConsentData();
   let subModulesByOrder = [];
   _dataProviders.forEach(provider => {
@@ -286,7 +286,7 @@ function initSubModules() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj) {
+export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData (fn, reqBidsConfigObj) {
   _userConsent = getConsentData();
 
   const relevantSubModules = [];
@@ -322,7 +322,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent, timeout);
   });
 
-  function onGetBidRequestDataCallback() {
+  function onGetBidRequestDataCallback () {
     if (isDone) {
       return;
     }
@@ -334,7 +334,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
   }
 
-  function exitHook() {
+  function exitHook () {
     if (isDone) {
       return;
     }
@@ -352,7 +352,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
  * this function used to place key values on primary ad server per ad unit
  * @param {Object} auction object received on auction end event
  */
-export function getAdUnitTargeting(auction) {
+export function getAdUnitTargeting (auction) {
   const relevantSubModules = subModules.filter(sm => typeof sm.getTargetingData === 'function');
   if (!relevantSubModules.length) {
     return;
@@ -390,7 +390,7 @@ export function getAdUnitTargeting(auction) {
  * @param {Array} arr - objects array
  * @return {Object} merged object
  */
-export function deepMerge(arr) {
+export function deepMerge (arr) {
   if (!Array.isArray(arr) || !arr.length) {
     return {};
   }
@@ -411,7 +411,7 @@ export function deepMerge(arr) {
   }, {});
 }
 
-export function onDataDeletionRequest(next, ...args) {
+export function onDataDeletionRequest (next, ...args) {
   subModules.forEach((sm) => {
     if (typeof sm.onDataDeletionRequest === 'function') {
       try {

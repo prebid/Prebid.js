@@ -122,7 +122,7 @@ export const spec = {
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} bid The bid that won the auction
    */
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (bid.nurl) {
       triggerPixel(bid.nurl);
     }
@@ -134,7 +134,7 @@ export const spec = {
  *
  * @param bid
  */
-function setOutstreamRenderer(bid) {
+function setOutstreamRenderer (bid) {
   let props = {};
   if (bid.vastUrl) {
     props.url = bid.vastUrl;

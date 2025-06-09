@@ -116,7 +116,7 @@ const getRendererForBid = (bidRequest, bidResponse) => {
 /* Converter config, applying custom extensions */
 const converter = ortbConverter({
   context: { netRevenue: true, ttl: 3600 },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     // Apply custom extensions to the imp
@@ -127,7 +127,7 @@ const converter = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const ortbRequest = buildRequest(imps, bidderRequest, context);
     const { bidRequests = [] } = context;
     const firstBidRequest = bidRequests?.[0];
@@ -156,7 +156,7 @@ const converter = ortbConverter({
 
     return ortbRequest;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     // Setting context: media type
     context.mediaType = deepAccess(bid, 'ext.prebid.type');
     const bidResponse = buildBidResponse(bid, context);
@@ -217,7 +217,7 @@ export const spec = {
     const bids = converter.fromORTB({response: ortbResponse.body, request: request.data}).bids;
     return bids
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
     const uid = ensureUid(gdprConsent);
     if (hasPurpose1Consent(gdprConsent)) {
@@ -231,14 +231,14 @@ export const spec = {
     }
     return syncs
   },
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     const payload = {
       event: EVENTS.TIMEOUT,
       error: timeoutData,
     };
     sendLog(payload, LOGGING_PERCENTAGE_ERROR);
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     const payload = {
       event: EVENTS.BID_WON,
       publisherId: bid.params?.[0]?.publisherId,
@@ -249,7 +249,7 @@ export const spec = {
     };
     sendLog(payload, LOGGING_PERCENTAGE_REGULAR);
   },
-  onSetTargeting: function(bid) {
+  onSetTargeting: function (bid) {
     const payload = {
       event: EVENTS.BID_WON,
       publisherId: bid.params?.[0]?.publisherId,
@@ -260,14 +260,14 @@ export const spec = {
     };
     sendLog(payload, LOGGING_PERCENTAGE_REGULAR);
   },
-  onBidderError: function({ error }) {
+  onBidderError: function ({ error }) {
     const payload = {
       event: EVENTS.ERROR,
       error: error,
     };
     sendLog(payload, LOGGING_PERCENTAGE_ERROR);
   },
-  onAdRenderSucceeded: function(bid) {
+  onAdRenderSucceeded: function (bid) {
     const payload = {
       event: EVENTS.BID_WON,
       publisherId: bid.params?.[0]?.publisherId,

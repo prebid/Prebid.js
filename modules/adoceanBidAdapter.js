@@ -7,9 +7,9 @@ const URL_SAFE_FIELDS = {
   slaves: true
 };
 
-function buildEndpointUrl(emiter, payloadMap) {
+function buildEndpointUrl (emiter, payloadMap) {
   const payload = [];
-  _each(payloadMap, function(v, k) {
+  _each(payloadMap, function (v, k) {
     payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)));
   });
 
@@ -17,7 +17,7 @@ function buildEndpointUrl(emiter, payloadMap) {
   return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
 }
 
-function buildRequest(masterBidRequests, masterId, gdprConsent) {
+function buildRequest (masterBidRequests, masterId, gdprConsent) {
   let emiter;
   const payload = {
     id: masterId,
@@ -35,7 +35,7 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
 
   const bidIdMap = {};
   const uniquePartLength = 10;
-  _each(masterBidRequests, function(bid, slaveId) {
+  _each(masterBidRequests, function (bid, slaveId) {
     if (!emiter) {
       emiter = bid.params.emiter;
     }
@@ -60,11 +60,11 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
 }
 
 const SCHAIN_FIELDS = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
-function serializeSupplyChain(schain) {
+function serializeSupplyChain (schain) {
   const header = `${schain.ver},${schain.complete}!`;
 
   const serializedNodes = [];
-  _each(schain.nodes, function(node) {
+  _each(schain.nodes, function (node) {
     const serializedNode = SCHAIN_FIELDS
       .map(fieldName => {
         if (fieldName === 'ext') {
@@ -83,7 +83,7 @@ function serializeSupplyChain(schain) {
   return header + serializedNodes.join('!');
 }
 
-function assignToMaster(bidRequest, bidRequestsByMaster) {
+function assignToMaster (bidRequest, bidRequestsByMaster) {
   const masterId = bidRequest.params.masterId;
   const slaveId = bidRequest.params.slaveId;
   const masterBidRequests = bidRequestsByMaster[masterId] = bidRequestsByMaster[masterId] || [{}];
@@ -97,7 +97,7 @@ function assignToMaster(bidRequest, bidRequestsByMaster) {
   masterBidRequests[i][slaveId] = bidRequest;
 }
 
-function interpretResponse(placementResponse, bidRequest, bids) {
+function interpretResponse (placementResponse, bidRequest, bids) {
   const requestId = bidRequest.bidIdMap[placementResponse.id];
   if (!placementResponse.error && requestId) {
     let adCode = '<script type="application/javascript">(function(){var wu="' + (placementResponse.winUrl || '') + '",su="' + (placementResponse.statsUrl || '') + '".replace(/\\[TIMESTAMP\\]/,(new Date()).getTime());';
@@ -128,7 +128,7 @@ function interpretResponse(placementResponse, bidRequest, bids) {
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const requiredParams = ['slaveId', 'masterId', 'emiter'];
     if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
       return false;
@@ -137,16 +137,16 @@ export const spec = {
     return !!bid.mediaTypes.banner;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequestsByMaster = {};
     let requests = [];
 
-    _each(validBidRequests, function(bidRequest) {
+    _each(validBidRequests, function (bidRequest) {
       assignToMaster(bidRequest, bidRequestsByMaster);
     });
 
-    _each(bidRequestsByMaster, function(masterRequests, masterId) {
-      _each(masterRequests, function(instanceRequests) {
+    _each(bidRequestsByMaster, function (masterRequests, masterId) {
+      _each(masterRequests, function (instanceRequests) {
         requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
       });
     });
@@ -154,11 +154,11 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let bids = [];
 
     if (isArray(serverResponse.body)) {
-      _each(serverResponse.body, function(placementResponse) {
+      _each(serverResponse.body, function (placementResponse) {
         interpretResponse(placementResponse, bidRequest, bids);
       });
     }

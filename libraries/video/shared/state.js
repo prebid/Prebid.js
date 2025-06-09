@@ -10,7 +10,7 @@
  * @summary factory to create a simple state object
  * @returns {State}
  */
-export default function stateFactory() {
+export default function stateFactory () {
   let state = {};
 
   /**
@@ -18,7 +18,7 @@ export default function stateFactory() {
    * @summary updates the state
    * @param {Object} stateUpdate
    */
-  function updateState(stateUpdate) {
+  function updateState (stateUpdate) {
     Object.assign(state, stateUpdate);
   }
 
@@ -27,7 +27,7 @@ export default function stateFactory() {
    * @summary provides the current state
    * @returns {Object} the current state
    */
-  function getState() {
+  function getState () {
     return state;
   }
 
@@ -35,7 +35,7 @@ export default function stateFactory() {
    * @function State#clearState
    * @summary erases the current state
    */
-  function clearState() {
+  function clearState () {
     state = {};
   }
 

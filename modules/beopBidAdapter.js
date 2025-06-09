@@ -39,7 +39,7 @@ export const spec = {
    * @param {Bid} bid The Bid params
    * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const id = bid.params.accountId || bid.params.networkId;
     if (id === null || typeof id === 'undefined') {
       return false
@@ -56,7 +56,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest Common params for each bidRequests
    * @return ServerRequest Info describing the request to the BeOp's server
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const slots = validBidRequests.map((bid) => beOpRequestSlotsMaker(bid, bidderRequest));
     const firstPartyData = bidderRequest.ortb2 || {};
     const psegs = firstPartyData.user?.ext?.permutive || firstPartyData.user?.ext?.data?.permutive || [];
@@ -107,13 +107,13 @@ export const spec = {
       data: payloadString
     }
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     if (serverResponse && serverResponse.body && isArray(serverResponse.body.bids) && serverResponse.body.bids.length > 0) {
       return serverResponse.body.bids;
     }
     return [];
   },
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     if (timeoutData === null || typeof timeoutData === 'undefined' || Object.keys(timeoutData).length === 0) {
       return;
     }
@@ -128,7 +128,7 @@ export const spec = {
       search: trackingParams
     }));
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (bid === null || typeof bid === 'undefined' || Object.keys(bid).length === 0) {
       return;
     }
@@ -150,7 +150,7 @@ export const spec = {
    * @param {*} serverResponses A successful response from the server.
    * @return {UserSync[]} An array of syncs that should be executed.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
 
     if (serverResponses.length > 0) {
@@ -173,7 +173,7 @@ export const spec = {
   }
 }
 
-function buildTrackingParams(data, info, value) {
+function buildTrackingParams (data, info, value) {
   let params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
@@ -190,7 +190,7 @@ function buildTrackingParams(data, info, value) {
   };
 }
 
-function beOpRequestSlotsMaker(bid, bidderRequest) {
+function beOpRequestSlotsMaker (bid, bidderRequest) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
   const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
   let floor;
@@ -219,16 +219,16 @@ function beOpRequestSlotsMaker(bid, bidderRequest) {
 }
 
 const protocolRelativeRegExp = /^\/\//
-function isProtocolRelativeUrl(url) {
+function isProtocolRelativeUrl (url) {
   return url && url.match(protocolRelativeRegExp) != null;
 }
 
 const withProtocolRegExp = /[a-z]{1,}:\/\//
-function isNoProtocolUrl(url) {
+function isNoProtocolUrl (url) {
   return url && url.match(withProtocolRegExp) == null;
 }
 
-function ensureProtocolInUrl(url, defaultProtocol) {
+function ensureProtocolInUrl (url, defaultProtocol) {
   if (isProtocolRelativeUrl(url)) {
     return `${defaultProtocol}${url}`;
   } else if (isNoProtocolUrl(url)) {
@@ -242,7 +242,7 @@ function ensureProtocolInUrl(url, defaultProtocol) {
  * Ex deepAccess(window, 'top.location.href') might throw if it crosses origins
  * so here is a lenient version
  */
-function safeDeepAccess(obj, path) {
+function safeDeepAccess (obj, path) {
   try {
     return deepAccess(obj, path)
   } catch (_e) {
@@ -250,7 +250,7 @@ function safeDeepAccess(obj, path) {
   }
 }
 
-function getPageUrl(refererInfo, window) {
+function getPageUrl (refererInfo, window) {
   refererInfo = refererInfo || getRefererInfo();
   let pageUrl = refererInfo.canonicalUrl || safeDeepAccess(window, 'top.location.href') || deepAccess(window, 'location.href');
   // Ensure the protocol is present (looks like sometimes the extracted pageUrl misses it)

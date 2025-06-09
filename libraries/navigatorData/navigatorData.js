@@ -1,4 +1,4 @@
-export function getHLen(win = window) {
+export function getHLen (win = window) {
   let hLen;
   try {
     hLen = win.top.history.length;
@@ -8,7 +8,7 @@ export function getHLen(win = window) {
   return hLen;
 }
 
-export function getHC(win = window) {
+export function getHC (win = window) {
   let hc;
   try {
     hc = win.top.navigator.hardwareConcurrency;
@@ -18,7 +18,7 @@ export function getHC(win = window) {
   return hc;
 }
 
-export function getDM(win = window) {
+export function getDM (win = window) {
   let dm;
   try {
     dm = win.top.navigator.deviceMemory;

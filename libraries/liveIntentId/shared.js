@@ -13,15 +13,15 @@ export const LI_PROVIDER_DOMAIN = 'liveintent.com';
 export const DEFAULT_REQUESTED_ATTRIBUTES = { 'nonId': true };
 export const DEFAULT_TREATMENT_RATE = 0.95;
 
-export function parseRequestedAttributes(overrides) {
-  function renameAttribute(attribute) {
+export function parseRequestedAttributes (overrides) {
+  function renameAttribute (attribute) {
     if (attribute === 'fpid') {
       return 'idCookie';
     } else {
       return attribute;
     };
   }
-  function createParameterArray(config) {
+  function createParameterArray (config) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [renameAttribute(k)] : []);
   }
   if (typeof overrides === 'object') {
@@ -31,7 +31,7 @@ export function parseRequestedAttributes(overrides) {
   }
 }
 
-export function makeSourceEventToSend(configParams) {
+export function makeSourceEventToSend (configParams) {
   const sourceEvent = {}
   let nonEmpty = false
   if (typeof configParams.emailHash === 'string') {
@@ -56,7 +56,7 @@ export function makeSourceEventToSend(configParams) {
   }
 }
 
-export function composeResult(value, config) {
+export function composeResult (value, config) {
   if (config.activatePartialTreatment) {
     if (window.liModuleEnabled) {
       return composeIdObject(value);
@@ -68,7 +68,7 @@ export function composeResult(value, config) {
   }
 }
 
-function composeIdObject(value) {
+function composeIdObject (value) {
   const result = {};
 
   // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
@@ -148,7 +148,7 @@ function composeIdObject(value) {
   return result
 }
 
-export function setUpTreatment(config) {
+export function setUpTreatment (config) {
   // If the treatment decision has not been made yet
   // and Prebid is configured to make this decision.
   if (window.liModuleEnabled === undefined && config.activatePartialTreatment) {
@@ -166,12 +166,12 @@ export const eids = {
   },
   ...UID2_EIDS,
   'lipb': {
-    getValue: function(data) {
+    getValue: function (data) {
       return data.lipbid;
     },
     source: 'liveintent.com',
     atype: 3,
-    getEidExt: function(data) {
+    getEidExt: function (data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
           segments: data.segments
@@ -182,10 +182,10 @@ export const eids = {
   'bidswitch': {
     source: 'bidswitch.net',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -194,10 +194,10 @@ export const eids = {
   'medianet': {
     source: 'media.net',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -206,10 +206,10 @@ export const eids = {
   'magnite': {
     source: 'rubiconproject.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -218,10 +218,10 @@ export const eids = {
   'index': {
     source: 'liveintent.indexexchange.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -230,10 +230,10 @@ export const eids = {
   'openx': {
     source: 'openx.net',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -242,10 +242,10 @@ export const eids = {
   'pubmatic': {
     source: 'pubmatic.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -254,10 +254,10 @@ export const eids = {
   'sovrn': {
     source: 'liveintent.sovrn.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -266,17 +266,17 @@ export const eids = {
   'fpid': {
     source: 'fpid.liveintent.com',
     atype: 1,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     }
   },
   'sharethrough': {
     source: 'sharethrough.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -285,10 +285,10 @@ export const eids = {
   'sonobi': {
     source: 'liveintent.sonobi.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -297,10 +297,10 @@ export const eids = {
   'triplelift': {
     source: 'liveintent.triplelift.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -309,10 +309,10 @@ export const eids = {
   'zetassp': {
     source: 'zeta-ssp.liveintent.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -321,10 +321,10 @@ export const eids = {
   'vidazoo': {
     source: 'liveintent.vidazoo.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }

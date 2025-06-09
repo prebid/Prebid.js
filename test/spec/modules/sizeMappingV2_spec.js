@@ -108,7 +108,7 @@ const AD_UNITS = [{
 }];
 
 // deletes the sizeConfig property from the adUnits either at the Ad Unit level or at the Bids level or at both.
-function deleteSizeConfig(adUnits, config) {
+function deleteSizeConfig (adUnits, config) {
   const { adUnitLevel, bidsLevel } = config;
   adUnits.forEach(adUnit => {
     const mediaTypes = adUnit.mediaTypes;

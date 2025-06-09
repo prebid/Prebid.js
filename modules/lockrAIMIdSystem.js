@@ -27,7 +27,7 @@ export const lockrAIMCodeVersion = '1.0';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME })
 
-function createLogger(logger, prefix) {
+function createLogger (logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
   }
@@ -44,7 +44,7 @@ export const lockrAIMSubmodule = {
    */
   name: MODULE_NAME,
 
-  init() {
+  init () {
     _logInfo('lockrAIM Initialization complete');
   },
 
@@ -55,7 +55,7 @@ export const lockrAIMSubmodule = {
    * @param {ConsentData|undefined} consentData
    * @returns {lockrAIMId}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     if (consentData?.gdpr?.gdprApplies === true) {
       _logWarn('lockrAIM is not intended for use where GDPR applies. The lockrAIM module will not run');
       return undefined;
@@ -87,7 +87,7 @@ class LockrAIMApiClient {
   static expiryDateKeys = [];
   static canRefreshToken = false;
 
-  constructor(opts, logInfo, logWarn, prebidStorageManager, gppString) {
+  constructor (opts, logInfo, logWarn, prebidStorageManager, gppString) {
     this._baseUrl = opts.baseUrl;
     this._appID = opts.appID;
     this._email = opts.email;
@@ -99,7 +99,7 @@ class LockrAIMApiClient {
     this.initializeRefresher();
   }
 
-  async generateToken(type = 'email', value) {
+  async generateToken (type = 'email', value) {
     const url = this._baseUrl + '/publisher/app/v1/identityLockr/generate-tokens';
     let rejectPromise;
     const promise = new Promise((resolve, reject) => {
@@ -146,7 +146,7 @@ class LockrAIMApiClient {
     return promise;
   }
 
-  async initializeRefresher() {
+  async initializeRefresher () {
     setInterval(() => {
       LockrAIMApiClient.expiryDateKeys.forEach(expiryItem => {
         const currentMillis = new Date().getTime();

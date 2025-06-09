@@ -60,7 +60,7 @@ let _eventQueue = [_pageView];
 let invisiblyAdapter = Object.assign(
   adapter({ url: DEFAULT_EVENT_URL, analyticsType }),
   {
-    track({ eventType, args }) {
+    track ({ eventType, args }) {
       handleEvent(eventType, args);
     },
     sendEvent,
@@ -92,7 +92,7 @@ invisiblyAdapter.disableAnalytics = function () {
   invisiblyAdapter.originDisableAnalytics();
 };
 
-function flush() {
+function flush () {
   if (!invisiblyAnalyticsEnabled) {
     return;
   }
@@ -128,7 +128,7 @@ function flush() {
   }
 }
 
-function handleEvent(eventType, eventArgs) {
+function handleEvent (eventType, eventArgs) {
   if (eventArgs) {
     eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
   } else {
@@ -203,7 +203,7 @@ function handleEvent(eventType, eventArgs) {
   sendEvent(invisiblyEvent);
 }
 
-function sendEvent(event) {
+function sendEvent (event) {
   _eventQueue.push(event);
   logInfo(`${analyticsName}Event ${event.eventType}:`, event);
 

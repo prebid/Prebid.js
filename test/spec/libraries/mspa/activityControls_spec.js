@@ -2,7 +2,7 @@ import {mspaRule, setupRules, isTransmitUfpdConsentDenied, isTransmitGeoConsentD
 import {ruleRegistry} from '../../../../src/activities/rules.js';
 
 describe('Consent interpretation', () => {
-  function mkConsent(flags) {
+  function mkConsent (flags) {
     return Object.assign({
       // not covered, opt in to targeted, sale, and share, all notices given, opt into precise geo
       Gpc: 0,
@@ -187,7 +187,7 @@ describe('Consent interpretation', () => {
   });
 
   describe('isTransmitGeoConsentDenied', () => {
-    function geoConsent(geoOptOut, flags) {
+    function geoConsent (geoOptOut, flags) {
       const consent = mkConsent(flags);
       consent.SensitiveDataProcessing[7] = geoOptOut;
       return consent;
@@ -222,7 +222,7 @@ describe('mspaRule', () => {
 
   describe('when SID is applicable', () => {
     let consent, denies;
-    function mkRule() {
+    function mkRule () {
       return mspaRule([1, 2], () => consent, denies, () => [2])
     }
 
@@ -279,7 +279,7 @@ describe('setupRules', () => {
     };
   });
 
-  function runSetup(api, sids, normalize) {
+  function runSetup (api, sids, normalize) {
     return setupRules(api, sids, normalize, rules, registerRule, () => consent)
   }
 

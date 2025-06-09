@@ -1,4 +1,4 @@
-export function getUserSyncParams(gdprConsent, uspConsent, gppConsent) {
+export function getUserSyncParams (gdprConsent, uspConsent, gppConsent) {
   let params = {};
 
   if (gdprConsent) {

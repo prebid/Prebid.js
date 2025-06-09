@@ -46,7 +46,7 @@ export const spec = {
 
 registerBidder(spec);
 
-async function getapi(url) {
+async function getapi (url) {
   try {
     const response = await fetch(url);
     var data = await response.json();

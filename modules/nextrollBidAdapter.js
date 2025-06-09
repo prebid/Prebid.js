@@ -99,13 +99,13 @@ export const spec = {
   }
 }
 
-function _getBanner(bidRequest) {
+function _getBanner (bidRequest) {
   let sizes = _getSizes(bidRequest);
   if (sizes === undefined) return undefined;
   return {format: sizes};
 }
 
-function _getNative(mediaTypeNative) {
+function _getNative (mediaTypeNative) {
   if (mediaTypeNative === undefined) return undefined;
   let assets = _getNativeAssets(mediaTypeNative);
   if (assets === undefined || assets.length == 0) return undefined;
@@ -140,7 +140,7 @@ const ASSET_KIND_MAP = {
   data: _getDataAsset,
 };
 
-function _getAsset(mediaTypeNative, assetMap) {
+function _getAsset (mediaTypeNative, assetMap) {
   const asset = mediaTypeNative[assetMap.key];
   if (asset === undefined) return undefined;
   const assetFunc = ASSET_KIND_MAP[assetMap.kind];
@@ -151,11 +151,11 @@ function _getAsset(mediaTypeNative, assetMap) {
   };
 }
 
-function _getTitleAsset(title, _assetMap) {
+function _getTitleAsset (title, _assetMap) {
   return {len: title.len || 0};
 }
 
-function _getMinAspectRatio(aspectRatio, property) {
+function _getMinAspectRatio (aspectRatio, property) {
   if (!isPlainObject(aspectRatio)) return 1;
 
   const ratio = aspectRatio['ratio_' + property];
@@ -167,7 +167,7 @@ function _getMinAspectRatio(aspectRatio, property) {
   return 1;
 }
 
-function _getImageAsset(image, assetMap) {
+function _getImageAsset (image, assetMap) {
   const sizes = image.sizes;
   const aspectRatio = image.aspect_ratios ? image.aspect_ratios[0] : undefined;
 
@@ -180,20 +180,20 @@ function _getImageAsset(image, assetMap) {
   };
 }
 
-function _getDataAsset(data, assetMap) {
+function _getDataAsset (data, assetMap) {
   return {
     type: assetMap.type,
     len: data.len || 0
   };
 }
 
-function _getNativeAssets(mediaTypeNative) {
+function _getNativeAssets (mediaTypeNative) {
   return NATIVE_ASSET_MAP
     .map(assetMap => _getAsset(mediaTypeNative, assetMap))
     .filter(asset => asset !== undefined);
 }
 
-function _getFloor(bidRequest) {
+function _getFloor (bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
   }
@@ -210,7 +210,7 @@ function _getFloor(bidRequest) {
   return null;
 }
 
-function _buildResponse(bidResponse, bid) {
+function _buildResponse (bidResponse, bid) {
   let response = {
     requestId: bidResponse.id,
     cpm: bid.price,
@@ -238,7 +238,7 @@ function _buildResponse(bidResponse, bid) {
 const privacyLink = 'https://app.adroll.com/optout/personalized';
 const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
-function _getNativeResponse(adm, price) {
+function _getNativeResponse (adm, price) {
   let baseResponse = {
     clickTrackers: (adm.link && adm.link.clicktrackers) || [],
     jstracker: adm.jstracker || [],
@@ -256,7 +256,7 @@ function _getNativeResponse(adm, price) {
   }, baseResponse);
 }
 
-function _getAssetResponse(asset, assetMap) {
+function _getAssetResponse (asset, assetMap) {
   switch (assetMap.kind) {
     case 'title':
       return asset.title.text;
@@ -273,7 +273,7 @@ function _getAssetResponse(asset, assetMap) {
   }
 }
 
-function _getSite(bidRequest, topLocation) {
+function _getSite (bidRequest, topLocation) {
   return {
     page: topLocation.href,
     domain: topLocation.hostname,
@@ -283,13 +283,13 @@ function _getSite(bidRequest, topLocation) {
   };
 }
 
-function _getSeller(bidRequest) {
+function _getSeller (bidRequest) {
   return {
     id: getBidIdParameter('sellerId', bidRequest.params)
   };
 }
 
-function _getSizes(bidRequest) {
+function _getSizes (bidRequest) {
   if (!isArray(bidRequest.sizes)) {
     return undefined;
   }
@@ -301,12 +301,12 @@ function _getSizes(bidRequest) {
   });
 }
 
-function _isValidSize(size) {
+function _isValidSize (size) {
   const isNumber = x => typeof x === 'number';
   return (size.length === 2 && isNumber(size[0]) && isNumber(size[1]));
 }
 
-function _getDevice(_bidRequest) {
+function _getDevice (_bidRequest) {
   return {
     ua: navigator.userAgent,
     language: navigator['language'],
@@ -315,7 +315,7 @@ function _getDevice(_bidRequest) {
   };
 }
 
-function _getRegs(bidderRequest) {
+function _getRegs (bidderRequest) {
   if (!bidderRequest || !bidderRequest.uspConsent) {
     return undefined;
   }
@@ -326,7 +326,7 @@ function _getRegs(bidderRequest) {
   };
 }
 
-function _getOs(userAgent) {
+function _getOs (userAgent) {
   const osTable = {
     'android': /android/i,
     'ios': /iphone|ipad/i,

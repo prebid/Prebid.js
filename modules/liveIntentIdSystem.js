@@ -1,4 +1,4 @@
-function loadModule() {
+function loadModule () {
   // Load appropriate module based on the build flag. Constant folding ensures
   // that the other one will not be included in the bundle.
   // eslint-disable-next-line no-constant-condition

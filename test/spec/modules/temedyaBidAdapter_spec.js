@@ -4,7 +4,7 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
 
-export const _getUrlVars = function(url) {
+export const _getUrlVars = function (url) {
   var hash;
   var myJson = {};
   var hashes = url.slice(url.indexOf('?') + 1).split('&');
@@ -15,11 +15,11 @@ export const _getUrlVars = function(url) {
   return myJson;
 }
 
-describe('temedya adapter', function() {
+describe('temedya adapter', function () {
   let bidRequests;
   let nativeBidRequests;
 
-  beforeEach(function() {
+  beforeEach(function () {
     bidRequests = [
       {
         bidder: 'temedya',
@@ -67,7 +67,7 @@ describe('temedya adapter', function() {
       expect(isValid).to.equal(true);
     });
 
-    it('invalid bid case: widgetId and countId is not passed', function() {
+    it('invalid bid case: widgetId and countId is not passed', function () {
       let validBid = {
         bidder: 'temedya',
         params: {
@@ -97,7 +97,7 @@ describe('temedya adapter', function() {
       expect(nativeBidRequests).to.deep.equal(originalBidRequests);
     });
 
-    it('Request params check', function() {
+    it('Request params check', function () {
       let request = spec.buildRequests(bidRequests)[0];
       const data = _getUrlVars(request.url)
       data.type = 'native';

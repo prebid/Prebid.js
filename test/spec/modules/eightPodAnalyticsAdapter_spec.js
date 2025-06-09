@@ -8,26 +8,26 @@ const {
   BID_WON
 } = EVENTS;
 
-describe('eightPodAnalyticAdapter', function() {
+describe('eightPodAnalyticAdapter', function () {
   let sandbox;
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
     adapterManager.enableAnalytics({
       provider: 'eightPod'
     });
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
     analyticsAdapter.disableAnalytics();
   });
 
-  describe('setup page', function() {
+  describe('setup page', function () {
     let getDataFromLocalStorageStub, localStorageIsEnabledStub;
     let addEventListenerSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       getDataFromLocalStorageStub = sandbox.stub(
         storage,
@@ -36,13 +36,13 @@ describe('eightPodAnalyticAdapter', function() {
       addEventListenerSpy = sandbox.spy(window, 'addEventListener');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       getDataFromLocalStorageStub.restore();
       localStorageIsEnabledStub.restore();
       addEventListenerSpy.restore();
     });
 
-    it('should subscribe on messageEvents', function() {
+    it('should subscribe on messageEvents', function () {
       getDataFromLocalStorageStub.returns(JSON.stringify([]));
       sandbox.spy(eightPodAnalytics, 'eventSubscribe');
       sandbox.spy(eightPodAnalytics, 'getEventFromLocalStorage');
@@ -53,7 +53,7 @@ describe('eightPodAnalyticAdapter', function() {
       sandbox.assert.callCount(analyticsAdapter.getEventFromLocalStorage, 1);
     });
 
-    it('should receive saved events list', function() {
+    it('should receive saved events list', function () {
       const eventList = [1, 2, 3];
       getDataFromLocalStorageStub.returns(JSON.stringify(eventList));
       sandbox.spy(eightPodAnalytics, 'eventSubscribe');
@@ -63,19 +63,19 @@ describe('eightPodAnalyticAdapter', function() {
     });
   });
 
-  describe('track event', function() {
+  describe('track event', function () {
     let setupPageStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       setupPageStub = sandbox.stub(eightPodAnalytics, 'setupPage');
       eightPodAnalytics.resetContext();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       setupPageStub.restore();
     });
 
-    it('should NOT call setup page and get context', function() {
+    it('should NOT call setup page and get context', function () {
       eightPodAnalytics.track({
         eventType: 'wrong_event_type',
       })
@@ -84,7 +84,7 @@ describe('eightPodAnalyticAdapter', function() {
       expect(analyticsAdapter.getContext()).to.deep.equal({})
     });
 
-    it('should call setup page and get context', function() {
+    it('should call setup page and get context', function () {
       eightPodAnalytics.track({
         eventType: BID_WON,
         args: {
@@ -115,23 +115,23 @@ describe('eightPodAnalyticAdapter', function() {
     });
   });
 
-  describe('trackEvent', function() {
+  describe('trackEvent', function () {
     let getContextStub, getTimeStub;
     const adUnitCode = 'adUnitCode';
 
-    beforeEach(function() {
+    beforeEach(function () {
       getContextStub = sandbox.stub(eightPodAnalytics, 'getContext');
       getTimeStub = sandbox.stub(Date.prototype, 'getTime').returns(1234);
       eightPodAnalytics.resetQueue();
       eightPodAnalytics.resetContext();
     });
 
-    afterEach(function() {
+    afterEach(function () {
       getContextStub.restore();
       getTimeStub.restore();
     });
 
-    it('should add event to the queue', function() {
+    it('should add event to the queue', function () {
       getContextStub.returns({adUnitCode: {}});
 
       const event1 = {

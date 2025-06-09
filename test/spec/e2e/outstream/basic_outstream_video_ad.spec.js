@@ -30,7 +30,7 @@ setupTest({
     expect(targetingKeys.hb_adid_appnexus).to.be.a('string');
   });
 
-  it('should render the video ad on the page', async function() {
+  it('should render the video ad on the page', async function () {
     // skipping test in Edge due to wdio bug: https://github.com/webdriverio/webdriverio/issues/3880
     // the iframe for the video does not have a name property and id is generated automatically...
     if (browser.capabilities.browserName !== 'edge') {

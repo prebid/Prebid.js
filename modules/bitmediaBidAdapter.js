@@ -78,7 +78,7 @@ const CONVERTER = ortbConverter({
     mediaType: BANNER,
   },
 
-  imp(buildImp, bidRequest) {
+  imp (buildImp, bidRequest) {
     logInfo(BIDDER_CODE, 'Building imp object for bidRequest', bidRequest);
     const sizes = bidRequest.sizes;
 
@@ -107,7 +107,7 @@ const CONVERTER = ortbConverter({
     return {id: bidRequest.bidId, imps};
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     logInfo(BIDDER_CODE, 'Building request with imps and bidderRequest', imps, bidderRequest);
 
     const requestImps = imps[0].imps;// Unpacking: each imp has the same id, but different banner size
@@ -149,7 +149,7 @@ const CONVERTER = ortbConverter({
     return reqData;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     logInfo(BIDDER_CODE, 'Processing bid response in converter', bid);
     const bidResponse = {
       requestId: bid.impid,

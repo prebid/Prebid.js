@@ -12,7 +12,7 @@ export const EVENT_TYPE_WIN = 500;
  *  in the ORTB native 1.2 spec (https://www.iab.com/wp-content/uploads/2018/03/OpenRTB-Native-Ads-Specification-Final-1.2.pdf, section 5.8)
  * @returns {{[type: string]: {[method: string]: string[]}}}
  */
-export function parseEventTrackers(eventTrackers) {
+export function parseEventTrackers (eventTrackers) {
   return (eventTrackers ?? []).reduce((tally, {event, method, url}) => {
     const trackersForType = tally[event] = tally[event] ?? {};
     const trackersForMethod = trackersForType[method] = trackersForType[method] ?? [];

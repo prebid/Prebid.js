@@ -29,7 +29,7 @@ import { submodule } from '../src/hook.js';
  * @param {Object} utils
  * @returns {VideoProvider}
  */
-export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callbackStorage_, utils, sharedUtils) {
+export function JWPlayerProvider (config, jwplayer_, adState_, timeState_, callbackStorage_, utils, sharedUtils) {
   const jwplayer = jwplayer_;
   let player = null;
   let playerVersion = null;
@@ -53,7 +53,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let height = null;
   let width = null;
 
-  function init() {
+  function init () {
     if (!jwplayer) {
       triggerSetupFailure({ code: -1 }); // TODO: come up with error code schema- player is absent
       return;
@@ -81,11 +81,11 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     }
   }
 
-  function getId() {
+  function getId () {
     return divId;
   }
 
-  function getOrtbVideo() {
+  function getOrtbVideo () {
     if (!player) {
       return;
     }
@@ -127,7 +127,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
       battr: adConfig.battr,
       maxextended: -1, // extension is allowed, and there is no time limit imposed.
       boxingallowed: 1,
-      playbackmethod: [ utils.getPlaybackMethod(config) ],
+      playbackmethod: [utils.getPlaybackMethod(config)],
       playbackend: 1, // TODO: need to account for floating player - https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player , https://developer.jwplayer.com/jwplayer/docs/jw8-player-configuration-reference#section-float-on-scroll
       // companionad - TODO add in future version
       // companiontype - TODO add in future version
@@ -157,7 +157,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     return video;
   }
 
-  function getOrtbContent() {
+  function getOrtbContent () {
     if (!player) {
       return;
     }
@@ -201,7 +201,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     return content;
   }
 
-  function setAdTagUrl(adTagUrl, options) {
+  function setAdTagUrl (adTagUrl, options) {
     if (!player) {
       return;
     }
@@ -209,7 +209,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     player.playAd(adTagUrl || options.adXml, options);
   }
 
-  function setAdXml(vastXml, options) {
+  function setAdXml (vastXml, options) {
     if (!player || !vastXml) {
       return;
     }
@@ -217,7 +217,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     player.loadAdXml(vastXml, options);
   }
 
-  function onEvent(externalEventName, callback, basePayload) {
+  function onEvent (externalEventName, callback, basePayload) {
     if (externalEventName === SETUP_COMPLETE) {
       setupCompleteCallbacks.push(callback);
       return;
@@ -475,7 +475,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     callbackStorage.storeCallback(externalEventName, eventHandler, callback);
   }
 
-  function offEvent(event, callback) {
+  function offEvent (event, callback) {
     const jwEvent = utils.getJwEvent(event);
     if (!callback) {
       player.off(jwEvent);
@@ -490,7 +490,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     player.off(jwEvent, eventHandler);
   }
 
-  function destroy() {
+  function destroy () {
     if (!player) {
       return;
     }
@@ -510,14 +510,14 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     destroy
   };
 
-  function setupPlayer(config) {
+  function setupPlayer (config) {
     if (!config) {
       return;
     }
     player.setup(utils.getJwConfig(config)).on('ready', triggerSetupComplete).on('setupError', triggerSetupFailure);
   }
 
-  function triggerSetupComplete() {
+  function triggerSetupComplete () {
     if (!setupCompleteCallbacks.length) {
       return;
     }
@@ -527,7 +527,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     setupCompleteCallbacks = [];
   }
 
-  function getSetupCompletePayload() {
+  function getSetupCompletePayload () {
     return {
       divId,
       playerVersion,
@@ -539,7 +539,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
     };
   }
 
-  function triggerSetupFailure(e) {
+  function triggerSetupFailure (e) {
     if (!setupFailedCallbacks.length) {
       return;
     }
@@ -577,7 +577,7 @@ export default jwplayerSubmoduleFactory;
 // HELPERS
 
 export const utils = {
-  getJwConfig: function(config) {
+  getJwConfig: function (config) {
     if (!config) {
       return;
     }
@@ -614,7 +614,7 @@ export const utils = {
     return jwConfig;
   },
 
-  getPlayerHeight: function(player, config) {
+  getPlayerHeight: function (player, config) {
     let height;
 
     if (player.getHeight) {
@@ -629,7 +629,7 @@ export const utils = {
     return config.height;
   },
 
-  getPlayerWidth: function(player, config) {
+  getPlayerWidth: function (player, config) {
     let width;
 
     if (player.getWidth) {
@@ -647,7 +647,7 @@ export const utils = {
     }
   },
 
-  getPlayerSizeFromAspectRatio: function(player, config) {
+  getPlayerSizeFromAspectRatio: function (player, config) {
     const aspectRatio = config.aspectratio;
     let percentageWidth = config.width;
 
@@ -687,7 +687,7 @@ export const utils = {
     };
   },
 
-  getJwEvent: function(eventName) {
+  getJwEvent: function (eventName) {
     switch (eventName) {
       case SETUP_COMPLETE:
         return 'ready';
@@ -730,7 +730,7 @@ export const utils = {
     }
   },
 
-  getSkipParams: function(adConfig) {
+  getSkipParams: function (adConfig) {
     const skipParams = {};
     const skipoffset = adConfig.skipoffset;
     if (skipoffset !== undefined) {
@@ -744,14 +744,14 @@ export const utils = {
     return skipParams;
   },
 
-  getSupportedMediaTypes: function(mediaTypes = []) {
+  getSupportedMediaTypes: function (mediaTypes = []) {
     const el = document.createElement('video');
     return mediaTypes
       .filter(mediaType => el.canPlayType(mediaType))
       .concat(VPAID_MIME_TYPE); // Always allow VPAIDs.
   },
 
-  getStartDelay: function() {
+  getStartDelay: function () {
     // todo calculate
     // need to know which ad we are bidding on
     // Might have to implement and set in Pb-video ; would required ad unit as param.
@@ -763,7 +763,7 @@ export const utils = {
    * @param {Object} player
    * @return {PLACEMENT|OrtbVideoParams.placement|undefined}
    */
-  getPlacement: function(adConfig, player) {
+  getPlacement: function (adConfig, player) {
     if (!adConfig.outstream) {
       // https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player for more info on outstream
       return PLACEMENT.INSTREAM;
@@ -781,7 +781,7 @@ export const utils = {
     return PLACEMENT[placement.toUpperCase()];
   },
 
-  getPlaybackMethod: function({ autoplay, mute, autoplayAdsMuted }) {
+  getPlaybackMethod: function ({ autoplay, mute, autoplayAdsMuted }) {
     if (autoplay) {
       // Determine whether player is going to start muted.
       const isMuted = mute || autoplayAdsMuted; // todo autoplayAdsMuted only applies to preRoll
@@ -802,7 +802,7 @@ export const utils = {
    * @param {string} adClient - The identifier of the ad plugin requesting the bid
    * @returns {boolean} - support of omid
    */
-  isOmidSupported: function(adClient) {
+  isOmidSupported: function (adClient) {
     const omidIsLoaded = window.OmidSessionClient !== undefined;
     return omidIsLoaded && adClient === 'vast';
   },
@@ -812,7 +812,7 @@ export const utils = {
    * @param {Object} player
    * @returns {string|undefined} ISO 639 language code.
    */
-  getIsoLanguageCode: function(player) {
+  getIsoLanguageCode: function (player) {
     const audioTracks = player.getAudioTracks();
     if (!audioTracks || !audioTracks.length) {
       return;
@@ -884,10 +884,10 @@ export const utils = {
 /**
  * @returns {CallbackStorage}
  */
-export function callbackStorageFactory() {
+export function callbackStorageFactory () {
   let storage = {};
 
-  function storeCallback(eventType, eventHandler, callback) {
+  function storeCallback (eventType, eventHandler, callback) {
     let eventHandlers = storage[eventType];
     if (!eventHandlers) {
       eventHandlers = storage[eventType] = {};
@@ -896,7 +896,7 @@ export function callbackStorageFactory() {
     eventHandlers[callback] = eventHandler;
   }
 
-  function getCallback(eventType, callback) {
+  function getCallback (eventType, callback) {
     let eventHandlers = storage[eventType];
     if (!eventHandlers) {
       return;
@@ -907,7 +907,7 @@ export function callbackStorageFactory() {
     return eventHandler;
   }
 
-  function clearStorage() {
+  function clearStorage () {
     storage = {};
   }
 
@@ -923,10 +923,10 @@ export function callbackStorageFactory() {
 /**
  * @returns {State}
  */
-export function adStateFactory() {
+export function adStateFactory () {
   const adState = Object.assign({}, stateFactory());
 
-  function updateForEvent(event) {
+  function updateForEvent (event) {
     const updates = {
       adTagUrl: event.tag,
       offset: event.adPosition,
@@ -965,7 +965,7 @@ export function adStateFactory() {
 
   adState.updateForEvent = updateForEvent;
 
-  function convertPlacementToOrtbCode(placement) {
+  function convertPlacementToOrtbCode (placement) {
     switch (placement) {
       case 'instream':
         return PLACEMENT.INSTREAM;
@@ -986,7 +986,7 @@ export function adStateFactory() {
     }
   }
 
-  function parseImaAdWrapperIds(adEvent) {
+  function parseImaAdWrapperIds (adEvent) {
     const ima = adEvent.ima;
     const ad = ima && ima.ad;
     if (!ad) {
@@ -1009,10 +1009,10 @@ export function adStateFactory() {
 /**
  * @returns {State}
  */
-export function timeStateFactory() {
+export function timeStateFactory () {
   const timeState = Object.assign({}, stateFactory());
 
-  function updateForEvent(event) {
+  function updateForEvent (event) {
     const { position, duration } = event;
     this.updateState({
       time: position,
@@ -1023,7 +1023,7 @@ export function timeStateFactory() {
 
   timeState.updateForEvent = updateForEvent;
 
-  function getPlaybackMode(duration) {
+  function getPlaybackMode (duration) {
     if (duration > 0) {
       return PLAYBACK_MODE.VOD;
     } else if (duration < 0) {

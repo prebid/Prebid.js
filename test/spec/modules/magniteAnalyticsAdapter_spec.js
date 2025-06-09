@@ -510,7 +510,7 @@ describe('magnite analytics adapter', function () {
   });
 
   describe('when handling events', function () {
-    function performStandardAuction({
+    function performStandardAuction ({
       gptEvents = [gptSlotRenderEnded0],
       auctionId = MOCK.AUCTION_INIT.auctionId,
       eventDelay = rubiConf.analyticsEventDelay,
@@ -1679,7 +1679,7 @@ describe('magnite analytics adapter', function () {
           { ...MOCK.BID_WON, auctionId: 'auctionId-3', transactionId: 'tid-3', bidId: 'bidId-3', requestId: 'bidId-3' },
         ];
       });
-      function runBasicAuction(auctionNum) {
+      function runBasicAuction (auctionNum) {
         events.emit(AUCTION_INIT, auctionInits[auctionNum]);
         events.emit(BID_REQUESTED, bidRequests[auctionNum]);
         events.emit(BID_RESPONSE, bidResponses[auctionNum]);

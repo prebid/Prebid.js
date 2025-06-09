@@ -47,7 +47,7 @@ export const markWinningBid = hook('sync', function (bid) {
  * @param [data.bid] bid response object that failed to render
  * @param [data.id] adId that failed to render
  */
-export function emitAdRenderFail({ reason, message, bid, id }) {
+export function emitAdRenderFail ({ reason, message, bid, id }) {
   const data = { reason, message };
   if (bid) {
     data.bid = bid;
@@ -68,7 +68,7 @@ export function emitAdRenderFail({ reason, message, bid, id }) {
  * @param [data.bid] bid response object for the ad that was rendered
  * @param [data.id] adId that was rendered.
  */
-export function emitAdRenderSucceeded({ doc, bid, id }) {
+export function emitAdRenderSucceeded ({ doc, bid, id }) {
   const data = { doc };
   if (bid) data.bid = bid;
   if (id) data.adId = id;
@@ -78,7 +78,7 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   events.emit(AD_RENDER_SUCCEEDED, data);
 }
 
-export function handleCreativeEvent(data, bidResponse) {
+export function handleCreativeEvent (data, bidResponse) {
   switch (data.event) {
     case EVENTS.AD_RENDER_FAILED:
       emitAdRenderFail({
@@ -100,7 +100,7 @@ export function handleCreativeEvent(data, bidResponse) {
   }
 }
 
-export function handleNativeMessage(data, bidResponse, {resizeFn, fireTrackers = fireNativeTrackers}) {
+export function handleNativeMessage (data, bidResponse, {resizeFn, fireTrackers = fireNativeTrackers}) {
   switch (data.action) {
     case 'resizeNativeHeight':
       resizeFn(data.width, data.height);
@@ -118,7 +118,7 @@ if (FEATURES.NATIVE) {
   HANDLERS[MESSAGES.NATIVE] = handleNativeMessage;
 }
 
-function creativeMessageHandler(deps) {
+function creativeMessageHandler (deps) {
   return function (type, data, bidResponse) {
     if (HANDLERS.hasOwnProperty(type)) {
       HANDLERS[type](data, bidResponse, deps);
@@ -141,7 +141,7 @@ export const getRenderingData = hook('sync', function (bidResponse, options) {
   };
 })
 
-export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe()}) {
+export const doRender = hook('sync', function ({renderFn, resizeFn, bidResponse, options, doc, isMainDocument = doc === document && !inIframe()}) {
   const videoBid = (FEATURES.VIDEO && bidResponse.mediaType === VIDEO)
   if (isMainDocument || videoBid) {
     emitAdRenderFail({
@@ -172,7 +172,7 @@ doRender.before(function (next, args) {
   }
 }, 100)
 
-export function handleRender({renderFn, resizeFn, adId, options, bidResponse, doc}) {
+export function handleRender ({renderFn, resizeFn, adId, options, bidResponse, doc}) {
   deferRendering(bidResponse, () => {
     if (bidResponse == null) {
       emitAdRenderFail({
@@ -210,7 +210,7 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
   })
 }
 
-export function markBidAsRendered(bidResponse) {
+export function markBidAsRendered (bidResponse) {
   const metrics = useMetrics(bidResponse.metrics);
   metrics.checkpoint('bidRender');
   metrics.timeBetween('bidWon', 'bidRender', 'render.deferred');
@@ -222,7 +222,7 @@ export function markBidAsRendered(bidResponse) {
 const DEFERRED_RENDER = new WeakMap();
 const WINNERS = new WeakSet();
 
-export function deferRendering(bidResponse, renderFn) {
+export function deferRendering (bidResponse, renderFn) {
   if (bidResponse == null) {
     // if the bid is missing, let renderFn deal with it now
     renderFn();
@@ -235,14 +235,14 @@ export function deferRendering(bidResponse, renderFn) {
   markWinner(bidResponse);
 }
 
-export function markWinner(bidResponse) {
+export function markWinner (bidResponse) {
   if (!WINNERS.has(bidResponse)) {
     WINNERS.add(bidResponse);
     markWinningBid(bidResponse);
   }
 }
 
-export function renderIfDeferred(bidResponse) {
+export function renderIfDeferred (bidResponse) {
   const renderFn = DEFERRED_RENDER.get(bidResponse);
   if (renderFn) {
     renderFn();
@@ -251,12 +251,12 @@ export function renderIfDeferred(bidResponse) {
   }
 }
 
-export function renderAdDirect(doc, adId, options) {
+export function renderAdDirect (doc, adId, options) {
   let bid;
-  function fail(reason, message) {
+  function fail (reason, message) {
     emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
-  function resizeFn(width, height) {
+  function resizeFn (width, height) {
     const frame = doc.defaultView?.frameElement;
     if (frame) {
       if (width) {
@@ -270,7 +270,7 @@ export function renderAdDirect(doc, adId, options) {
     }
   }
   const messageHandler = creativeMessageHandler({resizeFn});
-  function renderFn(adData) {
+  function renderFn (adData) {
     if (adData.ad) {
       doc.write(adData.ad);
       doc.close();
@@ -313,7 +313,7 @@ export function renderAdDirect(doc, adId, options) {
  * This is necessary because in some situations creatives may be rendered inside nested iframes - Prebid is not necessarily
  * in the immediate parent window.
  */
-export function insertLocatorFrame() {
+export function insertLocatorFrame () {
   if (!window.frames[PB_LOCATOR]) {
     if (!document.body) {
       window.requestAnimationFrame(insertLocatorFrame);

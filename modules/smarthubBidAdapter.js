@@ -48,8 +48,8 @@ const _getUrl = (partnerName) => {
 const getPartnerName = (bid) => String(bid.params?.partnerName || bid.bidder).toLowerCase();
 
 const getPlacementReqData = buildPlacementProcessingFunction({
-  addPlacementType() {},
-  addCustomFieldsToPlacement(bid, bidderRequest, placement) {
+  addPlacementType () {},
+  addCustomFieldsToPlacement (bid, bidderRequest, placement) {
     const { seat, token, iabCat, minBidfloor, pos } = bid.params;
     Object.assign(placement, {
       partnerName: getPartnerName(bid),
@@ -85,7 +85,7 @@ export const spec = {
   isBidRequestValid: isBidRequestValid(['seat', 'token'], 'every'),
   buildRequests,
   interpretResponse: interpretResponseBuilder({
-    addtlBidValidation(bid) {
+    addtlBidValidation (bid) {
       return bid.hasOwnProperty('netRevenue')
     }
   }),

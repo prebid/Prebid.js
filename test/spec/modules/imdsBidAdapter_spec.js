@@ -700,7 +700,7 @@ describe('imdsBidAdapter ', function () {
         mediaTypes: {
           video: {
             context: 'instream',
-            playerSize: [[ 640, 480 ]],
+            playerSize: [[640, 480]],
             startdelay: 1,
             linearity: 1,
             plcmt: 1,
@@ -709,7 +709,7 @@ describe('imdsBidAdapter ', function () {
         },
         adUnitCode: 'video1',
         transactionId: '93e5def8-29aa-4fe8-bd3a-0298c39f189a',
-        sizes: [[ 640, 480 ]],
+        sizes: [[640, 480]],
         bidId: '2624fabbb078e8',
         bidderRequestId: '117954d20d7c9c',
         auctionId: 'defd525f-4f1e-4416-a4cb-ae53be90e706',
@@ -1297,7 +1297,7 @@ describe('imdsBidAdapter ', function () {
       });
     });
 
-    it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp and bid.ext["imds.tv"].ttl are both undefined', function() {
+    it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp and bid.ext["imds.tv"].ttl are both undefined', function () {
       const br = { ...bidResponse };
       serverResponse.body.seatbid[0].bid.push(br);
       const resp = spec.interpretResponse(serverResponse, bidRequest);
@@ -1306,7 +1306,7 @@ describe('imdsBidAdapter ', function () {
       expect(resp[0].ttl).to.equal(420);
     });
 
-    it('should return ttl equal to bid.ext["imds.tv"].ttl if it is defined but bid.exp is undefined', function() {
+    it('should return ttl equal to bid.ext["imds.tv"].ttl if it is defined but bid.exp is undefined', function () {
       let br = { ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
       serverResponse.body.seatbid[0].bid.push(br);
       let resp = spec.interpretResponse(serverResponse, bidRequest);
@@ -1315,7 +1315,7 @@ describe('imdsBidAdapter ', function () {
       expect(resp[0].ttl).to.equal(4321);
     });
 
-    it('should return ttl equal to bid.exp if bid.exp is less than or equal to DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function() {
+    it('should return ttl equal to bid.exp if bid.exp is less than or equal to DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function () {
       const br = { exp: 123, ...bidResponse };
       serverResponse.body.seatbid[0].bid.push(br);
       const resp = spec.interpretResponse(serverResponse, bidRequest);
@@ -1324,7 +1324,7 @@ describe('imdsBidAdapter ', function () {
       expect(resp[0].ttl).to.equal(123);
     });
 
-    it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp is greater than DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function() {
+    it('should return ttl equal to DEFAULT_TTL_MAX if bid.exp is greater than DEFAULT_TTL_MAX and bid.ext["imds.tv"].ttl is undefined', function () {
       const br = { exp: 4321, ...bidResponse };
       serverResponse.body.seatbid[0].bid.push(br);
       const resp = spec.interpretResponse(serverResponse, bidRequest);
@@ -1333,7 +1333,7 @@ describe('imdsBidAdapter ', function () {
       expect(resp[0].ttl).to.equal(420);
     });
 
-    it('should return ttl equal to bid.exp if bid.exp is less than or equal to bid.ext["imds.tv"].ttl', function() {
+    it('should return ttl equal to bid.exp if bid.exp is less than or equal to bid.ext["imds.tv"].ttl', function () {
       const br = { exp: 1234, ext: { 'imds.tv': { ttl: 4321 } }, ...bidResponse };
       serverResponse.body.seatbid[0].bid.push(br);
       const resp = spec.interpretResponse(serverResponse, bidRequest);
@@ -1342,7 +1342,7 @@ describe('imdsBidAdapter ', function () {
       expect(resp[0].ttl).to.equal(1234);
     });
 
-    it('should return ttl equal to bid.ext["imds.tv"].ttl if bid.exp is greater than bid.ext["imds.tv"].ttl', function() {
+    it('should return ttl equal to bid.ext["imds.tv"].ttl if bid.exp is greater than bid.ext["imds.tv"].ttl', function () {
       const br = { exp: 4321, ext: { 'imds.tv': { ttl: 1234 } }, ...bidResponse };
       serverResponse.body.seatbid[0].bid.push(br);
       const resp = spec.interpretResponse(serverResponse, bidRequest);

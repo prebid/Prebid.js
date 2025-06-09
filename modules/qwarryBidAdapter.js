@@ -95,7 +95,7 @@ export const spec = {
   }
 }
 
-function prepareSizes(sizes) {
+function prepareSizes (sizes) {
   return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));
 }
 

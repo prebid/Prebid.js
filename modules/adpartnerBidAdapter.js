@@ -106,7 +106,7 @@ export const spec = {
 
     serverResponses.forEach(resp => {
       if (resp.body) {
-        Object.keys(resp.body).map(function(key, index) {
+        Object.keys(resp.body).map(function (key, index) {
           let respObject = resp.body[key];
           if (respObject['syncs'] !== undefined &&
             Array.isArray(respObject.syncs) &&

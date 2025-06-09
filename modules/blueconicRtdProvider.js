@@ -26,7 +26,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleNam
  * Try parsing stringified array of data.
  * @param {String} data
  */
-function parseJson(data) {
+function parseJson (data) {
   try {
     return JSON.parse(data);
   } catch (err) {
@@ -40,7 +40,7 @@ function parseJson(data) {
  * @param {Object} ortb2
  * @param {Object} rtd
  */
-export function addRealTimeData(ortb2, rtd) {
+export function addRealTimeData (ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
     mergeDeep(ortb2, rtd.ortb2);
   }
@@ -53,7 +53,7 @@ export function addRealTimeData(ortb2, rtd) {
  * @param {Object} rtdConfig
  * @param {Object} userConsent
  */
-export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
+export function getRealTimeData (reqBidsConfigObj, onDone, rtdConfig, userConsent) {
   if (rtdConfig && isPlainObject(rtdConfig.params)) {
     const jsonData = storage.getDataFromLocalStorage(RTD_LOCAL_NAME);
     if (jsonData) {
@@ -84,7 +84,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
  * @param {Object} userConsent
  * @return {boolean}
  */
-function init(provider, userConsent) {
+function init (provider, userConsent) {
   return true;
 }
 

@@ -20,7 +20,7 @@ describe('AdtelligentId module', function () {
   it('gets id from page context', function () {
     window.adtDmp = {
       ready: true,
-      getUID() {
+      getUID () {
         return adtUserIdLocalResponse;
       }
     }

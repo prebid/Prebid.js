@@ -47,11 +47,11 @@ describe('R2B2 adapter', function () {
   const id2 = { pid: 'd/g/p/1' };
   const id2Object = { d: 'd', g: 'g', p: 'p', m: 1 };
   const badId = { pid: 'd/g/' };
-  const bid1 = { bidId: bidId1, bidder, params: [ id1 ] };
-  const bid2 = { bidId: bidId2, bidder, params: [ id2 ] };
-  const bidWithBadSetup = { bidId: bidId3, bidder, params: [ badId ] };
-  const bidForeign1 = { bidId: bidId4, bidder: foreignBidder, params: [ { id: 'abc' } ] };
-  const bidForeign2 = { bidId: bidId5, bidder: foreignBidder, params: [ { id: 'xyz' } ] };
+  const bid1 = { bidId: bidId1, bidder, params: [id1] };
+  const bid2 = { bidId: bidId2, bidder, params: [id2] };
+  const bidWithBadSetup = { bidId: bidId3, bidder, params: [badId] };
+  const bidForeign1 = { bidId: bidId4, bidder: foreignBidder, params: [{ id: 'abc' }] };
+  const bidForeign2 = { bidId: bidId5, bidder: foreignBidder, params: [{ id: 'xyz' }] };
   const fakeTime = 1234567890;
   const cacheBusterRegex = /[\?&]cb=([^&]+)/;
   let bidStub, time;
@@ -295,7 +295,7 @@ describe('R2B2 adapter', function () {
 
     it('should map type correctly', function () {
       let result, bid;
-      let requestWithId = function(id) {
+      let requestWithId = function (id) {
         let b = bids[0];
         b.params.pid = id;
         let passedBids = [b];
@@ -435,9 +435,9 @@ describe('R2B2 adapter', function () {
       expect(result).to.be.an('array').that.has.lengthOf(0);
       result = spec.interpretResponse({ body: { seatbid: [] } }, {});
       expect(result).to.be.an('array').that.has.lengthOf(0);
-      result = spec.interpretResponse({ body: { seatbid: [ {} ] } }, {});
+      result = spec.interpretResponse({ body: { seatbid: [{}] } }, {});
       expect(result).to.be.an('array').that.has.lengthOf(0);
-      result = spec.interpretResponse({ body: { seatbid: [ { bids: [] } ] } }, {});
+      result = spec.interpretResponse({ body: { seatbid: [{ bids: [] }] } }, {});
       expect(result).to.be.an('array').that.has.lengthOf(0);
     });
 
@@ -466,7 +466,7 @@ describe('R2B2 adapter', function () {
       expect(bid.renderer).to.have.property('url').that.is.a('string');
     });
 
-    it('should map ext params correctly', function() {
+    it('should map ext params correctly', function () {
       let dgpm = {something: 'something'};
       r2b2.mappedParams = {};
       r2b2.mappedParams[impId] = dgpm;
@@ -493,7 +493,7 @@ describe('R2B2 adapter', function () {
       });
     });
 
-    it('should handle multiple bids', function() {
+    it('should handle multiple bids', function () {
       const impId2 = '123456';
       const price2 = 12;
       const ad2 = 'gaeouho';
@@ -525,13 +525,13 @@ describe('R2B2 adapter', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const syncOptions = {
       iframeEnabled: true,
       pixelEnabled: true
     };
 
-    it('should return an array with a sync for all bids', function() {
+    it('should return an array with a sync for all bids', function () {
       r2b2.placementsToSync = [id1Object, id2Object];
       const expectedEncodedIds = encodePlacementIds(r2b2.placementsToSync);
       const syncs = spec.getUserSyncs(syncOptions);
@@ -542,7 +542,7 @@ describe('R2B2 adapter', function () {
       expect(sync.url).to.include(`?p=${expectedEncodedIds}`);
     });
 
-    it('should return the sync and include gdpr and usp parameters in the url', function() {
+    it('should return the sync and include gdpr and usp parameters in the url', function () {
       r2b2.placementsToSync = [id1Object, id2Object];
       const syncs = spec.getUserSyncs(syncOptions, {}, gdprConsent, usPrivacyString);
       const sync = syncs[0];
@@ -553,8 +553,8 @@ describe('R2B2 adapter', function () {
     });
   });
 
-  describe('events', function() {
-    beforeEach(function() {
+  describe('events', function () {
+    beforeEach(function () {
       time = sinon.useFakeTimers(fakeTime);
       sinon.stub(utils, 'triggerPixel');
       r2b2.mappedParams = {};
@@ -567,10 +567,10 @@ describe('R2B2 adapter', function () {
         ext: {
           dgpm: { d: 'r2b2.cz', g: 'generic', m: 1, p: '300x300', pid: 'r2b2.cz/generic/300x300/1' }
         },
-        params: [ { pid: 'r2b2.cz/generic/300x300/1' } ],
+        params: [{ pid: 'r2b2.cz/generic/300x300/1' }],
       };
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
       time.restore();
     });

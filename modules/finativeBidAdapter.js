@@ -55,7 +55,7 @@ export const spec = {
 
   supportedMediaTypes: [NATIVE],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.adUnitId;
   },
 
@@ -150,7 +150,7 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(serverResponse, { bids }) {
+  interpretResponse: function (serverResponse, { bids }) {
     if (isEmpty(serverResponse.body)) {
       return [];
     }
@@ -188,7 +188,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function parseNative(bid) {
+function parseNative (bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
   let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
@@ -224,6 +224,6 @@ function parseNative(bid) {
   return result;
 }
 
-function flatten(arr) {
+function flatten (arr) {
   return [].concat(...arr);
 }

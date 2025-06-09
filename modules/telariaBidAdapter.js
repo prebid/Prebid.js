@@ -124,11 +124,11 @@ export const spec = {
   }
 };
 
-function getDefaultSrcPageUrl() {
+function getDefaultSrcPageUrl () {
   return encodeURIComponent(document.location.href);
 }
 
-function getUrlParams(params, schainFromBidRequest) {
+function getUrlParams (params, schainFromBidRequest) {
   let urlSuffix = '';
 
   if (!isEmpty(params)) {
@@ -143,7 +143,7 @@ function getUrlParams(params, schainFromBidRequest) {
   return urlSuffix;
 }
 
-export const getTimeoutUrl = function(timeoutData) {
+export const getTimeoutUrl = function (timeoutData) {
   let params = deepAccess(timeoutData, '0.params.0');
 
   if (!isEmpty(params)) {
@@ -168,7 +168,7 @@ export const getTimeoutUrl = function(timeoutData) {
  * @param bidderRequest
  * @returns {string}
  */
-function generateUrl(bid, bidderRequest) {
+function generateUrl (bid, bidderRequest) {
   let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
   if (!playerSize) {
     logWarn(`Although player size isn't required it is highly recommended`);
@@ -234,7 +234,7 @@ function generateUrl(bid, bidderRequest) {
  * @param width
  * @param height
  */
-function createBid(reqBid, response, width, height) {
+function createBid (reqBid, response, width, height) {
   // TTL 5 mins by default, future support for extended imp wait time
   const bid = {
     requestId: reqBid.bidId,

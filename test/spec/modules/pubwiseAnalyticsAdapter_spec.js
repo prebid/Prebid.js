@@ -33,7 +33,7 @@ describe('PubWise Prebid Analytics', function () {
     extraProp: 'extraProp retained'
   };
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
     clock = sandbox.useFakeTimers();
     sandbox.stub(events, 'getEvents').returns([]);

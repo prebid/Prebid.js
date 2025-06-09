@@ -66,7 +66,7 @@ export const spec = {
    * @param bidReqs
    * @param bidderRequest
    */
-  buildRequests: function(bidReqs, bidderRequest) {
+  buildRequests: function (bidReqs, bidderRequest) {
     try {
       let sovrnImps = [];
       let iv;
@@ -218,7 +218,7 @@ export const spec = {
    * @param {*} param0 A successful response from Sovrn.
    * @return {Array} An array of formatted bids (+ fledgeAuctionConfigs if available)
    */
-  interpretResponse: function({ body: {id, seatbid, ext} }) {
+  interpretResponse: function ({ body: {id, seatbid, ext} }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 
     try {
@@ -293,7 +293,7 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     try {
       const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
@@ -335,7 +335,7 @@ export const spec = {
   },
 }
 
-function _buildVideoRequestObj(bid) {
+function _buildVideoRequestObj (bid) {
   const videoObj = {}
   const bidSizes = deepAccess(bid, 'sizes')
   const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {})
@@ -370,7 +370,7 @@ function _buildVideoRequestObj(bid) {
   return videoObj
 }
 
-function _getBidFloors(bid) {
+function _getBidFloors (bid) {
   const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
     currency: 'USD',
     mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
@@ -384,11 +384,11 @@ function _getBidFloors(bid) {
   return !isNaN(paramValue) ? paramValue : undefined
 }
 
-function isValidIgBid(igBid) {
+function isValidIgBid (igBid) {
   return !isEmptyStr(igBid.impid) && isArray(igBid.igbuyer) && igBid.igbuyer.length
 }
 
-function isValidIgBuyer(igBuyer) {
+function isValidIgBuyer (igBuyer) {
   return !isEmptyStr(igBuyer.igdomain)
 }
 

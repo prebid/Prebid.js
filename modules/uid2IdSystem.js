@@ -32,7 +32,7 @@ const UID2_TEST_URL = 'https://operator-integ.uidapi.com';
 const UID2_PROD_URL = 'https://prod.uidapi.com';
 const UID2_BASE_URL = UID2_PROD_URL;
 
-function createLogger(logger, prefix) {
+function createLogger (logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
   }
@@ -57,7 +57,7 @@ export const uid2IdSubmodule = {
    * @param {string} value
    * @returns {{uid2:{ id: string } }} or undefined if value doesn't exists
    */
-  decode(value) {
+  decode (value) {
     const result = decodeImpl(value);
     _logInfo('UID2 decode returned', result);
     return result;
@@ -70,7 +70,7 @@ export const uid2IdSubmodule = {
    * @param {ConsentData|undefined} consentData
    * @returns {uid2Id}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     if (consentData?.gdpr?.gdprApplies === true) {
       _logWarn('UID2 is not intended for use where GDPR applies. The UID2 module will not run.');
       return;
@@ -100,7 +100,7 @@ export const uid2IdSubmodule = {
   eids: UID2_EIDS
 };
 
-function decodeImpl(value) {
+function decodeImpl (value) {
   if (typeof value === 'string') {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
     const result = { uid2: { id: value } };

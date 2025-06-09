@@ -10,7 +10,7 @@ import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const responseHeader = { 'Content-Type': 'application/json' };
 
-describe('LotameId', function() {
+describe('LotameId', function () {
   let logErrorStub;
   let getCookieStub;
   let setCookieStub;
@@ -53,7 +53,7 @@ describe('LotameId', function() {
     let request;
     let callBackSpy = sinon.spy();
 
-    beforeEach(function() {
+    beforeEach(function () {
       let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
       submoduleCallback(callBackSpy);
 
@@ -115,12 +115,12 @@ describe('LotameId', function() {
     });
   });
 
-  describe('No stored values', function() {
-    describe('and receives the profile id but no panorama id', function() {
+  describe('No stored values', function () {
+    describe('and receives the profile id but no panorama id', function () {
       let request;
       let callBackSpy = sinon.spy();
 
-      beforeEach(function() {
+      beforeEach(function () {
         let submoduleCallback = lotamePanoramaIdSubmodule.getId({}).callback;
         submoduleCallback(callBackSpy);
         request = server.requests[0];
@@ -135,7 +135,7 @@ describe('LotameId', function() {
         );
       });
 
-      it('should save the profile id', function() {
+      it('should save the profile id', function () {
         sinon.assert.calledWith(
           setLocalStorageStub,
           '_cc_id',
@@ -239,7 +239,7 @@ describe('LotameId', function() {
     });
   });
 
-  describe('With a panorama id found', function() {
+  describe('With a panorama id found', function () {
     describe('and it is too early to try again', function () {
       let submoduleCallback;
 
@@ -356,8 +356,8 @@ describe('LotameId', function() {
     });
   });
 
-  describe('With no panorama id found', function() {
-    beforeEach(function() {
+  describe('With no panorama id found', function () {
+    beforeEach(function () {
       getCookieStub.withArgs('panoramaId').returns(null);
       getLocalStorageStub.withArgs('panoramaId').returns(null);
     })
@@ -442,7 +442,7 @@ describe('LotameId', function() {
       expect(callBackSpy.calledOnce).to.be.true;
     });
 
-    it('should pass the gdpr consent string back', function() {
+    it('should pass the gdpr consent string back', function () {
       expect(request.url).to.be.eq(
         `${requestHost}?gdpr_applies=true&gdpr_consent=consentGiven`
       );
@@ -472,7 +472,7 @@ describe('LotameId', function() {
       expect(callBackSpy.calledOnce).to.be.true;
     });
 
-    it('should not include the gdpr consent string on the url', function() {
+    it('should not include the gdpr consent string on the url', function () {
       expect(request.url).to.be.eq(
         `${requestHost}?gdpr_applies=true`
       );
@@ -497,7 +497,7 @@ describe('LotameId', function() {
       expect(callBackSpy.calledOnce).to.be.true;
     });
 
-    it('should pass the gdpr consent string back', function() {
+    it('should pass the gdpr consent string back', function () {
       expect(request.url).to.be.eq(`${requestHost}`);
     });
   });
@@ -623,7 +623,7 @@ describe('LotameId', function() {
           .returns(String(Date.now() + 500 * 1000));
       });
 
-      describe('and an existing pano id', function() {
+      describe('and an existing pano id', function () {
         let submoduleCallback;
         beforeEach(function () {
           getCookieStub
@@ -807,7 +807,7 @@ describe('LotameId', function() {
         );
       });
 
-      it('should set the received expiry for the client', function() {
+      it('should set the received expiry for the client', function () {
         sinon.assert.calledWith(
           setCookieStub,
           'panoramaId_expiry_1234',
@@ -815,7 +815,7 @@ describe('LotameId', function() {
         );
       });
 
-      it('should not clear the cache for the panorama id', function() {
+      it('should not clear the cache for the panorama id', function () {
         sinon.assert.neverCalledWith(
           setCookieStub,
           'panoramaId',

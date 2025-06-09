@@ -28,7 +28,7 @@ let eventQueue = []
 let asteriobidAnalyticsEnabled = false
 
 let asteriobidAnalytics = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType }), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     handleEvent(eventType, args)
   }
 })
@@ -60,7 +60,7 @@ asteriobidAnalytics.disableAnalytics = function () {
   asteriobidAnalytics.originDisableAnalytics()
 }
 
-function collectUtmTagData() {
+function collectUtmTagData () {
   let newUtm = false
   let pmUtmTags = {}
   try {
@@ -90,7 +90,7 @@ function collectUtmTagData() {
   return pmUtmTags
 }
 
-function collectPageInfo() {
+function collectPageInfo () {
   const pageInfo = {
     domain: window.location.hostname,
   }
@@ -105,7 +105,7 @@ function collectPageInfo() {
   return pageInfo
 }
 
-function flush() {
+function flush () {
   if (!asteriobidAnalyticsEnabled) {
     return
   }
@@ -149,7 +149,7 @@ function flush() {
   }
 }
 
-function trimAdUnit(adUnit) {
+function trimAdUnit (adUnit) {
   if (!adUnit) return adUnit
   const res = {}
   res.code = adUnit.code
@@ -157,7 +157,7 @@ function trimAdUnit(adUnit) {
   return res
 }
 
-function trimBid(bid) {
+function trimBid (bid) {
   if (!bid) return bid
   const res = {}
   res.auctionId = bid.auctionId
@@ -176,7 +176,7 @@ function trimBid(bid) {
   return res
 }
 
-function trimBidderRequest(bidderRequest) {
+function trimBidderRequest (bidderRequest) {
   if (!bidderRequest) return bidderRequest
   const res = {}
   res.auctionId = bidderRequest.auctionId
@@ -187,7 +187,7 @@ function trimBidderRequest(bidderRequest) {
   return res
 }
 
-function handleEvent(eventType, eventArgs) {
+function handleEvent (eventType, eventArgs) {
   if (!asteriobidAnalyticsEnabled) {
     return
   }
@@ -313,7 +313,7 @@ function handleEvent(eventType, eventArgs) {
   sendEvent(pmEvent)
 }
 
-function sendEvent(event) {
+function sendEvent (event) {
   eventQueue.push(event)
   logInfo(`${analyticsName} Event ${event.eventType}:`, event)
 

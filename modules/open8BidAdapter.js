@@ -16,11 +16,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.slotKey);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     var requests = [];
     for (var i = 0; i < validBidRequests.length; i++) {
       var bid = validBidRequests[i];
@@ -39,7 +39,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     var bidderResponse = serverResponse.body;
 
     if (!bidderResponse.isAdReturn) {
@@ -103,7 +103,7 @@ export const spec = {
     return [bid];
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (syncOptions.iframeEnabled && serverResponses.length) {
       const syncIFs = serverResponses[0].body.syncIFs;
@@ -129,7 +129,7 @@ export const spec = {
     }
     return syncs;
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (!bid.nurl) { return; }
     const winUrl = bid.nurl.replace(
       /\$\{AUCTION_PRICE\}/,
@@ -139,7 +139,7 @@ export const spec = {
   }
 }
 
-function generateImpId() {
+function generateImpId () {
   var l = 16;
   var c = 'abcdefghijklmnopqrstuvwsyz0123456789';
   var cl = c.length;
@@ -150,7 +150,7 @@ function generateImpId() {
   return r;
 }
 
-function newRenderer(bidderResponse) {
+function newRenderer (bidderResponse) {
   const renderer = Renderer.install({
     id: bidderResponse.ad.bidId,
     url: bidderResponse.ad.video.purl,
@@ -166,7 +166,7 @@ function newRenderer(bidderResponse) {
   return renderer;
 }
 
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     window.op8.renderPrebid({
       vastXml: bid.vastXml,

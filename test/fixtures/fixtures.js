@@ -3,7 +3,7 @@ import { TARGETING_KEYS, STATUS } from 'src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
-function convertTargetingsFromOldToNew(targetings) {
+function convertTargetingsFromOldToNew (targetings) {
   var mapOfOldToNew = {
     'hb_bidder': TARGETING_KEYS.BIDDER,
     'hb_adid': TARGETING_KEYS.AD_ID,
@@ -14,9 +14,9 @@ function convertTargetingsFromOldToNew(targetings) {
     'hb_format': TARGETING_KEYS.FORMAT
   };
   var newTargetings = {};
-  utils._each(targetings, function(value, currentKey) {
+  utils._each(targetings, function (value, currentKey) {
     var replaced = false;
-    utils._each(mapOfOldToNew, function(newKey, oldKey) {
+    utils._each(mapOfOldToNew, function (newKey, oldKey) {
       if (currentKey.indexOf(oldKey) === 0 && oldKey !== newKey) {
         var updatedKey = currentKey.replace(oldKey, newKey);
         newTargetings[updatedKey] = targetings[currentKey];
@@ -30,7 +30,7 @@ function convertTargetingsFromOldToNew(targetings) {
   return newTargetings;
 }
 
-export function getBidRequests() {
+export function getBidRequests () {
   return [
     {
       'bidderCode': 'appnexus',
@@ -355,7 +355,7 @@ export function getBidRequests() {
   ];
 }
 
-export function getBidResponses() {
+export function getBidResponses () {
   return [
     {
       'bidderCode': 'triplelift',
@@ -624,7 +624,7 @@ export function getBidResponses() {
   ];
 }
 
-export function getSlotTargeting() {
+export function getSlotTargeting () {
   return {
     '/19968336/header-bid-tag-0': [
       convertTargetingsFromOldToNew({
@@ -656,7 +656,7 @@ export function getSlotTargeting() {
   };
 }
 
-export function getAdUnits() {
+export function getAdUnits () {
   return [
     {
       'code': '/19968336/header-bid-tag1',
@@ -822,7 +822,7 @@ export function getAdUnits() {
   ];
 };
 
-export function getTwinAdUnits() {
+export function getTwinAdUnits () {
   return [
     {
       'code': '/19968336/header-bid-tag1',
@@ -884,7 +884,7 @@ export function getTwinAdUnits() {
   ]
 }
 
-export function getBidResponsesFromAPI() {
+export function getBidResponsesFromAPI () {
   return {
     '/19968336/header-bid-tag-0': {
       'bids': [
@@ -1025,7 +1025,7 @@ export function getBidResponsesFromAPI() {
 }
 
 // Ad server targeting when `setConfig({ enableSendAllBids: true })` is set.
-export function getAdServerTargeting() {
+export function getAdServerTargeting () {
   return {
     '/19968336/header-bid-tag-0': convertTargetingsFromOldToNew({
       'foobar': '300x250,300x600,0x0',
@@ -1077,7 +1077,7 @@ export function getAdServerTargeting() {
 }
 
 // Key/values used to set ad server targeting.
-export function getTargetingKeys() {
+export function getTargetingKeys () {
   return [
     [
       TARGETING_KEYS.BIDDER,
@@ -1104,7 +1104,7 @@ export function getTargetingKeys() {
 
 // Key/values used to set ad server targeting when bid landscape
 // targeting is on.
-export function getTargetingKeysBidLandscape() {
+export function getTargetingKeysBidLandscape () {
   return [
     [
       TARGETING_KEYS.BIDDER,
@@ -1237,7 +1237,7 @@ export function getTargetingKeysBidLandscape() {
   ];
 }
 
-export function getBidRequestedPayload() {
+export function getBidRequestedPayload () {
   return {
     'bidderCode': 'adequant',
     'auctionId': '150f361b202aa8',
@@ -1277,7 +1277,7 @@ export function getBidRequestedPayload() {
   };
 }
 
-export function getCurrencyRates() {
+export function getCurrencyRates () {
   return {
     'dataAsOf': '2017-04-25',
     'conversions': {
@@ -1287,7 +1287,7 @@ export function getCurrencyRates() {
   };
 }
 
-export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType}) {
+export function createBidReceived ({bidder, cpm, auctionId, responseTimestamp, adUnitCode, adId, status, ttl, requestId, mediaType}) {
   let bid = {
     'bidderCode': bidder,
     'width': '300',
@@ -1327,7 +1327,7 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
   return Object.assign(createBid(STATUS.GOOD), bid);
 }
 
-export function getServerTestingsAds() {
+export function getServerTestingsAds () {
   return [
     {
       code: 'test_div_1',

@@ -89,7 +89,7 @@ const ORTB_VIDEO_PARAMS = {
  *
  * @returns {number}
  */
-function getDeviceType() {
+function getDeviceType () {
   if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
     return 5;
   }
@@ -104,7 +104,7 @@ function getDeviceType() {
  *
  * @returns {number}
  */
-function getOS() {
+function getOS () {
   if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
   if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
   if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
@@ -122,7 +122,7 @@ function getOS() {
  * @param {string|Array} size the size array or the wildcard '*'
  * @returns {number|boolean}
  */
-function getFloor(bid, mediaType, size = '*') {
+function getFloor (bid, mediaType, size = '*') {
   if (!isFn(bid.getFloor)) {
     return false;
   }
@@ -148,7 +148,7 @@ function getFloor(bid, mediaType, size = '*') {
  * @param {*} bid a Prebid.js bid (request) object
  * @returns {number|boolean}
  */
-function getHighestFloor(bid) {
+function getHighestFloor (bid) {
   const floors = [];
 
   for (let mediaType in bid.mediaTypes) {
@@ -174,7 +174,7 @@ function getHighestFloor(bid) {
  *
  * @returns {object}
  */
-function createOrtbTemplate() {
+function createOrtbTemplate () {
   return {
     id: '',
     at: AUCTION_TYPE,
@@ -211,7 +211,7 @@ function createOrtbTemplate() {
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */
-function createBannerImp(bid) {
+function createBannerImp (bid) {
   let sizes = bid.mediaTypes.banner.sizes;
   const params = deepAccess(bid, 'params', {});
 
@@ -244,7 +244,7 @@ function createBannerImp(bid) {
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */
-function createNativeImp(bid) {
+function createNativeImp (bid) {
   if (!bid.nativeParams) {
     logWarn(`${BIDDER_CODE}: bid.nativeParams object has not been found.`);
     return
@@ -278,7 +278,7 @@ function createNativeImp(bid) {
   });
 
   // just a helper function
-  const setImageAssetSizes = function(asset, param) {
+  const setImageAssetSizes = function (asset, param) {
     if (param.sizes && param.sizes.length) {
       asset.img.w = param.sizes ? param.sizes[0] : undefined;
       asset.img.h = param.sizes ? param.sizes[1] : undefined;
@@ -387,7 +387,7 @@ function createNativeImp(bid) {
  * @param {object} bid Prebid bid object from request
  * @returns {object}
  */
-function createVideoImp(bid) {
+function createVideoImp (bid) {
   const videoAdUnitParams = deepAccess(bid, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bid, 'params.video', {});
   const computedParams = {};
@@ -428,7 +428,7 @@ function createVideoImp(bid) {
  * @param {*} bid Prebid bid object from request
  * @returns
  */
-function createImp(bid) {
+function createImp (bid) {
   const imp = {
     id: bid.bidId,
     tagid: bid.params.adUnit || undefined,
@@ -484,7 +484,7 @@ function createImp(bid) {
  * @param {string|Array} cat IAB Category
  * @returns {string|null}
  */
-function getPrimaryCatFromResponse(cat) {
+function getPrimaryCatFromResponse (cat) {
   if (!cat || (isArray(cat) && !cat.length)) {
     return;
   }
@@ -502,7 +502,7 @@ function getPrimaryCatFromResponse(cat) {
  * @param {*} bid bid object from response
  * @returns {object} Prebid.js native object used in response
  */
-function nativeBidResponseHandler(bid) {
+function nativeBidResponseHandler (bid) {
   const nativeAdm = JSON.parse(bid.adm);
   if (!nativeAdm || !nativeAdm.assets.length) {
     logError(`${BIDDER_CODE}: invalid native response.`);
@@ -596,11 +596,11 @@ export const spec = {
 
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid && !isEmpty(bid));
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -672,7 +672,7 @@ export const spec = {
     return request;
   },
 
-  interpretResponse(serverResponse, bidRequest) {
+  interpretResponse (serverResponse, bidRequest) {
     const bidResponses = [];
 
     try {

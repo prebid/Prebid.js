@@ -18,7 +18,7 @@ describe('raveltechRtdProvider', () => {
     auctionId: 'abc',
     bidId: 'abc123',
     userIdAsEids: [
-      { source: 'usersource.com', uids: [ { id: 'testid123', atype: 1 } ] }
+      { source: 'usersource.com', uids: [{ id: 'testid123', atype: 1 }] }
     ]
   };
 
@@ -37,7 +37,7 @@ describe('raveltechRtdProvider', () => {
     adapterManager.aliasBidAdapter('test', 'alias2');
 
     // Init module
-    raveltechSubmodule.init({ params: { bidders: [ 'alias1', 'test' ], preserveOriginalBid: true } });
+    raveltechSubmodule.init({ params: { bidders: ['alias1', 'test'], preserveOriginalBid: true } });
   })
 
   afterEach(() => {
@@ -51,7 +51,7 @@ describe('raveltechRtdProvider', () => {
       auctionId: '123',
       bidderCode: 'alias2',
       bidderRequestId: 'abc',
-      bids: [ { ...fakeBidReq, bidder: 'alias2' } ]
+      bids: [{ ...fakeBidReq, bidder: 'alias2' }]
     }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
     expect(fakeAjax.calledOnce).to.be.true;
     expect(fakeZkad.called).to.be.false;
@@ -65,7 +65,7 @@ describe('raveltechRtdProvider', () => {
       auctionId: '123',
       bidderCode: 'test',
       bidderRequestId: 'abc',
-      bids: [ { ...fakeBidReq, bidder: 'test' } ]
+      bids: [{ ...fakeBidReq, bidder: 'test' }]
     }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
     expect(fakeAjax.calledOnce).to.be.true;
     expect(fakeZkad.called).to.be.false;
@@ -79,7 +79,7 @@ describe('raveltechRtdProvider', () => {
       auctionId: '123',
       bidderCode: 'test',
       bidderRequestId: 'abc',
-      bids: [ { ...fakeBidReq, bidder: 'test' } ]
+      bids: [{ ...fakeBidReq, bidder: 'test' }]
     }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
     expect(fakeAjax.calledOnce).to.be.true;
     expect(fakeZkad.called).to.be.false;
@@ -94,7 +94,7 @@ describe('raveltechRtdProvider', () => {
       auctionId: '123',
       bidderCode: 'test',
       bidderRequestId: 'abc',
-      bids: [ { ...fakeBidReq, bidder: 'test' } ]
+      bids: [{ ...fakeBidReq, bidder: 'test' }]
     }, sinon.stub(), sinon.stub(), fakeAjax, sinon.stub(), sinon.stub());
     expect(fakeAjax.calledTwice).to.be.true;
     expect(fakeZkad.calledOnce).to.be.true;

@@ -19,7 +19,7 @@ const SORTED = new WeakMap();
  * @return {function} - A function that will run all components in order of priority, with functions from `overrides` taking
  * precedence over components that match names.
  */
-export function compose(components, overrides = {}) {
+export function compose (components, overrides = {}) {
   if (!SORTED.has(components)) {
     const sorted = Object.entries(components);
     sorted.sort((a, b) => {

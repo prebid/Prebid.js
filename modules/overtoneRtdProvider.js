@@ -8,7 +8,7 @@ const logMessage = (...args) => {
   _logMessage('Overtone', ...args);
 };
 
-export async function fetchContextData(url = window.location.href) {
+export async function fetchContextData (url = window.location.href) {
   const pageUrl = encodeURIComponent(url);
   const requestUrl = `${OVERTONE_URL}?URL=${pageUrl}&InApp=False`;
   const request = window.ajaxBuilder || ajaxBuilder();
@@ -45,7 +45,7 @@ export async function fetchContextData(url = window.location.href) {
   });
 }
 
-function init(config) {
+function init (config) {
   logMessage('init', config);
   return true;
 }

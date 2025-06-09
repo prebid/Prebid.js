@@ -50,10 +50,10 @@ let bidCacheRegistry = createBidCacheRegistry();
  * Create a registry object that stores/manages bids while be held in queue for Prebid Cache.
  * @returns registry object with defined accessor functions
  */
-function createBidCacheRegistry() {
+function createBidCacheRegistry () {
   let registry = {};
 
-  function setupRegistrySlot(auctionId) {
+  function setupRegistrySlot (auctionId) {
     registry[auctionId] = {};
     registry[auctionId].bidStorage = new Set();
     registry[auctionId].queueDispatcher = createDispatcher(queueTimeDelay);
@@ -96,7 +96,7 @@ function createBidCacheRegistry() {
  * @param {Number} timeoutDuration number of milliseconds to pass before timer expires and current bid queue is flushed
  * @returns {Function}
  */
-function createDispatcher(timeoutDuration) {
+function createDispatcher (timeoutDuration) {
   let timeout;
   let counter = 1;
 
@@ -124,7 +124,7 @@ function createDispatcher(timeoutDuration) {
   };
 }
 
-function getPricePartForAdpodKey(bid) {
+function getPricePartForAdpodKey (bid) {
   let pricePart
   let prioritizeDeals = config.getConfig('adpod.prioritizeDeals');
   if (prioritizeDeals && deepAccess(bid, 'video.dealTier')) {
@@ -142,7 +142,7 @@ function getPricePartForAdpodKey(bid) {
  * @param {Object} bid bid object to update
  * @param {Boolean} brandCategoryExclusion value read from setConfig; influences whether category is required or not
  */
-function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
+function attachPriceIndustryDurationKeyToBid (bid, brandCategoryExclusion) {
   let initialCacheKey = bidCacheRegistry.getInitialCacheKey(bid);
   let duration = deepAccess(bid, 'video.durationBucket');
   const pricePart = getPricePartForAdpodKey(bid);
@@ -171,7 +171,7 @@ function attachPriceIndustryDurationKeyToBid(bid, brandCategoryExclusion) {
  * @param {Object} bidResponse bid object being added to queue
  * @param {Function} afterBidAdded callback function used when Prebid Cache responds
  */
-function updateBidQueue(auctionInstance, bidResponse, afterBidAdded) {
+function updateBidQueue (auctionInstance, bidResponse, afterBidAdded) {
   let bidListIter = bidCacheRegistry.getBids(bidResponse);
 
   if (bidListIter) {
@@ -188,7 +188,7 @@ function updateBidQueue(auctionInstance, bidResponse, afterBidAdded) {
  * Small helper function to remove bids from internal storage; normally b/c they're about to sent to Prebid Cache for processing.
  * @param {Array[Object]} bidResponses list of bids to remove
  */
-function removeBidsFromStorage(bidResponses) {
+function removeBidsFromStorage (bidResponses) {
   for (let i = 0; i < bidResponses.length; i++) {
     bidCacheRegistry.removeBid(bidResponses[i]);
   }
@@ -202,7 +202,7 @@ function removeBidsFromStorage(bidResponses) {
  * @param {Array[Object]} bidList list of bid objects that need to be sent to Prebid Cache
  * @param {Function} afterBidAdded callback function used when Prebid Cache responds
  */
-function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
+function firePrebidCacheCall (auctionInstance, bidList, afterBidAdded) {
   // remove entries now so other incoming bids won't accidentally have a stale version of the list while PBC is processing the current submitted list
   removeBidsFromStorage(bidList);
 
@@ -231,7 +231,7 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
  * @param {Function} afterBidAdded callback function used when Prebid Cache responds
  * @param {Object} videoConfig mediaTypes.video from the bid's adUnit
  */
-export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoConfig) {
+export function callPrebidCacheHook (fn, auctionInstance, bidResponse, afterBidAdded, videoConfig) {
   if (videoConfig && videoConfig.context === ADPOD) {
     let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
     let adServerCatId = deepAccess(bidResponse, 'meta.adServerCatId');
@@ -266,7 +266,7 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
  * @param {Array[Object]} adUnits list of adUnits to be evaluated
  * @returns {Array[Object]} list of adUnits that passed the check
  */
-export function checkAdUnitSetupHook(fn, adUnits) {
+export function checkAdUnitSetupHook (fn, adUnits) {
   let goodAdUnits = adUnits.filter(adUnit => {
     let mediaTypes = deepAccess(adUnit, 'mediaTypes');
     let videoConfig = deepAccess(mediaTypes, 'video');
@@ -319,7 +319,7 @@ export function checkAdUnitSetupHook(fn, adUnits) {
  * @param {Object} bidResponse incoming bidResponse being evaluated by bidderFactory
  * @returns {boolean} return false if bid duration is deemed invalid as per adUnit configuration; return true if fine
  */
-function checkBidDuration(videoMediaType, bidResponse) {
+function checkBidDuration (videoMediaType, bidResponse) {
   const buffer = 2;
   let bidDuration = deepAccess(bidResponse, 'video.durationSeconds');
   let adUnitRanges = videoMediaType.durationRangeSec;
@@ -355,7 +355,7 @@ function checkBidDuration(videoMediaType, bidResponse) {
  * @param {String} context value of the `bidRequest.mediaTypes.video.context` field; used in original function
  * @returns {boolean} this return is only used for adpod bids
  */
-export function checkVideoBidSetupHook(fn, bid, adUnit, videoMediaType, context) {
+export function checkVideoBidSetupHook (fn, bid, adUnit, videoMediaType, context) {
   if (context === ADPOD) {
     let result = true;
     let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
@@ -394,7 +394,7 @@ export function checkVideoBidSetupHook(fn, bid, adUnit, videoMediaType, context)
  * This function reads the (optional) settings for the adpod as set from the setConfig()
  * @param {Object} config contains the config settings for adpod module
  */
-export function adpodSetConfig(config) {
+export function adpodSetConfig (config) {
   if (config.bidQueueTimeDelay !== undefined) {
     if (typeof config.bidQueueTimeDelay === 'number' && config.bidQueueTimeDelay > 0) {
       queueTimeDelay = config.bidQueueTimeDelay;
@@ -416,7 +416,7 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
 /**
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
  */
-function initAdpodHooks() {
+function initAdpodHooks () {
   setupBeforeHookFnOnce(getHook('callPrebidCache'), callPrebidCacheHook);
   setupBeforeHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
   setupBeforeHookFnOnce(checkVideoBidSetup, checkVideoBidSetupHook);
@@ -430,7 +430,7 @@ initAdpodHooks()
  * @param {Function} callback send the cached bids (or error) back to adserverVideoModule for further processing
  }}
  */
-export function callPrebidCacheAfterAuction(bids, callback) {
+export function callPrebidCacheAfterAuction (bids, callback) {
   // will call PBC here and execute cb param to initialize player code
   store(bids, function (error, cacheIds) {
     if (error) {
@@ -452,7 +452,7 @@ export function callPrebidCacheAfterAuction(bids, callback) {
  * @param {Object} a
  * @param {Object} b
  */
-export function sortByPricePerSecond(a, b) {
+export function sortByPricePerSecond (a, b) {
   if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {
     return 1;
   }
@@ -469,7 +469,7 @@ export function sortByPricePerSecond(a, b) {
  * @param {function} options.callback - Callback function to handle the targeting key-value pairs.
  * @returns {Object} Targeting key-value pairs for ad unit codes.
  */
-export function getTargeting({ codes, callback } = {}) {
+export function getTargeting ({ codes, callback } = {}) {
   if (!callback) {
     logError('No callback function was defined in the getTargeting call.  Aborting getTargeting().');
     return;
@@ -583,7 +583,7 @@ export function getTargeting({ codes, callback } = {}) {
  * @param {Array} codes adUnitCodes
  * @returns {Array[Object]} adunits of mediaType adpod
  */
-function getAdPodAdUnits(codes) {
+function getAdPodAdUnits (codes) {
   return auctionManager.getAdUnits()
     .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
@@ -594,8 +594,8 @@ function getAdPodAdUnits(codes) {
  * @param {string} property
  * @returns {function} compare function to be used in sorting
  */
-function compareOn(property) {
-  return function compare(a, b) {
+function compareOn (property) {
+  return function compare (a, b) {
     if (a[property] < b[property]) {
       return 1;
     }
@@ -611,7 +611,7 @@ function compareOn(property) {
  * @param {Array[Object]} bidsReceived
  * @returns {Array[Object]} unique category bids
  */
-function getExclusiveBids(bidsReceived) {
+function getExclusiveBids (bidsReceived) {
   let bids = bidsReceived
     .map((bid) => Object.assign({}, bid, { [TARGETING_KEY_PB_CAT_DUR]: bid.adserverTargeting[TARGETING_KEY_PB_CAT_DUR] }));
   bids = groupBy(bids, TARGETING_KEY_PB_CAT_DUR);
@@ -629,7 +629,7 @@ function getExclusiveBids(bidsReceived) {
  * @param {Array[Object]} adPodAdUnits
  * @returns {Array[Object]} bids of mediaType adpod
  */
-function getBidsForAdpod(bidsReceived, adPodAdUnits) {
+function getBidsForAdpod (bidsReceived, adPodAdUnits) {
   let adUnitCodes = adPodAdUnits.map((adUnit) => adUnit.code);
   return bidsReceived
     .filter((bid) => adUnitCodes.indexOf(bid.adUnitCode) != -1 && (bid.video && bid.video.context === ADPOD))
@@ -642,12 +642,12 @@ const sharedMethods = {
 }
 Object.freeze(sharedMethods);
 
-module('adpod', function shareAdpodUtilities(...args) {
+module('adpod', function shareAdpodUtilities (...args) {
   if (!isPlainObject(args[0])) {
     logError('Adpod module needs plain object to share methods with submodule');
     return;
   }
-  function addMethods(object, func) {
+  function addMethods (object, func) {
     for (let name in func) {
       object[name] = func[name];
     }

@@ -177,7 +177,7 @@ describe('videojsProvider', function () {
     //
     // We can't determine what type of outstream play is occurring
     // if the src is absent so we should not set placement
-    it('should not set placement when src is absent', function() {
+    it('should not set placement when src is absent', function () {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
       const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
@@ -234,8 +234,8 @@ describe('videojsProvider', function () {
   });
 });
 
-describe('utils', function() {
-  describe('getSetupConfig', function() {
+describe('utils', function () {
+  describe('getSetupConfig', function () {
     it('should return undefined when config is absent', function () {
       expect(utils.getSetupConfig()).to.be.undefined;
     });
@@ -292,7 +292,7 @@ describe('utils', function() {
     });
   });
 
-  describe('getPositionCode', function() {
+  describe('getPositionCode', function () {
     it('should return the correct position when video is above the fold', function () {
       const {innerWidth, innerHeight} = getWinDimensions();
       const code = utils.getPositionCode({

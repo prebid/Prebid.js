@@ -26,7 +26,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True  if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return Boolean(bid.params.s);
   },
   /**
@@ -35,7 +35,7 @@ export const spec = {
    * @param {validBidRequests} validBidRequests an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
     const refInfo = bidderRequest?.refererInfo;
@@ -116,7 +116,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
 
     for (var i = 0; i < serverResponse.body.length; i++) {
@@ -149,7 +149,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     let syncs = []
     /* console.log(syncOptions,serverResponses)
      if (syncOptions.iframeEnabled) {
@@ -183,11 +183,11 @@ export const spec = {
   }
 }
 
-function getUsersIds({ userIdAsEids }) {
+function getUsersIds ({ userIdAsEids }) {
   return (userIdAsEids && userIdAsEids.length !== 0) ? userIdAsEids : [];
 }
 
-function getRr() {
+function getRr () {
   try {
     var td = top.document;
     var rr = td.referrer;
@@ -200,7 +200,7 @@ function getRr() {
   }
 }
 
-function getFl() {
+function getFl () {
   if (navigator.plugins !== undefined && navigator.plugins !== null) {
     if (navigator.plugins['Shockwave Flash'] !== undefined && navigator.plugins['Shockwave Flash'] !== null && typeof navigator.plugins['Shockwave Flash'] === 'object') {
       var description = navigator.plugins['Shockwave Flash'].description;
@@ -215,11 +215,11 @@ function getFl() {
   return 0;
 }
 
-function getTz() {
+function getTz () {
   return new Date().getTimezoneOffset();
 }
 
-function encodeToBase64WebSafe(string) {
+function encodeToBase64WebSafe (string) {
   return btoa(string).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 

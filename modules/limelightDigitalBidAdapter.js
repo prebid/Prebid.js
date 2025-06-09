@@ -17,7 +17,7 @@ const BIDDER_CODE = 'limelightDigital';
  * @param {object} bid The bid to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
-function isBidResponseValid(bid) {
+function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency || !bid.meta.advertiserDomains) {
     return false;
   }
@@ -129,7 +129,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function buildRequest(winTop, host, adUnits, bidderRequest) {
+function buildRequest (winTop, host, adUnits, bidderRequest) {
   return {
     method: 'POST',
     url: `https://${host}/hb`,
@@ -146,7 +146,7 @@ function buildRequest(winTop, host, adUnits, bidderRequest) {
   }
 }
 
-function buildPlacement(bidRequest) {
+function buildPlacement (bidRequest) {
   let sizes;
   if (bidRequest.mediaTypes) {
     switch (bidRequest.params.adUnitType) {

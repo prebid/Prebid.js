@@ -44,7 +44,7 @@ let sessTimeout = 60 * 30 * 1000; // 30 minutes, G Analytics default session len
 let sessName = 'sess_id';
 let sessTimeoutName = 'sess_timeout';
 
-function enrichWithSessionInfo(dataBag) {
+function enrichWithSessionInfo (dataBag) {
   try {
     // console.log(sessionData);
     dataBag['session_id'] = sessionData.sessionId;
@@ -56,7 +56,7 @@ function enrichWithSessionInfo(dataBag) {
   return dataBag;
 }
 
-function enrichWithMetrics(dataBag) {
+function enrichWithMetrics (dataBag) {
   try {
     if (window.PREBID_TIMEOUT) {
       dataBag['target_timeout'] = window.PREBID_TIMEOUT;
@@ -73,7 +73,7 @@ function enrichWithMetrics(dataBag) {
   return dataBag;
 }
 
-function enrichWithUTM(dataBag) {
+function enrichWithUTM (dataBag) {
   let newUtm = false;
   try {
     for (let prop in utmKeys) {
@@ -103,14 +103,14 @@ function enrichWithUTM(dataBag) {
   return dataBag;
 }
 
-function expireUtmData() {
+function expireUtmData () {
   pwInfo(`Session Expiring UTM Data`);
   for (let prop in utmKeys) {
     storage.removeDataFromLocalStorage(setNamespace(prop));
   }
 }
 
-function enrichWithCustomSegments(dataBag) {
+function enrichWithCustomSegments (dataBag) {
   // c_script_type: '', c_slot1: '', c_slot2: '', c_slot3: '', c_slot4: ''
   if (configOptions.custom) {
     if (configOptions.custom.c_script_type) {
@@ -141,39 +141,39 @@ function enrichWithCustomSegments(dataBag) {
   return dataBag;
 }
 
-function setNamespace(itemText) {
+function setNamespace (itemText) {
   return pwNamespace.concat('_' + itemText);
 }
 
-function localStorageSessTimeoutName() {
+function localStorageSessTimeoutName () {
   return setNamespace(sessTimeoutName);
 }
 
-function localStorageSessName() {
+function localStorageSessName () {
   return setNamespace(sessName);
 }
 
-function extendUserSessionTimeout() {
+function extendUserSessionTimeout () {
   storage.setDataInLocalStorage(localStorageSessTimeoutName(), Date.now().toString());
 }
 
-function userSessionID() {
+function userSessionID () {
   return storage.getDataFromLocalStorage(localStorageSessName()) || '';
 }
 
-function sessionExpired() {
+function sessionExpired () {
   let sessLastTime = storage.getDataFromLocalStorage(localStorageSessTimeoutName());
   return (Date.now() - parseInt(sessLastTime)) > sessTimeout;
 }
 
-function flushEvents() {
+function flushEvents () {
   if (pwEvents.length > 0) {
     let dataBag = {metaData: metaData, eventList: pwEvents.splice(0)}; // put all the events together with the metadata and send
     ajax(configOptions.endpoint, (result) => pwInfo(`Result`, result), JSON.stringify(dataBag));
   }
 }
 
-function isIngestedEvent(eventType) {
+function isIngestedEvent (eventType) {
   const ingested = [
     EVENTS.AUCTION_INIT,
     EVENTS.BID_REQUESTED,
@@ -186,17 +186,17 @@ function isIngestedEvent(eventType) {
   return ingested.indexOf(eventType) !== -1;
 }
 
-function markEnabled() {
+function markEnabled () {
   pwInfo(`Enabled`, configOptions);
   pwAnalyticsEnabled = true;
   setInterval(flushEvents, 100);
 }
 
-function pwInfo(info, context) {
+function pwInfo (info, context) {
   logInfo(`${analyticsName} ` + info, context);
 }
 
-function filterBidResponse(data) {
+function filterBidResponse (data) {
   let modified = Object.assign({}, data);
   // clean up some properties we don't track in public version
   if (typeof modified.ad !== 'undefined') {
@@ -219,7 +219,7 @@ function filterBidResponse(data) {
   return modified;
 }
 
-function filterAuctionInit(data) {
+function filterAuctionInit (data) {
   let modified = Object.assign({}, data);
 
   modified.refererInfo = {};
@@ -256,12 +256,12 @@ function filterAuctionInit(data) {
 
 let pubwiseAnalytics = Object.assign(adapter({analyticsType}), {
   // Override AnalyticsAdapter functions by supplying custom methods
-  track({eventType, args}) {
+  track ({eventType, args}) {
     this.handleEvent(eventType, args);
   }
 });
 
-pubwiseAnalytics.handleEvent = function(eventType, data) {
+pubwiseAnalytics.handleEvent = function (eventType, data) {
   // we log most events, but some are information
   if (isIngestedEvent(eventType)) {
     pwInfo(`Emitting Event ${eventType} ${pwAnalyticsEnabled}`, data);

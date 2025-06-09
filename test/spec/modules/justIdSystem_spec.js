@@ -7,33 +7,33 @@ const DEFAULT_PARTNER = 'pbjs-just-id-module';
 const url = 'https://example.com/getId.js';
 
 describe('JustIdSystem', function () {
-  describe('configWrapper', function() {
-    it('invalid mode', function() {
+  describe('configWrapper', function () {
+    it('invalid mode', function () {
       expect(() => new ConfigWrapper({ params: { mode: 'invalidmode' } })).to.throw(EX_INVALID_MODE);
     })
 
-    it('url is required', function() {
+    it('url is required', function () {
       expect(() => new ConfigWrapper(configModeCombined())).to.throw(EX_URL_REQUIRED);
     })
 
-    it('defaultPartner', function() {
+    it('defaultPartner', function () {
       expect(new ConfigWrapper(configModeCombined(url)).getUrl()).to.eq(expectedUrl(url, DEFAULT_PARTNER));
     })
 
-    it('customPartner', function() {
+    it('customPartner', function () {
       const partner = 'abc';
       expect(new ConfigWrapper(configModeCombined(url, partner)).getUrl()).to.eq(expectedUrl(url, partner));
     })
   });
 
-  describe('decode', function() {
-    it('decode justId', function() {
+  describe('decode', function () {
+    it('decode justId', function () {
       const justId = 'aaa';
       expect(justIdSubmodule.decode({uid: justId})).to.deep.eq({justId: justId});
     })
   });
 
-  describe('getId basic', function() {
+  describe('getId basic', function () {
     var atmMock = (cmd, param) => {
       switch (cmd) {
         case 'getReadyState':
@@ -52,15 +52,15 @@ describe('JustIdSystem', function () {
 
     var logErrorStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       logErrorStub = sinon.spy(utils, 'logError');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       logErrorStub.restore();
     });
 
-    it('all ok', function(done) {
+    it('all ok', function (done) {
       currentAtm = atmMock;
       const callbackSpy = sinon.stub();
 
@@ -80,7 +80,7 @@ describe('JustIdSystem', function () {
       expect(getAtmStub.lastCall.lastArg).to.equal(atmVarName);
     });
 
-    it('unsuported version', function(done) {
+    it('unsuported version', function (done) {
       currentAtm = (cmd, param) => {
         switch (cmd) {
           case 'getReadyState':
@@ -103,7 +103,7 @@ describe('JustIdSystem', function () {
       justIdSubmodule.getId({}).callback(callbackSpy);
     });
 
-    it('work with stub', function(done) {
+    it('work with stub', function (done) {
       var calls = [];
       currentAtm = (cmd, param) => {
         calls.push({cmd: cmd, param: param});
@@ -129,7 +129,7 @@ describe('JustIdSystem', function () {
     });
   });
 
-  describe('getId combined', function() {
+  describe('getId combined', function () {
     const scriptTag = document.createElement('script');
 
     const onPrebidGetId = sinon.stub().callsFake(event => {
@@ -159,12 +159,12 @@ describe('JustIdSystem', function () {
       logErrorStub.restore();
     });
 
-    it('url is required', function() {
+    it('url is required', function () {
       expect(justIdSubmodule.getId(configModeCombined())).to.be.undefined;
       expect(logErrorStub.calledOnce).to.be.true;
     });
 
-    it('without cachedIdObj', function() {
+    it('without cachedIdObj', function () {
       const callbackSpy = sinon.spy();
       justIdSubmodule.getId(configModeCombined(url)).callback(callbackSpy);
 
@@ -173,7 +173,7 @@ describe('JustIdSystem', function () {
       expect(callbackSpy.lastCall.lastArg.uid).to.equal('user123');
     });
 
-    it('with cachedIdObj', function() {
+    it('with cachedIdObj', function () {
       const callbackSpy = sinon.spy();
 
       justIdSubmodule.getId(configModeCombined(url), undefined, { uid: 'userABC' }).callback(callbackSpy);
@@ -183,7 +183,7 @@ describe('JustIdSystem', function () {
       expect(callbackSpy.lastCall.lastArg.uid).to.equal('userABC-x');
     });
 
-    it('check if getId arguments are passed to prebidGetId event', function() {
+    it('check if getId arguments are passed to prebidGetId event', function () {
       const callbackSpy = sinon.spy();
 
       const a = configModeCombined(url);
@@ -199,11 +199,11 @@ describe('JustIdSystem', function () {
   });
 });
 
-function expectedUrl(url, srcId) {
+function expectedUrl (url, srcId) {
   return `${url}?sourceId=${srcId}`
 }
 
-function configModeCombined(url, partner) {
+function configModeCombined (url, partner) {
   var conf = {
     params: {
       mode: 'COMBINED'

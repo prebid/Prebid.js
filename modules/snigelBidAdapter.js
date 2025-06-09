@@ -117,19 +117,19 @@ export const spec = {
 
 registerBidder(spec);
 
-function getPage(bidderRequest) {
+function getPage (bidderRequest) {
   return getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.page') || window.location.href;
 }
 
-function getEndpoint() {
+function getEndpoint () {
   return getConfig(`${BIDDER_CODE}.url`) || DEFAULT_URL;
 }
 
-function getTestFlag() {
+function getTestFlag () {
   return getConfig(`${BIDDER_CODE}.test`) === true;
 }
 
-function getLanguage() {
+function getLanguage () {
   return navigator && navigator.language
     ? navigator.language.indexOf('-') != -1
       ? navigator.language.split('-')[0]
@@ -137,7 +137,7 @@ function getLanguage() {
     : undefined;
 }
 
-function getCurrencies() {
+function getCurrencies () {
   const currencyOverrides = getConfig(`${BIDDER_CODE}.cur`);
   if (currencyOverrides !== undefined && (!isArray(currencyOverrides) || currencyOverrides.length === 0)) {
     throw Error('Currency override must be an array with at least one currency');
@@ -145,11 +145,11 @@ function getCurrencies() {
   return currencyOverrides || DEFAULT_CURRENCIES;
 }
 
-function getFloorCurrency() {
+function getFloorCurrency () {
   return getConfig(`${BIDDER_CODE}.floorCur`) || getCurrencies()[0];
 }
 
-function getPriceFloor(bidRequest, mediaType, size) {
+function getPriceFloor (bidRequest, mediaType, size) {
   if (isFn(bidRequest.getFloor)) {
     const cur = getFloorCurrency();
     const floorInfo = bidRequest.getFloor({
@@ -166,7 +166,7 @@ function getPriceFloor(bidRequest, mediaType, size) {
   }
 }
 
-function getRefreshInformation(adUnitCode) {
+function getRefreshInformation (adUnitCode) {
   const refresh = refreshes[adUnitCode];
   if (!refresh) {
     refreshes[adUnitCode] = {
@@ -186,7 +186,7 @@ function getRefreshInformation(adUnitCode) {
   };
 }
 
-function getPlacementCounter(placement) {
+function getPlacementCounter (placement) {
   const counter = placementCounters[placement];
   if (counter === undefined) {
     placementCounters[placement] = 0;
@@ -197,11 +197,11 @@ function getPlacementCounter(placement) {
   return placementCounters[placement];
 }
 
-function mapIdToRequestId(id, bidRequest) {
+function mapIdToRequestId (id, bidRequest) {
   return bidRequest.bidderRequest.bids.filter((bid) => bid.adUnitCode === id)[0].bidId;
 }
 
-function hasFullGdprConsent(gdprConsent) {
+function hasFullGdprConsent (gdprConsent) {
   try {
     const purposeConsents = Object.values(gdprConsent.vendorData.purpose.consents);
     return (
@@ -214,11 +214,11 @@ function hasFullGdprConsent(gdprConsent) {
   }
 }
 
-function getSyncUrl(responses) {
+function getSyncUrl (responses) {
   return getConfig(`${BIDDER_CODE}.syncUrl`) || deepAccess(responses[0], 'body.syncUrl');
 }
 
-function getSyncEndpoint(url, gdprConsent, uspConsent, gppConsent) {
+function getSyncEndpoint (url, gdprConsent, uspConsent, gppConsent) {
   return `${url}?gdpr=${gdprConsent?.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(
     gdprConsent?.consentString || ''
   )}&gpp_sid=${gppConsent?.applicableSections?.join(',') || ''}&gpp=${encodeURIComponent(
@@ -226,7 +226,7 @@ function getSyncEndpoint(url, gdprConsent, uspConsent, gppConsent) {
   )}&us_privacy=${uspConsent || ''}`;
 }
 
-function getSessionId() {
+function getSessionId () {
   try {
     if (storageManager.localStorageIsEnabled()) {
       let sessionId = storageManager.getDataFromLocalStorage(SESSION_ID_KEY);

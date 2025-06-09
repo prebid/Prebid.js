@@ -10,7 +10,7 @@ export function isBidRequestValid (bid) {
 
 export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
   const syncs = [];
-  function addSyncs(bid) {
+  function addSyncs (bid) {
     const uris = bid.cookieURLs;
     const types = bid.cookieURLSTypes || [];
 
@@ -49,7 +49,7 @@ export function getUserSyncsFn (syncOptions, serverResponses, syncsCache = {}) {
   return syncs;
 }
 
-export function createTag(bidRequests, adapterRequest) {
+export function createTag (bidRequests, adapterRequest) {
   const tag = {
     // TODO: is 'page' the right value here?
     Domain: deepAccess(adapterRequest, 'refererInfo.page'),

@@ -63,7 +63,7 @@ let overrides = window.grumi?.overrides;
  * fetches the creative wrapper
  * @param {function} success - success callback
  */
-export function fetchWrapper(success) {
+export function fetchWrapper (success) {
   if (wrapperReady) {
     return success(wrapper);
   }
@@ -74,12 +74,12 @@ export function fetchWrapper(success) {
  * sets the wrapper and calls preload client
  * @param {string} responseText
  */
-export function setWrapper(responseText) {
+export function setWrapper (responseText) {
   wrapperReady = true;
   wrapper = responseText;
 }
 
-export function getInitialParams(key) {
+export function getInitialParams (key) {
   let params = {
     wver: '1.1.1',
     wtype: 'pbjs-module',
@@ -95,7 +95,7 @@ export function getInitialParams(key) {
   return params;
 }
 
-export function markAsLoaded() {
+export function markAsLoaded () {
   preloaded = true;
 }
 
@@ -103,7 +103,7 @@ export function markAsLoaded() {
  * preloads the client
  * @param {string} key
  */
-export function preloadClient(key) {
+export function preloadClient (key) {
   let iframe = createInvisibleIframe();
   iframe.id = 'grumiFrame';
   insertElement(iframe);
@@ -117,13 +117,13 @@ export function preloadClient(key) {
  * @param {string} str
  * @return {function}
  */
-function replacer(str) {
+function replacer (str) {
   return function () {
     return str;
   }
 }
 
-export function wrapHtml(wrapper, html) {
+export function wrapHtml (wrapper, html) {
   return wrapper.replace(HTML_PLACEHOLDER, replacer(html));
 }
 
@@ -133,7 +133,7 @@ export function wrapHtml(wrapper, html) {
  * @param {string} key
  * @return {Object}
  */
-export function getMacros(bid, key) {
+export function getMacros (bid, key) {
   return {
     '${key}': key,
     '%%ADUNIT%%': bid.adUnitCode,
@@ -158,10 +158,10 @@ export function getMacros(bid, key) {
  * @param {Object} macros
  * @return {string}
  */
-function replaceMacros(wrapper, macros) {
+function replaceMacros (wrapper, macros) {
   var re = new RegExp('\\' + Object.keys(macros).join('|'), 'gi');
 
-  return wrapper.replace(re, function(matched) {
+  return wrapper.replace(re, function (matched) {
     return macros[matched];
   });
 }
@@ -173,7 +173,7 @@ function replaceMacros(wrapper, macros) {
  * @param {string} html
  * @return {string}
  */
-function buildHtml(bid, wrapper, html, key) {
+function buildHtml (bid, wrapper, html, key) {
   let macros = getMacros(bid, key);
   wrapper = replaceMacros(wrapper, macros);
   return wrapHtml(wrapper, html);
@@ -184,7 +184,7 @@ function buildHtml(bid, wrapper, html, key) {
  * @param {Object} bid
  * @param {string} ad
  */
-function mutateBid(bid, ad) {
+function mutateBid (bid, ad) {
   bid.ad = ad;
 }
 
@@ -193,7 +193,7 @@ function mutateBid(bid, ad) {
  * @param {Object} bid
  * @param {string} key
  */
-export function wrapBidResponse(bid, key) {
+export function wrapBidResponse (bid, key) {
   let wrapped = buildHtml(bid, wrapper, bid.ad, key);
   mutateBid(bid, wrapped);
 }
@@ -203,7 +203,7 @@ export function wrapBidResponse(bid, key) {
  * @param {string} bidder
  * @return {boolean}
  */
-function isSupportedBidder(bidder, paramsBidders) {
+function isSupportedBidder (bidder, paramsBidders) {
   return isEmpty(paramsBidders) || paramsBidders[bidder] === true;
 }
 
@@ -212,21 +212,21 @@ function isSupportedBidder(bidder, paramsBidders) {
  * @param {Object} bid
  * @return {boolean}
  */
-function shouldWrap(bid, params) {
+function shouldWrap (bid, params) {
   let supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
   let donePreload = params.wap ? preloaded : true;
   let isGPT = params.gpt;
   return wrapperReady && supportedBidder && donePreload && !isGPT;
 }
 
-function conditionallyWrap(bidResponse, config, userConsent) {
+function conditionallyWrap (bidResponse, config, userConsent) {
   let params = config.params;
   if (shouldWrap(bidResponse, params)) {
     wrapBidResponse(bidResponse, params.key);
   }
 }
 
-function isBillingMessage(data, params) {
+function isBillingMessage (data, params) {
   return data.key === params.key && data.impression;
 }
 
@@ -236,7 +236,7 @@ function isBillingMessage(data, params) {
  * a. applicable bids are wrapped
  * b. our code laoded and executed sucesfully
  */
-function fireBillableEventsForApplicableBids(params) {
+function fireBillableEventsForApplicableBids (params) {
   window.addEventListener('message', function (message) {
     let data = message.data;
     if (isBillingMessage(data, params)) {
@@ -257,13 +257,13 @@ function fireBillableEventsForApplicableBids(params) {
  * Loads Geoedge in page script that monitors all ad slots created by GPT
  * @param {Object} params
  */
-function setupInPage(params) {
+function setupInPage (params) {
   window.grumi = params;
   window.grumi.fromPrebid = true;
   loadExternalScript(getInPageUrl(params.key), MODULE_TYPE_RTD, SUBMODULE_NAME);
 }
 
-function init(config, userConsent) {
+function init (config, userConsent) {
   let params = config.params;
   if (!params || !params.key) {
     logError('missing key for geoedge RTD module provider');

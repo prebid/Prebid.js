@@ -1,6 +1,6 @@
 import {EVENT_TYPE_IMPRESSION, EVENT_TYPE_WIN, TRACKER_METHOD_IMG} from '../../../src/eventTrackers.js';
 
-export function addEventTrackers(bidResponse, bid) {
+export function addEventTrackers (bidResponse, bid) {
   bidResponse.eventtrackers = bidResponse.eventtrackers || [];
   [
     [bid.burl, EVENT_TYPE_IMPRESSION], // core used to fire burl directly, but only for bids coming from PBS

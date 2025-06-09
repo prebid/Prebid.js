@@ -78,7 +78,7 @@ describe('sirdataRtdProvider', function () {
   describe('onDocumentReady', function () {
     it('on Document Ready function execution', function () {
       const testString = '';
-      const testFunction = function() { return true; };
+      const testFunction = function () { return true; };
       let resString;
       try {
         resString = onDocumentReady(testString);
@@ -100,7 +100,7 @@ describe('sirdataRtdProvider', function () {
 
   describe('loadCustomFunction', function () {
     it('load function', function () {
-      const res = loadCustomFunction(function(...args) { return true; }, {}, {}, {}, {});
+      const res = loadCustomFunction(function (...args) { return true; }, {}, {}, {}, {});
       expect(res).to.be.true;
     });
   });
@@ -178,7 +178,7 @@ describe('sirdataRtdProvider', function () {
           'post_content_token': '987654321'
         }
       }
-      addSegmentData(firstReqBidsConfigObj, firstData, adUnits, function() { return true; });
+      addSegmentData(firstReqBidsConfigObj, firstData, adUnits, function () { return true; });
       expect(firstReqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
     });
   });

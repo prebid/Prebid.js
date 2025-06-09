@@ -10,7 +10,7 @@ import { USERSYNC_DEFAULT_CONFIG } from '../../src/userSync.js';
 const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
 const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
 
-export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+export function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   const spb = isPlainObject(config.getConfig('userSync')) &&
         isNumber(config.getConfig('userSync').syncsPerBidder)
     ? config.getConfig('userSync').syncsPerBidder : USERSYNC_DEFAULT_CONFIG.syncsPerBidder;

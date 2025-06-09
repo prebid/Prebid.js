@@ -28,7 +28,7 @@ var isDataSend = window.asc_data || false
 var bdNbTo = { 'to': [], 'nb': [] }
 
 /* method used for testing parameters */
-function isKeyInUrl(name) {
+function isKeyInUrl (name) {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
   const param = urlParams.get(name)
@@ -36,7 +36,7 @@ function isKeyInUrl(name) {
 }
 
 /* return ad unit full path wrt custom ad unit code */
-function getAdunitName(code) {
+function getAdunitName (code) {
   var name = code;
   for (const [key, value] of Object.entries(adunitsMap)) {
     if (key === code) { name = value; }
@@ -45,7 +45,7 @@ function getAdunitName(code) {
 }
 
 /* EVENT: auction init */
-function onAuctionStart(t) {
+function onAuctionStart (t) {
   /* map of ad unit code - ad unit full path */
   t.adUnits && t.adUnits.length && t.adUnits.forEach((adu) => {
     const { code, adunit } = adu
@@ -54,21 +54,21 @@ function onAuctionStart(t) {
 }
 
 /* EVENT: bid timeout */
-function onBidTimeout(t) {
+function onBidTimeout (t) {
   if (payload['visitor_data'] && t && t.length > 0) {
     bdNbTo['to'] = t
   }
 }
 
 /* EVENT: no bid */
-function onNoBidData(t) {
+function onNoBidData (t) {
   if (payload['visitor_data'] && t) {
     bdNbTo['nb'].push(t)
   }
 }
 
 /* EVENT: bid won */
-function onBidWon(t) {
+function onBidWon (t) {
   const { isCorrectOption } = initOptions
   if (isCorrectOption && (isDataSend || isBydata)) {
     ascAdapter.getBidWonData(t)
@@ -77,7 +77,7 @@ function onBidWon(t) {
 }
 
 /* EVENT: auction end */
-function onAuctionEnd(t) {
+function onAuctionEnd (t) {
   const { isCorrectOption } = initOptions;
   setTimeout(() => {
     if (isCorrectOption && (isDataSend || isBydata)) {
@@ -88,7 +88,7 @@ function onAuctionEnd(t) {
 }
 
 const ascAdapter = Object.assign(adapter({ url: DEFAULT_EVENT_URL, analyticsType: analyticsType }), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:
         onAuctionStart(args);
@@ -138,7 +138,7 @@ ascAdapter.initConfig = function (config) {
   return isCorrectOption;
 };
 
-ascAdapter.getBidWonData = function(t) {
+ascAdapter.getBidWonData = function (t) {
   const { auctionId, adUnitCode, size, requestId, bidder, timeToRespond, currency, mediaType, cpm } = t
   const aun = getAdunitName(adUnitCode)
   winPayload['aid'] = auctionId
@@ -225,7 +225,7 @@ ascAdapter.getVisitorData = function (data = {}) {
     }
   };
 
-  function generateUid() {
+  function generateUid () {
     try {
       var buffer = new Uint8Array(16);
       crypto.getRandomValues(buffer);
@@ -239,14 +239,14 @@ ascAdapter.getVisitorData = function (data = {}) {
       return '';
     }
   }
-  function base64url(source) {
+  function base64url (source) {
     var encodedSource = Base64.stringify(source);
     encodedSource = encodedSource.replace(/=+$/, '');
     encodedSource = encodedSource.replace(/\+/g, '-');
     encodedSource = encodedSource.replace(/\//g, '_');
     return encodedSource;
   }
-  function getJWToken(data) {
+  function getJWToken (data) {
     var header = {
       'alg': 'HS256',
       'typ': 'JWT'
@@ -261,12 +261,12 @@ ascAdapter.getVisitorData = function (data = {}) {
     var signedToken = token + '.' + signature;
     return signedToken;
   }
-  function detectWidth() {
+  function detectWidth () {
     const {width: viewportWidth} = getViewportSize();
     const windowDimensions = getWinDimensions();
     return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
   }
-  function giveDeviceTypeOnScreenSize() {
+  function giveDeviceTypeOnScreenSize () {
     var _dWidth = detectWidth();
     return _dWidth > 1024 ? 'Desktop' : (_dWidth <= 1024 && _dWidth >= 768) ? 'Tablet' : 'Mobile';
   }
@@ -380,7 +380,7 @@ ascAdapter.sendPayload = function (data) {
   sendDataOnKf(strJSON);
 }
 
-function sendDataOnKf(dataObj) {
+function sendDataOnKf (dataObj) {
   ajax(DEFAULT_EVENT_URL, {
     success: function () {
       _logInfo('send data success');
@@ -400,15 +400,15 @@ adapterManager.registerAnalyticsAdapter({
   code: MODULE_CODE,
 });
 
-function _logInfo(message, meta) {
+function _logInfo (message, meta) {
   logInfo(buildLogMessage(message), meta);
 }
 
-function _logError(message) {
+function _logError (message) {
   logError(buildLogMessage(message));
 }
 
-function buildLogMessage(message) {
+function buildLogMessage (message) {
   return 'Bydata Prebid Analytics ' + versionCode + ':' + message;
 }
 

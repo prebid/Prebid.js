@@ -48,10 +48,10 @@ export const ORTB_IPV6_PATHS = ['device.ipv6']
  * @param {RedactRuleDef} ruleDef
  * @return {TransformationRule}
  */
-export function redactRule(ruleDef) {
+export function redactRule (ruleDef) {
   return Object.assign({
-    get() {},
-    run(root, path, object, property, applies) {
+    get () {},
+    run (root, path, object, property, applies) {
       const val = object && object[property];
       if (isData(val) && applies()) {
         const repl = this.get(val);
@@ -83,7 +83,7 @@ export function redactRule(ruleDef) {
  * @param {Array[TransformationRule]} rules
  * @return {TransformationFunction}
  */
-export function objectTransformer(rules) {
+export function objectTransformer (rules) {
   rules.forEach(rule => {
     rule.paths = rule.paths.map((path) => {
       const parts = path.split('.');
@@ -91,7 +91,7 @@ export function objectTransformer(rules) {
       return [parts.length > 0 ? parts.join('.') : null, tail]
     })
   })
-  return function applyTransform(session, obj, ...args) {
+  return function applyTransform (session, obj, ...args) {
     const result = [];
     const applies = sessionedApplies(session, ...args);
     rules.forEach(rule => {
@@ -106,8 +106,8 @@ export function objectTransformer(rules) {
   }
 }
 
-export function sessionedApplies(session, ...args) {
-  return function applies(rule) {
+export function sessionedApplies (session, ...args) {
+  return function applies (rule) {
     if (!session.hasOwnProperty(rule.name)) {
       session[rule.name] = !!rule.applies(...args);
     }
@@ -115,17 +115,17 @@ export function sessionedApplies(session, ...args) {
   }
 }
 
-export function isData(val) {
+export function isData (val) {
   return val != null && (typeof val !== 'object' || Object.keys(val).length > 0)
 }
 
-export function appliesWhenActivityDenied(activity, isAllowed = isActivityAllowed) {
-  return function applies(params) {
+export function appliesWhenActivityDenied (activity, isAllowed = isActivityAllowed) {
+  return function applies (params) {
     return !isAllowed(activity, params);
   };
 }
 
-function bidRequestTransmitRules(isAllowed = isActivityAllowed) {
+function bidRequestTransmitRules (isAllowed = isActivityAllowed) {
   return [
     {
       name: ACTIVITY_TRANSMIT_EIDS,
@@ -140,7 +140,7 @@ function bidRequestTransmitRules(isAllowed = isActivityAllowed) {
   ].map(redactRule)
 }
 
-export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
+export function ortb2TransmitRules (isAllowed = isActivityAllowed) {
   return [
     {
       name: ACTIVITY_TRANSMIT_UFPD,
@@ -156,7 +156,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       name: ACTIVITY_TRANSMIT_PRECISE_GEO,
       paths: ORTB_GEO_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
-      get(val) {
+      get (val) {
         return Math.round((val + Number.EPSILON) * 100) / 100;
       }
     },
@@ -164,7 +164,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       name: ACTIVITY_TRANSMIT_PRECISE_GEO,
       paths: ORTB_IPV4_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
-      get(val) {
+      get (val) {
         return scrubIPv4(val);
       }
     },
@@ -172,7 +172,7 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
       name: ACTIVITY_TRANSMIT_PRECISE_GEO,
       paths: ORTB_IPV6_PATHS,
       applies: appliesWhenActivityDenied(ACTIVITY_TRANSMIT_PRECISE_GEO, isAllowed),
-      get(val) {
+      get (val) {
         return scrubIPv6(val);
       }
     },
@@ -184,14 +184,14 @@ export function ortb2TransmitRules(isAllowed = isActivityAllowed) {
   ].map(redactRule);
 }
 
-export function redactorFactory(isAllowed = isActivityAllowed) {
+export function redactorFactory (isAllowed = isActivityAllowed) {
   const redactOrtb2 = objectTransformer(ortb2TransmitRules(isAllowed));
   const redactBidRequest = objectTransformer(bidRequestTransmitRules(isAllowed));
-  return function redactor(params) {
+  return function redactor (params) {
     const session = {};
     return {
-      ortb2(obj) { redactOrtb2(session, obj, params); return obj },
-      bidRequest(obj) { redactBidRequest(session, obj, params); return obj }
+      ortb2 (obj) { redactOrtb2(session, obj, params); return obj },
+      bidRequest (obj) { redactBidRequest(session, obj, params); return obj }
     }
   }
 }

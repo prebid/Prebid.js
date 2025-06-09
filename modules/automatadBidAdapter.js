@@ -112,11 +112,11 @@ export const spec = {
 
     return bidResponses
   },
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     const timeoutUrl = ENDPOINT_URL + '/timeout'
     spec.ajaxCall(timeoutUrl, null, JSON.stringify(timeoutData), {method: 'POST', withCredentials: true})
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (!bid.nurl) { return }
     const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
     const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
@@ -140,7 +140,7 @@ export const spec = {
     return true
   },
 
-  ajaxCall: function(endpoint, callback, data, options = {}) {
+  ajaxCall: function (endpoint, callback, data, options = {}) {
     if (data) {
       options.contentType = 'application/json'
     }

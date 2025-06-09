@@ -26,18 +26,18 @@ const converter = ortbConverter({
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
     ttl: 30// default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.params', bidRequest.params);
     deepSetValue(imp, 'ext.mediaTypes', bidRequest.mediaTypes);
     deepSetValue(imp, 'ext.novatiqSyncResponse', bidRequest?.userId?.novatiq?.snowflake?.syncResponse);
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     return buildBidResponse(bid, context)
   }
 });
@@ -179,7 +179,7 @@ export const spec = {
   }
 };
 
-function createAd(adResult, locationPrams, bidParams, requestId) {
+function createAd (adResult, locationPrams, bidParams, requestId) {
   adgLogger.logInfo('params', bidParams);
   let ad = adResult.ad;
   if (adResult.vastxml && adResult.vastxml.length > 0) {
@@ -195,19 +195,19 @@ function createAd(adResult, locationPrams, bidParams, requestId) {
   return ad;
 }
 
-function isUpperBillboard(locationParams) {
+function isUpperBillboard (locationParams) {
   if (locationParams && locationParams.option && locationParams.option.ad_type) {
     return locationParams.option.ad_type === 'upper_billboard';
   }
   return false;
 }
 
-function isNative(adResult) {
+function isNative (adResult) {
   if (!adResult) return false;
   return adResult.native && adResult.native.assets.length > 0;
 }
 
-function createNativeAd(nativeAd, beaconUrl) {
+function createNativeAd (nativeAd, beaconUrl) {
   let native = {};
   if (nativeAd && nativeAd.assets.length > 0) {
     const assets = nativeAd.assets;
@@ -254,7 +254,7 @@ function createNativeAd(nativeAd, beaconUrl) {
   return native;
 }
 
-function appendChildToBody(ad, data) {
+function appendChildToBody (ad, data) {
   return ad.replace(/<\/\s?body>/, `${data}</body>`);
 }
 
@@ -262,7 +262,7 @@ function appendChildToBody(ad, data) {
  * create APVTag
  * @return {string}
  */
-function createAPVTag() {
+function createAPVTag () {
   const APVURL = 'https://cdn.apvdr.com/js/VideoAd.min.js';
   return `<script type="text/javascript" id="apv" src="${APVURL}"></script>`
 }
@@ -271,7 +271,7 @@ function createAPVTag() {
  * create ADGBrowserMTag
  * @return {string}
  */
-function createADGBrowserMTag() {
+function createADGBrowserMTag () {
   const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js';
   return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`;
 }
@@ -282,7 +282,7 @@ function createADGBrowserMTag() {
  * @param vastXml
  * @return {string}
  */
-function insertVASTMethodForAPV(targetId, vastXml) {
+function insertVASTMethodForAPV (targetId, vastXml) {
   let apvVideoAdParam = {
     s: targetId
   };
@@ -295,7 +295,7 @@ function insertVASTMethodForAPV(targetId, vastXml) {
  * @param marginTop
  * @return {string}
  */
-function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
+function insertVASTMethodForADGBrowserM (vastXml, marginTop) {
   return `<script type="text/javascript">window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});</script>`
 }
 
@@ -303,7 +303,7 @@ function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
  *
  * @param ad
  */
-function removeWrapper(ad) {
+function removeWrapper (ad) {
   const bodyIndex = ad.indexOf('<body>');
   const lastBodyIndex = ad.lastIndexOf('</body>');
   if (bodyIndex === -1 || lastBodyIndex === -1) return false;
@@ -313,7 +313,7 @@ function removeWrapper(ad) {
 /**
  * @return {?string} USD or JPY
  */
-function getCurrencyType(bidderRequest) {
+function getCurrencyType (bidderRequest) {
   const adServerCurrency = getCurrencyFromBidderRequest(bidderRequest) || ''
   return adServerCurrency.toUpperCase() === 'USD' ? 'USD' : 'JPY'
 }

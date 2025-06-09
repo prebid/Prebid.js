@@ -17,7 +17,7 @@ const BIDDER_CODE = 'valuad';
 const AD_URL = 'https://rtb.valuad.io/adapter';
 const WON_URL = 'https://hb-dot-valuad.appspot.com/adapter/win';
 
-function _isIframe() {
+function _isIframe () {
   try {
     return getWindowSelf() !== getWindowTop();
   } catch (e) {
@@ -25,11 +25,11 @@ function _isIframe() {
   }
 }
 
-function _isViewabilityMeasurable(element) {
+function _isViewabilityMeasurable (element) {
   return !_isIframe() && element !== null;
 }
 
-function _getViewability(element, topWin, { w, h } = {}) {
+function _getViewability (element, topWin, { w, h } = {}) {
   return topWin.document.visibilityState === 'visible' ? percentInView(element, { w, h }) : 0;
 }
 
@@ -39,7 +39,7 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent') || {};
@@ -99,7 +99,7 @@ const converter = ortbConverter({
     return request;
   },
 
-  imp(buildImp, bid, context) {
+  imp (buildImp, bid, context) {
     const imp = buildImp(bid, context);
 
     const mediaType = Object.keys(bid.mediaTypes)[0];
@@ -151,7 +151,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     let bidResponse;
     try {
       bidResponse = buildBidResponse(bid, context);
@@ -172,7 +172,7 @@ const converter = ortbConverter({
   },
 });
 
-function isBidRequestValid(bid = {}) {
+function isBidRequestValid (bid = {}) {
   const { params, bidId, mediaTypes } = bid;
 
   const foundKeys = bid && bid.params && bid.params.placementId;
@@ -187,7 +187,7 @@ function isBidRequestValid(bid = {}) {
   return valid;
 }
 
-function buildRequests(validBidRequests = [], bidderRequest = {}) {
+function buildRequests (validBidRequests = [], bidderRequest = {}) {
   const data = converter.toORTB({ validBidRequests, bidderRequest });
 
   return [{
@@ -197,14 +197,14 @@ function buildRequests(validBidRequests = [], bidderRequest = {}) {
   }];
 }
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   // Restore original call, remove logging and safe navigation
   const bidResponses = converter.fromORTB({response: response.body, request: request.data}).bids;
 
   return bidResponses;
 }
 
-function getUserSyncs(syncOptions, serverResponses) {
+function getUserSyncs (syncOptions, serverResponses) {
   if (!serverResponses.length || serverResponses[0].body === '' || !serverResponses[0].body.userSyncs) {
     return false;
   }
@@ -215,7 +215,7 @@ function getUserSyncs(syncOptions, serverResponses) {
   }));
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   const {
     adUnitCode, adUnitId, auctionId, bidder, cpm, currency, originalCpm, originalCurrency, size, vbid, vid,
   } = bid;

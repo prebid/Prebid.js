@@ -25,7 +25,7 @@ describe('ortb2Guard', () => {
     })
   });
 
-  function testAllowDeny(transmitActivity, enrichActivity, fn) {
+  function testAllowDeny (transmitActivity, enrichActivity, fn) {
     Object.entries({
       allowed: true,
       denied: false
@@ -43,7 +43,7 @@ describe('ortb2Guard', () => {
     })
   }
 
-  function testPropertiesAreProtected(properties, allowed) {
+  function testPropertiesAreProtected (properties, allowed) {
     properties.forEach(prop => {
       it(`should ${allowed ? 'keep' : 'undo'} additions to ${prop}`, () => {
         const orig = [{n: 'orig'}];

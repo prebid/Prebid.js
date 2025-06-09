@@ -22,7 +22,7 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME
 });
 
-function init(moduleConfig) {
+function init (moduleConfig) {
   if (!moduleConfig?.params?.clientSiteId) {
     logError('Mgid clientSiteId is not set!');
     return false;
@@ -30,7 +30,7 @@ function init(moduleConfig) {
   return true;
 }
 
-function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
+function getBidRequestData (reqBidsConfigObj, onDone, moduleConfig, userConsent) {
   let mguid;
   try {
     mguid = storage.getDataFromLocalStorage(MGUID_LOCAL_STORAGE_KEY);
@@ -126,7 +126,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userConsent) 
   }, moduleConfig.params.timeout || 1000);
 }
 
-function getContextUrl() {
+function getContextUrl () {
   const refererInfo = getRefererInfo();
 
   let resultUrl = refererInfo.canonicalUrl || refererInfo.topmostLocation;
@@ -141,7 +141,7 @@ function getContextUrl() {
   return resultUrl;
 }
 
-function getDataForMerge(responseData) {
+function getDataForMerge (responseData) {
   let siteData = {
     name: ORTB2_NAME
   };

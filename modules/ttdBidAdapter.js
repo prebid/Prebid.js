@@ -26,7 +26,7 @@ const MEDIA_TYPE = {
   VIDEO: 2
 };
 
-function getExt(firstPartyData) {
+function getExt (firstPartyData) {
   const ext = {
     ver: BIDADAPTERVERSION,
     pbjs: '$prebid.version$',
@@ -37,7 +37,7 @@ function getExt(firstPartyData) {
   };
 }
 
-function getRegs(bidderRequest) {
+function getRegs (bidderRequest) {
   let regs = {};
 
   if (bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
@@ -56,7 +56,7 @@ function getRegs(bidderRequest) {
   return regs;
 }
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   // value from params takes precedance over value set by Floor Module
   if (bid.params.bidfloor) {
     return bid.params.bidfloor;
@@ -77,7 +77,7 @@ function getBidFloor(bid) {
   return null;
 }
 
-function getSource(validBidRequests, bidderRequest) {
+function getSource (validBidRequests, bidderRequest) {
   let source = {
     tid: bidderRequest?.ortb2?.source?.tid,
   };
@@ -87,7 +87,7 @@ function getSource(validBidRequests, bidderRequest) {
   return source;
 }
 
-function getDevice(firstPartyData) {
+function getDevice (firstPartyData) {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
   let device = {
     ua: navigator.userAgent,
@@ -101,7 +101,7 @@ function getDevice(firstPartyData) {
   return device;
 };
 
-function getUser(bidderRequest, firstPartyData) {
+function getUser (bidderRequest, firstPartyData) {
   let user = {};
   if (bidderRequest.gdprConsent) {
     utils.deepSetValue(user, 'ext.consent', bidderRequest.gdprConsent.consentString);
@@ -121,7 +121,7 @@ function getUser(bidderRequest, firstPartyData) {
   return user;
 }
 
-function getSite(bidderRequest, firstPartyData) {
+function getSite (bidderRequest, firstPartyData) {
   var site = utils.mergeDeep({
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
     ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
@@ -139,7 +139,7 @@ function getSite(bidderRequest, firstPartyData) {
   return site;
 }
 
-function getImpression(bidRequest) {
+function getImpression (bidRequest) {
   let impression = {
     id: bidRequest.bidId
   };
@@ -178,7 +178,7 @@ function getImpression(bidRequest) {
   return impression;
 }
 
-function getSizes(sizes) {
+function getSizes (sizes) {
   const sizeStructs = utils.parseSizesInput(sizes)
     .filter(x => x) // sizes that don't conform are returned as null, which we want to ignore
     .map(x => x.split('x'))
@@ -192,7 +192,7 @@ function getSizes(sizes) {
   return sizeStructs;
 }
 
-function banner(bid) {
+function banner (bid) {
   const sizes = getSizes(bid.mediaTypes.banner.sizes).map(x => {
     return {
       w: x.width,
@@ -225,7 +225,7 @@ function banner(bid) {
   return banner;
 }
 
-function video(bid) {
+function video (bid) {
   if (FEATURES.VIDEO) {
     const v = bid?.mediaTypes?.video;
     if (!v) return;
@@ -280,7 +280,7 @@ function video(bid) {
   }
 }
 
-function selectEndpoint(params) {
+function selectEndpoint (params) {
   if (params.useHttp2) {
     return BIDDER_ENDPOINT_HTTP2;
   }
@@ -519,7 +519,7 @@ export const spec = {
    * @param {uspConsent} uspConsent USP consent object
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
     const syncs = [];
 
     let gdprParams = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString)}`;

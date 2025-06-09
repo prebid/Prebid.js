@@ -18,7 +18,7 @@ const buildServerUrl = (keyId) => {
   return `https://${host}.adxpremium.services/openrtb2/auction`
 }
 
-function hasRtd() {
+function hasRtd () {
   const rtdConfigs = config.getConfig('realTimeData.dataProviders') || [];
 
   return Boolean(rtdConfigs.find(provider => provider.name === 'dynamicAdBoost'));
@@ -30,7 +30,7 @@ export const converter = ortbConverter({
     ttl: 300,
     mediaType: BANNER,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     imp.ext = imp.ext || {};
@@ -49,7 +49,7 @@ export const converter = ortbConverter({
 
     return imp;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
 
     if (!bidResponse.creativeId) {
@@ -160,7 +160,7 @@ export const spec = {
 let hasSynced = false;
 
 // we need this for tests
-export function resetUserSync() {
+export function resetUserSync () {
   hasSynced = false;
 }
 

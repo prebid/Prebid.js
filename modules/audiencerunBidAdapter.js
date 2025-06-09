@@ -37,7 +37,7 @@ let requestedBids = [];
  * @param {Object} bid
  * @returns {number}
  */
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidfloor', 0);
   }
@@ -59,7 +59,7 @@ function getBidFloor(bid) {
  *
  * @returns {string}
  */
-function getPageReferer() {
+function getPageReferer () {
   let t, e;
   do {
     t = t ? t.parent : window;
@@ -78,7 +78,7 @@ function getPageReferer() {
  * @param {Object} bidderRequest
  * @return {string}
  */
-function getPageUrl(bidderRequest) {
+function getPageUrl (bidderRequest) {
   return bidderRequest?.refererInfo?.page
 }
 

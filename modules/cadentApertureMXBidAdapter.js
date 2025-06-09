@@ -195,18 +195,18 @@ export const cadentAdapter = {
     return cadentData;
   },
   // supporting eids
-  getEids(bidRequests) {
+  getEids (bidRequests) {
     return EIDS_SUPPORTED
       .map(cadentAdapter.getUserId(bidRequests))
       .filter(x => x);
   },
-  getUserId(bidRequests) {
+  getUserId (bidRequests) {
     return ({ key, source, rtiPartner }) => {
       let id = deepAccess(bidRequests, `userId.${key}`);
       return id ? cadentAdapter.formatEid(id, source, rtiPartner) : null;
     };
   },
-  formatEid(id, source, rtiPartner) {
+  formatEid (id, source, rtiPartner) {
     return {
       source,
       uids: [{
@@ -404,7 +404,7 @@ export const spec = {
 };
 
 // support floors module in prebid 5.0
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return parseFloat(getBidIdParameter('bidfloor', bid.params));
   }

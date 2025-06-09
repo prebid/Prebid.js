@@ -148,7 +148,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function buildSite(bidderRequest) {
+function buildSite (bidderRequest) {
   // TODO: should name/domain be the domain?
   let site = {
     name: window.location.hostname,
@@ -172,7 +172,7 @@ function buildSite(bidderRequest) {
   return site;
 }
 
-function buildDevice() {
+function buildDevice () {
   return {
     ua: navigator.userAgent,
     w: window.top.screen.width,
@@ -184,7 +184,7 @@ function buildDevice() {
   }
 }
 
-function buildRegs(bidderRequest) {
+function buildRegs (bidderRequest) {
   let regs = {
     coppa: config.getConfig('coppa') == true ? 1 : 0,
   };
@@ -210,12 +210,12 @@ function buildRegs(bidderRequest) {
   return regs;
 }
 
-function replaceAuctionPrice(str, cpm) {
+function replaceAuctionPrice (str, cpm) {
   if (!str) return;
   return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
 }
 
-function getFloor(bid, size) {
+function getFloor (bid, size) {
   if (typeof bid.getFloor === 'function') {
     let floorInfo = {};
     floorInfo = bid.getFloor({
@@ -231,7 +231,7 @@ function getFloor(bid, size) {
   return 0;
 }
 
-function getUserIdAsEids(userIds) {
+function getUserIdAsEids (userIds) {
   if (userIds) {
     return {
       ext: {
@@ -242,7 +242,7 @@ function getUserIdAsEids(userIds) {
   return {};
 }
 
-function getSchain(schain) {
+function getSchain (schain) {
   if (schain) {
     return {
       ext: {

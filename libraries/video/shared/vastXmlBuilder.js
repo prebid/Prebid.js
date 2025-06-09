@@ -1,6 +1,6 @@
 import { getGlobal } from '../../../src/prebidGlobal.js';
 
-export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
+export function buildVastWrapper (adId, adTagUrl, impressionUrl, impressionId, errorUrl) {
   let wrapperBody = getAdSystemNode('Prebid org', getGlobal().version);
 
   if (adTagUrl) {
@@ -18,42 +18,42 @@ export function buildVastWrapper(adId, adTagUrl, impressionUrl, impressionId, er
   return getVastNode(getAdNode(getWrapperNode(wrapperBody), adId), '4.2');
 }
 
-export function getVastNode(body, vastVersion) {
+export function getVastNode (body, vastVersion) {
   return getNode('VAST', body, { version: vastVersion });
 }
 
-export function getAdNode(body, adId) {
+export function getAdNode (body, adId) {
   return getNode('Ad', body, { id: adId });
 }
 
-export function getWrapperNode(body) {
+export function getWrapperNode (body) {
   return getNode('Wrapper', body);
 }
 
-export function getAdSystemNode(system, version) {
+export function getAdSystemNode (system, version) {
   return getNode('AdSystem', system, { version });
 }
 
-export function getAdTagUriNode(adTagUrl) {
+export function getAdTagUriNode (adTagUrl) {
   return getUrlNode('VASTAdTagURI', adTagUrl);
 }
 
-export function getImpressionNode(pingUrl, id) {
+export function getImpressionNode (pingUrl, id) {
   return getUrlNode('Impression', pingUrl, { id });
 }
 
-export function getErrorNode(pingUrl) {
+export function getErrorNode (pingUrl) {
   return getUrlNode('Error', pingUrl);
 }
 
 // Helpers
 
-function getUrlNode(labelName, url, attributes) {
+function getUrlNode (labelName, url, attributes) {
   const body = `<![CDATA[${url}]]>`;
   return getNode(labelName, body, attributes);
 }
 
-function getNode(labelName, body, attributes) {
+function getNode (labelName, body, attributes) {
   const openingLabel = getOpeningLabel(labelName, attributes);
   return `<${openingLabel}>${body}</${labelName}>`;
 }
@@ -61,7 +61,7 @@ function getNode(labelName, body, attributes) {
 /*
 attributes is a KVP Object.
  */
-function getOpeningLabel(name, attributes) {
+function getOpeningLabel (name, attributes) {
   if (!attributes) {
     return name;
   }

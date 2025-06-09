@@ -420,8 +420,8 @@ describe('SmartHubBidAdapter', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
-    it('Should return array of objects with GDPR values', function() {
+  describe('getUserSyncs', function () {
+    it('Should return array of objects with GDPR values', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
@@ -433,7 +433,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
-    it('Should return array of objects with CCPA values', function() {
+    it('Should return array of objects with CCPA values', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {
         consentString: '1---'
       });
@@ -444,7 +444,7 @@ describe('SmartHubBidAdapter', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://us.shb-sync.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
-    it('Should return array of objects with GPP values', function() {
+    it('Should return array of objects with GPP values', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {}, {
         gppString: 'ab12345',
         applicableSections: [8]

@@ -133,7 +133,7 @@ function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
  * Add the brandmetrics script to the page.
  * @param {string} scriptId - The script- id provided by brandmetrics or brandmetrics partner
  */
-function initializeBrandmetrics(scriptId) {
+function initializeBrandmetrics (scriptId) {
   window._brandmetrics = window._brandmetrics || []
 
   if (scriptId) {
@@ -148,7 +148,7 @@ function initializeBrandmetrics(scriptId) {
 /**
  * Hook in to brandmetrics creative_in_view- event and emit billable- event for creatives measured by brandmetrics.
  */
-function initializeBillableEvents() {
+function initializeBillableEvents () {
   if (!billableEventsInitialized) {
     window._brandmetrics.push({
       cmd: '_addeventlistener',
@@ -178,7 +178,7 @@ function initializeBillableEvents() {
  * @param {Object} customConfig
  * @returns
  */
-function getMergedConfig(customConfig) {
+function getMergedConfig (customConfig) {
   return mergeDeep({
     waitForIt: false,
     params: {

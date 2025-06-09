@@ -493,7 +493,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gppSid).to.deep.equal(['1', '2']);
     });
 
-    it('should create the request with dsa data and return with dsa object', function() {
+    it('should create the request with dsa data and return with dsa object', function () {
       const dsa = {
         dsarequired: 2,
         pubrender: 1,
@@ -612,7 +612,7 @@ describe('InsticatorBidAdapter', function () {
       const data = JSON.parse(requests[0].data);
       expect(data.imp[0].bidfloor).to.equal(1);
 
-      tempBiddRequest.mediaTypes.banner.format = [ { w: 300, h: 600 },
+      tempBiddRequest.mediaTypes.banner.format = [{ w: 300, h: 600 },
       ];
       const request2 = spec.buildRequests([tempBiddRequest], bidderRequest);
       const data2 = JSON.parse(request2[0].data);
@@ -1090,7 +1090,7 @@ describe('InsticatorBidAdapter', function () {
     };
     const bidRequestWithVideo = utils.deepClone(bidRequestVid);
 
-    it('should have related properties for video Instream', function() {
+    it('should have related properties for video Instream', function () {
       const serverResponseWithInstream = utils.deepClone(bidResponseVid);
       serverResponseWithInstream.body.seatbid[0].bid[0].vastXml = '<VAST version="4.0"><Ad></Ad></VAST>';
       serverResponseWithInstream.body.seatbid[0].bid[0].mediaType = 'video';
@@ -1104,7 +1104,7 @@ describe('InsticatorBidAdapter', function () {
     });
   })
 
-  describe(`Response with DSA data`, function() {
+  describe(`Response with DSA data`, function () {
     const bidRequestDsa = {
       method: 'POST',
       url: 'https://ex.ingage.tech/v1/openrtb',
@@ -1195,7 +1195,7 @@ describe('InsticatorBidAdapter', function () {
       }
     };
     const bidRequestWithDsa = utils.deepClone(bidRequestDsa);
-    it('should have related properties for DSA data', function() {
+    it('should have related properties for DSA data', function () {
       const serverResponseWithDsa = utils.deepClone(bidResponseDsa);
       const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequestWithDsa)[0];
       expect(bidResponse).to.have.any.keys('ext');

@@ -79,9 +79,9 @@ describe('truereachBidAdapterTests', function () {
     expect(bid.meta.advertiserDomains[0]).to.equal('https://www.momagic.com/');
   });
 
-  describe('user_sync', function() {
+  describe('user_sync', function () {
     const user_sync_url = 'https://ads-sg.momagic.com/jsp/usersync.jsp';
-    it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
+    it('register_iframe_pixel_if_iframeEnabled_is_true', function () {
       let syncs = spec.getUserSyncs(
         {iframeEnabled: true}
       );
@@ -91,7 +91,7 @@ describe('truereachBidAdapterTests', function () {
       expect(syncs[0].url).to.equal(user_sync_url);
     });
 
-    it('if_pixelEnabled_is_true', function() {
+    it('if_pixelEnabled_is_true', function () {
       let syncs = spec.getUserSyncs(
         {pixelEnabled: true}
       );

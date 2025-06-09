@@ -90,7 +90,7 @@ let cacheCleanupInterval;
 let conversantAnalytics = Object.assign(
   adapter({URL: ANALYTICS_URL, ANALYTICS_TYPE}),
   {
-    track({eventType, args}) {
+    track ({eventType, args}) {
       try {
         if (cnvrHelper.doSample) {
           logMessage(CNVR_CONSTANTS.LOG_PREFIX + ' track(): ' + eventType, args);
@@ -154,7 +154,7 @@ let conversantAnalytics = Object.assign(
     }
 }
  */
-function onBidderError(args) {
+function onBidderError (args) {
   if (!cnvrHelper.doSendErrorData) {
     logWarn(CNVR_CONSTANTS.LOG_PREFIX + 'Skipping bidder error parsing due to config disabling error logging, bidder error status = ' + args.error.status + ', Message = ' + args.error.statusText);
     return;
@@ -200,7 +200,7 @@ function onBidderError(args) {
   }
  ]
  */
-function onBidTimeout(args) {
+function onBidTimeout (args) {
   args.forEach(timedOutBid => {
     const timeoutCacheKey = cnvrHelper.getLookupKey(timedOutBid.auctionId, timedOutBid.adUnitCode, timedOutBid.bidder);
     cnvrHelper.timeoutCache[timeoutCacheKey] = {
@@ -214,7 +214,7 @@ function onBidTimeout(args) {
  * so that if the render fails we can match up important data so we can send a valid RENDER FAILED event back.
  * @param args bidWon args
  */
-function onBidWon(args) {
+function onBidWon (args) {
   const bidderCode = args.bidderCode;
   const adUnitCode = args.adUnitCode;
   const auctionId = args.auctionId;
@@ -270,7 +270,7 @@ function onBidWon(args) {
  *  bid: {object?} --optional: unsure what this looks like but guessing it is {bidder: <value>, params: {object}}
  *    }
  */
-function onAdRenderFailed(args) {
+function onAdRenderFailed (args) {
   const adId = args.adId;
   // Make sure we have all the data we need, adId is optional so it's not guaranteed, without that we can't match it up
   // to our adIdLookup data.
@@ -318,7 +318,7 @@ function onAdRenderFailed(args) {
  * @param args AUCTION END payload, fairly large data structure, main objects are 'adUnits[]', 'bidderRequests[]',
  * 'noBids[]', 'bidsReceived[]'... 'winningBids[]' seems to be always blank.
  */
-function onAuctionEnd(args) {
+function onAuctionEnd (args) {
   const auctionId = args.auctionId;
   if (!auctionId) {
     throw new Error(CNVR_CONSTANTS.ERROR_MISSING_DATA_PREFIX + 'auction id');
@@ -420,7 +420,7 @@ function onAuctionEnd(args) {
   }
   // We need to remove any duplicate ad sizes from merging ad-slots or overlap in different media types and also
   // media-types from merged ad-slots in twin bids.
-  Object.keys(auctionEndPayload.adUnits).forEach(function(adCode) {
+  Object.keys(auctionEndPayload.adUnits).forEach(function (adCode) {
     auctionEndPayload.adUnits[adCode].sizes = cnvrHelper.deduplicateArray(auctionEndPayload.adUnits[adCode].sizes);
     auctionEndPayload.adUnits[adCode].mediaTypes = cnvrHelper.deduplicateArray(auctionEndPayload.adUnits[adCode].mediaTypes);
   });
@@ -452,7 +452,7 @@ cnvrHelper.keyExistsAndIsObject = function (parent, key) {
  * @param array An array
  * @returns {*} A de-duplicated array.
  */
-cnvrHelper.deduplicateArray = function(array) {
+cnvrHelper.deduplicateArray = function (array) {
   if (!array || !Array.isArray(array)) {
     return array;
   }
@@ -472,7 +472,7 @@ cnvrHelper.deduplicateArray = function(array) {
  * @param cacheObj one of our cache objects [adIdLookup or timeoutCache]
  * @param currTime the current timestamp at the start of the most recent timer execution.
  */
-cnvrHelper.cleanCache = function(cacheObj, currTime) {
+cnvrHelper.cleanCache = function (cacheObj, currTime) {
   Object.keys(cacheObj).forEach(key => {
     const timeInCache = currTime - cacheObj[key].timeReceived;
     if (timeInCache >= CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE) {
@@ -488,7 +488,7 @@ cnvrHelper.cleanCache = function(cacheObj, currTime) {
  * @param bidderCode bidder code
  * @returns string concatenation of all the params into a string key for timeoutCache
  */
-cnvrHelper.getLookupKey = function(auctionId, adUnitCode, bidderCode) {
+cnvrHelper.getLookupKey = function (auctionId, adUnitCode, bidderCode) {
   return auctionId + '-' + adUnitCode + '-' + bidderCode;
 };
 
@@ -507,7 +507,7 @@ cnvrHelper.getLookupKey = function(auctionId, adUnitCode, bidderCode) {
  *      sid: *}
  * }}  Basic structure of our object that we return to the server.
  */
-cnvrHelper.createPayload = function(payloadType, auctionId, timestamp) {
+cnvrHelper.createPayload = function (payloadType, auctionId, timestamp) {
   return {
     requestType: payloadType,
     globalSampleRate: initOptions.global_sample_rate,
@@ -529,7 +529,7 @@ cnvrHelper.createPayload = function(payloadType, auctionId, timestamp) {
  * @param height in peixl (must be an int)
  * @returns {{w: *, h: *}} a fully valid adSize object
  */
-cnvrHelper.createAdSize = function(width, height) {
+cnvrHelper.createAdSize = function (width, height) {
   if (!isInteger(width)) {
     width = -1;
   }
@@ -546,7 +546,7 @@ cnvrHelper.createAdSize = function(width, height) {
  * Helper to create the basic structure of our adUnit payload
  * @returns {{sizes: [], bids: {}}} Basic adUnit payload structure as follows
  */
-cnvrHelper.createAdUnit = function() {
+cnvrHelper.createAdUnit = function () {
   return {
     sizes: [],
     mediaTypes: [],
@@ -571,7 +571,7 @@ cnvrHelper.createBid = function (eventCode, timeToRespond) {
  * @param defaultSampleRate A default value to apply if there is a problem
  * @returns {number} returns a float number from 0 (always off) to 1 (always on)
  */
-cnvrHelper.getSampleRate = function(parentObj, propNm, defaultSampleRate) {
+cnvrHelper.getSampleRate = function (parentObj, propNm, defaultSampleRate) {
   let sampleRate = defaultSampleRate;
   if (parentObj && typeof parentObj[propNm] !== 'undefined') {
     sampleRate = parseFloat(parentObj[propNm]);
@@ -591,7 +591,7 @@ cnvrHelper.getSampleRate = function(parentObj, propNm, defaultSampleRate) {
  * From getRefererInfo(): page = the best candidate for the current page URL: `canonicalUrl`, falling back to `location`
  * @returns {*} Best guess at top URL based on logic from RefererInfo.
  */
-cnvrHelper.getPageUrl = function() {
+cnvrHelper.getPageUrl = function () {
   return getRefererInfo().page;
 }
 
@@ -600,7 +600,7 @@ cnvrHelper.getPageUrl = function() {
  * @param eventType = original event that was fired
  * @param exception = {stack:"...",message:"..."}, exception that was triggered
  */
-cnvrHelper.sendErrorData = function(eventType, exception) {
+cnvrHelper.sendErrorData = function (eventType, exception) {
   if (!cnvrHelper.doSendErrorData) {
     logWarn(CNVR_CONSTANTS.LOG_PREFIX + 'Skipping sending error data due to config disabling error logging, error thrown = ' + exception);
     return;
@@ -624,7 +624,7 @@ cnvrHelper.sendErrorData = function(eventType, exception) {
  * extra header params.
  * @param payload our JSON payload from either AUCTION END, BID WIN, RENDER FAILED
  */
-function sendData(payload) {
+function sendData (payload) {
   ajax(ANALYTICS_URL, function () {}, JSON.stringify(payload), {contentType: 'text/plain'});
 }
 
@@ -641,7 +641,7 @@ conversantAnalytics.enableAnalytics = function (config) {
   }
 
   cacheCleanupInterval = setInterval(
-    function() {
+    function () {
       const currTime = Date.now();
       cnvrHelper.cleanCache(cnvrHelper.adIdLookup, currTime);
       cnvrHelper.cleanCache(cnvrHelper.timeoutCache, currTime);

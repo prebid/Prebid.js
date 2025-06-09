@@ -17,22 +17,22 @@
  * Retrieves request-related bid data.
  * All methods are designed to work with Bid (response) objects returned by bid adapters.
  */
-export function AuctionIndex(getAuctions) {
+export function AuctionIndex (getAuctions) {
   Object.assign(this, {
-    getAuction({auctionId}) {
+    getAuction ({auctionId}) {
       if (auctionId != null) {
         return getAuctions()
           .find(auction => auction.getAuctionId() === auctionId);
       }
     },
-    getAdUnit({adUnitId}) {
+    getAdUnit ({adUnitId}) {
       if (adUnitId != null) {
         return getAuctions()
           .flatMap(a => a.getAdUnits())
           .find(au => au.adUnitId === adUnitId);
       }
     },
-    getMediaTypes({adUnitId, requestId}) {
+    getMediaTypes ({adUnitId, requestId}) {
       if (requestId != null) {
         const req = this.getBidRequest({requestId});
         if (req != null && (adUnitId == null || req.adUnitId === adUnitId)) {
@@ -45,7 +45,7 @@ export function AuctionIndex(getAuctions) {
         }
       }
     },
-    getBidderRequest({requestId, bidderRequestId}) {
+    getBidderRequest ({requestId, bidderRequestId}) {
       if (requestId != null || bidderRequestId != null) {
         let bers = getAuctions().flatMap(a => a.getBidRequests());
         if (bidderRequestId != null) {
@@ -58,7 +58,7 @@ export function AuctionIndex(getAuctions) {
         }
       }
     },
-    getBidRequest({requestId}) {
+    getBidRequest ({requestId}) {
       if (requestId != null) {
         return getAuctions()
           .flatMap(a => a.getBidRequests())
@@ -66,7 +66,7 @@ export function AuctionIndex(getAuctions) {
           .find(br => br && br.bidId === requestId);
       }
     },
-    getOrtb2(bid) {
+    getOrtb2 (bid) {
       return this.getBidderRequest(bid)?.ortb2 || this.getAuction(bid)?.getFPD()?.global?.ortb2
     }
   });

@@ -23,7 +23,7 @@ export const COMMON_ORTB_VIDEO_PARAMS = {
   'api': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 6)
 };
 
-export function formatResponse(bid) {
+export function formatResponse (bid) {
   return {
     requestId: bid && bid.impid ? bid.impid : undefined,
     cpm: bid && bid.price ? bid.price : 0.0,

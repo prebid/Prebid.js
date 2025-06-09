@@ -29,7 +29,7 @@ let dabStartTime;
 // Array of div IDs to track
 let dynamicAdBoostAdUnits = {};
 
-function init() {
+function init () {
   dabStartDate = new Date();
   dabStartTime = dabStartDate.getTime();
   if (!CLIENT_SUPPORTS_IO) {
@@ -39,7 +39,7 @@ function init() {
   observer = new IntersectionObserver(dabHandleIntersection, dabOptions);
   let keyId = 'rtd-' + window.location.hostname;
 
-  let dabInterval = setInterval(function() {
+  let dabInterval = setInterval(function () {
     let dabDateNow = new Date();
     let dabTimeNow = dabDateNow.getTime();
     let dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
@@ -54,13 +54,13 @@ function init() {
   return true;
 }
 
-function loadLmScript(keyId) {
+function loadLmScript (keyId) {
   const scriptUrl = `${SCRIPT_URL}/${keyId}.js`;
   loadExternalScript(scriptUrl, MODULE_TYPE_RTD, MODULE_NAME);
   observer.disconnect();
 }
 
-function getBidRequestData(reqBidsConfigObj, callback) {
+function getBidRequestData (reqBidsConfigObj, callback) {
   const reqAdUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
 
   if (Array.isArray(reqAdUnits)) {
@@ -82,7 +82,7 @@ let markViewed = (entry, observer) => {
 }
 
 // Callback function when an observed element becomes visible
-function dabHandleIntersection(entries) {
+function dabHandleIntersection (entries) {
   entries.forEach(entry => {
     if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
       dynamicAdBoostAdUnits[entry.target.id] = entry.intersectionRatio;

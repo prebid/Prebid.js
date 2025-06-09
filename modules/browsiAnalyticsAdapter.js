@@ -19,11 +19,11 @@ let URL = encodeURIComponent(window.location.href);
 
 const { AUCTION_END, BROWSI_INIT, BROWSI_DATA } = EVENTS;
 
-export function getStaticData() {
+export function getStaticData () {
   return _staticData;
 }
 
-export function setStaticData(data) {
+export function setStaticData (data) {
   _staticData = {
     pvid: data.pvid,
     device: data.d,
@@ -36,19 +36,19 @@ export function setStaticData(data) {
   };
 }
 
-function getTimeOffset(ts) {
+function getTimeOffset (ts) {
   if (!ts) return undefined;
   return timestamp() - ts;
 }
 
-function getAdUnitPathByCode(code) {
+function getAdUnitPathByCode (code) {
   const slots = isGptPubadsDefined() && window.googletag.pubads().getSlots();
   if (!slots || !slots.length) return null;
   const match = slots.find(slot => slot.getSlotElementId() === code);
   return match?.getAdUnitPath();
 }
 
-function getAdUnitsData(args) {
+function getAdUnitsData (args) {
   const shouldSampleRtm = !!_staticData?.es;
   return args.adUnits?.map(adUnit => {
     let rtm;
@@ -69,7 +69,7 @@ function getAdUnitsData(args) {
   });
 }
 
-function handleAuctionEnd(args) {
+function handleAuctionEnd (args) {
   const event = {
     et: 'auction_data_sent',
     to: getTimeOffset(_staticData?.t),
@@ -87,12 +87,12 @@ function handleAuctionEnd(args) {
   sendEvent(event, 'rtd_demand');
 }
 
-function handleBrowsiData(args) {
+function handleBrowsiData (args) {
   if (args.moduleName !== 'browsi') return;
   setStaticData(args);
 }
 
-function handleModuleInit(args) {
+function handleModuleInit (args) {
   if (args.moduleName !== 'browsi') return;
   const event = {
     et: 'rtd_init',
@@ -107,7 +107,7 @@ function handleModuleInit(args) {
   sendEvent(event, 'rtd_supply');
 }
 
-function sendEvent(event, topic) {
+function sendEvent (event, topic) {
   try {
     const pvid = event.pvid || _staticData?.pvid || '';
     const body = JSON.stringify([event]);
@@ -119,7 +119,7 @@ function sendEvent(event, topic) {
 }
 
 let browsiAnalytics = Object.assign(adapter({ url: EVENT_SERVER_URL, analyticsType }), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case BROWSI_INIT:
         handleModuleInit(args);

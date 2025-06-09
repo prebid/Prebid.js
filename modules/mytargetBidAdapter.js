@@ -7,7 +7,7 @@ const BIDDER_URL = '//ad.mail.ru/hbid_prebid/';
 const DEFAULT_CURRENCY = 'RUB';
 const DEFAULT_TTL = 180;
 
-function buildPlacement(bidRequest) {
+function buildPlacement (bidRequest) {
   let { bidId, params } = bidRequest;
   let { placementId, position, response, bidfloor } = params;
   let placement = {
@@ -24,7 +24,7 @@ function buildPlacement(bidRequest) {
   return placement;
 }
 
-function getSiteName(referrer) {
+function getSiteName (referrer) {
   let sitename = config.getConfig('mytarget.sitename');
 
   if (!sitename) {
@@ -36,18 +36,18 @@ function getSiteName(referrer) {
   return sitename;
 }
 
-function generateRandomId() {
+function generateRandomId () {
   return Math.random().toString(16).substring(2);
 }
 
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.placementId;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let referrer = '';
 
     if (bidderRequest && bidderRequest.refererInfo) {
@@ -76,7 +76,7 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     let { body } = serverResponse;
 
     if (body.bids) {

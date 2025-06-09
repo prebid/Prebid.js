@@ -19,7 +19,7 @@ import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
  * Injects the Confiant Inc. configuration script into the page, based on proprtyId provided
  * @param {string} propertyId
  */
-function injectConfigScript(propertyId) {
+function injectConfigScript (propertyId) {
   const scriptSrc = `https://cdn.confiant-integrations.net/${propertyId}/gpt_and_prebid/config.js`;
 
   loadExternalScript(scriptSrc, MODULE_TYPE_RTD, 'confiant', () => {
@@ -30,7 +30,7 @@ function injectConfigScript(propertyId) {
  * Set up page with Confiant integration
  * @param {Object} config
  */
-function setupPage(config) {
+function setupPage (config) {
   const propertyId = config?.params?.propertyId;
   if (!propertyId) {
     logError('Confiant pbjs module: no propertyId provided');
@@ -60,7 +60,7 @@ function setupPage(config) {
  * Subscribe to window's message events to report Billable events
  * @param {Window} targetWindow window instance to subscribe to
  */
-function subscribeToConfiantCommFrame(targetWindow, propertyId) {
+function subscribeToConfiantCommFrame (targetWindow, propertyId) {
   targetWindow.addEventListener('message', getEventHandlerFunction(propertyId));
 }
 
@@ -68,7 +68,7 @@ let mutationObserver;
 /**
  * Set up mutation observer to subscribe to Confiant's communication channel ASAP
  */
-function setUpMutationObserver() {
+function setUpMutationObserver () {
   mutationObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((addedNode) => {
@@ -88,8 +88,8 @@ function setUpMutationObserver() {
 /**
  * Emit billable event when Confiant integration reports that it has monitored an impression
  */
-function getEventHandlerFunction(propertyId) {
-  return function reportBillableEvent(e) {
+function getEventHandlerFunction (propertyId) {
+  return function reportBillableEvent (e) {
     if (e.data.type.indexOf('cnft:reportBillableEvent:' + propertyId) > -1) {
       events.emit(EVENTS.BILLABLE_EVENT, {
         auctionId: e.data.auctionId,
@@ -105,7 +105,7 @@ function getEventHandlerFunction(propertyId) {
 /**
  * Confiant submodule registration
  */
-function registerConfiantSubmodule() {
+function registerConfiantSubmodule () {
   submodule('realTimeData', {
     name: 'confiant',
     init: (config) => {

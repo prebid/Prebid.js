@@ -15,7 +15,7 @@ describe('Intersection RTD Provider', function () {
     code: 'ad-slot-1',
     mediaTypes: {
       banner: {
-        sizes: [ [300, 250] ]
+        sizes: [[300, 250]]
       }
     },
     bids: [
@@ -26,11 +26,11 @@ describe('Intersection RTD Provider', function () {
   };
   const providerConfig = {name: 'intersection', waitForIt: true};
   const rtdConfig = {realTimeData: {auctionDelay: 200, dataProviders: [providerConfig]}}
-  describe('IntersectionObserver not supported', function() {
-    beforeEach(function() {
+  describe('IntersectionObserver not supported', function () {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
     });
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
       sandbox = undefined;
     });
@@ -39,8 +39,8 @@ describe('Intersection RTD Provider', function () {
       expect(intersectionSubmodule.init({})).is.false;
     });
   });
-  describe('IntersectionObserver supported', function() {
-    beforeEach(function() {
+  describe('IntersectionObserver supported', function () {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       placeholder = createDiv();
       append();
@@ -52,7 +52,7 @@ describe('Intersection RTD Provider', function () {
         utils.mergeDeep(__config, obj);
       });
     });
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
       remove();
       sandbox = undefined;
@@ -62,7 +62,7 @@ describe('Intersection RTD Provider', function () {
     it('init should return true', function () {
       expect(intersectionSubmodule.init({})).is.true;
     });
-    it('should set intersection. (request with "adUnitCodes")', function(done) {
+    it('should set intersection. (request with "adUnitCodes")', function (done) {
       pbjs.addAdUnits([utils.deepClone(adUnit)]);
       config.setConfig(rtdConfig);
       const onDone = sandbox.stub();
@@ -73,12 +73,12 @@ describe('Intersection RTD Provider', function () {
         onDone,
         providerConfig
       );
-      setTimeout(function() {
+      setTimeout(function () {
         expect(pbjs.adUnits[0].bids[0]).to.have.property('intersection');
         done();
       }, 200);
     });
-    it('should set intersection. (request with "adUnits")', function(done) {
+    it('should set intersection. (request with "adUnits")', function (done) {
       config.setConfig(rtdConfig);
       const onDone = sandbox.stub();
       const requestBidObject = {adUnits: [utils.deepClone(adUnit)]};
@@ -88,12 +88,12 @@ describe('Intersection RTD Provider', function () {
         onDone,
         providerConfig
       );
-      setTimeout(function() {
+      setTimeout(function () {
         expect(requestBidObject.adUnits[0].bids[0]).to.have.property('intersection');
         done();
       }, 200);
     });
-    it('should set intersection. (request all)', function(done) {
+    it('should set intersection. (request all)', function (done) {
       pbjs.addAdUnits([utils.deepClone(adUnit)]);
       config.setConfig(rtdConfig);
       const onDone = sandbox.stub();
@@ -104,12 +104,12 @@ describe('Intersection RTD Provider', function () {
         onDone,
         providerConfig
       );
-      setTimeout(function() {
+      setTimeout(function () {
         expect(pbjs.adUnits[0].bids[0]).to.have.property('intersection');
         done();
       }, 200);
     });
-    it('should call done due timeout', function(done) {
+    it('should call done due timeout', function (done) {
       config.setConfig(rtdConfig);
       remove();
       const onDone = sandbox.stub();
@@ -120,22 +120,22 @@ describe('Intersection RTD Provider', function () {
         onDone,
         {...providerConfig, test: 1}
       );
-      setTimeout(function() {
+      setTimeout(function () {
         sinon.assert.calledOnce(onDone);
         expect(requestBidObject.adUnits[0].bids[0]).to.not.have.property('intersection');
         done();
       }, 300);
     });
   });
-  function createDiv() {
+  function createDiv () {
     const div = document.createElement('div');
     div.id = adUnit.code;
     return div;
   }
-  function append() {
+  function append () {
     placeholder && document.body.appendChild(placeholder);
   }
-  function remove() {
+  function remove () {
     placeholder && placeholder.parentElement && placeholder.parentElement.removeChild(placeholder);
   }
 });

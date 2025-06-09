@@ -1554,7 +1554,7 @@ describe('The inmobi bidding adapter', function () {
         apiVersion: 1,
       },
     };
-    function mockResponse(winningBidId, mediaType) {
+    function mockResponse (winningBidId, mediaType) {
       return {
         id: '95d08af8-2d50-4d75-a411-8ecd9224970e',
         cur: 'USD',
@@ -1598,7 +1598,7 @@ describe('The inmobi bidding adapter', function () {
       };
     };
 
-    function mockResponseNative(winningBidId, mediaType) {
+    function mockResponseNative (winningBidId, mediaType) {
       return {
         id: '95d08af8-2d50-4d75-a411-8ecd9224970e',
         cur: 'USD',

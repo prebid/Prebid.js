@@ -13,7 +13,7 @@ describe('operaads ID', () => {
     });
   });
 
-  function fakeRequest(fn) {
+  function fakeRequest (fn) {
     const ajaxBuilderStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(() => {
       return (url, cbObj) => {
         cbObj.success(JSON.stringify(operaIdRemoteResponse));
@@ -23,8 +23,8 @@ describe('operaads ID', () => {
     ajaxBuilderStub.restore();
   }
 
-  describe('operaId submodule getId', function() {
-    it('request to the fake server to correctly extract test ID', function() {
+  describe('operaId submodule getId', function () {
+    it('request to the fake server to correctly extract test ID', function () {
       fakeRequest(() => {
         const moduleIdCallbackResponse = operaIdSubmodule.getId({ params: { pid: 'pub123' } });
         moduleIdCallbackResponse.callback((id) => {
@@ -33,7 +33,7 @@ describe('operaads ID', () => {
       });
     });
 
-    it('request to the fake server without publiser ID', function() {
+    it('request to the fake server without publiser ID', function () {
       fakeRequest(() => {
         const moduleIdCallbackResponse = operaIdSubmodule.getId({ params: {} });
         expect(moduleIdCallbackResponse).to.equal(undefined);
@@ -41,7 +41,7 @@ describe('operaads ID', () => {
     });
   });
 
-  describe('operaId submodule decode', function() {
+  describe('operaId submodule decode', function () {
     it('should respond with an object containing "operaId" as key with the value', () => {
       expect(operaIdSubmodule.decode(TEST_ID)).to.deep.equal({
         operaId: TEST_ID
@@ -58,7 +58,7 @@ describe('operaads ID', () => {
     before(() => {
       attachIdSystem(operaIdSubmodule);
     });
-    it('operaId', function() {
+    it('operaId', function () {
       const userId = {
         operaId: 'some-random-id-value'
       };

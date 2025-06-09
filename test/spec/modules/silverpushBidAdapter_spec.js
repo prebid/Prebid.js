@@ -361,7 +361,7 @@ describe('Silverpush Adapter', function () {
     }
   });
 
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     let ajaxStub;
 
     beforeEach(() => {
@@ -372,13 +372,13 @@ describe('Silverpush Adapter', function () {
       ajaxStub.restore()
     })
 
-    it('Should not trigger pixel if bid does not contain burl', function() {
+    it('Should not trigger pixel if bid does not contain burl', function () {
       const result = spec.onBidWon({});
 
       expect(ajaxStub.calledOnce).to.equal(false);
     })
 
-    it('Should trigger pixel with correct macros if bid burl is present', function() {
+    it('Should trigger pixel with correct macros if bid burl is present', function () {
       const result = spec.onBidWon({
         cpm: 1.5,
         auctionId: 'auc123',

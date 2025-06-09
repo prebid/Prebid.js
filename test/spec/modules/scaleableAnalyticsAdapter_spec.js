@@ -9,7 +9,7 @@ const AUCTION_INIT = EVENTS.AUCTION_INIT;
 const BID_WON = EVENTS.BID_WON;
 const AUCTION_END = EVENTS.AUCTION_END;
 
-describe('Scaleable Analytics Adapter', function() {
+describe('Scaleable Analytics Adapter', function () {
   const bidsReceivedObj = {
     adUnitCode: '12345',
     bidderCode: 'test-code',
@@ -99,8 +99,8 @@ describe('Scaleable Analytics Adapter', function() {
     }]
   }
 
-  describe('Event Handling', function() {
-    beforeEach(function() {
+  describe('Event Handling', function () {
+    beforeEach(function () {
       sinon.stub(events, 'getEvents').returns([]);
 
       scaleableAnalytics.enableAnalytics({
@@ -111,12 +111,12 @@ describe('Scaleable Analytics Adapter', function() {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       events.getEvents.restore();
       scaleableAnalytics.disableAnalytics();
     });
 
-    it('should handle the auction init event', function(done) {
+    it('should handle the auction init event', function (done) {
       events.emit(AUCTION_INIT, {
         adUnitCodes: [MOCK_DATA.adUnitCode],
         bidderRequests: MOCK_DATA.bidderRequests
@@ -128,7 +128,7 @@ describe('Scaleable Analytics Adapter', function() {
       done();
     });
 
-    it('should handle the bid timeout event', function() {
+    it('should handle the bid timeout event', function () {
       events.emit(BID_TIMEOUT, MOCK_DATA.bidTimeout);
 
       const actual = scaleableAnalytics.getAuctionData();
@@ -136,7 +136,7 @@ describe('Scaleable Analytics Adapter', function() {
       expect(actual).to.deep.equal(MOCK_DATA.expectedBidTimeout);
     });
 
-    it('should handle the bid won event', function(done) {
+    it('should handle the bid won event', function (done) {
       events.emit(BID_WON, MOCK_DATA.bidResponse);
 
       const result = JSON.parse(server.requests[0].requestBody);
@@ -153,7 +153,7 @@ describe('Scaleable Analytics Adapter', function() {
       done();
     });
 
-    it('should handle the auction end event', function(done) {
+    it('should handle the auction end event', function (done) {
       events.emit(AUCTION_END, MOCK_DATA.auctionEnd);
 
       const result = JSON.parse(server.requests[0].requestBody);

@@ -186,7 +186,7 @@ describe('Nexx360 bid adapter tests', () => {
           maxWidth: '400px',
           maxHeight: '350px',
         },
-        getBoundingClientRect() { return { width: 200, height: 250 }; }
+        getBoundingClientRect () { return { width: 200, height: 250 }; }
       });
       sandbox.stub(STORAGE, 'localStorageIsEnabled').callsFake(() => true);
       sandbox.stub(STORAGE, 'setDataInLocalStorage');

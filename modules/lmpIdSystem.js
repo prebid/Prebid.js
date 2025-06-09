@@ -18,11 +18,11 @@ const MODULE_NAME = 'lmpid';
 const STORAGE_KEY = '__lmpid';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
-function readFromLocalStorage() {
+function readFromLocalStorage () {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(STORAGE_KEY) : null;
 }
 
-function getLmpid() {
+function getLmpid () {
   return window[STORAGE_KEY] || readFromLocalStorage();
 }
 
@@ -40,7 +40,7 @@ export const lmpIdSubmodule = {
    * @param { string | undefined } value
    * @return { {lmpid: string} | undefined }
    */
-  decode(value) {
+  decode (value) {
     return value ? { lmpid: value } : undefined;
   },
 
@@ -50,7 +50,7 @@ export const lmpIdSubmodule = {
    * @param {SubmoduleConfig} config
    * @return {{id: string | undefined} | undefined}
    */
-  getId(config) {
+  getId (config) {
     const id = getLmpid();
     return id ? { id } : undefined;
   },

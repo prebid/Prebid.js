@@ -8,7 +8,7 @@ import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
 let permissionsAvailable = true;
 let geolocation;
-function getGeolocationData(requestBidsObject, onDone, providerConfig, userConsent) {
+function getGeolocationData (requestBidsObject, onDone, providerConfig, userConsent) {
   let done = false;
   if (!permissionsAvailable) {
     logWarn('permission for geolocation receiving was denied');
@@ -28,7 +28,7 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
       complete();
     });
   });
-  function complete() {
+  function complete () {
     if (done) return;
     done = true;
     if (geolocation) {
@@ -43,7 +43,7 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
     onDone();
   }
 }
-function init(moduleConfig) {
+function init (moduleConfig) {
   geolocation = void 0;
   if (!isFn(navigator?.permissions?.query) || !isFn(navigator?.geolocation?.getCurrentPosition || !navigator?.permissions?.query)) {
     logError('geolocation is not defined');
@@ -59,7 +59,7 @@ export const geolocationSubmodule = {
   getBidRequestData: getGeolocationData,
   init: init,
 };
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', geolocationSubmodule);
 }
 registerSubModule();

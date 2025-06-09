@@ -6,7 +6,7 @@ import { INSTREAM } from '../../../src/video';
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const PIXELS = ['/test.png', '/test2.png?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}']
 
-describe('vidoomyBidAdapter', function() {
+describe('vidoomyBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {

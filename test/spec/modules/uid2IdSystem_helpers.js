@@ -18,8 +18,8 @@ export const runAuction = async () => {
     sizes: [[300, 200], [300, 600]],
     bids: [{bidder: 'sampleBidder', params: {placementId: 'banner-only-bidder'}}]
   }];
-  return new Promise(function(resolve) {
-    startAuctionHook(function() {
+  return new Promise(function (resolve) {
+    startAuctionHook(function () {
       resolve(adUnits[0].bids[0]);
     }, {adUnits});
   });

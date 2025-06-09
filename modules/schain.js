@@ -31,15 +31,15 @@ const MODES = []; // an array of modes
 _each(MODE, mode => MODES.push(mode));
 
 // validate the supply chain object
-export function isSchainObjectValid(schainObject, returnOnError) {
+export function isSchainObjectValid (schainObject, returnOnError) {
   let failPrefix = 'Detected something wrong within an schain config:';
   let failMsg = '';
 
-  function appendFailMsg(msg) {
+  function appendFailMsg (msg) {
     failMsg += '\n' + msg;
   }
 
-  function printFailMsg() {
+  function printFailMsg () {
     if (returnOnError === true) {
       logError(failPrefix, schainObject, failMsg);
     } else {
@@ -132,7 +132,7 @@ export function isSchainObjectValid(schainObject, returnOnError) {
   return true;
 }
 
-export function isValidSchainConfig(schainObject) {
+export function isValidSchainConfig (schainObject) {
   if (schainObject === undefined) {
     return false;
   }
@@ -143,7 +143,7 @@ export function isValidSchainConfig(schainObject) {
   return true;
 }
 
-function resolveSchainConfig(schainObject, bidder) {
+function resolveSchainConfig (schainObject, bidder) {
   let mode = MODE.STRICT;
 
   if (isValidSchainConfig(schainObject)) {
@@ -165,8 +165,8 @@ function resolveSchainConfig(schainObject, bidder) {
   return null;
 }
 
-export function makeBidRequestsHook(fn, bidderRequests) {
-  function getSchainForBidder(bidder) {
+export function makeBidRequestsHook (fn, bidderRequests) {
+  function getSchainForBidder (bidder) {
     let bidderSchain = bidderConfigs[bidder] && bidderConfigs[bidder].schain;
     return bidderSchain || globalSchainConfig;
   }
@@ -189,13 +189,13 @@ export function makeBidRequestsHook(fn, bidderRequests) {
   fn(bidderRequests);
 }
 
-export function init() {
+export function init () {
   adapterManager.makeBidRequests.after(makeBidRequestsHook);
 }
 
 init()
 
-export function setOrtbSourceExtSchain(ortbRequest, bidderRequest, context) {
+export function setOrtbSourceExtSchain (ortbRequest, bidderRequest, context) {
   if (!deepAccess(ortbRequest, 'source.ext.schain')) {
     const schain = deepAccess(context, 'bidRequests.0.schain');
     if (schain) {

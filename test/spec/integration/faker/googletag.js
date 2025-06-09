@@ -1,35 +1,35 @@
 import faker from 'faker';
 import { randomFive } from './fixtures.js';
 
-var Slot = function Slot({ code, divId }) {
+var Slot = function Slot ({ code, divId }) {
   code = code || `ad-slot-code-${randomFive()}`;
   divId = divId || `div-id-${randomFive()}`;
 
   var slot = {
     targeting: [],
-    getSlotElementId: function getSlotElementId() {
+    getSlotElementId: function getSlotElementId () {
       return divId;
     },
 
-    getAdUnitPath: function getAdUnitPath() {
+    getAdUnitPath: function getAdUnitPath () {
       return code;
     },
 
-    setTargeting: function setTargeting(key, value) {
+    setTargeting: function setTargeting (key, value) {
       var obj = [];
       obj[key] = value;
       this.targeting.push(obj);
     },
 
-    getTargeting: function getTargeting() {
+    getTargeting: function getTargeting () {
       return this.targeting;
     },
 
-    getTargetingKeys: function getTargetingKeys() {
+    getTargetingKeys: function getTargetingKeys () {
       return [];
     },
 
-    clearTargeting: function clearTargeting() {
+    clearTargeting: function clearTargeting () {
       return window.googletag.pubads().getSlots();
     }
   };
@@ -37,17 +37,17 @@ var Slot = function Slot({ code, divId }) {
   return slot;
 };
 
-export function makeSlot() {
+export function makeSlot () {
   const slot = new Slot(...arguments);
   window.googletag._slots.push(slot);
   return slot;
 }
 
-export function emitEvent(eventName, params) {
+export function emitEvent (eventName, params) {
   (window.googletag._callbackMap[eventName] || []).forEach(eventCb => eventCb({...params, eventName}));
 }
 
-export function enable() {
+export function enable () {
   window.googletag = {
     _slots: [],
     _callbackMap: {},
@@ -68,19 +68,19 @@ export function enable() {
           self._slots = slots;
         },
 
-        setTargeting: function(key, arrayOfValues) {
+        setTargeting: function (key, arrayOfValues) {
           self._targeting[key] = Array.isArray(arrayOfValues) ? arrayOfValues : [arrayOfValues];
         },
 
-        getTargeting: function(key) {
+        getTargeting: function (key) {
           return self._targeting[key] || [];
         },
 
-        getTargetingKeys: function() {
+        getTargetingKeys: function () {
           return Object.getOwnPropertyNames(self._targeting);
         },
 
-        clearTargeting: function() {
+        clearTargeting: function () {
           self._targeting = {};
         },
 
@@ -93,11 +93,11 @@ export function enable() {
   };
 }
 
-export function disable() {
+export function disable () {
   window.googletag = undefined;
 }
 
-export function reset() {
+export function reset () {
   disable();
   enable();
 }

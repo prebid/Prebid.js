@@ -88,7 +88,7 @@ export let fetchScoreFile = true;
 /**
  * Make the request for the Score File.
  */
-export function scoreFileRequest() {
+export function scoreFileRequest () {
   logInfo('Fetch Optimera score file.');
   const ajax = ajaxBuilder();
   ajax(scoresURL,
@@ -113,7 +113,7 @@ export function scoreFileRequest() {
 /**
  * Apply the Optimera targeting to the ad slots.
  */
-export function returnTargetingData(adUnits, config) {
+export function returnTargetingData (adUnits, config) {
   const targeting = {};
   try {
     adUnits.forEach((adUnit) => {
@@ -133,7 +133,7 @@ export function returnTargetingData(adUnits, config) {
  * Fetch a new score file when an auction starts.
  * Only fetch the new file if a new score file is needed.
  */
-export function onAuctionInit(auctionDetails, config, userConsent) {
+export function onAuctionInit (auctionDetails, config, userConsent) {
   setScoresURL();
   if (fetchScoreFile) {
     scoreFileRequest();
@@ -144,7 +144,7 @@ export function onAuctionInit(auctionDetails, config, userConsent) {
  * Initialize the Module.
  * moduleConfig.params.apiVersion can be either v0 or v1.
  */
-export function init(moduleConfig) {
+export function init (moduleConfig) {
   _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.clientID) {
     clientID = _moduleParams.clientID;
@@ -178,7 +178,7 @@ export function init(moduleConfig) {
  * has been updated, set the fetchScoreFile flag to true to is can be fetched.
  *
  */
-export function setScoresURL() {
+export function setScoresURL () {
   const optimeraHost = window.location.host;
   const optimeraPathName = window.location.pathname;
   const baseUrl = scoresBaseURL[apiVersion] ? scoresBaseURL[apiVersion] : scoresBaseURL.v0;
@@ -209,7 +209,7 @@ export function setScoresURL() {
  * @param {*} result
  * @returns {string} JSON string of Optimera Scores.
  */
-export function setScores(result) {
+export function setScores (result) {
   let scores = {};
   try {
     scores = JSON.parse(result);
@@ -257,7 +257,7 @@ export const optimeraSubmodule = {
 /**
  * Register the Sub Module.
  */
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', optimeraSubmodule);
 }
 

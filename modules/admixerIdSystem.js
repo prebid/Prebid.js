@@ -39,7 +39,7 @@ export const admixerIdSubmodule = {
    * @param {string} value
    * @returns {{admixerId:string}}
    */
-  decode(value) {
+  decode (value) {
     return { 'admixerId': value }
   },
   /**
@@ -49,7 +49,7 @@ export const admixerIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, {gdpr: consentData} = {}) {
+  getId (config, {gdpr: consentData} = {}) {
     const {e, p, pid} = (config && config.params) || {};
     if (!pid || typeof pid !== 'string') {
       logError('admixerId submodule requires partner id to be defined');
@@ -62,10 +62,10 @@ export const admixerIdSubmodule = {
       return;
     }
     const url = `https://inv-nets.admixer.net/cntcm.aspx?ssp=${pid}${e ? `&e=${e}` : ''}${p ? `&p=${p}` : ''}${consentString ? `&cs=${consentString}` : ''}`;
-    const resp = function(callback) {
+    const resp = function (callback) {
       if (window.admixTMLoad && window.admixTMLoad.push) {
-        window.admixTMLoad.push(function() {
-          window.admixTM.retrieveVisitorId(function(visitorId) {
+        window.admixTMLoad.push(function () {
+          window.admixTM.retrieveVisitorId(function (visitorId) {
             if (visitorId) {
               callback(visitorId);
             } else {
@@ -87,7 +87,7 @@ export const admixerIdSubmodule = {
     },
   }
 };
-function retrieveVisitorId(url, callback) {
+function retrieveVisitorId (url, callback) {
   ajax(url, {
     success: response => {
       const {setData: {visitorid} = {}} = JSON.parse(response || '{}');

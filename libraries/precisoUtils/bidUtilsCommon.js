@@ -8,7 +8,7 @@ import {
 } from '../../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../../src/mediaTypes.js';
 
-function isBidResponseValid(bid) {
+function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
         !bid.ttl || !bid.currency || !bid.meta) {
     return false;
@@ -26,7 +26,7 @@ function isBidResponseValid(bid) {
   }
 }
 
-export function getBidFloor(bid) {
+export function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidFloor', 0);
   }
@@ -43,7 +43,7 @@ export function getBidFloor(bid) {
   }
 }
 
-export function isBidRequestValid(bid) {
+export function isBidRequestValid (bid) {
   return Boolean(bid.bidId && bid.params && bid.params.placementId);
 }
 
@@ -92,7 +92,7 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
   };
 }
 
-export function interpretResponse(serverResponse) {
+export function interpretResponse (serverResponse) {
   let response = [];
   for (let i = 0; i < serverResponse.body.length; i++) {
     let resItem = serverResponse.body[i];
@@ -106,7 +106,7 @@ export function interpretResponse(serverResponse) {
   return response;
 }
 
-export function consentCheck(bidderRequest, req) {
+export function consentCheck (bidderRequest, req) {
   if (bidderRequest) {
     if (bidderRequest.uspConsent) {
       req.ccpa = bidderRequest.uspConsent;

@@ -140,11 +140,11 @@ FEATURE: Analytics Adapters API
   })
 
   describe('event filters', () => {
-    function fireEvents() {
+    function fireEvents () {
       events.emit(BID_WON, {});
       events.emit(NO_BID, {});
     }
-    function getEvents(ev) {
+    function getEvents (ev) {
       return server.requests
         .map(r => JSON.parse(r.requestBody))
         .filter(r => r.eventType === ev)

@@ -408,7 +408,7 @@ describe('state normalizations', () => {
   });
 
   describe('child consent', () => {
-    function checkChildConsent(sid, orig, normalized) {
+    function checkChildConsent (sid, orig, normalized) {
       expect(NORMALIZATIONS[sid]({
         KnownChildSensitiveDataConsents: orig
       }).KnownChildSensitiveDataConsents).to.eql(normalized)

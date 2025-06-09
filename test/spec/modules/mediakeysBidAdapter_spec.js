@@ -179,7 +179,7 @@ describe('mediakeysBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    it('should create imp for supported mediaType only', function() {
+    it('should create imp for supported mediaType only', function () {
       const bidRequests = [utils.deepClone(bid)];
       const bidderRequestCopy = utils.deepClone(bidderRequest);
       bidderRequestCopy.bids = bidRequests;
@@ -229,8 +229,8 @@ describe('mediakeysBidAdapter', function () {
       expect(data.imp[0].ext.data.something).to.equal('test');
     });
 
-    describe('native imp', function() {
-      it('should get a native object in request', function() {
+    describe('native imp', function () {
+      it('should get a native object in request', function () {
         const bidRequests = [utils.deepClone(bidNative)];
         const bidderRequestCopy = utils.deepClone(bidderRequest);
         bidderRequestCopy.bids = bidRequests;
@@ -250,7 +250,7 @@ describe('mediakeysBidAdapter', function () {
         expect(bodyAsset.data.type).to.equal(2);
       });
 
-      it('should get a native object in request with properties filled with params values', function() {
+      it('should get a native object in request with properties filled with params values', function () {
         const bidRequests = [utils.deepClone(bidNative)];
         bidRequests[0].params = {
           native: {
@@ -273,7 +273,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].native.request.assets.length).to.equal(6);
       });
 
-      it('should get a native object in request when native type ,image" has been set', function() {
+      it('should get a native object in request when native type ,image" has been set', function () {
         const bidRequests = [utils.deepClone(bidNative)];
         bidRequests[0].mediaTypes.native = { type: 'image' };
         bidRequests[0].nativeParams = {
@@ -300,7 +300,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].native.request.assets.length).to.equal(5); // [1] clickUrl ignored
       });
 
-      it('should log errors and ignore misformated assets', function() {
+      it('should log errors and ignore misformated assets', function () {
         const bidRequests = [utils.deepClone(bidNative)];
         delete bidRequests[0].nativeParams.title.len;
         bidRequests[0].nativeParams.unregistred = {required: true};
@@ -320,8 +320,8 @@ describe('mediakeysBidAdapter', function () {
       });
     });
 
-    describe('video imp', function() {
-      it('should get a video object in request', function() {
+    describe('video imp', function () {
+      it('should get a video object in request', function () {
         const bidRequests = [utils.deepClone(bidVideo)];
         const bidderRequestCopy = utils.deepClone(bidderRequest);
         bidderRequestCopy.bids = bidRequests;
@@ -337,7 +337,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].video.h).to.equal(320);
       });
 
-      it('should ignore and warn misformated ORTB video properties', function() {
+      it('should ignore and warn misformated ORTB video properties', function () {
         const bidRequests = [utils.deepClone(bidVideo)];
         bidRequests[0].mediaTypes.video.unknown = 'foo';
         bidRequests[0].mediaTypes.video.placement = 10;
@@ -359,7 +359,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].video.unknown).to.not.exist;
       });
 
-      it('should merge adUnit mediaTypes level and bidder level params properties ', function() {
+      it('should merge adUnit mediaTypes level and bidder level params properties ', function () {
         const bidRequests = [utils.deepClone(bidVideo)];
         bidRequests[0].mediaTypes.video.placement = 1;
         bidRequests[0].mediaTypes.video.mimes = ['video/mpeg4'];
@@ -415,7 +415,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].video.companiontype).to.not.exist;
       });
 
-      it('should log warn message when OpenRTB validation fails ', function() {
+      it('should log warn message when OpenRTB validation fails ', function () {
         const bidRequests = [utils.deepClone(bidVideo)];
         bidRequests[0].mediaTypes.video.placement = 'string';
         bidRequests[0].mediaTypes.video.api = 1;
@@ -495,7 +495,7 @@ describe('mediakeysBidAdapter', function () {
       expect(data.user.ext.consent).to.equal(consent.consentString);
     });
 
-    describe('PriceFloors module support', function() {
+    describe('PriceFloors module support', function () {
       const getFloorTest = (options) => {
         switch (options.mediaType) {
           case BANNER:
@@ -532,7 +532,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].bidfloor).to.not.exist;
       });
 
-      it('should get the highest floorPrice found when bid have several mediaTypes', function() {
+      it('should get the highest floorPrice found when bid have several mediaTypes', function () {
         const bidWithPriceFloors = utils.deepClone(bid);
 
         bidWithPriceFloors.mediaTypes.video = {
@@ -563,7 +563,7 @@ describe('mediakeysBidAdapter', function () {
         expect(data.imp[0].bidfloor).to.equal(5);
       });
 
-      it('should set properties at payload level from FPD', function() {
+      it('should set properties at payload level from FPD', function () {
         const ortb2 = {
           site: {
             domain: 'domain.example',
@@ -603,7 +603,7 @@ describe('mediakeysBidAdapter', function () {
       });
     });
 
-    describe('should support userId modules', function() {
+    describe('should support userId modules', function () {
       const userIdAsEids = [{
         source: 'pubcid.org',
         uids: [
@@ -614,7 +614,7 @@ describe('mediakeysBidAdapter', function () {
         ]
       }];
 
-      it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
+      it('should send "user.eids" in the request for Prebid.js supported modules only', function () {
         const bidCopy = utils.deepClone(bid);
         bidCopy.userIdAsEids = userIdAsEids;
 
@@ -698,7 +698,7 @@ describe('mediakeysBidAdapter', function () {
       utils.isArray.restore();
     });
 
-    it('Meta Primary category handling', function() {
+    it('Meta Primary category handling', function () {
       const rawServerResponseCopy = utils.deepClone(rawServerResponse);
       const rawServerResponseCopy2 = utils.deepClone(rawServerResponse);
       const rawServerResponseCopy3 = utils.deepClone(rawServerResponse);
@@ -782,7 +782,7 @@ describe('mediakeysBidAdapter', function () {
       let rawServerResponseNative;
       let nativeObject;
 
-      beforeEach(function() {
+      beforeEach(function () {
         bidRequests = [utils.deepClone(bidNative)];
         bidderRequestCopy = utils.deepClone(bidderRequest);
         bidderRequestCopy.bids = bidRequests;
@@ -817,7 +817,7 @@ describe('mediakeysBidAdapter', function () {
         rawServerResponseNative.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObject)
       });
 
-      it('should ignore invalid native response', function() {
+      it('should ignore invalid native response', function () {
         const nativeObjectCopy = utils.deepClone(nativeObject);
         nativeObjectCopy.assets = [];
         const rawServerResponseNativeCopy = utils.deepClone(rawServerResponseNative);
@@ -827,7 +827,7 @@ describe('mediakeysBidAdapter', function () {
         expect(response[0].native).to.not.exist;
       });
 
-      it('should build a classic Prebid.js native object for response', function() {
+      it('should build a classic Prebid.js native object for response', function () {
         const rawServerResponseNativeCopy = utils.deepClone(rawServerResponseNative);
         const response = spec.interpretResponse(rawServerResponseNativeCopy, request);
         expect(response.length).to.equal(1);
@@ -851,7 +851,7 @@ describe('mediakeysBidAdapter', function () {
         expect(response[0].native.javascriptTrackers).to.equal('<script async src="https://eventrack-js.me/impression-1"></script>');
       });
 
-      it('should ignore eventtrackers with a unsupported type', function() {
+      it('should ignore eventtrackers with a unsupported type', function () {
         const rawServerResponseNativeCopy = utils.deepClone(rawServerResponseNative);
         const nativeObjectCopy = utils.deepClone(nativeObject);
         nativeObjectCopy.eventtrackers[0].event = 2;
@@ -878,22 +878,22 @@ describe('mediakeysBidAdapter', function () {
     });
   });
 
-  describe('onBidWon', function() {
-    beforeEach(function() {
+  describe('onBidWon', function () {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 
-    it('Should not trigger pixel if bid does not contain burl', function() {
+    it('Should not trigger pixel if bid does not contain burl', function () {
       const result = spec.onBidWon({});
       expect(result).to.be.undefined;
       expect(utils.triggerPixel.callCount).to.equal(0);
     })
 
-    it('Should trigger pixel if bid.burl exists', function() {
+    it('Should trigger pixel if bid.burl exists', function () {
       const result = spec.onBidWon({
         cpm: 4.2,
         burl: 'https://example.com/p=${AUCTION_PRICE}&foo=bar'

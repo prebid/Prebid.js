@@ -39,12 +39,12 @@ export const yandexIdSubmodule = {
    * Decodes the stored id value for passing to bid requests.
    * @param {string} value
    */
-  decode(value) {
+  decode (value) {
     logInfo(`Decoded ${YANDEX_ID_KEY}`, value);
 
     return { [YANDEX_ID_KEY]: value };
   },
-  getId(submoduleConfig, _consentData, storedId) {
+  getId (submoduleConfig, _consentData, storedId) {
     if (checkConfigHasErrorsAndReport(submoduleConfig)) {
       return;
     }
@@ -69,7 +69,7 @@ export const yandexIdSubmodule = {
        * @see https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--agent-types-
        */
       atype: 1,
-      getUidExt() {
+      getUidExt () {
         if (PREBID_STORAGE.cookiesAreEnabled()) {
           return YANDEX_EXT_COOKIE_NAMES.reduce((acc, cookieName) => ({
             ...acc,
@@ -85,7 +85,7 @@ export const yandexIdSubmodule = {
  * @param {SubmoduleConfig} submoduleConfig
  * @returns {boolean} `true` - when there are errors, `false` - otherwise.
  */
-function checkConfigHasErrorsAndReport(submoduleConfig) {
+function checkConfigHasErrorsAndReport (submoduleConfig) {
   let error = false;
 
   const READABLE_MODULE_NAME = 'Yandex ID module';
@@ -118,7 +118,7 @@ function checkConfigHasErrorsAndReport(submoduleConfig) {
  * @see https://github.com/yandex/metrica-tag/blob/main/src/utils/uid/uid.ts#L51
  */
 class YandexIdGenerator {
-  generate() {
+  generate () {
     const yandexId = [
       this._getCurrentSecTimestamp(),
       this._getRandomInteger(1000000, 999999999),
@@ -129,7 +129,7 @@ class YandexIdGenerator {
     return yandexId;
   }
 
-  _getCurrentSecTimestamp() {
+  _getCurrentSecTimestamp () {
     return Math.round(Date.now() / 1000);
   }
 
@@ -137,7 +137,7 @@ class YandexIdGenerator {
    * @param {number} min
    * @param {number} max
    */
-  _getRandomInteger(min, max) {
+  _getRandomInteger (min, max) {
     const generateRandom = this._getRandomGenerator();
 
     /**
@@ -147,7 +147,7 @@ class YandexIdGenerator {
     return Math.floor(generateRandom() * (max - min)) + min;
   }
 
-  _getRandomGenerator() {
+  _getRandomGenerator () {
     if (window.crypto) {
       return () => {
         const buffer = new Uint32Array(1);

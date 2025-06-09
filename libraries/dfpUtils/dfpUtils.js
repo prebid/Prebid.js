@@ -14,7 +14,7 @@ export const DFP_ENDPOINT = {
   pathname: '/gampad/ads'
 }
 
-export function gdprParams() {
+export function gdprParams () {
   const gdprConsent = gdprDataHandler.getConsentData();
   const params = {};
   if (gdprConsent) {

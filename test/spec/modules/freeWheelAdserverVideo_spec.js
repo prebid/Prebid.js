@@ -4,7 +4,7 @@ import { auctionManager } from 'src/auctionManager.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 
-describe('freeWheel adserver module', function() {
+describe('freeWheel adserver module', function () {
   let amStub;
   let amGetAdUnitsStub;
 
@@ -63,7 +63,7 @@ describe('freeWheel adserver module', function() {
     });
   })
 
-  afterEach(function() {
+  afterEach(function () {
     config.resetConfig();
   });
 
@@ -72,11 +72,11 @@ describe('freeWheel adserver module', function() {
     amStub.restore();
   });
 
-  it('should return targeting for all adunits', function() {
+  it('should return targeting for all adunits', function () {
     amStub.returns(getBidsReceived());
     let targeting;
     adpodUtils.getTargeting({
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -85,12 +85,12 @@ describe('freeWheel adserver module', function() {
     expect(targeting['midroll_1'].length).to.equal(3);
   });
 
-  it('should return targeting for passed adunit code', function() {
+  it('should return targeting for passed adunit code', function () {
     amStub.returns(getBidsReceived());
     let targeting;
     adpodUtils.getTargeting({
       codes: ['preroll_1'],
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -99,7 +99,7 @@ describe('freeWheel adserver module', function() {
     expect(targeting['midroll_1']).to.not.exist;
   });
 
-  it('should only use adpod bids', function() {
+  it('should only use adpod bids', function () {
     let bannerBid = [{
       'ad': 'creative',
       'cpm': '1.99',
@@ -118,7 +118,7 @@ describe('freeWheel adserver module', function() {
     amStub.returns(getBidsReceived().concat(bannerBid));
     let targeting;
     adpodUtils.getTargeting({
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -127,7 +127,7 @@ describe('freeWheel adserver module', function() {
     expect(targeting['midroll_1'].length).to.equal(3);
   });
 
-  it('should return unique category bids when competitive exclusion is enabled', function() {
+  it('should return unique category bids when competitive exclusion is enabled', function () {
     config.setConfig({
       adpod: {
         brandCategoryExclusion: true,
@@ -142,7 +142,7 @@ describe('freeWheel adserver module', function() {
     ]);
     let targeting;
     adpodUtils.getTargeting({
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -151,7 +151,7 @@ describe('freeWheel adserver module', function() {
     expect(targeting['midroll_1'].length).to.equal(2);
   });
 
-  it('should only select bids less than adpod duration', function() {
+  it('should only select bids less than adpod duration', function () {
     amStub.returns([
       createBid(10, 'preroll_1', 90, '10.00_395_90s', '123', '395'),
       createBid(15, 'preroll_1', 90, '15.00_395_90s', '123', '395'),
@@ -159,7 +159,7 @@ describe('freeWheel adserver module', function() {
     ]);
     let targeting;
     adpodUtils.getTargeting({
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -168,7 +168,7 @@ describe('freeWheel adserver module', function() {
     expect(targeting['midroll_1']).to.be.empty;
   });
 
-  it('should select bids when deferCaching is enabled', function() {
+  it('should select bids when deferCaching is enabled', function () {
     config.setConfig({
       adpod: {
         deferCaching: true
@@ -177,7 +177,7 @@ describe('freeWheel adserver module', function() {
     amStub.returns(getBidsReceived());
     let targeting;
     adpodUtils.getTargeting({
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -192,7 +192,7 @@ describe('freeWheel adserver module', function() {
     expect(targeting['midroll_1'].length).to.equal(3);
   });
 
-  it('should prioritize bids with deal', function() {
+  it('should prioritize bids with deal', function () {
     config.setConfig({
       adpod: {
         deferCaching: true,
@@ -214,7 +214,7 @@ describe('freeWheel adserver module', function() {
     amStub.returns(bidsReceived);
     let targeting;
     adpodUtils.getTargeting({
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -231,7 +231,7 @@ describe('freeWheel adserver module', function() {
     expect(targeting['preroll_1']).to.deep.include({'hb_cache_id': '123'});
   });
 
-  it('should apply minDealTier to bids if configured', function() {
+  it('should apply minDealTier to bids if configured', function () {
     config.setConfig({
       adpod: {
         deferCaching: true,
@@ -264,7 +264,7 @@ describe('freeWheel adserver module', function() {
     amStub.returns(bidsReceived);
     let targeting;
     adpodUtils.getTargeting({
-      callback: function(errorMsg, targetingResult) {
+      callback: function (errorMsg, targetingResult) {
         targeting = targetingResult;
       }
     });
@@ -283,7 +283,7 @@ describe('freeWheel adserver module', function() {
   })
 });
 
-function getBidsReceived() {
+function getBidsReceived () {
   return [
     createBid(10, 'preroll_1', 15, '10.00_395_15s', '123', '395'),
     createBid(15, 'preroll_1', 15, '15.00_395_15s', '123', '395'),
@@ -293,7 +293,7 @@ function getBidsReceived() {
   ]
 }
 
-function createBid(cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, industry) {
+function createBid (cpm, adUnitCode, durationBucket, priceIndustryDuration, uuid, industry) {
   return {
     'bidderCode': 'appnexus',
     'width': 640,

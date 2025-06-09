@@ -20,11 +20,11 @@ export class ConsentHandler {
   generatedTime;
   hashFields;
 
-  constructor() {
+  constructor () {
     this.reset();
   }
 
-  #resolve(data) {
+  #resolve (data) {
     this.#ready = true;
     this.#data = data;
     this.#defer.resolve(data);
@@ -33,7 +33,7 @@ export class ConsentHandler {
   /**
    * reset this handler (mainly for tests)
    */
-  reset() {
+  reset () {
     this.#defer = defer();
     this.#enabled = false;
     this.#data = null;
@@ -45,28 +45,28 @@ export class ConsentHandler {
    * Enable this consent handler. This should be called by the relevant consent management module
    * on initialization.
    */
-  enable() {
+  enable () {
     this.#enabled = true;
   }
 
   /**
    * @returns {boolean} true if the related consent management module is enabled.
    */
-  get enabled() {
+  get enabled () {
     return this.#enabled;
   }
 
   /**
    * @returns {boolean} true if consent data has been resolved (it may be `null` if the resolution failed).
    */
-  get ready() {
+  get ready () {
     return this.#ready;
   }
 
   /**
    * @returns a promise than resolves to the consent data, or null if no consent data is available
    */
-  get promise() {
+  get promise () {
     if (this.#ready) {
       return PbPromise.resolve(this.#data);
     }
@@ -76,17 +76,17 @@ export class ConsentHandler {
     return this.#defer.promise;
   }
 
-  setConsentData(data, time = timestamp()) {
+  setConsentData (data, time = timestamp()) {
     this.generatedTime = time;
     this.#dirty = true;
     this.#resolve(data);
   }
 
-  getConsentData() {
+  getConsentData () {
     return this.#data;
   }
 
-  get hash() {
+  get hash () {
     if (this.#dirty) {
       this.#hash = cyrb53Hash(JSON.stringify(this.#data && this.hashFields ? this.hashFields.map(f => this.#data[f]) : this.#data))
       this.#dirty = false;
@@ -96,7 +96,7 @@ export class ConsentHandler {
 }
 
 class UspConsentHandler extends ConsentHandler {
-  getConsentMeta() {
+  getConsentMeta () {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
       return {
@@ -108,7 +108,7 @@ class UspConsentHandler extends ConsentHandler {
 
 class GdprConsentHandler extends ConsentHandler {
   hashFields = ['gdprApplies', 'consentString']
-  getConsentMeta() {
+  getConsentMeta () {
     const consentData = this.getConsentData();
     if (consentData && consentData.vendorData && this.generatedTime) {
       return {
@@ -123,7 +123,7 @@ class GdprConsentHandler extends ConsentHandler {
 
 class GppConsentHandler extends ConsentHandler {
   hashFields = ['applicableSections', 'gppString'];
-  getConsentMeta() {
+  getConsentMeta () {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
       return {
@@ -133,7 +133,7 @@ class GppConsentHandler extends ConsentHandler {
   }
 }
 
-export function gvlidRegistry() {
+export function gvlidRegistry () {
   const registry = {};
   const flat = {};
   const none = {};
@@ -144,7 +144,7 @@ export function gvlidRegistry() {
      * @param {string} moduleName
      * @param {number} gvlid
      */
-    register(moduleType, moduleName, gvlid) {
+    register (moduleType, moduleName, gvlid) {
       if (gvlid) {
         (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
         if (flat.hasOwnProperty(moduleName)) {
@@ -168,7 +168,7 @@ export function gvlidRegistry() {
      *   `modules` is a map from module type to that module's GVL ID;
      *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
-    get(moduleName) {
+    get (moduleName) {
       const result = {modules: registry[moduleName] || {}};
       if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
         result.gvlid = flat[moduleName];
@@ -182,18 +182,18 @@ export const gdprDataHandler = new GdprConsentHandler();
 export const uspDataHandler = new UspConsentHandler();
 export const gppDataHandler = new GppConsentHandler();
 export const coppaDataHandler = (() => {
-  function getCoppa() {
+  function getCoppa () {
     return !!(config.getConfig('coppa'))
   }
   return {
     getCoppa,
     getConsentData: getCoppa,
     getConsentMeta: getCoppa,
-    reset() {},
-    get promise() {
+    reset () {},
+    get promise () {
       return PbPromise.resolve(getCoppa())
     },
-    get hash() {
+    get hash () {
       return getCoppa() ? '1' : '0'
     }
   }
@@ -208,20 +208,20 @@ const ALL_HANDLERS = {
   coppa: coppaDataHandler,
 }
 
-export function multiHandler(handlers = ALL_HANDLERS) {
+export function multiHandler (handlers = ALL_HANDLERS) {
   handlers = Object.entries(handlers);
-  function collector(method) {
+  function collector (method) {
     return function () {
       return Object.fromEntries(handlers.map(([name, handler]) => [name, handler[method]()]))
     }
   }
   return Object.assign(
     {
-      get promise() {
+      get promise () {
         return PbPromise.all(handlers.map(([name, handler]) => handler.promise.then(val => [name, val])))
           .then(entries => Object.fromEntries(entries));
       },
-      get hash() {
+      get hash () {
         return cyrb53Hash(handlers.map(([_, handler]) => handler.hash).join(':'));
       }
     },

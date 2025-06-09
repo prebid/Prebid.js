@@ -28,7 +28,7 @@ describe('bid interceptor', () => {
     interceptor = new BidInterceptor({setTimeout: mockSetTimeout, logger: prefixLog('TEST')});
   });
 
-  function setRules(...rules) {
+  function setRules (...rules) {
     interceptor.updateConfig({
       intercept: rules
     });
@@ -108,7 +108,7 @@ describe('bid interceptor', () => {
   });
 
   describe('rule', () => {
-    function matchingRule({replace, options, paapi}) {
+    function matchingRule ({replace, options, paapi}) {
       setRules({when: {}, then: replace, options: options, paapi});
       return interceptor.match({});
     }
@@ -230,7 +230,7 @@ describe('bid interceptor', () => {
   describe('intercept()', () => {
     let done, addBid, addPaapiConfig;
 
-    function intercept(args = {}) {
+    function intercept (args = {}) {
       const bidRequest = {bids: args.bids || []};
       return interceptor.intercept(Object.assign({bidRequest, done, addBid, addPaapiConfig}, args));
     }
@@ -356,7 +356,7 @@ describe('Debugging config', () => {
 describe('bidderBidInterceptor', () => {
   let next, interceptBids, onCompletion, interceptResult, done, addBid, wrapCallback, addPaapiConfig, wrapped;
 
-  function interceptorArgs({spec = {}, bids = [], bidRequest = {}, ajax = {}, cbs = {}} = {}) {
+  function interceptorArgs ({spec = {}, bids = [], bidRequest = {}, ajax = {}, cbs = {}} = {}) {
     return [next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, Object.assign({onCompletion}, cbs)];
   }
 
@@ -488,7 +488,7 @@ describe('pbsBidInterceptor', () => {
   });
 
   const pbsBidInterceptor = makePbsInterceptor({createBid});
-  function callInterceptor() {
+  function callInterceptor () {
     return pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid});
   }
 
@@ -633,7 +633,7 @@ describe('bid overrides', function () {
     it('should not throw if sessionStorage is inaccessible', function () {
       expect(() => {
         sessionLoader({
-          getItem() {
+          getItem () {
             throw new Error('test');
           }
         });
@@ -668,7 +668,7 @@ describe('bid overrides', function () {
       bids = [];
     });
 
-    function run(overrides) {
+    function run (overrides) {
       mockBids.forEach(bid => {
         let next = (adUnitCode, bid) => {
           bids.push(bid);
@@ -778,7 +778,7 @@ describe('bid overrides', function () {
       bidderRequests = [];
     });
 
-    function run(overrides) {
+    function run (overrides) {
       let next = (b) => {
         bidderRequests = b;
       };

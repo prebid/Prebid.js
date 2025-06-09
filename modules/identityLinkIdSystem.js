@@ -42,7 +42,7 @@ export const identityLinkSubmodule = {
    * @param {string} value
    * @returns {{idl_env:string}}
    */
-  decode(value) {
+  decode (value) {
     return { 'idl_env': value }
   },
   /**
@@ -52,7 +52,7 @@ export const identityLinkSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.pid !== 'string') {
       utils.logError('identityLink: requires partner id to be defined');
@@ -107,7 +107,7 @@ export const identityLinkSubmodule = {
   }
 };
 // return envelope from third party endpoint
-function getEnvelope(url, callback, configParams) {
+function getEnvelope (url, callback, configParams) {
   const callbacks = {
     success: response => {
       let responseObj;
@@ -136,19 +136,19 @@ function getEnvelope(url, callback, configParams) {
   }
 }
 
-function setRetryCookie() {
+function setRetryCookie () {
   let now = new Date();
   now.setTime(now.getTime() + 3600000);
   storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
 }
 
-function setEnvelopeSource(src) {
+function setEnvelopeSource (src) {
   let now = new Date();
   now.setTime(now.getTime() + 2592000000);
   storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
 }
 
-export function getEnvelopeFromStorage() {
+export function getEnvelopeFromStorage () {
   let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
   return rawEnvelope ? window.atob(rawEnvelope) : undefined;
 }

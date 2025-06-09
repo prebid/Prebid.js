@@ -64,13 +64,13 @@ describe('bigRichMediaAdapterTests', function () {
       }
     ];
 
-    beforeEach(function() {
-      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
+    beforeEach(function () {
+      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function () {
         return [];
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       getAdUnitsStub.restore();
     });
 
@@ -93,7 +93,7 @@ describe('bigRichMediaAdapterTests', function () {
     });
 
     if (FEATURES.VIDEO) {
-      it('should build video bid request', function() {
+      it('should build video bid request', function () {
         const bidRequest = deepClone(bidRequests[0]);
         bidRequest.params = {
           placementId: '1234235',
@@ -259,12 +259,12 @@ describe('bigRichMediaAdapterTests', function () {
     }
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const syncOptions = {
       syncEnabled: false
     };
 
-    it('should not return sync', function() {
+    it('should not return sync', function () {
       const serverResponse = [{ body: '' }];
       const result = spec.getUserSyncs(syncOptions, serverResponse);
       expect(result).to.be.undefined;

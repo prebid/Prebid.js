@@ -229,7 +229,7 @@ export const spec = {
   }
 }
 
-function buildBanner(request) {
+function buildBanner (request) {
   let sizes = request.sizes;
   if (request.mediaTypes && request.mediaTypes.banner && request.mediaTypes.banner.sizes) {
     sizes = request.mediaTypes.banner.sizes;
@@ -239,7 +239,7 @@ function buildBanner(request) {
   };
 }
 
-function buildVideo(request) {
+function buildVideo (request) {
   let video = {};
   const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
@@ -259,7 +259,7 @@ function buildVideo(request) {
   return video;
 }
 
-export function checkParamDataType(key, value, datatype) {
+export function checkParamDataType (key, value, datatype) {
   let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
@@ -282,18 +282,18 @@ export function checkParamDataType(key, value, datatype) {
   return undefined;
 }
 
-function hasBannerMediaType(bidRequest) {
+function hasBannerMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
 
 /**
  * @param {BidRequest} bidRequest bid request
  */
-function hasVideoMediaType(bidRequest) {
+function hasVideoMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 
-export function _getDomainFromURL(url) {
+export function _getDomainFromURL (url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;

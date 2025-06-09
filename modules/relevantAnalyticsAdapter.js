@@ -18,7 +18,7 @@ Object.assign(relevantAnalytics, {
    * create (if needed) the global array that is used to pass events to the Relevant Yield library
    * by the 'track' function above.
    */
-  enableAnalytics: function(...args) {
+  enableAnalytics: function (...args) {
     window.relevantDigital = window.relevantDigital || {};
     window.relevantDigital.pbEventLog = window.relevantDigital.pbEventLog || [];
     return orgEnableAnalytics.call(this, ...args);

@@ -9,26 +9,26 @@ import {auctionManager} from '../../src/auctionManager.js';
 const vastTrackers = [];
 let enabled = false;
 
-export function reset() {
+export function reset () {
   vastTrackers.length = 0;
 }
 
-export function enable() {
+export function enable () {
   if (!enabled) {
     callPrebidCache.before(addTrackersToResponse);
     enabled = true;
   }
 }
 
-export function disable() {
+export function disable () {
   if (enabled) {
     callPrebidCache.getHooks({hook: addTrackersToResponse}).remove();
     enabled = false;
   }
 }
 
-export function cacheVideoBidHook({index = auctionManager.index} = {}) {
-  return function addTrackersToResponse(next, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+export function cacheVideoBidHook ({index = auctionManager.index} = {}) {
+  return function addTrackersToResponse (next, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
     if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
       const vastTrackers = getVastTrackers(bidResponse, {index});
       if (vastTrackers) {
@@ -46,13 +46,13 @@ export function cacheVideoBidHook({index = auctionManager.index} = {}) {
 const addTrackersToResponse = cacheVideoBidHook();
 enable();
 
-export function registerVastTrackers(moduleType, moduleName, trackerFn) {
+export function registerVastTrackers (moduleType, moduleName, trackerFn) {
   if (typeof trackerFn === 'function') {
     vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn});
   }
 }
 
-export function insertVastTrackers(trackers, vastXml) {
+export function insertVastTrackers (trackers, vastXml) {
   const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
   const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
   try {
@@ -74,7 +74,7 @@ export function insertVastTrackers(trackers, vastXml) {
   return vastXml;
 }
 
-export function getVastTrackers(bid, {index = auctionManager.index}) {
+export function getVastTrackers (bid, {index = auctionManager.index}) {
   let trackers = [];
   vastTrackers.filter(
     ({
@@ -96,11 +96,11 @@ export function getVastTrackers(bid, {index = auctionManager.index}) {
   return (trackersMap.size ? trackersMap : null);
 };
 
-function isValidVastTracker(trackers, trackerToAdd) {
+function isValidVastTracker (trackers, trackerToAdd) {
   return trackerToAdd.hasOwnProperty('event') && trackerToAdd.hasOwnProperty('url');
 }
 
-function trackersToMap(trackers) {
+function trackersToMap (trackers) {
   return trackers.reduce((map, {url, event}) => {
     !map.has(event) && map.set(event, new Set());
     map.get(event).add(url);
@@ -108,7 +108,7 @@ function trackersToMap(trackers) {
   }, new Map());
 }
 
-export function addImpUrlToTrackers(bid, trackersMap) {
+export function addImpUrlToTrackers (bid, trackersMap) {
   if (bid.vastImpUrl) {
     if (!trackersMap) {
       trackersMap = new Map();

@@ -133,7 +133,7 @@ describe('arcspanRtdProvider', function () {
   });
 });
 
-function getGoodConfig() {
+function getGoodConfig () {
   return {
     name: 'arcspan',
     waitForIt: true,
@@ -143,7 +143,7 @@ function getGoodConfig() {
   };
 }
 
-function getBadConfig() {
+function getBadConfig () {
   return {
     name: 'arcspan',
     waitForIt: true,
@@ -153,7 +153,7 @@ function getBadConfig() {
   };
 }
 
-function getTestConfig() {
+function getTestConfig () {
   return {
     name: 'arcspan',
     waitForIt: true,
@@ -163,18 +163,18 @@ function getTestConfig() {
   };
 }
 
-function setIAB(vjson) {
+function setIAB (vjson) {
   window.arcobj2 = {};
   window.arcobj2.cat = 0;
   if (typeof vjson.codes != 'undefined') {
     window.arcobj2.cat = 1;
     if (typeof vjson.codes.images != 'undefined') {
-      vjson.codes.images.forEach(function f(e, i) {
+      vjson.codes.images.forEach(function f (e, i) {
         vjson.codes.images[i] = e.replace('-', '_');
       });
     }
     if (typeof vjson.codes.text != 'undefined') {
-      vjson.codes.text.forEach(function f(e, i) {
+      vjson.codes.text.forEach(function f (e, i) {
         vjson.codes.text[i] = e.replace('-', '_');
       });
     }

@@ -51,7 +51,7 @@ describe('topLevelPaapi', () => {
     sandbox.restore();
   });
 
-  function addPaapiConfig(adUnitCode, auctionConfig, _auctionId = auctionId) {
+  function addPaapiConfig (adUnitCode, auctionConfig, _auctionId = auctionId) {
     let auction = auctions[_auctionId];
     if (!auction) {
       auction = auctions[_auctionId] = {
@@ -83,7 +83,7 @@ describe('topLevelPaapi', () => {
     });
   }
 
-  function endAuctions() {
+  function endAuctions () {
     Object.entries(auctions).forEach(([auctionId, {adUnits}]) => {
       events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: Object.keys(adUnits), adUnits: Object.values(adUnits)});
     });
@@ -173,11 +173,11 @@ describe('topLevelPaapi', () => {
             });
           });
 
-          function getBids(filters) {
+          function getBids (filters) {
             return getPAAPIBids(filters, raa);
           }
 
-          function expectBids(actual, expected) {
+          function expectBids (actual, expected) {
             expect(Object.keys(actual)).to.eql(Object.keys(expected));
             Object.entries(expected).forEach(([au, val]) => {
               sinon.assert.match(actual[au], val == null ? val : {

@@ -10,8 +10,8 @@
  * @param {string} moduleName the name of the module using this function
  * @returns {function(): string}
  */
-export function domainOverrideToRootDomain(storage, moduleName) {
-  return function() {
+export function domainOverrideToRootDomain (storage, moduleName) {
+  return function () {
     const domainElements = document.domain.split('.');
     const cookieName = `_gd${Date.now()}_${moduleName}`;
 

@@ -54,7 +54,7 @@ const _approvedLoadExternalJSList = [
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
  * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
-export function loadExternalScript(url, moduleType, moduleCode, callback, doc, attributes) {
+export function loadExternalScript (url, moduleType, moduleCode, callback, doc, attributes) {
   if (!isActivityAllowed(LOAD_EXTERNAL_SCRIPT, activityParams(moduleType, moduleCode))) {
     return;
   }
@@ -109,7 +109,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
     }
   }, doc, attributes);
 
-  function requestResource(tagSrc, callback, doc, attributes) {
+  function requestResource (tagSrc, callback, doc, attributes) {
     if (!doc) {
       doc = document;
     }
@@ -146,7 +146,7 @@ export function loadExternalScript(url, moduleType, moduleCode, callback, doc, a
 
     return jptScript;
   }
-  function getCacheObject(doc, url) {
+  function getCacheObject (doc, url) {
     const cachedDocObj = _requestCache.get(doc);
     if (cachedDocObj && cachedDocObj[url]) {
       return cachedDocObj[url];

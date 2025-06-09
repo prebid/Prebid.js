@@ -154,16 +154,16 @@ describe('ID5 ID System', function () {
     'Content-Type': 'application/json'
   };
 
-  function expDaysStr(expDays) {
+  function expDaysStr (expDays) {
     return (new Date(Date.now() + (1000 * 60 * 60 * 24 * expDays))).toUTCString();
   }
 
-  function storeInStorage(key, value, expDays) {
+  function storeInStorage (key, value, expDays) {
     id5System.storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
     id5System.storage.setDataInLocalStorage(`${key}`, value);
   }
 
-  function getId5FetchConfig(partner = ID5_TEST_PARTNER_ID, storageName = id5System.ID5_STORAGE_NAME, storageType = 'html5') {
+  function getId5FetchConfig (partner = ID5_TEST_PARTNER_ID, storageName = id5System.ID5_STORAGE_NAME, storageType = 'html5') {
     return {
       name: ID5_MODULE_NAME,
       params: {
@@ -177,7 +177,7 @@ describe('ID5 ID System', function () {
     };
   }
 
-  function getUserSyncConfig(userIds) {
+  function getUserSyncConfig (userIds) {
     return {
       userSync: {
         userIds: userIds,
@@ -186,11 +186,11 @@ describe('ID5 ID System', function () {
     };
   }
 
-  function getFetchLocalStorageConfig() {
+  function getFetchLocalStorageConfig () {
     return getUserSyncConfig([getId5FetchConfig()]);
   }
 
-  function getAdUnitMock(code = 'adUnit-code') {
+  function getAdUnitMock (code = 'adUnit-code') {
     return {
       code,
       mediaTypes: {banner: {}, native: {}},
@@ -199,7 +199,7 @@ describe('ID5 ID System', function () {
     };
   }
 
-  function callSubmoduleGetId(config, consentData, cacheIdObj) {
+  function callSubmoduleGetId (config, consentData, cacheIdObj) {
     return new PbPromise((resolve) => {
       id5System.id5IdSubmodule.getId(config, consentData, cacheIdObj).callback((response) => {
         resolve(response);
@@ -207,7 +207,7 @@ describe('ID5 ID System', function () {
     });
   }
 
-  function wrapAsyncExpects(done, expectsFn) {
+  function wrapAsyncExpects (done, expectsFn) {
     return function () {
       try {
         expectsFn();
@@ -221,20 +221,20 @@ describe('ID5 ID System', function () {
     currentRequestIdx = 0;
     server;
 
-    constructor(server) {
+    constructor (server) {
       this.currentRequestIdx = 0;
       this.server = server;
     }
 
-    async expectFirstRequest() {
+    async expectFirstRequest () {
       return this.#waitOnRequest(0);
     }
 
-    async expectNextRequest() {
+    async expectNextRequest () {
       return this.#waitOnRequest(++this.currentRequestIdx);
     }
 
-    async expectConfigRequest() {
+    async expectConfigRequest () {
       const configRequest = await this.expectFirstRequest();
       expect(configRequest.url).is.eq(ID5_API_CONFIG_URL);
       expect(configRequest.method).is.eq('POST');
@@ -242,12 +242,12 @@ describe('ID5 ID System', function () {
       return configRequest;
     }
 
-    async respondWithConfigAndExpectNext(configRequest, config = ID5_API_CONFIG) {
+    async respondWithConfigAndExpectNext (configRequest, config = ID5_API_CONFIG) {
       configRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(config));
       return this.expectNextRequest();
     }
 
-    async expectFetchRequest() {
+    async expectFetchRequest () {
       const configRequest = await this.expectFirstRequest();
       const fetchRequest = await this.respondWithConfigAndExpectNext(configRequest);
       expect(fetchRequest.method).is.eq('POST');
@@ -255,7 +255,7 @@ describe('ID5 ID System', function () {
       return fetchRequest;
     }
 
-    async #waitOnRequest(index) {
+    async #waitOnRequest (index) {
       const server = this.server;
       return new PbPromise((resolve) => {
         const waitForCondition = () => {
@@ -269,7 +269,7 @@ describe('ID5 ID System', function () {
       });
     }
 
-    hasReceivedAnyRequest() {
+    hasReceivedAnyRequest () {
       const requests = this.server.requests;
       return requests && requests.length > 0;
     }

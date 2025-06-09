@@ -38,7 +38,7 @@ const V2_ADUNITS = new WeakMap();
   Returns "true" if at least one of the adUnits in the adUnits array is using an Ad Unit and/or Bidder level sizeConfig,
   otherwise, returns "false."
 */
-export function isUsingNewSizeMapping(adUnits) {
+export function isUsingNewSizeMapping (adUnits) {
   return !!adUnits.find(adUnit => {
     if (V2_ADUNITS.has(adUnit)) return V2_ADUNITS.get(adUnit);
     if (adUnit.mediaTypes) {
@@ -68,7 +68,7 @@ export function isUsingNewSizeMapping(adUnits) {
   @param {AdUnit[]} adUnits
   @returns {AdUnit[]} validateAdUnits - Unrecognized properties are deleted.
  */
-export function checkAdUnitSetupHook(adUnits) {
+export function checkAdUnitSetupHook (adUnits) {
   const validateSizeConfig = function (mediaType, sizeConfig, adUnitCode) {
     let isValid = true;
     const associatedProperty = {
@@ -243,7 +243,7 @@ getHook('checkAdUnitSetup').before(function (fn, adUnits) {
 });
 
 // checks if the sizeConfig object declared at the Bidder level is in the right format or not.
-export function checkBidderSizeConfigFormat(sizeConfig) {
+export function checkBidderSizeConfigFormat (sizeConfig) {
   let didCheckPass = true;
   if (Array.isArray(sizeConfig) && sizeConfig.length > 0) {
     sizeConfig.forEach(config => {
@@ -282,7 +282,7 @@ getHook('setupAdUnitMediaTypes').before(function (fn, adUnits, labels) {
  * @param {number} adUnitInstance - Instance count of an 'Identical' ad unit.
  * @returns {boolean} Represents if the Ad Unit or the Bid is active or not
  */
-export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitInstance) {
+export function isLabelActivated (bidOrAdUnit, activeLabels, adUnitCode, adUnitInstance) {
   let labelOperator;
   const labelsFound = Object.keys(bidOrAdUnit).filter(prop => prop === 'labelAny' || prop === 'labelAll');
   if (labelsFound && labelsFound.length > 1) {
@@ -321,7 +321,7 @@ export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitIn
  * @param {Object} mediaTypes Contains information about supported media types for an Ad Unit and size information for each of those types
  * @returns {Object} Filtered mediaTypes object with relevant media types filtered by size buckets based on activeViewPort size
  */
-export function getFilteredMediaTypes(mediaTypes) {
+export function getFilteredMediaTypes (mediaTypes) {
   let
     activeViewportWidth,
     activeViewportHeight,
@@ -395,7 +395,7 @@ export function getFilteredMediaTypes(mediaTypes) {
  * @param {Object} sizeConfig Represents the sizeConfig object which is active based on the current viewport size
  * @returns {boolean} Represents if the size config is active or not
  */
-export function isSizeConfigActivated(mediaType, sizeConfig) {
+export function isSizeConfigActivated (mediaType, sizeConfig) {
   switch (mediaType) {
     case 'banner':
       // we need this check, sizeConfig.sizes[0].length > 0, in place because a sizeBucket can have sizes: [],
@@ -418,7 +418,7 @@ export function isSizeConfigActivated(mediaType, sizeConfig) {
  * Calculated at the time of making call to pbjs.requestBids function
  * @returns {Array} The active size bucket matching the activeViewPort, for example: [750, 0]
  */
-export function getActiveSizeBucket(sizeConfig, activeViewport) {
+export function getActiveSizeBucket (sizeConfig, activeViewport) {
   let activeSizeBucket = [];
   sizeConfig
     .sort((a, b) => a.minViewPort[0] - b.minViewPort[0])
@@ -434,7 +434,7 @@ export function getActiveSizeBucket(sizeConfig, activeViewport) {
   return activeSizeBucket;
 }
 
-export function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
+export function getRelevantMediaTypesForBidder (sizeConfig, activeViewport) {
   const mediaTypes = new Set();
   if (internal.checkBidderSizeConfigFormat(sizeConfig)) {
     const activeSizeBucket = internal.getActiveSizeBucket(sizeConfig, activeViewport);
@@ -443,7 +443,7 @@ export function getRelevantMediaTypesForBidder(sizeConfig, activeViewport) {
   return mediaTypes;
 }
 
-export function getAdUnitDetail(adUnit, labels, adUnitInstance) {
+export function getAdUnitDetail (adUnit, labels, adUnitInstance) {
   const isLabelActivated = internal.isLabelActivated(adUnit, labels, adUnit.code, adUnitInstance);
   const { sizeBucketToSizeMap, activeViewport, transformedMediaTypes } = isLabelActivated && internal.getFilteredMediaTypes(adUnit.mediaTypes);
   isLabelActivated && logInfo(`Size Mapping V2:: Ad Unit: ${adUnit.code}(${adUnitInstance}) => Active size buckets after filtration: `, sizeBucketToSizeMap);
@@ -454,7 +454,7 @@ export function getAdUnitDetail(adUnit, labels, adUnitInstance) {
   };
 }
 
-export function setupAdUnitMediaTypes(adUnits, labels) {
+export function setupAdUnitMediaTypes (adUnits, labels) {
   const duplCounter = {};
   return adUnits.reduce((result, adUnit) => {
     const instance = (() => {

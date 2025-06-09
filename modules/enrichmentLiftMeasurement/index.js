@@ -26,7 +26,7 @@ export const storeSplitsMethod = {
 let moduleConfig;
 let rules = [];
 
-export function init(storageManager = getStorageManager({ moduleType: MODULE_TYPE, moduleName: MODULE_NAME })) {
+export function init (storageManager = getStorageManager({ moduleType: MODULE_TYPE, moduleName: MODULE_NAME })) {
   moduleConfig = config.getConfig(MODULE_NAME) || {};
   const {suppression, testRun, storeSplits} = moduleConfig;
   let modules;
@@ -54,13 +54,13 @@ export function init(storageManager = getStorageManager({ moduleType: MODULE_TYP
   }
 }
 
-export function reset() {
+export function reset () {
   rules.forEach(unregister => unregister());
   setAnalyticLabels({});
   rules = [];
 }
 
-export function compareConfigs(old, current) {
+export function compareConfigs (old, current) {
   const {modules: newModules, testRun: newTestRun} = current;
   const {modules: oldModules, testRun: oldTestRun} = old;
 
@@ -75,7 +75,7 @@ export function compareConfigs(old, current) {
   return percentageEqual && testRunEqual;
 }
 
-function userIdSystemBlockRule(bannedModules, init) {
+function userIdSystemBlockRule (bannedModules, init) {
   return (params) => {
     if ((params.init ?? true) === init && params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID && bannedModules.has(params[ACTIVITY_PARAM_COMPONENT_NAME])) {
       return {allow: false, reason: 'disabled due to AB testing'};
@@ -83,7 +83,7 @@ function userIdSystemBlockRule(bannedModules, init) {
   }
 };
 
-export function getCalculatedSubmodules(modules = moduleConfig.modules) {
+export function getCalculatedSubmodules (modules = moduleConfig.modules) {
   return (modules || [])
     .map(({name, percentage}) => {
       const enabled = Math.random() < percentage;
@@ -91,7 +91,7 @@ export function getCalculatedSubmodules(modules = moduleConfig.modules) {
     });
 };
 
-export function getStoredTestConfig(storeSplits, storageManager) {
+export function getStoredTestConfig (storeSplits, storageManager) {
   const [checkMethod, getMethod] = {
     [storeSplitsMethod.SESSION_STORAGE]: [storageManager.sessionStorageIsEnabled, storageManager.getDataFromSessionStorage],
     [storeSplitsMethod.LOCAL_STORAGE]: [storageManager.localStorageIsEnabled, storageManager.getDataFromLocalStorage],
@@ -109,7 +109,7 @@ export function getStoredTestConfig(storeSplits, storageManager) {
   }
 };
 
-export function storeTestConfig(testRun, modules, storeSplits, storageManager) {
+export function storeTestConfig (testRun, modules, storeSplits, storageManager) {
   const [checkMethod, storeMethod] = {
     [storeSplitsMethod.SESSION_STORAGE]: [storageManager.sessionStorageIsEnabled, storageManager.setDataInSessionStorage],
     [storeSplitsMethod.LOCAL_STORAGE]: [storageManager.localStorageIsEnabled, storageManager.setDataInLocalStorage],

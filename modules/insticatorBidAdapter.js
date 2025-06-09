@@ -50,7 +50,7 @@ config.setDefaults({
   },
 });
 
-function getUserId() {
+function getUserId () {
   let uid;
 
   if (storage.localStorageIsEnabled()) {
@@ -66,7 +66,7 @@ function getUserId() {
   return uid;
 }
 
-function setUserId(userId) {
+function setUserId (userId) {
   if (storage.localStorageIsEnabled()) {
     storage.setDataInLocalStorage(USER_ID_KEY, userId);
   }
@@ -77,7 +77,7 @@ function setUserId(userId) {
   }
 }
 
-function buildBanner(bidRequest) {
+function buildBanner (bidRequest) {
   const format = [];
   const pos = deepAccess(bidRequest, 'mediaTypes.banner.pos');
   const sizes =
@@ -96,7 +96,7 @@ function buildBanner(bidRequest) {
   }
 }
 
-function buildVideo(bidRequest) {
+function buildVideo (bidRequest) {
   let w = deepAccess(bidRequest, 'mediaTypes.video.w');
   let h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
@@ -146,7 +146,7 @@ function buildVideo(bidRequest) {
   return videoObj
 }
 
-function buildImpression(bidRequest) {
+function buildImpression (bidRequest) {
   const imp = {
     id: bidRequest.bidId,
     tagid: bidRequest.adUnitCode,
@@ -235,7 +235,7 @@ function buildImpression(bidRequest) {
   return imp;
 }
 
-function buildDevice(bidRequest) {
+function buildDevice (bidRequest) {
   const ortb2Data = bidRequest?.ortb2 || {};
   const deviceConfig = ortb2Data?.device || {}
 
@@ -256,7 +256,7 @@ function buildDevice(bidRequest) {
   return device;
 }
 
-function _getCoppa(bidderRequest) {
+function _getCoppa (bidderRequest) {
   const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
 
   // If coppa is defined in the request, use it
@@ -266,7 +266,7 @@ function _getCoppa(bidderRequest) {
   return config.getConfig('coppa') === true ? 1 : 0;
 }
 
-function _getGppConsent(bidderRequest) {
+function _getGppConsent (bidderRequest) {
   let gpp = deepAccess(bidderRequest, 'gppConsent.gppString')
   let gppSid = deepAccess(bidderRequest, 'gppConsent.applicableSections')
 
@@ -277,11 +277,11 @@ function _getGppConsent(bidderRequest) {
   return { gpp, gppSid }
 }
 
-function _getUspConsent(bidderRequest) {
+function _getUspConsent (bidderRequest) {
   return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
 }
 
-function buildRegs(bidderRequest) {
+function buildRegs (bidderRequest) {
   let regs = {
     ext: {},
   };
@@ -317,7 +317,7 @@ function buildRegs(bidderRequest) {
   return regs;
 }
 
-function buildUser(bid) {
+function buildUser (bid) {
   const userId = getUserId() || generateUUID();
   const yob = deepAccess(bid, 'params.user.yob')
   const gender = deepAccess(bid, 'params.user.gender')
@@ -354,7 +354,7 @@ function buildUser(bid) {
   return userData
 }
 
-function extractSchain(bids, requestId) {
+function extractSchain (bids, requestId) {
   if (!bids || bids.length === 0 || !bids[0].schain) return;
 
   const schain = bids[0].schain;
@@ -365,14 +365,14 @@ function extractSchain(bids, requestId) {
   return schain;
 }
 
-function extractEids(bids) {
+function extractEids (bids) {
   if (!bids) return;
 
   const bid = bids.find(bid => isArray(bid.userIdAsEids) && bid.userIdAsEids.length > 0);
   return bid ? bid.userIdAsEids : bids[0].userIdAsEids;
 }
 
-function buildRequest(validBidRequests, bidderRequest) {
+function buildRequest (validBidRequests, bidderRequest) {
   const req = {
     id: bidderRequest.bidderRequestId,
     tmax: bidderRequest.timeout,
@@ -441,7 +441,7 @@ function buildRequest(validBidRequests, bidderRequest) {
   return req;
 }
 
-function buildBid(bid, bidderRequest) {
+function buildBid (bid, bidderRequest) {
   const originalBid = ((bidderRequest.bids) || []).find((b) => b.bidId === bid.impid);
   let meta = {}
 
@@ -491,11 +491,11 @@ function buildBid(bid, bidderRequest) {
   return bidResponse;
 }
 
-function buildBidSet(seatbid, bidderRequest) {
+function buildBidSet (seatbid, bidderRequest) {
   return seatbid.bid.map((bid) => buildBid(bid, bidderRequest));
 }
 
-function validateSize(size) {
+function validateSize (size) {
   return (
     size instanceof Array &&
     size.length === 2 &&
@@ -504,7 +504,7 @@ function validateSize(size) {
   );
 }
 
-function validateSizes(sizes) {
+function validateSizes (sizes) {
   return (
     sizes instanceof Array &&
     sizes.length > 0 &&
@@ -512,7 +512,7 @@ function validateSizes(sizes) {
   );
 }
 
-function validateAdUnitId(bid) {
+function validateAdUnitId (bid) {
   if (!bid.params.adUnitId) {
     logError('insticator: missing adUnitId bid parameter');
     return false;
@@ -521,7 +521,7 @@ function validateAdUnitId(bid) {
   return true;
 }
 
-function validateMediaType(bid) {
+function validateMediaType (bid) {
   if (!(BANNER in bid.mediaTypes || VIDEO in bid.mediaTypes)) {
     logError('insticator: expected banner or video in mediaTypes');
     return false;
@@ -530,7 +530,7 @@ function validateMediaType(bid) {
   return true;
 }
 
-function validateBanner(bid) {
+function validateBanner (bid) {
   const banner = deepAccess(bid, 'mediaTypes.banner');
 
   if (banner === undefined) {
@@ -548,7 +548,7 @@ function validateBanner(bid) {
   return true;
 }
 
-function validateVideo(bid) {
+function validateVideo (bid) {
   const videoParams = deepAccess(bid, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bid, 'params.video');
   let video = {
@@ -608,7 +608,7 @@ function validateVideo(bid) {
   return true;
 }
 
-function parsePlayerSizeToWidthHeight(playerSize, w, h) {
+function parsePlayerSizeToWidthHeight (playerSize, w, h) {
   if (!w && playerSize) {
     if (Array.isArray(playerSize[0])) {
       w = parseInt(playerSize[0][0], 10);
@@ -630,7 +630,7 @@ function parsePlayerSizeToWidthHeight(playerSize, w, h) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function (bid) {
     return (

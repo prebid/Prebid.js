@@ -2,7 +2,7 @@ import {config} from 'src/config.js';
 import {getRealTimeData, anonymisedRtdSubmodule, storage} from 'modules/anonymisedRtdProvider.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 
-describe('anonymisedRtdProvider', function() {
+describe('anonymisedRtdProvider', function () {
   let getDataFromLocalStorageStub;
 
   const testReqBidsConfigObj = {
@@ -13,7 +13,7 @@ describe('anonymisedRtdProvider', function() {
     ]
   };
 
-  const onDone = function() { return true };
+  const onDone = function () { return true };
 
   const cmoduleConfig = {
     'name': 'anonymised',
@@ -22,7 +22,7 @@ describe('anonymisedRtdProvider', function() {
     }
   }
 
-  beforeEach(function() {
+  beforeEach(function () {
     config.resetConfig();
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
   });
@@ -31,7 +31,7 @@ describe('anonymisedRtdProvider', function() {
     getDataFromLocalStorageStub.restore();
   });
 
-  describe('anonymisedRtdSubmodule', function() {
+  describe('anonymisedRtdSubmodule', function () {
     it('successfully instantiates', function () {
 		  expect(anonymisedRtdSubmodule.init()).to.equal(true);
     });
@@ -146,8 +146,8 @@ describe('anonymisedRtdProvider', function() {
     });
   });
 
-  describe('Get Real-Time Data', function() {
-    it('gets rtd from local storage and set to ortb2.user.data', function() {
+  describe('Get Real-Time Data', function () {
+    it('gets rtd from local storage and set to ortb2.user.data', function () {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
@@ -185,7 +185,7 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user.keywords).to.be.undefined;
     });
 
-    it('gets rtd from local storage and set to ortb2.user.keywords for appnexus bidders parameter', function() {
+    it('gets rtd from local storage and set to ortb2.user.keywords for appnexus bidders parameter', function () {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
@@ -224,7 +224,7 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user.keywords).to.include('perid=93SUG3H540WBJMYNT03KX8N3');
     });
 
-    it('gets rtd from local storage and set to ortb2.user.data if `bidders` parameter undefined', function() {
+    it('gets rtd from local storage and set to ortb2.user.data if `bidders` parameter undefined', function () {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
@@ -261,7 +261,7 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user.keywords).to.be.undefined;
     });
 
-    it('do not set rtd if `cohortStorageKey` parameter undefined', function() {
+    it('do not set rtd if `cohortStorageKey` parameter undefined', function () {
       const rtdConfig = {
         params: {
           bidders: ['smartadserver']
@@ -281,7 +281,7 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
     });
 
-    it('do not set rtd if local storage empty', function() {
+    it('do not set rtd if local storage empty', function () {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
@@ -299,7 +299,7 @@ describe('anonymisedRtdProvider', function() {
       expect(config.getConfig().ortb2).to.be.undefined;
     });
 
-    it('do not set rtd if local storage has incorrect value', function() {
+    it('do not set rtd if local storage has incorrect value', function () {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',

@@ -17,17 +17,17 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 const { getConfig } = config;
 
-function _isMobile() {
+function _isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  isBidRequestValid: function(bid = {}) {
+  isBidRequestValid: function (bid = {}) {
     return !!(bid && bid.params);
   },
-  buildRequests: function(validBidRequests = [], bidderRequest = {}) {
+  buildRequests: function (validBidRequests = [], bidderRequest = {}) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const chtnwId = (storage.getCookie(COOKIE_NAME) != undefined) ? storage.getCookie(COOKIE_NAME) : generateUUID();
     if (storage.cookiesAreEnabled()) {
@@ -41,7 +41,7 @@ export const spec = {
     device.dnt = getDNT() ? 1 : 0;
     device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const bidParams = [];
-    _each(validBidRequests, function(bid) {
+    _each(validBidRequests, function (bid) {
       bidParams.push({
         bidId: bid.bidId,
         placement: bid.params.placementId,
@@ -70,16 +70,16 @@ export const spec = {
       bids: validBidRequests
     };
   },
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const bidResponses = []
-    _each(serverResponse.body, function(response, i) {
+    _each(serverResponse.body, function (response, i) {
       bidResponses.push({
         ...response
       });
     });
     return bidResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
     if (syncOptions.pixelEnabled) {
       const chtnwId = generateUUID()
@@ -92,7 +92,7 @@ export const spec = {
     }
     return syncs
   },
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     if (timeoutData === null) {
       return;
     }
@@ -101,12 +101,12 @@ export const spec = {
       withCredentials: false
     });
   },
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (bid.nurl) {
       ajax(bid.nurl, null);
     }
   },
-  onSetTargeting: function(bid) {
+  onSetTargeting: function (bid) {
   },
 }
 registerBidder(spec);

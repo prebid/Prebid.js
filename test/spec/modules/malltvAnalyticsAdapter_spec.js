@@ -28,8 +28,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       events.getEvents.restore()
     })
 
-    describe('#getCpmInEur()', function() {
-      it('should get bid cpm as currency is EUR', function() {
+    describe('#getCpmInEur()', function () {
+      it('should get bid cpm as currency is EUR', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -50,8 +50,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       })
     })
 
-    describe('#parseBidderCode()', function() {
-      it('should get lower case bidder code from bidderCode field value', function() {
+    describe('#parseBidderCode()', function () {
+      it('should get lower case bidder code from bidderCode field value', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -71,7 +71,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
         expect(result).to.equal('malltv')
       })
 
-      it('should get lower case bidder code from bidder field value as bidderCode field is missing', function() {
+      it('should get lower case bidder code from bidder field value as bidderCode field is missing', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -92,8 +92,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       })
     })
 
-    describe('#parseAdUnitCode()', function() {
-      it('should get lower case adUnit code from adUnitCode field value', function() {
+    describe('#parseAdUnitCode()', function () {
+      it('should get lower case adUnit code from adUnitCode field value', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -114,17 +114,17 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       })
     })
 
-    describe('#getCachedAuction()', function() {
+    describe('#getCachedAuction()', function () {
       const existing = {timeoutBids: [{}]}
       malltvAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing
 
-      it('should get the existing cached object if it exists', function() {
+      it('should get the existing cached object if it exists', function () {
         const result = malltvAnalyticsAdapter.getCachedAuction('test_auction_id')
 
         expect(result).to.equal(existing)
       })
 
-      it('should create a new object and store it in the cache on cache miss', function() {
+      it('should create a new object and store it in the cache on cache miss', function () {
         const result = malltvAnalyticsAdapter.getCachedAuction('no_such_id')
 
         expect(result).to.deep.include({
@@ -133,7 +133,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       })
     })
 
-    describe('when formatting JSON payload sent to backend', function() {
+    describe('when formatting JSON payload sent to backend', function () {
       const receivedBids = [
         {
           auctionId: auctionId,
@@ -243,7 +243,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
         },
       ]
 
-      function assertHavingRequiredMessageFields(message) {
+      function assertHavingRequiredMessageFields (message) {
         expect(message).to.include({
           analyticsVersion: ANALYTICS_VERSION,
           auctionId: auctionId,
@@ -252,16 +252,16 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
         })
       }
 
-      describe('#createCommonMessage', function() {
-        it('should correctly serialize some common fields', function() {
+      describe('#createCommonMessage', function () {
+        it('should correctly serialize some common fields', function () {
           const message = malltvAnalyticsAdapter.createCommonMessage(auctionId)
 
           assertHavingRequiredMessageFields(message)
         })
       })
 
-      describe('#serializeBidResponse', function() {
-        it('should handle BID properly and serialize bid price related fields', function() {
+      describe('#serializeBidResponse', function () {
+        it('should handle BID properly and serialize bid price related fields', function () {
           const result = malltvAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID)
 
           expect(result).to.include({
@@ -277,7 +277,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           })
         })
 
-        it('should handle NO_BID properly and set status to noBid', function() {
+        it('should handle NO_BID properly and set status to noBid', function () {
           const result = malltvAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID)
 
           expect(result).to.include({
@@ -287,7 +287,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           })
         })
 
-        it('should handle BID_WON properly and serialize bid price related fields', function() {
+        it('should handle BID_WON properly and serialize bid price related fields', function () {
           const result = malltvAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID_WON)
 
           expect(result).to.include({
@@ -303,7 +303,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           })
         })
 
-        it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function() {
+        it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function () {
           const result = malltvAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT)
 
           expect(result).to.include({
@@ -313,7 +313,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           })
         })
 
-        it('should handle BID_WON properly and fill originalCpm field with cpm in missing originalCpm case', function() {
+        it('should handle BID_WON properly and fill originalCpm field with cpm in missing originalCpm case', function () {
           const result = malltvAnalyticsAdapter.serializeBidResponse(withoutOriginalCpmBids[0], BIDDER_STATUS.BID_WON)
 
           expect(result).to.include({
@@ -329,7 +329,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
           })
         })
 
-        it('should handle BID_WON properly and fill originalCurrency field with currency in missing originalCurrency case', function() {
+        it('should handle BID_WON properly and fill originalCurrency field with currency in missing originalCurrency case', function () {
           const result = malltvAnalyticsAdapter.serializeBidResponse(withoutOriginalCurrencyBids[0], BIDDER_STATUS.BID_WON)
           expect(result).to.include({
             prebidWon: true,
@@ -345,8 +345,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
         })
       })
 
-      describe('#addBidResponseToMessage()', function() {
-        it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
+      describe('#addBidResponseToMessage()', function () {
+        it('should add a bid response in the output message, grouped by adunit_id and bidder', function () {
           const message = {
             adUnits: {}
           }
@@ -364,8 +364,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
         })
       })
 
-      describe('#createBidMessage()', function() {
-        it('should format auction message sent to the backend', function() {
+      describe('#createBidMessage()', function () {
+        it('should format auction message sent to the backend', function () {
           const args = {
             auctionId: auctionId,
             timestamp: 1234567890,
@@ -434,8 +434,8 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
         })
       })
 
-      describe('#handleBidTimeout()', function() {
-        it('should cached the timeout bid as BID_TIMEOUT event was triggered', function() {
+      describe('#handleBidTimeout()', function () {
+        it('should cached the timeout bid as BID_TIMEOUT event was triggered', function () {
           malltvAnalyticsAdapter.cachedAuctions['test_timeout_auction_id'] = { 'timeoutBids': [] }
           const args = [{
             auctionId: 'test_timeout_auction_id',
@@ -479,14 +479,14 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       events.getEvents.restore()
     })
 
-    it('should call handleBidTimeout as BID_TIMEOUT trigger event', function() {
+    it('should call handleBidTimeout as BID_TIMEOUT trigger event', function () {
       sinon.spy(malltvAnalyticsAdapter, 'handleBidTimeout')
       events.emit(EVENTS.BID_TIMEOUT, {})
       sinon.assert.callCount(malltvAnalyticsAdapter.handleBidTimeout, 1)
       malltvAnalyticsAdapter.handleBidTimeout.restore()
     })
 
-    it('should call handleAuctionEnd as AUCTION_END trigger event', function() {
+    it('should call handleAuctionEnd as AUCTION_END trigger event', function () {
       sinon.spy(malltvAnalyticsAdapter, 'handleAuctionEnd')
       events.emit(EVENTS.AUCTION_END, {})
       sinon.assert.callCount(malltvAnalyticsAdapter.handleAuctionEnd, 1)
@@ -518,7 +518,7 @@ describe('Malltv Prebid AnalyticsAdapter Testing', function () {
       expect(server).to.equal(configOptions.server)
     })
 
-    it('should not enable Analytics when propertyId is missing', function() {
+    it('should not enable Analytics when propertyId is missing', function () {
       const configOptions = {
         options: { }
       }

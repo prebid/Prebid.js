@@ -7,9 +7,9 @@ before(() => {
   setDebounceDelay(0);
 })
 
-export function disableAjaxForAnalytics() {
+export function disableAjaxForAnalytics () {
   sinon.stub(_internal, 'ajax').callsFake(() => null);
 }
-export function enableAjaxForAnalytics() {
+export function enableAjaxForAnalytics () {
   _internal.ajax.restore();
 }

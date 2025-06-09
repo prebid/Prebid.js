@@ -5,7 +5,7 @@ import { interpretResponse } from '../libraries/precisoUtils/bidUtils.js';
 
 const BIDDER_CODE = 'idx'
 const ENDPOINT_URL = 'https://dev-event.dxmdp.com/rest/api/v1/bid'
-const SUPPORTED_MEDIA_TYPES = [ BANNER ]
+const SUPPORTED_MEDIA_TYPES = [BANNER]
 
 export const spec = {
   code: BIDDER_CODE,

@@ -77,14 +77,14 @@ const LoggingEvents = {
   ...EVENTS,
 };
 // =============================[ CONFIGURATION ]=================================
-function fetchAnalyticsConfig() {
-  function updateLoggingPercentage(response) {
+function fetchAnalyticsConfig () {
+  function updateLoggingPercentage (response) {
     if (!isNaN(parseInt(response.percentage, 10))) {
       mnetGlobals.configuration.loggingPercent = response.percentage;
     }
   }
 
-  function parseConfig(loggingConfig) {
+  function parseConfig (loggingConfig) {
     const domain = deepAccess(loggingConfig, 'domain.' + mnetGlobals.refererInfo.domain);
     updateLoggingPercentage(domain || loggingConfig);
 
@@ -92,7 +92,7 @@ function fetchAnalyticsConfig() {
     mnetGlobals.configuration.ajaxState = CONFIG_PASS;
   }
 
-  function success(response) {
+  function success (response) {
     try {
       parseConfig(JSON.parse(response));
     } catch (e) {
@@ -101,12 +101,12 @@ function fetchAnalyticsConfig() {
     }
   }
 
-  function error() {
+  function error () {
     mnetGlobals.configuration.ajaxState = CONFIG_ERROR;
     errorLogger(ERROR_CONFIG_FETCH).send();
   }
 
-  function getConfigURL() {
+  function getConfigURL () {
     return `${CONFIG_URL}?${(formatQS({
       cid: mnetGlobals.configuration.cid,
       dn: mnetGlobals.refererInfo.domain
@@ -134,7 +134,7 @@ function fetchAnalyticsConfig() {
   ajax(getConfigURL(), { success, error });
 }
 
-function initConfiguration(eventType, configuration) {
+function initConfiguration (eventType, configuration) {
   mnetGlobals.refererInfo = getRefererInfo();
   // Holds configuration details
   mnetGlobals.configuration = {
@@ -154,7 +154,7 @@ function initConfiguration(eventType, configuration) {
 }
 
 // ======================[ LOGGING AND TRACKING ]===========================
-function doLogging(auctionObj, adUnitCode, logType, bidObj) {
+function doLogging (auctionObj, adUnitCode, logType, bidObj) {
   const queryParams = getQueryString(auctionObj, adUnitCode, logType, bidObj);
   // Use the generated queryParams for logging
   const payload = getLoggingPayload(queryParams);
@@ -162,7 +162,7 @@ function doLogging(auctionObj, adUnitCode, logType, bidObj) {
   auctionObj.adSlots[adUnitCode].logged[logType] = true;
 }
 
-function getQueryString(auctionObj, adUnitCode, logType, winningBidObj) {
+function getQueryString (auctionObj, adUnitCode, logType, winningBidObj) {
   const commonParams = getCommonParams(auctionObj, adUnitCode, logType);
   const bidParams = getBidParams(auctionObj, adUnitCode, winningBidObj);
   const queryString = formatQS(commonParams);
@@ -170,7 +170,7 @@ function getQueryString(auctionObj, adUnitCode, logType, winningBidObj) {
   return `${queryString}${bidStrings}`;
 }
 
-function getErrorTracker(bidResponse, error) {
+function getErrorTracker (bidResponse, error) {
   const stack = {
     acid: bidResponse.auctionId,
     bidId: bidResponse.requestId,
@@ -187,7 +187,7 @@ function getErrorTracker(bidResponse, error) {
   ];
 }
 
-function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
+function vastTrackerHandler (bidResponse, { auction, bidRequest }) {
   if (!config.getConfig('cache')?.url) return [];
   try {
     if (auction) {
@@ -225,7 +225,7 @@ function vastTrackerHandler(bidResponse, { auction, bidRequest }) {
   }
 }
 
-function processBidResponse(auctionObj, bidRequest, bidResponse) {
+function processBidResponse (auctionObj, bidRequest, bidResponse) {
   bidRequest.bidTs = Date.now();
   bidRequest.responseReceived = true;
   // timeout bid can be there for the bidResponse came after auctionEnd
@@ -252,7 +252,7 @@ function processBidResponse(auctionObj, bidRequest, bidResponse) {
   return { validBidResponseObj: bidObj, bidIdAlreadyPresent };
 }
 
-function getLoggingBids(auctionObj, adUnitCode) {
+function getLoggingBids (auctionObj, adUnitCode) {
   const receivedResponse = buildBidResponseMap(auctionObj, adUnitCode);
   const dummyBids = getDummyBids(auctionObj, adUnitCode, receivedResponse);
 
@@ -261,7 +261,7 @@ function getLoggingBids(auctionObj, adUnitCode) {
   );
 }
 
-function getBidParams(auctionObj, adUnitCode, winningBidObj) {
+function getBidParams (auctionObj, adUnitCode, winningBidObj) {
   let loggableBids = [];
   if (winningBidObj) {
     const responseInfoMap = mnetGlobals.infoByAdIdMap[winningBidObj.adId] || {};
@@ -280,7 +280,7 @@ function getBidParams(auctionObj, adUnitCode, winningBidObj) {
   return loggableBids;
 }
 
-function getDummyBids(auctionObj, adUnitCode, receivedResponse) {
+function getDummyBids (auctionObj, adUnitCode, receivedResponse) {
   const emptyBids = [];
 
   auctionObj.bidsRequested
@@ -303,7 +303,7 @@ function getDummyBids(auctionObj, adUnitCode, receivedResponse) {
   return emptyBids;
 }
 
-function setDbf(bids) {
+function setDbf (bids) {
   const highestBids = {};
 
   bids.forEach((bid) => {
@@ -321,7 +321,7 @@ function setDbf(bids) {
   return bids;
 }
 
-function isHigher(newBid, currentBid = {}) {
+function isHigher (newBid, currentBid = {}) {
   const newPriority = DBF_PRIORITY[newBid.status] ?? 0;
   const currentPriority = DBF_PRIORITY[currentBid.status] ?? -1;
 
@@ -331,7 +331,7 @@ function isHigher(newBid, currentBid = {}) {
   );
 }
 
-function markWinningBidsAndImpressionStatus(auctionObj) {
+function markWinningBidsAndImpressionStatus (auctionObj) {
   const sendAllBidsEnabled = config.getConfig(SEND_ALL_BID_PROP) === true;
 
   const updatePsiBid = (winner, adUnitCode, winnersAdIds) => {
@@ -394,7 +394,7 @@ function markWinningBidsAndImpressionStatus(auctionObj) {
   });
 }
 // =====================[ S2S ]======================
-function addS2sInfo(auctionObj, bidderRequests) {
+function addS2sInfo (auctionObj, bidderRequests) {
   bidderRequests.forEach((bidderRequest) => {
     bidderRequest.bids.forEach((bidRequest) => {
       if (bidRequest.src !== S2S.SRC) return;
@@ -413,7 +413,7 @@ function addS2sInfo(auctionObj, bidderRequests) {
 }
 
 // =========================[ HELPERS ]==========================
-function getAllMediaTypesAndSizes(adUnits) {
+function getAllMediaTypesAndSizes (adUnits) {
   const allMTypes = new Set();
   const allSizes = new Set();
 
@@ -425,7 +425,7 @@ function getAllMediaTypesAndSizes(adUnits) {
   return { allMTypes: [...allMTypes], allSizes: [...allSizes] };
 }
 
-function getAdSlot(adUnits) {
+function getAdSlot (adUnits) {
   const context = adUnits.find((adUnit) => !!deepAccess(adUnit, 'mediaTypes.video.context'))?.mediaTypes.video.context;
   return Object.assign(
     {},
@@ -434,7 +434,7 @@ function getAdSlot(adUnits) {
   );
 }
 
-function buildBidResponseMap(auctionObj, adUnitCode) {
+function buildBidResponseMap (auctionObj, adUnitCode) {
   const responses = [].concat(auctionObj.bidsReceived, auctionObj.psiBids).filter((bid) => bid.adUnitCode === adUnitCode);
   const receivedResponse = {};
 
@@ -463,8 +463,8 @@ function buildBidResponseMap(auctionObj, adUnitCode) {
   return receivedResponse;
 }
 
-function getDfpCurrencyInfo(bidResponse) {
-  function convertCurrency(price, fromCurrency, toCurrency) {
+function getDfpCurrencyInfo (bidResponse) {
+  function convertCurrency (price, fromCurrency, toCurrency) {
     try {
       return getGlobal().convertCurrency?.(price, fromCurrency, toCurrency) || price;
     } catch (e) {
@@ -524,7 +524,7 @@ function getDfpCurrencyInfo(bidResponse) {
 /**
  * Generates auction-level, slot-level, and config-level parameters.
  */
-function getCommonParams(auctionObj, adUnitCode, logType) {
+function getCommonParams (auctionObj, adUnitCode, logType) {
   const adSlotObj = auctionObj.adSlots[adUnitCode] || {};
   let commonParams = Object.assign(
     { lgtp: logType },
@@ -544,7 +544,7 @@ function getCommonParams(auctionObj, adUnitCode, logType) {
   return commonParams;
 }
 
-function setupSlotResponseReceivedListener() {
+function setupSlotResponseReceivedListener () {
   window.googletag = window.googletag || {};
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
@@ -568,14 +568,14 @@ function setupSlotResponseReceivedListener() {
 
 // ======================[ EVENT QUEUE PROCESSING ]=======================
 const eventQueue = () => {
-  function enqueueEvent(eventType, args) {
+  function enqueueEvent (eventType, args) {
     if (mnetGlobals.configuration.debug) {
       logInfo(eventType, args);
     }
     processEventQueue(eventType, args);
   }
 
-  function processEventQueue(eventType, args) {
+  function processEventQueue (eventType, args) {
     try {
       const handler = eventListeners[eventType];
       if (!handler) {
@@ -594,7 +594,7 @@ const eventQueue = () => {
 };
 
 // ======================[ AUCTION EVENT HANDLERS ]=====================
-function auctionInitHandler(eventType, auction) {
+function auctionInitHandler (eventType, auction) {
   let auctionObj = mnetGlobals.auctions[auction.auctionId];
   if (auctionObj) {
     return;
@@ -637,7 +637,7 @@ function auctionInitHandler(eventType, auction) {
   mnetGlobals.auctions[auction.auctionId] = auctionObj;
 }
 
-function auctionEndHandler(eventType, auctionEndData) {
+function auctionEndHandler (eventType, auctionEndData) {
   const auctionObj = mnetGlobals.auctions[auctionEndData.auctionId];
   if (!auctionObj) return;
 
@@ -658,7 +658,7 @@ function auctionEndHandler(eventType, auctionEndData) {
   ]).finally(execute);
 }
 
-function bidRequestedHandler(eventType, bidRequestedData) {
+function bidRequestedHandler (eventType, bidRequestedData) {
   const auctionObj = mnetGlobals.auctions[bidRequestedData.auctionId];
   if (!auctionObj) return;
   auctionObj.auctionStartTime = bidRequestedData.auctionStart;
@@ -673,7 +673,7 @@ function bidRequestedHandler(eventType, bidRequestedData) {
     });
 }
 
-function bidResponseHandler(eventType, validBidResponse) {
+function bidResponseHandler (eventType, validBidResponse) {
   const auctionObj = mnetGlobals.auctions[validBidResponse.auctionId];
   if (!auctionObj) return;
 
@@ -692,7 +692,7 @@ function bidResponseHandler(eventType, validBidResponse) {
   }
 }
 
-function bidWonHandler(eventType, winner) {
+function bidWonHandler (eventType, winner) {
   const { auctionId, adUnitCode, adId, bidder, requestId, originalRequestId } = winner;
   const auctionObj = mnetGlobals.auctions[auctionId];
   if (!auctionObj) {
@@ -731,7 +731,7 @@ function bidWonHandler(eventType, winner) {
   doLogging(auctionObj, adUnitCode, LOG_RA, bidObj);
 }
 
-function bidRejectedHandler(eventType, bidRejected) {
+function bidRejectedHandler (eventType, bidRejected) {
   const auctionObj = mnetGlobals.auctions[bidRejected.auctionId];
   if (!auctionObj) return;
   if (bidRejected.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET) {
@@ -740,7 +740,7 @@ function bidRejectedHandler(eventType, bidRejected) {
   }
 }
 
-function noBidResponseHandler(eventType, noBid) {
+function noBidResponseHandler (eventType, noBid) {
   const auctionObj = mnetGlobals.auctions[noBid.auctionId];
   if (!auctionObj) return;
 
@@ -758,7 +758,7 @@ function noBidResponseHandler(eventType, noBid) {
   auctionObj.bidsReceived.push(noBidObj);
 }
 
-function bidTimeoutHandler(eventType, timedOutBids) {
+function bidTimeoutHandler (eventType, timedOutBids) {
   const auctionId = deepAccess(timedOutBids, '0.auctionId');
   const auctionObj = mnetGlobals.auctions[auctionId];
   if (!auctionObj) return;
@@ -778,13 +778,13 @@ function bidTimeoutHandler(eventType, timedOutBids) {
   });
 }
 
-function bidderDoneHandler(eventType, args) {
+function bidderDoneHandler (eventType, args) {
   const auctionObj = mnetGlobals.auctions[args.auctionId];
   if (!auctionObj) return;
   auctionObj.pendingRequests--;
 }
 
-function adRenderFailedHandler(eventType, args) {
+function adRenderFailedHandler (eventType, args) {
   const {reason, message, bid: {
     auctionId,
     adUnitCode,
@@ -800,7 +800,7 @@ function adRenderFailedHandler(eventType, args) {
   }).send();
 }
 
-function adRenderSucceededHandler(eventType, args) {
+function adRenderSucceededHandler (eventType, args) {
   const {bid: {auctionId, adUnitCode, bidder, creativeId}} = args;
   errorLogger(eventType, {
     auctionId,
@@ -810,7 +810,7 @@ function adRenderSucceededHandler(eventType, args) {
   }).send();
 }
 
-function staleRenderHandler(eventType, args) {
+function staleRenderHandler (eventType, args) {
   const { auctionId, adUnitCode, bidder, creativeId, adId, cpm } = args;
   errorLogger(eventType, {
     adId,
@@ -843,30 +843,30 @@ const eventListeners = {
 };
 
 let medianetAnalytics = Object.assign(adapter({ analyticsType: 'endpoint' }), {
-  getlogsQueue() {
+  getlogsQueue () {
     return mnetGlobals.logsQueue;
   },
 
-  getErrorQueue() {
+  getErrorQueue () {
     return mnetGlobals.errorQueue;
   },
 
-  getVastTrackerHandler() {
+  getVastTrackerHandler () {
     return vastTrackerHandler;
   },
 
-  clearlogsQueue() {
+  clearlogsQueue () {
     mnetGlobals.logsQueue = [];
     mnetGlobals.errorQueue = [];
     mnetGlobals.auctions = {};
   },
 
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     mnetGlobals.eventQueue.enqueueEvent(eventType, args);
   },
 });
 
-function setupListeners() {
+function setupListeners () {
   setupSlotResponseReceivedListener();
   registerVastTrackers(MODULE_TYPE_ANALYTICS, ADAPTER_CODE, vastTrackerHandler);
 }

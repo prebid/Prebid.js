@@ -658,7 +658,7 @@ describe('bridgeuppBidAdapter_spec', function () {
       },
     }
 
-    function mockResponse(bidId, mediaType) {
+    function mockResponse (bidId, mediaType) {
       return {
         id: 'sonarads-response-id-hash-123123',
         cur: 'USD',

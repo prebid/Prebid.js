@@ -3,10 +3,10 @@ import { newBidder } from 'src/adapters/bidderFactory';
 
 const ENDPOINT = 'https://as.vt.open8.com/v1/control/prebid';
 
-describe('Open8Adapter', function() {
+describe('Open8Adapter', function () {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', function() {
+  describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'open8',
       'params': {
@@ -19,11 +19,11 @@ describe('Open8Adapter', function() {
       'auctionId': 'auctionid1234',
     };
 
-    it('should return true when required params found', function() {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function() {
+    it('should return false when required params are not passed', function () {
       bid.params = {
         ' slotKey': 0
       };
@@ -31,7 +31,7 @@ describe('Open8Adapter', function() {
     });
   });
 
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     let bidRequests = [
       {
         'bidder': 'open8',
@@ -46,13 +46,13 @@ describe('Open8Adapter', function() {
       }
     ];
 
-    it('sends bid request to ENDPOINT via GET', function() {
+    it('sends bid request to ENDPOINT via GET', function () {
       const requests = spec.buildRequests(bidRequests);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
     });
   });
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     const adomin = ['example.com']
     const bannerResponse = {
       slotKey: 'slotkey1234',
@@ -116,7 +116,7 @@ describe('Open8Adapter', function() {
       }
     };
 
-    it('should get correct banner bid response', function() {
+    it('should get correct banner bid response', function () {
       let expectedResponse = [{
         'slotKey': 'slotkey1234',
         'userId': 'userid1234',
@@ -148,7 +148,7 @@ describe('Open8Adapter', function() {
       expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
-    it('handles video responses', function() {
+    it('handles video responses', function () {
       let expectedResponse = [{
         'slotKey': 'slotkey1234',
         'userId': 'userid1234',
@@ -182,7 +182,7 @@ describe('Open8Adapter', function() {
       expect(result[0]).to.nested.contain.property('meta.advertiserDomains', adomin);
     });
 
-    it('handles nobid responses', function() {
+    it('handles nobid responses', function () {
       let response = {
         isAdReturn: false,
         'ad': {}
@@ -194,7 +194,7 @@ describe('Open8Adapter', function() {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const imgResponse1 = {
       body: {
         'isAdReturn': true,
@@ -225,7 +225,7 @@ describe('Open8Adapter', function() {
       }
     };
 
-    it('should use a sync img url from first response', function() {
+    it('should use a sync img url from first response', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imgResponse1, imgResponse2, ifResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -235,7 +235,7 @@ describe('Open8Adapter', function() {
       ]);
     });
 
-    it('handle ifs response', function() {
+    it('handle ifs response', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [ifResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -245,12 +245,12 @@ describe('Open8Adapter', function() {
       ]);
     });
 
-    it('handle empty response (e.g. timeout)', function() {
+    it('handle empty response (e.g. timeout)', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
     });
 
-    it('returns empty syncs when not enabled', function() {
+    it('returns empty syncs when not enabled', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imgResponse1]);
       expect(syncs).to.deep.equal([]);
     });

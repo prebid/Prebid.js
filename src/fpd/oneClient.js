@@ -4,8 +4,8 @@ import {logWarn} from '../utils.js';
 // if one is set, the others will be removed
 export const CLIENT_SECTIONS = ['dooh', 'app', 'site']
 
-export function clientSectionChecker(logPrefix) {
-  return function onlyOneClientSection(ortb2) {
+export function clientSectionChecker (logPrefix) {
+  return function onlyOneClientSection (ortb2) {
     CLIENT_SECTIONS.reduce((found, section) => {
       if (hasSection(ortb2, section)) {
         if (found != null) {
@@ -21,6 +21,6 @@ export function clientSectionChecker(logPrefix) {
   }
 }
 
-export function hasSection(ortb2, section) {
+export function hasSection (ortb2, section) {
   return ortb2[section] != null && Object.keys(ortb2[section]).length > 0
 }

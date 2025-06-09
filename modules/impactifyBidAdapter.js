@@ -34,7 +34,7 @@ export const STORAGE_KEY = '_im_str'
  * @type {Object}
  */
 const helpers = {
-  getExtParamsFromBid(bid) {
+  getExtParamsFromBid (bid) {
     let ext = {
       impactify: {
         appId: bid.params.appId
@@ -60,7 +60,7 @@ const helpers = {
     return ext;
   },
 
-  getDeviceType() {
+  getDeviceType () {
     // OpenRTB Device type
     if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
       return 5;
@@ -71,7 +71,7 @@ const helpers = {
     return 2;
   },
 
-  createOrtbImpBannerObj(bid, size) {
+  createOrtbImpBannerObj (bid, size) {
     let sizes = size.split('x');
 
     return {
@@ -83,7 +83,7 @@ const helpers = {
     }
   },
 
-  createOrtbImpVideoObj(bid) {
+  createOrtbImpVideoObj (bid) {
     return {
       id: 'video-' + bid.bidId,
       playerSize: [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT],
@@ -92,7 +92,7 @@ const helpers = {
     }
   },
 
-  getFloor(bid) {
+  getFloor (bid) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,
       mediaType: '*',
@@ -104,7 +104,7 @@ const helpers = {
     return null;
   },
 
-  getImStrFromLocalStorage() {
+  getImStrFromLocalStorage () {
     return STORAGE.localStorageIsEnabled(false) ? STORAGE.getDataFromLocalStorage(STORAGE_KEY, false) : '';
   }
 
@@ -116,7 +116,7 @@ const helpers = {
  * @param bidderRequest
  * @returns {{cur: string[], validBidRequests, id, source: {tid}, imp: *[]}}
  */
-function createOpenRtbRequest(validBidRequests, bidderRequest) {
+function createOpenRtbRequest (validBidRequests, bidderRequest) {
   // Create request and set imp bids inside
   let request = {
     id: bidderRequest.bidderRequestId,

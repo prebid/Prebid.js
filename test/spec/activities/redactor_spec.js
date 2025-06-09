@@ -80,18 +80,18 @@ describe('objectTransformer', () => {
   describe('using redact rules', () => {
     Object.entries({
       replacement: {
-        get(path, val) {
+        get (path, val) {
           return `repl${val}`
         },
-        expectation(parent, prop, val) {
+        expectation (parent, prop, val) {
           sinon.assert.match(parent, {
             [prop]: val
           })
         }
       },
       removal: {
-        get(path, val) {},
-        expectation(parent, prop, val) {
+        get (path, val) {},
+        expectation (parent, prop, val) {
           expect(Object.keys(parent)).to.not.include.members([prop]);
         }
       }
@@ -104,7 +104,7 @@ describe('objectTransformer', () => {
               name: 'test',
               get,
               paths: ['foo'],
-              applies() { return true }
+              applies () { return true }
             })
           ])({}, obj);
           sinon.assert.match(obj, {
@@ -119,7 +119,7 @@ describe('objectTransformer', () => {
               name: 'test',
               get,
               paths: ['outer.inner.foo'],
-              applies() { return true; }
+              applies () { return true; }
             })
           ])({}, obj);
           sinon.assert.match(obj, {
@@ -164,8 +164,8 @@ describe('objectTransformer', () => {
           objectTransformer([redactRule({
             name: 'test',
             paths: ['foo'],
-            applies() { return true },
-            get(val) { return 'repl' },
+            applies () { return true },
+            get (val) { return 'repl' },
           })])({}, obj);
           expect(obj).to.eql({foo: 'repl'});
         })
@@ -180,7 +180,7 @@ describe('objectTransformer', () => {
           name: 'applies',
           paths: ['foo'],
           applies,
-          get(val) { return `repl_r1_${val}`; },
+          get (val) { return `repl_r1_${val}`; },
         },
         {
           name: 'notApplies',
@@ -193,7 +193,7 @@ describe('objectTransformer', () => {
           name: 'applies',
           paths: ['bar'],
           applies,
-          get(val) { return `repl_r2_${val}` }
+          get (val) { return `repl_r2_${val}` }
         },
         {
           name: 'notApplies',
@@ -239,7 +239,7 @@ describe('redactor', () => {
     })(activityParams(MODULE_TYPE, MODULE_NAME));
   });
 
-  function testAllowDeny(activity, fn) {
+  function testAllowDeny (activity, fn) {
     Object.entries({
       allowed: true,
       denied: false
@@ -259,7 +259,7 @@ describe('redactor', () => {
     });
   }
 
-  function testPropertiesAreRemoved(method, properties, allowed) {
+  function testPropertiesAreRemoved (method, properties, allowed) {
     properties.forEach(prop => {
       it(`should ${allowed ? 'NOT ' : ''}remove ${prop}`, () => {
         const obj = {};

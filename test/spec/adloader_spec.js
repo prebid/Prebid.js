@@ -31,29 +31,29 @@ describe('adLoader', function () {
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
-    it('should not load cached script again', function() {
+    it('should not load cached script again', function () {
       adLoader.loadExternalScript('someURL', 'debugging', MODULE_TYPE_PREBID);
       expect(utilsinsertElementStub.called).to.be.false;
     });
 
-    it('callback function can be passed to the function', function() {
-      let callback = function() {};
+    it('callback function can be passed to the function', function () {
+      let callback = function () {};
       adLoader.loadExternalScript('someURL1', MODULE_TYPE_PREBID, 'debugging', callback);
       expect(utilsinsertElementStub.called).to.be.true;
     });
 
     it('requires a url to be included once per document', function () {
-      function getDocSpec() {
+      function getDocSpec () {
         return {
-          createElement: function() {
+          createElement: function () {
             return {
 
             }
           },
-          getElementsByTagName: function() {
+          getElementsByTagName: function () {
             return {
               firstChild: {
-                insertBefore: function() {
+                insertBefore: function () {
 
                 }
               }
@@ -82,10 +82,10 @@ describe('adLoader', function () {
             }
           }
         },
-        getElementsByTagName: function() {
+        getElementsByTagName: function () {
           return {
             firstChild: {
-              insertBefore: function() {}
+              insertBefore: function () {}
             }
           }
         }

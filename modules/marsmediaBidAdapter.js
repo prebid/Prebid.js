@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
-function MarsmediaAdapter() {
+function MarsmediaAdapter () {
   this.code = 'marsmedia';
   this.aliases = ['mars'];
   this.supportedMediaTypes = [VIDEO, BANNER];
@@ -26,7 +26,7 @@ function MarsmediaAdapter() {
     return [];
   };
 
-  function frameImp(BRs, bidderRequest) {
+  function frameImp (BRs, bidderRequest) {
     var impList = [];
     var isSecure = 0;
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
@@ -61,7 +61,7 @@ function MarsmediaAdapter() {
     return impList;
   }
 
-  function frameSite(bidderRequest) {
+  function frameSite (bidderRequest) {
     var site = {
       domain: '',
       page: '',
@@ -86,7 +86,7 @@ function MarsmediaAdapter() {
     return site;
   }
 
-  function frameDevice() {
+  function frameDevice () {
     return {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
@@ -94,7 +94,7 @@ function MarsmediaAdapter() {
     }
   }
 
-  function getValidSizeSet(dimensionList) {
+  function getValidSizeSet (dimensionList) {
     let w = parseInt(dimensionList[0]);
     let h = parseInt(dimensionList[1]);
     // clever check for NaN
@@ -104,7 +104,7 @@ function MarsmediaAdapter() {
     return false;
   }
 
-  function frameBanner(adUnit) {
+  function frameBanner (adUnit) {
     // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
     var sizeList = adUnit.sizes;
     if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
@@ -112,7 +112,7 @@ function MarsmediaAdapter() {
     }
     var sizeStringList = parseSizesInput(sizeList);
     var format = [];
-    sizeStringList.forEach(function(size) {
+    sizeStringList.forEach(function (size) {
       if (size) {
         var dimensionList = getValidSizeSet(size.split('x'));
         if (dimensionList) {
@@ -132,7 +132,7 @@ function MarsmediaAdapter() {
     return false;
   }
 
-  function frameVideo(bid) {
+  function frameVideo (bid) {
     var size = [];
     if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
       var dimensionSet = bid.mediaTypes.video.playerSize;
@@ -157,7 +157,7 @@ function MarsmediaAdapter() {
     }
   }
 
-  function frameExt(bid) {
+  function frameExt (bid) {
     if ((bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes)) {
       let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
       bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
@@ -187,7 +187,7 @@ function MarsmediaAdapter() {
     }
   }
 
-  function frameBid(BRs, bidderRequest) {
+  function frameBid (BRs, bidderRequest) {
     let bid = {
       id: BRs[0].bidderRequestId,
       imp: frameImp(BRs, bidderRequest),
@@ -219,7 +219,7 @@ function MarsmediaAdapter() {
     return bid;
   }
 
-  function getFirstParam(key, validBidRequests) {
+  function getFirstParam (key, validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
       if (validBidRequests[i].params && validBidRequests[i].params[key]) {
         return validBidRequests[i].params[key];
@@ -319,7 +319,7 @@ function MarsmediaAdapter() {
     return bids;
   };
 
-  function sendbeacon(bid, type) {
+  function sendbeacon (bid, type) {
     const bidString = JSON.stringify(bid);
     const encodedBuf = window.btoa(bidString);
     triggerPixel('https://ping-hqx-1.go2speed.media/notification/rtb/beacon/?bt=' + type + '&bid=3mhdom&hb_j=' + encodedBuf, null);
@@ -351,15 +351,15 @@ function MarsmediaAdapter() {
     return floor;
   }
 
-  function _getMinSize(sizes) {
+  function _getMinSize (sizes) {
     return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
   }
 
-  function _isViewabilityMeasurable(element) {
+  function _isViewabilityMeasurable (element) {
     return !_isIframe() && element !== null;
   }
 
-  function _isIframe() {
+  function _isIframe () {
     try {
       return getWindowSelf() !== getWindowTop();
     } catch (e) {
@@ -367,7 +367,7 @@ function MarsmediaAdapter() {
     }
   }
 
-  function _getViewability(element, topWin, { w, h } = {}) {
+  function _getViewability (element, topWin, { w, h } = {}) {
     return topWin.document.visibilityState === 'visible'
       ? percentInView(element, { w, h })
       : 0;

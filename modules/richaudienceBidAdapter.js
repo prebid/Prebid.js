@@ -220,7 +220,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function raiGetSizes(bid) {
+function raiGetSizes (bid) {
   let raiNewSizes;
   if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) {
     raiNewSizes = bid.mediaTypes.banner.sizes
@@ -233,7 +233,7 @@ function raiGetSizes(bid) {
   }
 }
 
-function raiGetDemandType(bid) {
+function raiGetDemandType (bid) {
   let raiFormat = 'display';
   if (typeof bid.sizes != 'undefined') {
     bid.sizes.forEach(function (sz) {
@@ -250,7 +250,7 @@ function raiGetDemandType(bid) {
   return raiFormat;
 }
 
-function raiGetVideoInfo(bid) {
+function raiGetVideoInfo (bid) {
   let videoData;
   if (raiGetDemandType(bid) == 'video') {
     videoData = {
@@ -266,13 +266,13 @@ function raiGetVideoInfo(bid) {
   return videoData;
 }
 
-function renderer(bid) {
+function renderer (bid) {
   bid.renderer.push(() => {
     renderAd(bid)
   });
 }
 
-function renderAd(bid) {
+function renderAd (bid) {
   let raOutstreamHBPassback = `${bid.vastXml}`;
   let raPlayerHB = {
     adUnit: bid.adUnitCode
@@ -281,7 +281,7 @@ function renderAd(bid) {
   window.raParams(raPlayerHB, raOutstreamHBPassback, true);
 }
 
-function raiGetResolution() {
+function raiGetResolution () {
   let resolution = '';
   if (typeof window.screen != 'undefined') {
     resolution = window.screen.width + 'x' + window.screen.height;
@@ -289,7 +289,7 @@ function raiGetResolution() {
   return resolution;
 }
 
-function raiSetPbAdSlot(bid) {
+function raiSetPbAdSlot (bid) {
   let pbAdSlot = '';
   if (deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') != null) {
     pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot')
@@ -297,7 +297,7 @@ function raiSetPbAdSlot(bid) {
   return pbAdSlot
 }
 
-function raiGetSyncInclude(config) {
+function raiGetSyncInclude (config) {
   try {
     let raConfig = null;
     let raiSync = {};
@@ -316,7 +316,7 @@ function raiGetSyncInclude(config) {
   }
 }
 
-function raiGetFloor(bid, config) {
+function raiGetFloor (bid, config) {
   try {
     let raiFloor;
     if (bid.params.bidfloor != null) {
@@ -336,7 +336,7 @@ function raiGetFloor(bid, config) {
   }
 }
 
-function raiGetTimeoutURL(data) {
+function raiGetTimeoutURL (data) {
   let {params, timeout} = data[0]
   let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
 
@@ -348,7 +348,7 @@ function raiGetTimeoutURL(data) {
   return url
 }
 
-function setDSA(bid) {
+function setDSA (bid) {
   let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
   return dsa;
 }

@@ -16,7 +16,7 @@ const getEndpoint = (network) => {
   return `https://csr.onet.pl/${encodeURIComponent(network)}/csr-006/csr.json?nid=${encodeURIComponent(network)}&`;
 };
 
-function parseParams(params, bidderRequest) {
+function parseParams (params, bidderRequest) {
   const newParams = {};
   if (params.customParams && typeof params.customParams === 'object') {
     for (const param in params.customParams) {
@@ -72,7 +72,7 @@ function parseParams(params, bidderRequest) {
  * @param type number // 1 - img, 2 - js
  * @returns an object { event: 1, method: 1 or 2, url: 'string' }
  */
-function prepareItemEventtrackers(url, type) {
+function prepareItemEventtrackers (url, type) {
   return {
     event: 1,
     method: type,
@@ -80,7 +80,7 @@ function prepareItemEventtrackers(url, type) {
   };
 }
 
-function prepareEventtrackers(emsLink, imp, impression, impression1, impressionJs1) {
+function prepareEventtrackers (emsLink, imp, impression, impression1, impressionJs1) {
   const eventtrackers = [prepareItemEventtrackers(emsLink, 1)];
 
   if (imp) {
@@ -102,7 +102,7 @@ function prepareEventtrackers(emsLink, imp, impression, impression1, impressionJ
   return eventtrackers;
 }
 
-function parseOrtbResponse(ad) {
+function parseOrtbResponse (ad) {
   if (!(ad.data?.fields && ad.data?.meta)) {
     return false;
   }
@@ -178,7 +178,7 @@ function parseOrtbResponse(ad) {
   return ortb
 }
 
-function parseNativeResponse(ad) {
+function parseNativeResponse (ad) {
   if (!(ad.data?.fields && ad.data?.meta)) {
     return false;
   }
@@ -317,7 +317,7 @@ const parseAuctionConfigs = (serverResponse, bidRequest) => {
       'config': {
         'seller': BO_CSR_ONET,
         'decisionLogicUrl': `${BO_CSR_ONET}/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
-        'interestGroupBuyers': [ BO_CSR_ONET ],
+        'interestGroupBuyers': [BO_CSR_ONET],
         'auctionSignals': {
           'params': bid.params,
           'sizes': bid.sizes,

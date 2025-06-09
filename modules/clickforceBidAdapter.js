@@ -20,7 +20,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return bid && bid.params && !!bid.params.zone;
   },
 
@@ -30,12 +30,12 @@ export const spec = {
    * @param {BidRequest[]} validBidRequests - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests) {
+  buildRequests: function (validBidRequests) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const bidParams = [];
-    _each(validBidRequests, function(bid) {
+    _each(validBidRequests, function (bid) {
       bidParams.push({
         z: bid.params.zone,
         bidId: bid.bidId
@@ -56,17 +56,17 @@ export const spec = {
    * @param {*} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const cfResponses = [];
     const bidRequestList = [];
 
     if (typeof bidRequest != 'undefined') {
-      _each(bidRequest.validBidRequests, function(req) {
+      _each(bidRequest.validBidRequests, function (req) {
         bidRequestList[req.bidId] = req;
       });
     }
 
-    _each(serverResponse.body, function(response) {
+    _each(serverResponse.body, function (response) {
       if (response.requestId != null) {
         // native ad size
         if (response.width == 3) {
@@ -124,7 +124,7 @@ export const spec = {
     });
     return cfResponses;
   },
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
       return [{
         type: 'iframe',

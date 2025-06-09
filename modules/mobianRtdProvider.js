@@ -63,7 +63,7 @@ const logMessage = (...args) => {
   _logMessage('Mobian', ...args);
 };
 
-function makeMemoizedFetch() {
+function makeMemoizedFetch () {
   let cachedResponse = null;
   return async function () {
     if (cachedResponse) {
@@ -84,9 +84,9 @@ export const getContextData = makeMemoizedFetch();
 
 const entriesToObjectReducer = (acc, [key, value]) => ({ ...acc, [key]: value });
 
-export function makeContextDataToKeyValuesReducer(config) {
+export function makeContextDataToKeyValuesReducer (config) {
   const { prefix } = config;
-  return function contextDataToKeyValuesReducer(keyValues, [key, value]) {
+  return function contextDataToKeyValuesReducer (keyValues, [key, value]) {
     if (key === AP_VALUES) {
       AP_KEYS.forEach((apKey) => {
         if (!value?.[apKey]?.length) return;
@@ -100,7 +100,7 @@ export function makeContextDataToKeyValuesReducer(config) {
   }
 }
 
-export async function fetchContextData() {
+export async function fetchContextData () {
   const pageUrl = encodeURIComponent(window.location.href);
   const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
   const request = ajaxBuilder();
@@ -110,7 +110,7 @@ export async function fetchContextData() {
   });
 }
 
-export function getConfig(config) {
+export function getConfig (config) {
   const [advertiserTargeting, publisherTargeting] = ['advertiserTargeting', 'publisherTargeting'].map((key) => {
     const value = config?.params?.[key];
     if (!value) {
@@ -131,7 +131,7 @@ export function getConfig(config) {
  * @param {MobianConfig} config
  * @param {MobianContextData} contextData
  */
-export function setTargeting(config, contextData) {
+export function setTargeting (config, contextData) {
   logMessage('context', contextData);
   const keyValues = Object.entries(contextData)
     .filter(([key]) => config.publisherTargeting.includes(key))
@@ -144,7 +144,7 @@ export function setTargeting(config, contextData) {
  * @param {Object|string} contextData
  * @returns {MobianContextData}
  */
-export function makeDataFromResponse(contextData) {
+export function makeDataFromResponse (contextData) {
   const data = typeof contextData === 'string' ? safeJSONParse(contextData) : contextData;
   const results = data.results;
   if (!results) {
@@ -167,7 +167,7 @@ export function makeDataFromResponse(contextData) {
  * @param {MobianContextData} contextData
  * @param {MobianConfig} config
  */
-export function extendBidRequestConfig(bidReqConfig, contextData, config) {
+export function extendBidRequestConfig (bidReqConfig, contextData, config) {
   logMessage('extendBidRequestConfig', bidReqConfig, contextData);
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const keyValues = Object.entries(contextData)
@@ -188,7 +188,7 @@ export function extendBidRequestConfig(bidReqConfig, contextData, config) {
  * @param {MobianConfig} rawConfig
  * @returns {boolean}
  */
-function init(rawConfig) {
+function init (rawConfig) {
   logMessage('init', rawConfig);
   const config = getConfig(rawConfig);
   if (config.publisherTargeting.length) {
@@ -197,7 +197,7 @@ function init(rawConfig) {
   return true;
 }
 
-function getBidRequestData(bidReqConfig, callback, rawConfig) {
+function getBidRequestData (bidReqConfig, callback, rawConfig) {
   logMessage('getBidRequestData', bidReqConfig);
 
   const config = getConfig(rawConfig);

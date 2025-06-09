@@ -71,12 +71,12 @@ describe('optidigitalAdapterTests', function () {
           },
           'mediaTypes': {
             'banner': {
-              'sizes': [ [ 300, 250 ], [ 300, 600 ] ]
+              'sizes': [[300, 250], [300, 600]]
             }
           },
           'adUnitCode': 'div-gpt-ad-1460505748561-0',
           'transactionId': '0cb56262-9637-474d-a572-86fa860fd8b7',
-          'sizes': [ [ 300, 250 ], [ 300, 600 ] ],
+          'sizes': [[300, 250], [300, 600]],
           'bidId': '245d89f17f289f',
           'bidderRequestId': '199d7ffafa1e91',
           'auctionId': 'b66f01cd-3441-4403-99fa-d8062e795933',
@@ -205,12 +205,12 @@ describe('optidigitalAdapterTests', function () {
       expect(request).to.be.an('array').that.is.empty;
     });
 
-    it('should send bid request via POST', function() {
+    it('should send bid request via POST', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.method).to.equal('POST');
     });
 
-    it('should send bid request to given endpoint', function() {
+    it('should send bid request to given endpoint', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.url).to.equal(ENDPOINT);
     });
@@ -380,14 +380,14 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.bapp).to.deep.equal(validBidRequests[0].params.bapp);
     });
 
-    it('should send empty GDPR consent and required set to false', function() {
+    it('should send empty GDPR consent and required set to false', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.gdpr.consent).to.equal('');
       expect(payload.gdpr.required).to.equal(false);
     });
 
-    it('should send GDPR to given endpoint', function() {
+    it('should send GDPR to given endpoint', function () {
       let consentString = 'DFR8KRePoQNsRREZCADBG+A==';
       bidderRequest.gdprConsent = {
         'consentString': consentString,
@@ -404,7 +404,7 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.gdpr.required).to.exist.and.to.be.true;
     });
 
-    it('should send empty GDPR consent to endpoint', function() {
+    it('should send empty GDPR consent to endpoint', function () {
       let consentString = false;
       bidderRequest.gdprConsent = {
         'consentString': consentString,
@@ -419,14 +419,14 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.gdpr.consent).to.equal('');
     });
 
-    it('should send uspConsent to given endpoint', function() {
+    it('should send uspConsent to given endpoint', function () {
       bidderRequest.uspConsent = '1YYY';
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.us_privacy).to.exist;
     });
 
-    it('should send gppConsent to given endpoint where there is gppConsent', function() {
+    it('should send gppConsent to given endpoint where there is gppConsent', function () {
       let consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
       bidderRequest.gppConsent = {
         'gppString': consentString,
@@ -437,7 +437,7 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.gpp).to.exist;
     });
 
-    it('should send gppConsent to given endpoint when there is gpp in ortb2', function() {
+    it('should send gppConsent to given endpoint when there is gpp in ortb2', function () {
       let consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
       bidderRequest.gppConsent = undefined;
       bidderRequest.ortb2 = {
@@ -451,7 +451,7 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.gpp).to.exist;
     });
 
-    it('should use appropriate mediaTypes banner sizes', function() {
+    it('should use appropriate mediaTypes banner sizes', function () {
       const mediaTypesBannerSize = {
         'mediaTypes': {
           'banner': {
@@ -462,7 +462,7 @@ describe('optidigitalAdapterTests', function () {
       returnBannerSizes(mediaTypesBannerSize, '300x600');
     });
 
-    it('should use appropriate mediaTypes banner sizes as array', function() {
+    it('should use appropriate mediaTypes banner sizes as array', function () {
       const mediaTypesBannerSize = {
         'mediaTypes': {
           'banner': {
@@ -473,7 +473,7 @@ describe('optidigitalAdapterTests', function () {
       returnBannerSizes(mediaTypesBannerSize, ['300x600']);
     });
 
-    it('should fetch floor from floor module if it is available', function() {
+    it('should fetch floor from floor module if it is available', function () {
       let validBidRequestsWithCurrency = [
         {
           'bidder': 'optidigital',
@@ -504,7 +504,7 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.imp[0].bidFloor).to.exist;
     });
 
-    it('should add userEids to payload', function() {
+    it('should add userEids to payload', function () {
       const userIdAsEids = [{
         source: 'pubcid.org',
         uids: [{
@@ -519,14 +519,14 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.user.eids).to.deep.equal(userIdAsEids);
     });
 
-    it('should not add userIdAsEids to payload when userIdAsEids is not present', function() {
+    it('should not add userIdAsEids to payload when userIdAsEids is not present', function () {
       validBidRequests[0].userIdAsEids = undefined;
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(undefined);
     });
 
-    function returnBannerSizes(mediaTypes, expectedSizes) {
+    function returnBannerSizes (mediaTypes, expectedSizes) {
       const bidRequest = Object.assign(validBidRequests[0], mediaTypes);
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
@@ -539,51 +539,51 @@ describe('optidigitalAdapterTests', function () {
       });
     }
   });
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const syncurlIframe = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
     let test;
     beforeEach(function () {
       test = sinon.sandbox.create();
       resetSync();
     });
-    afterEach(function() {
+    afterEach(function () {
       test.restore();
     });
 
-    it('should be executed as in config', function() {
+    it('should be executed as in config', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, undefined)).to.deep.equal([{
         type: 'iframe', url: syncurlIframe
       }]);
     });
 
-    it('should return appropriate URL with GDPR equals to 1 and GDPR consent', function() {
+    it('should return appropriate URL with GDPR equals to 1 and GDPR consent', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo`
       }]);
     });
-    it('should return appropriate URL with GDPR equals to 0 and GDPR consent', function() {
+    it('should return appropriate URL with GDPR equals to 0 and GDPR consent', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=0&gdpr_consent=foo`
       }]);
     });
-    it('should return appropriate URL with GDPR equals to 1 and no consent', function() {
+    it('should return appropriate URL with GDPR equals to 1 and no consent', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=`
       }]);
     });
-    it('should return appropriate URL with GDPR equals to 1, GDPR consent and US Privacy consent', function() {
+    it('should return appropriate URL with GDPR equals to 1, GDPR consent and US Privacy consent', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, 'fooUsp')).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp`
       }]);
     });
-    it('should return appropriate URL with GDPR equals to 1, GDPR consent, US Privacy consent and GPP consent', function() {
+    it('should return appropriate URL with GDPR equals to 1, GDPR consent, US Privacy consent and GPP consent', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, 'fooUsp', {gppString: 'fooGpp', applicableSections: [7]})).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp&gpp=fooGpp&gpp_sid=7`
       }]);
     });
   });
   describe('interpretResponse', function () {
-    it('should get bids', function() {
+    it('should get bids', function () {
       let bids = {
         'body': {
           'bids': [{
@@ -648,7 +648,7 @@ describe('optidigitalAdapterTests', function () {
       expect(result).to.eql(expectedResponse);
     });
 
-    it('should handle empty array bid response', function() {
+    it('should handle empty array bid response', function () {
       let bids = {
         'body': {
           'bids': []

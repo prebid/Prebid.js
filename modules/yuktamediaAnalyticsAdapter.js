@@ -39,7 +39,7 @@ const _pageInfo = {
   prebidVersion: 'v' + 'prebid.version$'
 };
 
-function getParameterByName(param) {
+function getParameterByName (param) {
   let vars = {};
   window.location.href.replace(location.hash, '').replace(
     /[?&]+([^=&]+)=?([^&]*)?/gi,
@@ -50,7 +50,7 @@ function getParameterByName(param) {
   return vars[param] ? vars[param] : '';
 }
 
-function updateSessionId() {
+function updateSessionId () {
   if (isSessionIdTimeoutExpired()) {
     let newSessionId = generateUUID();
     storage.setDataInLocalStorage(localStoragePrefix.concat('session_id'), newSessionId);
@@ -59,25 +59,25 @@ function updateSessionId() {
   updateSessionIdTimeout();
 }
 
-function updateSessionIdTimeout() {
+function updateSessionIdTimeout () {
   storage.setDataInLocalStorage(localStoragePrefix.concat('session_timeout'), Date.now());
 }
 
-function isSessionIdTimeoutExpired() {
+function isSessionIdTimeoutExpired () {
   let cpmSessionTimestamp = storage.getDataFromLocalStorage(localStoragePrefix.concat('session_timeout'));
   return Date.now() - cpmSessionTimestamp > 3600000;
 }
 
-function getSessionId() {
+function getSessionId () {
   return storage.getDataFromLocalStorage(localStoragePrefix.concat('session_id')) ? storage.getDataFromLocalStorage(localStoragePrefix.concat('session_id')) : '';
 }
 
-function isUtmTimeoutExpired() {
+function isUtmTimeoutExpired () {
   let utmTimestamp = storage.getDataFromLocalStorage(localStoragePrefix.concat('utm_timeout'));
   return (Date.now() - utmTimestamp) > 3600000;
 }
 
-function send(data, status) {
+function send (data, status) {
   data.initOptions = Object.assign(_pageInfo, initOptions);
   const yuktamediaAnalyticsRequestUrl = buildUrl({
     protocol: 'https',
@@ -95,7 +95,7 @@ function send(data, status) {
 }
 
 var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     if (typeof args !== 'undefined') {
       switch (eventType) {
         case EVENTS.AUCTION_INIT:

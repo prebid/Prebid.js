@@ -14,7 +14,7 @@ import { MAX_REQUEST_LENGTH } from "../intentIqConstants/intentIqConstants.js";
  *
  * @return {string} The resulting URL with additional parameters appended if valid; otherwise, the original URL.
  */
-export function handleAdditionalParams(browser, url, requestTo, additionalParams) {
+export function handleAdditionalParams (browser, url, requestTo, additionalParams) {
   let queryString = '';
 
   if (!Array.isArray(additionalParams)) return url;

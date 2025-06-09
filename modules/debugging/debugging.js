@@ -7,7 +7,7 @@ const interceptorHooks = [];
 let bidInterceptor;
 let enabled = false;
 
-function enableDebugging(debugConfig, {fromSession = false, config, hook, logger}) {
+function enableDebugging (debugConfig, {fromSession = false, config, hook, logger}) {
   config.setConfig({debug: true});
   bidInterceptor.updateConfig(debugConfig);
   resetHooks(true);
@@ -20,7 +20,7 @@ function enableDebugging(debugConfig, {fromSession = false, config, hook, logger
   }
 }
 
-export function disableDebugging({hook, logger}) {
+export function disableDebugging ({hook, logger}) {
   bidInterceptor.updateConfig(({}));
   resetHooks(false);
   // also disable "legacy" overrides
@@ -32,7 +32,7 @@ export function disableDebugging({hook, logger}) {
 }
 
 // eslint-disable-next-line no-restricted-properties
-function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorage, DEBUG_KEY} = {}) {
+function saveDebuggingConfig (debugConfig, {sessionStorage = window.sessionStorage, DEBUG_KEY} = {}) {
   if (!debugConfig.enabled) {
     try {
       sessionStorage.removeItem(DEBUG_KEY);
@@ -51,7 +51,7 @@ function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorag
 }
 
 // eslint-disable-next-line no-restricted-properties
-export function getConfig(debugging, {getStorage = () => window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
+export function getConfig (debugging, {getStorage = () => window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
   if (debugging == null) return;
   let sessionStorage;
   try {
@@ -69,7 +69,7 @@ export function getConfig(debugging, {getStorage = () => window.sessionStorage, 
   }
 }
 
-export function sessionLoader({DEBUG_KEY, storage, config, hook, logger}) {
+export function sessionLoader ({DEBUG_KEY, storage, config, hook, logger}) {
   let overrides;
   try {
     // eslint-disable-next-line no-restricted-properties
@@ -82,7 +82,7 @@ export function sessionLoader({DEBUG_KEY, storage, config, hook, logger}) {
   }
 }
 
-function resetHooks(enable) {
+function resetHooks (enable) {
   interceptorHooks.forEach(([getHookFn, interceptor]) => {
     getHookFn().getHooks({hook: interceptor}).remove();
   });
@@ -93,14 +93,14 @@ function resetHooks(enable) {
   }
 }
 
-function registerBidInterceptor(getHookFn, interceptor) {
+function registerBidInterceptor (getHookFn, interceptor) {
   const interceptBids = (...args) => bidInterceptor.intercept(...args);
   interceptorHooks.push([getHookFn, function (next, ...args) {
     interceptor(next, interceptBids, ...args);
   }]);
 }
 
-export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, cbs) {
+export function bidderBidInterceptor (next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, cbs) {
   const done = delayExecution(cbs.onCompletion, 2);
   ({bids, bidRequest} = interceptBids({
     bids,
@@ -117,7 +117,7 @@ export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest
   }
 }
 
-export function install({DEBUG_KEY, config, hook, createBid, logger}) {
+export function install ({DEBUG_KEY, config, hook, createBid, logger}) {
   bidInterceptor = new BidInterceptor({logger});
   const pbsBidInterceptor = makePbsInterceptor({createBid});
   registerBidInterceptor(() => hook.get('processBidderRequests'), bidderBidInterceptor);

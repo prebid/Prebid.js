@@ -3,7 +3,7 @@ import {VIDEO} from '../../src/mediaTypes.js';
 import {getRefererInfo} from '../../src/refererDetection.js';
 import {createTrackPixelHtml, deepAccess, getBidRequest, formatQS} from '../../src/utils.js';
 
-export function getSizes(request) {
+export function getSizes (request) {
   let sizes = request.sizes;
   if (!sizes && request.mediaTypes && request.mediaTypes.banner && request.mediaTypes.banner.sizes) {
     sizes = request.mediaTypes.banner.sizes;
@@ -18,7 +18,7 @@ export function getSizes(request) {
   return sizes;
 }
 
-export function formatRequest({payload, url, bidderRequest, bidId}) {
+export function formatRequest ({payload, url, bidderRequest, bidId}) {
   const request = {
     method: 'POST',
     data: JSON.stringify(payload),
@@ -39,7 +39,7 @@ export function formatRequest({payload, url, bidderRequest, bidId}) {
   return request;
 }
 
-export function createVideoTag(bid) {
+export function createVideoTag (bid) {
   const tag = {};
   tag.id = parseInt(bid.params.placementId, 10);
   tag.gpid = 'targetVideo';
@@ -61,7 +61,7 @@ export function createVideoTag(bid) {
   return tag;
 }
 
-export function bannerBid(serverBid, rtbBid, bidderRequest, margin) {
+export function bannerBid (serverBid, rtbBid, bidderRequest, margin) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const sizes = getSizes(bidRequest);
   const bid = {
@@ -93,7 +93,7 @@ export function bannerBid(serverBid, rtbBid, bidderRequest, margin) {
   return bid;
 }
 
-export function videoBid(serverBid, requestId, currency, params, ttl) {
+export function videoBid (serverBid, requestId, currency, params, ttl) {
   const {ad, adUrl, vastUrl, vastXml} = getAd(serverBid);
 
   const bid = {
@@ -123,11 +123,11 @@ export function videoBid(serverBid, requestId, currency, params, ttl) {
   return bid;
 }
 
-export function getRtbBid(tag) {
+export function getRtbBid (tag) {
   return tag && tag.ads && tag.ads.length && tag.ads.find(ad => ad.rtb);
 }
 
-export function getBannerHtml(vastUrl) {
+export function getBannerHtml (vastUrl) {
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -143,7 +143,7 @@ export function getBannerHtml(vastUrl) {
   </html>`;
 }
 
-export function getAd(bid) {
+export function getAd (bid) {
   let ad, adUrl, vastXml, vastUrl;
 
   switch (deepAccess(bid, 'ext.prebid.type')) {
@@ -168,7 +168,7 @@ export function getAd(bid) {
   return {ad, adUrl, vastXml, vastUrl};
 }
 
-export function getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent, endpoint) {
+export function getSyncResponse (syncOptions, gdprConsent, uspConsent, gppConsent, endpoint) {
   const params = {
     endpoint
   };
@@ -202,7 +202,7 @@ export function getSyncResponse(syncOptions, gdprConsent, uspConsent, gppConsent
   return response;
 }
 
-export function getSiteObj() {
+export function getSiteObj () {
   const refInfo = (getRefererInfo && getRefererInfo()) || {};
 
   return {

@@ -21,7 +21,7 @@ const converter = ortbConverter({
     ttl: 300
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const bidRequest = buildRequest(imps, bidderRequest, context);
     deepSetValue(bidRequest, 'site.publisher.domain', bidderRequest.refererInfo.domain);
     deepSetValue(bidRequest, 'site.page', bidderRequest.refererInfo.page);
@@ -85,13 +85,13 @@ export const spec = {
     }
   },
 
-  interpretResponse(serverResponse, bidRequest) {
+  interpretResponse (serverResponse, bidRequest) {
     const bids = converter.fromORTB({response: serverResponse.body, request: bidRequest.data}).bids;
     return bids;
   }
 };
 
-export function expandAuctionMacros(str, price, currency) {
+export function expandAuctionMacros (str, price, currency) {
   if (!str) return;
 
   const defaultCurrency = 'RUB';

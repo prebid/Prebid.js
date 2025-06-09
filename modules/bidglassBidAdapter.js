@@ -20,7 +20,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!bid.params.adUnitId; // only adUnitId is required
   },
   /**
@@ -30,7 +30,7 @@ export const spec = {
    * @param {BidderRequest} bidderRequest request by bidder
    * @return {ServerRequest} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     /*
     Sample array entry for validBidRequests[]:
     [{
@@ -50,10 +50,10 @@ export const spec = {
     */
 
     let imps = [];
-    let getReferer = function() {
+    let getReferer = function () {
       return window === window.top ? window.location.href : window.parent === window.top ? document.referrer : null;
     };
-    let getOrigins = function() {
+    let getOrigins = function () {
       var ori = [window.location.protocol + '//' + window.location.hostname];
 
       if (window.location.ancestorOrigins) {
@@ -77,7 +77,7 @@ export const spec = {
 
     let bidglass = window['bidglass'];
 
-    _each(validBidRequests, function(bid) {
+    _each(validBidRequests, function (bid) {
       bid.sizes = ((isArray(bid.sizes) && isArray(bid.sizes[0])) ? bid.sizes : [bid.sizes]);
       bid.sizes = bid.sizes.filter(size => isArray(size));
 
@@ -150,11 +150,11 @@ export const spec = {
    * @param {ServerRequest} serverRequest The original server request for this bid
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, serverRequest) {
+  interpretResponse: function (serverResponse, serverRequest) {
     const bidResponses = [];
     const bidReq = JSON.parse(serverRequest.data);
 
-    _each(serverResponse.body.bidResponses, function(serverBid) {
+    _each(serverResponse.body.bidResponses, function (serverBid) {
       const bidResponse = {
         requestId: serverBid.requestId,
         cpm: parseFloat(serverBid.cpm),

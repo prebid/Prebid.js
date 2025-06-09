@@ -30,7 +30,7 @@ let bidRequestTimeout = 0;
 let analyticsType = 'endpoint';
 
 let growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}), {
-  track({eventType, args}) {
+  track ({eventType, args}) {
     let eventData = args ? utils.deepClone(args) : {};
     let data = {};
     if (!trackEvents.includes(eventType)) return;
@@ -116,7 +116,7 @@ let growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}
 
 growthCodeAnalyticsAdapter.originEnableAnalytics = growthCodeAnalyticsAdapter.enableAnalytics;
 
-growthCodeAnalyticsAdapter.enableAnalytics = function(conf = {}) {
+growthCodeAnalyticsAdapter.enableAnalytics = function (conf = {}) {
   if (typeof conf.options === 'object') {
     if (conf.options.pid) {
       pid = conf.options.pid;
@@ -136,7 +136,7 @@ growthCodeAnalyticsAdapter.enableAnalytics = function(conf = {}) {
   growthCodeAnalyticsAdapter.originEnableAnalytics(conf);
 };
 
-function logToServer() {
+function logToServer () {
   if (pid === DEFAULT_PID) return;
   if (eventQueue.length >= 1) {
     // Get the correct GCID
@@ -166,7 +166,7 @@ function logToServer() {
   }
 }
 
-function sendEvent(event) {
+function sendEvent (event) {
   eventQueue.push(event);
   logInfo(MODULE_NAME + 'Analytics Event: ' + event);
 

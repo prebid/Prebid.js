@@ -42,7 +42,7 @@ export const spec = {
     }
     return true;
   },
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const data = converter.toORTB({ bidRequests, bidderRequest })
     ENDPOINT = String(deepAccess(bidRequests[0], 'params.endpoint')) ? deepAccess(bidRequests[0], 'params.endpoint') : ENDPOINT
     data.user = {
@@ -54,7 +54,7 @@ export const spec = {
       data
     }
   },
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     let bids = [];
     if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
       response.body.seatbid.forEach(function (bidder) {
@@ -107,10 +107,10 @@ export const spec = {
   // onAdRenderSucceeded: function (bid) { },
   supportedMediaTypes: [BANNER]
 }
-function hasBanner(bidRequest) {
+function hasBanner (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
-function hasVideo(bidRequest) {
+function hasVideo (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 

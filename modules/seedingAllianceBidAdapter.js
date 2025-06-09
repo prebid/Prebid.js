@@ -21,7 +21,7 @@ const converter = ortbConverter({
     ttl: 360,
     netRevenue: true
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     // set basic page, this might be updated later by adunit param
     deepSetValue(request, 'site.page', bidderRequest.refererInfo.page);
@@ -33,7 +33,7 @@ const converter = ortbConverter({
 
     return request;
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     // add tagid from params
     imp.tagid = bidRequest.params.adUnitId;
@@ -169,11 +169,11 @@ const getEids = (bidRequest) => {
   return eids;
 }
 
-function flatten(arr) {
+function flatten (arr) {
   return [].concat(...arr);
 }
 
-function parseNative(bid, nativeParams) {
+function parseNative (bid, nativeParams) {
   let native;
   if (typeof bid.adm === 'string') {
     try {

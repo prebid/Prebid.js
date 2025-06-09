@@ -22,7 +22,7 @@ const eventDataComposerMap = {
 };
 
 // This function is copy from prebid core
-function formatQS(query) {
+function formatQS (query) {
   return Object
     .keys(query)
     .map(k => Array.isArray(query[k])
@@ -32,7 +32,7 @@ function formatQS(query) {
 }
 
 // This function is copy from prebid core
-function buildUrl(obj) {
+function buildUrl (obj) {
   return (obj.protocol || 'http') + '://' +
     (obj.host ||
       obj.hostname + (obj.port ? `:${obj.port}` : '')) +

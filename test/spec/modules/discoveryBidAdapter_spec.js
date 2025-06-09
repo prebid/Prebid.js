@@ -232,8 +232,8 @@ describe('discovery:BidAdapterTests', function () {
     });
   });
 
-  describe('discovery: buildRequests', function() {
-    describe('getPmgUID function', function() {
+  describe('discovery: buildRequests', function () {
+    describe('getPmgUID function', function () {
       it('should generate new UUID and set cookie if not exists', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
@@ -262,7 +262,7 @@ describe('discovery:BidAdapterTests', function () {
         expect(storage.getDataFromLocalStorage.called).to.be.true;
       });
     })
-    describe('buildUTMTagData function', function() {
+    describe('buildUTMTagData function', function () {
       it('should set UTM cookie', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
@@ -319,7 +319,7 @@ describe('discovery:BidAdapterTests', function () {
     expect(bid.currency).to.equal('USD');
   });
 
-  describe('discovery: getUserSyncs', function() {
+  describe('discovery: getUserSyncs', function () {
     const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
     const IFRAME_ENABLED = {
       iframeEnabled: true,
@@ -360,7 +360,7 @@ describe('discovery:BidAdapterTests', function () {
 
 describe('discovery Bid Adapter Tests', function () {
   describe('buildRequests', () => {
-    describe('getPageTitle function', function() {
+    describe('getPageTitle function', function () {
       let sandbox;
 
       beforeEach(() => {
@@ -371,7 +371,7 @@ describe('discovery Bid Adapter Tests', function () {
         sandbox.restore();
       });
 
-      it('should return the top document title if available', function() {
+      it('should return the top document title if available', function () {
         const fakeTopDocument = {
           title: 'Top Document Title',
           querySelector: () => ({ content: 'Top Document Title test' })
@@ -383,7 +383,7 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal('Top Document Title');
       });
 
-      it('should return the content of top og:title meta tag if title is empty', function() {
+      it('should return the content of top og:title meta tag if title is empty', function () {
         const ogTitleContent = 'Top OG Title Content';
         const fakeTopWindow = {
           document: {
@@ -396,7 +396,7 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(ogTitleContent);
       });
 
-      it('should return the document title if no og:title meta tag is present', function() {
+      it('should return the document title if no og:title meta tag is present', function () {
         document.title = 'Test Page Title';
         sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
 
@@ -404,7 +404,7 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal('Test Page Title');
       });
 
-      it('should return the content of og:title meta tag if present', function() {
+      it('should return the content of og:title meta tag if present', function () {
         document.title = '';
         const ogTitleContent = 'Top OG Title Content';
         sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
@@ -412,16 +412,16 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(ogTitleContent);
       });
 
-      it('should return an empty string if no title or og:title meta tag is found', function() {
+      it('should return an empty string if no title or og:title meta tag is found', function () {
         document.title = '';
         sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
         const result = getPageTitle({ top: undefined });
         expect(result).to.equal('');
       });
 
-      it('should handle exceptions when accessing top.document and fallback to current document', function() {
+      it('should handle exceptions when accessing top.document and fallback to current document', function () {
         const fakeWindow = {
-          get top() {
+          get top () {
             throw new Error('Access denied');
           }
         };
@@ -433,7 +433,7 @@ describe('discovery Bid Adapter Tests', function () {
       });
     });
 
-    describe('getPageDescription function', function() {
+    describe('getPageDescription function', function () {
       let sandbox;
 
       beforeEach(() => {
@@ -444,7 +444,7 @@ describe('discovery Bid Adapter Tests', function () {
         sandbox.restore();
       });
 
-      it('should return the top document description if available', function() {
+      it('should return the top document description if available', function () {
         const descriptionContent = 'Top Document Description';
         const fakeTopDocument = {
           querySelector: sandbox.stub().withArgs('meta[name="description"]').returns({ content: descriptionContent })
@@ -454,7 +454,7 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(descriptionContent);
       });
 
-      it('should return the top document og:description if description is not present', function() {
+      it('should return the top document og:description if description is not present', function () {
         const ogDescriptionContent = 'Top OG Description';
         const fakeTopDocument = {
           querySelector: sandbox.stub().withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent })
@@ -464,12 +464,12 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(ogDescriptionContent);
       });
 
-      it('should return the current document description if top document is not accessible', function() {
+      it('should return the current document description if top document is not accessible', function () {
         const descriptionContent = 'Current Document Description';
         sandbox.stub(document, 'querySelector')
           .withArgs('meta[name="description"]').returns({ content: descriptionContent })
         const fakeWindow = {
-          get top() {
+          get top () {
             throw new Error('Access denied');
           }
         };
@@ -477,13 +477,13 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(descriptionContent);
       });
 
-      it('should return the current document og:description if description is not present and top document is not accessible', function() {
+      it('should return the current document og:description if description is not present and top document is not accessible', function () {
         const ogDescriptionContent = 'Current OG Description';
         sandbox.stub(document, 'querySelector')
           .withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent });
 
         const fakeWindow = {
-          get top() {
+          get top () {
             throw new Error('Access denied');
           }
         };
@@ -492,7 +492,7 @@ describe('discovery Bid Adapter Tests', function () {
       });
     });
 
-    describe('getPageKeywords function', function() {
+    describe('getPageKeywords function', function () {
       let sandbox;
 
       beforeEach(() => {
@@ -503,7 +503,7 @@ describe('discovery Bid Adapter Tests', function () {
         sandbox.restore();
       });
 
-      it('should return the top document keywords if available', function() {
+      it('should return the top document keywords if available', function () {
         const keywordsContent = 'keyword1, keyword2, keyword3';
         const fakeTopDocument = {
           querySelector: sandbox.stub()
@@ -515,14 +515,14 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(keywordsContent);
       });
 
-      it('should return the current document keywords if top document is not accessible', function() {
+      it('should return the current document keywords if top document is not accessible', function () {
         const keywordsContent = 'keyword1, keyword2, keyword3';
         sandbox.stub(document, 'querySelector')
           .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
 
         // 模拟顶层窗口访问异常
         const fakeWindow = {
-          get top() {
+          get top () {
             throw new Error('Access denied');
           }
         };
@@ -531,14 +531,14 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(keywordsContent);
       });
 
-      it('should return an empty string if no keywords meta tag is found', function() {
+      it('should return an empty string if no keywords meta tag is found', function () {
         sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
 
         const result = getPageKeywords();
         expect(result).to.equal('');
       });
     });
-    describe('getConnectionDownLink function', function() {
+    describe('getConnectionDownLink function', function () {
       let sandbox;
 
       beforeEach(() => {
@@ -549,7 +549,7 @@ describe('discovery Bid Adapter Tests', function () {
         sandbox.restore();
       });
 
-      it('should return the downlink value as a string if available', function() {
+      it('should return the downlink value as a string if available', function () {
         const downlinkValue = 2.5;
         const fakeNavigator = {
           connection: {
@@ -561,7 +561,7 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.equal(downlinkValue.toString());
       });
 
-      it('should return undefined if downlink is not available', function() {
+      it('should return undefined if downlink is not available', function () {
         const fakeNavigator = {
           connection: {}
         };
@@ -570,21 +570,21 @@ describe('discovery Bid Adapter Tests', function () {
         expect(result).to.be.undefined;
       });
 
-      it('should return undefined if connection is not available', function() {
+      it('should return undefined if connection is not available', function () {
         const fakeNavigator = {};
 
         const result = getConnectionDownLink({ navigator: fakeNavigator });
         expect(result).to.be.undefined;
       });
 
-      it('should handle cases where navigator is not defined', function() {
+      it('should handle cases where navigator is not defined', function () {
         const result = getConnectionDownLink({});
         expect(result).to.be.undefined;
       });
     });
 
-    describe('getUserSyncs with message event listener', function() {
-      function messageHandler(event) {
+    describe('getUserSyncs with message event listener', function () {
+      function messageHandler (event) {
         if (!event.data || event.origin !== THIRD_PARTY_COOKIE_ORIGIN) {
           return;
         }
@@ -652,7 +652,7 @@ describe('discovery Bid Adapter Tests', function () {
 
       it('should return undefined when accessing win.top.history.length throws an error', () => {
         const mockWindow = {
-          get top() {
+          get top () {
             throw new Error('Access denied');
           }
         };

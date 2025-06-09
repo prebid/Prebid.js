@@ -21,18 +21,18 @@ describe('consent management utils', () => {
     Object.entries({
       'an error': {
         error: new Error('mock-error'),
-        check(logger) {
+        check (logger) {
           sinon.assert.calledWith(logger, sinon.match('mock-error'));
         }
       },
       'an error with args': {
         error: Object.assign(new Error('mock-error'), {args: ['arg1', 'arg2']}),
-        check(logger) {
+        check (logger) {
           sinon.assert.calledWith(logger, sinon.match('mock-error'), 'arg1', 'arg2');
         }
       },
       'no error': {
-        check() {
+        check () {
         }
       }
     }).forEach(([errorDesc, {error, check: checkLogs}]) => {
@@ -58,10 +58,10 @@ describe('consent management utils', () => {
         });
       });
       describe(`when loadConsentData resolves with ${errorDesc}`, () => {
-        function setupError() {
+        function setupError () {
           loadResult = Promise.resolve({error});
         }
-        function setupConsentAndError() {
+        function setupConsentAndError () {
           loadResult = Promise.resolve({consentData: {'consent': 'data'}, error});
         }
         Object.entries({
@@ -122,7 +122,7 @@ describe('consent management utils', () => {
       })
     })
 
-    function runLookup() {
+    function runLookup () {
       return lookupConsentData({
         name,
         consentDataHandler,

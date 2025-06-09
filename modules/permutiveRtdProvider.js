@@ -27,13 +27,13 @@ export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME})
 
-function init(moduleConfig, userConsent) {
+function init (moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
 
   return true
 }
 
-function liftIntoParams(params) {
+function liftIntoParams (params) {
   return isPlainObject(params) ? { params } : {}
 }
 
@@ -44,7 +44,7 @@ let cachedPermutiveModuleConfig = {}
  * apply publisher defined params set in the Permutive platform, so they may still be applied if the Permutive SDK has
  * not initialised before this submodule is initialised.
  */
-function readPermutiveModuleConfigFromCache() {
+function readPermutiveModuleConfigFromCache () {
   const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
   return cachedPermutiveModuleConfig = liftIntoParams(params)
 }
@@ -54,7 +54,7 @@ function readPermutiveModuleConfigFromCache() {
  *
  * @return The Permutive config available by the Permutive SDK or null if the operation errors.
  */
-function getParamsFromPermutive() {
+function getParamsFromPermutive () {
   try {
     return liftIntoParams(window.permutive.addons.prebid.getPermutiveRtdConfig())
   } catch (e) {
@@ -75,7 +75,7 @@ function getParamsFromPermutive() {
  * @param {Object} customModuleConfig - Publisher config for module
  * @return {Object} Deep merges of the default, Permutive and custom config.
  */
-export function getModuleConfig(customModuleConfig) {
+export function getModuleConfig (customModuleConfig) {
   // Use the params from Permutive if available, otherwise fallback to the cached value set by Permutive.
   const permutiveModuleConfig = getParamsFromPermutive() || cachedPermutiveModuleConfig
 
@@ -140,7 +140,7 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
  * @param {Object} segmentData - The segments available for targeting
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, segmentData) {
+function updateOrtbConfig (bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, segmentData) {
   logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig })
 
   const customCohortsData = deepAccess(segmentData, bidder) || []
@@ -311,7 +311,7 @@ export function isPermutiveOnPage () {
  * @param {number} maxSegs - Maximum number of segments to be included
  * @return {Object}
  */
-export function getSegments(maxSegs) {
+export function getSegments (maxSegs) {
   const segments = {
     ac:
       makeSafe(() => {
@@ -435,7 +435,7 @@ const ortb2UserDataTransformations = {
  * @param {Object} iabIds object of mappings between Permutive and IAB segment IDs (key: permutive ID, value: IAB ID)
  * @return {string} IAB audience taxonomy ID associated with the Permutive segment ID
  */
-function iabSegmentId(permutiveSegmentId, iabIds) {
+function iabSegmentId (permutiveSegmentId, iabIds) {
   return iabIds[permutiveSegmentId] || unknownIabSegmentId
 }
 
@@ -445,7 +445,7 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  * @param reqBidsConfigObj - Bidder provided config for request
  * @param moduleConfig - Publisher provided config
  */
-export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
+export function readAndSetCohorts (reqBidsConfigObj, moduleConfig) {
   const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))
 
   makeSafe(function () {

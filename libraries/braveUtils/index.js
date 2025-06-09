@@ -6,7 +6,7 @@ import { isPlainObject, isArray, isArrayOfNums, parseUrl, isFn } from '../../src
  * @param {object} br - The bid request
  * @returns {object} The native request object
  */
-export function createNativeRequest(br) {
+export function createNativeRequest (br) {
   let impObject = {
     ver: '1.2',
     assets: []
@@ -40,7 +40,7 @@ export function createNativeRequest(br) {
  * @param {object} br - The bid request
  * @returns {object} The banner request object
  */
-export function createBannerRequest(br) {
+export function createBannerRequest (br) {
   let [w, h] = [300, 250];
   let format = [];
 
@@ -65,7 +65,7 @@ export function createBannerRequest(br) {
  * @param {object} br - The bid request
  * @returns {object} The video request object
  */
-export function createVideoRequest(br) {
+export function createVideoRequest (br) {
   let videoObj = {...br.mediaTypes.video, id: br.transactionId};
 
   if (videoObj.playerSize) {
@@ -84,7 +84,7 @@ export function createVideoRequest(br) {
  * @param {object} adm - The native ad response
  * @returns {object} Parsed native ad object
  */
-export function parseNative(adm) {
+export function parseNative (adm) {
   let bid = {
     clickUrl: adm.native.link?.url,
     impressionTrackers: adm.native.imptrackers || [],
@@ -109,7 +109,7 @@ export function parseNative(adm) {
  * @param {string} defaultCur - currency which support bidder
  * @returns {number} Parsed float bid floor price
  */
-export function getFloor(br, mediaType, defaultCur) {
+export function getFloor (br, mediaType, defaultCur) {
   let floor = 0.05;
 
   if (!isFn(br.getFloor)) {
@@ -135,7 +135,7 @@ export function getFloor(br, mediaType, defaultCur) {
  * @param {object} request - bidderRequest data
  * @returns {object} The site request object
  */
-export function prepareSite(br, request) {
+export function prepareSite (br, request) {
   let siteObj = {};
 
   siteObj.publisher = {
@@ -158,7 +158,7 @@ export function prepareSite(br, request) {
  * @param {object} request - bidderRequest data
  * @returns {boolean} Response with true once finish
  */
-export function prepareConsents(data, request) {
+export function prepareConsents (data, request) {
   if (request.gdprConsent !== undefined) {
     data.regs.ext.gdpr = request.gdprConsent.gdprApplies ? 1 : 0;
     data.user.ext.consent = request.gdprConsent.consentString ? request.gdprConsent.consentString : '';
@@ -177,7 +177,7 @@ export function prepareConsents(data, request) {
  * @param {object} br - The bid request
  * @returns {boolean} Response with true once finish
  */
-export function prepareEids(data, br) {
+export function prepareEids (data, br) {
   if (br.userIdAsEids !== undefined) {
     data.user.ext.eids = br.userIdAsEids;
   }

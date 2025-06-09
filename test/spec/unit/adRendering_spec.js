@@ -103,13 +103,13 @@ describe('adRendering', () => {
       }
     });
 
-    function expectAdRenderFailedEvent(reason) {
+    function expectAdRenderFailedEvent (reason) {
       sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({ adId, reason }));
     }
 
     describe('doRender', () => {
       let getRenderingDataStub;
-      function getRenderingDataHook(next, ...args) {
+      function getRenderingDataHook (next, ...args) {
         next.bail(getRenderingDataStub(...args));
       }
       before(() => {
@@ -218,7 +218,7 @@ describe('adRendering', () => {
 
     describe('deferRendering', () => {
       let fn, markWin;
-      function markWinHook(next, bidResponse) {
+      function markWinHook (next, bidResponse) {
         markWin(bidResponse);
       }
       before(() => {
@@ -303,7 +303,7 @@ describe('adRendering', () => {
     });
     describe('handleRender', () => {
       let doRenderStub
-      function doRenderHook(next, ...args) {
+      function doRenderHook (next, ...args) {
         next.bail(doRenderStub(...args));
       }
       before(() => {

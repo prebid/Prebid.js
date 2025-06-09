@@ -22,8 +22,8 @@ config.getConfig('paapi', (cfg) => {
   }
 });
 
-export function setTargetingHookFactory(setPaapiConfig = getGlobal().setPAAPIConfigForGPT) {
-  return function(next, adUnit, customSlotMatching) {
+export function setTargetingHookFactory (setPaapiConfig = getGlobal().setPAAPIConfigForGPT) {
+  return function (next, adUnit, customSlotMatching) {
     const adUnitCodes = Array.isArray(adUnit) ? adUnit : [adUnit]
     adUnitCodes
       .map(adUnitCode => adUnitCode == null ? undefined : {adUnitCode})
@@ -32,9 +32,9 @@ export function setTargetingHookFactory(setPaapiConfig = getGlobal().setPAAPICon
   }
 }
 
-export function slotConfigurator() {
+export function slotConfigurator () {
   const PREVIOUSLY_SET = {};
-  return function setComponentAuction(adUnitCode, gptSlots, auctionConfigs, reset = true) {
+  return function setComponentAuction (adUnitCode, gptSlots, auctionConfigs, reset = true) {
     if (gptSlots.length > 0) {
       let previous = PREVIOUSLY_SET[adUnitCode] ?? {};
       let configsBySeller = Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]));
@@ -114,7 +114,7 @@ export const getPAAPISizeHook = (() => {
   ].sort(keyCompare(([w, h]) => -(w * h)))
     .map(size => [size, sizeTupleToSizeString(size)]);
 
-  return function(next, sizes) {
+  return function (next, sizes) {
     if (sizes?.length) {
       const sizeStrings = new Set(sizes.map(sizeTupleToSizeString));
       const preferredSize = SUPPORTED_SIZES.find(([_, sizeStr]) => sizeStrings.has(sizeStr));
@@ -127,7 +127,7 @@ export const getPAAPISizeHook = (() => {
   }
 })();
 
-export function setPAAPIConfigFactory(
+export function setPAAPIConfigFactory (
   getConfig = (filters) => getPAAPIConfig(filters, true),
   setGptConfig = setComponentAuction,
   getSlots = getGPTSlotsForAdUnits) {
@@ -135,7 +135,7 @@ export function setPAAPIConfigFactory(
    * Configure GPT slots with PAAPI auction configs.
    * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
    */
-  return function(filters = {}, customSlotMatching) {
+  return function (filters = {}, customSlotMatching) {
     let some = false;
     const cfg = getConfig(filters) || {};
     const auToSlots = getSlots(Object.keys(cfg), customSlotMatching);
@@ -159,7 +159,7 @@ const setTargetingHook = setTargetingHookFactory();
 
 submodule('paapi', {
   name: 'gpt',
-  init(params) {
+  init (params) {
     getPAAPIConfig = params.getPAAPIConfig;
     getHook('getPAAPISize').before(getPAAPISizeHook);
   }

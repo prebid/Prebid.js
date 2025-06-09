@@ -22,23 +22,23 @@ describe('adpod.js', function () {
     let afterBidAddedSpy;
     let auctionBids = [];
 
-    let callbackFn = function() {
+    let callbackFn = function () {
       callbackResult = true;
     };
 
     let auctionInstance = {
-      getAuctionStatus: function() {
+      getAuctionStatus: function () {
         return auction.AUCTION_IN_PROGRESS;
       }
     }
 
-    const fakeStoreFn = function(bids, callback) {
+    const fakeStoreFn = function (bids, callback) {
       let payload = [];
       bids.forEach(bid => payload.push({uuid: bid.customCacheKey}));
       callback(null, payload);
     };
 
-    beforeEach(function() {
+    beforeEach(function () {
       callbackResult = null;
       afterBidAddedSpy = sinon.spy();
       storeStub = sinon.stub(videoCache, 'store');
@@ -55,7 +55,7 @@ describe('adpod.js', function () {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       storeStub.restore();
       logWarnStub.restore();
       logInfoStub.restore();
@@ -79,7 +79,7 @@ describe('adpod.js', function () {
       expect(callbackResult).to.equal(true);
     });
 
-    it('should immediately add the adpod bid to auction if adpod.deferCaching in config is true', function() {
+    it('should immediately add the adpod bid to auction if adpod.deferCaching in config is true', function () {
       config.setConfig({
         adpod: {
           deferCaching: true,
@@ -379,7 +379,7 @@ describe('adpod.js', function () {
       expect(auctionBids[2].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
-    it('should cache the bids with a shortened custom key when adpod.brandCategoryExclusion is false', function() {
+    it('should cache the bids with a shortened custom key when adpod.brandCategoryExclusion is false', function () {
       storeStub.callsFake(fakeStoreFn);
 
       config.setConfig({
@@ -455,7 +455,7 @@ describe('adpod.js', function () {
       expect(auctionBids[1].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
-    it('should not add bid to auction when config adpod.brandCategoryExclusion is true but bid is missing adServerCatId', function() {
+    it('should not add bid to auction when config adpod.brandCategoryExclusion is true but bid is missing adServerCatId', function () {
       storeStub.callsFake(fakeStoreFn);
 
       config.setConfig({
@@ -500,7 +500,7 @@ describe('adpod.js', function () {
     });
 
     it('should not add bid to auction when Prebid Cache detects an existing key', function () {
-      storeStub.callsFake(function(bids, callback) {
+      storeStub.callsFake(function (bids, callback) {
         let payload = [];
         bids.forEach(bid => payload.push({uuid: bid.customCacheKey}));
 
@@ -576,8 +576,8 @@ describe('adpod.js', function () {
       expect(auctionBids[0].videoCacheKey).to.exist.and.to.equal(auctionBids[0].adserverTargeting.hb_cache_id)
     });
 
-    it('should not add bids to auction if PBC returns an error', function() {
-      storeStub.callsFake(function(bids, callback) {
+    it('should not add bids to auction if PBC returns an error', function () {
+      storeStub.callsFake(function (bids, callback) {
         let payload = [];
         let errmsg = 'invalid json';
 
@@ -635,7 +635,7 @@ describe('adpod.js', function () {
       expect(auctionBids.length).to.equal(0);
     });
 
-    it('should use bid.adserverTargeting.hb_pb when custom price granularity is configured', function() {
+    it('should use bid.adserverTargeting.hb_pb when custom price granularity is configured', function () {
       storeStub.callsFake(fakeStoreFn);
 
       const customConfigObject = {
@@ -702,7 +702,7 @@ describe('adpod.js', function () {
       expect(auctionBids.length).to.equal(1);
     });
 
-    it('should set deal tier in place of cpm when prioritzeDeals is true', function() {
+    it('should set deal tier in place of cpm when prioritzeDeals is true', function () {
       config.setConfig({
         adpod: {
           deferCaching: true,
@@ -785,11 +785,11 @@ describe('adpod.js', function () {
       results = null;
     });
 
-    afterEach(function() {
+    afterEach(function () {
       utils.logWarn.restore();
     });
 
-    it('removes an incorrectly setup adpod adunit - required fields are missing', function() {
+    it('removes an incorrectly setup adpod adunit - required fields are missing', function () {
       let adUnits = [{
         code: 'test1',
         mediaTypes: {
@@ -819,7 +819,7 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledOnce).to.equal(true);
     });
 
-    it('removes an incorrectly setup adpod adunit - required fields are using invalid values', function() {
+    it('removes an incorrectly setup adpod adunit - required fields are using invalid values', function () {
       let adUnits = [{
         code: 'test1',
         mediaTypes: {
@@ -845,7 +845,7 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledTwice).to.equal(true);
     });
 
-    it('removes an incorrectly setup adpod adunit - attempting to use multi-format adUnit', function() {
+    it('removes an incorrectly setup adpod adunit - attempting to use multi-format adUnit', function () {
       let adUnits = [{
         code: 'multi_test1',
         mediaTypes: {
@@ -867,7 +867,7 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledOnce).to.equal(true);
     });
 
-    it('accepts mixed set of adunits', function() {
+    it('accepts mixed set of adunits', function () {
       let adUnits = [{
         code: 'test3',
         mediaTypes: {
@@ -899,10 +899,10 @@ describe('adpod.js', function () {
     let callbackResult;
     let bailResult;
     const callbackFn = {
-      call: function(context, bid) {
+      call: function (context, bid) {
         callbackResult = bid;
       },
-      bail: function(result) {
+      bail: function (result) {
         bailResult = result;
       }
     }
@@ -940,7 +940,7 @@ describe('adpod.js', function () {
       }
     };
 
-    beforeEach(function() {
+    beforeEach(function () {
       callbackResult = null;
       bailResult = null;
       config.setConfig({
@@ -955,13 +955,13 @@ describe('adpod.js', function () {
       logErrorStub = sinon.stub(utils, 'logError');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       config.resetConfig();
       logWarnStub.restore();
       logErrorStub.restore();
     })
 
-    it('redirects to original function for non-adpod type video bids', function() {
+    it('redirects to original function for non-adpod type video bids', function () {
       let bannerTestBid = {
         mediaType: 'video'
       };
@@ -971,7 +971,7 @@ describe('adpod.js', function () {
       expect(logErrorStub.called).to.equal(false);
     });
 
-    it('returns true when adpod bid is properly setup', function() {
+    it('returns true when adpod bid is properly setup', function () {
       config.setConfig({
         cache: {
           url: 'http://test.cache.url/endpoint'
@@ -989,7 +989,7 @@ describe('adpod.js', function () {
       expect(logErrorStub.called).to.equal(false);
     });
 
-    it('returns true when adpod bid is missing iab category while brandCategoryExclusion in config is false', function() {
+    it('returns true when adpod bid is missing iab category while brandCategoryExclusion in config is false', function () {
       let goodBid = utils.deepClone(adpodTestBid);
       checkVideoBidSetupHook(callbackFn, goodBid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
       expect(callbackResult).to.be.null;
@@ -997,8 +997,8 @@ describe('adpod.js', function () {
       expect(logErrorStub.called).to.equal(false);
     });
 
-    it('returns false when a required property from an adpod bid is missing', function() {
-      function testInvalidAdpodBid(badTestBid, shouldErrorBeLogged) {
+    it('returns false when a required property from an adpod bid is missing', function () {
+      function testInvalidAdpodBid (badTestBid, shouldErrorBeLogged) {
         checkVideoBidSetupHook(callbackFn, badTestBid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
         expect(callbackResult).to.be.null;
         expect(bailResult).to.equal(false);
@@ -1026,7 +1026,7 @@ describe('adpod.js', function () {
       testInvalidAdpodBid(noCacheUrlBid, true);
     });
 
-    describe('checkBidDuration', function() {
+    describe('checkBidDuration', function () {
       const basicBid = {
         video: {
           context: ADPOD,
@@ -1038,7 +1038,7 @@ describe('adpod.js', function () {
         vastXml: '<VAST/>'
       };
 
-      it('when requireExactDuration is true', function() {
+      it('when requireExactDuration is true', function () {
         let goodBid = utils.deepClone(basicBid);
         checkVideoBidSetupHook(callbackFn, goodBid, adUnitWithExact, adUnitWithExact.mediaTypes.video, ADPOD);
 
@@ -1057,8 +1057,8 @@ describe('adpod.js', function () {
         expect(logWarnStub.calledOnce).to.equal(true);
       });
 
-      it('when requireExactDuration is false and bids are bucketed properly', function() {
-        function testRoundingForGoodBId(bid, bucketValue) {
+      it('when requireExactDuration is false and bids are bucketed properly', function () {
+        function testRoundingForGoodBId (bid, bucketValue) {
           checkVideoBidSetupHook(callbackFn, bid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
           expect(callbackResult).to.be.null;
           expect(bid.video.durationBucket).to.equal(bucketValue);
@@ -1087,8 +1087,8 @@ describe('adpod.js', function () {
         testRoundingForGoodBId(goodBid47, 45);
       });
 
-      it('when requireExactDuration is false and bid duration exceeds listed buckets', function() {
-        function testRoundingForBadBid(bid) {
+      it('when requireExactDuration is false and bid duration exceeds listed buckets', function () {
+        function testRoundingForBadBid (bid) {
           checkVideoBidSetupHook(callbackFn, bid, adUnitNoExact, adUnitNoExact.mediaTypes.video, ADPOD);
           expect(callbackResult).to.be.null;
           expect(bid.video.durationBucket).to.be.undefined;
@@ -1109,7 +1109,7 @@ describe('adpod.js', function () {
 
   describe('adpodSetConfig', function () {
     let logWarnStub;
-    beforeEach(function() {
+    beforeEach(function () {
       logWarnStub = sinon.stub(utils, 'logWarn');
     });
 
@@ -1117,7 +1117,7 @@ describe('adpod.js', function () {
       logWarnStub.restore();
     });
 
-    it('should log a warning when values other than numbers are used in setConfig', function() {
+    it('should log a warning when values other than numbers are used in setConfig', function () {
       adpodSetConfig({
         bidQueueSizeLimit: '2',
         bidQueueTimeDelay: '50'
@@ -1125,7 +1125,7 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledTwice).to.equal(true);
     });
 
-    it('should log a warning when numbers less than or equal to zero are used in setConfig', function() {
+    it('should log a warning when numbers less than or equal to zero are used in setConfig', function () {
       adpodSetConfig({
         bidQueueSizeLimit: 0,
         bidQueueTimeDelay: -2
@@ -1133,7 +1133,7 @@ describe('adpod.js', function () {
       expect(logWarnStub.calledTwice).to.equal(true);
     });
 
-    it('should not log any warning when using a valid config', function() {
+    it('should not log any warning when using a valid config', function () {
       adpodSetConfig({
         bidQueueSizeLimit: 10
       });
@@ -1147,8 +1147,8 @@ describe('adpod.js', function () {
     })
   });
 
-  describe('adpod utils', function() {
-    it('should sort bids array', function() {
+  describe('adpod utils', function () {
+    it('should sort bids array', function () {
       let bids = [{
         cpm: 10.12345,
         adserverTargeting: {

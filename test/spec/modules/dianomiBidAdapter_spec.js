@@ -423,7 +423,7 @@ describe('Dianomi adapter', () => {
           });
         });
 
-        function getBidWithFloor(floor) {
+        function getBidWithFloor (floor) {
           return {
             params: { smartadId: 1234 },
             mediaTypes: { video: {} },
@@ -731,7 +731,7 @@ describe('Dianomi adapter', () => {
       });
     });
 
-    function getRequestImps(validBidRequests) {
+    function getRequestImps (validBidRequests) {
       return JSON.parse(
         spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
       ).imp;

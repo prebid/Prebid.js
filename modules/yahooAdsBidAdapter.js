@@ -58,26 +58,26 @@ const SUPPORTED_USER_ID_SOURCES = [
 
 /* Utility functions */
 
-function getConfigValue(bid, key) {
+function getConfigValue (bid, key) {
   const bidderCode = bid.bidder || bid.bidderCode;
   return config.getConfig(`${bidderCode}.${key}`);
 }
 
-function getSize(size) {
+function getSize (size) {
   return {
     w: parseInt(size[0]),
     h: parseInt(size[1])
   }
 }
 
-function transformSizes(sizes) {
+function transformSizes (sizes) {
   if (isArray(sizes) && sizes.length === 2 && !isArray(sizes[0])) {
-    return [ getSize(sizes) ];
+    return [getSize(sizes)];
   }
   return sizes.map(getSize);
 }
 
-function extractUserSyncUrls(syncOptions, pixels) {
+function extractUserSyncUrls (syncOptions, pixels) {
   let itemsRegExp = /(img|iframe)[\s\S]*?src\s*=\s*("|')(.*?)\2/gi;
   let tagNameRegExp = /\w*(?=\s)/;
   let srcRegExp = /src=("|')(.*?)\1/;
@@ -119,7 +119,7 @@ function extractUserSyncUrls(syncOptions, pixels) {
  * @param {object} consentData.gdpr.gdprApplies
  * @param {string} consentData.uspConsent
  */
-function updateConsentQueryParams(url, consentData) {
+function updateConsentQueryParams (url, consentData) {
   const parameterMap = {
     'gdpr_consent': consentData.gdpr ? consentData.gdpr.consentString : '',
     'gdpr': consentData.gdpr && consentData.gdpr.gdprApplies ? '1' : '0',
@@ -140,7 +140,7 @@ function updateConsentQueryParams(url, consentData) {
   return existingUrl.toString();
 };
 
-function getSupportedEids(bid) {
+function getSupportedEids (bid) {
   if (isArray(deepAccess(bid, 'userIdAsEids'))) {
     return bid.userIdAsEids.filter(eid => {
       return SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1;
@@ -149,11 +149,11 @@ function getSupportedEids(bid) {
   return [];
 }
 
-function isSecure(bid) {
+function isSecure (bid) {
   return deepAccess(bid, 'params.bidOverride.imp.secure') ?? bid.ortb2Imp?.secure ?? 1;
 };
 
-function getPubIdMode(bid) {
+function getPubIdMode (bid) {
   let pubIdMode;
   if (deepAccess(bid, 'params.pubId')) {
     pubIdMode = true;
@@ -163,7 +163,7 @@ function getPubIdMode(bid) {
   return pubIdMode;
 };
 
-function getAdapterMode(bid) {
+function getAdapterMode (bid) {
   let adapterMode = getConfigValue(bid, 'mode');
   adapterMode = adapterMode ? adapterMode.toLowerCase() : undefined;
   if (typeof adapterMode === 'undefined' || adapterMode === BANNER) {
@@ -175,7 +175,7 @@ function getAdapterMode(bid) {
   }
 };
 
-function getResponseFormat(bid) {
+function getResponseFormat (bid) {
   const adm = bid.adm;
   if (adm.indexOf('o2playerSettings') !== -1 || adm.indexOf('YAHOO.VideoPlatform.VideoPlayer') !== -1 || adm.indexOf('AdPlacement') !== -1) {
     return BANNER;
@@ -184,7 +184,7 @@ function getResponseFormat(bid) {
   }
 };
 
-function getFloorModuleData(bid) {
+function getFloorModuleData (bid) {
   const adapterMode = getAdapterMode(bid);
   const getFloorRequestObject = {
     currency: deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY,
@@ -194,7 +194,7 @@ function getFloorModuleData(bid) {
   return (isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
 };
 
-function filterBidRequestByMode(validBidRequests) {
+function filterBidRequestByMode (validBidRequests) {
   const mediaTypesMode = getAdapterMode(validBidRequests[0]);
   let result = [];
   if (mediaTypesMode === BANNER) {
@@ -213,7 +213,7 @@ function filterBidRequestByMode(validBidRequests) {
   return result;
 };
 
-function validateAppendObject(validationType, allowedKeys, inputObject, appendToObject) {
+function validateAppendObject (validationType, allowedKeys, inputObject, appendToObject) {
   const outputObject = {
     ...appendToObject
   };
@@ -251,20 +251,20 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
   return outputObject;
 };
 
-function getTtl(bidderRequest) {
+function getTtl (bidderRequest) {
   const globalTTL = getConfigValue(bidderRequest, 'ttl');
   return globalTTL ? validateTTL(globalTTL) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
 };
 
-function validateTTL(ttl) {
+function validateTTL (ttl) {
   return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL
 };
 
-function isNotEmptyStr(value) {
+function isNotEmptyStr (value) {
   return (isStr(value) && value.length > 0);
 };
 
-function generateOpenRtbObject(bidderRequest, bid) {
+function generateOpenRtbObject (bidderRequest, bid) {
   if (bidderRequest) {
     let outBoundBidRequest = {
       id: generateUUID(),
@@ -339,7 +339,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
   };
 };
 
-function appendImpObject(bid, openRtbObject) {
+function appendImpObject (bid, openRtbObject) {
   const mediaTypeMode = getAdapterMode(bid);
 
   if (openRtbObject && bid) {
@@ -418,7 +418,7 @@ function appendImpObject(bid, openRtbObject) {
   };
 };
 
-function appendFirstPartyData(outBoundBidRequest, bid) {
+function appendFirstPartyData (outBoundBidRequest, bid) {
   const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
@@ -501,7 +501,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   return outBoundBidRequest;
 };
 
-function generateServerRequest({payload, requestOptions, bidderRequest}) {
+function generateServerRequest ({payload, requestOptions, bidderRequest}) {
   const pubIdMode = getPubIdMode(bidderRequest);
   const overrideEndpoint = getConfigValue(bidderRequest, 'endpoint');
   let sspEndpoint = overrideEndpoint || SSP_ENDPOINT_DCN_POS;
@@ -543,7 +543,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
   };
 };
 
-function createRenderer(bidderRequest, bidResponse) {
+function createRenderer (bidderRequest, bidResponse) {
   const renderer = Renderer.install({
     url: 'https://s.yimg.com/kp/prebid-outstream-renderer/renderer.js',
     loaded: false,
@@ -551,8 +551,8 @@ function createRenderer(bidderRequest, bidResponse) {
   })
 
   try {
-    renderer.setRender(function(bidResponse) {
-      setTimeout(function() {
+    renderer.setRender(function (bidResponse) {
+      setTimeout(function () {
         // eslint-disable-next-line no-undef
         o2PlayerRender(bidResponse);
       }, deepAccess(bidderRequest, 'params.testing.renderer.setTimeout') || DEFAULT_RENDERER_TIMEOUT);
@@ -571,7 +571,7 @@ export const spec = {
   aliases: BIDDER_ALIASES,
   supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const params = bid.params;
     if (deepAccess(params, 'testing.e2etest') === true) {
       return true;
@@ -586,7 +586,7 @@ export const spec = {
     }
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     if (isEmpty(validBidRequests) || isEmpty(bidderRequest)) {
       logWarn('buildRequests called with either empty "validBidRequests" or "bidderRequest"');
       return undefined;
@@ -618,7 +618,7 @@ export const spec = {
     });
   },
 
-  interpretResponse: function(serverResponse, { bidderRequest }) {
+  interpretResponse: function (serverResponse, { bidderRequest }) {
     const response = [];
     if (!serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) {
       return response;
@@ -672,7 +672,7 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const bidResponse = !isEmpty(serverResponses) && serverResponses[0].body;
 
     if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {

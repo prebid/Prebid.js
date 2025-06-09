@@ -108,7 +108,7 @@ config.setDefaults({
  * @param {S2SConfig} s2sConfig
  * @return {boolean}
  */
-function updateConfigDefaults(s2sConfig) {
+function updateConfigDefaults (s2sConfig) {
   if (s2sConfig.defaultVendor) {
     let vendor = s2sConfig.defaultVendor;
     let optionKeys = Object.keys(s2sConfig);
@@ -136,7 +136,7 @@ function updateConfigDefaults(s2sConfig) {
  * @param {S2SConfig} s2sConfig
  * @return {boolean}
  */
-function validateConfigRequiredProps(s2sConfig) {
+function validateConfigRequiredProps (s2sConfig) {
   for (const key of ['accountId', 'endpoint']) {
     if (s2sConfig[key] == null) {
       logError(key + ' missing in server to server config');
@@ -148,7 +148,7 @@ function validateConfigRequiredProps(s2sConfig) {
 
 // temporary change to modify the s2sConfig for new format used for endpoint URLs;
 // could be removed later as part of a major release, if we decide to not support the old format
-function formatUrlParams(option) {
+function formatUrlParams (option) {
   ['endpoint', 'syncEndpoint'].forEach((prop) => {
     if (isStr(option[prop])) {
       let temp = option[prop];
@@ -164,7 +164,7 @@ function formatUrlParams(option) {
   });
 }
 
-export function validateConfig(options) {
+export function validateConfig (options) {
   if (!options) {
     return;
   }
@@ -197,7 +197,7 @@ export function validateConfig(options) {
 /**
  * @param {(S2SConfig[]|S2SConfig)} options
  */
-function setS2sConfig(options) {
+function setS2sConfig (options) {
   options = validateConfig(options);
   if (options.length) {
     _s2sConfigs = options;
@@ -208,14 +208,14 @@ getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
  */
-export function resetSyncedStatus() {
+export function resetSyncedStatus () {
   _syncCount = 0;
 }
 
 /**
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
-function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) {
+function queueSync (bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) {
   if (_s2sConfigs.length === _syncCount) {
     return;
   }
@@ -286,7 +286,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
     });
 }
 
-function doAllSyncs(bidders, s2sConfig) {
+function doAllSyncs (bidders, s2sConfig) {
   if (bidders.length === 0) {
     return;
   }
@@ -312,7 +312,7 @@ function doAllSyncs(bidders, s2sConfig) {
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
  * @param {S2SConfig} s2sConfig
  */
-function doPreBidderSync(type, url, bidder, done, s2sConfig) {
+function doPreBidderSync (type, url, bidder, done, s2sConfig) {
   if (s2sConfig.syncUrlModifier && typeof s2sConfig.syncUrlModifier[bidder] === 'function') {
     url = s2sConfig.syncUrlModifier[bidder](type, url, bidder);
   }
@@ -328,7 +328,7 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
  * @param {number} timeout maximum time to wait for rendering in milliseconds
  */
-function doBidderSync(type, url, bidder, done, timeout) {
+function doBidderSync (type, url, bidder, done, timeout) {
   if (!url) {
     logError(`No sync url for bidder "${bidder}": ${url}`);
     done();
@@ -349,7 +349,7 @@ function doBidderSync(type, url, bidder, done, timeout) {
  *
  * @param {Array} bidders a list of bidder names
  */
-function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
+function doClientSideSyncs (bidders, gdprConsent, uspConsent, gppConsent) {
   bidders.forEach(bidder => {
     let clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
@@ -367,7 +367,7 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   });
 }
 
-function getMatchingConsentUrl(urlProp, gdprConsent) {
+function getMatchingConsentUrl (urlProp, gdprConsent) {
   const hasPurpose = hasPurpose1Consent(gdprConsent);
   const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent
   if (!url) {
@@ -376,7 +376,7 @@ function getMatchingConsentUrl(urlProp, gdprConsent) {
   return url;
 }
 
-function getConsentData(bidRequests) {
+function getConsentData (bidRequests) {
   let gdprConsent, uspConsent, gppConsent;
   if (Array.isArray(bidRequests) && bidRequests.length > 0) {
     gdprConsent = bidRequests[0].gdprConsent;
@@ -389,11 +389,11 @@ function getConsentData(bidRequests) {
 /**
  * Bidder adapter for Prebid Server
  */
-export function PrebidServer() {
+export function PrebidServer () {
   const baseAdapter = new Adapter('prebidServer');
 
   /* Prebid executes this function when the page asks to send out bid requests */
-  baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+  baseAdapter.callBids = function (s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
     const adapterMetrics = s2sBidRequest.metrics = useMetrics(bidRequests?.[0]?.metrics)
       .newMetrics()
       .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
@@ -442,7 +442,7 @@ export function PrebidServer() {
           done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
-        onError(msg, error) {
+        onError (msg, error) {
           const {p1Consent = '', noP1Consent = ''} = s2sBidRequest?.s2sConfig?.endpoint || {};
           if (p1Consent === noP1Consent) {
             logError(`Prebid server call failed: '${msg}'. Endpoint: "${p1Consent}"}`, error);
@@ -553,17 +553,17 @@ export const processPBSRequest = hook('async', function (s2sBidRequest, bidReque
   }
 }, 'processPBSRequest');
 
-function getAnalyticsFlags(s2sConfig, response) {
+function getAnalyticsFlags (s2sConfig, response) {
   return {
     atagData: getAtagData(response),
     seatNonBidData: getNonBidData(s2sConfig, response)
   }
 }
-function getNonBidData(s2sConfig, response) {
+function getNonBidData (s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus ? response?.ext?.seatnonbid : undefined;
 }
 
-function getAtagData(response) {
+function getAtagData (response) {
   return response?.ext?.prebid?.analytics?.tags;
 }
 

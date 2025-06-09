@@ -41,47 +41,47 @@ const ADLOOX_MEDIATYPE = {
 };
 
 const MACRO = {};
-MACRO['client'] = function(b, c) {
+MACRO['client'] = function (b, c) {
   return c.client;
 };
-MACRO['clientid'] = function(b, c) {
+MACRO['clientid'] = function (b, c) {
   return c.clientid;
 };
-MACRO['tagid'] = function(b, c) {
+MACRO['tagid'] = function (b, c) {
   return c.tagid;
 };
-MACRO['platformid'] = function(b, c) {
+MACRO['platformid'] = function (b, c) {
   return c.platformid;
 };
-MACRO['targetelt'] = function(b, c) {
+MACRO['targetelt'] = function (b, c) {
   return c.toselector(b);
 };
-MACRO['creatype'] = function(b, c) {
+MACRO['creatype'] = function (b, c) {
   return b.mediaType == 'video' ? ADLOOX_MEDIATYPE.VIDEO : ADLOOX_MEDIATYPE.DISPLAY;
 };
-MACRO['pageurl'] = function(b, c) {
+MACRO['pageurl'] = function (b, c) {
   const refererInfo = getRefererInfo();
   return (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0];
 };
-MACRO['gpid'] = function(b, c) {
+MACRO['gpid'] = function (b, c) {
   const adUnit = ((auctionManager.getAdUnits()) || []).find(a => b.adUnitCode === a.code);
   return deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(b.adUnitCode).gptSlot || b.adUnitCode;
 };
 MACRO['pbAdSlot'] = MACRO['pbadslot'] = MACRO['gpid']; // legacy
 
 const PARAMS_DEFAULT = {
-  'id1': function(b) { return b.adUnitCode },
+  'id1': function (b) { return b.adUnitCode },
   'id2': '%%gpid%%',
-  'id3': function(b) { return b.bidder },
-  'id4': function(b) { return b.adId },
-  'id5': function(b) { return b.dealId },
-  'id6': function(b) { return b.creativeId },
-  'id7': function(b) { return b.size },
+  'id3': function (b) { return b.bidder },
+  'id4': function (b) { return b.adId },
+  'id5': function (b) { return b.dealId },
+  'id6': function (b) { return b.creativeId },
+  'id7': function (b) { return b.size },
   'id11': '$ADLOOX_WEBSITE'
 };
 
 let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     if (!analyticsAdapter[`handle_${eventType}`]) return;
 
     logInfo(MODULE, 'track', eventType, args);
@@ -93,7 +93,7 @@ let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
 analyticsAdapter.context = null;
 
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
-analyticsAdapter.enableAnalytics = function(config) {
+analyticsAdapter.enableAnalytics = function (config) {
   analyticsAdapter.context = null;
 
   logInfo(MODULE, 'config', config);
@@ -137,7 +137,7 @@ analyticsAdapter.enableAnalytics = function(config) {
 
   analyticsAdapter.context = {
     js: config.options.js || URL_JS,
-    toselector: config.options.toselector || function(bid) {
+    toselector: config.options.toselector || function (bid) {
       let code = getGptSlotInfoForAdUnitCode(bid.adUnitCode).divId || bid.adUnitCode;
       // https://mathiasbynens.be/notes/css-escapes
       try {
@@ -159,9 +159,9 @@ analyticsAdapter.enableAnalytics = function(config) {
     .keys(config.options.params)
     .forEach(k => {
       if (!Array.isArray(config.options.params[k])) {
-        config.options.params[k] = [ config.options.params[k] ];
+        config.options.params[k] = [config.options.params[k]];
       }
-      config.options.params[k].forEach(v => analyticsAdapter.context.params.push([ k, v ]));
+      config.options.params[k].forEach(v => analyticsAdapter.context.params.push([k, v]));
     });
 
   Object.keys(COMMAND_QUEUE).forEach(commandProcess);
@@ -170,18 +170,18 @@ analyticsAdapter.enableAnalytics = function(config) {
 }
 
 analyticsAdapter.originDisableAnalytics = analyticsAdapter.disableAnalytics;
-analyticsAdapter.disableAnalytics = function() {
+analyticsAdapter.disableAnalytics = function () {
   analyticsAdapter.context = null;
 
   analyticsAdapter.originDisableAnalytics();
 }
 
-analyticsAdapter.url = function(url, args, bid) {
+analyticsAdapter.url = function (url, args, bid) {
   // utils.formatQS outputs PHP encoded querystrings... (╯°□°)╯ ┻━┻
-  function a2qs(a) {
+  function a2qs (a) {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
-    function fixedEncodeURIComponent(str) {
-      return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    function fixedEncodeURIComponent (str) {
+      return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
         return '%' + c.charCodeAt(0).toString(16);
       });
     }
@@ -223,7 +223,7 @@ analyticsAdapter.url = function(url, args, bid) {
 }
 
 const preloaded = {};
-analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
+analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function (auctionDetails) {
   if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
 
   const uri = parseUrl(analyticsAdapter.url(`${analyticsAdapter.context.js}#`));
@@ -242,7 +242,7 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   preloaded[href] = true;
 }
 
-analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
+analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function (bid) {
   if (deepAccess(bid, 'ext.adloox.video.adserver')) {
     logMessage(MODULE, `measuring '${bid.mediaType}' ad unit code '${bid.adUnitCode}' via Ad Server module`);
     return;
@@ -261,11 +261,11 @@ analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   logMessage(MODULE, `measuring '${bid.mediaType}' unit at '${bid.adUnitCode}'`);
 
   const params = analyticsAdapter.context.params.concat([
-    [ 'tagid', '%%tagid%%' ],
-    [ 'platform', '%%platformid%%' ],
-    [ 'fwtype', 4 ],
-    [ 'targetelt', '%%targetelt%%' ],
-    [ 'creatype', '%%creatype%%' ]
+    ['tagid', '%%tagid%%'],
+    ['platform', '%%platformid%%'],
+    ['fwtype', 4],
+    ['targetelt', '%%targetelt%%'],
+    ['creatype', '%%creatype%%']
   ]);
 
   loadExternalScript(analyticsAdapter.url(`${analyticsAdapter.context.js}#`, params, bid), MODULE_TYPE_ANALYTICS, 'adloox');
@@ -287,16 +287,16 @@ export const COMMAND = {
   URL: 'url',
   TRACK: 'track'
 };
-export function command(cmd, data, callback0) {
+export function command (cmd, data, callback0) {
   const cid = getUniqueIdentifierStr();
-  const callback = function() {
+  const callback = function () {
     delete COMMAND_QUEUE[cid];
     if (callback0) callback0.apply(null, arguments);
   };
   COMMAND_QUEUE[cid] = { cmd, data, callback };
   if (analyticsAdapter.context) commandProcess(cid);
 }
-function commandProcess(cid) {
+function commandProcess (cid) {
   const { cmd, data, callback } = COMMAND_QUEUE[cid];
 
   logInfo(MODULE, 'command', cmd, data);

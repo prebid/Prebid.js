@@ -4,7 +4,7 @@ import { deepAccess, getDNT, parseSizesInput, isArray } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-function RhythmOneBidAdapter() {
+function RhythmOneBidAdapter () {
   this.code = 'rhythmone';
   this.supportedMediaTypes = [VIDEO, BANNER];
   this.gvlid = 36;
@@ -25,7 +25,7 @@ function RhythmOneBidAdapter() {
     return [];
   };
 
-  function frameImp(BRs, bidderRequest) {
+  function frameImp (BRs, bidderRequest) {
     var impList = [];
     var isSecure = 0;
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
@@ -59,7 +59,7 @@ function RhythmOneBidAdapter() {
     return impList;
   }
 
-  function frameSite(bidderRequest) {
+  function frameSite (bidderRequest) {
     return {
       domain: bidderRequest?.refererInfo?.domain || '',
       page: bidderRequest?.refererInfo?.page || '',
@@ -67,7 +67,7 @@ function RhythmOneBidAdapter() {
     }
   }
 
-  function frameDevice() {
+  function frameDevice () {
     return {
       ua: navigator.userAgent,
       ip: '', // Empty Ip string is required, server gets the ip from HTTP header
@@ -75,7 +75,7 @@ function RhythmOneBidAdapter() {
     }
   }
 
-  function getValidSizeSet(dimensionList) {
+  function getValidSizeSet (dimensionList) {
     let w = parseInt(dimensionList[0]);
     let h = parseInt(dimensionList[1]);
     // clever check for NaN
@@ -85,7 +85,7 @@ function RhythmOneBidAdapter() {
     return false;
   }
 
-  function frameBanner(adUnit) {
+  function frameBanner (adUnit) {
     // adUnit.sizes is scheduled to be deprecated, continue its support but prefer adUnit.mediaTypes.banner
     var sizeList = adUnit.sizes;
     if (adUnit.mediaTypes && adUnit.mediaTypes.banner) {
@@ -93,7 +93,7 @@ function RhythmOneBidAdapter() {
     }
     var sizeStringList = parseSizesInput(sizeList);
     var format = [];
-    sizeStringList.forEach(function(size) {
+    sizeStringList.forEach(function (size) {
       if (size) {
         var dimensionList = getValidSizeSet(size.split('x'));
         if (dimensionList) {
@@ -113,7 +113,7 @@ function RhythmOneBidAdapter() {
     return false;
   }
 
-  function frameVideo(bid) {
+  function frameVideo (bid) {
     var size = [];
     if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
       var dimensionSet = bid.mediaTypes.video.playerSize;
@@ -138,7 +138,7 @@ function RhythmOneBidAdapter() {
     }
   }
 
-  function frameExt(bid) {
+  function frameExt (bid) {
     return {
       bidder: {
         placementId: bid.params['placementId'],
@@ -148,7 +148,7 @@ function RhythmOneBidAdapter() {
     }
   }
 
-  function frameBid(BRs, bidderRequest) {
+  function frameBid (BRs, bidderRequest) {
     let bid = {
       id: BRs[0].bidderRequestId,
       imp: frameImp(BRs, bidderRequest),
@@ -177,7 +177,7 @@ function RhythmOneBidAdapter() {
     return bid;
   }
 
-  function getFirstParam(key, validBidRequests) {
+  function getFirstParam (key, validBidRequests) {
     for (let i = 0; i < validBidRequests.length; i++) {
       if (validBidRequests[i].params && validBidRequests[i].params[key]) {
         return validBidRequests[i].params[key];

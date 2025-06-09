@@ -12,10 +12,10 @@ if (scope === window) {
   scope._pbjsGlobals.push('$$PREBID_GLOBAL$$');
 }
 
-export function getGlobal() {
+export function getGlobal () {
   return global;
 }
 
-export function registerModule(name) {
+export function registerModule (name) {
   global.installedModules.push(name);
 }

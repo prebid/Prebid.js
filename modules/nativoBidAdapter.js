@@ -10,7 +10,7 @@ const converter = ortbConverter({
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
     ttl: 30, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context)
     imp.tagid = bidRequest.adUnitCode
     if (imp.ext) imp.ext.placementId = bidRequest.params.placementId
@@ -32,7 +32,7 @@ const PRICE_FLOOR_WILDCARD = '*'
 
 const localPbjsRef = getGlobal()
 
-function getMediaType(accessObj) {
+function getMediaType (accessObj) {
   if (deepAccess(accessObj, 'mediaTypes.video')) {
     return VIDEO
   } else if (deepAccess(accessObj, 'mediaTypes.native')) {
@@ -46,7 +46,7 @@ function getMediaType(accessObj) {
  * Keep track of bid data by keys
  * @returns {Object} - Map of bid data that can be referenced by multiple keys
  */
-export function BidDataMap() {
+export function BidDataMap () {
   const referenceMap = {}
   const bids = []
 
@@ -55,7 +55,7 @@ export function BidDataMap() {
    * @param {String} key - The key to store the index reference
    * @param {number} index - The index value of the bidData
    */
-  function addKeyReference(key, index) {
+  function addKeyReference (key, index) {
     if (!referenceMap.hasOwnProperty(key)) {
       referenceMap[key] = index
     }
@@ -66,7 +66,7 @@ export function BidDataMap() {
    * @param {Object} bid - Bid data
    * @param {(Array|string)} keys - Keys to reference the index value
    */
-  function addBidData(bid, keys) {
+  function addBidData (bid, keys) {
     const index = bids.length
     bids.push(bid)
 
@@ -85,7 +85,7 @@ export function BidDataMap() {
    * @param {String} key - The key value to find the bid data by
    * @returns {Object} - The bid data
    */
-  function getBidData(key) {
+  function getBidData (key) {
     const stringKey = String(key)
     if (referenceMap.hasOwnProperty(stringKey)) {
       return bids[referenceMap[stringKey]]
@@ -512,23 +512,23 @@ registerBidder(spec)
 
 // Utils
 export class RequestData {
-  constructor() {
+  constructor () {
     this.bidRequestDataSources = []
   }
 
-  addBidRequestDataSource(bidRequestDataSource) {
+  addBidRequestDataSource (bidRequestDataSource) {
     if (!(bidRequestDataSource instanceof BidRequestDataSource)) return
 
     this.bidRequestDataSources.push(bidRequestDataSource)
   }
 
-  processBidRequestData(bidRequest, bidderRequest) {
+  processBidRequestData (bidRequest, bidderRequest) {
     for (let bidRequestDataSource of this.bidRequestDataSources) {
       bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest)
     }
   }
 
-  getRequestDataQueryString() {
+  getRequestDataQueryString () {
     if (this.bidRequestDataSources.length == 0) return
 
     const queryParams = this.bidRequestDataSources
@@ -539,29 +539,30 @@ export class RequestData {
 }
 
 export class BidRequestDataSource {
-  constructor() {
+  constructor () {
     this.type = 'BidRequestDataSource'
   }
-  processBidRequestData(bidRequest, bidderRequest) {}
-  getRequestQueryString() {
+
+  processBidRequestData (bidRequest, bidderRequest) {}
+  getRequestQueryString () {
     return ''
   }
 }
 
 export class UserEIDs extends BidRequestDataSource {
-  constructor() {
+  constructor () {
     super()
     this.type = 'UserEIDs'
     this.qsParam = new QueryStringParam('ntv_pb_eid')
     this.eids = []
   }
 
-  processBidRequestData(bidRequest, bidderRequest) {
+  processBidRequestData (bidRequest, bidderRequest) {
     if (bidRequest.userIdAsEids === undefined || this.eids.length > 0) return
     this.eids = bidRequest.userIdAsEids
   }
 
-  getRequestQueryString() {
+  getRequestQueryString () {
     if (this.eids.length === 0) return ''
 
     const encodedValueArray = encodeToBase64(this.eids)
@@ -571,7 +572,7 @@ export class UserEIDs extends BidRequestDataSource {
 }
 
 export class QueryStringParam {
-  constructor(key, value) {
+  constructor (key, value) {
     this.key = key
     this.value = value
   }
@@ -581,13 +582,13 @@ QueryStringParam.prototype.toString = function () {
   return `${this.key}=${this.value}`
 }
 
-export function encodeToBase64(value) {
+export function encodeToBase64 (value) {
   try {
     return btoa(JSON.stringify(value))
   } catch (err) {}
 }
 
-export function parseFloorPriceData(bidRequest) {
+export function parseFloorPriceData (bidRequest) {
   if (typeof bidRequest.getFloor !== 'function') return
 
   // Setup price floor data per bid request
@@ -638,7 +639,7 @@ export function parseFloorPriceData(bidRequest) {
  * @param {String} mediaType - The media type
  * @returns {Object} - Bid floor data
  */
-export function getSizeWildcardPrice(bidRequest, mediaType) {
+export function getSizeWildcardPrice (bidRequest, mediaType) {
   return bidRequest.getFloor({
     currency: FLOOR_PRICE_CURRENCY,
     mediaType,
@@ -652,7 +653,7 @@ export function getSizeWildcardPrice(bidRequest, mediaType) {
  * @param {*} sizes - The sizes to get the floor price data for
  * @returns {Object} - Bid floor data
  */
-export function getMediaWildcardPrices(
+export function getMediaWildcardPrices (
   bidRequest,
   sizes = [PRICE_FLOOR_WILDCARD]
 ) {
@@ -683,7 +684,7 @@ export function getMediaWildcardPrices(
  * @param {Array} size - Size data [width, height]
  * @returns {String} - Formated size string
  */
-export function sizeToString(size) {
+export function sizeToString (size) {
   if (!Array.isArray(size) || size.length < 2) return ''
   return `${size[0]}x${size[1]}`
 }
@@ -693,7 +694,7 @@ export function sizeToString(size) {
  * @param {Array<Object>} requests - Bid requests
  * @returns {Array<Object>} - Array of ad unit data
  */
-function buildAdUnitData(requests) {
+function buildAdUnitData (requests) {
   return requests.map((request) => {
     // Track if we've already requested for this ad unit code
     adUnitsRequested[request.adUnitCode] =
@@ -715,7 +716,7 @@ function buildAdUnitData(requests) {
  * @param {String} value - Value to append
  * @returns
  */
-function appendQSParamString(str, key, value) {
+function appendQSParamString (str, key, value) {
   return str + `${str.length ? '&' : ''}${key}=${value}`
 }
 
@@ -724,7 +725,7 @@ function appendQSParamString(str, key, value) {
  * @param {Object[]} arr - Object to convert
  * @returns
  */
-function arrayToQS(arr) {
+function arrayToQS (arr) {
   return arr.reduce((value, obj) => {
     return appendQSParamString(value, obj.key, obj.value)
   }, '')
@@ -735,7 +736,7 @@ function arrayToQS(arr) {
  * @param {Array} sizes - Array of size arrays
  * @returns Size array with the largest area
  */
-function getLargestSize(sizes, method = area) {
+function getLargestSize (sizes, method = area) {
   if (!sizes || sizes.length === 0) return []
   if (sizes.length === 1) return sizes[0]
 
@@ -751,7 +752,7 @@ function getLargestSize(sizes, method = area) {
 /**
  * Build the final request url
  */
-export function buildRequestUrl(baseUrl, qsParamStringArray = []) {
+export function buildRequestUrl (baseUrl, qsParamStringArray = []) {
   if (qsParamStringArray.length === 0 || !Array.isArray(qsParamStringArray)) {
     return baseUrl
   }
@@ -782,13 +783,13 @@ const area = (size) => size[0] * size[1]
  * @param {Array} filter - The filter data bucket currently stored
  * @param {Array} filterData - The filter data to add
  */
-function appendFilterData(filter, filterData) {
+function appendFilterData (filter, filterData) {
   if (filterData && Array.isArray(filterData) && filterData.length) {
     filterData.forEach((ad) => filter.add(ad))
   }
 }
 
-export function getPageUrlFromBidRequest(bidRequest) {
+export function getPageUrlFromBidRequest (bidRequest) {
   let paramPageUrl = deepAccess(bidRequest, 'params.url')
 
   if (paramPageUrl == undefined) return
@@ -803,12 +804,12 @@ export function getPageUrlFromBidRequest(bidRequest) {
   } catch (err) {}
 }
 
-export function hasProtocol(url) {
+export function hasProtocol (url) {
   const protocolRegexp = /^http[s]?\:/
   return protocolRegexp.test(url)
 }
 
-export function addProtocol(url) {
+export function addProtocol (url) {
   if (hasProtocol(url)) {
     return url
   }

@@ -156,7 +156,7 @@ export const spec = {
     return false;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
     if (syncOptions.iframeEnabled && serverResponses.length > 0) {
       const serverBody = serverResponses[0].body;
       if (!serverBody || typeof serverBody !== 'object') return [];
@@ -175,15 +175,15 @@ export const spec = {
   }
 }
 
-function prepareSizes(sizes) {
+function prepareSizes (sizes) {
   return sizes ? sizes.map(size => ({width: size[0], height: size[1]})) : []
 }
 
-function prepareBidFloorSize(sizes) {
+function prepareBidFloorSize (sizes) {
   return sizes && sizes.length === 1 ? sizes : ['*'];
 }
 
-function getBidFloor(bidRequest, formatTypes) {
+function getBidFloor (bidRequest, formatTypes) {
   let minFloor
   if (typeof bidRequest.getFloor === 'function') {
     const bidFloorSizes = prepareBidFloorSize(bidRequest.sizes)

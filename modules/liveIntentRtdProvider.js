@@ -31,7 +31,7 @@ const init = (config, userConsent) => {
  * @param {UserConsentData} userConsent
  */
 
-function onBidRequest(bidRequest, config, userConsent) {
+function onBidRequest (bidRequest, config, userConsent) {
   bidRequest.bids.forEach(bid => {
     const providedSegmentsFromUserId = deepAccess(bid, 'userId.lipb.segments', [])
     if (providedSegmentsFromUserId.length > 0) {

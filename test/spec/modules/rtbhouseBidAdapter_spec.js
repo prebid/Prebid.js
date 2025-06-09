@@ -453,7 +453,7 @@ describe('RTBHouseAdapter', () => {
     });
 
     describe('native imp', () => {
-      function basicRequest(extension) {
+      function basicRequest (extension) {
         return Object.assign({
           bidder: 'bidder',
           adUnitCode: 'adunit-code',
@@ -466,7 +466,7 @@ describe('RTBHouseAdapter', () => {
         }, extension);
       }
 
-      function buildImp(request) {
+      function buildImp (request) {
         const resultRequest = spec.buildRequests([request], bidderRequest);
         return JSON.parse(resultRequest.data).imp[0];
       }

@@ -6,10 +6,10 @@ const ENDPOINT = 'https://as.innity.com/synd/';
 
 export const spec = {
   code: BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.pub && bid.params.zone);
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       let parseSized = parseSizesInput(bidRequest.sizes);
       let arrSize = parseSized[0].split('x');
@@ -36,7 +36,7 @@ export const spec = {
       };
     });
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const res = serverResponse.body;
     if (Object.keys(res).length === 0) {
       return [];

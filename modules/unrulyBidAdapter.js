@@ -3,7 +3,7 @@ import {Renderer} from '../src/Renderer.js'
 import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {VIDEO, BANNER} from '../src/mediaTypes.js'
 
-function configureUniversalTag(exchangeRenderer, requestId) {
+function configureUniversalTag (exchangeRenderer, requestId) {
   if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
   if (!exchangeRenderer.config.siteId) throw new Error('UnrulyBidAdapter: Missing renderer siteId.');
 
@@ -14,12 +14,12 @@ function configureUniversalTag(exchangeRenderer, requestId) {
   parent.window.unruly['native'].supplyMode = 'prebid';
 }
 
-function configureRendererQueue() {
+function configureRendererQueue () {
   parent.window.unruly['native'].prebid = parent.window.unruly['native'].prebid || {};
   parent.window.unruly['native'].prebid.uq = parent.window.unruly['native'].prebid.uq || [];
 }
 
-function notifyRenderer(bidResponseBid) {
+function notifyRenderer (bidResponseBid) {
   parent.window.unruly['native'].prebid.uq.push(['render', bidResponseBid]);
 }
 

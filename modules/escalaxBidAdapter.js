@@ -11,7 +11,7 @@ const ESCALAX_URL = `https://${ESCALAX_SUBDOMAIN_MACRO}.escalax.io/bid?type=pjs&
 const ESCALAX_DEFAULT_CURRENCY = 'USD';
 const ESCALAX_DEFAULT_SUBDOMAIN = 'bidder_us';
 
-function createImp(buildImp, bidRequest, context) {
+function createImp (buildImp, bidRequest, context) {
   const imp = buildImp(bidRequest, context);
   imp.ext = {
     [BIDDER_CODE]: {
@@ -23,7 +23,7 @@ function createImp(buildImp, bidRequest, context) {
   return imp;
 }
 
-function createRequest(buildRequest, imps, bidderRequest, context) {
+function createRequest (buildRequest, imps, bidderRequest, context) {
   const request = buildRequest(imps, bidderRequest, context);
   const bid = context.bidRequests[0];
   request.test = config.getConfig('debug') ? 1 : 0;
@@ -31,13 +31,13 @@ function createRequest(buildRequest, imps, bidderRequest, context) {
   return request;
 }
 
-function createBidResponse(buildBidResponse, bid, context) {
+function createBidResponse (buildBidResponse, bid, context) {
   const bidResponse = buildBidResponse(bid, context);
   bidResponse.cur = 'USD';
   return bidResponse;
 }
 
-function getSubdomain() {
+function getSubdomain () {
   const regionMap = {
     'Europe': 'bidder_eu',
     'Africa': 'bidder_eu',

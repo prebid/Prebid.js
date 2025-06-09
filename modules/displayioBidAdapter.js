@@ -15,7 +15,7 @@ const US_KEY = '_dio_us';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.placementId && bid.params.siteId &&
       bid.params.adsSrvDomain && bid.params.cdnDomain);
   },
@@ -138,7 +138,7 @@ function getPayload (bid, bidderRequest) {
   }
 }
 
-function newRenderer(bid) {
+function newRenderer (bid) {
   const renderer = Renderer.install({
     id: bid.requestId,
     url: bid.renderURL,
@@ -154,7 +154,7 @@ function newRenderer(bid) {
   return renderer;
 }
 
-function webisRender(bid, doc) {
+function webisRender (bid, doc) {
   bid.renderer.push(() => {
     const win = doc?.defaultView || window;
     win.webis.init(bid.adData, bid.adUnitCode, bid.params);

@@ -32,7 +32,7 @@ const EUID_TEST_URL = 'https://integ.euid.eu';
 const EUID_PROD_URL = 'https://prod.euid.eu';
 const EUID_BASE_URL = EUID_PROD_URL;
 
-function createLogger(logger, prefix) {
+function createLogger (logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
   }
@@ -42,7 +42,7 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-function hasWriteToDeviceConsent(consentData) {
+function hasWriteToDeviceConsent (consentData) {
   const gdprApplies = consentData?.gdprApplies === true;
   const localStorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
   const prebidVendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID_TTD.toString()}`)
@@ -71,7 +71,7 @@ export const euidIdSubmodule = {
    * @param {string} value
    * @returns {{euid:{ id: string } }} or undefined if value doesn't exists
    */
-  decode(value) {
+  decode (value) {
     const result = decodeImpl(value);
     _logInfo('EUID decode returned', result);
     return result;
@@ -84,7 +84,7 @@ export const euidIdSubmodule = {
    * @param {ConsentData|undefined} consentData
    * @returns {IdResponse}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     if (consentData?.gdpr?.gdprApplies !== true) {
       logWarn('EUID is intended for use within the EU. The module will not run when GDPR does not apply.');
       return;
@@ -120,14 +120,14 @@ export const euidIdSubmodule = {
     'euid': {
       source: 'euid.eu',
       atype: 3,
-      getValue: function(data) {
+      getValue: function (data) {
         return data.id;
       }
     },
   },
 };
 
-function decodeImpl(value) {
+function decodeImpl (value) {
   if (typeof value === 'string') {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
     const result = { euid: { id: value } };

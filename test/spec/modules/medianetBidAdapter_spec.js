@@ -1497,7 +1497,7 @@ let VALID_BID_REQUEST = [{
                 'callbackURL': 'https://test.com/paapi/v1/abcd'
               },
               'perBuyerSignals': {
-                'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+                'https://buyer.test.media.net': ['test_buyer_signals']
               },
               'perBuyerTimeouts': {
                 '*': 200
@@ -1557,7 +1557,7 @@ let VALID_BID_REQUEST = [{
                   'callbackURL': 'https://test.com/paapi/v1/abcd'
                 },
                 'perBuyerSignals': {
-                  'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+                  'https://buyer.test.media.net': ['test_buyer_signals']
                 },
                 'perBuyerTimeouts': {
                   '*': 200
@@ -2016,7 +2016,7 @@ describe('Media.net bid adapter', function () {
       expect(JSON.stringify(bidReq.data)).to.include('instream');
     });
 
-    it('should have valid crid present in bid request', function() {
+    it('should have valid crid present in bid request', function () {
       sandbox.stub(config, 'getConfig').callsFake((key) => {
         const config = {
           'coppa': true
@@ -2027,7 +2027,7 @@ describe('Media.net bid adapter', function () {
       expect(JSON.parse(bidreq.data)).to.deep.equal(VALID_PAYLOAD_WITH_CRID);
     });
 
-    it('should have valid ortb2Imp param present in bid request', function() {
+    it('should have valid ortb2Imp param present in bid request', function () {
       let bidreq = spec.buildRequests(VALID_BID_REQUEST_WITH_ORTB2, VALID_AUCTIONDATA);
       let actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
       const expected = VALID_BID_REQUEST_WITH_ORTB2[0].ortb2Imp
@@ -2195,7 +2195,7 @@ describe('Media.net bid adapter', function () {
       expect(userSyncs).to.deep.equal(ENABLED_SYNC_IFRAME);
     });
 
-    it('should have empty user sync array', function() {
+    it('should have empty user sync array', function () {
       let userSyncs = spec.getUserSyncs(SYNC_OPTIONS_IFRAME_ENABLED, {});
       expect(userSyncs).to.deep.equal([]);
     });
@@ -2220,7 +2220,7 @@ describe('Media.net bid adapter', function () {
       expect(bids).to.deep.equal(validBids);
     });
 
-    it('should have empty bid response', function() {
+    it('should have empty bid response', function () {
       let bids = spec.interpretResponse(SERVER_RESPONSE_NOBODY, []);
       expect(bids).to.deep.equal([]);
     });
@@ -2230,13 +2230,13 @@ describe('Media.net bid adapter', function () {
       expect(bids).to.deep.equal(SERVER_VALID_BIDS);
     });
 
-    it('should have empty bid list', function() {
+    it('should have empty bid list', function () {
       let validBids = [];
       let bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
       expect(bids).to.deep.equal(validBids);
     });
 
-    it('should return paapi if PAAPI response is received', function() {
+    it('should return paapi if PAAPI response is received', function () {
       let response = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
       expect(response).to.have.property('bids');
       expect(response).to.have.property('paapi');
@@ -2250,13 +2250,13 @@ describe('Media.net bid adapter', function () {
       expect(response.paapi[0]).to.deep.equal(SERVER_RESPONSE_PAAPI_ORTB.body.ext.igi[0].igs[0])
     });
 
-    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id', function() {
+    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id', function () {
       let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
       expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
 
-    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id for openRTB response', function() {
+    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id for openRTB response', function () {
       let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
       expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
@@ -2378,7 +2378,7 @@ describe('Media.net bid adapter', function () {
   });
   describe('buildRequests floor tests', function () {
     let floor;
-    let getFloor = function(req) {
+    let getFloor = function (req) {
       return floor[req.mediaType];
     };
     beforeEach(function () {
@@ -2452,7 +2452,7 @@ describe('Media.net bid adapter', function () {
       expect(bids).to.deep.equal(validBids);
     });
 
-    it('should have empty bid response', function() {
+    it('should have empty bid response', function () {
       let bids = spec.interpretResponse(SERVER_RESPONSE_NOBODY, []);
       expect(bids).to.deep.equal([]);
     });
@@ -2462,7 +2462,7 @@ describe('Media.net bid adapter', function () {
       expect(bids).to.deep.equal(SERVER_VALID_BIDS);
     });
 
-    it('should have empty bid list', function() {
+    it('should have empty bid list', function () {
       let validBids = [];
       let bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
       expect(bids).to.deep.equal(validBids);

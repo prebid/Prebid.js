@@ -22,13 +22,13 @@ describe('ssp_genieeBidAdapter', function () {
     auctionId: 'auctionId12345',
   };
 
-  function getGeparamsDefinedBid(bid, params) {
+  function getGeparamsDefinedBid (bid, params) {
     const newBid = { ...bid };
     newBid.params.geparams = params;
     return newBid;
   }
 
-  function hasParamsNotBlankStringTestGeparams(param, query) {
+  function hasParamsNotBlankStringTestGeparams (param, query) {
     it(`should set the ${query} query to geparams.${param} when geparams.${param} is neither undefined nor null nor a blank string`, function () {
       window.geparams[param] = undefined;
       let request = spec.buildRequests([BANNER_BID]);
@@ -49,7 +49,7 @@ describe('ssp_genieeBidAdapter', function () {
     });
   }
 
-  function hasParamsNotBlankStringTestGecuparams(param, query) {
+  function hasParamsNotBlankStringTestGecuparams (param, query) {
     it(`should set the ${query} query to gecuparams.${param} when gecuparams.${param} is neither undefined nor null nor a blank string`, function () {
       window.gecuparams = {};
       window.gecuparams[param] = undefined;
@@ -372,23 +372,23 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[0].data).to.not.have.property('extuid');
       });
 
-      describe('buildExtuidQuery', function() {
-        it('should return tab-separated string when both id5 and imuId exist', function() {
+      describe('buildExtuidQuery', function () {
+        it('should return tab-separated string when both id5 and imuId exist', function () {
           const result = buildExtuidQuery({ id5: 'test_id5', imuId: 'test_imu' });
           expect(result).to.equal('id5:test_id5\tim:test_imu');
         });
 
-        it('should return only id5 when imuId is missing', function() {
+        it('should return only id5 when imuId is missing', function () {
           const result = buildExtuidQuery({ id5: 'test_id5', imuId: null });
           expect(result).to.equal('id5:test_id5');
         });
 
-        it('should return only imuId when id5 is missing', function() {
+        it('should return only imuId when id5 is missing', function () {
           const result = buildExtuidQuery({ id5: null, imuId: 'test_imu' });
           expect(result).to.equal('im:test_imu');
         });
 
-        it('should return null when both id5 and imuId are missing', function() {
+        it('should return null when both id5 and imuId are missing', function () {
           const result = buildExtuidQuery({ id5: null, imuId: null });
           expect(result).to.be.null;
         });

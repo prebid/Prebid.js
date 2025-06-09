@@ -17,11 +17,11 @@ const MUSTANG_URL = PROTOCOL + '://cdn.stickyadstv.com/mustang/mustang.min.js';
 const PRIMETIME_URL = PROTOCOL + '://cdn.stickyadstv.com/prime-time/';
 const USER_SYNC_URL = PROTOCOL + '://ads.stickyadstv.com/auto-user-sync';
 
-function getProtocol() {
+function getProtocol () {
   return 'https';
 }
 
-function isValidUrl(str) {
+function isValidUrl (str) {
   if (!str) {
     return false;
   }
@@ -31,7 +31,7 @@ function isValidUrl(str) {
   return pattern.test(str);
 }
 
-function getBiggerSize(array) {
+function getBiggerSize (array) {
   var result = [0, 0];
   for (var i = 0; i < array.length; i++) {
     if (array[i][0] * array[i][1] > result[0] * result[1]) {
@@ -41,7 +41,7 @@ function getBiggerSize(array) {
   return result;
 }
 
-function getBiggerSizeWithLimit(array, minSizeLimit, maxSizeLimit) {
+function getBiggerSizeWithLimit (array, minSizeLimit, maxSizeLimit) {
   var minSize = minSizeLimit || [0, 0];
   var maxSize = maxSizeLimit || [Number.MAX_VALUE, Number.MAX_VALUE];
   var candidates = [];
@@ -59,14 +59,14 @@ function getBiggerSizeWithLimit(array, minSizeLimit, maxSizeLimit) {
 * read the pricing extension with this format: <Extension type='StickyPricing'><Price currency="EUR">1.0000</Price></Extension>
 * @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
 */
-function getPricing(xmlNode) {
+function getPricing (xmlNode) {
   var pricingExtNode;
   var princingData = {};
 
   var extensions = xmlNode.querySelectorAll('Extension');
   // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-  Array.prototype.forEach.call(extensions, function(node) {
+  Array.prototype.forEach.call(extensions, function (node) {
     if (node.getAttribute('type') === 'StickyPricing') {
       pricingExtNode = node;
     }
@@ -95,13 +95,13 @@ function getPricing(xmlNode) {
 * </Extension>
 * @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
 */
-function getAdvertiserDomain(xmlNode) {
+function getAdvertiserDomain (xmlNode) {
   var domain = [];
   var brandExtNode;
   var extensions = xmlNode.querySelectorAll('Extension');
   // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-  Array.prototype.forEach.call(extensions, function(node) {
+  Array.prototype.forEach.call(extensions, function (node) {
     if (node.getAttribute('type') === 'StickyBrand') {
       brandExtNode = node;
     }
@@ -118,7 +118,7 @@ function getAdvertiserDomain(xmlNode) {
   return domain;
 }
 
-function hashcode(inputString) {
+function hashcode (inputString) {
   var hash = 0;
   var char;
   if (inputString.length == 0) return hash;
@@ -130,19 +130,19 @@ function hashcode(inputString) {
   return hash;
 }
 
-function getCreativeId(xmlNode) {
+function getCreativeId (xmlNode) {
   var creaId = '';
   var adNodes = xmlNode.querySelectorAll('Ad');
   // Nodelist.forEach is not supported in IE and Edge
   // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-  Array.prototype.forEach.call(adNodes, function(el) {
+  Array.prototype.forEach.call(adNodes, function (el) {
     creaId += '[' + el.getAttribute('id') + ']';
   });
 
   return creaId;
 }
 
-function getValueFromKeyInImpressionNode(xmlNode, key) {
+function getValueFromKeyInImpressionNode (xmlNode, key) {
   var value = '';
   var impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
   var isRootViewKeyPresent = false;
@@ -175,22 +175,22 @@ function getValueFromKeyInImpressionNode(xmlNode, key) {
   return value;
 }
 
-function getDealId(xmlNode) {
+function getDealId (xmlNode) {
   return getValueFromKeyInImpressionNode(xmlNode, 'dealId');
 }
 
-function getBannerId(xmlNode) {
+function getBannerId (xmlNode) {
   return getValueFromKeyInImpressionNode(xmlNode, 'adId');
 }
 
-function getCampaignId(xmlNode) {
+function getCampaignId (xmlNode) {
   return getValueFromKeyInImpressionNode(xmlNode, 'campaignId');
 }
 
 /**
  * returns the top most accessible window
  */
-function getTopMostWindow() {
+function getTopMostWindow () {
   var res = window;
 
   try {
@@ -202,7 +202,7 @@ function getTopMostWindow() {
   return res;
 }
 
-function getComponentId(inputFormat) {
+function getComponentId (inputFormat) {
   var component = 'mustang'; // default component id
 
   if (inputFormat && inputFormat !== 'inbanner') {
@@ -213,14 +213,14 @@ function getComponentId(inputFormat) {
   return component;
 }
 
-function getAPIName(componentId) {
+function getAPIName (componentId) {
   componentId = componentId || '';
 
   // remove dash in componentId to get API name
   return componentId.replace('-', '');
 }
 
-function getBidFloor(bid, config) {
+function getBidFloor (bid, config) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidfloor', 0);
   }
@@ -237,11 +237,11 @@ function getBidFloor(bid, config) {
   }
 }
 
-function getFloorCurrency(config) {
+function getFloorCurrency (config) {
   return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
 }
 
-function formatAdHTML(bid, size) {
+function formatAdHTML (bid, size) {
   var integrationType = bid.params.format;
 
   var divHtml = '<div id="freewheelssp_prebid_target" style="width:' + size[0] + 'px;height:' + size[1] + 'px;"></div>';
@@ -278,7 +278,7 @@ function formatAdHTML(bid, size) {
   '</script>';
 }
 
-var getInBannerScript = function(bid, size) {
+var getInBannerScript = function (bid, size) {
   return 'var config = {' +
   '      preloadedVast:vast,' +
   '      autoPlay:true' +
@@ -288,7 +288,7 @@ var getInBannerScript = function(bid, size) {
   '    ad.initAd(' + size[0] + ',' + size[1] + ',"",0,"","");';
 };
 
-var getOutstreamScript = function(bid) {
+var getOutstreamScript = function (bid) {
   var config = bid.params;
 
   // default placement if no placement is set
@@ -329,7 +329,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.zoneId);
   },
 
@@ -339,7 +339,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     // var currency = config.getConfig(currency);
 
     let buildRequest = (currentBidRequest, bidderRequest) => {
@@ -473,7 +473,7 @@ export const spec = {
       };
     };
 
-    return bidRequests.map(function(currentBidRequest) {
+    return bidRequests.map(function (currentBidRequest) {
       return buildRequest(currentBidRequest, bidderRequest);
     });
   },
@@ -485,7 +485,7 @@ export const spec = {
    * @param {object} request the built request object containing the initial bidRequest.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     var bidrequest = request.bidRequest;
     var playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
@@ -560,7 +560,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
     const params = {};
 
     if (gdprConsent) {

@@ -21,7 +21,7 @@ slot.style.left = '20px'
 
 document.body.appendChild(slot);
 
-function getSlotConfigs(mediaTypes, params) {
+function getSlotConfigs (mediaTypes, params) {
   return {
     params: params,
     sizes: [
@@ -45,7 +45,7 @@ function getSlotConfigs(mediaTypes, params) {
   };
 }
 
-function createInStreamSlotConfig(mediaType) {
+function createInStreamSlotConfig (mediaType) {
   return getSlotConfigs(mediaType, {
     publisherId: PUBLISHER_ID,
     adUnitId: ADUNIT_ID,
@@ -160,7 +160,7 @@ describe('Seedtag Adapter', function () {
     });
     describe('returns false', function () {
       describe('when params are not correct', function () {
-        function createSlotConfig(params) {
+        function createSlotConfig (params) {
           return getSlotConfigs({ banner: {} }, params);
         }
         it('does not have the PublisherToken.', function () {

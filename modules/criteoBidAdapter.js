@@ -55,7 +55,7 @@ const CONVERTER = ortbConverter({
  * @param {Object} context - The context object.
  * @returns {Object} The ORTB 2.5 imp object.
  */
-function imp(buildImp, bidRequest, context) {
+function imp (buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
   const params = bidRequest.params;
 
@@ -125,7 +125,7 @@ function imp(buildImp, bidRequest, context) {
  * @param {Object} context - The context object.
  * @returns {Object} The ORTB 2.5 request object.
  */
-function request(buildRequest, imps, bidderRequest, context) {
+function request (buildRequest, imps, bidderRequest, context) {
   let request = buildRequest(imps, bidderRequest, context);
 
   // params.pubid should override publisher id
@@ -155,7 +155,7 @@ function request(buildRequest, imps, bidderRequest, context) {
  * @param context
  * @returns {*}
  */
-function bidResponse(buildBidResponse, bid, context) {
+function bidResponse (buildBidResponse, bid, context) {
   context.mediaType = bid?.ext?.mediatype;
   if (context.mediaType === NATIVE && typeof bid.adm_native !== 'undefined') {
     bid.adm = bid.adm_native;
@@ -197,7 +197,7 @@ function bidResponse(buildBidResponse, bid, context) {
  * @param context
  * @returns *
  */
-function response(buildResponse, bidResponses, ortbResponse, context) {
+function response (buildResponse, bidResponses, ortbResponse, context) {
   let response = buildResponse(bidResponses, ortbResponse, context);
 
   const pafTransmission = ortbResponse?.ext?.paf?.transmission;
@@ -260,7 +260,7 @@ export const spec = {
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
 
-      window.addEventListener('message', function handler(event) {
+      window.addEventListener('message', function handler (event) {
         if (!event.data || event.origin != 'https://gum.criteo.com') {
           return;
         }
@@ -419,14 +419,14 @@ export const spec = {
   }
 };
 
-function readFromAllStorages(name) {
+function readFromAllStorages (name) {
   const fromCookie = storage.getCookie(name);
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
 
   return fromCookie || fromLocalStorage || undefined;
 }
 
-function saveOnAllStorages(name, value, expirationTimeHours, domain) {
+function saveOnAllStorages (name, value, expirationTimeHours, domain) {
   const date = new Date();
   date.setTime(date.getTime() + (expirationTimeHours * 60 * 60 * 1000));
   const expires = `expires=${date.toUTCString()}`;
@@ -452,7 +452,7 @@ function saveOnAllStorages(name, value, expirationTimeHours, domain) {
   storage.setDataInLocalStorage(name, value);
 }
 
-function deleteFromAllStorages(name) {
+function deleteFromAllStorages (name) {
   storage.setCookie(name, '', 0);
   storage.removeDataFromLocalStorage(name);
 }
@@ -461,7 +461,7 @@ function deleteFromAllStorages(name) {
  * @param {BidRequest[]} bidRequests
  * @param bidderRequest
  */
-function buildContext(bidRequests, bidderRequest) {
+function buildContext (bidRequests, bidderRequest) {
   const queryString = parseUrl(bidderRequest?.refererInfo?.topmostLocation).search;
 
   return {
@@ -479,7 +479,7 @@ function buildContext(bidRequests, bidderRequest) {
  * @param {Object} context
  * @return {string}
  */
-function buildCdbUrl(context) {
+function buildCdbUrl (context) {
   let url = CDB_ENDPOINT;
   url += '?profileId=' + PROFILE_ID_INLINE;
   url += '&av=' + String(ADAPTER_VERSION);
@@ -519,7 +519,7 @@ function buildCdbUrl(context) {
   return url;
 }
 
-function checkNativeSendId(bidRequest) {
+function checkNativeSendId (bidRequest) {
   return !(bidRequest.nativeParams &&
     (
       (bidRequest.nativeParams.image && ((bidRequest.nativeParams.image.sendId !== true || bidRequest.nativeParams.image.sendTargetingKeys === true))) ||
@@ -531,7 +531,7 @@ function checkNativeSendId(bidRequest) {
     ));
 }
 
-function parseSizes(sizes, parser = s => s) {
+function parseSizes (sizes, parser = s => s) {
   if (sizes == undefined) {
     return [];
   }
@@ -541,19 +541,19 @@ function parseSizes(sizes, parser = s => s) {
   return [parser(sizes)]; // or a single one ? (ie. [728,90])
 }
 
-function parseSize(size) {
+function parseSize (size) {
   return size[0] + 'x' + size[1];
 }
 
-function hasVideoMediaType(bidRequest) {
+function hasVideoMediaType (bidRequest) {
   return bidRequest?.mediaTypes?.video !== undefined;
 }
 
-function hasNativeMediaType(bidRequest) {
+function hasNativeMediaType (bidRequest) {
   return bidRequest?.mediaTypes?.native !== undefined;
 }
 
-function hasValidVideoMediaType(bidRequest) {
+function hasValidVideoMediaType (bidRequest) {
   let isValid = true;
 
   var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
@@ -575,7 +575,7 @@ function hasValidVideoMediaType(bidRequest) {
   return isValid;
 }
 
-function pickAvailableGetFloorFunc(bidRequest) {
+function pickAvailableGetFloorFunc (bidRequest) {
   if (bidRequest.getFloor) {
     return bidRequest.getFloor;
   }
@@ -593,7 +593,7 @@ function pickAvailableGetFloorFunc(bidRequest) {
   return undefined;
 }
 
-function getFloors(bidRequest) {
+function getFloors (bidRequest) {
   try {
     const floors = {};
 
@@ -624,7 +624,7 @@ function getFloors(bidRequest) {
   }
 }
 
-function createOutstreamVideoRenderer(bid) {
+function createOutstreamVideoRenderer (bid) {
   if (bid.ext?.videoPlayerConfig === undefined || bid.ext?.videoPlayerType === undefined) {
     return undefined;
   }

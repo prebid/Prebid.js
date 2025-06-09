@@ -22,11 +22,11 @@ import { getGlobal } from '../src/prebidGlobal.js';
  * @param {Object} moduleConfig
  * @param {Object} userConsent
  */
-export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, userConsent) {
+export function getDgKeywordsAndSet (reqBidsConfigObj, callback, moduleConfig, userConsent) {
   const PROFILE_TIMEOUT_MS = 1000;
   const timeout = (moduleConfig && moduleConfig.params && moduleConfig.params.timeout && Number(moduleConfig.params.timeout) > 0) ? Number(moduleConfig.params.timeout) : PROFILE_TIMEOUT_MS;
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
-  callback = (function(cb) {
+  callback = (function (cb) {
     let done = false;
     return function () {
       if (!done) {
@@ -45,7 +45,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
     logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
     logMessage('[dgkeyword sub module] get targets from profile api start.');
     ajax(getProfileApiUrl(moduleConfig?.params?.url, moduleConfig?.params?.enableReadFpid), {
-      success: function(response) {
+      success: function (response) {
         const res = JSON.parse(response);
         if (!isFinish) {
           logMessage('[dgkeyword sub module] get targets from profile api end.');
@@ -72,7 +72,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
         }
         callback();
       },
-      error: function(errorStatus) {
+      error: function (errorStatus) {
         // error occur
         logError('[dgkeyword sub module] profile api access error.', errorStatus);
         callback();
@@ -91,7 +91,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   }
 }
 
-export function getProfileApiUrl(customeUrl, enableReadFpid) {
+export function getProfileApiUrl (customeUrl, enableReadFpid) {
   const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1';
   const fpid = (enableReadFpid) ? readFpidFromLocalStrage() : '';
   let url = customeUrl || URL;
@@ -99,7 +99,7 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
   return url;
 }
 
-export function readFpidFromLocalStrage() {
+export function readFpidFromLocalStrage () {
   try {
     // TODO: use storageManager
     // eslint-disable-next-line no-restricted-properties
@@ -117,7 +117,7 @@ export function readFpidFromLocalStrage() {
  * get all bidder which hava {dgkeyword: true} in params
  * @param {Object} adUnits
  */
-export function getTargetBidderOfDgKeywords(adUnits) {
+export function getTargetBidderOfDgKeywords (adUnits) {
   let setKeywordTargetBidders = [];
   for (let adUnit of adUnits) {
     for (let bid of adUnit.bids) {
@@ -146,16 +146,16 @@ export const dgkeywordSubmodule = {
   init: init,
 };
 
-function init(moduleConfig) {
+function init (moduleConfig) {
   return true;
 }
 
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', dgkeywordSubmodule);
 }
 
 // keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
-export function convertKeywordsToString(keywords) {
+export function convertKeywordsToString (keywords) {
   let result = '';
   Object.keys(keywords).forEach(key => {
     // if 'text' or ''

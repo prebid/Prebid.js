@@ -57,7 +57,7 @@ describe('AsterioBid Analytics Adapter', function () {
       expect(asteriobidAnalytics.getOptions().url).to.equal(custom_url);
     });
 
-    it('bid won event', function() {
+    it('bid won event', function () {
       let bundleId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
       asteriobidAnalytics.enableAnalytics({
         provider: 'asteriobid',

@@ -53,7 +53,7 @@ export const spec = {
       payload.ccpa = bidderRequest.uspConsent;
     }
 
-    function getOrtb2Keywords(ortb2Obj) {
+    function getOrtb2Keywords (ortb2Obj) {
       const fields = [
         'site.keywords',
         'site.content.keywords',

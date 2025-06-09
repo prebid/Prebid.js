@@ -18,7 +18,7 @@ import {deepClone} from 'src/utils.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
-const BidRequestBuilder = function BidRequestBuilder(options) {
+const BidRequestBuilder = function BidRequestBuilder (options) {
   const defaults = {
     request: {
       auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
@@ -48,7 +48,7 @@ const BidRequestBuilder = function BidRequestBuilder(options) {
   this.build = () => request;
 };
 
-const BidderRequestBuilder = function BidderRequestBuilder(options) {
+const BidderRequestBuilder = function BidderRequestBuilder (options) {
   const defaults = {
     bidderCode: 'trafficgate',
     auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
@@ -309,7 +309,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       }];
     });
 
-    context('common requests checks', function() {
+    context('common requests checks', function () {
       it('should be able to handle multiformat requests', () => {
         const multiformat = utils.deepClone(bidRequestsWithMediaTypes[0]);
         multiformat.mediaTypes.video = {
@@ -410,7 +410,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         })
       })
 
-      describe('FPD', function() {
+      describe('FPD', function () {
         let bidRequests;
         const mockBidderRequest = {refererInfo: {}};
 
@@ -451,7 +451,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
           }];
         });
 
-        it('ortb2.site should be merged in the request', function() {
+        it('ortb2.site should be merged in the request', function () {
           const request = spec.buildRequests(bidRequests, {
             ...mockBidderRequest,
             'ortb2': {
@@ -468,7 +468,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
         });
 
-        it('ortb2.user should be merged in the request', function() {
+        it('ortb2.user should be merged in the request', function () {
           const request = spec.buildRequests(bidRequests, {
             ...mockBidderRequest,
             'ortb2': {
@@ -481,15 +481,15 @@ describe('TrafficgateOpenxRtbAdapter', function () {
           expect(data.user.yob).to.equal(1985);
         });
 
-        describe('ortb2Imp', function() {
-          describe('ortb2Imp.ext.data.pbadslot', function() {
+        describe('ortb2Imp', function () {
+          describe('ortb2Imp.ext.data.pbadslot', function () {
             beforeEach(function () {
               if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
                 delete bidRequests[0].ortb2Imp;
               }
             });
 
-            it('should not send if imp[].ext.data object is invalid', function() {
+            it('should not send if imp[].ext.data object is invalid', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {}
               };
@@ -498,7 +498,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
-            it('should not send if imp[].ext.data.pbadslot is undefined', function() {
+            it('should not send if imp[].ext.data.pbadslot is undefined', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -514,7 +514,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               }
             });
 
-            it('should send if imp[].ext.data.pbadslot is string', function() {
+            it('should send if imp[].ext.data.pbadslot is string', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -529,14 +529,14 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             });
           });
 
-          describe('ortb2Imp.ext.data.adserver', function() {
+          describe('ortb2Imp.ext.data.adserver', function () {
             beforeEach(function () {
               if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
                 delete bidRequests[0].ortb2Imp;
               }
             });
 
-            it('should not send if imp[].ext.data object is invalid', function() {
+            it('should not send if imp[].ext.data object is invalid', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {}
               };
@@ -545,7 +545,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
-            it('should not send if imp[].ext.data.adserver is undefined', function() {
+            it('should not send if imp[].ext.data.adserver is undefined', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -561,7 +561,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               }
             });
 
-            it('should send', function() {
+            it('should send', function () {
               let adSlotValue = 'abc';
               bidRequests[0].ortb2Imp = {
                 ext: {
@@ -580,14 +580,14 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             });
           });
 
-          describe('ortb2Imp.ext.data.other', function() {
+          describe('ortb2Imp.ext.data.other', function () {
             beforeEach(function () {
               if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
                 delete bidRequests[0].ortb2Imp;
               }
             });
 
-            it('should not send if imp[].ext.data object is invalid', function() {
+            it('should not send if imp[].ext.data object is invalid', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {}
               };
@@ -596,7 +596,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               expect(data.imp[0].ext).to.not.have.property('data');
             });
 
-            it('should not send if imp[].ext.data.other is undefined', function() {
+            it('should not send if imp[].ext.data.other is undefined', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -612,7 +612,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
               }
             });
 
-            it('ortb2Imp.ext.data.other', function() {
+            it('ortb2Imp.ext.data.other', function () {
               bidRequests[0].ortb2Imp = {
                 ext: {
                   data: {
@@ -636,20 +636,20 @@ describe('TrafficgateOpenxRtbAdapter', function () {
                     source: 2,
                     platform: {
                       brand: 'macOS',
-                      version: [ '12', '4', '0' ]
+                      version: ['12', '4', '0']
                     },
                     browsers: [
                       {
                         brand: 'Chromium',
-                        version: [ '106', '0', '5249', '119' ]
+                        version: ['106', '0', '5249', '119']
                       },
                       {
                         brand: 'Google Chrome',
-                        version: [ '106', '0', '5249', '119' ]
+                        version: ['106', '0', '5249', '119']
                       },
                       {
                         brand: 'Not;A=Brand',
-                        version: [ '99', '0', '0', '0' ]
+                        version: ['99', '0', '0', '0']
                       }],
                     mobile: 0,
                     model: 'Pro',
@@ -817,7 +817,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
       });
 
-      context('coppa', function() {
+      context('coppa', function () {
         it('when there are no coppa param settings, should not send a coppa flag', async function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, await addFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.regs?.coppa).to.be.not.ok;
@@ -847,13 +847,13 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
       });
 
-      context('do not track (DNT)', function() {
+      context('do not track (DNT)', function () {
         let doNotTrackStub;
 
         beforeEach(function () {
           doNotTrackStub = sinon.stub(utils, 'getDNT');
         });
-        afterEach(function() {
+        afterEach(function () {
           doNotTrackStub.restore();
         });
 
@@ -1014,7 +1014,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         });
       });
 
-      context('FLEDGE', function() {
+      context('FLEDGE', function () {
         it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, {
             ...mockBidderRequest,
@@ -1041,7 +1041,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
           expect(request[1].data.imp[0]).to.have.any.keys(VIDEO);
         });
 
-        it('Update imp.video with OpenRTB options from mimeTypes and params', function() {
+        it('Update imp.video with OpenRTB options from mimeTypes and params', function () {
           const bid01 = new BidRequestBuilder({
             adUnitCode: 'adunit-code-01',
             mediaTypes: {
@@ -1274,7 +1274,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
       });
     });
 
-    context('when the response is a banner', function() {
+    context('when the response is a banner', function () {
       beforeEach(function () {
         bidRequestConfigs = [{
           bidder: 'trafficgate',
@@ -1321,7 +1321,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
     });
 
     if (FEATURES.VIDEO) {
-      context('when the response is a video', function() {
+      context('when the response is a video', function () {
         beforeEach(function () {
           bidRequestConfigs = [{
             bidder: 'trafficgate',

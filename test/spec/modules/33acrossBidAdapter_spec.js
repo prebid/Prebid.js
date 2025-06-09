@@ -7,7 +7,7 @@ import { config } from 'src/config.js';
 import { spec } from 'modules/33acrossBidAdapter.js';
 import { resetWinDimensions } from '../../../src/utils';
 
-function validateBuiltServerRequest(builtReq, expectedReq) {
+function validateBuiltServerRequest (builtReq, expectedReq) {
   expect(builtReq.url).to.equal(expectedReq.url);
   expect(builtReq.options).to.deep.equal(expectedReq.options);
   expect(JSON.parse(builtReq.data)).to.deep.equal(
@@ -24,7 +24,7 @@ describe('33acrossBidAdapter:', function () {
   let bidRequests;
   let sandbox;
 
-  function TtxRequestBuilder(siteId = SITE_ID) {
+  function TtxRequestBuilder (siteId = SITE_ID) {
     const ttxRequest = {
       imp: [{
         id: 'b1'
@@ -271,7 +271,7 @@ describe('33acrossBidAdapter:', function () {
             return Object.assign(fm, {
               ext: {
                 ttx: {
-                  bidfloors: [ floors[i] ]
+                  bidfloors: [floors[i]]
                 }
               }
             })
@@ -308,7 +308,7 @@ describe('33acrossBidAdapter:', function () {
     this.build = () => ttxRequest;
   }
 
-  function ServerRequestBuilder() {
+  function ServerRequestBuilder () {
     const serverRequest = {
       'method': 'POST',
       'url': `${END_POINT}?guid=${SITE_ID}`,
@@ -337,7 +337,7 @@ describe('33acrossBidAdapter:', function () {
     this.build = () => serverRequest;
   }
 
-  function BidRequestsBuilder() {
+  function BidRequestsBuilder () {
     const bidRequests = [
       {
         bidId: 'b1',
@@ -450,7 +450,7 @@ describe('33acrossBidAdapter:', function () {
 
   let bidderRequest;
 
-  beforeEach(function() {
+  beforeEach(function () {
     element = {
       x: 0,
       y: 0,
@@ -508,13 +508,13 @@ describe('33acrossBidAdapter:', function () {
     bidderRequest = {bidderRequestId: 'r1'};
   });
 
-  afterEach(function() {
+  afterEach(function () {
     resetWinDimensions();
     sandbox.restore();
   });
-  describe('isBidRequestValid:', function() {
-    context('basic validation', function() {
-      it('returns true for valid bidder name values', function() {
+  describe('isBidRequestValid:', function () {
+    context('basic validation', function () {
+      it('returns true for valid bidder name values', function () {
         const validBidderName = [
           '33across',
           '33across_mgni'
@@ -532,7 +532,7 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      it('returns true for valid guid values', function() {
+      it('returns true for valid guid values', function () {
         // NOTE: We ignore whitespace at the start and end since
         // in our experience these are common typos
         const validGUIDs = [
@@ -554,7 +554,7 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      it('returns false for invalid guid values', function() {
+      it('returns false for invalid guid values', function () {
         const invalidGUIDs = [
           undefined,
           'siab'
@@ -573,8 +573,8 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('banner validation', function() {
-      it('returns true when banner mediaType does not exist', function() {
+    context('banner validation', function () {
+      it('returns true when banner mediaType does not exist', function () {
         const bid = {
           bidder: '33across',
           params: {
@@ -585,7 +585,7 @@ describe('33acrossBidAdapter:', function () {
         expect(spec.isBidRequestValid(bid)).to.be.true;
       });
 
-      it('returns true when banner sizes are defined', function() {
+      it('returns true when banner sizes are defined', function () {
         const bid = {
           bidder: '33across',
           mediaTypes: {
@@ -601,7 +601,7 @@ describe('33acrossBidAdapter:', function () {
         expect(spec.isBidRequestValid(bid)).to.be.true;
       });
 
-      it('returns false when banner sizes are invalid', function() {
+      it('returns false when banner sizes are invalid', function () {
         const invalidSizes = [
           undefined,
           '16:9',
@@ -627,8 +627,8 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('video validation', function() {
-      beforeEach(function() {
+    context('video validation', function () {
+      beforeEach(function () {
         // Basic Valid BidRequest
         this.bid = {
           bidder: '33across',
@@ -646,7 +646,7 @@ describe('33acrossBidAdapter:', function () {
         };
       });
 
-      it('returns true when video mediaType does not exist', function() {
+      it('returns true when video mediaType does not exist', function () {
         const bid = {
           bidder: '33across',
           params: {
@@ -657,17 +657,17 @@ describe('33acrossBidAdapter:', function () {
         expect(spec.isBidRequestValid(bid)).to.be.true;
       });
 
-      it('returns true when valid video mediaType is defined', function() {
+      it('returns true when valid video mediaType is defined', function () {
         expect(spec.isBidRequestValid(this.bid)).to.be.true;
       });
 
-      it('returns false when video context is not defined', function() {
+      it('returns false when video context is not defined', function () {
         delete this.bid.mediaTypes.video.context;
 
         expect(spec.isBidRequestValid(this.bid)).to.be.false;
       });
 
-      it('returns false when video playserSize is invalid', function() {
+      it('returns false when video playserSize is invalid', function () {
         const invalidSizes = [
           undefined,
           '16:9',
@@ -681,7 +681,7 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      it('returns false when video mimes is invalid', function() {
+      it('returns false when video mimes is invalid', function () {
         const invalidMimes = [
           undefined,
           'foo',
@@ -695,7 +695,7 @@ describe('33acrossBidAdapter:', function () {
         })
       });
 
-      it('returns false when video protocols is invalid', function() {
+      it('returns false when video protocols is invalid', function () {
         const invalidMimes = [
           undefined,
           'foo',
@@ -709,7 +709,7 @@ describe('33acrossBidAdapter:', function () {
         })
       });
 
-      it('returns false when video placement is invalid', function() {
+      it('returns false when video placement is invalid', function () {
         const invalidPlacement = [
           [],
           '1',
@@ -728,7 +728,7 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      it('returns false when video startdelay is invalid for instream context', function() {
+      it('returns false when video startdelay is invalid for instream context', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withVideo({context: 'instream', protocols: [1, 2], mimes: ['foo', 'bar']})
@@ -748,7 +748,7 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      it('returns true when video startdelay is invalid for outstream context', function() {
+      it('returns true when video startdelay is invalid for outstream context', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withVideo({context: 'outstream', protocols: [1, 2], mimes: ['foo', 'bar']})
@@ -770,9 +770,9 @@ describe('33acrossBidAdapter:', function () {
     })
   });
 
-  describe('buildRequests:', function() {
-    context('when element is fully in view', function() {
-      it('returns 100', function() {
+  describe('buildRequests:', function () {
+    context('when element is fully in view', function () {
+      it('returns 100', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -784,13 +784,13 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 600, height: 400 });
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
-    context('when element is out of view', function() {
-      it('returns 0', function() {
+    context('when element is out of view', function () {
+      it('returns 0', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -802,13 +802,13 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
-    context('when element is partially in view', function() {
-      it('returns percentage', function() {
+    context('when element is partially in view', function () {
+      it('returns percentage', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -820,13 +820,13 @@ describe('33acrossBidAdapter:', function () {
 
         Object.assign(element, { width: 800, height: 800 });
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
-    context('when width or height of the element is zero', function() {
-      it('try to use alternative values', function() {
+    context('when width or height of the element is zero', function () {
+      it('try to use alternative values', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -840,13 +840,13 @@ describe('33acrossBidAdapter:', function () {
         Object.assign(element, { width: 0, height: 0 });
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
-    context('when nested iframes', function() {
-      it('returns \'nm\'', function() {
+    context('when nested iframes', function () {
+      it('returns \'nm\'', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -863,12 +863,12 @@ describe('33acrossBidAdapter:', function () {
         sandbox.stub(utils, 'getWindowTop').returns({});
         sandbox.stub(utils, 'getWindowSelf').returns(win);
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
 
-      context('when all the wrapping windows are accessible', function() {
-        it('returns the viewport dimensions of the top most accessible window', function() {
+      context('when all the wrapping windows are accessible', function () {
+        it('returns the viewport dimensions of the top most accessible window', function () {
           const ttxRequest = new TtxRequestBuilder()
             .withBanner()
             .withDevice({
@@ -904,13 +904,13 @@ describe('33acrossBidAdapter:', function () {
             }
           });
 
-          const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
           validateBuiltServerRequest(buildRequest, serverRequest);
         });
       });
 
-      context('when one of the wrapping windows cannot be accessed', function() {
-        it('returns the viewport dimensions of the top most accessible window', function() {
+      context('when one of the wrapping windows cannot be accessed', function () {
+        it('returns the viewport dimensions of the top most accessible window', function () {
           const ttxRequest = new TtxRequestBuilder()
             .withBanner()
             .withDevice({
@@ -931,7 +931,7 @@ describe('33acrossBidAdapter:', function () {
           const notAccessibleParentWindow = {};
 
           Object.defineProperty(notAccessibleParentWindow, 'document', {
-            get() { throw new Error('fakeError'); }
+            get () { throw new Error('fakeError'); }
           });
 
           sandbox.stub(win, 'parent').value({
@@ -952,13 +952,13 @@ describe('33acrossBidAdapter:', function () {
             }
           });
 
-          const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
           validateBuiltServerRequest(buildRequest, serverRequest);
         });
       });
     });
 
-    it('returns the screen dimensions', function() {
+    it('returns the screen dimensions', function () {
       const ttxRequest = new TtxRequestBuilder()
         .withBanner()
         .withDevice({
@@ -978,13 +978,13 @@ describe('33acrossBidAdapter:', function () {
       win.screen.width = 1024;
       win.screen.height = 728;
 
-      const [ buildRequest ] = spec.buildRequests(bidRequests, {bidderRequestId: 'r1'});
+      const [buildRequest] = spec.buildRequests(bidRequests, {bidderRequestId: 'r1'});
 
       validateBuiltServerRequest(buildRequest, serverRequest);
     });
 
-    context('when the window height is greater than the width', function() {
-      it('returns the smaller screen dimension as the width', function() {
+    context('when the window height is greater than the width', function () {
+      it('returns the smaller screen dimension as the width', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withDevice({
@@ -1009,14 +1009,14 @@ describe('33acrossBidAdapter:', function () {
 
         resetWinDimensions();
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
-    context('when tab is inactive', function() {
-      it('returns 0', function() {
+    context('when tab is inactive', function () {
+      it('returns 0', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1033,13 +1033,13 @@ describe('33acrossBidAdapter:', function () {
         sandbox.stub(utils, 'getWindowTop').returns(win);
         resetWinDimensions();
 
-        const [ buildRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [buildRequest] = spec.buildRequests(bidRequests, bidderRequest);
         validateBuiltServerRequest(buildRequest, serverRequest);
       });
     });
 
-    context('when gdpr consent data exists', function() {
-      beforeEach(function() {
+    context('when gdpr consent data exists', function () {
+      beforeEach(function () {
         bidderRequest = {
           ...bidderRequest,
           gdprConsent: {
@@ -1049,7 +1049,7 @@ describe('33acrossBidAdapter:', function () {
         }
       });
 
-      it('returns corresponding server requests with gdpr consent data', function() {
+      it('returns corresponding server requests with gdpr consent data', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1058,12 +1058,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('returns corresponding test server requests with gdpr consent data', function() {
+      it('returns corresponding test server requests with gdpr consent data', function () {
         sandbox.stub(config, 'getConfig')
           .withArgs('ttxSettings')
           .returns({
@@ -1079,14 +1079,14 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when gdpr consent data does not exist', function() {
-      it('returns corresponding server requests with default gdpr consent data', function() {
+    context('when gdpr consent data does not exist', function () {
+      it('returns corresponding server requests with default gdpr consent data', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1094,12 +1094,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('returns corresponding test server requests with default gdpr consent data', function() {
+      it('returns corresponding test server requests with default gdpr consent data', function () {
         sandbox.stub(config, 'getConfig')
           .withArgs('ttxSettings')
           .returns({
@@ -1114,21 +1114,21 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when us_privacy consent data exists', function() {
-      beforeEach(function() {
+    context('when us_privacy consent data exists', function () {
+      beforeEach(function () {
         bidderRequest = {
           ...bidderRequest,
           uspConsent: 'foo'
         }
       });
 
-      it('returns corresponding server requests with us_privacy consent data', function() {
+      it('returns corresponding server requests with us_privacy consent data', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1137,12 +1137,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('returns corresponding test server requests with us_privacy consent data', function() {
+      it('returns corresponding test server requests with us_privacy consent data', function () {
         sandbox.stub(config, 'getConfig')
           .withArgs('ttxSettings')
           .returns({
@@ -1158,14 +1158,14 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when us_privacy consent data does not exist', function() {
-      it('returns corresponding server requests with default us_privacy data', function() {
+    context('when us_privacy consent data does not exist', function () {
+      it('returns corresponding server requests with default us_privacy data', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1173,12 +1173,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('returns corresponding test server requests with default us_privacy consent data', function() {
+      it('returns corresponding test server requests with default us_privacy consent data', function () {
         sandbox.stub(config, 'getConfig')
           .withArgs('ttxSettings')
           .returns({
@@ -1193,18 +1193,18 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when coppa has been enabled', function() {
-      beforeEach(function() {
+    context('when coppa has been enabled', function () {
+      beforeEach(function () {
         sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
       });
 
-      it('returns corresponding server requests with coppa: 1', function() {
+      it('returns corresponding server requests with coppa: 1', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1214,18 +1214,18 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when coppa has been disabled', function() {
-      beforeEach(function() {
+    context('when coppa has been disabled', function () {
+      beforeEach(function () {
         sandbox.stub(config, 'getConfig').withArgs('coppa').returns(false);
       });
 
-      it('returns corresponding server requests with coppa: 0', function() {
+      it('returns corresponding server requests with coppa: 0', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1234,14 +1234,14 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when GPP consent data exists', function() {
-      beforeEach(function() {
+    context('when GPP consent data exists', function () {
+      beforeEach(function () {
         bidderRequest = {
           ...bidderRequest,
           gppConsent: {
@@ -1251,7 +1251,7 @@ describe('33acrossBidAdapter:', function () {
         }
       });
 
-      it('returns corresponding server requests with GPP consent data', function() {
+      it('returns corresponding server requests with GPP consent data', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1260,12 +1260,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('returns corresponding test server requests with GPP consent data', function() {
+      it('returns corresponding test server requests with GPP consent data', function () {
         sandbox.stub(config, 'getConfig').withArgs('ttxSettings')
           .returns({
             'url': 'https://foo.com/hb/'
@@ -1280,15 +1280,15 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .withUrl('https://foo.com/hb/')
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when refererInfo values are available', function() {
-      context('when refererInfo.page is defined', function() {
-        it('returns corresponding server requests with site.page set', function() {
+    context('when refererInfo values are available', function () {
+      context('when refererInfo.page is defined', function () {
+        it('returns corresponding server requests with site.page set', function () {
           bidderRequest = {
             ...bidderRequest,
             refererInfo: {
@@ -1305,14 +1305,14 @@ describe('33acrossBidAdapter:', function () {
             .withData(ttxRequest)
             .build();
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
       });
 
-      context('when refererInfo.ref is defined', function() {
-        it('returns corresponding server requests with site.ref set', function() {
+      context('when refererInfo.ref is defined', function () {
+        it('returns corresponding server requests with site.ref set', function () {
           bidderRequest = {
             ...bidderRequest,
             refererInfo: {
@@ -1329,15 +1329,15 @@ describe('33acrossBidAdapter:', function () {
             .withData(ttxRequest)
             .build();
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
       });
     });
 
-    context('when Global Placement ID (gpid) is defined', function() {
-      it('passes the Global Placement ID (gpid) in the request', function() {
+    context('when Global Placement ID (gpid) is defined', function () {
+      it('passes the Global Placement ID (gpid) in the request', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1348,7 +1348,7 @@ describe('33acrossBidAdapter:', function () {
           .build();
 
         let copyBidRequest = utils.deepClone(bidRequests);
-        const bidRequestsWithGpid = copyBidRequest.map(function(bidRequest, index) {
+        const bidRequestsWithGpid = copyBidRequest.map(function (bidRequest, index) {
           return {
             ...bidRequest,
             ortb2Imp: {
@@ -1359,14 +1359,14 @@ describe('33acrossBidAdapter:', function () {
           };
         });
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequestsWithGpid, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequestsWithGpid, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when referer value is not available', function() {
-      it('returns corresponding server requests without site.page and site.ref set', function() {
+    context('when referer value is not available', function () {
+      it('returns corresponding server requests without site.page and site.ref set', function () {
         bidderRequest.refererInfo = {};
 
         const ttxRequest = new TtxRequestBuilder()
@@ -1377,14 +1377,14 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when there is schain object in the bidRequest', function() {
-      it('builds request with schain info in source', function() {
+    context('when there is schain object in the bidRequest', function () {
+      it('builds request with schain info in source', function () {
         const schainValues = [
           {
             'ver': '1.0',
@@ -1431,15 +1431,15 @@ describe('33acrossBidAdapter:', function () {
             .withData(ttxRequest)
             .build();
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
       });
     });
 
-    context('when there no schain object is passed', function() {
-      it('does not set source field', function() {
+    context('when there no schain object is passed', function () {
+      it('does not set source field', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1449,14 +1449,14 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when price floor module is not enabled for banner in bidRequest', function() {
-      it('does not set any bidfloors in ttxRequest', function() {
+    context('when price floor module is not enabled for banner in bidRequest', function () {
+      it('does not set any bidfloors in ttxRequest', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
@@ -1464,14 +1464,14 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when price floor module is enabled for banner in bidRequest', function() {
-      it('does not set any bidfloors in ttxRequest if there is no floor', function() {
+    context('when price floor module is enabled for banner in bidRequest', function () {
+      it('does not set any bidfloors in ttxRequest if there is no floor', function () {
         bidRequests[0].getFloor = () => ({});
 
         const ttxRequest = new TtxRequestBuilder()
@@ -1481,12 +1481,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('sets bidfloors in ttxRequest if there is a floor', function() {
+      it('sets bidfloors in ttxRequest if there is a floor', function () {
         bidRequests[0].getFloor = ({size, currency, mediaType}) => {
           const floor = (size[0] === 300 && size[1] === 250) ? 1.0 : 0.10
           return (
@@ -1500,21 +1500,21 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
-          .withFormatFloors('banner', [ 1.0, 0.10 ])
+          .withFormatFloors('banner', [1.0, 0.10])
           .build();
 
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when mediaType has video only', function() {
-      context('and context is instream', function() {
-        it('builds instream request with default params', function() {
+    context('when mediaType has video only', function () {
+      context('and context is instream', function () {
+        it('builds instream request with default params', function () {
           const bidRequests = (
             new BidRequestsBuilder()
               .withVideo({context: 'instream'})
@@ -1531,12 +1531,12 @@ describe('33acrossBidAdapter:', function () {
           const serverRequest = new ServerRequestBuilder()
             .withData(ttxRequest)
             .build();
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
 
-        it('builds instream request with params passed', function() {
+        it('builds instream request with params passed', function () {
           const bidRequests = (
             new BidRequestsBuilder()
               .withVideo({context: 'instream', startdelay: -2})
@@ -1548,13 +1548,13 @@ describe('33acrossBidAdapter:', function () {
             .withProduct('instream')
             .build();
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
         });
 
-        context('when the placement is still specified in the DEPRECATED `placement` field', function() {
-          it('does not overwrite its value and does not set it in the recent `plcmt` field as well', function() {
+        context('when the placement is still specified in the DEPRECATED `placement` field', function () {
+          it('does not overwrite its value and does not set it in the recent `plcmt` field as well', function () {
             const bidRequests = (
               new BidRequestsBuilder()
                 .withVideo({
@@ -1575,15 +1575,15 @@ describe('33acrossBidAdapter:', function () {
             const serverRequest = new ServerRequestBuilder()
               .withData(ttxRequest)
               .build();
-            const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+            const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
             expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
           });
         });
       });
 
-      context('and context is outstream', function() {
-        it('builds siab request with video only with default params', function() {
+      context('and context is outstream', function () {
+        it('builds siab request with video only with default params', function () {
           const bidRequests = (
             new BidRequestsBuilder()
               .withVideo({context: 'outstream'})
@@ -1601,12 +1601,12 @@ describe('33acrossBidAdapter:', function () {
           const serverRequest = new ServerRequestBuilder()
             .withData(ttxRequest)
             .build();
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
 
-        it('builds siab request with video params passed', function() {
+        it('builds siab request with video params passed', function () {
           const bidRequests = (
             new BidRequestsBuilder()
               .withVideo({context: 'outstream', plcmt: 3, playbackmethod: [2]})
@@ -1621,13 +1621,13 @@ describe('33acrossBidAdapter:', function () {
           const serverRequest = new ServerRequestBuilder()
             .withData(ttxRequest)
             .build();
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           validateBuiltServerRequest(builtServerRequest, serverRequest);
         });
 
-        context('and the placement is specified in the DEPRECATED `placement` field', function() {
-          it('sets the recent `plcmt` field', function() {
+        context('and the placement is specified in the DEPRECATED `placement` field', function () {
+          it('sets the recent `plcmt` field', function () {
             const bidRequests = (
               new BidRequestsBuilder()
                 .withVideo({context: 'outstream', placement: 3, playbackmethod: [2]})
@@ -1642,7 +1642,7 @@ describe('33acrossBidAdapter:', function () {
             const serverRequest = new ServerRequestBuilder()
               .withData(ttxRequest)
               .build();
-            const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+            const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
             validateBuiltServerRequest(builtServerRequest, serverRequest);
           });
@@ -1650,8 +1650,8 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when mediaType has banner only', function() {
-      it('builds default siab request', function() {
+    context('when mediaType has banner only', function () {
+      it('builds default siab request', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withBanner()
@@ -1666,12 +1666,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('builds default inview request when product is set as such', function() {
+      it('builds default inview request when product is set as such', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withBanner()
@@ -1687,14 +1687,14 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when mediaType has banner and video', function() {
-      it('builds siab request with banner and outstream video', function() {
+    context('when mediaType has banner and video', function () {
+      it('builds siab request with banner and outstream video', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withBanner()
@@ -1711,12 +1711,12 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
 
-      it('builds siab request with banner and outstream video even when context is instream', function() {
+      it('builds siab request with banner and outstream video even when context is instream', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withBanner()
@@ -1735,14 +1735,14 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
-    context('when price floor module is enabled for video in bidRequest', function() {
-      it('does not set any bidfloors in video if there is no floor', function() {
+    context('when price floor module is enabled for video in bidRequest', function () {
+      it('does not set any bidfloors in video if there is no floor', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withVideo({context: 'outstream'})
@@ -1756,12 +1756,12 @@ describe('33acrossBidAdapter:', function () {
           .withProduct()
           .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
       });
 
-      it('sets bidfloors in video if there is a floor', function() {
+      it('sets bidfloors in video if there is a floor', function () {
         const bidRequests = (
           new BidRequestsBuilder()
             .withVideo({context: 'outstream'})
@@ -1781,17 +1781,17 @@ describe('33acrossBidAdapter:', function () {
         const ttxRequest = new TtxRequestBuilder()
           .withVideo()
           .withProduct()
-          .withFloors('video', [ 1.0 ])
+          .withFloors('video', [1.0])
           .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
       });
     });
 
-    context('when user ID data exists as userIdAsEids Array in bidRequest', function() {
-      it('passes userIds in eids field in ORTB request', function() {
+    context('when user ID data exists as userIdAsEids Array in bidRequest', function () {
+      it('passes userIds in eids field in ORTB request', function () {
         const eids = [
           {
             'source': 'x-device-vendor-x.com',
@@ -1826,12 +1826,12 @@ describe('33acrossBidAdapter:', function () {
           .withProduct()
           .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
       });
 
-      it('does not validate eids ORTB', function() {
+      it('does not validate eids ORTB', function () {
         const eids = [1, 2, 3];
 
         const bidRequests = (
@@ -1845,14 +1845,14 @@ describe('33acrossBidAdapter:', function () {
           .withProduct()
           .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+        const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
         expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
       });
     });
 
-    context('when user IDs do not exist under the userIdAsEids field in bidRequest as a non-empty Array', function() {
-      it('does not pass user IDs in the bidRequest ORTB', function() {
+    context('when user IDs do not exist under the userIdAsEids field in bidRequest as a non-empty Array', function () {
+      it('does not pass user IDs in the bidRequest ORTB', function () {
         const eidsScenarios = [
           'foo',
           [],
@@ -1892,15 +1892,15 @@ describe('33acrossBidAdapter:', function () {
             .withProduct()
             .build();
 
-          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [builtServerRequest] = spec.buildRequests(bidRequests, bidderRequest);
 
           expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
         });
       });
     });
 
-    context('when SRA mode is enabled', function() {
-      it('builds a single request with multiple imps corresponding to each group {siteId, productId}', function() {
+    context('when SRA mode is enabled', function () {
+      it('builds a single request with multiple imps corresponding to each group {siteId, productId}', function () {
         sandbox.stub(config, 'getConfig')
           .withArgs('ttxSettings')
           .returns({
@@ -1972,8 +1972,8 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when SRA mode is not enabled', function() {
-      it('builds multiple requests, one corresponding to each Ad Unit', function() {
+    context('when SRA mode is not enabled', function () {
+      it('builds multiple requests, one corresponding to each Ad Unit', function () {
         const bidRequests = new BidRequestsBuilder()
           .addBid()
           .addBid({
@@ -2035,11 +2035,11 @@ describe('33acrossBidAdapter:', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     let ttxRequest, serverRequest;
     const videoBid = '<VAST version="3.0"><Ad></Ad></VAST>';
 
-    beforeEach(function() {
+    beforeEach(function () {
       ttxRequest = new TtxRequestBuilder()
         .withBanner()
         .withProduct()
@@ -2059,8 +2059,8 @@ describe('33acrossBidAdapter:', function () {
         .build();
     });
 
-    context('when exactly one bid is returned', function() {
-      it('interprets and returns the single banner bid response', function() {
+    context('when exactly one bid is returned', function () {
+      it('interprets and returns the single banner bid response', function () {
         const serverResponse = {
           cur: 'USD',
           ext: {},
@@ -2099,7 +2099,7 @@ describe('33acrossBidAdapter:', function () {
         expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
       });
 
-      it('interprets and returns the single video bid response', function() {
+      it('interprets and returns the single video bid response', function () {
         const serverResponse = {
           cur: 'USD',
           ext: {},
@@ -2145,8 +2145,8 @@ describe('33acrossBidAdapter:', function () {
         expect(spec.interpretResponse({ body: serverResponse }, serverRequest)).to.deep.equal([bidResponse]);
       });
 
-      context('when the list of advertiser domains for block list checking is empty', function() {
-        it('doesn\'t include the empty list in the interpreted response', function() {
+      context('when the list of advertiser domains for block list checking is empty', function () {
+        it('doesn\'t include the empty list in the interpreted response', function () {
           const serverResponse = {
             cur: 'USD',
             ext: {},
@@ -2186,8 +2186,8 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when no bids are returned', function() {
-      it('interprets and returns empty array', function() {
+    context('when no bids are returned', function () {
+      it('interprets and returns empty array', function () {
         const serverResponse = {
           cur: 'USD',
           ext: {},
@@ -2199,8 +2199,8 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when more than one bids are returned', function() {
-      it('interprets and returns all bids', function() {
+    context('when more than one bids are returned', function () {
+      it('interprets and returns all bids', function () {
         const serverResponse = {
           cur: 'USD',
           ext: {},
@@ -2291,10 +2291,10 @@ describe('33acrossBidAdapter:', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     let syncs;
 
-    beforeEach(function() {
+    beforeEach(function () {
       syncs = [
         {
           type: 'iframe',
@@ -2347,8 +2347,8 @@ describe('33acrossBidAdapter:', function () {
       ];
     });
 
-    context('when iframe is not enabled', function() {
-      it('returns empty sync array', function() {
+    context('when iframe is not enabled', function () {
+      it('returns empty sync array', function () {
         const syncOptions = {};
 
         spec.buildRequests(bidRequests);
@@ -2357,16 +2357,16 @@ describe('33acrossBidAdapter:', function () {
       });
     }, bidderRequest);
 
-    context('when iframe is enabled', function() {
+    context('when iframe is enabled', function () {
       let syncOptions;
-      beforeEach(function() {
+      beforeEach(function () {
         syncOptions = {
           iframeEnabled: true
         };
       });
 
-      context('when there is no gdpr consent data', function() {
-        it('returns sync urls with undefined consent string as param', function() {
+      context('when there is no gdpr consent data', function () {
+        it('returns sync urls with undefined consent string as param', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, undefined);
@@ -2385,8 +2385,8 @@ describe('33acrossBidAdapter:', function () {
         })
       });
 
-      context('when gdpr applies but there is no consent string', function() {
-        it('returns sync urls with undefined consent string as param and gdpr=1', function() {
+      context('when gdpr applies but there is no consent string', function () {
+        it('returns sync urls with undefined consent string as param and gdpr=1', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true});
@@ -2405,8 +2405,8 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      context('when gdpr applies and there is consent string', function() {
-        it('returns sync urls with gdpr_consent=consent string as param and gdpr=1', function() {
+      context('when gdpr applies and there is consent string', function () {
+        it('returns sync urls with gdpr_consent=consent string as param and gdpr=1', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: true, consentString: 'consent123A'});
@@ -2425,8 +2425,8 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      context('when gdpr does not apply and there is no consent string', function() {
-        it('returns sync urls with undefined consent string as param and gdpr=0', function() {
+      context('when gdpr does not apply and there is no consent string', function () {
+        it('returns sync urls with undefined consent string as param and gdpr=0', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false});
@@ -2444,8 +2444,8 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      context('when gdpr is unknown and there is consent string', function() {
-        it('returns sync urls with only consent string as param', function() {
+      context('when gdpr is unknown and there is consent string', function () {
+        it('returns sync urls with only consent string as param', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, {consentString: 'consent123A'});
@@ -2463,8 +2463,8 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      context('when gdpr does not apply and there is consent string (yikes!)', function() {
-        it('returns sync urls with consent string as param and gdpr=0', function() {
+      context('when gdpr does not apply and there is consent string (yikes!)', function () {
+        it('returns sync urls with consent string as param and gdpr=0', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, {gdprApplies: false, consentString: 'consent123A'});
@@ -2482,8 +2482,8 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      context('when there is no usPrivacy data', function() {
-        it('returns sync urls with undefined consent string as param', function() {
+      context('when there is no usPrivacy data', function () {
+        it('returns sync urls with undefined consent string as param', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {});
@@ -2502,8 +2502,8 @@ describe('33acrossBidAdapter:', function () {
         })
       });
 
-      context('when there is usPrivacy data', function() {
-        it('returns sync urls with consent string as param', function() {
+      context('when there is usPrivacy data', function () {
+        it('returns sync urls with consent string as param', function () {
           spec.buildRequests(bidRequests, bidderRequest);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, {}, 'foo');
@@ -2522,8 +2522,8 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      context('when there is no GPP data', function() {
-        it('returns sync urls with empty GPP params', function() {
+      context('when there is no GPP data', function () {
+        it('returns sync urls with empty GPP params', function () {
           spec.buildRequests(bidRequests);
 
           const syncResults = spec.getUserSyncs(syncOptions, {});
@@ -2542,8 +2542,8 @@ describe('33acrossBidAdapter:', function () {
         })
       });
 
-      context('when there is GPP data', function() {
-        it('returns sync urls with GPP consent string & GPP Section ID as params', function() {
+      context('when there is GPP data', function () {
+        it('returns sync urls with GPP consent string & GPP Section ID as params', function () {
           spec.buildRequests(bidRequests);
 
           const syncResults = spec.getUserSyncs(syncOptions, {}, {}, undefined, {
@@ -2565,8 +2565,8 @@ describe('33acrossBidAdapter:', function () {
         });
       });
 
-      context('when user sync is invoked without a bid request phase', function() {
-        it('results in an empty syncs array', function() {
+      context('when user sync is invoked without a bid request phase', function () {
+        it('results in an empty syncs array', function () {
           const syncResults = spec.getUserSyncs(syncOptions, {}, {}, 'foo');
 
           expect(syncResults).to.deep.equal([]);

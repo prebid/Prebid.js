@@ -136,7 +136,7 @@ describe('BeachfrontAdapter', function () {
       it('should create a POST request for each bid', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         expect(requests[0].method).to.equal('POST');
         expect(requests[0].url).to.equal(VIDEO_ENDPOINT + bidRequest.params.appId);
       });
@@ -148,7 +148,7 @@ describe('BeachfrontAdapter', function () {
         bidRequest.params.tagid = '7cd7a7b4-ef3f-4aeb-9565-3627f255fa10';
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [ width, height ]
+            playerSize: [width, height]
           }
         };
         const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
@@ -157,7 +157,7 @@ describe('BeachfrontAdapter', function () {
             page: topLocation.href
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.isPrebid).to.equal(true);
         expect(data.appId).to.equal(bidRequest.params.appId);
@@ -175,7 +175,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
         bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].bidfloor).to.equal(1.16);
       });
@@ -184,7 +184,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
         bidRequest.getFloor = () => ({});
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       });
@@ -195,10 +195,10 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [[ width, height ]]
+            playerSize: [[width, height]]
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ w: width, h: height });
       });
@@ -212,7 +212,7 @@ describe('BeachfrontAdapter', function () {
             playerSize: `${width}x${height}`
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ w: width, h: height });
       });
@@ -224,7 +224,7 @@ describe('BeachfrontAdapter', function () {
             playerSize: []
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ w: undefined, h: undefined });
       });
@@ -233,9 +233,9 @@ describe('BeachfrontAdapter', function () {
         const width = 640;
         const height = 480;
         const bidRequest = bidRequests[0];
-        bidRequest.sizes = [ width, height ];
+        bidRequest.sizes = [width, height];
         bidRequest.mediaTypes = { video: {} };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ w: width, h: height });
       });
@@ -250,7 +250,7 @@ describe('BeachfrontAdapter', function () {
         bidRequest.mediaTypes = {
           video: { mimes, playbackmethod, maxduration, plcmt, skip }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, plcmt, skip });
       });
@@ -264,7 +264,7 @@ describe('BeachfrontAdapter', function () {
         const skip = 1;
         bidRequest.mediaTypes = { video: { plcmt: 3, skip: 0 } };
         bidRequest.params.video = { mimes, playbackmethod, maxduration, plcmt, skip };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, plcmt, skip });
       });
@@ -274,7 +274,7 @@ describe('BeachfrontAdapter', function () {
         bidRequest.mediaTypes = { video: {} };
         const uspConsent = '2112YYZ';
         const bidderRequest = { uspConsent };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.regs.ext.us_privacy).to.equal(uspConsent);
       });
@@ -289,7 +289,7 @@ describe('BeachfrontAdapter', function () {
             consentString
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.regs.ext.gdpr).to.equal(1);
         expect(data.user.ext.consent).to.equal(consentString);
@@ -306,7 +306,7 @@ describe('BeachfrontAdapter', function () {
             applicableSections
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.regs.gpp).to.equal(gppString);
         expect(data.regs.gpp_sid).to.deep.equal(applicableSections);
@@ -328,7 +328,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
         bidRequest.schain = schain;
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.source.ext.schain).to.deep.equal(schain);
       });
@@ -343,7 +343,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { video: {} };
         bidRequest.userId = userId;
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.user.ext.eids).to.deep.equal([
           {
@@ -408,7 +408,7 @@ describe('BeachfrontAdapter', function () {
         bidRequest.params.tagid = '7cd7a7b4-ef3f-4aeb-9565-3627f255fa10';
         bidRequest.mediaTypes = {
           banner: {
-            sizes: [ width, height ]
+            sizes: [width, height]
           }
         };
         const topLocation = parseUrl('http://www.example.com?foo=bar', { decodeSearchAsString: true });
@@ -417,7 +417,7 @@ describe('BeachfrontAdapter', function () {
             page: topLocation.href
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.slots).to.deep.equal([
           {
@@ -438,7 +438,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
         bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.slots[0].bidfloor).to.equal(1.16);
       });
@@ -447,7 +447,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
         bidRequest.getFloor = () => ({});
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.slots[0].bidfloor).to.equal(bidRequest.params.bidfloor);
       });
@@ -458,10 +458,10 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           banner: {
-            sizes: [[ width, height ]]
+            sizes: [[width, height]]
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.equal([
           { w: width, h: height }
@@ -477,7 +477,7 @@ describe('BeachfrontAdapter', function () {
             sizes: `${width}x${height}`
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.equal([
           { w: width, h: height }
@@ -491,7 +491,7 @@ describe('BeachfrontAdapter', function () {
             sizes: []
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.equal([]);
       });
@@ -500,9 +500,9 @@ describe('BeachfrontAdapter', function () {
         const width = 300;
         const height = 250;
         const bidRequest = bidRequests[0];
-        bidRequest.sizes = [ width, height ];
+        bidRequest.sizes = [width, height];
         bidRequest.mediaTypes = { banner: {} };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.slots[0].sizes).to.deep.contain({ w: width, h: height });
       });
@@ -512,7 +512,7 @@ describe('BeachfrontAdapter', function () {
         bidRequest.mediaTypes = { banner: {} };
         const uspConsent = '2112YYZ';
         const bidderRequest = { uspConsent };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.usPrivacy).to.equal(uspConsent);
       });
@@ -527,7 +527,7 @@ describe('BeachfrontAdapter', function () {
             consentString
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.gdpr).to.equal(1);
         expect(data.gdprConsent).to.equal(consentString);
@@ -544,7 +544,7 @@ describe('BeachfrontAdapter', function () {
             applicableSections
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.gpp).to.equal(gppString);
         expect(data.gppSid).to.deep.equal(applicableSections);
@@ -566,7 +566,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
         bidRequest.schain = schain;
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.schain).to.deep.equal(schain);
       });
@@ -581,7 +581,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
         bidRequest.userId = userId;
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         const data = requests[0].data;
         expect(data.tdid).to.equal(userId.tdid);
         expect(data.idl).to.equal(userId.idl_env);
@@ -609,7 +609,7 @@ describe('BeachfrontAdapter', function () {
           },
           ortb2
         };
-        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const requests = spec.buildRequests([bidRequest], bidderRequest);
         const data = requests[0].data;
         expect(data.user.data).to.equal('some user data');
         expect(data.site.keywords).to.equal('test keyword');
@@ -628,7 +628,7 @@ describe('BeachfrontAdapter', function () {
         };
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = { banner: {} };
-        const requests = spec.buildRequests([ bidRequest ], {ortb2});
+        const requests = spec.buildRequests([bidRequest], {ortb2});
         const data = requests[0].data;
         expect(data.ortb2.user.data).to.equal('some user data');
         expect(data.ortb2.site.keywords).to.equal('test keyword');
@@ -642,10 +642,10 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [ width, height ]
+            playerSize: [width, height]
           },
           banner: {
-            sizes: [ width, height ]
+            sizes: [width, height]
           }
         };
         bidRequest.params = {
@@ -658,7 +658,7 @@ describe('BeachfrontAdapter', function () {
             appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         expect(requests.length).to.equal(2);
         expect(requests[0].url).to.contain(VIDEO_ENDPOINT);
         expect(requests[1].url).to.contain(BANNER_ENDPOINT);
@@ -668,10 +668,10 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [ 640, 360 ]
+            playerSize: [640, 360]
           },
           banner: {
-            sizes: [ 300, 250 ]
+            sizes: [300, 250]
           }
         };
         bidRequest.params = {
@@ -684,7 +684,7 @@ describe('BeachfrontAdapter', function () {
             appId: '3b16770b-17af-4d22-daff-9606bdf2c9c3'
           }
         };
-        const requests = spec.buildRequests([ bidRequest ], {});
+        const requests = spec.buildRequests([bidRequest], {});
         expect(requests[0].data.imp[0].video).to.deep.contain({ w: 640, h: 360 });
         expect(requests[1].data.slots[0].sizes).to.deep.equal([{ w: 300, h: 250 }]);
       });
@@ -716,7 +716,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [ width, height ]
+            playerSize: [width, height]
           }
         };
         const serverResponse = {
@@ -749,7 +749,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [ width, height ]
+            playerSize: [width, height]
           }
         };
         bidRequest.params.video = { responseType: 'nurl' };
@@ -770,7 +770,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [ width, height ]
+            playerSize: [width, height]
           }
         };
         bidRequest.params.video = { responseType: 'adm' };
@@ -811,7 +811,7 @@ describe('BeachfrontAdapter', function () {
         const bidRequest = bidRequests[0];
         bidRequest.mediaTypes = {
           video: {
-            playerSize: [ width, height ]
+            playerSize: [width, height]
           }
         };
         const serverResponse = {
@@ -849,12 +849,12 @@ describe('BeachfrontAdapter', function () {
       it('should return valid banner bid responses', function () {
         bidRequests[0].mediaTypes = {
           banner: {
-            sizes: [[ 300, 250 ], [ 728, 90 ]]
+            sizes: [[300, 250], [728, 90]]
           }
         };
         bidRequests[1].mediaTypes = {
           banner: {
-            sizes: [[ 300, 600 ], [ 200, 200 ]]
+            sizes: [[300, 600], [200, 200]]
           }
         };
         const serverResponse = [{
@@ -895,7 +895,7 @@ describe('BeachfrontAdapter', function () {
       it('should return meta data for the bid response', () => {
         bidRequests[0].mediaTypes = {
           banner: {
-            sizes: [[ 300, 250 ], [ 728, 90 ]]
+            sizes: [[300, 250], [728, 90]]
           }
         };
         const serverResponse = [{

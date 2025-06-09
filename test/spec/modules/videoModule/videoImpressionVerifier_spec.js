@@ -6,7 +6,7 @@ trackerMock = {
   remove: sinon.spy()
 }
 
-describe('Base Impression Verifier', function() {
+describe('Base Impression Verifier', function () {
   describe('trackBid', function () {
     it('should generate uuid', function () {
       const baseVerifier = baseImpressionVerifier(trackerMock);

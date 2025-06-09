@@ -2,7 +2,7 @@ import {BidRequest} from './spec.js';
 import {logWarn} from '../../src/utils.js';
 import {toOrtb25} from '../ortb2.5Translator/translator.js';
 
-function deleteField(errno, path, obj, field, value) {
+function deleteField (errno, path, obj, field, value) {
   logWarn(`${path} is not valid ORTB 2.5, field will be removed from request:`, value);
   Array.isArray(obj) ? obj.splice(field, 1) : delete obj[field];
 }
@@ -30,7 +30,7 @@ function deleteField(errno, path, obj, field, value) {
  *         - value is `obj[field]`.
  *        The default logs a warning and deletes the offending field.
  */
-export function toOrtb25Strict(ortb2, translator = toOrtb25, onError = deleteField) {
+export function toOrtb25Strict (ortb2, translator = toOrtb25, onError = deleteField) {
   ortb2 = translator(ortb2);
   BidRequest(null, null, null, ortb2, onError);
   return ortb2;

@@ -16,7 +16,7 @@ const MODULE = `${MODULE_NAME}RtdProvider`;
  * @param {Object} userConsent
  * @returns {boolean}
  */
-function init(config, userConsent) {
+function init (config, userConsent) {
   return true;
 }
 
@@ -27,7 +27,7 @@ function init(config, userConsent) {
  * @param {Object} config - Module configuration
  * @param {Object} userConsent - User consent data
  */
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+function getBidRequestData (reqBidsConfigObj, callback, config, userConsent) {
   // Check if window.gamera.getPrebidSegments is available
   if (typeof window.gamera?.getPrebidSegments !== 'function') {
     window.gamera = window.gamera || {};
@@ -48,7 +48,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
  * @param {Object} config - Module configuration
  * @param {Object} userConsent - User consent data
  */
-function enrichAuction(reqBidsConfigObj, callback, config, userConsent) {
+function enrichAuction (reqBidsConfigObj, callback, config, userConsent) {
   try {
     /**
      * @function external:"window.gamera".getPrebidSegments

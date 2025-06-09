@@ -32,7 +32,7 @@ export const pubProvidedIdSubmodule = {
    * @param {string} value
    * @returns {{pubProvidedId: Array}} or undefined if value doesn't exists
    */
-  decode(value) {
+  decode (value) {
     const res = value ? {pubProvidedId: value} : undefined;
     logInfo('PubProvidedId: Decoded value ' + JSON.stringify(res));
     return res;
@@ -44,7 +44,7 @@ export const pubProvidedIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {{id: Array}}
    */
-  getId(config) {
+  getId (config) {
     const configParams = (config && config.params) || {};
     let res = [];
     if (isArray(configParams.eids)) {

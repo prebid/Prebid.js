@@ -85,13 +85,13 @@ export let _floorDataForAuction = {};
 /**
  * @summary Simple function to round up to a certain decimal degree
  */
-function roundUp(number, precision) {
+function roundUp (number, precision) {
   return Math.ceil((parseFloat(number) * Math.pow(10, precision)).toFixed(1)) / Math.pow(10, precision);
 }
 
 const getHostname = (() => {
   let domain;
-  return function() {
+  return function () {
     if (domain == null) {
       domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeURL: true}).hostname;
     }
@@ -100,13 +100,13 @@ const getHostname = (() => {
 })();
 
 // First look into bidRequest!
-function getGptSlotFromAdUnit(adUnitId, {index = auctionManager.index} = {}) {
+function getGptSlotFromAdUnit (adUnitId, {index = auctionManager.index} = {}) {
   const adUnit = index.getAdUnit({adUnitId});
   const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
   return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
 }
 
-function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
+function getAdUnitCode (request, response, {index = auctionManager.index} = {}) {
   return request?.adUnitCode || index.getAdUnit(response).code;
 }
 
@@ -127,7 +127,7 @@ export let fieldMatchingFunctions = {
  * a "*" catch-all match
  * Returns array of Tuple [exact match, catch all] for each field in rules file
  */
-function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
+function enumeratePossibleFieldValues (floorFields, bidObject, responseObject) {
   if (!floorFields.length) return [];
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
@@ -142,7 +142,7 @@ function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
  * @summary get's the first matching floor based on context provided.
  * Generates all possible rule matches and picks the first matching one.
  */
-export function getFirstMatchingFloor(floorData, bidObject, responseObject = {}) {
+export function getFirstMatchingFloor (floorData, bidObject, responseObject = {}) {
   let fieldValues = enumeratePossibleFieldValues(deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
   if (!fieldValues.length) {
     return {matchingFloor: undefined}
@@ -180,7 +180,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
  * The generated list is of all possible key matches based on fields input
  * The list is sorted by least amount of * in rule to most with left most fields taking precedence
  */
-function generatePossibleEnumerations(arrayOfFields, delimiter) {
+function generatePossibleEnumerations (arrayOfFields, delimiter) {
   return arrayOfFields.reduce((accum, currentVal) => {
     let ret = [];
     accum.map(obj => {
@@ -195,7 +195,7 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(inputCpm, bid, bidRequest) {
+export function getBiddersCpmAdjustment (inputCpm, bid, bidRequest) {
   return parseFloat(adjustCpm(inputCpm, {...bid, cpm: inputCpm}, bidRequest));
 }
 
@@ -203,7 +203,7 @@ export function getBiddersCpmAdjustment(inputCpm, bid, bidRequest) {
  * @summary This function takes the original floor and the adjusted floor in order to determine the bidders actual floor
  * With js rounding errors with decimal division we utilize similar method as shown in cpmBucketManager.js
  */
-export function calculateAdjustedFloor(oldFloor, newFloor) {
+export function calculateAdjustedFloor (oldFloor, newFloor) {
   const pow = Math.pow(10, 10);
   return ((oldFloor * pow) / (newFloor * pow) * (oldFloor * pow)) / pow;
 }
@@ -221,7 +221,7 @@ const getMediaTypesSizes = {
  * @summary for getFloor only, before selecting a rule, if a bidAdapter asks for * in their getFloor params
  * Then we may be able to get a better rule than the * ones depending on context of the adUnit
  */
-function updateRequestParamsFromContext(bidRequest, requestParams) {
+function updateRequestParamsFromContext (bidRequest, requestParams) {
   // if adapter asks for *'s then we can do some logic to infer if we can get a more specific rule based on context of bid
   let mediaTypesOnBid = Object.keys(bidRequest.mediaTypes || {});
   // if there is only one mediaType then we can just use it
@@ -239,7 +239,7 @@ function updateRequestParamsFromContext(bidRequest, requestParams) {
  * @summary This is the function which will return a single floor based on the input requests
  * and matching it to a rule for the current auction
  */
-export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
+export function getFloor (requestParams = {currency: 'USD', mediaType: '*', size: '*'}) {
   let bidRequest = this;
   let floorData = _floorDataForAuction[bidRequest.auctionId];
   if (!floorData || floorData.skipped) return {};
@@ -289,7 +289,7 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
 /**
  * @summary Takes a floorsData object and converts it into a hash map with appropriate keys
  */
-export function getFloorsDataForAuction(floorData, adUnitCode) {
+export function getFloorsDataForAuction (floorData, adUnitCode) {
   let auctionFloorData = deepClone(floorData);
   auctionFloorData.schema.delimiter = floorData.schema.delimiter || '|';
   auctionFloorData.values = normalizeRulesForAuction(auctionFloorData, adUnitCode);
@@ -301,7 +301,7 @@ export function getFloorsDataForAuction(floorData, adUnitCode) {
 /**
  * @summary if adUnitCode needs to be added to the offset then it will add it else just return the values
  */
-function normalizeRulesForAuction(floorData, adUnitCode) {
+function normalizeRulesForAuction (floorData, adUnitCode) {
   let fields = floorData.schema.fields;
   let delimiter = floorData.schema.delimiter
 
@@ -319,7 +319,7 @@ function normalizeRulesForAuction(floorData, adUnitCode) {
  * @summary This function will take the adUnits and generate a floor data object to be used during the auction
  * Only called if no set config or fetch level data has returned
  */
-export function getFloorDataFromAdUnits(adUnits) {
+export function getFloorDataFromAdUnits (adUnits) {
   const schemaAu = adUnits.find(au => au.floors?.schema != null);
   return adUnits.reduce((accum, adUnit) => {
     if (adUnit.floors?.schema != null && !deepEqual(adUnit.floors.schema, schemaAu?.floors?.schema)) {
@@ -344,7 +344,7 @@ export function getFloorDataFromAdUnits(adUnits) {
   }, {});
 }
 
-function getNoFloorSignalBidersArray(floorData) {
+function getNoFloorSignalBidersArray (floorData) {
   const { data, enforcement } = floorData
   // The data.noFloorSignalBidders higher priority then the enforcment
   if (data?.noFloorSignalBidders?.length > 0) {
@@ -358,7 +358,7 @@ function getNoFloorSignalBidersArray(floorData) {
 /**
  * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
  */
-export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
+export function updateAdUnitsForAuction (adUnits, floorData, auctionId) {
   const noFloorSignalBiddersArray = getNoFloorSignalBidersArray(floorData)
 
   adUnits.forEach((adUnit) => {
@@ -390,7 +390,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
   });
 }
 
-export function pickRandomModel(modelGroups, weightSum) {
+export function pickRandomModel (modelGroups, weightSum) {
   // we loop through the models subtracting the current model weight from our random number
   // once we are at or below zero, we return the associated model
   let random = Math.floor(Math.random() * weightSum + 1)
@@ -405,7 +405,7 @@ export function pickRandomModel(modelGroups, weightSum) {
 /**
  * @summary Updates the adUnits accordingly and returns the necessary floorsData for the current auction
  */
-export function createFloorsDataForAuction(adUnits, auctionId) {
+export function createFloorsDataForAuction (adUnits, auctionId) {
   let resolvedFloorsData = deepClone(_floorsConfig);
   // if using schema 2 pick a model here:
   if (deepAccess(resolvedFloorsData, 'data.floorsSchemaVersion') === 2) {
@@ -442,7 +442,7 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
 /**
  * @summary This is the function which will be called to exit our module and continue the auction.
  */
-export function continueAuction(hookConfig) {
+export function continueAuction (hookConfig) {
   if (!hookConfig.hasExited) {
     // We need to know the auctionId at this time. So we will use the passed in one or generate and set it ourselves
     hookConfig.reqBidsConfigObj.auctionId = hookConfig.reqBidsConfigObj.auctionId || generateUUID();
@@ -453,7 +453,7 @@ export function continueAuction(hookConfig) {
   }
 }
 
-function validateSchemaFields(fields) {
+function validateSchemaFields (fields) {
   if (Array.isArray(fields) && fields.length > 0) {
     if (fields.every(field => allowedFields.includes(field))) {
       return true;
@@ -464,14 +464,14 @@ function validateSchemaFields(fields) {
   return false;
 }
 
-function isValidRule(key, floor, numFields, delimiter) {
+function isValidRule (key, floor, numFields, delimiter) {
   if (typeof key !== 'string' || key.split(delimiter).length !== numFields) {
     return false;
   }
   return typeof floor === 'number' || floor === null;
 }
 
-function validateRules(floorsData, numFields, delimiter) {
+function validateRules (floorsData, numFields, delimiter) {
   if (typeof floorsData.values !== 'object') {
     return false;
   }
@@ -486,7 +486,7 @@ function validateRules(floorsData, numFields, delimiter) {
   return Object.keys(floorsData.values).length > 0;
 }
 
-export function normalizeDefault(model) {
+export function normalizeDefault (model) {
   if (isNumber(model.default)) {
     let defaultRule = '*';
     const numFields = (model.schema?.fields || []).length;
@@ -504,7 +504,7 @@ export function normalizeDefault(model) {
   return model;
 }
 
-function modelIsValid(model) {
+function modelIsValid (model) {
   model = normalizeDefault(model);
   // schema.fields has only allowed attributes
   if (!validateSchemaFields(deepAccess(model, 'schema.fields'))) {
@@ -541,7 +541,7 @@ const floorsSchemaValidation = {
  * And each 'key' should have the correct number of 'fields' after splitting
  * on the delim. If rule does not match remove it. return if still at least 1 rule
  */
-export function isFloorsDataValid(floorsData) {
+export function isFloorsDataValid (floorsData) {
   if (typeof floorsData !== 'object') {
     return false;
   }
@@ -556,7 +556,7 @@ export function isFloorsDataValid(floorsData) {
 /**
  * @summary This function updates the global Floors Data field based on the new one passed in if it is valid
  */
-export function parseFloorData(floorsData, location) {
+export function parseFloorData (floorsData, location) {
   if (floorsData && typeof floorsData === 'object' && isFloorsDataValid(floorsData)) {
     logInfo(`${MODULE_NAME}: A ${location} set the auction floor data set to `, floorsData);
     return {
@@ -572,7 +572,7 @@ export function parseFloorData(floorsData, location) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('priceFloors', function requestBidsHook (fn, reqBidsConfigObj) {
   // preserves all module related variables for the current auction instance (used primiarily for concurrent auctions)
   const hookConfig = {
     reqBidsConfigObj,
@@ -598,7 +598,7 @@ export const requestBidsHook = timedAuctionHook('priceFloors', function requestB
  * This function handles the ajax response which comes from the user set URL to fetch floors data from
  * @param {object} fetchResponse The floors data response which came back from the url configured in config.floors
  */
-export function handleFetchResponse(fetchResponse) {
+export function handleFetchResponse (fetchResponse) {
   fetching = false;
   _floorsConfig.fetchStatus = 'success';
   let floorResponse;
@@ -621,7 +621,7 @@ export function handleFetchResponse(fetchResponse) {
   _delayedAuctions.resume();
 }
 
-function handleFetchError(status) {
+function handleFetchError (status) {
   fetching = false;
   _floorsConfig.fetchStatus = 'error';
   logError(`${MODULE_NAME}: Fetch errored with: `, status);
@@ -634,7 +634,7 @@ function handleFetchError(status) {
  * This function handles sending and receiving the AJAX call for a floors fetch
  * @param {object} floorEndpoint the floors config coming from setConfig
  */
-export function generateAndHandleFetch(floorEndpoint) {
+export function generateAndHandleFetch (floorEndpoint) {
   // if a fetch url is defined and one is not already occurring, fire it!
   if (floorEndpoint.url && !fetching) {
     // default to GET and we only support GET for now
@@ -653,7 +653,7 @@ export function generateAndHandleFetch(floorEndpoint) {
 /**
  * @summary Updates our allowedFields and fieldMatchingFunctions with the publisher defined new ones
  */
-function addFieldOverrides(overrides) {
+function addFieldOverrides (overrides) {
   Object.keys(overrides).forEach(override => {
     // we only add it if it is not already in the allowed fields and if the passed in value is a function
     if (allowedFields.indexOf(override) === -1 && typeof overrides[override] === 'function') {
@@ -666,7 +666,7 @@ function addFieldOverrides(overrides) {
 /**
  * @summary This is the function which controls what happens during a pbjs.setConfig({...floors: {}}) is called
  */
-export function handleSetFloorsConfig(config) {
+export function handleSetFloorsConfig (config) {
   _floorsConfig = pick(config, [
     'floorMin',
     'enabled', enabled => enabled !== false, // defaults to true
@@ -721,7 +721,7 @@ export function handleSetFloorsConfig(config) {
  * @summary Analytics adapters especially need context of what the floors module is doing in order
  * to best create informed models. This function attaches necessary information to the bidResponse object for processing
  */
-function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
+function addFloorDataToBid (floorData, floorInfo, bid, adjustedCpm) {
   bid.floorData = {
     floorValue: floorInfo.matchingFloor,
     floorRule: floorInfo.matchingRule,
@@ -740,7 +740,7 @@ function addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm) {
 /**
  * @summary takes the enforcement flags and the bid itself and determines if it should be floored
  */
-function shouldFloorBid(floorData, floorInfo, bid) {
+function shouldFloorBid (floorData, floorInfo, bid) {
   let enforceJS = deepAccess(floorData, 'enforcement.enforceJS') !== false;
   let shouldFloorDeal = deepAccess(floorData, 'enforcement.floorDeals') === true || !bid.dealId;
   let bidBelowFloor = bid.floorData.cpmAfterAdjustments < floorInfo.matchingFloor;
@@ -751,7 +751,7 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  * @summary The main driving force of floors. On bidResponse we hook in and intercept bidResponses.
  * And if the rule we find determines a bid should be floored we will do so.
  */
-export const addBidResponseHook = timedBidResponseHook('priceFloors', function addBidResponseHook(fn, adUnitCode, bid, reject) {
+export const addBidResponseHook = timedBidResponseHook('priceFloors', function addBidResponseHook (fn, adUnitCode, bid, reject) {
   let floorData = _floorDataForAuction[bid.auctionId];
   // if no floor data then bail
   if (!floorData || !bid || floorData.skipped) {
@@ -803,7 +803,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
 
-function tryGetFloor(bidRequest, {currency = config.getConfig('currency.adServerCurrency') || 'USD', mediaType = '*', size = '*'}, fn) {
+function tryGetFloor (bidRequest, {currency = config.getConfig('currency.adServerCurrency') || 'USD', mediaType = '*', size = '*'}, fn) {
   if (typeof bidRequest.getFloor === 'function') {
     let floor;
     try {
@@ -826,7 +826,7 @@ function tryGetFloor(bidRequest, {currency = config.getConfig('currency.adServer
 /**
  * Sets bidfloor and bidfloorcur for ORTB imp objects
  */
-export function setOrtbImpBidFloor(imp, bidRequest, context) {
+export function setOrtbImpBidFloor (imp, bidRequest, context) {
   tryGetFloor(bidRequest, {
     currency: context.currency,
     mediaType: context.mediaType || '*',
@@ -842,8 +842,8 @@ export function setOrtbImpBidFloor(imp, bidRequest, context) {
 /**
  * Set per-mediatype and per-format bidfloor
  */
-export function setGranularBidfloors(imp, bidRequest, context) {
-  function setIfDifferent(bidfloor, bidfloorcur) {
+export function setGranularBidfloors (imp, bidRequest, context) {
+  function setIfDifferent (bidfloor, bidfloorcur) {
     if (bidfloor !== imp.bidfloor || bidfloorcur !== imp.bidfloorcur) {
       deepSetValue(this, 'ext.bidfloor', bidfloor);
       deepSetValue(this, 'ext.bidfloorcur', bidfloorcur);
@@ -869,7 +869,7 @@ export function setGranularBidfloors(imp, bidRequest, context) {
     })
 }
 
-export function setImpExtPrebidFloors(imp, bidRequest, context) {
+export function setImpExtPrebidFloors (imp, bidRequest, context) {
   // logic below relates to https://github.com/prebid/Prebid.js/issues/8749 and does the following:
   // 1. check client-side floors (ref bidfloor/bidfloorcur & ortb2Imp floorMin/floorMinCur (if present))
   // 2. set pbs req wide floorMinCur to the first floor currency found when iterating over imp's
@@ -899,7 +899,7 @@ export function setImpExtPrebidFloors(imp, bidRequest, context) {
 /**
  * PBS specific extension: set ext.prebid.floors.enabled = false if floors are processed client-side
  */
-export function setOrtbExtPrebidFloors(ortbRequest, bidderRequest, context) {
+export function setOrtbExtPrebidFloors (ortbRequest, bidderRequest, context) {
   if (addedFloorsHook) {
     deepSetValue(ortbRequest, 'ext.prebid.floors.enabled', ortbRequest.ext?.prebid?.floors?.enabled || false);
   }

@@ -67,7 +67,7 @@ const converter = ortbConverter({
     currency: 'USD'
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     // tagid
     imp.tagid = bidRequest.params.ct.toString();
@@ -94,7 +94,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     // publisher id
     const siteOrApp = request.site || request.app;
@@ -109,7 +109,7 @@ const converter = ortbConverter({
     return request;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.cur = bidResponse.cur || DEFAULT_CURRENCY;
     return bidResponse;
@@ -119,7 +119,7 @@ const converter = ortbConverter({
 /**
  * Unknown params are captured and sent on ext
  */
-function slotUnknownParams(slot) {
+function slotUnknownParams (slot) {
   const ext = {};
   const knownParamsMap = {};
   KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);

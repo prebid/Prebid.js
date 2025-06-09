@@ -9,7 +9,7 @@ import {EVENTS} from 'src/constants.js'
 
 const events = require('src/events');
 
-describe('Conversant analytics adapter tests', function() {
+describe('Conversant analytics adapter tests', function () {
   let sandbox; // sinon sandbox to make restoring all stubbed objects easier
   let clock; // clock stub from sinon to mock our cache cleanup interval
   let logInfoStub;
@@ -41,7 +41,7 @@ describe('Conversant analytics adapter tests', function() {
     sandbox.stub(events, 'getEvents').returns([]); // need to stub this otherwise unwanted events seem to get fired during testing
     const getGlobalStub = {
       version: PREBID_VERSION,
-      getUserIds: function() { // userIdTargeting.js init() gets called on AUCTION_END so we need to mock this function.
+      getUserIds: function () { // userIdTargeting.js init() gets called on AUCTION_END so we need to mock this function.
         return {};
       }
     };
@@ -62,15 +62,15 @@ describe('Conversant analytics adapter tests', function() {
     conversantAnalytics.disableAnalytics();
   });
 
-  describe('Initialization Tests', function() {
-    it('should log error if site id is not passed', function() {
+  describe('Initialization Tests', function () {
+    it('should log error if site id is not passed', function () {
       sandbox.stub(utils, 'logError');
       conversantAnalytics.disableAnalytics();
       conversantAnalytics.enableAnalytics();
       expect(utils.logError.calledWith(CNVR_CONSTANTS.LOG_PREFIX + 'siteId is required.')).to.be.true;
     });
 
-    it('should not log error if valid config is passed', function() {
+    it('should not log error if valid config is passed', function () {
       sandbox.stub(utils, 'logError');
 
       conversantAnalytics.enableAnalytics(VALID_CONFIGURATION);
@@ -88,14 +88,14 @@ describe('Conversant analytics adapter tests', function() {
       ).to.be.true;
     });
 
-    it('should sample when sampling set to 1', function() {
+    it('should sample when sampling set to 1', function () {
       sandbox.stub(utils, 'logError');
       conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
       expect(utils.logError.called).to.equal(false);
       expect(cnvrHelper.doSample).to.equal(true);
     });
 
-    it('should NOT sample when sampling set to 0', function() {
+    it('should NOT sample when sampling set to 0', function () {
       sandbox.stub(utils, 'logError');
       const NEVER_SAMPLE_CONFIG = utils.deepClone(VALID_ALWAYS_SAMPLE_CONFIG);
       NEVER_SAMPLE_CONFIG.options.cnvr_sampling = 0;
@@ -106,8 +106,8 @@ describe('Conversant analytics adapter tests', function() {
     });
   });
 
-  describe('Helper Function Tests', function() {
-    it('should cleanup up cache objects', function() {
+  describe('Helper Function Tests', function () {
+    it('should cleanup up cache objects', function () {
       conversantAnalytics.enableAnalytics(VALID_CONFIGURATION);
 
       cnvrHelper.adIdLookup.keep = { timeReceived: DATESTAMP + 1 };
@@ -142,14 +142,14 @@ describe('Conversant analytics adapter tests', function() {
       expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(0);
     });
 
-    it('createBid() should return correct object', function() {
+    it('createBid() should return correct object', function () {
       const EVENT_CODE = 1;
       const TIME = 2;
       const bid = cnvrHelper.createBid(EVENT_CODE, 2);
       expect(bid).to.deep.equal({ eventCodes: [EVENT_CODE], timeToRespond: TIME });
     });
 
-    it('createAdUnit() should return correct object', function() {
+    it('createAdUnit() should return correct object', function () {
       const adUnit = cnvrHelper.createAdUnit();
       expect(adUnit).to.deep.equal({
         sizes: [],
@@ -158,7 +158,7 @@ describe('Conversant analytics adapter tests', function() {
       });
     });
 
-    it('createAdSize() should return correct object', function() {
+    it('createAdSize() should return correct object', function () {
       let adSize = cnvrHelper.createAdSize(1, 2);
       expect(adSize).to.deep.equal({ w: 1, h: 2 });
 
@@ -169,7 +169,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(adSize).to.deep.equal({ w: -1, h: -1 });
     });
 
-    it('getLookupKey() should return correct object', function() {
+    it('getLookupKey() should return correct object', function () {
       let key = cnvrHelper.getLookupKey(undefined, undefined, undefined);
       expect(key).to.equal('undefined-undefined-undefined');
 
@@ -177,7 +177,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(key).to.equal('foo-bar-baz');
     });
 
-    it('createPayload() should return correct object', function() {
+    it('createPayload() should return correct object', function () {
       const REQUEST_TYPE = 'foo';
       const AUCTION_ID = '124 abc';
       const myDate = Date.now();
@@ -199,7 +199,7 @@ describe('Conversant analytics adapter tests', function() {
       });
     });
 
-    it('keyExistsAndIsObject() should return correct data', function() {
+    it('keyExistsAndIsObject() should return correct data', function () {
       const data = {
         a: [],
         b: 1,
@@ -248,12 +248,12 @@ describe('Conversant analytics adapter tests', function() {
       expect(cnvrHelper.getSampleRate(obj, 'too_small', DEFAULT_VAL)).to.equal(0);
     });
 
-    it('getPageUrl() should return correct data', function() {
+    it('getPageUrl() should return correct data', function () {
       const url = cnvrHelper.getPageUrl();
       expect(url.length).to.be.above(1);
     });
 
-    it('sendErrorData() should send data via ajax', function() {
+    it('sendErrorData() should send data via ajax', function () {
       const error = {
         stack: 'foobar',
         message: 'foobar message'
@@ -274,7 +274,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.url).to.not.be.undefined;
     });
 
-    it('Should not send data when error logging disabled', function() {
+    it('Should not send data when error logging disabled', function () {
       const error = {
         stack: 'foobar',
         message: 'foobar message'
@@ -311,7 +311,7 @@ describe('Conversant analytics adapter tests', function() {
     });
   });
 
-  describe('Bid Timeout Event Tests', function() {
+  describe('Bid Timeout Event Tests', function () {
     const BID_TIMEOUT_PAYLOAD = [{
       bidId: '80882409358b8a8',
       bidder: 'conversant',
@@ -324,7 +324,7 @@ describe('Conversant analytics adapter tests', function() {
       auctionId: 'afbd6e0b-e45b-46ab-87bf-c0bac0cb8881'
     }];
 
-    it('should put both items in timeout cache', function() {
+    it('should put both items in timeout cache', function () {
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(0);
       events.emit(EVENTS.BID_TIMEOUT, BID_TIMEOUT_PAYLOAD);
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(2);
@@ -337,7 +337,7 @@ describe('Conversant analytics adapter tests', function() {
     });
   });
 
-  describe('Render Failed Tests', function() {
+  describe('Render Failed Tests', function () {
     const RENDER_FAILED_PAYLOAD = {
       reason: 'reason',
       message: 'value',
@@ -349,7 +349,7 @@ describe('Conversant analytics adapter tests', function() {
       message: 'value'
     };
 
-    it('should empty adIdLookup and send data', function() {
+    it('should empty adIdLookup and send data', function () {
       cnvrHelper.adIdLookup[RENDER_FAILED_PAYLOAD.adId] = {
         bidderCode: 'bidderCode',
         adUnitCode: 'adUnitCode',
@@ -370,7 +370,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.adUnits.adUnitCode.bids.bidderCode[0].message).to.have.lengthOf.above(0);
     });
 
-    it('should not send data if no adId', function() {
+    it('should not send data if no adId', function () {
       cnvrHelper.adIdLookup[RENDER_FAILED_PAYLOAD.adId] = {
         bidderCode: 'bidderCode',
         adUnitCode: 'adUnitCode',
@@ -394,7 +394,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.url).to.not.be.undefined;
     });
 
-    it('should not send data if bad data in lookup', function() {
+    it('should not send data if bad data in lookup', function () {
       cnvrHelper.adIdLookup[RENDER_FAILED_PAYLOAD.adId] = {
         bidderCode: 'bidderCode',
         auctionId: 'auctionId',
@@ -417,7 +417,7 @@ describe('Conversant analytics adapter tests', function() {
     });
   });
 
-  describe('Bid Won Tests', function() {
+  describe('Bid Won Tests', function () {
     const GOOD_BID_WON_ARGS = {
       bidderCode: 'conversant',
       width: 300,
@@ -489,7 +489,7 @@ describe('Conversant analytics adapter tests', function() {
       ]
     };
 
-    it('should not send data or put a record in adIdLookup when bad data provided', function() {
+    it('should not send data or put a record in adIdLookup when bad data provided', function () {
       expect(requests).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0);
       events.emit(EVENTS.BID_WON, BAD_BID_WON_ARGS);
@@ -507,7 +507,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.url).to.not.be.undefined;
     });
 
-    it('should send data and put a record in adIdLookup', function() {
+    it('should send data and put a record in adIdLookup', function () {
       const myAuctionStart = Date.now();
       cnvrHelper.auctionIdTimestampCache[GOOD_BID_WON_ARGS.auctionId] = { timeReceived: myAuctionStart };
 
@@ -544,7 +544,7 @@ describe('Conversant analytics adapter tests', function() {
     });
   });
 
-  describe('Auction End Tests', function() {
+  describe('Auction End Tests', function () {
     const AUCTION_END_PAYLOAD = {
       auctionId: '85e1bf44-4035-4e24-bd3c-b1ba367fe294',
       timestamp: 1583851418288,
@@ -911,7 +911,7 @@ describe('Conversant analytics adapter tests', function() {
       timeout: 3000
     };
 
-    it('should not do anything when auction id doesnt exist', function() {
+    it('should not do anything when auction id doesnt exist', function () {
       sandbox.stub(utils, 'logError');
 
       const BAD_ARGS = JSON.parse(JSON.stringify(AUCTION_END_PAYLOAD));
@@ -931,7 +931,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.url).to.not.be.undefined;
     });
 
-    it('should send the expected data', function() {
+    it('should send the expected data', function () {
       sandbox.stub(utils, 'logError');
       sandbox.stub(utils, 'logWarn');
 
@@ -1061,7 +1061,7 @@ describe('Conversant analytics adapter tests', function() {
     });
   });
 
-  describe('Bidder Error Tests', function() {
+  describe('Bidder Error Tests', function () {
     // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
     const XHR_ERROR_MOCK = {
       status: 500,
@@ -1088,7 +1088,7 @@ describe('Conversant analytics adapter tests', function() {
       }
     };
 
-    it('should record error when bidder_error called', function() {
+    it('should record error when bidder_error called', function () {
       const warnStub = sandbox.stub(utils, 'logWarn');
       expect(requests).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(0);

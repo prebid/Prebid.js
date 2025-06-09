@@ -10,10 +10,10 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['clmb'],
   supportedMediaTypes: [BANNER],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.placementId);
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     if (validBidRequests.length === 0) {
       return [];
     }
@@ -63,7 +63,7 @@ export const spec = {
       data: payloadArr,
     }]
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     const res = serverResponse.body || serverResponse;
     if (!res || res.length === 0) {

@@ -36,16 +36,16 @@ const EVENTS = {
 };
 
 export class AdapterHelpers {
-  doSync(gdprConsent = { consentString: '', gdprApplies: false }, accountId) {
+  doSync (gdprConsent = { consentString: '', gdprApplies: false }, accountId) {
     insertUserSyncIframe(
       this.createSyncUrl(gdprConsent, accountId)
     );
   }
 
-  createSyncUrl({ consentString, gppString, applicableSections, gdprApplies }, network) {
+  createSyncUrl ({ consentString, gppString, applicableSections, gdprApplies }, network) {
     try {
       const url = new URL(SYNC_URL);
-      const networks = [ '368531133' ];
+      const networks = ['368531133'];
 
       if (network) {
         networks.push(network);
@@ -67,7 +67,7 @@ export class AdapterHelpers {
     return null;
   }
 
-  addOrtbFirstPartyData(data, bidRequests) {
+  addOrtbFirstPartyData (data, bidRequests) {
     const params = bidRequests[0].params || {};
     const key = data.app ? 'app' : 'site';
 
@@ -78,7 +78,7 @@ export class AdapterHelpers {
     }
   }
 
-  getExtData(bidRequests, bidderRequest) {
+  getExtData (bidRequests, bidderRequest) {
     return {
       version: VERSION,
       pbversion: '$prebid.version$',
@@ -89,7 +89,7 @@ export class AdapterHelpers {
     }
   }
 
-  createRequest(converter, bidRequests, bidderRequest, mediaType) {
+  createRequest (converter, bidRequests, bidderRequest, mediaType) {
     const data = converter.toORTB({ bidRequests, bidderRequest, context: { mediaType } });
 
     data.ext[BIDDER_CODE] = this.getExtData(bidRequests, bidderRequest);
@@ -97,15 +97,15 @@ export class AdapterHelpers {
     return { method: 'POST', url: ENDPOINT, data };
   }
 
-  isVideoBid(bid) {
+  isVideoBid (bid) {
     return deepAccess(bid, 'mediaTypes.video');
   }
 
-  isBannerBid(bid) {
+  isBannerBid (bid) {
     return deepAccess(bid, 'mediaTypes.banner') || !this.isVideoBid(bid);
   }
 
-  adoptVideoImp(imp, bidRequest) {
+  adoptVideoImp (imp, bidRequest) {
     imp.id = bidRequest.adUnitCode;
 
     if (bidRequest.params) {
@@ -113,13 +113,13 @@ export class AdapterHelpers {
     }
   }
 
-  adoptBannerImp(imp, bidRequest) {
+  adoptBannerImp (imp, bidRequest) {
     if (bidRequest.params) {
       imp.tagId = bidRequest.params.tagId;
     }
   }
 
-  adoptBidResponse(bidResponse, bid, context) {
+  adoptBidResponse (bidResponse, bid, context) {
     bidResponse.bidderCode = BIDDER_CODE;
 
     bidResponse.vastXml = bidResponse.ad || bid.adm;
@@ -150,7 +150,7 @@ export class AdapterHelpers {
     return bidResponse;
   }
 
-  replaceMacro(str) {
+  replaceMacro (str) {
     return str.replace('[TIMESTAMP]', Date.now());
   }
 
@@ -162,7 +162,7 @@ export class AdapterHelpers {
     }
   }
 
-  sendMessage(eventName, data = {}) {
+  sendMessage (eventName, data = {}) {
     this.postToAllParentFrames({
       type: EVENTS.TYPE,
       eventName,
@@ -170,7 +170,7 @@ export class AdapterHelpers {
     });
   }
 
-  listenForMessages() {
+  listenForMessages () {
     window.addEventListener('message', ({ data }) => {
       if (data && data.type === EVENTS.TYPE && data.eventName === EVENTS.PING) {
         const { href, sid } = data.metadata;
@@ -187,7 +187,7 @@ export class AdapterHelpers {
     });
   }
 
-  getEventUrl(data, eventName) {
+  getEventUrl (data, eventName) {
     const bid = data[0];
     const params = {
       adapterVersion: VERSION,
@@ -245,14 +245,14 @@ export class AdapterHelpers {
     return `https://v.ex.co/event?${searchParams}`;
   }
 
-  triggerUrl(url) {
+  triggerUrl (url) {
     fetch(url, {
       keepalive: true,
       credentials: 'include'
     });
   }
 
-  log(severity, message) {
+  log (severity, message) {
     const msg = `${BIDDER_CODE.toUpperCase()}: ${message}`;
 
     if (severity === 'warn') {
@@ -273,7 +273,7 @@ const helpers = new AdapterHelpers();
  * @description https://github.com/prebid/Prebid.js/blob/master/libraries/ortbConverter/README.md
  */
 export const converter = ortbConverter({
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const data = buildRequest(imps, bidderRequest, context);
 
     if (data.cur && !data.cur.includes('USD')) {
@@ -287,7 +287,7 @@ export const converter = ortbConverter({
 
     return data;
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     imp.secure = window.location.protocol === 'http:' ? 0 : 1;
@@ -302,7 +302,7 @@ export const converter = ortbConverter({
 
     return imp;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     return helpers.adoptBidResponse(bidResponse, bid, context);
   },

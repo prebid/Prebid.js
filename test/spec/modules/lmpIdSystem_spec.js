@@ -5,7 +5,7 @@ import { storage, lmpIdSubmodule } from 'modules/lmpIdSystem.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import 'src/prebid.js';
 
-function getConfigMock() {
+function getConfigMock () {
   return {
     userSync: {
       syncDelay: 0,
@@ -16,7 +16,7 @@ function getConfigMock() {
   }
 }
 
-function getAdUnitMock(code = 'adUnit-code') {
+function getAdUnitMock (code = 'adUnit-code') {
   return {
     code,
     mediaTypes: { banner: {}, native: {} },

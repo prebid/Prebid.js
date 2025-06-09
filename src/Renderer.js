@@ -16,7 +16,7 @@ const moduleCode = 'outstream';
  * be used to render that bid unless the Publisher overrides them.
  */
 
-export function Renderer(options) {
+export function Renderer (options) {
   const { url, config, id, callback, loaded, adUnitCode, renderNow } = options;
   this.url = url;
   this.config = config;
@@ -68,23 +68,23 @@ export function Renderer(options) {
   }.bind(this); // bind the function to this object to avoid 'this' errors
 }
 
-Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {
+Renderer.install = function ({ url, config, id, callback, loaded, adUnitCode, renderNow }) {
   return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow });
 };
 
-Renderer.prototype.getConfig = function() {
+Renderer.prototype.getConfig = function () {
   return this.config;
 };
 
-Renderer.prototype.setRender = function(fn) {
+Renderer.prototype.setRender = function (fn) {
   this._render = fn;
 };
 
-Renderer.prototype.setEventHandlers = function(handlers) {
+Renderer.prototype.setEventHandlers = function (handlers) {
   this.handlers = handlers;
 };
 
-Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
+Renderer.prototype.handleVideoEvent = function ({ id, eventName }) {
   if (typeof this.handlers[eventName] === 'function') {
     this.handlers[eventName]();
   }
@@ -96,7 +96,7 @@ Renderer.prototype.handleVideoEvent = function({ id, eventName }) {
  * Calls functions that were pushed to the command queue before the
  * renderer was loaded by `loadExternalScript`
  */
-Renderer.prototype.process = function() {
+Renderer.prototype.process = function () {
   while (this.cmd.length > 0) {
     try {
       this.cmd.shift().call();
@@ -111,7 +111,7 @@ Renderer.prototype.process = function() {
  * @param {Object} renderer Renderer object installed by adapter
  * @returns {Boolean}
  */
-export function isRendererRequired(renderer) {
+export function isRendererRequired (renderer) {
   return !!(renderer && (renderer.url || renderer.renderNow));
 }
 
@@ -121,7 +121,7 @@ export function isRendererRequired(renderer) {
  * @param {Object} bid Bid response
  * @param {Document} doc context document of bid
  */
-export function executeRenderer(renderer, bid, doc) {
+export function executeRenderer (renderer, bid, doc) {
   let docContext = null;
   if (renderer.config && renderer.config.documentResolver) {
     docContext = renderer.config.documentResolver(bid, document, doc);// a user provided callback, which should return a Document, and expect the parameters; bid, sourceDocument, renderDocument
@@ -133,7 +133,7 @@ export function executeRenderer(renderer, bid, doc) {
   renderer.render(bid, renderer.documentContext);
 }
 
-function isRendererPreferredFromAdUnit(adUnitCode) {
+function isRendererPreferredFromAdUnit (adUnitCode) {
   const adUnits = pbjsInstance.adUnits;
   const adUnit = adUnits.find(adUnit => {
     return adUnit.code === adUnitCode;

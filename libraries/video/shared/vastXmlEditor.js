@@ -1,10 +1,10 @@
 import XMLUtil from '../../xmlUtils/xmlUtils.js';
 import { getErrorNode, getImpressionNode, buildVastWrapper } from './vastXmlBuilder.js';
 
-export function VastXmlEditor(xmlUtil_) {
+export function VastXmlEditor (xmlUtil_) {
   const xmlUtil = xmlUtil_;
 
-  function getVastXmlWithTracking(vastXml, adId, impressionUrl, impressionId, errorUrl) {
+  function getVastXmlWithTracking (vastXml, adId, impressionUrl, impressionId, errorUrl) {
     const impressionDoc = getImpressionDoc(impressionUrl, impressionId);
     const errorDoc = getErrorDoc(errorUrl);
     if (!adId && !impressionDoc && !errorDoc) {
@@ -17,7 +17,7 @@ export function VastXmlEditor(xmlUtil_) {
     return xmlUtil.serialize(vastXmlDoc);
   }
 
-  function appendTrackingNodes(vastXmlDoc, impressionDoc, errorDoc) {
+  function appendTrackingNodes (vastXmlDoc, impressionDoc, errorDoc) {
     const nodes = vastXmlDoc.querySelectorAll('InLine,Wrapper');
     const nodeCount = nodes.length;
     for (let i = 0; i < nodeCount; i++) {
@@ -29,7 +29,7 @@ export function VastXmlEditor(xmlUtil_) {
     }
   }
 
-  function replaceAdId(vastXmlDoc, adId) {
+  function replaceAdId (vastXmlDoc, adId) {
     if (!adId) {
       return;
     }
@@ -47,7 +47,7 @@ export function VastXmlEditor(xmlUtil_) {
     buildVastWrapper
   }
 
-  function getImpressionDoc(impressionUrl, impressionId) {
+  function getImpressionDoc (impressionUrl, impressionId) {
     if (!impressionUrl) {
       return;
     }
@@ -56,7 +56,7 @@ export function VastXmlEditor(xmlUtil_) {
     return xmlUtil.parse(impressionNode);
   }
 
-  function getErrorDoc(errorUrl) {
+  function getErrorDoc (errorUrl) {
     if (!errorUrl) {
       return;
     }
@@ -65,7 +65,7 @@ export function VastXmlEditor(xmlUtil_) {
     return xmlUtil.parse(errorNode);
   }
 
-  function appendChild(node, child, copy) {
+  function appendChild (node, child, copy) {
     if (!child) {
       return;
     }
@@ -75,6 +75,6 @@ export function VastXmlEditor(xmlUtil_) {
   }
 }
 
-export function vastXmlEditorFactory() {
+export function vastXmlEditorFactory () {
   return VastXmlEditor(XMLUtil());
 }

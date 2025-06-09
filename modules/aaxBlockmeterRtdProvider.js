@@ -12,7 +12,7 @@ export const _config = {
 
 window.aax = window.aax || {};
 
-function loadBlockmeter(_rtdConfig) {
+function loadBlockmeter (_rtdConfig) {
   if (!(_rtdConfig.params && _rtdConfig.params.pub) || !isStr(_rtdConfig.params && _rtdConfig.params.pub) || isEmptyStr(_rtdConfig.params && _rtdConfig.params.pub)) {
     logError(`${_config.MODULE}: params.pub should be a string`);
     return false;
@@ -33,7 +33,7 @@ function loadBlockmeter(_rtdConfig) {
   return true;
 }
 
-function markAdBlockInventory(codes, _rtdConfig, _userConsent) {
+function markAdBlockInventory (codes, _rtdConfig, _userConsent) {
   return codes.reduce((targets, code) => {
     targets[code] = targets[code] || {};
     const getAaxTargets = () => isFn(window.aax.getTargetingData)
@@ -53,7 +53,7 @@ export const aaxBlockmeterRtdModule = {
   getTargetingData: markAdBlockInventory,
 };
 
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', aaxBlockmeterRtdModule);
 }
 

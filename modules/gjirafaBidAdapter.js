@@ -130,7 +130,7 @@ export const spec = {
  * @param {Array} sizes Possible sizes for the ad unit.
  * @return {string} Processed sizes param to be used for the bid request.
  */
-function generateSizeParam(sizes) {
+function generateSizeParam (sizes) {
   return sizes.map(size => size.join(DIMENSION_SEPARATOR)).join(SIZE_SEPARATOR);
 }
 

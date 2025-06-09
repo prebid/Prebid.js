@@ -15,7 +15,7 @@ describe('consentManagementGpp', function () {
   beforeEach(resetConsentData);
   after(resetConsentData);
 
-  async function runHook(request = {}) {
+  async function runHook (request = {}) {
     let hookRan = false;
     consentConfig.requestBidsHook(() => {
       hookRan = true;
@@ -178,7 +178,7 @@ describe('consentManagementGpp', function () {
 
     let gppClient, gppData, eventListener;
 
-    function mockClient(apiVersion = '1.1', cmpVersion = '1.1') {
+    function mockClient (apiVersion = '1.1', cmpVersion = '1.1') {
       const mockCmp = sinon.stub().callsFake(function ({command, callback}) {
         if (command === 'addEventListener') {
           eventListener = callback;
@@ -316,7 +316,7 @@ describe('consentManagementGpp', function () {
 
       CHANGE_EVENTS.forEach(evt => {
         describe(`event: ${evt}`, () => {
-          function makeEvent(pingData) {
+          function makeEvent (pingData) {
             return {
               eventName: evt,
               pingData
@@ -514,7 +514,7 @@ describe('consentManagementGpp', function () {
         resetConsentData();
       });
 
-      function startHook() {
+      function startHook () {
         let hookRan = false;
         consentConfig.requestBidsHook(() => {
           hookRan = true;

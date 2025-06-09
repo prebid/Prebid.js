@@ -29,7 +29,7 @@ export const converter = ortbConverter({
     ttl: TTL,
     currency: DEFAULT_CURRENCY,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = bidRequest.adUnitCode;
     deepSetValue(imp, `ext.${BIDDER_CODE}`, {
@@ -104,7 +104,7 @@ export const spec = {
   },
 };
 
-function formatRequest(ortbPayload) {
+function formatRequest (ortbPayload) {
   let request = [];
   const options = {
     withCredentials: true,

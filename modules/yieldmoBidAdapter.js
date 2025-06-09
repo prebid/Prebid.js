@@ -210,7 +210,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
     const syncs = [];
     const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
     const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
@@ -240,14 +240,14 @@ registerBidder(spec);
 /**
  * @param {BidRequest} bidRequest bid request
  */
-function hasBannerMediaType(bidRequest) {
+function hasBannerMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
 
 /**
  * @param {BidRequest} bidRequest bid request
  */
-function hasVideoMediaType(bidRequest) {
+function hasVideoMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 
@@ -255,7 +255,7 @@ function hasVideoMediaType(bidRequest) {
  * Adds placement information to array
  * @param request bid request
  */
-function addPlacement(request) {
+function addPlacement (request) {
   const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
   const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(request, 'ortb2Imp.ext.divid');
@@ -300,7 +300,7 @@ function addPlacement(request) {
  * creates a new banner bid with response information
  * @param response server response
  */
-function createNewBannerBid(response) {
+function createNewBannerBid (response) {
   return {
     dealId: response.publisherDealId,
     requestId: response['callback_id'],
@@ -324,7 +324,7 @@ function createNewBannerBid(response) {
  * @param response openRTB server response
  * @param bidRequest server request
  */
-function createNewVideoBid(response, bidRequest) {
+function createNewVideoBid (response, bidRequest) {
   const imp = (deepAccess(bidRequest, 'data.imp') || []).find(imp => imp.id === response.impid);
 
   let result = {
@@ -378,7 +378,7 @@ function createNewVideoBid(response, bidRequest) {
  * Detects whether dnt is true
  * @returns true if user enabled dnt
  */
-function getDNT() {
+function getDNT () {
   return (
     window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false
   );
@@ -387,7 +387,7 @@ function getDNT() {
 /**
  * get page description
  */
-function getPageDescription() {
+function getPageDescription () {
   if (document.querySelector('meta[name="description"]')) {
     return document
       .querySelector('meta[name="description"]')
@@ -403,7 +403,7 @@ function getPageDescription() {
  * @param {*} idType
  * @returns an id if there is one, or undefined
  */
-function getId(request, idType) {
+function getId (request, idType) {
   return (typeof deepAccess(request, 'userId') === 'object') ? request.userId[idType] : undefined;
 }
 
@@ -412,7 +412,7 @@ function getId(request, idType) {
  * @param {BidderRequest} bidderRequest bidder request object
  * @return Object OpenRTB request object
  */
-function openRtbRequest(bidRequests, bidderRequest) {
+function openRtbRequest (bidRequests, bidderRequest) {
   const schain = bidRequests[0].schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
@@ -443,17 +443,17 @@ function openRtbRequest(bidRequests, bidderRequest) {
   return openRtbRequest;
 }
 
-function getGPCSignal(bidderRequest) {
+function getGPCSignal (bidderRequest) {
   const gpc = deepAccess(bidderRequest, 'ortb2.regs.ext.gpc');
   return gpc;
 }
 
-function getCdep(bidderRequest) {
+function getCdep (bidderRequest) {
   const cdep = deepAccess(bidderRequest, 'ortb2.device.ext.cdep') || null;
   return cdep;
 }
 
-function getTopics(bidderRequest) {
+function getTopics (bidderRequest) {
   const userData = deepAccess(bidderRequest, 'ortb2.user.data') || [];
   const topicsData = userData.filter((dataObj) => {
     const segtax = dataObj.ext?.segtax;
@@ -476,7 +476,7 @@ function getTopics(bidderRequest) {
  * @param {BidRequest} bidRequest bidder request object.
  * @return Object OpenRTB's 'imp' (impression) object
  */
-function openRtbImpression(bidRequest) {
+function openRtbImpression (bidRequest) {
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
@@ -512,7 +512,7 @@ function openRtbImpression(bidRequest) {
   }
   if (imp.video.plcmt !== 1 || imp.video.placement !== 1) {
     imp.video.startdelay = DEFAULT_START_DELAY;
-    imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
+    imp.video.playbackmethod = [DEFAULT_PLAYBACK_METHOD];
   }
   if (gpid) {
     imp.ext.gpid = gpid;
@@ -526,7 +526,7 @@ function openRtbImpression(bidRequest) {
   return imp;
 }
 
-function getBidFloor(bidRequest, mediaType) {
+function getBidFloor (bidRequest, mediaType) {
   let floorInfo = {};
 
   if (typeof bidRequest.getFloor === 'function') {
@@ -540,7 +540,7 @@ function getBidFloor(bidRequest, mediaType) {
  * @param {BidRequest} bidRequest bidder request object.
  * @return [number, number] || null Player's width and height, or undefined otherwise.
  */
-function extractPlayerSize(bidRequest) {
+function extractPlayerSize (bidRequest) {
   const sizeArr = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   if (isArrayOfNums(sizeArr, 2)) {
     return sizeArr;
@@ -555,7 +555,7 @@ function extractPlayerSize(bidRequest) {
  * @param {BidderRequest} bidderRequest bidder request object
  * @return Object OpenRTB's 'site' object
  */
-function openRtbSite(bidRequest, bidderRequest) {
+function openRtbSite (bidRequest, bidderRequest) {
   let result = {};
 
   const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
@@ -586,7 +586,7 @@ function openRtbSite(bidRequest, bidderRequest) {
  * @param {Object} openRtbRequest OpenRTB's request to update.
  * @param {BidderRequest} bidderRequest bidder request object.
  */
-function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
+function populateOpenRtbGdpr (openRtbRequest, bidderRequest) {
   const gdpr = bidderRequest.gdprConsent;
   const gpp = deepAccess(bidderRequest, 'gppConsent.gppString');
   const gppsid = deepAccess(bidderRequest, 'gppConsent.applicableSections');
@@ -610,7 +610,7 @@ function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
  * @param {object} bid bid to validate
  * @return {boolean} true if valid, otherwise false
  */
-function validateVideoParams(bid) {
+function validateVideoParams (bid) {
   if (!hasVideoMediaType(bid)) {
     return true;
   }
@@ -702,7 +702,7 @@ function validateVideoParams(bid) {
  * @param {string} propertyName name of property to reduce
  * @return {number} 0 if required characters count was removed otherwise count of how many left
  */
-function shortcutProperty(extraCharacters, target, propertyName) {
+function shortcutProperty (extraCharacters, target, propertyName) {
   if (target[propertyName].length > extraCharacters) {
     target[propertyName] = target[propertyName].substring(0, target[propertyName].length - extraCharacters);
 
@@ -721,7 +721,7 @@ function shortcutProperty(extraCharacters, target, propertyName) {
  * @param {Object} bidRequest OpenRTB's request as a cource of userId.
  * @return array of eids objects
  */
-function getEids(bidRequest) {
+function getEids (bidRequest) {
   if (deepAccess(bidRequest, 'userIdAsEids')) {
     return bidRequest.userIdAsEids || [];
   }
@@ -732,7 +732,7 @@ function getEids(bidRequest) {
  *
  * @return {boolean} true if can access top window otherwise false
  */
-function canAccessTopWindow() {
+function canAccessTopWindow () {
   try {
     if (getWindowTop().location.href) {
       return true;
@@ -742,11 +742,11 @@ function canAccessTopWindow() {
   }
 }
 
-function isStage(bidderRequest) {
+function isStage (bidderRequest) {
   return !!bidderRequest.refererInfo?.referer?.includes('pb_force_a');
 }
 
-function getAdserverUrl(path, stage) {
+function getAdserverUrl (path, stage) {
   const domain = stage ? STAGE_DOMAIN : PROD_DOMAIN;
   return `${domain}${path}`;
 }

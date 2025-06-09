@@ -359,7 +359,7 @@ export const spec = {
   }
 };
 
-function reloadViewabilityScriptWithCorrectParameters(bid) {
+function reloadViewabilityScriptWithCorrectParameters (bid) {
   let viewJsPayload = getMediafuseViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
 
   if (viewJsPayload) {
@@ -410,7 +410,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
   }
 }
 
-function strIsMediafuseViewabilityScript(str) {
+function strIsMediafuseViewabilityScript (str) {
   let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
   let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
 
@@ -420,7 +420,7 @@ function strIsMediafuseViewabilityScript(str) {
   return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
 }
 
-function getMediafuseViewabilityScriptFromJsTrackers(jsTrackerArray) {
+function getMediafuseViewabilityScriptFromJsTrackers (jsTrackerArray) {
   let viewJsPayload;
   if (isStr(jsTrackerArray) && strIsMediafuseViewabilityScript(jsTrackerArray)) {
     viewJsPayload = jsTrackerArray;
@@ -435,7 +435,7 @@ function getMediafuseViewabilityScriptFromJsTrackers(jsTrackerArray) {
   return viewJsPayload;
 }
 
-function getViewabilityScriptUrlFromPayload(viewJsPayload) {
+function getViewabilityScriptUrlFromPayload (viewJsPayload) {
   // extracting the content of the src attribute
   // -> substring between src=" and "
   let indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
@@ -444,7 +444,7 @@ function getViewabilityScriptUrlFromPayload(viewJsPayload) {
   return jsTrackerSrc;
 }
 
-function formatRequest(payload, bidderRequest) {
+function formatRequest (payload, bidderRequest) {
   let request = [];
   let options = {
     withCredentials: true
@@ -490,7 +490,7 @@ function formatRequest(payload, bidderRequest) {
   return request;
 }
 
-function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
+function newRenderer (adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
@@ -523,7 +523,7 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * @param bidderRequest
  * @return Bid
  */
-function newBid(serverBid, rtbBid, bidderRequest) {
+function newBid (serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
@@ -551,7 +551,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   }
 
   // temporary function; may remove at later date if/when adserver fully supports dchain
-  function setupDChain(rtbBid) {
+  function setupDChain (rtbBid) {
     let dchain = {
       ver: '1.0',
       complete: 0,
@@ -681,7 +681,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   return bid;
 }
 
-function bidToTag(bid) {
+function bidToTag (bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
   tag.primary_size = tag.sizes[0];
@@ -852,7 +852,7 @@ function bidToTag(bid) {
 }
 
 /* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
+function transformSizes (requestSizes) {
   let sizes = [];
   let sizeObj = {};
 
@@ -874,32 +874,32 @@ function transformSizes(requestSizes) {
   return sizes;
 }
 
-function hasUserInfo(bid) {
+function hasUserInfo (bid) {
   return !!bid.params.user;
 }
 
-function hasMemberId(bid) {
+function hasMemberId (bid) {
   return !!parseInt(bid.params.member, 10);
 }
 
-function hasAppDeviceInfo(bid) {
+function hasAppDeviceInfo (bid) {
   if (bid.params) {
     return !!bid.params.app
   }
 }
 
-function hasAppId(bid) {
+function hasAppId (bid) {
   if (bid.params && bid.params.app) {
     return !!bid.params.app.id
   }
   return !!bid.params.app
 }
 
-function hasDebug(bid) {
+function hasDebug (bid) {
   return !!bid.debug
 }
 
-function hasAdPod(bid) {
+function hasAdPod (bid) {
   return (
     bid.mediaTypes &&
     bid.mediaTypes.video &&
@@ -907,7 +907,7 @@ function hasAdPod(bid) {
   );
 }
 
-function hasOmidSupport(bid) {
+function hasOmidSupport (bid) {
   let hasOmid = false;
   const bidderParams = bid.params;
   const videoParams = bid.params.video;
@@ -925,7 +925,7 @@ function hasOmidSupport(bid) {
  * total adpod duration and the range of duration seconds. Sets minduration/
  * maxduration video property according to requireExactDuration configuration
  */
-function createAdPodRequest(tags, adPodBid) {
+function createAdPodRequest (tags, adPodBid) {
   const { durationRangeSec, requireExactDuration } = adPodBid.mediaTypes.video;
 
   const numberOfPlacements = getAdPodPlacementNumber(adPodBid.mediaTypes.video);
@@ -953,7 +953,7 @@ function createAdPodRequest(tags, adPodBid) {
   return request;
 }
 
-function getAdPodPlacementNumber(videoParams) {
+function getAdPodPlacementNumber (videoParams) {
   const { adPodDurationSec, durationRangeSec, requireExactDuration } = videoParams;
   const minAllowedDuration = Math.min(...durationRangeSec);
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration);
@@ -963,16 +963,16 @@ function getAdPodPlacementNumber(videoParams) {
     : numberOfPlacements;
 }
 
-function setVideoProperty(tag, key, value) {
+function setVideoProperty (tag, key, value) {
   if (isEmpty(tag.video)) { tag.video = {}; }
   tag.video[key] = value;
 }
 
-function getRtbBid(tag) {
+function getRtbBid (tag) {
   return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
 }
 
-function buildNativeRequest(params) {
+function buildNativeRequest (params) {
   const request = {};
 
   // map standard prebid native asset identifier to /ut parameters
@@ -1012,14 +1012,14 @@ function buildNativeRequest(params) {
  * This function hides google div container for outstream bids to remove unwanted space on page. Mediafuse renderer creates a new iframe outside of google iframe to render the outstream creative.
  * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
+function hidedfpContainer (elementId) {
   var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
   if (el[0]) {
     el[0].style.setProperty('display', 'none');
   }
 }
 
-function hideSASIframe(elementId) {
+function hideSASIframe (elementId) {
   try {
     // find script tag with id 'sas_script'. This ensures it only works if you're using Smart Ad Server.
     const el = document.getElementById(elementId).querySelectorAll("script[id^='sas_script']");
@@ -1031,7 +1031,7 @@ function hideSASIframe(elementId) {
   }
 }
 
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
   // push to render queue because ANOutstreamVideo may not be loaded
@@ -1047,11 +1047,11 @@ function outstreamRender(bid) {
   });
 }
 
-function handleOutstreamRendererEvents(bid, id, eventName) {
+function handleOutstreamRendererEvents (bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
 }
 
-function parseMediaType(rtbBid) {
+function parseMediaType (rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType === VIDEO) {
     return VIDEO;
@@ -1062,7 +1062,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
-function addUserId(eids, id, source, rti) {
+function addUserId (eids, id, source, rti) {
   if (id) {
     if (rti) {
       eids.push({ source, id, rti_partner: rti });
@@ -1073,7 +1073,7 @@ function addUserId(eids, id, source, rti) {
   return eids;
 }
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return (bid.params.reserve) ? bid.params.reserve : null;
   }

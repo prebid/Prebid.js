@@ -24,7 +24,7 @@ const SESSION_RAND_PART = 9;
 const TRACK_TIME_KEY = '_fz_tr';
 const UNIQ_ID_KEY = '_fz_uniq';
 
-function getPageInfo() {
+function getPageInfo () {
   const pageInfo = {
     domain: window.location.hostname,
   }
@@ -36,7 +36,7 @@ function getPageInfo() {
   return pageInfo;
 }
 
-function getUniqId() {
+function getUniqId () {
   let isUniqFromLS;
   let uniq = storage.getCookie(UNIQ_ID_KEY);
   if (!uniq) {
@@ -64,7 +64,7 @@ function getUniqId() {
   return uniq;
 }
 
-function initFirstVisit() {
+function initFirstVisit () {
   let now;
   let visitDate;
   let cookies;
@@ -134,7 +134,7 @@ function parseCookies(cookie) {
 }
 */
 
-function getRandAsStr(digits) {
+function getRandAsStr (digits) {
   let str = '';
   let rand = 0;
   let i;
@@ -149,7 +149,7 @@ function getRandAsStr(digits) {
   return str;
 }
 
-function getSessionBegin(session) {
+function getSessionBegin (session) {
   if (!session || (typeof session !== 'string')) {
     return 0;
   }
@@ -164,7 +164,7 @@ function getSessionBegin(session) {
   return parseInt(timestamp, 10);
 }
 
-function initSession() {
+function initSession () {
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_DURATION);
   const timestamp = Math.floor(now.getTime() / 1000);
@@ -212,7 +212,7 @@ function initSession() {
   };
 }
 
-function checkSessionByExpires() {
+function checkSessionByExpires () {
   const timestamp = getTrackRequestLastTime();
   const now = new Date().getTime();
 
@@ -222,14 +222,14 @@ function checkSessionByExpires() {
   return true;
 }
 
-function checkSessionByReferer() {
+function checkSessionByReferer () {
   const referrer = fntzAnalyticsAdapter.context.pageInfo.referrerDomain;
   const domain = fntzAnalyticsAdapter.context.pageInfo.domain;
 
   return referrer === '' || domain === referrer;
 }
 
-function checkSessionByDay() {
+function checkSessionByDay () {
   let last = getTrackRequestLastTime();
   if (last) {
     last = new Date(last);
@@ -243,7 +243,7 @@ function checkSessionByDay() {
   return false;
 }
 
-function saveTrackRequestTime() {
+function saveTrackRequestTime () {
   const now = new Date().getTime();
   const expires = new Date(now + SESSION_DURATION);
 
@@ -256,7 +256,7 @@ function saveTrackRequestTime() {
   } catch (a) {}
 }
 
-function getTrackRequestLastTime() {
+function getTrackRequestLastTime () {
   let cookie;
 
   try {
@@ -278,14 +278,14 @@ function getTrackRequestLastTime() {
   return 0;
 }
 
-function getAntiCacheParam() {
+function getAntiCacheParam () {
   const date = new Date();
   const rand = (Math.random() * 99999 + 1) >>> 0;
 
-  return ([ date.getTime(), rand ].join(''));
+  return ([date.getTime(), rand].join(''));
 }
 
-function replaceBidder(str, bidder) {
+function replaceBidder (str, bidder) {
   let _str = str;
   _str = _str.replace(/\%bidder\%/, bidder.toLowerCase());
   _str = _str.replace(/\%BIDDER\%/, bidder.toUpperCase());
@@ -294,14 +294,14 @@ function replaceBidder(str, bidder) {
   return _str;
 }
 
-function prepareBidRequestedParams(args) {
+function prepareBidRequestedParams (args) {
   return [{
     event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidRequestTrack, args.bidderCode)),
     ref: encodeURIComponent(window.location.href),
   }];
 }
 
-function prepareBidResponseParams(args) {
+function prepareBidResponseParams (args) {
   return [{
     event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidResponsePriceTrack, args.bidderCode)),
     value: args.cpm,
@@ -313,7 +313,7 @@ function prepareBidResponseParams(args) {
   }];
 }
 
-function prepareBidWonParams(args) {
+function prepareBidWonParams (args) {
   return [{
     event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidWonTrack, args.bidderCode)),
     value: args.cpm,
@@ -321,8 +321,8 @@ function prepareBidWonParams(args) {
   }];
 }
 
-function prepareBidTimeoutParams(args) {
-  return args.map(function(bid) {
+function prepareBidTimeoutParams (args) {
+  return args.map(function (bid) {
     return {
       event: encodeURIComponent(replaceBidder(fntzAnalyticsAdapter.context.bidTimeoutTrack, bid.bidder)),
       value: bid.timeout,
@@ -331,7 +331,7 @@ function prepareBidTimeoutParams(args) {
   })
 }
 
-function prepareTrackData(evtype, args) {
+function prepareTrackData (evtype, args) {
   let prepareParams = null;
 
   switch (evtype) {
@@ -384,7 +384,7 @@ function prepareTrackData(evtype, args) {
   });
 }
 
-function sendTrackRequest(trackData) {
+function sendTrackRequest (trackData) {
   try {
     ajax(
       fntzAnalyticsAdapter.context.host,
@@ -408,7 +408,7 @@ const fntzAnalyticsAdapter = Object.assign(
     ANALYTICS_TYPE
   }),
   {
-    track({ eventType, args }) {
+    track ({ eventType, args }) {
       if (typeof args !== 'undefined') {
         const trackData = prepareTrackData(eventType, args);
         if (!trackData) { return; }

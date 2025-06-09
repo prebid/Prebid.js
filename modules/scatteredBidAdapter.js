@@ -60,7 +60,7 @@ export const spec = {
   }
 }
 
-function getKeyOnAny(collection, key) {
+function getKeyOnAny (collection, key) {
   for (let i = 0; i < collection.length; i++) {
     const result = deepAccess(collection[i], key);
     if (result) {

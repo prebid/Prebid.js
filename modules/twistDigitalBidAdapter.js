@@ -12,7 +12,7 @@ const BIDDER_VERSION = '1.0.0';
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
-export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
+export function createDomain (subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.twist.win`;
 }
 

@@ -6,12 +6,12 @@ const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid';
 const USER_SYNC_URL = 'https://api.primecaster.net/primecaster_dmppv.html'
 export const spec = {
   code: BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (!(bid.params.sid)) {
       return false;
     } else { return true }
   },
-  buildRequests: function(validBidRequests) {
+  buildRequests: function (validBidRequests) {
     return validBidRequests.map(bidRequest => {
       const bidId = bidRequest.bidId;
       const params = bidRequest.params;
@@ -30,7 +30,7 @@ export const spec = {
       }
     });
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const body = serverResponse.body;
     const bidResponses = [];
     if (body.cid) {

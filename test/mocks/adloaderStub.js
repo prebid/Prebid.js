@@ -5,7 +5,7 @@ export let loadExternalScript = adloader.loadExternalScript;
 
 export let loadExternalScriptStub = createStub();
 
-function createStub() {
+function createStub () {
   return sinon.stub(adloader, 'loadExternalScript').callsFake((...args) => {
     if (typeof args[3] === 'function') {
       args[3]();
@@ -14,7 +14,7 @@ function createStub() {
   });
 }
 
-beforeEach(function() {
+beforeEach(function () {
   loadExternalScriptStub.restore();
   loadExternalScriptStub = createStub();
 });

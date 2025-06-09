@@ -73,7 +73,7 @@ export const spec = {
       const bidResponse = serverResponse.body;
       const bidResponses = [];
       if (bidResponse && bidRequest.options.mediaType == NATIVE) {
-        bidResponse.ads.forEach(function(ad) {
+        bidResponse.ads.forEach(function (ad) {
           bidResponses.push({
             requestId: bidRequest.options.requestId,
             cpm: parseFloat(ad.assets.cpm) || 1,
@@ -107,7 +107,7 @@ export const spec = {
           });
         });
       } else if (bidResponse && bidRequest.options.mediaType == 'display') {
-        bidResponse.ads.forEach(function(ad) {
+        bidResponse.ads.forEach(function (ad) {
           let w = ad.assets.width || 300;
           let h = ad.assets.height || 250;
           let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>';
@@ -150,7 +150,7 @@ export const spec = {
    * @return {boolean}
    * @private
    */
-  _isBannerRequest(req) {
+  _isBannerRequest (req) {
     return !!(req.mediaTypes && req.mediaTypes.banner);
   }
 }

@@ -30,17 +30,17 @@ const MOCK_RESPONSE = {
   }
 };
 
-function mockResponse(
+function mockResponse (
   responseText,
   response = (url, successCallback) => successCallback(responseText)) {
-  return function() {
+  return function () {
     return response;
   }
 }
 
 describe('Merkle System', function () {
-  describe('merkleIdSystem.decode()', function() {
-    it('provides multiple Merkle IDs (EID) from a stored object', function() {
+  describe('merkleIdSystem.decode()', function () {
+    it('provides multiple Merkle IDs (EID) from a stored object', function () {
       let storage = {
         merkleId: [{
           id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }
@@ -61,7 +61,7 @@ describe('Merkle System', function () {
       });
     });
 
-    it('can decode legacy stored object', function() {
+    it('can decode legacy stored object', function () {
       let merkleId = {'pam_id': {'id': 'testmerkleId', 'keyID': 1}};
 
       expect(merkleIdSubmodule.decode(merkleId)).to.deep.equal({
@@ -69,7 +69,7 @@ describe('Merkle System', function () {
       });
     })
 
-    it('returns undefined', function() {
+    it('returns undefined', function () {
       let merkleId = {};
       expect(merkleIdSubmodule.decode(merkleId)).to.be.undefined;
     })
@@ -255,7 +255,7 @@ describe('Merkle System', function () {
     before(() => {
       attachIdSystem(merkleIdSubmodule);
     });
-    it('merkleId (legacy) - supports single id', function() {
+    it('merkleId (legacy) - supports single id', function () {
       const userId = {
         merkleId: {
           id: 'some-random-id-value', keyID: 1
@@ -274,7 +274,7 @@ describe('Merkle System', function () {
       });
     });
 
-    it('merkleId supports multiple source providers', function() {
+    it('merkleId supports multiple source providers', function () {
       const userId = {
         merkleId: [{
           id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }

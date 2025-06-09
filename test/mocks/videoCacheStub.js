@@ -9,7 +9,7 @@ import {_internal as videoCache} from 'src/videoCache.js';
  *
  * @return {function} A function which returns the current stubs for the mocked functions.
  */
-export default function useVideoCacheStub(responses) {
+export default function useVideoCacheStub (responses) {
   let storeStub;
 
   beforeEach(function () {
@@ -26,7 +26,7 @@ export default function useVideoCacheStub(responses) {
     videoCache.store.restore();
   });
 
-  return function() {
+  return function () {
     return {
       store: storeStub
     };

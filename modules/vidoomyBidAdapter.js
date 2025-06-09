@@ -52,7 +52,7 @@ const isBidRequestValid = bid => {
  * @param {String} str
  * @returns {String}
  */
-function encodeURIComponentWithExlamation(str) {
+function encodeURIComponentWithExlamation (str) {
   return encodeURIComponent(str).replace(/!/g, '%21');
 }
 
@@ -62,7 +62,7 @@ function encodeURIComponentWithExlamation(str) {
  * @param {Object} schainObj supply chain object
  * @returns {string} serialized supply chain value
  */
-function serializeSupplyChainObj(schainObj) {
+function serializeSupplyChainObj (schainObj) {
   if (!schainObj || !schainObj.nodes) {
     return '';
   }
@@ -83,7 +83,7 @@ function serializeSupplyChainObj(schainObj) {
  * @param {Number} bidfloor
  * @returns {Number} floor
  */
-function getBidFloor(bid, mediaType, sizes, bidfloor) {
+function getBidFloor (bid, mediaType, sizes, bidfloor) {
   let floor = bidfloor;
   var size = sizes && sizes.length > 0 ? sizes[0] : '*';
   if (typeof bid.getFloor === 'function') {
@@ -277,7 +277,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
   }
 };
 
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
     const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
     const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
@@ -304,7 +304,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function getDomainWithoutSubdomain(hostname) {
+function getDomainWithoutSubdomain (hostname) {
   const parts = hostname.split('.');
   const newParts = [];
   for (let i = parts.length - 1; i >= 0; i--) {

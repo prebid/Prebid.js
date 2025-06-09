@@ -14,7 +14,7 @@ const BIDDER_CODE = 'epom_dsp';
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     const globalSettings = config.getBidderConfig()[BIDDER_CODE]?.epomSettings || {};
     const endpoint = bid.params?.endpoint || globalSettings.endpoint;
     if (!endpoint || typeof endpoint !== 'string') {
@@ -29,7 +29,7 @@ export const spec = {
     return true;
   },
 
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     try {
       const bidderConfig = config.getBidderConfig();
       const globalSettings = bidderConfig[BIDDER_CODE]?.epomSettings || {};
@@ -81,7 +81,7 @@ export const spec = {
     }
   },
 
-  interpretResponse(serverResponse, request) {
+  interpretResponse (serverResponse, request) {
     const bidResponses = [];
     const response = serverResponse.body;
 
@@ -116,7 +116,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs (syncOptions, serverResponses) {
     const syncs = [];
 
     if (syncOptions.iframeEnabled && serverResponses.length > 0) {

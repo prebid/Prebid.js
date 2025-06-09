@@ -667,17 +667,17 @@ describe('OguryBidAdapter', () => {
     let windowTopStub;
     const stubbedCurrentTime = 1234567890
     const stubbedDevicePixelRatio = 1
-    const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
+    const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function () {
       return stubbedCurrentTime;
     });
 
-    const stubbedDevicePixelMethod = sinon.stub(window, 'devicePixelRatio').get(function() {
+    const stubbedDevicePixelMethod = sinon.stub(window, 'devicePixelRatio').get(function () {
       return stubbedDevicePixelRatio;
     });
 
     const defaultTimeout = 1000;
 
-    function assertImpObject(ortbBidRequest, bidRequest) {
+    function assertImpObject (ortbBidRequest, bidRequest) {
       expect(ortbBidRequest.secure).to.equal(1);
       expect(ortbBidRequest.id).to.equal(bidRequest.bidId);
       expect(ortbBidRequest.tagid).to.equal(bidRequest.adUnitCode);
@@ -696,7 +696,7 @@ describe('OguryBidAdapter', () => {
       });
     }
 
-    function assertRequestObject(dataRequest) {
+    function assertRequestObject (dataRequest) {
       expect(dataRequest.id).to.be.a('string');
       expect(dataRequest.tmax).to.equal(defaultTimeout);
 
@@ -753,7 +753,7 @@ describe('OguryBidAdapter', () => {
     });
 
     it('timeSpentOnpage should be 0 if timeline is undefined', function () {
-      const stubbedTimelineMethod = sinon.stub(document, 'timeline').get(function() {
+      const stubbedTimelineMethod = sinon.stub(document, 'timeline').get(function () {
         return undefined;
       });
 
@@ -909,7 +909,7 @@ describe('OguryBidAdapter', () => {
       }
     };
 
-    function assertPrebidBidResponse(prebidBidResponse, ortbResponse) {
+    function assertPrebidBidResponse (prebidBidResponse, ortbResponse) {
       expect(prebidBidResponse.ttl).to.equal(60);
       expect(prebidBidResponse.currency).to.equal('USD');
       expect(prebidBidResponse.netRevenue).to.be.true;
@@ -951,37 +951,37 @@ describe('OguryBidAdapter', () => {
     });
   });
 
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     const nurl = 'https://fakewinurl.test/';
     let requests;
 
-    beforeEach(function() {
+    beforeEach(function () {
       requests = server.requests;
     })
 
-    it('Should not create nurl request if bid is undefined', function() {
+    it('Should not create nurl request if bid is undefined', function () {
       spec.onBidWon()
       expect(requests.length).to.equal(0);
     })
 
-    it('Should not create nurl request if bid does not contains nurl', function() {
+    it('Should not create nurl request if bid does not contains nurl', function () {
       spec.onBidWon({})
       expect(requests.length).to.equal(0);
     })
 
-    it('Should not create nurl request if bid contains undefined nurl', function() {
+    it('Should not create nurl request if bid contains undefined nurl', function () {
       spec.onBidWon({ nurl: undefined })
       expect(requests.length).to.equal(0);
     })
 
-    it('Should create nurl request if bid nurl', function() {
+    it('Should create nurl request if bid nurl', function () {
       spec.onBidWon({ nurl })
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal(nurl);
       expect(requests[0].method).to.equal('GET')
     })
 
-    it('Should trigger getWindowContext method', function() {
+    it('Should trigger getWindowContext method', function () {
       const bidSample = {
         id: 'advertId',
         impid: 'bidId',
@@ -1007,14 +1007,14 @@ describe('OguryBidAdapter', () => {
     })
   })
 
-  describe('getWindowContext', function() {
-    it('Should return top window if exist', function() {
+  describe('getWindowContext', function () {
+    it('Should return top window if exist', function () {
       const res = spec.getWindowContext()
       expect(res).to.equal(window.top)
       expect(res).to.not.be.undefined;
     })
 
-    it('Should return self window if getting top window throw an error', function() {
+    it('Should return self window if getting top window throw an error', function () {
       const stub = sinon.stub(utils, 'getWindowTop')
       stub.throws()
       const res = spec.getWindowContext()
@@ -1026,14 +1026,14 @@ describe('OguryBidAdapter', () => {
   describe('onTimeout', function () {
     let requests;
 
-    beforeEach(function() {
+    beforeEach(function () {
       requests = server.requests;
       server.onCreate = (xhr) => {
         requests.push(xhr);
       };
     })
 
-    it('should send on bid timeout notification', function() {
+    it('should send on bid timeout notification', function () {
       const bid = {
         ad: '<img style="width: 300px; height: 250px;" src="https://assets.afcdn.com/recipe/20190529/93153_w1024h768c1cx2220cy1728cxt0cyt0cxb4441cyb3456.jpg" alt="cookies" />',
         cpm: 3

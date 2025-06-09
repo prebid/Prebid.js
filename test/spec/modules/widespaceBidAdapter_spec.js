@@ -145,7 +145,7 @@ describe('+widespaceAdatperTest', function () {
   describe('+bidRequest', function () {
     let request;
     const UrlRegExp = /^((ftp|http|https):)?\/\/[^ "]+$/;
-    before(function() {
+    before(function () {
       request = spec.buildRequests(bidRequest, bidderRequest);
     })
 

@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/astraoneBidAdapter.js'
 
-function getSlotConfigs(mediaTypes, params) {
+function getSlotConfigs (mediaTypes, params) {
   return {
     params: params,
     sizes: [],
@@ -16,14 +16,14 @@ function getSlotConfigs(mediaTypes, params) {
   }
 }
 
-describe('AstraOne Adapter', function() {
-  describe('isBidRequestValid method', function() {
+describe('AstraOne Adapter', function () {
+  describe('isBidRequestValid method', function () {
     const PLACE_ID = '5f477bf94d506ebe2c4240f3';
     const IMAGE_URL = 'https://creative.astraone.io/files/default_image-1-600x400.jpg';
 
-    describe('returns true', function() {
+    describe('returns true', function () {
       describe('when banner slot config has all mandatory params', () => {
-        describe('and placement has the correct value', function() {
+        describe('and placement has the correct value', function () {
           const createBannerSlotConfig = placement => {
             return getSlotConfigs(
               { banner: {} },
@@ -36,7 +36,7 @@ describe('AstraOne Adapter', function() {
           }
           const placements = ['inImage'];
           placements.forEach(placement => {
-            it('should be ' + placement, function() {
+            it('should be ' + placement, function () {
               const isBidRequestValid = spec.isBidRequestValid(
                 createBannerSlotConfig(placement)
               )
@@ -46,12 +46,12 @@ describe('AstraOne Adapter', function() {
         })
       })
     })
-    describe('returns false', function() {
-      describe('when params are not correct', function() {
-        function createSlotconfig(params) {
+    describe('returns false', function () {
+      describe('when params are not correct', function () {
+        function createSlotconfig (params) {
           return getSlotConfigs({ banner: {} }, params)
         }
-        it('does not have the placeId.', function() {
+        it('does not have the placeId.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               imageUrl: IMAGE_URL,
@@ -60,7 +60,7 @@ describe('AstraOne Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have the imageUrl.', function() {
+        it('does not have the imageUrl.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placeId: PLACE_ID,
@@ -69,7 +69,7 @@ describe('AstraOne Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have the placement.', function() {
+        it('does not have the placement.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placeId: PLACE_ID,
@@ -78,7 +78,7 @@ describe('AstraOne Adapter', function() {
           )
           expect(isBidRequestValid).to.equal(false)
         })
-        it('does not have a the correct placement.', function() {
+        it('does not have a the correct placement.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotconfig({
               placeId: PLACE_ID,
@@ -92,7 +92,7 @@ describe('AstraOne Adapter', function() {
     })
   })
 
-  describe('buildRequests method', function() {
+  describe('buildRequests method', function () {
     const bidderRequest = {
       refererInfo: { referer: 'referer' }
     }
@@ -104,13 +104,13 @@ describe('AstraOne Adapter', function() {
     const validBidRequests = [
       getSlotConfigs({ banner: {} }, mandatoryParams)
     ]
-    it('Url params should be correct ', function() {
+    it('Url params should be correct ', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest)
       expect(request.method).to.equal('POST')
       expect(request.url).to.equal('https://ssp.astraone.io/auction/prebid')
     })
 
-    it('Common data request should be correct', function() {
+    it('Common data request should be correct', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest)
       const data = JSON.parse(request.data)
       expect(Array.isArray(data.bidRequests)).to.equal(true)
@@ -120,16 +120,16 @@ describe('AstraOne Adapter', function() {
       })
     })
 
-    describe('GDPR params', function() {
-      describe('when there are not consent management platform', function() {
-        it('cmp should be false', function() {
+    describe('GDPR params', function () {
+      describe('when there are not consent management platform', function () {
+        it('cmp should be false', function () {
           const request = spec.buildRequests(validBidRequests, bidderRequest)
           const data = JSON.parse(request.data)
           expect(data.cmp).to.equal(false)
         })
       })
-      describe('when there are consent management platform', function() {
-        it('cmps should be true and ga should not sended, when gdprApplies is undefined', function() {
+      describe('when there are consent management platform', function () {
+        it('cmps should be true and ga should not sended, when gdprApplies is undefined', function () {
           bidderRequest['gdprConsent'] = {
             gdprApplies: undefined,
             consentString: 'consentString'
@@ -140,7 +140,7 @@ describe('AstraOne Adapter', function() {
           expect(Object.keys(data).indexOf('data')).to.equal(-1)
           expect(data.cs).to.equal('consentString')
         })
-        it('cmps should be true and all gdpr parameters should be sended, when there are gdprApplies', function() {
+        it('cmps should be true and all gdpr parameters should be sended, when there are gdprApplies', function () {
           bidderRequest['gdprConsent'] = {
             gdprApplies: true,
             consentString: 'consentString'
@@ -154,11 +154,11 @@ describe('AstraOne Adapter', function() {
       })
     })
 
-    describe('BidRequests params', function() {
+    describe('BidRequests params', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest)
       const data = JSON.parse(request.data)
       const bidRequests = data.bidRequests
-      it('should request a Banner', function() {
+      it('should request a Banner', function () {
         const bannerBid = bidRequests[0]
         expect(bannerBid.bidId).to.equal('2df8c0733f284e')
         expect(bannerBid.transactionId).to.equal('31a58515-3634-4e90-9c96-f86196db1459')
@@ -167,8 +167,8 @@ describe('AstraOne Adapter', function() {
     })
   })
 
-  describe('interpret response method', function() {
-    it('should return a void array, when the server response have not got bids.', function() {
+  describe('interpret response method', function () {
+    it('should return a void array, when the server response have not got bids.', function () {
       const serverResponse = {
         body: []
       }
@@ -176,9 +176,9 @@ describe('AstraOne Adapter', function() {
       expect(Array.isArray(bids)).to.equal(true)
       expect(bids.length).to.equal(0)
     })
-    describe('when the server response return a bid', function() {
-      describe('the bid is a banner', function() {
-        it('should return a banner bid', function() {
+    describe('when the server response return a bid', function () {
+      describe('the bid is a banner', function () {
+        it('should return a banner bid', function () {
           const serverResponse = {
             body: {
               bids: [

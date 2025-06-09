@@ -28,7 +28,7 @@ const converter = ortbConverter({
     netRevenue: DEFAULT_NET_REVENUE,
     ttl: DEFAULT_BID_TTL
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     if (!imp.bidfloor) {
@@ -37,7 +37,7 @@ const converter = ortbConverter({
     }
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     mergeDeep(req, {
       ext: {
@@ -60,7 +60,7 @@ const converter = ortbConverter({
 
     return req;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     let resMediaType;
     const {bidRequest} = context;
 
@@ -193,7 +193,7 @@ export const spec = {
 
 };
 
-function outstreamRenderer(bid) {
+function outstreamRenderer (bid) {
   const rendererConfig = {
     width: bid.width,
     height: bid.height,
@@ -232,15 +232,15 @@ function outstreamRenderer(bid) {
  * Util Functions
  *======================================= */
 
-function hasBannerMediaType(bidRequest) {
+function hasBannerMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
 
-function hasVideoMediaType(bidRequest) {
+function hasVideoMediaType (bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 
-function _validateParams(bidRequest) {
+function _validateParams (bidRequest) {
   if (!bidRequest.params) {
     return false;
   }
@@ -272,7 +272,7 @@ function _validateParams(bidRequest) {
  * @param {BidRequest} bidRequest bid to validate
  * @return boolean, true if valid, otherwise false
  */
-function _validateBanner(bidRequest) {
+function _validateBanner (bidRequest) {
   // If there's no banner no need to validate
   if (!hasBannerMediaType(bidRequest)) {
     return true;
@@ -290,7 +290,7 @@ function _validateBanner(bidRequest) {
  * @param {Object} bidRequest bid to validate
  * @return {boolean} true if valid, otherwise false
  */
-function _validateVideo(bidRequest) {
+function _validateVideo (bidRequest) {
   // If there's no video no need to validate
   if (!hasVideoMediaType(bidRequest)) {
     return true;

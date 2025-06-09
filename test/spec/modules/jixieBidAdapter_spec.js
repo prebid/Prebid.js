@@ -240,7 +240,7 @@ describe('jixie Adapter', function () {
       // and domain, pageurl
       // get the interceptors ready:
       let getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.callsFake(function fakeFn(prop) {
+      getConfigStub.callsFake(function fakeFn (prop) {
         if (prop == 'jixie') {
           return testJixieCfg_;
         }
@@ -328,7 +328,7 @@ describe('jixie Adapter', function () {
         precision: 1
       };
       let getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.callsFake(function fakeFn(prop) {
+      getConfigStub.callsFake(function fakeFn (prop) {
         if (prop == 'priceGranularity') {
           return content;
         }
@@ -345,7 +345,7 @@ describe('jixie Adapter', function () {
     it('it should popular the device info when it is available', function () {
       let getConfigStub = sinon.stub(config, 'getConfig');
       let content = {w: 500, h: 400};
-      getConfigStub.callsFake(function fakeFn(prop) {
+      getConfigStub.callsFake(function fakeFn (prop) {
         if (prop == 'device') {
           return content;
         }
@@ -401,7 +401,7 @@ describe('jixie Adapter', function () {
 
       // 2 aid is set in the jixie config
       let getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.callsFake(function fakeFn(prop) {
+      getConfigStub.callsFake(function fakeFn (prop) {
         if (prop == 'jixie') {
           return { aid: '11223344556677889900' };
         }
@@ -684,10 +684,10 @@ describe('jixie Adapter', function () {
   /**
    * onBidWon
    */
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     let ajaxStub;
     let miscDimsStub;
-    beforeEach(function() {
+    beforeEach(function () {
       miscDimsStub = sinon.stub(jixieaux, 'getMiscDims');
       ajaxStub = sinon.stub(jixieaux, 'ajax');
 
@@ -695,14 +695,14 @@ describe('jixie Adapter', function () {
         .returns({ device: device_, pageurl: pageurl_, domain: domain_, mkeywords: keywords_ });
     })
 
-    afterEach(function() {
+    afterEach(function () {
       miscDimsStub.restore();
       ajaxStub.restore();
     })
 
     let TRACKINGURL_ = 'https://abc.com/sync?action=bidwon';
 
-    it('Should fire if the adserver trackingUrl flag says so', function() {
+    it('Should fire if the adserver trackingUrl flag says so', function () {
       spec.onBidWon({ trackingUrl: TRACKINGURL_ })
       expect(jixieaux.ajax.calledWith(TRACKINGURL_)).to.equal(true);
     })

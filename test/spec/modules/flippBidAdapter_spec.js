@@ -62,8 +62,8 @@ describe('flippAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
-    it('should get correct bid response', function() {
+  describe('interpretResponse', function () {
+    it('should get correct bid response', function () {
       const bidRequest = {
         method: 'POST',
         url: ENDPOINT,
@@ -134,7 +134,7 @@ describe('flippAdapter', function () {
       expect(result).to.deep.have.same.members(expectedResponse);
     });
 
-    it('should get empty bid response when no ad is returned', function() {
+    it('should get empty bid response when no ad is returned', function () {
       const bidRequest = {
         method: 'POST',
         url: ENDPOINT,
@@ -171,7 +171,7 @@ describe('flippAdapter', function () {
       expect(result).to.deep.have.same.members([]);
     })
 
-    it('should get empty response when bid server returns 204', function() {
+    it('should get empty response when bid server returns 204', function () {
       expect(spec.interpretResponse({})).to.be.empty;
     });
   });

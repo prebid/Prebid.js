@@ -54,7 +54,7 @@ const createRenderer = (bid, dataToCreatePlace) => {
   const renderer = new Renderer({
     targetId: bid.adUnitCode,
     url: SDK_PATH,
-    callback() {
+    callback () {
       renderer.loaded = true
       window.afp.createPlaceByData(dataToCreatePlace)
     }
@@ -66,7 +66,7 @@ const createRenderer = (bid, dataToCreatePlace) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  isBidRequestValid({mediaTypes, params}) {
+  isBidRequestValid ({mediaTypes, params}) {
     if (typeof params !== 'object' || typeof mediaTypes !== 'object') {
       return false
     }
@@ -94,7 +94,7 @@ export const spec = {
     }
     return false
   },
-  buildRequests(validBidRequests, {refererInfo, gdprConsent}) {
+  buildRequests (validBidRequests, {refererInfo, gdprConsent}) {
     const payload = {
       pageUrl: IS_DEV ? TEST_PAGE_URL : refererInfo.page,
       gdprConsent: gdprConsent,
@@ -129,7 +129,7 @@ export const spec = {
       }
     }
   },
-  interpretResponse(serverResponse) {
+  interpretResponse (serverResponse) {
     let bids = serverResponse.body && serverResponse.body.bids
     bids = Array.isArray(bids) ? bids : []
 

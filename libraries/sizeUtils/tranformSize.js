@@ -5,7 +5,7 @@ import * as utils from '../../src/utils.js';
  * @param  {Array|Object} requestSizes
  * @return {Object}
  */
-export function transformSizes(requestSizes) {
+export function transformSizes (requestSizes) {
   let sizes = [];
   let sizeObj = {};
 

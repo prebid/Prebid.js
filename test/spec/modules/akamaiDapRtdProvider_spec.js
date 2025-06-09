@@ -9,7 +9,7 @@ import {server} from 'test/mocks/xhr.js';
 import {hook} from '../../../src/hook.js';
 const responseHeader = {'Content-Type': 'application/json'};
 
-describe('akamaiDapRtdProvider', function() {
+describe('akamaiDapRtdProvider', function () {
   const testReqBidsConfigObj = {
     adUnits: [
       {
@@ -18,7 +18,7 @@ describe('akamaiDapRtdProvider', function() {
     ]
   };
 
-  const onDone = function() { return true };
+  const onDone = function () { return true };
 
   const sampleGdprConsentConfig = {
     'gdpr': {
@@ -138,7 +138,7 @@ describe('akamaiDapRtdProvider', function() {
 
   let ortb2, bidConfig;
 
-  beforeEach(function() {
+  beforeEach(function () {
     bidConfig = {ortb2Fragments: {}};
     ortb2 = bidConfig.ortb2Fragments.global = {};
     config.resetConfig();
@@ -151,14 +151,14 @@ describe('akamaiDapRtdProvider', function() {
   afterEach(function () {
   });
 
-  describe('akamaiDapRtdSubmodule', function() {
+  describe('akamaiDapRtdSubmodule', function () {
     it('successfully instantiates', function () {
       expect(akamaiDapRtdSubmodule.init()).to.equal(true);
     });
   });
 
-  describe('Get Real-Time Data', function() {
-    it('gets rtd from local storage cache', function() {
+  describe('Get Real-Time Data', function () {
+    it('gets rtd from local storage cache', function () {
       let dapGetMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetMembershipFromLocalStorage').returns(membership)
       let dapGetRtdObjStub = sinon.stub(dapUtils, 'dapGetRtdObj').returns(cachedRtd)
       let dapGetEncryptedMembershipFromLocalStorageStub = sinon.stub(dapUtils, 'dapGetEncryptedMembershipFromLocalStorage').returns(encMembership)
@@ -182,8 +182,8 @@ describe('akamaiDapRtdProvider', function() {
     });
   });
 
-  describe('calling DAP APIs', function() {
-    it('Calls callDapAPIs for unencrypted segments flow', function() {
+  describe('calling DAP APIs', function () {
+    it('Calls callDapAPIs for unencrypted segments flow', function () {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       let dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
       try {
@@ -203,7 +203,7 @@ describe('akamaiDapRtdProvider', function() {
       }
     });
 
-    it('Calls callDapAPIs for encrypted segments flow', function() {
+    it('Calls callDapAPIs for encrypted segments flow', function () {
       storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(sampleCachedToken));
       let dapExtractExpiryFromTokenStub = sinon.stub(dapUtils, 'dapExtractExpiryFromToken').returns(cacheExpiry)
       try {
@@ -229,9 +229,9 @@ describe('akamaiDapRtdProvider', function() {
     it('dapTokenize error callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -242,9 +242,9 @@ describe('akamaiDapRtdProvider', function() {
     it('dapTokenize success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapTokenize(configAsync, sampleIdentity, onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -300,9 +300,9 @@ describe('akamaiDapRtdProvider', function() {
     it('dapMembership success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -313,9 +313,9 @@ describe('akamaiDapRtdProvider', function() {
     it('dapMembership error callback', function () {
       let configAsync = JSON.parse(JSON.stringify(sampleConfig));
       let submoduleCallback = dapUtils.dapMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -328,9 +328,9 @@ describe('akamaiDapRtdProvider', function() {
     it('dapEncMembership success callback', function () {
       let configAsync = JSON.parse(JSON.stringify(esampleConfig));
       let submoduleCallback = dapUtils.dapEncryptedMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];
@@ -341,9 +341,9 @@ describe('akamaiDapRtdProvider', function() {
     it('dapEncMembership error callback', function () {
       let configAsync = JSON.parse(JSON.stringify(esampleConfig));
       let submoduleCallback = dapUtils.dapEncryptedMembership(configAsync, 'token', onDone,
-        function(token, status, xhr, onDone) {
+        function (token, status, xhr, onDone) {
         },
-        function(xhr, status, error, onDone) {
+        function (xhr, status, error, onDone) {
         }
       );
       let request = server.requests[0];

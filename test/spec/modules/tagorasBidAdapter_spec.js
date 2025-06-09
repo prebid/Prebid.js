@@ -198,7 +198,7 @@ const REQUEST = {
   }
 };
 
-function getTopWindowQueryParams() {
+function getTopWindowQueryParams () {
   try {
     const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
     return parsedUrl.search;

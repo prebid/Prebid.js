@@ -7,7 +7,7 @@ const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
 const COOKIE_LESS_URL =
   'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
 
-function _createServerRequest(bidRequests, bidderRequest) {
+function _createServerRequest (bidRequests, bidderRequest) {
   var sizeIds = [];
   bidRequests.forEach(function (bid) {
     var sizeId = {
@@ -88,7 +88,7 @@ function _createServerRequest(bidRequests, bidderRequest) {
   };
 }
 
-function _assignSegments(bid) {
+function _assignSegments (bid) {
   var segs = (bid.ortb2 && bid.ortb2.user && bid.ortb2.user.ext && bid.ortb2.user.ext.data && bid.ortb2.user.ext.data.sd_rtd && bid.ortb2.user.ext.data.sd_rtd.segments ? bid.ortb2.user.ext.data.sd_rtd.segments : []);
   var cats = {};
   if (bid.ortb2 && bid.ortb2.site && bid.ortb2.site.ext && bid.ortb2.site.ext.data && bid.ortb2.site.ext.data.sd_rtd) {
@@ -106,7 +106,7 @@ function _assignSegments(bid) {
   };
 }
 
-function _createBidResponse(response) {
+function _createBidResponse (response) {
   return {
     requestId: response.requestId,
     cpm: response.cpm,
@@ -130,7 +130,7 @@ function _createBidResponse(response) {
  * @return boolean True if this is a valid bid, and false otherwise.
  */
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   return !!(bid.params.website && bid.params.language);
 }
 /**
@@ -141,7 +141,7 @@ function isBidRequestValid(bid) {
  * @return ServerRequest Info describing the request to the server.
  */
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   var request = _createServerRequest(bidRequests, bidderRequest);
 
   return request;
@@ -154,11 +154,11 @@ function buildRequests(bidRequests, bidderRequest) {
  * @return  An array of bids which were nested inside the server.
  */
 
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   return serverResponse.body.map(_createBidResponse);
 }
 
-function _assignFloor(bid) {
+function _assignFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }

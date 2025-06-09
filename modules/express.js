@@ -14,7 +14,7 @@ const pbjsInstance = getGlobal();
  *
  * @param {Object[]} [adUnits = pbjs.adUnits] - an array of adUnits for express to operate on.
  */
-pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
+pbjsInstance.express = function (adUnits = pbjsInstance.adUnits) {
   logMessage('loading ' + MODULE_NAME);
 
   if (adUnits.length === 0) {
@@ -46,7 +46,7 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
     logMessage('running');
 
     // function to convert google tag slot sizes to [[w,h],...]
-    function mapGptSlotSizes(aGPTSlotSizes) {
+    function mapGptSlotSizes (aGPTSlotSizes) {
       var aSlotSizes = [];
       for (var i = 0; i < aGPTSlotSizes.length; i++) {
         try {
@@ -59,7 +59,7 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
     }
 
     // a helper function to verify slots or get slots if not present
-    function defaultSlots(slots) {
+    function defaultSlots (slots) {
       return Array.isArray(slots)
         ? slots.slice()
         // eslint-disable-next-line no-undef
@@ -67,7 +67,7 @@ pbjsInstance.express = function(adUnits = pbjsInstance.adUnits) {
     }
 
     // maps gpt slots to adUnits, matches are copied to new array and removed from passed array.
-    function pickAdUnits(gptSlots) {
+    function pickAdUnits (gptSlots) {
       var adUnits = [];
       // traverse backwards (since gptSlots is mutated) to find adUnits in cache and remove non-mapped slots
       for (var i = gptSlots.length - 1; i > -1; i--) {

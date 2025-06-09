@@ -556,28 +556,28 @@ describe('PubMatic adapter', () => {
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should contain string values with length greater than 3', function() {
+        it('should contain string values with length greater than 3', function () {
           validBidRequests[0].params.bcat = ['AB', 'CD', 'IAB1', 'IAB2'];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('bcat');
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should trim strings', function() {
+        it('should trim strings', function () {
           validBidRequests[0].params.bcat = ['   IAB1    ', '   IAB2   '];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('bcat');
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should pass unique strings', function() {
+        it('should pass unique strings', function () {
           validBidRequests[0].params.bcat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2'];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.have.property('bcat');
           expect(request.data).to.have.property('bcat').to.deep.equal(['IAB1', 'IAB2']);
         });
 
-        it('should fail if validations are not met', function() {
+        it('should fail if validations are not met', function () {
           validBidRequests[0].params.bcat = ['', 'IA', 'IB'];
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request.data).to.not.have.property('bcat');

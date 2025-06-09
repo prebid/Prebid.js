@@ -104,13 +104,13 @@ describe('H12 Media Adapter', function () {
     }
   };
 
-  function removeElement(id) {
+  function removeElement (id) {
     if (document.getElementById(id)) {
       document.body.removeChild(document.getElementById(id));
     }
   }
 
-  function createElement(id) {
+  function createElement (id) {
     const div = document.createElement('div');
     div.id = id;
     div.style.width = '50px';
@@ -123,7 +123,7 @@ describe('H12 Media Adapter', function () {
     document.body.appendChild(div);
     return div;
   }
-  function createElementVisible(id) {
+  function createElementVisible (id) {
     const element = createElement(id);
     sandbox.stub(element, 'getBoundingClientRect').returns({
       x: 10,
@@ -131,7 +131,7 @@ describe('H12 Media Adapter', function () {
     });
     return element;
   }
-  function createElementInvisible(id) {
+  function createElementInvisible (id) {
     const element = document.createElement('div');
     element.id = id;
     document.body.appendChild(element);
@@ -139,7 +139,7 @@ describe('H12 Media Adapter', function () {
     return element;
   }
 
-  function createElementHidden(id) {
+  function createElementHidden (id) {
     const element = createElement(id);
     document.body.appendChild(element);
     element.style.visibility = 'hidden';
@@ -168,7 +168,7 @@ describe('H12 Media Adapter', function () {
     sandbox.restore();
   });
 
-  after(function() {
+  after(function () {
     sandbox.resetHistory();
     sandbox.resetBehavior();
   })

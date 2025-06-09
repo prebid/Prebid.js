@@ -33,7 +33,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @param {String} defaultVal
  * @param arg
  */
-function paramOrDefault(param, defaultVal, arg) {
+function paramOrDefault (param, defaultVal, arg) {
   if (isFn(param)) {
     return param(arg);
   } else if (isStr(param)) {
@@ -67,7 +67,7 @@ export const hadronIdSubmodule = {
    * @param {string} value
    * @returns {Object}
    */
-  decode(value) {
+  decode (value) {
     return {
       hadronId: isStr(value) ? value : value.hasOwnProperty('id') ? value.id[MODULE_NAME] : value[MODULE_NAME]
     }
@@ -78,7 +78,7 @@ export const hadronIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     logInfo(LOG_PREFIX, `getId is called`, config);
     if (!isPlainObject(config.params)) {
       config.params = {};

@@ -172,7 +172,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function displayNative(ad, template) {
+function displayNative (ad, template) {
   template = template.replace(/{image}/g, ad['image']['url']);
   template = template.replace(/{title}/g, ad['title']);
   template = template.replace(/{clickUrl}/g, ad['clickUrl']);
@@ -180,7 +180,7 @@ function displayNative(ad, template) {
   return template;
 }
 
-function getTemplate(size, customTemplate) {
+function getTemplate (size, customTemplate) {
   if (typeof (customTemplate) !== 'undefined' && customTemplate !== '') {
     return customTemplate;
   }
@@ -200,7 +200,7 @@ function getTemplate(size, customTemplate) {
   return '';
 }
 
-function buildImp(bid, id) {
+function buildImp (bid, id) {
   let bidfloor;
   if (isFn(bid.getFloor)) {
     bidfloor = bid.getFloor({

@@ -7,7 +7,7 @@ import { ajax } from '../../src/ajax.js';
  * @param {string} referer - The referer URL.
  * @returns {Object} - An object containing bidRequests and beaconParams.
  */
-export function buildBidRequestsAndParams(validBidRequests, referer) {
+export function buildBidRequestsAndParams (validBidRequests, referer) {
   const bidRequests = [];
   const beaconParams = { tag: [], partner: [], sizes: [], referer: encodeURIComponent(referer) };
 
@@ -48,14 +48,14 @@ export function buildBidRequestsAndParams(validBidRequests, referer) {
   return { bidRequests, beaconParams };
 }
 
-export function joinSizesToString(sizes) {
+export function joinSizesToString (sizes) {
   return sizes.map(size => size.join('x')).join('|');
 }
 
-export function postRequest(endpoint, data) {
+export function postRequest (endpoint, data) {
   ajax(endpoint, null, data, { method: 'POST' });
 }
 
-export function buildEndpointUrl(protocol, hostname, pathname, searchParams) {
+export function buildEndpointUrl (protocol, hostname, pathname, searchParams) {
   return buildUrl({ protocol, hostname, pathname, search: searchParams });
 }

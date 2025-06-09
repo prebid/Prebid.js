@@ -20,7 +20,7 @@ describe('topics', () => {
   });
 
   describe('getTopicsData', () => {
-    function makeTopic(topic, modelv, taxv = '1') {
+    function makeTopic (topic, modelv, taxv = '1') {
       return {
         topic,
         taxonomyVersion: taxv,
@@ -28,7 +28,7 @@ describe('topics', () => {
       };
     }
 
-    function byTaxClass(segments) {
+    function byTaxClass (segments) {
       return segments.reduce((memo, segment) => {
         memo[`${segment.ext.segtax}:${segment.ext.segclass}`] = segment;
         return memo;
@@ -184,7 +184,7 @@ describe('topics', () => {
       },
       'document that throws on featurePolicy': {
         browsingTopics: sinon.stub(),
-        get featurePolicy() {
+        get featurePolicy () {
           throw new Error();
         }
       },
@@ -280,7 +280,7 @@ describe('topics', () => {
       'allow': {
         browsingTopics: true,
         featurePolicy: {
-          allowsFeature(feature) {
+          allowsFeature (feature) {
             return feature !== 'browsing-topics';
           }
         }
@@ -401,11 +401,11 @@ describe('topics', () => {
         loadTopicsForBidders({
           browsingTopics: true,
           featurePolicy: {
-            allowsFeature() { return true }
+            allowsFeature () { return true }
           },
           createElement: sinon.stub().callsFake(() => ({style: {}})),
           documentElement: {
-            appendChild() {}
+            appendChild () {}
           }
         });
       });
@@ -466,7 +466,7 @@ describe('handles fetch request for topics api headers', () => {
     loadTopicsForBidders({
       browsingTopics: true,
       featurePolicy: {
-        allowsFeature() { return true }
+        allowsFeature () { return true }
       }
     });
     sinon.assert.calledOnce(stubbedFetch);
@@ -490,7 +490,7 @@ describe('handles fetch request for topics api headers', () => {
     loadTopicsForBidders({
       browsingTopics: true,
       featurePolicy: {
-        allowsFeature() { return true }
+        allowsFeature () { return true }
       }
     });
     sinon.assert.notCalled(stubbedFetch);
@@ -528,7 +528,7 @@ describe('handles fetch request for topics api headers', () => {
     loadTopicsForBidders({
       browsingTopics: true,
       featurePolicy: {
-        allowsFeature() { return true }
+        allowsFeature () { return true }
       }
     });
     sinon.assert.notCalled(stubbedFetch);

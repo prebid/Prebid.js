@@ -19,7 +19,7 @@ const converter = ortbConverter({
     currency: DEFAULT_CURRENCY,
     mediaType: BANNER,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     return imp;
   },
@@ -47,7 +47,7 @@ export const spec = {
     return false;
   },
 
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     let data = converter.toORTB({ bidRequests, bidderRequest });
 
     return [
@@ -60,7 +60,7 @@ export const spec = {
     ];
   },
 
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     const bids = converter.fromORTB({
       response: response.body,
       request: request.data,

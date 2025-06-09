@@ -103,7 +103,7 @@ export const spec = {
 
 };
 
-function parseRTBResponse(serverResponse, adapterRequest) {
+function parseRTBResponse (serverResponse, adapterRequest) {
   const isEmptyResponse = !serverResponse || !isArray(serverResponse.bids);
   const bids = [];
 
@@ -126,7 +126,7 @@ function parseRTBResponse(serverResponse, adapterRequest) {
   return bids;
 }
 
-function bidToTag(bidRequests, adapterRequest) {
+function bidToTag (bidRequests, adapterRequest) {
   // start publisher env
   const tag = createTag(bidRequests, adapterRequest);
   if (window.adtDmp && window.adtDmp.ready) {
@@ -157,7 +157,7 @@ function bidToTag(bidRequests, adapterRequest) {
  * @param bidReq {object}
  * @returns {object}
  */
-function prepareBidRequests(bidReq) {
+function prepareBidRequests (bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
   const bidReqParams = {
@@ -188,7 +188,7 @@ function prepareBidRequests(bidReq) {
  * @param bidderRequest {object}
  * @returns {object}
  */
-function getMediaType(bidderRequest) {
+function getMediaType (bidderRequest) {
   return deepAccess(bidderRequest, 'mediaTypes.video') ? VIDEO : BANNER;
 }
 
@@ -198,7 +198,7 @@ function getMediaType(bidderRequest) {
  * @param bidRequest {Object}
  * @returns {object}
  */
-function createBid(bidResponse, bidRequest) {
+function createBid (bidResponse, bidRequest) {
   const mediaType = getMediaType(bidRequest)
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
   const bid = {
@@ -254,7 +254,7 @@ function createBid(bidResponse, bidRequest) {
  * @param bidderParams
  * @returns {*}
  */
-function newRenderer(requestId, bidderParams) {
+function newRenderer (requestId, bidderParams) {
   const renderer = Renderer.install({
     id: requestId,
     url: OUTSTREAM_SRC,
@@ -271,7 +271,7 @@ function newRenderer(requestId, bidderParams) {
  * Initialise Adtelligent outstream
  * @param bid
  */
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     const opts = Object.assign({}, bid.renderer.getConfig(), {
       width: bid.width,

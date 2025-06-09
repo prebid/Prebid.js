@@ -26,7 +26,7 @@ const converter = ortbConverter({
     currency: 'USD',
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const floor = getBidfloor(bidRequest);
 
@@ -45,7 +45,7 @@ const converter = ortbConverter({
     return imp;
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
     deepSetValue(request, 'ext.prebid.mobilefuse.version', ADAPTER_VERSION);
@@ -63,11 +63,11 @@ const converter = ortbConverter({
   }
 });
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   return !!bid.params.placement_id;
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   return {
     method: 'POST',
     url: ENDPOINT_URL,
@@ -75,7 +75,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   };
 }
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   if (!response.body || !response.body.seatbid) {
     return [];
   }
@@ -86,7 +86,7 @@ function interpretResponse(response, request) {
   }).bids;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   if (syncOptions.iframeEnabled) {
     const params = [];
 
@@ -117,7 +117,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   return pixels;
 }
 
-function getBidfloor(bidRequest) {
+function getBidfloor (bidRequest) {
   if (bidRequest.params.bidfloor) {
     return bidRequest.params.bidfloor;
   }

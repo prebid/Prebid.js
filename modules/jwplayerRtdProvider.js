@@ -65,11 +65,11 @@ config.getConfig('realTimeData', ({realTimeData}) => {
 
 submodule('realTimeData', jwplayerSubmodule);
 
-function init(provider, userConsent) {
+function init (provider, userConsent) {
   return true;
 }
 
-export function fetchTargetingInformation(jwTargeting) {
+export function fetchTargetingInformation (jwTargeting) {
   const mediaIDs = jwTargeting.mediaIDs;
   if (!mediaIDs) {
     return;
@@ -79,14 +79,14 @@ export function fetchTargetingInformation(jwTargeting) {
   });
 }
 
-export function setOverrides(params) {
+export function setOverrides (params) {
   overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_WHEN_EMPTY);
   overrideContentUrl = sanitizeOverrideParam(params.overrideContentUrl, ENRICH_WHEN_EMPTY);
   overrideContentTitle = sanitizeOverrideParam(params.overrideContentTitle, ENRICH_WHEN_EMPTY);
   overrideContentDescription = sanitizeOverrideParam(params.overrideContentDescription, ENRICH_WHEN_EMPTY);
 }
 
-function sanitizeOverrideParam(overrideParam, defaultValue) {
+function sanitizeOverrideParam (overrideParam, defaultValue) {
   if (overrideValidationRegex.test(overrideParam)) {
     return overrideParam;
   }
@@ -94,7 +94,7 @@ function sanitizeOverrideParam(overrideParam, defaultValue) {
   return defaultValue;
 }
 
-export function fetchTargetingForMediaId(mediaId) {
+export function fetchTargetingForMediaId (mediaId) {
   const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
@@ -111,7 +111,7 @@ export function fetchTargetingForMediaId(mediaId) {
   });
 }
 
-function parsePlaylistItem(response) {
+function parsePlaylistItem (response) {
   let item;
   try {
     const data = JSON.parse(response);
@@ -131,13 +131,13 @@ function parsePlaylistItem(response) {
   return item;
 }
 
-function cachePlaylistItem(playlistItem, mediaId) {
+function cachePlaylistItem (playlistItem, mediaId) {
   if (playlistItem && mediaId) {
     playlistItemCache[mediaId] = playlistItem;
   }
 }
 
-function onRequestCompleted(mediaID, success) {
+function onRequestCompleted (mediaID, success) {
   const callback = pendingRequests[mediaID];
   if (callback) {
     callback(success ? getVatFromCache(mediaID) : { mediaID });
@@ -155,7 +155,7 @@ function onRequestCompleted(mediaID, success) {
   }
 }
 
-function enrichBidRequest(bidReqConfig, onDone) {
+function enrichBidRequest (bidReqConfig, onDone) {
   activeRequestCount = 0;
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
   enrichAdUnits(adUnits, bidReqConfig.ortb2Fragments);
@@ -172,7 +172,7 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * @param {adUnit[]} adUnits
  * @param ortb2Fragments
  */
-export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
+export function enrichAdUnits (adUnits, ortb2Fragments = {}) {
   const fpdFallback = deepAccess(ortb2Fragments.global, 'site.ext.data.jwTargeting');
   adUnits.forEach(adUnit => {
     const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
@@ -196,12 +196,12 @@ export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
   });
 }
 
-function supportsInstreamVideo(mediaTypes) {
+function supportsInstreamVideo (mediaTypes) {
   const video = mediaTypes && mediaTypes.video;
   return video && video.context === 'instream';
 }
 
-export function extractPublisherParams(adUnit, fallback) {
+export function extractPublisherParams (adUnit, fallback) {
   let adUnitTargeting;
   try {
     adUnitTargeting = adUnit.ortb2Imp.ext.data.jwTargeting;
@@ -214,7 +214,7 @@ export function extractPublisherParams(adUnit, fallback) {
   return Object.assign({}, fallback, adUnitTargeting);
 }
 
-function loadVat(params, onCompletion) {
+function loadVat (params, onCompletion) {
   let { playerID, playerDivId, mediaID } = params;
   if (!playerDivId) {
     playerDivId = playerID;
@@ -229,7 +229,7 @@ function loadVat(params, onCompletion) {
   onCompletion(vat);
 }
 
-function loadVatForPendingRequest(playerDivId, mediaID, callback) {
+function loadVatForPendingRequest (playerDivId, mediaID, callback) {
   const vat = getVatFromPlayer(playerDivId, mediaID);
   if (vat) {
     callback(vat);
@@ -239,7 +239,7 @@ function loadVatForPendingRequest(playerDivId, mediaID, callback) {
   }
 }
 
-export function getVatFromCache(mediaID) {
+export function getVatFromCache (mediaID) {
   const item = playlistItemCache[mediaID];
 
   if (!item) {
@@ -257,11 +257,11 @@ export function getVatFromCache(mediaID) {
   };
 }
 
-function getFileFromSources(playlistItem) {
+function getFileFromSources (playlistItem) {
   return playlistItem.sources?.find?.(source => !!source.file)?.file;
 }
 
-export function getVatFromPlayer(playerDivId, mediaID) {
+export function getVatFromPlayer (playerDivId, mediaID) {
   const player = getPlayer(playerDivId);
   if (!player) {
     return null;
@@ -291,7 +291,7 @@ export function getVatFromPlayer(playerDivId, mediaID) {
 /*
   deprecated
  */
-export function formatTargetingResponse(vat) {
+export function formatTargetingResponse (vat) {
   const { segments, mediaID } = vat;
   const targeting = {};
   if (segments && segments.length) {
@@ -306,7 +306,7 @@ export function formatTargetingResponse(vat) {
   return targeting;
 }
 
-export function getContentId(mediaID) {
+export function getContentId (mediaID) {
   if (!mediaID) {
     return;
   }
@@ -314,7 +314,7 @@ export function getContentId(mediaID) {
   return 'jw_' + mediaID;
 }
 
-export function getContentSegments(segments) {
+export function getContentSegments (segments) {
   if (!segments || !segments.length) {
     return;
   }
@@ -329,7 +329,7 @@ export function getContentSegments(segments) {
   return formattedSegments;
 }
 
-export function getContentData(mediaId, segments) {
+export function getContentData (mediaId, segments) {
   if (!mediaId && !segments) {
     return;
   }
@@ -351,7 +351,7 @@ export function getContentData(mediaId, segments) {
   return contentData;
 }
 
-export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, contentDescription, contentUrl) {
+export function addOrtbSiteContent (ortb2, contentId, contentData, contentTitle, contentDescription, contentUrl) {
   if (ortb2 == null) {
     ortb2 = {};
   }
@@ -391,7 +391,7 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
   return ortb2;
 }
 
-function shouldOverride(currentValue, newValue, configValue) {
+function shouldOverride (currentValue, newValue, configValue) {
   switch (configValue) {
     case ENRICH_ALWAYS:
       return !!newValue;
@@ -404,7 +404,7 @@ function shouldOverride(currentValue, newValue, configValue) {
   }
 }
 
-function enrichBids(bids, targeting, contentId, contentData) {
+function enrichBids (bids, targeting, contentId, contentData) {
   if (!bids) {
     return;
   }
@@ -417,7 +417,7 @@ function enrichBids(bids, targeting, contentId, contentData) {
 /*
   deprecated
  */
-export function addTargetingToBid(bid, targeting) {
+export function addTargetingToBid (bid, targeting) {
   if (!targeting) {
     return;
   }
@@ -428,7 +428,7 @@ export function addTargetingToBid(bid, targeting) {
   bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
-export function getPlayer(playerDivId) {
+export function getPlayer (playerDivId) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
     logError(SUBMODULE_NAME + '.js was not found on page');

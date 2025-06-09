@@ -11,7 +11,7 @@ export const tapadIdSubmodule = {
    * @function
    * @returns {{tapadId: string} | undefined}
    */
-  decode(id) {
+  decode (id) {
     return { tapadId: id };
   },
   /*
@@ -21,7 +21,7 @@ export const tapadIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse }}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const uspData = consentData?.usp;
     if (uspData && uspData !== '1---') {
       return { id: undefined };

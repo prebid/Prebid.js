@@ -12,7 +12,7 @@ import {deepAccess, isArray, isEmptyStr, isFn, logError} from '../../src/utils.j
  * @param bidRequest
  * @param payload
  */
-export function fillUsersIds(bidRequest, payload) {
+export function fillUsersIds (bidRequest, payload) {
   if (bidRequest.hasOwnProperty('userId')) {
     let didMapping = {
       did_netid: 'userId.netId',
@@ -26,7 +26,7 @@ export function fillUsersIds(bidRequest, payload) {
       did_euid: 'userId.euid',
       // did_tdid: 'unifiedId',
       did_tdid: 'userId.tdid',
-      did_ppuid: function() {
+      did_ppuid: function () {
         let path = 'userId.pubProvidedId';
         let value = deepAccess(bidRequest, path);
         if (isArray(value)) {
@@ -74,14 +74,14 @@ export function fillUsersIds(bidRequest, payload) {
   }
 }
 
-export function appendToUrl(url, what) {
+export function appendToUrl (url, what) {
   if (!what) {
     return url;
   }
   return url + (url.indexOf('?') !== -1 ? '&' : '?') + what;
 }
 
-export function objectToQueryString(obj, prefix) {
+export function objectToQueryString (obj, prefix) {
   let str = [];
   let p;
   for (p in obj) {
@@ -102,7 +102,7 @@ export function objectToQueryString(obj, prefix) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a banner bid
  */
-export function isBannerRequest(bid) {
+export function isBannerRequest (bid) {
   return bid.mediaType === 'banner' || !!deepAccess(bid, 'mediaTypes.banner') || !isVideoRequest(bid);
 }
 
@@ -112,7 +112,7 @@ export function isBannerRequest(bid) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {boolean} True if it's a video bid
  */
-export function isVideoRequest(bid) {
+export function isVideoRequest (bid) {
   return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
@@ -122,7 +122,7 @@ export function isVideoRequest(bid) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object}
  */
-export function getVideoSizes(bid) {
+export function getVideoSizes (bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
 }
 
@@ -132,7 +132,7 @@ export function getVideoSizes(bid) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object}
  */
-export function getVideoContext(bid) {
+export function getVideoContext (bid) {
   return deepAccess(bid, 'mediaTypes.video.context') || 'unknown';
 }
 
@@ -142,7 +142,7 @@ export function getVideoContext(bid) {
  * @param {BidRequest} bid - Bid request generated from ad slots
  * @returns {object} True if it's a video bid
  */
-export function getBannerSizes(bid) {
+export function getBannerSizes (bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
@@ -151,7 +151,7 @@ export function getBannerSizes(bid) {
  * @param size
  * @returns {object} sizeObj
  */
-export function parseSize(size) {
+export function parseSize (size) {
   let sizeObj = {}
   sizeObj.width = parseInt(size[0], 10);
   sizeObj.height = parseInt(size[1], 10);
@@ -163,7 +163,7 @@ export function parseSize(size) {
  * @param sizes
  * @returns {{width: number , height: number }[]}
  */
-export function parseSizes(sizes) {
+export function parseSizes (sizes) {
   if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
     return sizes.map(size => parseSize(size));
   }
@@ -176,7 +176,7 @@ export function parseSizes(sizes) {
  * @param mediaTypesInfo
  * @returns {*}
  */
-export function convertMediaInfoForRequest(mediaTypesInfo) {
+export function convertMediaInfoForRequest (mediaTypesInfo) {
   let requestData = {};
   Object.keys(mediaTypesInfo).forEach(mediaType => {
     requestData[mediaType] = mediaTypesInfo[mediaType].map(size => {
@@ -191,7 +191,7 @@ export function convertMediaInfoForRequest(mediaTypesInfo) {
  *
  * @param bid
  */
-export function getMediaTypesInfo(bid) {
+export function getMediaTypesInfo (bid) {
   let mediaTypesInfo = {};
 
   if (bid.mediaTypes) {
@@ -214,7 +214,7 @@ export function getMediaTypesInfo(bid) {
  * @param bid
  * @returns {number|*}
  */
-export function getBidFloor(bid) {
+export function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidfloor', 0);
   }
@@ -235,7 +235,7 @@ export function getBidFloor(bid) {
  * Convert site.content to string
  * @param content
  */
-export function siteContentToString(content) {
+export function siteContentToString (content) {
   if (!content) {
     return '';
   }
@@ -269,7 +269,7 @@ export function siteContentToString(content) {
  * @param {Object} target - The object to which the values will be assigned.
  * @param {Object} values - An object containing key-value pairs to be assigned.
  */
-export function assignDefinedValues(target, values) {
+export function assignDefinedValues (target, values) {
   for (const key in values) {
     if (values[key] !== undefined) {
       target[key] = values[key];
@@ -282,7 +282,7 @@ export function assignDefinedValues(target, values) {
  * @param {Object} bid - The bid request object
  * @returns {{segclass: *, segtax: *, segments: *}|undefined} - User segments/topics or undefined if not found
  */
-export function extractUserSegments(bid) {
+export function extractUserSegments (bid) {
   const userData = deepAccess(bid, 'ortb2.user.data') || [];
   for (const dataObj of userData) {
     if (dataObj.segment && isArray(dataObj.segment) && dataObj.segment.length > 0) {
@@ -301,7 +301,7 @@ export function extractUserSegments(bid) {
   return undefined;
 }
 
-export function handleSyncUrls(syncOptions, serverResponses, gdprConsent, uspConsent) {
+export function handleSyncUrls (syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (!serverResponses || serverResponses.length === 0) {
     return [];
   }
@@ -333,7 +333,7 @@ export function handleSyncUrls(syncOptions, serverResponses, gdprConsent, uspCon
   return syncs;
 }
 
-export function interpretResponse(serverResponse, bidRequest, rendererFunc) {
+export function interpretResponse (serverResponse, bidRequest, rendererFunc) {
   const bidResponses = [];
   const response = serverResponse.body;
   const crid = response.crid || 0;

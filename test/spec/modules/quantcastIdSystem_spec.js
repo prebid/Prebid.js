@@ -6,7 +6,7 @@ import {createEidsArray} from '../../../modules/userId/eids.js';
 import {expect} from 'chai/index.mjs';
 
 describe('QuantcastId module', function () {
-  beforeEach(function() {
+  beforeEach(function () {
     sinon.stub(coppaDataHandler, 'getCoppa');
     sinon.stub(utils, 'triggerPixel');
     sinon.stub(window, 'addEventListener');
@@ -74,28 +74,28 @@ describe('QuantcastId fire pixel', function () {
   });
 });
 
-describe('Quantcast CCPA consent check', function() {
-  it('returns true when CCPA constent string is not present', function() {
+describe('Quantcast CCPA consent check', function () {
+  it('returns true when CCPA constent string is not present', function () {
     expect(hasCCPAConsent()).to.equal(true);
   });
 
-  it("returns true when notice_given or do-not-sell in CCPA constent string is not 'Y' ", function() {
+  it("returns true when notice_given or do-not-sell in CCPA constent string is not 'Y' ", function () {
     expect(hasCCPAConsent('1NNN')).to.equal(true);
     expect(hasCCPAConsent('1YNN')).to.equal(true);
     expect(hasCCPAConsent('1NYN')).to.equal(true);
   });
 
-  it("returns false when CCPA consent string is present, and notice_given or do-not-sell in the string is 'Y' ", function() {
+  it("returns false when CCPA consent string is present, and notice_given or do-not-sell in the string is 'Y' ", function () {
     expect(hasCCPAConsent('1YYN')).to.equal(false);
   });
 });
 
-describe('Quantcast GDPR consent check', function() {
-  it("returns true when GDPR doesn't apply", function() {
+describe('Quantcast GDPR consent check', function () {
+  it("returns true when GDPR doesn't apply", function () {
     expect(hasGDPRConsent({gdprApplies: false})).to.equal(true);
   });
 
-  it('returns false if denied consent, even if special purpose 1 treatment is true in DE', function() {
+  it('returns false if denied consent, even if special purpose 1 treatment is true in DE', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       publisherCC: 'DE',
@@ -116,7 +116,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(false);
   });
 
-  it('returns false if publisher flatly denies required purpose', function() {
+  it('returns false if publisher flatly denies required purpose', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -135,7 +135,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(false);
   });
 
-  it('returns true if positive consent for required purpose', function() {
+  it('returns true if positive consent for required purpose', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -147,7 +147,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(true);
   });
 
-  it('returns false if positive consent but publisher requires legitimate interest for required purpose', function() {
+  it('returns false if positive consent but publisher requires legitimate interest for required purpose', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -166,7 +166,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(false);
   });
 
-  it('returns false if no vendor consent and no legitimate interest', function() {
+  it('returns false if no vendor consent and no legitimate interest', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -178,7 +178,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(false);
   });
 
-  it('returns false if no purpose consent and no legitimate interest', function() {
+  it('returns false if no purpose consent and no legitimate interest', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -190,7 +190,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(false);
   });
 
-  it('returns false if no consent, but legitimate interest for consent-first purpose, and no restrictions specified', function() {
+  it('returns false if no consent, but legitimate interest for consent-first purpose, and no restrictions specified', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -204,7 +204,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(false);
   });
 
-  it('returns false if consent, but no legitimate interest for legitimate-interest-first purpose, and no restrictions specified', function() {
+  it('returns false if consent, but no legitimate interest for legitimate-interest-first purpose, and no restrictions specified', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -218,7 +218,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['10'])).to.equal(false);
   });
 
-  it('returns true if consent, but no legitimate interest for legitimate-interest-first purpose, and corresponding consent restriction specified', function() {
+  it('returns true if consent, but no legitimate interest for legitimate-interest-first purpose, and corresponding consent restriction specified', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -239,7 +239,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['10'])).to.equal(true);
   });
 
-  it('returns false if no consent but legitimate interest for required purpose other than 1, but publisher requires consent', function() {
+  it('returns false if no consent but legitimate interest for required purpose other than 1, but publisher requires consent', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -260,7 +260,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['10'])).to.equal(false);
   });
 
-  it('returns false if no consent and no legitimate interest for vendor for required purpose other than 1', function() {
+  it('returns false if no consent and no legitimate interest for vendor for required purpose other than 1', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -274,7 +274,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['10'])).to.equal(false);
   });
 
-  it('returns false if no consent and no legitimate interest for required purpose other than 1', function() {
+  it('returns false if no consent and no legitimate interest for required purpose other than 1', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -288,7 +288,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['10'])).to.equal(false);
   });
 
-  it('returns false if no consent but legitimate interest for required purpose, but required purpose is purpose 1', function() {
+  it('returns false if no consent but legitimate interest for required purpose, but required purpose is purpose 1', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -302,7 +302,7 @@ describe('Quantcast GDPR consent check', function() {
     }, ['1'])).to.equal(false);
   });
 
-  it('returns true if different legal bases for multiple required purposes', function() {
+  it('returns true if different legal bases for multiple required purposes', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -329,7 +329,7 @@ describe('Quantcast GDPR consent check', function() {
     })).to.equal(true);
   });
 
-  it('returns true if full consent and legitimate interest for all required purposes with no restrictions specified', function() {
+  it('returns true if full consent and legitimate interest for all required purposes with no restrictions specified', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -357,7 +357,7 @@ describe('Quantcast GDPR consent check', function() {
     })).to.equal(true);
   });
 
-  it('returns false if one of multiple required purposes has no legal basis', function() {
+  it('returns false if one of multiple required purposes has no legal basis', function () {
     expect(checkTCFv2({
       gdprApplies: true,
       vendor: {
@@ -387,7 +387,7 @@ describe('Quantcast GDPR consent check', function() {
     before(() => {
       attachIdSystem(quantcastIdSubmodule);
     });
-    it('quantcastId', function() {
+    it('quantcastId', function () {
       const userId = {
         quantcastId: 'some-random-id-value'
       };

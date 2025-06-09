@@ -30,7 +30,7 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
   /**
    * Execute on bid won - setup basic settings, save context about EightPod's bid. We will send it with our events later
    */
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case BID_WON:
         if (args.bidder === 'eightPod') {
@@ -45,14 +45,14 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
   /**
    * Execute on bid won upload events from local storage
    */
-  setupPage() {
+  setupPage () {
     queue = this.getEventFromLocalStorage();
   },
 
   /**
    * Subscribe on internal ad unit tracking events
    */
-  eventSubscribe() {
+  eventSubscribe () {
     window.addEventListener('message', async (event) => {
       const data = event.data;
 
@@ -67,13 +67,13 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
       this._interval = setInterval(sendEvents, 10_000);
     }
   },
-  resetQueue() {
+  resetQueue () {
     queue = [];
   },
-  getContext() {
+  getContext () {
     return context;
   },
-  resetContext() {
+  resetContext () {
     context = {};
   },
   getEventFromLocalStorage,
@@ -82,7 +82,7 @@ let eightPodAnalytics = Object.assign(adapter({url: trackerUrl, analyticsType}),
 /**
  * Create context of event, who emits it
  */
-function makeContext(args) {
+function makeContext (args) {
   const params = args?.params?.[0];
   return {
     bidId: args.seatBidId,
@@ -96,7 +96,7 @@ function makeContext(args) {
 /**
  * Create event, add context and push it to queue
  */
-export function trackEvent(event, adUnitCode) {
+export function trackEvent (event, adUnitCode) {
   if (!event.detail) {
     return;
   }
@@ -117,7 +117,7 @@ export function trackEvent(event, adUnitCode) {
 /**
  * Push event to queue, save event list in local storage
  */
-function addEvent(eventPayload) {
+function addEvent (eventPayload) {
   queue.push(eventPayload);
   storage.setDataInLocalStorage(`EIGHT_POD_EVENTS`, JSON.stringify(queue), null);
 }
@@ -125,7 +125,7 @@ function addEvent(eventPayload) {
 /**
  * Gets previously saved event that has not been sent
  */
-function getEventFromLocalStorage() {
+function getEventFromLocalStorage () {
   const storedEvents = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage('EIGHT_POD_EVENTS') : null;
 
   if (storedEvents) {
@@ -138,7 +138,7 @@ function getEventFromLocalStorage() {
 /**
  * Send event to our custom tracking server and reset queue
  */
-function sendEvents() {
+function sendEvents () {
   eightPodAnalytics.eventsStorage = queue;
 
   if (queue.length) {
@@ -161,7 +161,7 @@ function sendEvents() {
 /**
  * Send event to our custom tracking server
  */
-function sendEventsApi(eventList, callbacks) {
+function sendEventsApi (eventList, callbacks) {
   ajax(trackerUrl, callbacks, JSON.stringify(eventList), {keepalive: true});
 }
 

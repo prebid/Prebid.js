@@ -37,7 +37,7 @@ export const domainUtils = {
   domainOverride: domainOverrideToRootDomain(storage, MODULE_NAME)
 };
 
-function calculateResponseObj(response) {
+function calculateResponseObj (response) {
   if (!response.succeeded) {
     if (response.error == 'Cookied User') {
       logMessage(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
@@ -60,7 +60,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes) {
+function calculateQueryStringParams ({ pid, pubProvidedHem }, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -106,7 +106,7 @@ function calculateQueryStringParams({ pid, pubProvidedHem }, gdprConsentData, en
   return params;
 }
 
-function deleteFromStorage(key) {
+function deleteFromStorage (key) {
   if (storage.cookiesAreEnabled()) {
     const expiredDate = new Date(0).toUTCString();
 
@@ -116,7 +116,7 @@ function deleteFromStorage(key) {
   storage.removeDataFromLocalStorage(key);
 }
 
-function storeValue(key, value, { enabledStorageTypes, expires }) {
+function storeValue (key, value, { enabledStorageTypes, expires }) {
   enabledStorageTypes.forEach(storageType => {
     if (storageType === STORAGE_TYPE_COOKIES) {
       const expirationInMs = 60 * 60 * 24 * 1000 * expires;
@@ -129,7 +129,7 @@ function storeValue(key, value, { enabledStorageTypes, expires }) {
   });
 }
 
-function getStoredValue(key, enabledStorageTypes) {
+function getStoredValue (key, enabledStorageTypes) {
   let storedValue;
 
   enabledStorageTypes.find(storageType => {
@@ -145,7 +145,7 @@ function getStoredValue(key, enabledStorageTypes) {
   return storedValue;
 }
 
-function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, envelopeAvailable }) {
+function filterEnabledSupplementalIds ({ tp, fp, hem }, { storeFpid, storeTpid, envelopeAvailable }) {
   const ids = [];
 
   if (storeFpid) {
@@ -169,8 +169,8 @@ function filterEnabledSupplementalIds({ tp, fp, hem }, { storeFpid, storeTpid, e
   return ids;
 }
 
-function updateSupplementalIdStorage(supplementalId, storageConfig) {
-  const [ key, id, clear ] = supplementalId;
+function updateSupplementalIdStorage (supplementalId, storageConfig) {
+  const [key, id, clear] = supplementalId;
 
   if (clear) {
     deleteFromStorage(key);
@@ -183,7 +183,7 @@ function updateSupplementalIdStorage(supplementalId, storageConfig) {
   }
 }
 
-function handleSupplementalIds(ids, { enabledStorageTypes, expires, ...options }) {
+function handleSupplementalIds (ids, { enabledStorageTypes, expires, ...options }) {
   filterEnabledSupplementalIds(ids, options).forEach((supplementalId) => {
     updateSupplementalIdStorage(supplementalId, {
       enabledStorageTypes,
@@ -208,7 +208,7 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @param {string} id
    * @returns {{'33acrossId':{ envelope: string}}}
    */
-  decode(id) {
+  decode (id) {
     return {
       [MODULE_NAME]: {
         envelope: id
@@ -222,7 +222,7 @@ export const thirtyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, {gdpr: gdprConsentData} = {}) {
+  getId ({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, {gdpr: gdprConsentData} = {}) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -244,9 +244,9 @@ export const thirtyThreeAcrossIdSubmodule = {
     const pubProvidedHem = hem || window._33across?.hem?.sha256;
 
     return {
-      callback(cb) {
+      callback (cb) {
         ajaxBuilder(AJAX_TIMEOUT)(apiUrl, {
-          success(response) {
+          success (response) {
             let responseObj = { };
 
             try {
@@ -275,7 +275,7 @@ export const thirtyThreeAcrossIdSubmodule = {
 
             cb(responseObj.envelope);
           },
-          error(err) {
+          error (err) {
             logError(`${MODULE_NAME}: ID error response`, err);
 
             cb();
@@ -292,7 +292,7 @@ export const thirtyThreeAcrossIdSubmodule = {
     '33acrossId': {
       source: '33across.com',
       atype: 1,
-      getValue: function(data) {
+      getValue: function (data) {
         return data.envelope;
       }
     },

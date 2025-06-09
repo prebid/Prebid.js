@@ -101,7 +101,7 @@ describe('orbidderBidAdapter', () => {
     ]
   };
 
-  const deepClone = function(val) {
+  const deepClone = function (val) {
     return JSON.parse(JSON.stringify(val));
   };
 

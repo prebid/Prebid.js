@@ -1283,7 +1283,7 @@ describe('smaatoBidAdapterTest', () => {
   });
 
   describe('interpretResponse', () => {
-    function buildBidRequest(payloadAsJsObj = {imp: [{}]}) {
+    function buildBidRequest (payloadAsJsObj = {imp: [{}]}) {
       return {
         method: 'POST',
         url: 'https://prebid.ad.smaato.net/oapi/prebid',

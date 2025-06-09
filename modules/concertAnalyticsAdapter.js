@@ -21,7 +21,7 @@ const {
 let queue = [];
 
 let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
-  track({ eventType, args }) {
+  track ({ eventType, args }) {
     switch (eventType) {
       case BID_RESPONSE:
         if (args.bidder !== 'concert') break;
@@ -44,7 +44,7 @@ let concertAnalytics = Object.assign(adapter({url, analyticsType}), {
   }
 });
 
-function mapBidEvent(eventType, args) {
+function mapBidEvent (eventType, args) {
   const { adId, auctionId, cpm, creativeId, width, height, timeToRespond } = args;
   const [gamCreativeId, concertRequestId] = getConcertRequestId(creativeId);
 
@@ -72,17 +72,17 @@ function mapBidEvent(eventType, args) {
  *
  * @param {string} creativeId
  */
-function getConcertRequestId(creativeId) {
+function getConcertRequestId (creativeId) {
   if (!creativeId || creativeId.indexOf('|') < 0) return [null, null];
 
   return creativeId.split('|');
 }
 
-function sampleAnalytics() {
+function sampleAnalytics () {
   return Math.random() <= SAMPLE_RATE_PERCENTAGE;
 }
 
-function sendEvents() {
+function sendEvents () {
   concertAnalytics.eventsStorage = queue;
 
   if (!queue.length) return;

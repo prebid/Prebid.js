@@ -21,9 +21,9 @@ const BASE_URL = 'https://auction.adpearl.io';
 export const spec = {
   code: 'pubgenius',
 
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     const adUnitId = bid.params.adUnitId;
     if (!isStr(adUnitId) && !isInteger(adUnitId)) {
       logError('pubgenius bidder params: adUnitId must be a string or integer.');
@@ -95,7 +95,7 @@ export const spec = {
     };
   },
 
-  interpretResponse({ body }) {
+  interpretResponse ({ body }) {
     const bidResponses = [];
     const currency = body.cur || 'USD';
     const seatbids = body.seatbid;
@@ -113,7 +113,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
 
     if (syncOptions.iframeEnabled) {
@@ -140,14 +140,14 @@ export const spec = {
     return syncs;
   },
 
-  onTimeout(data) {
+  onTimeout (data) {
     ajax(`${getBaseUrl()}/prebid/events?type=timeout`, null, JSON.stringify(data), {
       method: 'POST',
     });
   },
 };
 
-function buildVideoParams(videoMediaType, videoParams) {
+function buildVideoParams (videoMediaType, videoParams) {
   videoMediaType = videoMediaType || {};
   const params = pick(videoMediaType, [
     'mimes',
@@ -174,7 +174,7 @@ function buildVideoParams(videoMediaType, videoParams) {
   return Object.assign(params, videoParams);
 }
 
-function buildImp(bid) {
+function buildImp (bid) {
   const imp = {
     id: bid.bidId,
     tagid: String(bid.params.adUnitId),
@@ -213,7 +213,7 @@ function buildImp(bid) {
   return imp;
 }
 
-function buildSite(bidderRequest) {
+function buildSite (bidderRequest) {
   let site = null;
   const { refererInfo } = bidderRequest;
 
@@ -231,7 +231,7 @@ function buildSite(bidderRequest) {
   return site;
 }
 
-function interpretBid(bid) {
+function interpretBid (bid) {
   const bidResponse = {
     requestId: bid.impid,
     cpm: bid.price,
@@ -269,25 +269,25 @@ function interpretBid(bid) {
   return bidResponse;
 }
 
-function numericBoolean(value) {
+function numericBoolean (value) {
   return value ? 1 : 0;
 }
 
-function getBaseUrl() {
+function getBaseUrl () {
   const pubg = config.getConfig('pubgenius');
   return (pubg && pubg.endpoint) || BASE_URL;
 }
 
-function isValidSize(size) {
+function isValidSize (size) {
   return isArrayOfNums(size, 2) && size[0] > 0 && size[1] > 0;
 }
 
-function isValidBanner(banner) {
+function isValidBanner (banner) {
   const sizes = banner.sizes;
   return !!(sizes && sizes.length) && sizes.every(isValidSize);
 }
 
-function isValidVideo(videoMediaType, videoParams) {
+function isValidVideo (videoMediaType, videoParams) {
   const params = buildVideoParams(videoMediaType, videoParams);
 
   return !!(isValidSize([params.w, params.h]) &&

@@ -167,8 +167,8 @@ const response_native = {
   }],
 };
 
-describe('BraveBidAdapter', function() {
-  describe('isBidRequestValid', function() {
+describe('BraveBidAdapter', function () {
+  describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(request_banner)).to.equal(true);
     });
@@ -245,7 +245,7 @@ describe('BraveBidAdapter', function() {
   });
 
   describe('interpretResponse', function () {
-    it('Empty response must return empty array', function() {
+    it('Empty response must return empty array', function () {
       const emptyResponse = null;
       let response = spec.interpretResponse(emptyResponse);
 

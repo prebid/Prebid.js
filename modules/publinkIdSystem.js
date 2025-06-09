@@ -27,11 +27,11 @@ const PUBLINK_REFRESH_PATH = '/cvx/client/sync/publink/refresh';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-function isHex(s) {
+function isHex (s) {
   return /^[A-F0-9]+$/i.test(s);
 }
 
-function publinkIdUrl(params, consentData, storedId) {
+function publinkIdUrl (params, consentData, storedId) {
   let url = parseUrl('https://proc.ad.cpe.dotomi.com' + PUBLINK_REFRESH_PATH);
   url.search = {
     mpn: 'Prebid.js',
@@ -67,10 +67,10 @@ function publinkIdUrl(params, consentData, storedId) {
   return buildUrl(url);
 }
 
-function makeCallback(config = {}, consentData, storedId) {
-  return function(prebidCallback) {
+function makeCallback (config = {}, consentData, storedId) {
+  return function (prebidCallback) {
     const options = {method: 'GET', withCredentials: true};
-    let handleResponse = function(responseText, xhr) {
+    let handleResponse = function (responseText, xhr) {
       if (xhr.status === 200) {
         let response = JSON.parse(responseText);
         if (response) {
@@ -86,9 +86,9 @@ function makeCallback(config = {}, consentData, storedId) {
   }
 }
 
-function getlocalValue() {
+function getlocalValue () {
   let result;
-  function getData(key) {
+  function getData (key) {
     let value;
     if (storage.hasLocalStorage()) {
       value = storage.getDataFromLocalStorage(key);
@@ -135,7 +135,7 @@ export const publinkIdSubmodule = {
    * @param {string} publinkId encrypted userid
    * @returns {{publinkId: string} | undefined}
    */
-  decode(publinkId) {
+  decode (publinkId) {
     return {publinkId: publinkId};
   },
 
@@ -148,7 +148,7 @@ export const publinkIdSubmodule = {
    * @param {(Object|undefined)} storedId Previously cached id
    * @returns {IdResponse}
    */
-  getId: function(config, consentData, storedId) {
+  getId: function (config, consentData, storedId) {
     const localValue = getlocalValue();
     if (localValue) {
       return {id: localValue};

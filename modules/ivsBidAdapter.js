@@ -32,7 +32,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (bid && typeof bid.params !== 'object') {
       logError(BIDDER_CODE + ': params is not defined or is incorrect in the bidder settings.');
       return false;
@@ -63,7 +63,7 @@ export const spec = {
    * @param {Object} bidderRequest - master bidRequest object
    * @return {Object} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const data = converter.toORTB({ bidderRequest, validBidRequests, context: {mediaType: 'video'} });
     deepSetValue(data.site, 'publisher.id', validBidRequests[0].params.publisherId);
 
@@ -83,7 +83,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body) return;
     return converter.fromORTB({ response: serverResponse.body, request: bidRequest.data }).bids;
   },

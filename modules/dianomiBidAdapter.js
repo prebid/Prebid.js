@@ -325,7 +325,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function parseNative(bid) {
+function parseNative (bid) {
   const { assets, link, imptrackers, jstracker } = bid.native;
   const result = {
     clickUrl: link.url,
@@ -349,11 +349,11 @@ function parseNative(bid) {
   return result;
 }
 
-function flatten(arr) {
+function flatten (arr) {
   return [].concat(...arr);
 }
 
-function renderer(bid) {
+function renderer (bid) {
   bid.renderer.push(() => {
     window.Dianomi.renderOutstream(bid);
   });

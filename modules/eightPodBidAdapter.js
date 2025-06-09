@@ -24,29 +24,29 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 300,
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context)
     return req
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response (buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context)
     return response.bids
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     return buildImp(bidRequest, context)
   },
   bidResponse
 })
 
-function hasRequiredParams(bidRequest) {
+function hasRequiredParams (bidRequest) {
   return !!bidRequest?.params?.placementId
 }
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   return hasRequiredParams(bidRequest)
 }
 
-function buildRequests(bids, bidderRequest) {
+function buildRequests (bids, bidderRequest) {
   let bannerBids = bids.filter((bid) => isBannerBid(bid))
   let requests = bannerBids.length
     ? createRequest(bannerBids, bidderRequest, BANNER)
@@ -55,7 +55,7 @@ function buildRequests(bids, bidderRequest) {
   return requests
 }
 
-function bidResponse(buildBidResponse, bid, context) {
+function bidResponse (buildBidResponse, bid, context) {
   bid.nurl = replacePriceInUrl(bid.nurl, bid.price);
 
   const bidResponse = buildBidResponse(bid, context);
@@ -69,16 +69,16 @@ function bidResponse(buildBidResponse, bid, context) {
   return bidResponse;
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   if (bid.burl) {
     utils.triggerPixel(bid.burl)
   }
 }
-function replacePriceInUrl(url, price) {
+function replacePriceInUrl (url, price) {
   return url.replace(/\${AUCTION_PRICE}/, price)
 }
 
-export function parseUserAgent() {
+export function parseUserAgent () {
   const ua = navigator.userAgent.toLowerCase();
 
   // Check if it's iOS
@@ -109,7 +109,7 @@ export function parseUserAgent() {
   }
 }
 
-export function getPageKeywords(win = window) {
+export function getPageKeywords (win = window) {
   let element;
 
   try {
@@ -121,7 +121,7 @@ export function getPageKeywords(win = window) {
   return ((element && element.content) || '').replaceAll(' ', '');
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   const requests = bidRequests.map((bidRequest) => {
     const data = converter.toORTB({
       bidRequests: [bidRequest],
@@ -190,19 +190,19 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return requests;
 }
 
-function getBidderParams(bid) {
+function getBidderParams (bid) {
   return bid?.params ? bid.params : undefined;
 }
 
-function isVideoBid(bid) {
+function isVideoBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.video')
 }
 
-function isBannerBid(bid) {
+function isBannerBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.banner')
 }
 
-function interpretResponse(resp, req) {
+function interpretResponse (resp, req) {
   const impressionId = resp.body.seatbid[0].bid[0].impid;
   const bidResponses = converter.fromORTB({ request: req.data, response: resp.body });
   const ad = bidResponses[0].ad;

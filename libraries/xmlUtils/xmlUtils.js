@@ -1,10 +1,10 @@
 const XML_MIME_TYPE = 'application/xml';
 
-export default function XMLUtil() {
+export default function XMLUtil () {
   let parser;
   let serializer;
 
-  function getParser() {
+  function getParser () {
     if (!parser) {
       // DOMParser instantiation is costly; instantiate only once throughout Prebid lifecycle.
       parser = new DOMParser();
@@ -12,7 +12,7 @@ export default function XMLUtil() {
     return parser;
   }
 
-  function getSerializer() {
+  function getSerializer () {
     if (!serializer) {
       // XMLSerializer instantiation is costly; instantiate only once throughout Prebid lifecycle.
       serializer = new XMLSerializer();
@@ -20,11 +20,11 @@ export default function XMLUtil() {
     return serializer;
   }
 
-  function parse(xmlString) {
+  function parse (xmlString) {
     return getParser().parseFromString(xmlString, XML_MIME_TYPE);
   }
 
-  function serialize(xmlDoc) {
+  function serialize (xmlDoc) {
     return getSerializer().serializeToString(xmlDoc);
   }
 

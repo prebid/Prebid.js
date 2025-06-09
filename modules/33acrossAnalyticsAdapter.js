@@ -117,24 +117,24 @@ class TransactionManager {
   #transactionsCompleted = new Set();
   #onComplete;
 
-  constructor({ timeout, onComplete }) {
+  constructor ({ timeout, onComplete }) {
     this.#sendTimeout = timeout;
     this.#onComplete = onComplete;
   }
 
-  status() {
+  status () {
     return {
       pending: [...this.#transactionsPending],
       completed: [...this.#transactionsCompleted],
     };
   }
 
-  initiate(transactionId) {
+  initiate (transactionId) {
     this.#transactionsPending.add(transactionId);
     this.#restartSendTimeout();
   }
 
-  complete(transactionId) {
+  complete (transactionId) {
     if (!this.#transactionsPending.has(transactionId)) {
       log.warn(`transactionId "${transactionId}" was not found. No transaction to mark as complete.`);
       return;
@@ -148,7 +148,7 @@ class TransactionManager {
     }
   }
 
-  #flushTransactions() {
+  #flushTransactions () {
     this.#clearSendTimeout();
     this.#transactionsPending = new Set();
     this.#onComplete();
@@ -156,11 +156,11 @@ class TransactionManager {
 
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
 
-  #clearSendTimeout() {
+  #clearSendTimeout () {
     return clearTimeout(this.#sendTimeoutId);
   }
 
-  #restartSendTimeout() {
+  #restartSendTimeout () {
     this.#clearSendTimeout();
 
     this.#sendTimeoutId = setTimeout(() => {
@@ -186,7 +186,7 @@ export const locals = {
   },
   /** @type {Object<string, Object>} */
   adUnitMap: {},
-  reset() {
+  reset () {
     this.transactionManagers = {};
     this.cache = {
       auctions: {},
@@ -229,7 +229,7 @@ analyticsAdapter.enableAnalytics = enableAnalyticsWrapper;
 /**
  * @param {AnalyticsConfig} config Analytics module configuration
  */
-function enableAnalyticsWrapper(config) {
+function enableAnalyticsWrapper (config) {
   const { options } = config;
 
   const pid = options.pid;
@@ -260,7 +260,7 @@ function enableAnalyticsWrapper(config) {
  * @param {string} [endpoint]
  * @returns {string}
  */
-function calculateEndpoint(endpoint = DEFAULT_ENDPOINT) {
+function calculateEndpoint (endpoint = DEFAULT_ENDPOINT) {
   if (typeof endpoint === 'string' && endpoint.startsWith('http')) {
     return endpoint;
   }
@@ -273,7 +273,7 @@ function calculateEndpoint(endpoint = DEFAULT_ENDPOINT) {
  * @param {number} [configTimeout]
  * @returns {number} Transaction Timeout
  */
-function calculateTransactionTimeout(configTimeout = DEFAULT_TRANSACTION_TIMEOUT) {
+function calculateTransactionTimeout (configTimeout = DEFAULT_TRANSACTION_TIMEOUT) {
   if (typeof configTimeout === 'number' && configTimeout >= 0) {
     return configTimeout;
   }
@@ -283,7 +283,7 @@ function calculateTransactionTimeout(configTimeout = DEFAULT_TRANSACTION_TIMEOUT
   return DEFAULT_TRANSACTION_TIMEOUT;
 }
 
-function subscribeToGamSlots() {
+function subscribeToGamSlots () {
   window.googletag.pubads().addEventListener('slotRenderEnded', event => {
     setTimeout(() => {
       const { transactionId, auctionId } =
@@ -300,7 +300,7 @@ function subscribeToGamSlots() {
   });
 }
 
-function getAdUnitMetadata(adUnitPath, adSlotElementId) {
+function getAdUnitMetadata (adUnitPath, adSlotElementId) {
   const adUnitMeta = locals.adUnitMap[adUnitPath] || locals.adUnitMap[adSlotElementId];
   if (adUnitMeta && adUnitMeta.length > 0) {
     return adUnitMeta[adUnitMeta.length - 1];
@@ -329,7 +329,7 @@ export default analyticsAdapter;
  * @param {string} completedAuctionId value of auctionId
  * @return {AnalyticsReport} Analytics report
  */
-function createReportFromCache(analyticsCache, completedAuctionId) {
+function createReportFromCache (analyticsCache, completedAuctionId) {
   const { pid, auctions } = analyticsCache;
 
   const report = {
@@ -337,7 +337,7 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
-    auctions: [ auctions[completedAuctionId] ],
+    auctions: [auctions[completedAuctionId]],
   }
   if (uspDataHandler.getConsentData()) {
     report.usPrivacy = uspDataHandler.getConsentData();
@@ -360,7 +360,7 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
   return report;
 }
 
-function getCachedBid(auctionId, bidId) {
+function getCachedBid (auctionId, bidId) {
   const auction = locals.cache.auctions[auctionId];
   for (let adUnit of auction.adUnits) {
     for (let bid of adUnit.bids) {
@@ -377,7 +377,7 @@ function getCachedBid(auctionId, bidId) {
  * @param {Object} args.args Event data
  * @param {string} args.eventType
  */
-function analyticEventHandler({ eventType, args }) {
+function analyticEventHandler ({ eventType, args }) {
   if (!locals.cache) {
     log.error('Something went wrong. Analytics cache is not initialized.');
     return;
@@ -426,7 +426,7 @@ function analyticEventHandler({ eventType, args }) {
 /****************
  * AUCTION_INIT *
  ***************/
-function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
+function onAuctionInit ({ adUnits, auctionId, bidderRequests }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
     log.error('Analytics adapter failed to parse auction.');
     return;
@@ -455,7 +455,7 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
   locals.transactionManagers[auctionId] ||=
     new TransactionManager({
       timeout: analyticsAdapter.getTimeout(),
-      onComplete() {
+      onComplete () {
         sendReport(
           createReportFromCache(locals.cache, auctionId),
           analyticsAdapter.getUrl()
@@ -465,7 +465,7 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
     });
 }
 
-function setAdUnitMap(adUnitCode, auctionId, transactionId) {
+function setAdUnitMap (adUnitCode, auctionId, transactionId) {
   if (!locals.adUnitMap[adUnitCode]) {
     locals.adUnitMap[adUnitCode] = [];
   }
@@ -476,7 +476,7 @@ function setAdUnitMap(adUnitCode, auctionId, transactionId) {
 /*****************
  * BID_REQUESTED *
  ****************/
-function onBidRequested({ auctionId, bids }) {
+function onBidRequested ({ auctionId, bids }) {
   for (let { bidder, bidId, transactionId, src } of bids) {
     const auction = locals.cache.auctions[auctionId];
     const adUnit = auction.adUnits.find(adUnit => adUnit.transactionId === transactionId);
@@ -498,7 +498,7 @@ function onBidRequested({ auctionId, bids }) {
 /****************
  * BID_RESPONSE *
  ***************/
-function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, size, status, source }) {
+function onBidResponse ({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, size, status, source }) {
   const bid = getCachedBid(auctionId, requestId);
   if (!bid) return;
 
@@ -521,7 +521,7 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
 /****************
  * BID_REJECTED *
  ***************/
-function onBidRejected({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, width, height, source }) {
+function onBidRejected ({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, width, height, source }) {
   const bid = getCachedBid(auctionId, requestId);
   if (!bid) return;
 
@@ -550,7 +550,7 @@ function onBidRejected({ requestId, auctionId, cpm, currency, originalCpm, floor
  * @param {string} args.auctionId
  * @returns {void}
  */
-function onAuctionEnd({ bidsReceived, auctionId }) {
+function onAuctionEnd ({ bidsReceived, auctionId }) {
   for (let bid of bidsReceived) {
     setCachedBidStatus(auctionId, bid.requestId, bid.status);
   }
@@ -559,7 +559,7 @@ function onAuctionEnd({ bidsReceived, auctionId }) {
 /***********
  * BID_WON *
  **********/
-function onBidWon(bidWon) {
+function onBidWon (bidWon) {
   const { auctionId, requestId, transactionId } = bidWon;
   const bid = getCachedBid(auctionId, requestId);
   if (!bid) {
@@ -577,7 +577,7 @@ function onBidWon(bidWon) {
  * @param {BidStatus} [status]
  * @returns {void}
  */
-function setBidStatus(bid, status = BidStatus.AVAILABLE) {
+function setBidStatus (bid, status = BidStatus.AVAILABLE) {
   const statusStates = {
     pending: {
       next: [BidStatus.AVAILABLE, BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
@@ -616,7 +616,7 @@ function setBidStatus(bid, status = BidStatus.AVAILABLE) {
   }
 }
 
-function setCachedBidStatus(auctionId, bidId, status) {
+function setCachedBidStatus (auctionId, bidId, status) {
   const bid = getCachedBid(auctionId, bidId);
   if (!bid) return;
   setBidStatus(bid, status);
@@ -628,7 +628,7 @@ function setCachedBidStatus(auctionId, bidId, status) {
  * @param {AnalyticsReport} report Request payload
  * @param {string} endpoint URL
  */
-function sendReport(report, endpoint) {
+function sendReport (report, endpoint) {
   if (sendBeacon(endpoint, JSON.stringify(report))) {
     log.info(`Analytics report sent to ${endpoint}`, report);
 
@@ -643,7 +643,7 @@ function sendReport(report, endpoint) {
  *
  * @return {Object} New logger functions
  */
-function getLogger() {
+function getLogger () {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
   return {

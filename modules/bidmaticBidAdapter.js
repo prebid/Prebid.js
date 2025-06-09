@@ -14,7 +14,7 @@ export const converter = ortbConverter({
     netRevenue: true,
     ttl: 290,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const floorInfo = isFn(bidRequest.getFloor) ? bidRequest.getFloor({
       currency: context.currency || 'USD',
@@ -33,14 +33,14 @@ export const converter = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     if (!request.cur) {
       request.cur = [DEFAULT_CURRENCY];
     }
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const { bidRequest } = context;
 
     let resMediaType;
@@ -63,7 +63,7 @@ export const converter = ortbConverter({
 
 const PROCESSED_SOURCES = {};
 
-export function createUserSyncs(processedSources, syncOptions, gdprConsent, uspConsent, gppConsent) {
+export function createUserSyncs (processedSources, syncOptions, gdprConsent, uspConsent, gppConsent) {
   if (syncOptions?.iframeEnabled) {
     return Object.entries(processedSources)
       .filter(([_, syncMade]) => syncMade === 0)

@@ -6,7 +6,7 @@ import responseResolvers from './responses.js';
  * @typedef {Number|String|boolean|null|undefined} Scalar
  */
 
-export function BidInterceptor(opts = {}) {
+export function BidInterceptor (opts = {}) {
   ({setTimeout: this.setTimeout = window.setTimeout.bind(window)} = opts);
   this.logger = opts.logger;
   this.rules = [];
@@ -16,7 +16,7 @@ Object.assign(BidInterceptor.prototype, {
   DEFAULT_RULE_OPTIONS: {
     delay: 0
   },
-  serializeConfig(ruleDefs) {
+  serializeConfig (ruleDefs) {
     const isSerializable = (ruleDef, i) => {
       const serializable = !hasNonSerializableProperty(ruleDef);
       if (!serializable && !deepAccess(ruleDef, 'options.suppressWarnings')) {
@@ -26,7 +26,7 @@ Object.assign(BidInterceptor.prototype, {
     }
     return ruleDefs.filter(isSerializable);
   },
-  updateConfig(config) {
+  updateConfig (config) {
     this.rules = (config.intercept || []).map((ruleDef, i) => this.rule(ruleDef, i + 1))
   },
   /**
@@ -46,7 +46,7 @@ Object.assign(BidInterceptor.prototype, {
    * @param {Number} ruleNo
    * @returns {Rule}
    */
-  rule(ruleDef, ruleNo) {
+  rule (ruleDef, ruleNo) {
     return {
       no: ruleNo,
       match: this.matcher(ruleDef.when, ruleNo),
@@ -70,7 +70,7 @@ Object.assign(BidInterceptor.prototype, {
    * @param {Number} ruleNo
    * @returns {MatchPredicate} a predicate function that matches a bid against the given `matchDef`
    */
-  matcher(matchDef, ruleNo) {
+  matcher (matchDef, ruleNo) {
     if (typeof matchDef === 'function') {
       return matchDef;
     }
@@ -78,7 +78,7 @@ Object.assign(BidInterceptor.prototype, {
       this.logger.logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
       return () => false;
     }
-    function matches(candidate, {ref = matchDef, args = []}) {
+    function matches (candidate, {ref = matchDef, args = []}) {
       return Object.entries(ref).map(([key, val]) => {
         const cVal = candidate[key];
         if (val instanceof RegExp) {
@@ -110,7 +110,7 @@ Object.assign(BidInterceptor.prototype, {
    * @param ruleNo
    * @return {ReplacerFn}
    */
-  replacer(replDef, ruleNo) {
+  replacer (replDef, ruleNo) {
     if (replDef === null) {
       return () => null
     }
@@ -146,8 +146,8 @@ Object.assign(BidInterceptor.prototype, {
     }
   },
 
-  paapiReplacer(paapiDef, ruleNo) {
-    function wrap(configs = []) {
+  paapiReplacer (paapiDef, ruleNo) {
+    function wrap (configs = []) {
       return configs.map(config => {
         return Object.keys(config).some(k => !['config', 'igb'].includes(k))
           ? {config}
@@ -163,7 +163,7 @@ Object.assign(BidInterceptor.prototype, {
     }
   },
 
-  responseDefaults(bid) {
+  responseDefaults (bid) {
     const response = {
       requestId: bid.bidId,
       cpm: 3.5764,
@@ -195,7 +195,7 @@ Object.assign(BidInterceptor.prototype, {
    * @param args
    * @returns {Rule|undefined} the first matching rule, or undefined if no match was found.
    */
-  match(candidate, ...args) {
+  match (candidate, ...args) {
     return this.rules.find((rule) => rule.match(candidate, ...args));
   },
   /**
@@ -206,7 +206,7 @@ Object.assign(BidInterceptor.prototype, {
    * @returns {[{bid: *, rule: Rule}[], *[]]} a 2-tuple for matching bids (decorated with the matching rule) and
    * non-matching bids.
    */
-  matchAll(bids, bidRequest) {
+  matchAll (bids, bidRequest) {
     const [matches, remainder] = [[], []];
     bids.forEach((bid) => {
       const rule = this.match(bid, bidRequest);
@@ -230,7 +230,7 @@ Object.assign(BidInterceptor.prototype, {
    * @param {function():void} params.done called once after all mock responses have been run through `addBid`
    * @returns {{bids: Object[], bidRequest: Object}} remaining bids that did not match any rule (this applies also to bidRequest.bids)
    */
-  intercept({bids, bidRequest, addBid, addPaapiConfig, done}) {
+  intercept ({bids, bidRequest, addBid, addPaapiConfig, done}) {
     if (bids == null) {
       bids = bidRequest.bids;
     }

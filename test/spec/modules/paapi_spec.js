@@ -49,7 +49,7 @@ describe('paapi module', () => {
   describe(`using paapi configuration`, () => {
     let getPAAPISizeStub;
 
-    function getPAAPISizeHook(next, sizes) {
+    function getPAAPISizeHook (next, sizes) {
       next.bail(getPAAPISizeStub(sizes));
     }
 
@@ -71,7 +71,7 @@ describe('paapi module', () => {
         ajax = sinon.stub();
         bidderRequest = {paapi: {}}
       })
-      function getWrappedAjax() {
+      function getWrappedAjax () {
         let wrappedAjax;
         let next = sinon.stub().callsFake((spec, bids, br, ajax) => {
           wrappedAjax = ajax;
@@ -153,7 +153,7 @@ describe('paapi module', () => {
             });
           });
 
-          function addIgb(request, igb) {
+          function addIgb (request, igb) {
             addPaapiConfigHook(nextFnSpy, Object.assign({auctionId}, request), {igb});
           }
 
@@ -175,7 +175,7 @@ describe('paapi module', () => {
               ortb2Imp = {'fpd': 2};
             });
 
-            function getBuyerAuctionConfig() {
+            function getBuyerAuctionConfig () {
               addIgb({adUnitCode: 'au1', ortb2, ortb2Imp}, igb1);
               events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
               return getPAAPIConfig({auctionId}).au1.componentAuctions[0];
@@ -279,7 +279,7 @@ describe('paapi module', () => {
             ortb2Imp = {fpd: 2};
           });
 
-          function getComponentAuctionConfig() {
+          function getComponentAuctionConfig () {
             addPaapiConfigHook(nextFnSpy, {
               auctionId,
               adUnitCode: 'au1',
@@ -480,14 +480,14 @@ describe('paapi module', () => {
             };
           });
 
-          function getConfig() {
+          function getConfig () {
             addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: adUnit.code}, paapiConfig);
             events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: [adUnit.code], adUnits: [adUnit]});
             return getPAAPIConfig()[adUnit.code];
           }
 
           Object.entries({
-            'adUnit.ortb2Imp.ext.paapi.requestedSize'() {
+            'adUnit.ortb2Imp.ext.paapi.requestedSize' () {
               adUnit.ortb2Imp = {
                 ext: {
                   paapi: {
@@ -499,7 +499,7 @@ describe('paapi module', () => {
                 }
               };
             },
-            'largest size'() {
+            'largest size' () {
               getPAAPISizeStub.returns([123, 321]);
             }
           }).forEach(([t, setup]) => {
@@ -536,15 +536,15 @@ describe('paapi module', () => {
         const AUCTION1 = 'auction1';
         const AUCTION2 = 'auction2';
 
-        function mockAuction(auctionId) {
+        function mockAuction (auctionId) {
           return {
-            getAuctionId() {
+            getAuctionId () {
               return auctionId;
             }
           };
         }
 
-        function expectAdUnitsFromAuctions(actualConfig, auToAuctionMap) {
+        function expectAdUnitsFromAuctions (actualConfig, auToAuctionMap) {
           expect(Object.keys(actualConfig)).to.have.members(Object.keys(auToAuctionMap));
           Object.entries(actualConfig).forEach(([au, cfg]) => {
             cfg.componentAuctions.forEach(cmp => expect(cmp.auctionId).to.eql(auToAuctionMap[au]));
@@ -699,20 +699,20 @@ describe('paapi module', () => {
           })
         });
 
-        function mark() {
+        function mark () {
           return Object.fromEntries(
             adapterManager.makeBidRequests(
               adUnits,
               Date.now(),
               utils.getUniqueIdentifierStr(),
-              function callback() {
+              function callback () {
               },
               []
             ).map(b => [b.bidderCode, b])
           );
         }
 
-        async function testAsyncParams(bidderRequest) {
+        async function testAsyncParams (bidderRequest) {
           for (const method of NAVIGATOR_APIS) {
             navigator[method].returns('result');
             expect(await bidderRequest.paapi[method]('arg').resolve()).to.eql('result');
@@ -720,7 +720,7 @@ describe('paapi module', () => {
           }
         }
 
-        async function expectFledgeFlags(...enableFlags) {
+        async function expectFledgeFlags (...enableFlags) {
           const bidRequests = mark();
           expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
           if (bidRequests.appnexus.paapi?.enabled) {
@@ -799,14 +799,14 @@ describe('paapi module', () => {
         });
       });
       describe('addPaapiData', () => {
-        function getEnrichedAdUnits() {
+        function getEnrichedAdUnits () {
           const next = sinon.stub();
           addPaapiData(next, adUnits);
           sinon.assert.calledWith(next, adUnits);
           return adUnits;
         }
 
-        function getImpExt() {
+        function getImpExt () {
           const next = sinon.stub();
           addPaapiData(next, adUnits);
           sinon.assert.calledWith(next, adUnits);
@@ -1116,7 +1116,7 @@ describe('paapi module', () => {
           ];
         });
 
-        function toAuctionConfig(reqs = igbRequests) {
+        function toAuctionConfig (reqs = igbRequests) {
           return buyersToAuctionConfigs(reqs, merge, config, partitioners);
         }
 
@@ -1204,19 +1204,19 @@ describe('paapi module', () => {
       bids = [];
     });
 
-    function runParamHook() {
+    function runParamHook () {
       return Promise.resolve(buildPAAPIParams(next, spec, bids, bidderRequest));
     }
 
     Object.entries({
       'has no paapiParameters': () => null,
-      'returns empty parameter map'() {
+      'returns empty parameter map' () {
         spec.paapiParameters = () => ({})
       },
-      'returns null parameter map'() {
+      'returns null parameter map' () {
         spec.paapiParameters = () => null
       },
-      'returns params, but PAAPI is disabled'() {
+      'returns params, but PAAPI is disabled' () {
         bidderRequest.paapi.enabled = false;
         spec.paapiParameters = () => ({param: new AsyncPAAPIParam()})
       }
@@ -1308,12 +1308,12 @@ describe('paapi module', () => {
         config.resetConfig();
       });
 
-      function startParallel() {
+      function startParallel () {
         parallelPaapiProcessing(next, spec, bids, bidderRequest, ...restOfTheArgs);
         onAuctionInit({auctionId: 'aid'})
       }
 
-      function endAuction() {
+      function endAuction () {
         events.emit(EVENTS.AUCTION_END, {auctionId: 'aid', bidsReceived, bidderRequests, adUnitCodes, adUnits})
       }
 
@@ -1327,7 +1327,7 @@ describe('paapi module', () => {
         Object.entries({
           'returns no configs': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []); },
           'throws': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => { throw new Error() }) },
-          'returns too little config': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [ {bidId: 'bidId', config: {seller: 'mock.seller'}} ]) },
+          'returns too little config': () => { spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [{bidId: 'bidId', config: {seller: 'mock.seller'}}]) },
           'bidder is not paapi enabled': () => {
             bidderRequest.paapi.enabled = false;
             spec.buildPAAPIConfigs = sinon.stub().callsFake(() => [{config: mockConfig, bidId: 'bidId'}])
@@ -1345,7 +1345,7 @@ describe('paapi module', () => {
         });
       });
 
-      function resolveConfig(auctionConfig) {
+      function resolveConfig (auctionConfig) {
         return Promise.all(
           Object.entries(auctionConfig)
             .map(([key, value]) => Promise.resolve(value).then(value => [key, value]))
@@ -1453,7 +1453,7 @@ describe('paapi module', () => {
               seller: 'mock.seller'
             };
           })
-          function returnRemainder() {
+          function returnRemainder () {
             addPaapiConfigHook(sinon.stub(), bids[0], {config: configRemainder});
           }
           it('should resolve component configs with values returned by adapters', async () => {
@@ -1487,9 +1487,9 @@ describe('paapi module', () => {
               ASYNC_SIGNALS.forEach(signal => mockConfig[signal] = {default: signal})
             });
             Object.entries({
-              'returns no matching config'() {
+              'returns no matching config' () {
               },
-              'does not include values in response'() {
+              'does not include values in response' () {
                 configRemainder = {};
                 returnRemainder();
               }
@@ -1564,20 +1564,20 @@ describe('paapi module', () => {
 
             Object.entries({
               'parallel=true, some configs deferred': {
-                setup() {
+                setup () {
                   config.mergeConfig({paapi: {parallel: true}})
                 },
                 delayed: false,
               },
               'parallel=true, no deferred configs': {
-                setup() {
+                setup () {
                   config.mergeConfig({paapi: {parallel: true}});
                   spec.buildPAAPIConfigs = sinon.stub().callsFake(() => []);
                 },
                 delayed: true
               },
               'parallel=false, some configs deferred': {
-                setup() {
+                setup () {
                   config.mergeConfig({paapi: {parallel: false}})
                 },
                 delayed: true
@@ -1589,7 +1589,7 @@ describe('paapi module', () => {
                   setup();
                 });
 
-                function expectInvoked(shouldBeInvoked) {
+                function expectInvoked (shouldBeInvoked) {
                   if (shouldBeInvoked) {
                     sinon.assert.calledWith(onAuctionConfig, 'aid', sinon.match(arg => arg.au.componentAuctions[0].seller === 'mock.seller'));
                   } else {
@@ -1631,13 +1631,13 @@ describe('paapi module', () => {
           bidderRequest.paapi.componentSeller = true;
         });
         Object.entries({
-          'componentSeller not configured'() {
+          'componentSeller not configured' () {
             bidderRequest.paapi.componentSeller = false;
           },
-          'buildPAAPIconfig returns nothing'() {
+          'buildPAAPIconfig returns nothing' () {
             builtCfg = []
           },
-          'returned igb is not valid'() {
+          'returned igb is not valid' () {
             builtCfg = [{bidId: 'bidId', igb: {}}];
           }
         }).forEach(([t, setup]) => {
@@ -1676,7 +1676,7 @@ describe('paapi module', () => {
             });
           });
 
-          function returnIgb(igb) {
+          function returnIgb (igb) {
             addPaapiConfigHook(sinon.stub(), bids[0], {igb});
           }
 
@@ -1741,7 +1741,7 @@ describe('paapi module', () => {
             })
           })
 
-          function startMultiple() {
+          function startMultiple () {
             startParallel();
             spec.code = 'other';
             igb.origin = 'other.buyer'
@@ -1812,11 +1812,11 @@ describe('paapi module', () => {
     });
 
     describe('response parsing', () => {
-      function generateImpCtx(fledgeFlags) {
+      function generateImpCtx (fledgeFlags) {
         return Object.fromEntries(Object.entries(fledgeFlags).map(([impid, fledgeEnabled]) => [impid, {imp: {ext: {ae: fledgeEnabled}}}]));
       }
 
-      function extractResult(type, ctx) {
+      function extractResult (type, ctx) {
         return Object.fromEntries(
           Object.entries(ctx)
             .map(([impid, ctx]) => [impid, ctx.paapiConfigs?.map(cfg => cfg[type].id)])
@@ -1828,7 +1828,7 @@ describe('paapi module', () => {
         'parseExtPrebidFledge': {
           parser: parseExtPrebidFledge,
           responses: {
-            'ext.prebid.fledge'(configs) {
+            'ext.prebid.fledge' (configs) {
               return {
                 ext: {
                   prebid: {
@@ -1844,7 +1844,7 @@ describe('paapi module', () => {
         'parseExtIgi': {
           parser: parseExtIgi,
           responses: {
-            'ext.igi.igs'(configs) {
+            'ext.igi.igs' (configs) {
               return {
                 ext: {
                   igi: [{
@@ -1853,7 +1853,7 @@ describe('paapi module', () => {
                 }
               };
             },
-            'ext.igi.igs with impid on igi'(configs) {
+            'ext.igi.igs with impid on igi' (configs) {
               return {
                 ext: {
                   igi: configs.map(cfg => {
@@ -1867,7 +1867,7 @@ describe('paapi module', () => {
                 }
               };
             },
-            'ext.igi.igs with conflicting impid'(configs) {
+            'ext.igi.igs with conflicting impid' (configs) {
               return {
                 ext: {
                   igi: [{
@@ -1883,7 +1883,7 @@ describe('paapi module', () => {
         describe(t, () => {
           Object.entries(responses).forEach(([t, packageConfigs]) => {
             describe(`when response uses ${t}`, () => {
-              function generateCfg(impid, ...ids) {
+              function generateCfg (impid, ...ids) {
                 return ids.map((id) => ({impid, config: {id}}));
               }
 

@@ -14,12 +14,12 @@ export const converter = ortbConverter({
     netRevenue: true,
     ttl: 30
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.bidder', {...bidRequest.params});
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.at = 1;
     const {bundleId, publisherId} = bidderRequest.bids[0].params;

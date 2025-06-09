@@ -270,7 +270,7 @@ describe('Yieldone Prebid Analytic', function () {
 
       delete yieldoneAnalytics.eventsStorage[auctionId];
 
-      setTimeout(function() {
+      setTimeout(function () {
         events.emit(EVENTS.BID_WON, winner);
 
         sinon.assert.callCount(sendStatStub, 2)

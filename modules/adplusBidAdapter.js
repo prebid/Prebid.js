@@ -19,7 +19,7 @@ export function isValidUuid (uuid) {
   );
 }
 
-function getSessionId() {
+function getSessionId () {
   let sid = storage.cookiesAreEnabled() && storage.getCookie(SESSION_CODE);
 
   if (
@@ -32,7 +32,7 @@ function getSessionId() {
   return sid;
 }
 
-function setSessionId(sid) {
+function setSessionId (sid) {
   if (storage.cookiesAreEnabled()) {
     const expires = new Date(Date.now() + COOKIE_EXP).toISOString();
 
@@ -42,7 +42,7 @@ function setSessionId(sid) {
 // #endregion
 
 // #region Bid request validation
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (!bid) {
     utils.logError(BIDDER_CODE, 'bid, can not be empty', bid);
     return false;
@@ -90,7 +90,7 @@ function isBidRequestValid(bid) {
  * @param {object} bid
  * @returns
  */
-function createBidRequest(bid) {
+function createBidRequest (bid) {
   // Developer Params
   const {
     inventoryId,
@@ -135,7 +135,7 @@ function createBidRequest(bid) {
   };
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   return validBidRequests.map((req) => createBidRequest(req));
 }
 // #endregion
@@ -147,7 +147,7 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @param { object } bidParams
  * @returns
  */
-function createAdResponse(responseData, bidParams) {
+function createAdResponse (responseData, bidParams) {
   return {
     requestId: responseData.requestID,
     cpm: responseData.cpm,
@@ -169,7 +169,7 @@ function createAdResponse(responseData, bidParams) {
   };
 }
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   // In case of empty response
   if (
     response.body == null ||
@@ -190,10 +190,10 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  onTimeout(timeoutData) {
+  onTimeout (timeoutData) {
     utils.logError('Adplus adapter timed out for the auction.', timeoutData);
   },
-  onBidWon(bid) {
+  onBidWon (bid) {
     utils.logInfo(
       `Adplus adapter won the auction. Bid id: ${bid.bidId}, Ad Unit Id: ${bid.adUnitId}, Inventory Id: ${bid.inventoryId}`
     );

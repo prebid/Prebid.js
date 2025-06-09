@@ -80,7 +80,7 @@ describe('ssmasBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('check bid request bidder is Sem Seo & Mas', function() {
+    it('check bid request bidder is Sem Seo & Mas', function () {
       const invalidBid = {
         ...bid, bidder: 'invalidBidder'
       };
@@ -226,10 +226,10 @@ describe('ssmasBidAdapter', function () {
   });
 
   describe('test onBidWon function', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('exists and is a function', () => {

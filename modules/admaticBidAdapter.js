@@ -213,7 +213,7 @@ export const spec = {
 
 var hasSynced = false;
 
-export function resetUserSync() {
+export function resetUserSync () {
   hasSynced = false;
 }
 
@@ -221,7 +221,7 @@ export function resetUserSync() {
  * @param {object} schain object set by Publisher
  * @returns {object} OpenRTB SupplyChain object
  */
-function mapSchain(schain) {
+function mapSchain (schain) {
   if (!schain) {
     return null;
   }
@@ -236,7 +236,7 @@ function mapSchain(schain) {
  * @param {object} schain object set by Publisher
  * @returns {object} bool
  */
-function validateSchain(schain) {
+function validateSchain (schain) {
   if (!schain.nodes) {
     return false;
   }
@@ -246,7 +246,7 @@ function validateSchain(schain) {
   });
 }
 
-function isUrl(str) {
+function isUrl (str) {
   try {
     URL(str);
     return true;
@@ -255,7 +255,7 @@ function isUrl(str) {
   }
 };
 
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       targetId: bid.adUnitCode,
@@ -264,7 +264,7 @@ function outstreamRender(bid) {
   });
 }
 
-function createOutstreamVideoRenderer(bid) {
+function createOutstreamVideoRenderer (bid) {
   const renderer = Renderer.install({
     id: bid.bidId,
     url: RENDERER_URL,
@@ -280,7 +280,7 @@ function createOutstreamVideoRenderer(bid) {
   return renderer;
 }
 
-function getAssociatedBidRequest(bidRequests, bid) {
+function getAssociatedBidRequest (bidRequests, bid) {
   for (const request of bidRequests) {
     if (request.id === bid.id) {
       return request;
@@ -289,7 +289,7 @@ function getAssociatedBidRequest(bidRequests, bid) {
   return undefined;
 }
 
-function enrichSlotWithFloors(slot, bidRequest) {
+function enrichSlotWithFloors (slot, bidRequest) {
   try {
     const slotFloors = {};
 
@@ -325,7 +325,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
   }
 }
 
-function parseSizes(sizes, parser = s => s) {
+function parseSizes (sizes, parser = s => s) {
   if (sizes == undefined) {
     return [];
   }
@@ -335,11 +335,11 @@ function parseSizes(sizes, parser = s => s) {
   return [parser(sizes)]; // or a single one ? (ie. [728,90])
 }
 
-function parseSize(size) {
+function parseSize (size) {
   return size[0] + 'x' + size[1];
 }
 
-function buildRequestObject(bid) {
+function buildRequestObject (bid) {
   const reqObj = {};
   reqObj.size = getSizes(bid);
   if (bid.mediaTypes?.banner) {
@@ -367,11 +367,11 @@ function buildRequestObject(bid) {
   return reqObj;
 }
 
-function getSizes(bid) {
+function getSizes (bid) {
   return concatSizes(bid);
 }
 
-function concatSizes(bid) {
+function concatSizes (bid) {
   let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
   let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
   let nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
@@ -393,11 +393,11 @@ function concatSizes(bid) {
   }
 }
 
-function _validateId(id) {
+function _validateId (id) {
   return (parseInt(id) > 0);
 }
 
-function _validateString(str) {
+function _validateString (str) {
   return (typeof str == 'string');
 }
 

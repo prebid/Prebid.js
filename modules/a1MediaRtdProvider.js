@@ -23,7 +23,7 @@ export const subModuleObj = {
   getBidRequestData: alterBidRequests,
 };
 
-export function getStorageData(key) {
+export function getStorageData (key) {
   let storageValue = '';
   if (storage.getDataFromLocalStorage(key)) {
     storageValue = storage.getDataFromLocalStorage(key);
@@ -33,7 +33,7 @@ export function getStorageData(key) {
   return storageValue;
 }
 
-function loadLbScript(tagname) {
+function loadLbScript (tagname) {
   const linkback = window.linkback = window.linkback || {};
   if (!linkback.l) {
     linkback.l = true;
@@ -43,7 +43,7 @@ function loadLbScript(tagname) {
   }
 }
 
-function init(config, userConsent) {
+function init (config, userConsent) {
   const tagId = config.params.tagId;
   if (tagId && !isEmptyStr(tagId)) {
     loadLbScript(config.params.tagId);
@@ -55,7 +55,7 @@ function init(config, userConsent) {
   return false;
 }
 
-function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
+function alterBidRequests (reqBidsConfigObj, callback, config, userConsent) {
   const a1seg = getStorageData(A1_SEG_KEY);
   const a1gid = getStorageData(A1_AUD_KEY);
 

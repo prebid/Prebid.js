@@ -21,7 +21,7 @@ const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const VMCID_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 
-function isEUConsentRequired(consentData) {
+function isEUConsentRequired (consentData) {
   return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
 }
 
@@ -42,7 +42,7 @@ export const verizonMediaIdSubmodule = {
    * @function
    * @returns {{connectid: string} | undefined}
    */
-  decode(value) {
+  decode (value) {
     return (typeof value === 'object' && (value.connectid || value.vmuid))
       ? {connectid: value.connectid || value.vmuid} : undefined;
   },
@@ -53,7 +53,7 @@ export const verizonMediaIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const params = config.params || {};
     if (!params || typeof params.he !== 'string' ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
@@ -103,7 +103,7 @@ export const verizonMediaIdSubmodule = {
    * Utilised for each of testing.
    * @returns {Function}
    */
-  getAjaxFn() {
+  getAjaxFn () {
     return ajax;
   },
   eids: {

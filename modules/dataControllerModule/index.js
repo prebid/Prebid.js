@@ -19,7 +19,7 @@ const _logger = prefixLog(LOG_PRE_FIX);
 /**
  * BidderRequests hook to intiate module and reset data object
  */
-export const filterBidData = timedAuctionHook('dataController', function filterBidData(fn, req) {
+export const filterBidData = timedAuctionHook('dataController', function filterBidData (fn, req) {
   if (_dataControllerConfig.filterEIDwhenSDA) {
     filterEIDs(req.adUnits, req.ortb2Fragments);
   }
@@ -31,7 +31,7 @@ export const filterBidData = timedAuctionHook('dataController', function filterB
   return req;
 });
 
-function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
+function containsConfiguredEIDS (eidSourcesMap, bidderCode) {
   if (_dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
     return true;
   }
@@ -48,14 +48,14 @@ function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
   return containsEIDs;
 }
 
-function containsConfiguredSDA(segementMap, bidderCode) {
+function containsConfiguredSDA (segementMap, bidderCode) {
   if (_dataControllerConfig.filterEIDwhenSDA.includes(ALL)) {
     return true;
   }
   return hasValue(segementMap.get(bidderCode)) || hasValue(segementMap.get(GLOBAL))
 }
 
-function hasValue(bidderSegement) {
+function hasValue (bidderSegement) {
   let containsSDA = false;
   if (bidderSegement == undefined) {
     return false;
@@ -68,7 +68,7 @@ function hasValue(bidderSegement) {
   return containsSDA;
 }
 
-function getSegmentConfig(ortb2Fragments) {
+function getSegmentConfig (ortb2Fragments) {
   let bidderSDAMap = new Map();
   let globalObject = deepAccess(ortb2Fragments, 'global') || {};
 
@@ -81,12 +81,12 @@ function getSegmentConfig(ortb2Fragments) {
   return bidderSDAMap;
 }
 
-function collectSegments(bidderSDAMap, key, data) {
+function collectSegments (bidderSDAMap, key, data) {
   let segmentSet = constructSegment(deepAccess(data, 'user.data') || []);
   if (segmentSet && segmentSet.size > 0) bidderSDAMap.set(key, segmentSet);
 }
 
-function constructSegment(userData) {
+function constructSegment (userData) {
   let segmentSet;
   if (userData) {
     segmentSet = new Set();
@@ -109,7 +109,7 @@ function constructSegment(userData) {
   return segmentSet;
 }
 
-function getEIDsSource(adUnits) {
+function getEIDsSource (adUnits) {
   let bidderEIDSMap = new Map();
   adUnits.forEach(adUnit => {
     (adUnit.bids || []).forEach(bid => {
@@ -129,7 +129,7 @@ function getEIDsSource(adUnits) {
   return bidderEIDSMap;
 }
 
-function filterSDA(adUnits, ortb2Fragments) {
+function filterSDA (adUnits, ortb2Fragments) {
   let bidderEIDSMap = getEIDsSource(adUnits);
   let resetGlobal = false;
   for (const [key, value] of Object.entries(ortb2Fragments.bidder)) {
@@ -144,7 +144,7 @@ function filterSDA(adUnits, ortb2Fragments) {
   }
 }
 
-function filterEIDs(adUnits, ortb2Fragments) {
+function filterEIDs (adUnits, ortb2Fragments) {
   let segementMap = getSegmentConfig(ortb2Fragments);
   let globalEidUpdate = false;
   adUnits.forEach(adUnit => {
@@ -171,7 +171,7 @@ function filterEIDs(adUnits, ortb2Fragments) {
   return adUnits;
 }
 
-export function init() {
+export function init () {
   const confListener = config.getConfig(MODULE_NAME, dataControllerConfig => {
     const dataController = dataControllerConfig && dataControllerConfig.dataController;
     if (!dataController) {

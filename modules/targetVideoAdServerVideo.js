@@ -11,7 +11,7 @@ import { buildUrl, isEmpty, isPlainObject, logError, parseUrl } from '../src/uti
  * @param {Object} [options.bid] - Optional bid property.
  * @returns {string|undefined} The generated URL (if neither bid nor adUnit property is provided the generated string is undefined).
  */
-export function buildVideoUrl(options) {
+export function buildVideoUrl (options) {
   if (!options.params || !options.params?.iu) {
     logError('buildVideoUrl: Missing required properties.');
     return;
@@ -80,7 +80,7 @@ export function buildVideoUrl(options) {
   });
 }
 
-function getAllTargetingData(options) {
+function getAllTargetingData (options) {
   let allTargetingData = {};
   const adUnit = options && options.adUnit;
   if (adUnit) {

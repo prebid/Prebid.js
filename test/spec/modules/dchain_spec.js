@@ -264,7 +264,7 @@ describe('dchain module', function () {
     });
 
     it('good strict config should append a node object to existing bid.meta.dchain object', function () {
-      function testCallback(adUnitCode, bid) {
+      function testCallback (adUnitCode, bid) {
         expect(bid.meta.dchain).to.exist;
         expect(bid.meta.dchain.nodes[1]).to.exist.and.to.deep.equal({
           'name': 'bidder',
@@ -279,7 +279,7 @@ describe('dchain module', function () {
     });
 
     it('bad strict config should delete the bid.meta.dchain object', function () {
-      function testCallback(adUnitCode, bid) {
+      function testCallback (adUnitCode, bid) {
         expect(bid.meta.dchain).to.not.exist;
       }
 
@@ -289,7 +289,7 @@ describe('dchain module', function () {
     });
 
     it('relaxed config should allow bid.meta.dchain to proceed, even with bad values', function () {
-      function testCallback(adUnitCode, bid) {
+      function testCallback (adUnitCode, bid) {
         expect(bid.meta.dchain).to.exist;
         expect(bid.meta.dchain.complete).to.exist.and.to.equal(3);
         expect(bid.meta.dchain.nodes[2]).to.exist.and.to.deep.equal({ asi: 'bidderA' });
@@ -302,7 +302,7 @@ describe('dchain module', function () {
 
     it('off config should allow the bid.meta.dchain to proceed', function () {
       // check for missing nodes
-      function testCallback(adUnitCode, bid) {
+      function testCallback (adUnitCode, bid) {
         expect(bid.meta.dchain).to.exist;
         expect(bid.meta.dchain.complete).to.exist.and.to.equal(0);
         expect(bid.meta.dchain.nodes).to.exist.and.to.deep.equal({ test: 123 });
@@ -314,7 +314,7 @@ describe('dchain module', function () {
     });
 
     it('no bidder dchain', function () {
-      function testCallback(adUnitCode, bid) {
+      function testCallback (adUnitCode, bid) {
         expect(bid.meta.dchain).to.exist;
         expect(bid.meta.dchain.ver).to.exist.and.to.equal('1.0');
         expect(bid.meta.dchain.complete).to.exist.and.to.equal(0);

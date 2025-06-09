@@ -18,7 +18,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   url: RTB_URL,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.

@@ -15,7 +15,7 @@ const converter = ortbConverter({
     ttl: 30
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.adm = replaceAuctionPrice(bidResponse.adm, bidResponse.price);
     bidResponse.burl = replaceAuctionPrice(bidResponse.burl, bidResponse.price);
@@ -28,13 +28,13 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let valid = bid.params.sspId;
 
     return !!valid;
   },
 
-  buildRequests: function(bids, bidderRequest) {
+  buildRequests: function (bids, bidderRequest) {
     return bids.map((bid) => {
       let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
       let bidMediaType = deepAccess(bid, 'mediaTypes.video');
@@ -52,7 +52,7 @@ export const spec = {
     });
   },
 
-  interpretResponse: function(response, request) {
+  interpretResponse: function (response, request) {
     if (!response?.body) {
       return [];
     }
@@ -70,7 +70,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
 
     if (!hasPurpose1Consent(gdprConsent)) {
@@ -92,7 +92,7 @@ export const spec = {
     return syncs;
   },
 
-  supportedMediaTypes: [ BANNER, VIDEO ]
+  supportedMediaTypes: [BANNER, VIDEO]
 }
 
 registerBidder(spec);

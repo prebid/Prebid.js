@@ -11,7 +11,7 @@ const GVLID = 1074;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER ],
+  supportedMediaTypes: [NATIVE, BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.

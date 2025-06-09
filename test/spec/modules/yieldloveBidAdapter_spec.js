@@ -12,7 +12,7 @@ describe('Yieldlove Bid Adaper', function () {
     {
       'bidder': 'yieldlove',
       'adUnitCode': 'adunit-code',
-      'sizes': [ [300, 250] ],
+      'sizes': [[300, 250]],
       'params': {
         pid,
         rid
@@ -112,7 +112,7 @@ describe('Yieldlove Bid Adaper', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     it('should retrieve user iframe syncs', function () {
       expect(spec.getUserSyncs({ iframeEnabled: true }, [serverResponse], undefined, undefined)).to.deep.equal([{
         type: 'iframe',

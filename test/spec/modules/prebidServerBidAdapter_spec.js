@@ -555,7 +555,7 @@ const RESPONSE_OPENRTB_NATIVE = {
   ]
 };
 
-async function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
+async function addFpdEnrichmentsToS2SRequest (s2sReq, bidderRequests) {
   return {
     ...s2sReq,
     ortb2Fragments: {
@@ -604,7 +604,7 @@ describe('S2S Adapter', function () {
 
   addBidResponse.reject = sinon.spy();
 
-  function prepRequest(req) {
+  function prepRequest (req) {
     req.ad_units.forEach((adUnit) => {
       delete adUnit.nativeParams
     });
@@ -716,7 +716,7 @@ describe('S2S Adapter', function () {
         sandbox.restore();
       })
 
-      function callBids() {
+      function callBids () {
         adapter.callBids({
           ...s2sReq,
           ortb2Fragments
@@ -753,7 +753,7 @@ describe('S2S Adapter', function () {
         BID_REQUESTS[0].bids[0].ortb2Imp = {ext: {tid: 'mock-tid'}};
       });
 
-      function makeRequest() {
+      function makeRequest () {
         adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
         return JSON.parse(server.requests[0].requestBody);
       }
@@ -967,7 +967,7 @@ describe('S2S Adapter', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
 
-    function mockTCF({applies = true, hasP1Consent = true} = {}) {
+    function mockTCF ({applies = true, hasP1Consent = true} = {}) {
       return {
         consentString: 'mockConsent',
         gdprApplies: applies,
@@ -1168,7 +1168,7 @@ describe('S2S Adapter', function () {
     });
 
     describe('price floors module', function () {
-      function runTest(expectedFloor, expectedCur) {
+      function runTest (expectedFloor, expectedCur) {
         adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
         const requestBid = JSON.parse(server.requests[requestCount].requestBody);
         expect(requestBid.imp[0].bidfloor).to.equal(expectedFloor);
@@ -1877,7 +1877,7 @@ describe('S2S Adapter', function () {
         s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
       })
 
-      function callCookieSync() {
+      function callCookieSync () {
         const s2sBidRequest = utils.deepClone(REQUEST);
         s2sBidRequest.s2sConfig = s2sConfig;
         config.setConfig({ s2sConfig: s2sConfig });
@@ -3617,7 +3617,7 @@ describe('S2S Adapter', function () {
     describe('stored impressions', () => {
       let bidReq, response;
 
-      function mks2sReq(s2sConfig = CONFIG) {
+      function mks2sReq (s2sConfig = CONFIG) {
         return {...REQUEST, s2sConfig, ad_units: [{...REQUEST.ad_units[0], bids: [{bidder: null, bid_id: 'testId'}]}]};
       }
 
@@ -3745,7 +3745,7 @@ describe('S2S Adapter', function () {
 
       let fledgeStub, request, bidderRequests;
 
-      function fledgeHook(next, ...args) {
+      function fledgeHook (next, ...args) {
         fledgeStub(...args);
       }
 
@@ -3784,7 +3784,7 @@ describe('S2S Adapter', function () {
         request.ad_units.forEach(au => deepSetValue(au, 'ortb2Imp.ext.ae', 1));
       });
 
-      function expectFledgeCalls() {
+      function expectFledgeCalls () {
         const auctionId = bidderRequests[0].auctionId;
         sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), sinon.match({config: {id: 1}}))
         sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), sinon.match({config: {id: 2}}))
@@ -4131,10 +4131,10 @@ describe('S2S Adapter', function () {
     });
 
     Object.entries({
-      'an alias'() {
+      'an alias' () {
         adapterManager.aliasBidAdapter('rubicon', 'rubicon-alias');
       },
-      'a server side alias'(s2sConfig) {
+      'a server side alias' (s2sConfig) {
         s2sConfig.extPrebid = {
           aliases: {
             'rubicon-alias': 'rubicon'
@@ -4627,11 +4627,11 @@ describe('S2S Adapter', function () {
     })
   });
   describe('EID handling', () => {
-    function mkEid(source, value = source) {
+    function mkEid (source, value = source) {
       return {source, value};
     }
 
-    function eidEntry(source, value = source, bidders = false) {
+    function eidEntry (source, value = source, bidders = false) {
       return {eid: {source, value}, bidders};
     }
 

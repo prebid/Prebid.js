@@ -23,7 +23,7 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: BIDDER_ALIAS,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
+  supportedMediaTypes: [NATIVE, BANNER, VIDEO],
   isBidRequestValid: (bid) => {
     const params = bid.params || {};
     const { mid, inv, mname } = params;
@@ -70,7 +70,7 @@ export const spec = {
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getCurrencyFromBidderRequest(bidderRequest);
-    const cur = currency && [ currency ];
+    const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const schain = setOnAny(validBidRequests, 'schain');
 
@@ -141,7 +141,7 @@ export const spec = {
       if (bannerParams && bannerParams.sizes) {
         const sizes = parseSizesInput(bannerParams.sizes);
         const format = sizes.map(size => {
-          const [ width, height ] = size.split('x');
+          const [width, height] = size.split('x');
           const w = parseInt(width, 10);
           const h = parseInt(height, 10);
           return { w, h };
@@ -185,7 +185,7 @@ export const spec = {
       bids: validBidRequests
     };
   },
-  interpretResponse: function(serverResponse, { bids }) {
+  interpretResponse: function (serverResponse, { bids }) {
     if (!serverResponse.body) {
       return;
     }
@@ -249,11 +249,11 @@ export const spec = {
 
 registerBidder(spec);
 
-function flatten(arr) {
+function flatten (arr) {
   return [].concat(...arr);
 }
 
-function renderer(bid) {
+function renderer (bid) {
   bid.renderer.push(() => {
     window.Adform.renderOutstream(bid);
   });

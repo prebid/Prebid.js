@@ -525,7 +525,7 @@ describe('Consumable BidAdapter', function () {
       let bidderRequest1 = deepClone(BIDDER_REQUEST_1);
       let bidderRequest2 = deepClone(BIDDER_REQUEST_2);
       bidderRequest1.bidRequest[0].params.bidFloor = 0.05;
-      bidderRequest2.bidRequest[0].getFloor = function() {
+      bidderRequest2.bidRequest[0].getFloor = function () {
         return {
           currency: 'USD',
           floor: 0.15
@@ -726,7 +726,7 @@ describe('Consumable BidAdapter', function () {
       expect(opts.length).to.equal(1);
     });
   });
-  describe('unifiedId from userId module', function() {
+  describe('unifiedId from userId module', function () {
     let sandbox, bidderRequest;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
@@ -737,7 +737,7 @@ describe('Consumable BidAdapter', function () {
       sandbox.restore();
     });
 
-    it('Request should have EIDs', function() {
+    it('Request should have EIDs', function () {
       bidderRequest.bidRequest[0].userId = {};
       bidderRequest.bidRequest[0].userId.tdid = 'TTD_ID';
       bidderRequest.bidRequest[0].userIdAsEids = [{
@@ -797,13 +797,13 @@ describe('Consumable BidAdapter', function () {
       );
     });
 
-    it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
+    it('Request should NOT have adsrvrOrgId params if userId is NOT object', function () {
       let request = spec.buildRequests(bidderRequest.bidRequest, BIDDER_REQUEST_1);
       let data = JSON.parse(request.data);
       expect(data.user.eids).to.deep.equal(undefined);
     });
 
-    it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
+    it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function () {
       bidderRequest.bidRequest[0].userId = {
         tdid: 1234
       };

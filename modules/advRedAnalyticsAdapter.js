@@ -17,12 +17,12 @@ let flushInterval
 let queue = []
 
 let advRedAnalytics = Object.assign(adapter({url: DEFAULT_EVENT_URL, analyticsType: 'endpoint'}), {
-  track({eventType, args}) {
+  track ({eventType, args}) {
     handleEvent(eventType, args)
   }
 })
 
-function sendEvents() {
+function sendEvents () {
   if (queue.length > 0) {
     const message = {
       pwId: pwId,
@@ -46,7 +46,7 @@ function sendEvents() {
   }
 }
 
-function convertAdUnit(adUnit) {
+function convertAdUnit (adUnit) {
   if (!adUnit) return adUnit
 
   const shortAdUnit = {}
@@ -55,7 +55,7 @@ function convertAdUnit(adUnit) {
   return shortAdUnit
 }
 
-function convertBid(bid) {
+function convertBid (bid) {
   if (!bid) return bid
 
   const shortBid = {}
@@ -69,7 +69,7 @@ function convertBid(bid) {
   return shortBid
 }
 
-function convertAuctionInit(origEvent) {
+function convertAuctionInit (origEvent) {
   let shortEvent = {}
   shortEvent.auctionId = origEvent.auctionId
   shortEvent.timeout = origEvent.timeout
@@ -77,7 +77,7 @@ function convertAuctionInit(origEvent) {
   return shortEvent
 }
 
-function convertBidRequested(origEvent) {
+function convertBidRequested (origEvent) {
   let shortEvent = {}
   shortEvent.bidderCode = origEvent.bidderCode
   shortEvent.bids = origEvent.bids && origEvent.bids.map(convertBid)
@@ -85,19 +85,19 @@ function convertBidRequested(origEvent) {
   return shortEvent
 }
 
-function convertBidTimeout(origEvent) {
+function convertBidTimeout (origEvent) {
   let shortEvent = {}
   shortEvent.bids = origEvent && origEvent.map ? origEvent.map(convertBid) : origEvent
   return shortEvent
 }
 
-function convertBidderError(origEvent) {
+function convertBidderError (origEvent) {
   let shortEvent = {}
   shortEvent.bids = origEvent.bidderRequest && origEvent.bidderRequest.bids && origEvent.bidderRequest.bids.map(convertBid)
   return shortEvent
 }
 
-function convertAuctionEnd(origEvent) {
+function convertAuctionEnd (origEvent) {
   let shortEvent = {}
   shortEvent.adUnitCodes = origEvent.adUnitCodes
   shortEvent.bidsReceived = origEvent.bidsReceived && origEvent.bidsReceived.map(convertBid)
@@ -105,7 +105,7 @@ function convertAuctionEnd(origEvent) {
   return shortEvent
 }
 
-function convertBidWon(origEvent) {
+function convertBidWon (origEvent) {
   let shortEvent = {}
   shortEvent.adUnitCode = origEvent.adUnitCode
   shortEvent.bidderCode = origEvent.bidderCode
@@ -117,7 +117,7 @@ function convertBidWon(origEvent) {
   return shortEvent
 }
 
-function handleEvent(eventType, origEvent) {
+function handleEvent (eventType, origEvent) {
   try {
     origEvent = origEvent ? JSON.parse(JSON.stringify(origEvent)) : {}
   } catch (e) {
@@ -160,7 +160,7 @@ function handleEvent(eventType, origEvent) {
   sendEvent(shortEvent)
 }
 
-function sendEvent(event) {
+function sendEvent (event) {
   queue.push(event)
 
   if (event.eventType === EVENTS.AUCTION_END) {

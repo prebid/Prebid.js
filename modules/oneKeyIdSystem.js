@@ -64,7 +64,7 @@ export const oneKeyIdSubmodule = {
    * @param {(Object|string)} data
    * @returns {(Object|undefined)}
    */
-  decode(data) {
+  decode (data) {
     return { oneKeyData: data };
   },
   /**
@@ -73,26 +73,26 @@ export const oneKeyIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     return {
       callback: getIdsAndPreferences
     };
   },
   eids: {
     'oneKeyData': {
-      getValue: function(data) {
+      getValue: function (data) {
         if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
           return data.identifiers[0].value;
         }
       },
       source: 'paf',
       atype: 1,
-      getEidExt: function(data) {
+      getEidExt: function (data) {
         if (data && data.preferences) {
           return {preferences: data.preferences};
         }
       },
-      getUidExt: function(data) {
+      getUidExt: function (data) {
         if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
           const id = data.identifiers[0];
           return {

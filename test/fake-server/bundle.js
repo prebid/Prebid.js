@@ -14,7 +14,7 @@ const replaceStrings = (() => {
   const rules = Object.entries(REPLACE).map(([orig, repl]) => {
     return [new RegExp(orig, 'g'), repl];
   });
-  return function(text) {
+  return function (text) {
     return rules.reduce((text, [pat, repl]) => text.replace(pat, repl), text);
   }
 })();

@@ -77,7 +77,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    function parseRequest(url) {
+    function parseRequest (url) {
       const res = {};
       (url.split('?')[1] || '').split('&').forEach((it) => {
         const couple = it.split('=');
@@ -108,15 +108,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -274,15 +274,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -329,15 +329,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -385,15 +385,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -454,15 +454,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -512,15 +512,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -566,15 +566,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -634,15 +634,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -720,15 +720,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -778,15 +778,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -807,7 +807,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('buildRequests (multiple media types w/ unsupported video+outstream)', function () {
-    function parseRequest(url) {
+    function parseRequest (url) {
       const res = {};
       (url.split('?')[1] || '').split('&').forEach((it) => {
         const couple = it.split('=');
@@ -836,15 +836,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -972,7 +972,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('buildRequests (check ad slot exists)', function () {
-    function parseRequest(url) {
+    function parseRequest (url) {
       const res = {};
       (url.split('?')[1] || '').split('&').forEach((it) => {
         const couple = it.split('=');
@@ -1001,15 +1001,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -1055,7 +1055,7 @@ describe('VisxAdapter', function () {
     let sandbox;
     let documentStub;
 
-    before(function() {
+    before(function () {
       sandbox = sinon.sandbox.create();
       documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs('visx-adunit-code-1').returns({
@@ -1076,7 +1076,7 @@ describe('VisxAdapter', function () {
       cookiesAreEnabledStub.returns(false);
     });
 
-    after(function() {
+    after(function () {
       sandbox.restore();
       localStorageIsEnabledStub.restore();
       cookiesAreEnabledStub.restore();
@@ -1120,15 +1120,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -1186,15 +1186,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -1940,7 +1940,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('user sync', function () {
-    function parseUrl(url) {
+    function parseUrl (url) {
       const [, path, querySt] = url.match(/^https?:\/\/[^\/]+(?:\/([^?]+)?)?(?:\?(.+)?)?$/) || [];
       const query = {};
       (querySt || '').split('&').forEach((q) => {
@@ -2025,15 +2025,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0
@@ -2154,15 +2154,15 @@ describe('VisxAdapter', function () {
             'browsers': [
               {
                 'brand': 'Chromium',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Google Chrome',
-                'version': [ '124' ]
+                'version': ['124']
               },
               {
                 'brand': 'Not-A.Brand',
-                'version': [ '99' ]
+                'version': ['99']
               }
             ],
             'mobile': 0

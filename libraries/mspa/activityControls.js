@@ -13,11 +13,11 @@ import {logInfo} from '../../src/utils.js';
 
 const SENSITIVE_DATA_GEO = 7;
 
-function isApplicable(val) {
+function isApplicable (val) {
   return val != null && val !== 0
 }
 
-export function isBasicConsentDenied(cd) {
+export function isBasicConsentDenied (cd) {
   // service provider mode is always consent denied
   return ['MspaServiceProviderMode', 'Gpc'].some(prop => cd[prop] === 1) ||
     // you cannot consent to what you were not notified of
@@ -32,11 +32,11 @@ export function isBasicConsentDenied(cd) {
     cd.MspaCoveredTransaction === 0;
 }
 
-export function sensitiveNoticeIs(cd, value) {
+export function sensitiveNoticeIs (cd, value) {
   return ['SensitiveDataProcessingOptOutNotice', 'SensitiveDataLimitUseNotice'].some(prop => cd[prop] === value)
 }
 
-export function isConsentDenied(cd) {
+export function isConsentDenied (cd) {
   return isBasicConsentDenied(cd) ||
     ['Sale', 'Sharing', 'TargetedAdvertising'].some(scope => {
       const oo = cd[`${scope}OptOut`];
@@ -92,7 +92,7 @@ export const isTransmitUfpdConsentDenied = (() => {
   }
 })();
 
-export function isTransmitGeoConsentDenied(cd) {
+export function isTransmitGeoConsentDenied (cd) {
   const geoConsent = cd.SensitiveDataProcessing[SENSITIVE_DATA_GEO];
   return geoConsent === 1 ||
     isBasicConsentDenied(cd) ||
@@ -109,7 +109,7 @@ const CONSENT_RULES = {
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied
 };
 
-export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDataHandler.getConsentData()?.applicableSections) {
+export function mspaRule (sids, getConsent, denies, applicableSids = () => gppDataHandler.getConsentData()?.applicableSections) {
   return function () {
     if (applicableSids().some(sid => sids.includes(sid))) {
       const consent = getConsent();
@@ -126,14 +126,14 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
   };
 }
 
-function flatSection(subsections) {
+function flatSection (subsections) {
   if (!Array.isArray(subsections)) return subsections;
   return subsections.reduceRight((subsection, consent) => {
     return Object.assign(consent, subsection);
   }, {});
 }
 
-export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSENT_RULES, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
+export function setupRules (api, sids, normalizeConsent = (c) => c, rules = CONSENT_RULES, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
   const unreg = [];
   const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
   logInfo(`Enabling activity controls for ${ruleName}`)

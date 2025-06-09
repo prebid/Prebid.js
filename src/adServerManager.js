@@ -43,7 +43,7 @@ const prebid = getGlobal();
  * @property {string} name The identifying name for this adserver.
  * @property {VideoSupport} videoSupport An object with the functions needed to support video in Prebid.
  */
-export function registerVideoSupport(name, videoSupport) {
+export function registerVideoSupport (name, videoSupport) {
   prebid.adServers = prebid.adServers || { };
   prebid.adServers[name] = prebid.adServers[name] || { };
   Object.keys(videoSupport).forEach((key) => {

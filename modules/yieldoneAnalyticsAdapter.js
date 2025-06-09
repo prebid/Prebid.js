@@ -22,7 +22,7 @@ let currentAuctionId = '';
 let url = defaultUrl;
 let pubId = '';
 
-function makeAdUnitNameMap() {
+function makeAdUnitNameMap () {
   if (window.googletag && window.googletag.pubads) {
     // eslint-disable-next-line no-undef
     const p = googletag.pubads();
@@ -41,13 +41,13 @@ function makeAdUnitNameMap() {
   }
 }
 
-function addAdUnitNameForArray(ar, map) {
+function addAdUnitNameForArray (ar, map) {
   if (isArray(ar)) {
     ar.forEach((it) => { addAdUnitName(it, map) });
   }
 }
 
-function addAdUnitName(params, map) {
+function addAdUnitName (params, map) {
   if (params.adUnitCode && map[params.adUnitCode]) {
     params.adUnitName = map[params.adUnitCode];
   }
@@ -67,8 +67,8 @@ function addAdUnitName(params, map) {
 }
 
 const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
-  getUrl() { return url; },
-  track({eventType, args = {}}) {
+  getUrl () { return url; },
+  track ({eventType, args = {}}) {
     if (eventType === EVENTS.BID_REQUESTED) {
       const reqBidderId = `${args.bidderCode}_${args.auctionId}`;
       requestedBidders[reqBidderId] = deepClone(args);
@@ -140,14 +140,14 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
       }
     }
   },
-  sendStat(data, auctionId) {
+  sendStat (data, auctionId) {
     if (!data || !data.events || !data.events.length) return;
     delete yieldoneAnalytics.eventsStorage[auctionId];
     ajax(
       url,
       {
-        success: function() {},
-        error: function() {}
+        success: function () {},
+        error: function () {}
       },
       JSON.stringify(data),
       {

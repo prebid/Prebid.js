@@ -72,13 +72,13 @@ describe('MediaFuseAdapter', function () {
       }
     ];
 
-    beforeEach(function() {
-      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
+    beforeEach(function () {
+      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function () {
         return [];
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       getAdUnitsStub.restore();
     });
 
@@ -100,7 +100,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.tags[0].private_sizes).to.deep.equal([{width: 300, height: 250}]);
     });
 
-    it('should add publisher_id in request', function() {
+    it('should add publisher_id in request', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -146,7 +146,7 @@ describe('MediaFuseAdapter', function () {
       }];
 
       ['banner', 'video', 'native'].forEach(type => {
-        getAdUnitsStub.callsFake(function(...args) {
+        getAdUnitsStub.callsFake(function (...args) {
           return adUnits;
         });
 
@@ -165,7 +165,7 @@ describe('MediaFuseAdapter', function () {
       });
     });
 
-    it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function() {
+    it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function () {
       const bidRequest = Object.assign({}, bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -215,7 +215,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
-    it('should include ORTB video values when video params were not set', function() {
+    it('should include ORTB video values when video params were not set', function () {
       let bidRequest = deepClone(bidRequests[0]);
       bidRequest.params = {
         placementId: '1234235',
@@ -346,7 +346,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.tags[0].reserve).to.exist.and.to.equal(3);
     });
 
-    it('should duplicate adpod placements into batches and set correct maxduration', function() {
+    it('should duplicate adpod placements into batches and set correct maxduration', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -379,7 +379,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload2.tags[0].video.maxduration).to.equal(30);
     });
 
-    it('should round down adpod placements when numbers are uneven', function() {
+    it('should round down adpod placements when numbers are uneven', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -402,7 +402,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.tags.length).to.equal(2);
     });
 
-    it('should duplicate adpod placements when requireExactDuration is set', function() {
+    it('should duplicate adpod placements when requireExactDuration is set', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -444,7 +444,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload2tagsWith30.length).to.equal(5);
     });
 
-    it('should set durations for placements when requireExactDuration is set and numbers are uneven', function() {
+    it('should set durations for placements when requireExactDuration is set and numbers are uneven', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -475,7 +475,7 @@ describe('MediaFuseAdapter', function () {
       expect(tagsWith60.length).to.equal(1);
     });
 
-    it('should break adpod request into batches', function() {
+    it('should break adpod request into batches', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -503,7 +503,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload3.tags.length).to.equal(15);
     });
 
-    it('should contain hb_source value for adpod', function() {
+    it('should contain hb_source value for adpod', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -525,7 +525,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.tags[0].hb_source).to.deep.equal(7);
     });
 
-    it('should contain hb_source value for other media', function() {
+    it('should contain hb_source value for other media', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -541,7 +541,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
-    it('adds brand_category_exclusion to request when set', function() {
+    it('adds brand_category_exclusion to request when set', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon
         .stub(config, 'getConfig')
@@ -556,7 +556,7 @@ describe('MediaFuseAdapter', function () {
       config.getConfig.restore();
     });
 
-    it('adds auction level keywords to request when set', function() {
+    it('adds auction level keywords to request when set', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       sinon
         .stub(config, 'getConfig')
@@ -756,7 +756,7 @@ describe('MediaFuseAdapter', function () {
       expect(payload.gdpr_consent.addtl_consent).to.exist.and.to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
     });
 
-    it('should add us privacy string to payload', function() {
+    it('should add us privacy string to payload', function () {
       let consentString = '1YA-';
       let bidderRequest = {
         'bidderCode': 'mediafuse',
@@ -1023,11 +1023,11 @@ describe('MediaFuseAdapter', function () {
   describe('interpretResponse', function () {
     let bidderSettingsStorage;
 
-    before(function() {
+    before(function () {
       bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
-    after(function() {
+    after(function () {
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
@@ -1356,7 +1356,7 @@ describe('MediaFuseAdapter', function () {
       );
     });
 
-    it('should add deal_priority and deal_code', function() {
+    it('should add deal_priority and deal_code', function () {
       let responseWithDeal = deepClone(response);
       responseWithDeal.tags[0].ads[0].ad_type = 'video';
       responseWithDeal.tags[0].ads[0].deal_priority = 5;
@@ -1383,7 +1383,7 @@ describe('MediaFuseAdapter', function () {
       expect(result[0].video.dealTier).to.equal(5);
     });
 
-    it('should add advertiser id', function() {
+    it('should add advertiser id', function () {
       let responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
 
@@ -1397,7 +1397,7 @@ describe('MediaFuseAdapter', function () {
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
     });
 
-    it('should add brand id', function() {
+    it('should add brand id', function () {
       let responseBrandId = deepClone(response);
       responseBrandId.tags[0].ads[0].brand_id = 123;
 
@@ -1411,7 +1411,7 @@ describe('MediaFuseAdapter', function () {
       expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
 
-    it('should add advertiserDomains', function() {
+    it('should add advertiserDomains', function () {
       let responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
 

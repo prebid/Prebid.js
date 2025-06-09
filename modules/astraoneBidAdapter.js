@@ -13,8 +13,8 @@ const BIDDER_CODE = 'astraone';
 const SSP_ENDPOINT = 'https://ssp.astraone.io/auction/prebid';
 const TTL = 60;
 
-function buildBidRequests(validBidRequests) {
-  return _map(validBidRequests, function(validBidRequest) {
+function buildBidRequests (validBidRequests) {
+  return _map(validBidRequests, function (validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
@@ -29,7 +29,7 @@ function buildBidRequests(validBidRequests) {
   })
 }
 
-function buildBid(bidData) {
+function buildBid (bidData) {
   const bid = {
     requestId: bidData.bidId,
     cpm: bidData.price,
@@ -50,11 +50,11 @@ function buildBid(bidData) {
   return bid;
 }
 
-function getMediaTypeFromBid(bid) {
+function getMediaTypeFromBid (bid) {
   return bid.mediaTypes && Object.keys(bid.mediaTypes)[0]
 }
 
-function wrapAd(bid, bidData) {
+function wrapAd (bid, bidData) {
   return `<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -88,7 +88,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return (
       getMediaTypeFromBid(bid) === BANNER &&
       !!bid.params.placeId &&
@@ -104,7 +104,7 @@ export const spec = {
    * @param {validBidRequests} validBidRequests an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     const payload = {
       url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
@@ -134,7 +134,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const bids = serverResponse.body && serverResponse.body.bids;
 
     return Array.isArray(bids) ? bids.map(bid => buildBid(bid)) : []

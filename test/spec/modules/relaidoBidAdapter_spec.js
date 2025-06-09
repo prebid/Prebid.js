@@ -116,7 +116,7 @@ describe('RelaidoAdapter', function () {
       }
     };
     window.RelaidoPlayer = {
-      renderAd: function() {
+      renderAd: function () {
         return null;
       }
     };

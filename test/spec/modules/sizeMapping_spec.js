@@ -105,7 +105,7 @@ describe('sizeMapping', function () {
           sizes: TEST_SIZES
         }
       },
-      getSizes(mediaTypes) {
+      getSizes (mediaTypes) {
         return mediaTypes.banner.sizes;
       },
     }
@@ -117,7 +117,7 @@ describe('sizeMapping', function () {
           playerSize: TEST_SIZES
         }
       },
-      getSizes(mediaTypes) {
+      getSizes (mediaTypes) {
         return mediaTypes.video.playerSize;
       }
     }

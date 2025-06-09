@@ -13,7 +13,7 @@ import {loadExternalScript} from '../src/adloader.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
-export function createRtdProvider(moduleName) {
+export function createRtdProvider (moduleName) {
   const MODULE_NAME = 'realTimeData';
   const SUBMODULE_NAME = moduleName;
   const GVLID = 1116;
@@ -25,7 +25,7 @@ export function createRtdProvider(moduleName) {
    * @param ortb2 object to merge into
    * @param {Object} rtd
    */
-  function addRealTimeData(ortb2, rtd) {
+  function addRealTimeData (ortb2, rtd) {
     if (isPlainObject(rtd.ortb2)) {
       logMessage(`${SUBMODULE_NAME}RtdProvider: merging original: `, ortb2);
       logMessage(`${SUBMODULE_NAME}RtdProvider: merging in: `, rtd.ortb2);
@@ -36,7 +36,7 @@ export function createRtdProvider(moduleName) {
    * Try parsing stringified array of segment IDs.
    * @param {String} data
    */
-  function tryParse(data) {
+  function tryParse (data) {
     try {
       return JSON.parse(data);
     } catch (err) {
@@ -48,7 +48,7 @@ export function createRtdProvider(moduleName) {
    * Load the Anonymised Marketing Tag script
    * @param {Object} config
    */
-  function tryLoadMarketingTag(config) {
+  function tryLoadMarketingTag (config) {
     const clientId = config?.params?.tagConfig?.clientId;
     if (typeof clientId !== 'string' || !clientId.trim()) {
       logWarn(`${SUBMODULE_NAME}RtdProvider: clientId missing or invalid; Marketing Tag not loaded.`);
@@ -77,7 +77,7 @@ export function createRtdProvider(moduleName) {
    * @param {Object} config
    * @param {Object} userConsent
    */
-  function getRealTimeData(reqBidsConfigObj, onDone, config, userConsent) {
+  function getRealTimeData (reqBidsConfigObj, onDone, config, userConsent) {
     if (config && isPlainObject(config.params)) {
       const cohortStorageKey = config.params.cohortStorageKey;
       const bidders = config.params.bidders;
@@ -130,7 +130,7 @@ export function createRtdProvider(moduleName) {
    * @param {Object} userConsent
    * @return {boolean}
    */
-  function init(config, userConsent) {
+  function init (config, userConsent) {
     tryLoadMarketingTag(config);
     return true;
   }

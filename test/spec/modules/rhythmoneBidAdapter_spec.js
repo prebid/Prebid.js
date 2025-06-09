@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 var r1adapter = spec;
 
 describe('rhythmone adapter tests', function () {
-  beforeEach(function() {
+  beforeEach(function () {
     this.defaultBidderRequest = {
       'refererInfo': {
         'ref': 'Reference Page',
@@ -55,7 +55,7 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mypath');
     });
 
-    it('interpretResponse works', function() {
+    it('interpretResponse works', function () {
       var bidList = {
         'body': [
           {
@@ -83,7 +83,7 @@ describe('rhythmone adapter tests', function () {
     });
   });
 
-  describe('Verify POST Video Bid Request', function() {
+  describe('Verify POST Video Bid Request', function () {
     it('buildRequests works', function () {
       var bidRequestList = [
         {
@@ -132,7 +132,7 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
     });
 
-    it('interpretResponse works', function() {
+    it('interpretResponse works', function () {
       var bidList = {
         'body': [
           {
@@ -167,7 +167,7 @@ describe('rhythmone adapter tests', function () {
     });
   });
 
-  describe('Verify Multi-Format ads and Multiple Size Bid Request', function() {
+  describe('Verify Multi-Format ads and Multiple Size Bid Request', function () {
     it('buildRequests works', function () {
       var bidRequestList = [
         {
@@ -225,7 +225,7 @@ describe('rhythmone adapter tests', function () {
       expect(openrtbRequest.imp[0].ext.bidder.path).to.equal('mypath');
     });
 
-    it('interpretResponse works', function() {
+    it('interpretResponse works', function () {
       var bidList = {
         'body': {
           'id': '1e810245dd1779',
@@ -266,7 +266,7 @@ describe('rhythmone adapter tests', function () {
     });
   });
 
-  describe('misc buildRequests', function() {
+  describe('misc buildRequests', function () {
     it('should send GDPR Consent data to RhythmOne tag', function () {
       var bidRequestList = [
         {
@@ -617,7 +617,7 @@ describe('rhythmone adapter tests', function () {
       expect(bidRequest).to.be.empty;
     });
 
-    it('should return empty site data when refererInfo is missing', function() {
+    it('should return empty site data when refererInfo is missing', function () {
       delete this.defaultBidderRequest.refererInfo;
       var bidRequestList = [
         {
@@ -647,7 +647,7 @@ describe('rhythmone adapter tests', function () {
     });
   });
 
-  it('should secure correctly', function() {
+  it('should secure correctly', function () {
     this.defaultBidderRequest.refererInfo.stack[0] = ['https://securesite.dvl'];
     var bidRequestList = [
       {
@@ -674,7 +674,7 @@ describe('rhythmone adapter tests', function () {
     expect(openrtbRequest.imp[0].secure).to.equal(1);
   });
 
-  it('should pass schain', function() {
+  it('should pass schain', function () {
     var schain = {
       'ver': '1.0',
       'complete': 1,
@@ -715,7 +715,7 @@ describe('rhythmone adapter tests', function () {
   });
 
   describe('misc interpretResponse', function () {
-    it('No bid response', function() {
+    it('No bid response', function () {
       var noBidResponse = r1adapter.interpretResponse({
         'body': ''
       });

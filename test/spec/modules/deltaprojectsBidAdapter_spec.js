@@ -9,9 +9,9 @@ import {
 const BID_REQ_REFER = 'http://example.com/page?param=val';
 const BID_REQ_DOMAIN = 'example.com'
 
-describe('deltaprojectsBidAdapter', function() {
+describe('deltaprojectsBidAdapter', function () {
   describe('isBidRequestValid', function () {
-    function makeBid() {
+    function makeBid () {
       return {
         bidder: BIDDER_CODE,
         params: {
@@ -122,7 +122,7 @@ describe('deltaprojectsBidAdapter', function() {
     const consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
 
     const GDPR_REQ_REFERER = 'http://localhost:9876/'
-    function getGdprRequestBody(gdprApplies, consentString) {
+    function getGdprRequestBody (gdprApplies, consentString) {
       const gdprRequest = spec.buildRequests(gdprBidRequests, {
         gdprConsent: {
           gdprApplies: gdprApplies,
@@ -135,25 +135,25 @@ describe('deltaprojectsBidAdapter', function() {
       return gdprRequest.data;
     }
 
-    it('should handle gdpr applies being present and true', function() {
+    it('should handle gdpr applies being present and true', function () {
       const gdprRequestBody = getGdprRequestBody(true, consentString);
       expect(gdprRequestBody.regs.ext.gdpr).to.equal(1);
       expect(gdprRequestBody.user.ext.consent).to.equal(consentString);
     })
 
-    it('should handle gdpr applies being present and false', function() {
+    it('should handle gdpr applies being present and false', function () {
       const gdprRequestBody = getGdprRequestBody(false, consentString);
       expect(gdprRequestBody.regs.ext.gdpr).to.equal(0);
       expect(gdprRequestBody.user.ext.consent).to.equal(consentString);
     })
 
-    it('should handle gdpr applies  being undefined', function() {
+    it('should handle gdpr applies  being undefined', function () {
       const gdprRequestBody = getGdprRequestBody(undefined, consentString);
       expect(gdprRequestBody.regs).to.deep.equal({ext: {}});
       expect(gdprRequestBody.user.ext.consent).to.equal(consentString);
     })
 
-    it('should handle gdpr consent being undefined', function() {
+    it('should handle gdpr consent being undefined', function () {
       const gdprRequest = spec.buildRequests(gdprBidRequests, {refererInfo: { referer: GDPR_REQ_REFERER }})[0];
       const gdprRequestBody = gdprRequest.data;
       expect(gdprRequestBody.regs).to.deep.equal({ ext: {} });
@@ -179,7 +179,7 @@ describe('deltaprojectsBidAdapter', function() {
       },
     ];
     const request = spec.buildRequests(bidRequests, {refererInfo: { referer: BID_REQ_REFER }})[0];
-    function makeResponse() {
+    function makeResponse () {
       return {
         body: {
           id: '5e5c23a5ba71e78',

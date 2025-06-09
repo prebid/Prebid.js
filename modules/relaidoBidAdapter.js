@@ -25,7 +25,7 @@ const UUID_KEY = 'relaido_uuid';
 
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (!deepAccess(bid, 'params.placementId')) {
     logWarn('placementId param is reqeuired.');
     return false;
@@ -43,7 +43,7 @@ function isBidRequestValid(bid) {
   return false;
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const bids = [];
   let bidDomain = null;
   let bidder = null;
@@ -135,7 +135,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   };
 }
 
-function interpretResponse(serverResponse, bidRequest) {
+function interpretResponse (serverResponse, bidRequest) {
   const bidResponses = [];
   const body = serverResponse.body;
   if (!body || body.status != 'ok') {
@@ -180,7 +180,7 @@ function interpretResponse(serverResponse, bidRequest) {
   return bidResponses;
 }
 
-function getUserSyncs(syncOptions, serverResponses) {
+function getUserSyncs (syncOptions, serverResponses) {
   if (!syncOptions.iframeEnabled) {
     return [];
   }
@@ -194,7 +194,7 @@ function getUserSyncs(syncOptions, serverResponses) {
   }];
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   let query = parseQueryStringParameters({
     placement_id: deepAccess(bid, 'params.0.placementId'),
     creative_id: deepAccess(bid, 'creativeId'),
@@ -210,7 +210,7 @@ function onBidWon(bid) {
   triggerPixel(burl);
 }
 
-function onTimeout(data) {
+function onTimeout (data) {
   let query = parseQueryStringParameters({
     placement_id: deepAccess(data, '0.params.0.placementId'),
     timeout: deepAccess(data, '0.timeout'),
@@ -225,11 +225,11 @@ function onTimeout(data) {
   triggerPixel(timeoutUrl);
 }
 
-function createPlayerTag(playerUrl) {
+function createPlayerTag (playerUrl) {
   return `<script src="${playerUrl}"></script>`;
 }
 
-function createRenderTag(width, height, vast) {
+function createRenderTag (width, height, vast) {
   return `<script>(function(){` +
     `window.RelaidoPlayer.renderAd({` +
     `width: ${width},` +
@@ -240,7 +240,7 @@ function createRenderTag(width, height, vast) {
     `})();</script>`;
 };
 
-function newRenderer(bidId, playerUrl) {
+function newRenderer (bidId, playerUrl) {
   const renderer = Renderer.install({
     id: bidId,
     url: playerUrl,
@@ -254,7 +254,7 @@ function newRenderer(bidId, playerUrl) {
   return renderer;
 }
 
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     window.RelaidoPlayer.renderAd({
       adUnitCode: bid.adUnitCode,
@@ -267,7 +267,7 @@ function outstreamRender(bid) {
   });
 }
 
-function isBannerValid(bid) {
+function isBannerValid (bid) {
   const sizes = getValidSizes(deepAccess(bid, 'mediaTypes.banner.sizes'));
   if (sizes.length > 0) {
     return true;
@@ -275,7 +275,7 @@ function isBannerValid(bid) {
   return false;
 }
 
-function isVideoValid(bid) {
+function isVideoValid (bid) {
   let playerSize = getValidSizes(deepAccess(bid, 'mediaTypes.video.playerSize'));
   if (playerSize.length === 0) {
     playerSize = getValidSizes(deepAccess(bid, 'params.video.playerSize'));
@@ -289,7 +289,7 @@ function isVideoValid(bid) {
   return false;
 }
 
-function getUuid() {
+function getUuid () {
   const id = storage.getCookie(UUID_KEY)
   if (id) return id;
   const newId = generateUUID();
@@ -297,7 +297,7 @@ function getUuid() {
   return newId;
 }
 
-function getOgUrl() {
+function getOgUrl () {
   try {
     const ogURLElement = window.top.document.querySelector('meta[property="og:url"]');
     return ogURLElement ? ogURLElement.content : null;
@@ -307,26 +307,26 @@ function getOgUrl() {
   }
 }
 
-function getCanonicalUrl(canonicalUrl, isOgUrlOption) {
+function getCanonicalUrl (canonicalUrl, isOgUrlOption) {
   if (!canonicalUrl) {
     return (isOgUrlOption) ? getOgUrl() : null;
   }
   return canonicalUrl;
 }
 
-function getCanonicalUrlHash(canonicalUrl) {
+function getCanonicalUrlHash (canonicalUrl) {
   return (canonicalUrl) ? sha1(canonicalUrl).toString() : null;
 }
 
-function hasBannerMediaType(bid) {
+function hasBannerMediaType (bid) {
   return !!deepAccess(bid, 'mediaTypes.banner');
 }
 
-function hasVideoMediaType(bid) {
+function hasVideoMediaType (bid) {
   return !!deepAccess(bid, 'mediaTypes.video');
 }
 
-function getValidSizes(sizes) {
+function getValidSizes (sizes) {
   let result = [];
   if (sizes && isArray(sizes) && sizes.length > 0) {
     for (let i = 0; i < sizes.length; i++) {
@@ -354,7 +354,7 @@ function getValidSizes(sizes) {
   return result;
 }
 
-function getBannerSizes(bidRequest) {
+function getBannerSizes (bidRequest) {
   if (!hasBannerMediaType(bidRequest)) {
     return null;
   }
@@ -365,7 +365,7 @@ function getBannerSizes(bidRequest) {
   return parseSizesInput(sizes).join(',');
 }
 
-function getTargeting(bidRequest) {
+function getTargeting (bidRequest) {
   const targetings = {};
   const pubads = getPubads();
   if (pubads) {
@@ -386,11 +386,11 @@ function getTargeting(bidRequest) {
   return targetings;
 }
 
-function getPubads() {
+function getPubads () {
   return (isGptPubadsDefined()) ? window.googletag.pubads() : null;
 }
 
-function getAdUnit(adUnitCode) {
+function getAdUnit (adUnitCode) {
   if (isGptPubadsDefined()) {
     const adSlots = window.googletag.pubads().getSlots();
     const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode);

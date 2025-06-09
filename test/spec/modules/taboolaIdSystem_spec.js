@@ -219,30 +219,30 @@ describe('TaboolaIdSystem', function () {
     });
   });
 
-  describe('userData cookie parsing', function() {
-    it('should read "user-id" from multi-key cookie', function() {
+  describe('userData cookie parsing', function () {
+    it('should read "user-id" from multi-key cookie', function () {
       // e.g. "user-id=ABC123&foo=bar"
       getCookieStub.returns('user-id=ABC123&foo=bar');
       const result = taboolaIdSubmodule.getId({});
       expect(result.id).to.equal('ABC123');
     });
 
-    it('should skip cookie if cookiesAreEnabled is false', function() {
+    it('should skip cookie if cookiesAreEnabled is false', function () {
       cookiesAreEnabledStub.returns(false);
       getCookieStub.returns('user-id=XYZ');
       const result = taboolaIdSubmodule.getId({});
       expect(result.id).to.be.undefined;
     });
 
-    it('should handle no cookie data at all', function() {
+    it('should handle no cookie data at all', function () {
       getCookieStub.returns(undefined);
       const result = taboolaIdSubmodule.getId({});
       expect(result.id).to.be.undefined;
     });
   });
 
-  describe('handle response edge cases', function() {
-    it('should do nothing if no existing ID and server returns invalid JSON (missing user.id)', function() {
+  describe('handle response edge cases', function () {
+    it('should do nothing if no existing ID and server returns invalid JSON (missing user.id)', function () {
       getDataFromLocalStorageStub.returns(undefined);
       const result = taboolaIdSubmodule.getId({params: {
         shouldSkipSync: false
@@ -264,7 +264,7 @@ describe('TaboolaIdSystem', function () {
       expect(setDataInLocalStorageStub.called).to.be.false;
     });
 
-    it('should skip both read and write when local storage is disabled', function() {
+    it('should skip both read and write when local storage is disabled', function () {
       // Pretend local storage is present physically, but "disabled" for usage
       hasLocalStorageStub.returns(true);
       localStorageIsEnabledStub.returns(false);
@@ -297,7 +297,7 @@ describe('TaboolaIdSystem', function () {
       expect(setDataInLocalStorageStub.called).to.be.false;
     });
 
-    it('should pick an ID from cookie or TRC if local storage is disabled', function() {
+    it('should pick an ID from cookie or TRC if local storage is disabled', function () {
       hasLocalStorageStub.returns(true);
       localStorageIsEnabledStub.returns(false);
       getCookieStub.returns('COOKIE_ID');
@@ -324,7 +324,7 @@ describe('TaboolaIdSystem', function () {
       expect(setDataInLocalStorageStub.called).to.be.false;
     });
 
-    it('should ignore empty string from the server as a new ID', function() {
+    it('should ignore empty string from the server as a new ID', function () {
       getDataFromLocalStorageStub.returns('OLD_ID');
       const result = taboolaIdSubmodule.getId({params: {
         shouldSkipSync: false

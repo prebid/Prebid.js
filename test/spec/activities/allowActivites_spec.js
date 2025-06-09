@@ -21,7 +21,7 @@ describe('allowActivities config', () => {
     config.resetConfig();
   });
 
-  function setupActivityConfig(cfg) {
+  function setupActivityConfig (cfg) {
     config.setConfig({
       allowActivities: {
         [ACTIVITY]: cfg
@@ -41,7 +41,7 @@ describe('allowActivities config', () => {
         default: false,
         rules: [
           {
-            condition({componentName}) {
+            condition ({componentName}) {
               return componentName === MODULE_NAME
             },
             allow: true
@@ -63,7 +63,7 @@ describe('allowActivities config', () => {
     it('are tested for their condition', () => {
       setupActivityConfig({
         rules: [{
-          condition({flag}) { return flag },
+          condition ({flag}) { return flag },
           allow: false
         }]
       });
@@ -82,7 +82,7 @@ describe('allowActivities config', () => {
     it('do not choke when the condition throws', () => {
       setupActivityConfig({
         rules: [{
-          condition() {
+          condition () {
             throw new Error()
           },
           allow: true
@@ -94,7 +94,7 @@ describe('allowActivities config', () => {
     it('does not pass private (underscored) parameters to condition', () => {
       setupActivityConfig({
         rules: [{
-          condition({_priv}) { return _priv },
+          condition ({_priv}) { return _priv },
           allow: false
         }]
       });

@@ -129,7 +129,7 @@ describe('Adf adapter', function () {
       });
 
       it('should transfer DSA info', function () {
-        let validBidRequests = [ { bidId: 'bidId', params: { siteId: 'siteId' } } ];
+        let validBidRequests = [{ bidId: 'bidId', params: { siteId: 'siteId' } }];
 
         let request = JSON.parse(
           spec.buildRequests(validBidRequests, {
@@ -305,8 +305,8 @@ describe('Adf adapter', function () {
         bidId: 'bidId',
         params: {},
         userIdAsEids: [
-          { source: 'adserver.org', uids: [ { id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } } ] },
-          { source: 'pubcid.org', uids: [ { id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 } ] }
+          { source: 'adserver.org', uids: [{ id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: { rtiPartner: 'TDID' } }] },
+          { source: 'pubcid.org', uids: [{ id: 'pubCommonId_FROM_USER_ID_MODULE', atype: 1 }] }
         ]
       }];
 
@@ -321,7 +321,7 @@ describe('Adf adapter', function () {
       setCurrencyConfig({ adServerCurrency: 'EUR' })
       return addFPDToBidderRequest(bidderRequest).then(res => {
         let request = JSON.parse(spec.buildRequests(validBidRequests, res).data);
-        assert.deepEqual(request.cur, [ 'EUR' ]);
+        assert.deepEqual(request.cur, ['EUR']);
         setCurrencyConfig({});
       });
     });
@@ -431,7 +431,7 @@ describe('Adf adapter', function () {
             { bidId: 'bidId', params: { mid: 1234, inv: 1002, mname: 'placement2' }, mediaTypes: {video: {}} },
             { bidId: 'bidId', params: { mid: 1234 }, mediaTypes: {video: {}} }
           ];
-          const [ imp1, imp2, imp3 ] = getRequestImps(validBidRequests);
+          const [imp1, imp2, imp3] = getRequestImps(validBidRequests);
 
           assert.equal(imp1.ext.bidder.inv, 1000);
           assert.equal(imp1.ext.bidder.mname, 'placement');
@@ -458,7 +458,7 @@ describe('Adf adapter', function () {
         });
 
         it('should not add if floor price not defined', function () {
-          const validBidRequests = [ getBidWithFloor() ];
+          const validBidRequests = [getBidWithFloor()];
           let imp = getRequestImps(validBidRequests)[0];
 
           assert.equal(imp.bidfloor, undefined);
@@ -467,7 +467,7 @@ describe('Adf adapter', function () {
 
         it('should request floor price in adserver currency', function () {
           setCurrencyConfig({ adServerCurrency: 'DKK' })
-          const validBidRequests = [ getBidWithFloor() ];
+          const validBidRequests = [getBidWithFloor()];
           return addFPDToBidderRequest(validBidRequests[0]).then(res => {
             const imp = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ...res }).data).imp[0];
             assert.equal(imp.bidfloor, undefined);
@@ -477,7 +477,7 @@ describe('Adf adapter', function () {
         });
 
         it('should add correct floor values', function () {
-          const expectedFloors = [ 1, 1.3, 0.5 ];
+          const expectedFloors = [1, 1.3, 0.5];
           const validBidRequests = expectedFloors.map(getBidWithFloor);
           let imps = getRequestImps(validBidRequests);
 
@@ -490,16 +490,16 @@ describe('Adf adapter', function () {
         it('should add correct params to getFloor', function () {
           let result;
           let mediaTypes = { video: {
-            playerSize: [ 100, 200 ]
+            playerSize: [100, 200]
           } };
-          const expectedFloors = [ 1, 1.3, 0.5 ];
+          const expectedFloors = [1, 1.3, 0.5];
           setCurrencyConfig({ adServerCurrency: 'DKK' });
           let validBidRequests = expectedFloors.map(getBidWithFloorTest);
           return addFPDToBidderRequest(validBidRequests[0]).then(res => {
             getRequestImps(validBidRequests, res);
             assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' })
             mediaTypes = { banner: {
-              sizes: [ [100, 200], [300, 400] ]
+              sizes: [[100, 200], [300, 400]]
             }};
             getRequestImps(validBidRequests, res);
 
@@ -517,7 +517,7 @@ describe('Adf adapter', function () {
             setCurrencyConfig({});
           });
 
-          function getBidWithFloorTest(floor) {
+          function getBidWithFloorTest (floor) {
             return {
               params: { mid: 1 },
               mediaTypes: mediaTypes,
@@ -532,7 +532,7 @@ describe('Adf adapter', function () {
           }
         });
 
-        function getBidWithFloor(floor) {
+        function getBidWithFloor (floor) {
           return {
             params: { mid: 1 },
             mediaTypes: { video: {} },
@@ -589,7 +589,7 @@ describe('Adf adapter', function () {
               video: {}
             }
           }];
-          let [ first, second, third ] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
+          let [first, second, third] = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp;
 
           assert.ok(first.banner);
           assert.ok(first.video);
@@ -618,7 +618,7 @@ describe('Adf adapter', function () {
           }];
           let { banner } = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0];
           assert.deepEqual(banner, {
-            format: [ { w: 100, h: 100 }, { w: 200, h: 300 } ]
+            format: [{ w: 100, h: 100 }, { w: 200, h: 300 }]
           });
         });
       });
@@ -725,7 +725,7 @@ describe('Adf adapter', function () {
                       hmin: 627,
                       w: 325,
                       h: 300,
-                      mimes: [ 'image/jpg', 'image/gif' ]
+                      mimes: ['image/jpg', 'image/gif']
                     }
                   },
                   {
@@ -900,7 +900,7 @@ describe('Adf adapter', function () {
       });
     });
 
-    function getRequestImps(validBidRequests, enriched = {}) {
+    function getRequestImps (validBidRequests, enriched = {}) {
       return JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, ...enriched }).data).imp;
     }
   });
@@ -1019,11 +1019,11 @@ describe('Adf adapter', function () {
 
       bids = spec.interpretResponse(serverResponse, bidRequest).map(bid => {
         const { requestId, native: { ortb: { link: { url } } } } = bid;
-        return [ requestId, url ];
+        return [requestId, url];
       });
 
       assert.equal(bids.length, 3);
-      assert.deepEqual(bids, [[ 'bidId1', 'link1' ], [ 'bidId2', 'link2' ], [ 'bidId4', 'link4' ]]);
+      assert.deepEqual(bids, [['bidId1', 'link1'], ['bidId2', 'link2'], ['bidId4', 'link4']]);
     });
 
     it('should set correct values to bid', function () {
@@ -1043,7 +1043,7 @@ describe('Adf adapter', function () {
                   imptrackers: ['imptrackers url1', 'imptrackers url2']
                 },
                 dealid: 'deal-id',
-                adomain: [ 'demo.com' ],
+                adomain: ['demo.com'],
                 ext: {
                   prebid: {
                     type: 'native',
@@ -1058,7 +1058,7 @@ describe('Adf adapter', function () {
                     adrender: 1
                   }
                 },
-                cat: [ 'IAB1', 'IAB2' ]
+                cat: ['IAB1', 'IAB2']
               }
             ]
           }],
@@ -1119,8 +1119,8 @@ describe('Adf adapter', function () {
       assert.deepEqual(bids[0].mediaType, 'native');
       assert.deepEqual(bids[0].meta.mediaType, 'native');
       assert.deepEqual(bids[0].meta.primaryCatId, 'IAB1');
-      assert.deepEqual(bids[0].meta.secondaryCatIds, [ 'IAB2' ]);
-      assert.deepEqual(bids[0].meta.advertiserDomains, [ 'demo.com' ]);
+      assert.deepEqual(bids[0].meta.secondaryCatIds, ['IAB2']);
+      assert.deepEqual(bids[0].meta.advertiserDomains, ['demo.com']);
       assert.deepEqual(bids[0].meta.dsa, {
         behalf: 'some-behalf',
         paid: 'some-paid',
@@ -1172,7 +1172,7 @@ describe('Adf adapter', function () {
               img: { url: 'test.url.com/Files/58345/308200.jpg?bv=1', w: 300, h: 300 }
             }],
             link: {
-              url: 'clickUrl', clicktrackers: [ 'clickTracker1', 'clickTracker2' ]
+              url: 'clickUrl', clicktrackers: ['clickTracker1', 'clickTracker2']
             },
             imptrackers: ['imptracker url1', 'imptracker url2'],
             jstracker: 'jstracker'

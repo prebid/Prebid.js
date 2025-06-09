@@ -11,14 +11,14 @@ const SUPPORTED_AD_SIZES = [
   [100, 100], [200, 200], [300, 250], [336, 280], [400, 200], [300, 200], [600, 600], [236, 202], [1080, 1920], [300, 374]
 ];
 
-function getBidRequestUrl(bidRequest, bidderRequest) {
+function getBidRequestUrl (bidRequest, bidderRequest) {
   if (bidRequest.params.url && bidRequest.params.url !== 'current url') {
     return bidRequest.params.url;
   }
   return getBidderRequestUrl(bidderRequest);
 }
 
-function getBidderRequestUrl(bidderRequest) {
+function getBidderRequestUrl (bidderRequest) {
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     return bidderRequest.refererInfo.page;
   }
@@ -26,11 +26,11 @@ function getBidderRequestUrl(bidderRequest) {
   return encodeURIComponent(pageUrl);
 }
 
-function getTileImageUrl(tile) {
+function getTileImageUrl (tile) {
   return tile.imageUrl.indexOf('http') === -1 ? 'https:' + tile.imageUrl : tile.imageUrl;
 }
 
-function collectImpressionTrackers(tile, response) {
+function collectImpressionTrackers (tile, response) {
   const trackers = [response.widgetViewPixel];
   if (!tile.trackers) return trackers;
   const impressionTrackers = tile.trackers.impressionPixels || [];
@@ -38,7 +38,7 @@ function collectImpressionTrackers(tile, response) {
   return [...impressionTrackers, ...viewTrackers, ...trackers];
 }
 
-function parseNativeAdResponse(tile, response) {
+function parseNativeAdResponse (tile, response) {
   return {
     title: tile.title,
     body: '',
@@ -56,7 +56,7 @@ function parseNativeAdResponse(tile, response) {
   };
 }
 
-function parseBannerAdResponse(tile, response) {
+function parseBannerAdResponse (tile, response) {
   if (tile.tag) {
     return tile.tag;
   }
@@ -76,12 +76,12 @@ function parseBannerAdResponse(tile, response) {
   return `<html><body>${style}<div id="__CONDORX__BANNER"><a href="${tile.clickUrl}" target=_blank><img class="__condorx_banner_image" src="${getTileImageUrl(tile)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${tile.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
 }
 
-function getValidAdSize(bidRequest) {
+function getValidAdSize (bidRequest) {
   const sizes = getBidderAdSizes(bidRequest);
   return sizes.find(isValidAdSize);
 }
 
-function getBidderAdSizes(bidRequest) {
+function getBidderAdSizes (bidRequest) {
   if (bidRequest.sizes && bidRequest.sizes.length > 0) {
     return bidRequest.sizes;
   } else if (bidRequest.nativeParams && bidRequest.nativeParams.image && bidRequest.nativeParams.image.sizes) {
@@ -90,7 +90,7 @@ function getBidderAdSizes(bidRequest) {
   return [[-1, -1]];
 }
 
-function isValidAdSize([width, height]) {
+function isValidAdSize ([width, height]) {
   if (!width || !height) {
     return false;
   }

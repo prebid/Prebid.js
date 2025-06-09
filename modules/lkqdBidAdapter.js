@@ -11,14 +11,14 @@ const PROTOCOLS = [1, 2, 3, 4, 5, 6, 7, 8];
 const PARAM_VOLUME_DEFAULT = '100';
 const DEFAULT_SIZES = [[640, 480]];
 
-function calculateSizes(VIDEO_BID, bid) {
+function calculateSizes (VIDEO_BID, bid) {
   const userProvided = bid.sizes && Array.isArray(bid.sizes) ? (Array.isArray(bid.sizes[0]) ? bid.sizes : [bid.sizes]) : DEFAULT_SIZES;
   const preBidProvided = VIDEO_BID.playerSize && Array.isArray(VIDEO_BID.playerSize) ? (Array.isArray(VIDEO_BID.playerSize[0]) ? VIDEO_BID.playerSize : [VIDEO_BID.playerSize]) : null;
 
   return preBidProvided || userProvided;
 }
 
-function isSet(value) {
+function isSet (value) {
   return value != null;
 }
 
@@ -26,12 +26,12 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: [],
   supportedMediaTypes: [VIDEO],
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return bid.bidder === BIDDER_CODE && bid.params && Object.keys(bid.params).length > 0 &&
       ((isSet(bid.params.publisherId) && parseInt(bid.params.publisherId) > 0) || (isSet(bid.params.placementId) && parseInt(bid.params.placementId) > 0)) &&
       bid.params.siteId != null;
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const BIDDER_REQUEST = bidderRequest || {};
     const serverRequestObjects = [];
     const UTC_OFFSET = new Date().getTimezoneOffset();
@@ -193,7 +193,7 @@ export const spec = {
 
     return serverRequestObjects;
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
     const bidResponses = [];
 

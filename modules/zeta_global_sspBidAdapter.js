@@ -108,7 +108,7 @@ export const spec = {
         const floorInfo = request.getFloor({
           currency: 'USD',
           mediaType: impData.video ? 'video' : 'banner',
-          size: [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
+          size: [impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h]
         });
         if (floorInfo && floorInfo.floor) {
           impData.bidfloor = floorInfo.floor;
@@ -289,7 +289,7 @@ export const spec = {
   }
 }
 
-function buildBanner(request) {
+function buildBanner (request) {
   let sizes = request.sizes;
   if (request.mediaTypes &&
     request.mediaTypes.banner &&
@@ -316,7 +316,7 @@ function buildBanner(request) {
   }
 }
 
-function buildVideo(request) {
+function buildVideo (request) {
   let video = {};
   const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
@@ -336,7 +336,7 @@ function buildVideo(request) {
   return video;
 }
 
-function checkParamDataType(key, value, datatype) {
+function checkParamDataType (key, value, datatype) {
   let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
@@ -359,13 +359,13 @@ function checkParamDataType(key, value, datatype) {
   return undefined;
 }
 
-function provideEids(request, payload) {
+function provideEids (request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
   }
 }
 
-function provideSegments(bidderRequest, payload) {
+function provideSegments (bidderRequest, payload) {
   const data = bidderRequest.ortb2?.user?.data;
   if (isArray(data)) {
     const segments = data.filter(d => d?.segment).map(d => d.segment).filter(s => isArray(s)).flatMap(s => s).filter(s => s?.id);
@@ -384,7 +384,7 @@ function provideSegments(bidderRequest, payload) {
   }
 }
 
-function provideMediaType(zetaBid, bid, bidRequest) {
+function provideMediaType (zetaBid, bid, bidRequest) {
   if (zetaBid.ext && zetaBid.ext.prebid && zetaBid.ext.prebid.type) {
     bid.mediaType = zetaBid.ext.prebid.type === VIDEO ? VIDEO : BANNER;
   } else {
@@ -392,7 +392,7 @@ function provideMediaType(zetaBid, bid, bidRequest) {
   }
 }
 
-function cropPage(page) {
+function cropPage (page) {
   if (page) {
     if (page.length > 100) {
       page = page.substring(0, 100);
@@ -416,7 +416,7 @@ function cropPage(page) {
   return '';
 }
 
-function clearEmpties(o) {
+function clearEmpties (o) {
   for (let k in o) {
     if (o[k] === null) {
       delete o[k];

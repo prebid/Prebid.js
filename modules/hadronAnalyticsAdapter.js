@@ -48,7 +48,7 @@ var bidRequestTimeout = 0;
 let analyticsType = 'endpoint';
 
 let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
-  track({eventType, args}) {
+  track ({eventType, args}) {
     args = args ? utils.deepClone(args) : {};
     var data = {};
     if (!eventsToTrack.includes(eventType)) return;
@@ -134,7 +134,7 @@ let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, a
 
 hadronAnalyticsAdapter.originEnableAnalytics = hadronAnalyticsAdapter.enableAnalytics;
 
-hadronAnalyticsAdapter.enableAnalytics = function(conf = {}) {
+hadronAnalyticsAdapter.enableAnalytics = function (conf = {}) {
   if (typeof conf.options === 'object') {
     if (conf.options.partnerId) {
       partnerId = conf.options.partnerId;
@@ -152,7 +152,7 @@ hadronAnalyticsAdapter.enableAnalytics = function(conf = {}) {
   hadronAnalyticsAdapter.originEnableAnalytics(conf);
 };
 
-function flush() {
+function flush () {
   // Don't send anything if no partner id was declared
   if (partnerId === DEFAULT_PARTNER_ID) return;
   if (eventQueue.length > 1) {
@@ -178,7 +178,7 @@ function flush() {
   }
 }
 
-function sendEvent(event) {
+function sendEvent (event) {
   eventQueue.push(event);
   utils.logInfo(`HADRON_ANALYTICS_EVENT ${event.eventType} `, event);
 

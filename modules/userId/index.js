@@ -203,26 +203,26 @@ const uidMetrics = (() => {
   }
 })();
 
-function submoduleMetrics(moduleName) {
+function submoduleMetrics (moduleName) {
   return uidMetrics().fork().renameWith(n => [`userId.mod.${n}`, `userId.mods.${moduleName}.${n}`])
 }
 
 /** @param {Submodule[]} submodules */
-export function setSubmoduleRegistry(submodules) {
+export function setSubmoduleRegistry (submodules) {
   submoduleRegistry = submodules;
   updateEIDConfig(submodules);
 }
 
-function cookieSetter(submodule, storageMgr) {
+function cookieSetter (submodule, storageMgr) {
   storageMgr = storageMgr || submodule.storageMgr;
   const domainOverride = (typeof submodule.submodule.domainOverride === 'function') ? submodule.submodule.domainOverride() : null;
   const name = submodule.config.storage.name;
-  return function setCookie(suffix, value, expiration) {
+  return function setCookie (suffix, value, expiration) {
     storageMgr.setCookie(name + (suffix || ''), value, expiration, 'Lax', domainOverride);
   }
 }
 
-function setValueInCookie(submodule, valueStr, expiresStr) {
+function setValueInCookie (submodule, valueStr, expiresStr) {
   const storage = submodule.config.storage;
   const setCookie = cookieSetter(submodule);
 
@@ -233,7 +233,7 @@ function setValueInCookie(submodule, valueStr, expiresStr) {
   }
 }
 
-function setValueInLocalStorage(submodule, valueStr, expiresStr) {
+function setValueInLocalStorage (submodule, valueStr, expiresStr) {
   const storage = submodule.config.storage;
   const mgr = submodule.storageMgr;
 
@@ -249,7 +249,7 @@ function setValueInLocalStorage(submodule, valueStr, expiresStr) {
  * @param {SubmoduleContainer} submodule
  * @param {(Object|string)} value
  */
-export function setStoredValue(submodule, value) {
+export function setStoredValue (submodule, value) {
   /**
    * @type {SubmoduleStorage}
    */
@@ -274,7 +274,7 @@ export function setStoredValue(submodule, value) {
   }
 }
 
-function deleteValueFromCookie(submodule) {
+function deleteValueFromCookie (submodule) {
   const setCookie = cookieSetter(submodule, coreStorage);
   const expiry = (new Date(Date.now() - 1000 * 60 * 60 * 24)).toUTCString();
 
@@ -287,7 +287,7 @@ function deleteValueFromCookie(submodule) {
   })
 }
 
-function deleteValueFromLocalStorage(submodule) {
+function deleteValueFromLocalStorage (submodule) {
   ['', '_last', '_exp', '_cst'].forEach(suffix => {
     try {
       coreStorage.removeDataFromLocalStorage(submodule.config.storage.name + suffix);
@@ -297,7 +297,7 @@ function deleteValueFromLocalStorage(submodule) {
   });
 }
 
-export function deleteStoredValue(submodule) {
+export function deleteStoredValue (submodule) {
   populateEnabledStorageTypes(submodule);
 
   submodule.enabledStorageTypes.forEach(storageType => {
@@ -312,11 +312,11 @@ export function deleteStoredValue(submodule) {
   });
 }
 
-function getValueFromCookie(submodule, storedKey) {
+function getValueFromCookie (submodule, storedKey) {
   return submodule.storageMgr.getCookie(storedKey)
 }
 
-function getValueFromLocalStorage(submodule, storedKey) {
+function getValueFromLocalStorage (submodule, storedKey) {
   const mgr = submodule.storageMgr;
   const storage = submodule.config.storage;
   const storedValueExp = mgr.getDataFromLocalStorage(`${storage.name}_exp`);
@@ -334,7 +334,7 @@ function getValueFromLocalStorage(submodule, storedKey) {
  * @param {String|undefined} key optional key of the value
  * @returns {string}
  */
-function getStoredValue(submodule, key = undefined) {
+function getStoredValue (submodule, key = undefined) {
   const storage = submodule.config.storage;
   const storedKey = key ? `${storage.name}_${key}` : storage.name;
   let storedValue;
@@ -367,7 +367,7 @@ function getStoredValue(submodule, key = undefined) {
  * @param {function} cb - callback for after processing is done.
  * @param {PriorityMaps} priorityMaps
  */
-function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
+function processSubmoduleCallbacks (submodules, cb, priorityMaps) {
   cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
     clearTimeout(timeoutID);
@@ -375,7 +375,7 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
   }, submodules.length);
   submodules.forEach(function (submodule) {
     const moduleDone = submoduleMetrics(submodule.submodule.name).startTiming('callback').stopBefore(done);
-    function callbackCompleted(idObj) {
+    function callbackCompleted (idObj) {
       // if valid, id data should be saved to cookie/html storage
       if (idObj) {
         if (submodule.config.storage) {
@@ -405,7 +405,7 @@ function processSubmoduleCallbacks(submodules, cb, priorityMaps) {
  * @param {SubmodulePriorityMap} priorityMap
  * @returns {{}}
  */
-function getIds(priorityMap) {
+function getIds (priorityMap) {
   return Object.fromEntries(
     Object.entries(priorityMap)
       .map(([key, getActiveModule]) => [key, getActiveModule()?.idObj?.[key]])
@@ -413,7 +413,7 @@ function getIds(priorityMap) {
   )
 }
 
-function getPrimaryIds(submodule) {
+function getPrimaryIds (submodule) {
   if (submodule.primaryIds) return submodule.primaryIds;
   const ids = Object.keys(submodule.eids ?? {});
   if (ids.length > 1) {
@@ -432,7 +432,7 @@ function getPrimaryIds(submodule) {
  * @param {(item: T) => Submodule} getIdMod
  * @returns {{[key: string]: T[]}}
  */
-function orderByPriority(items, getKeys, getIdMod) {
+function orderByPriority (items, getKeys, getIdMod) {
   const tally = {};
   items.forEach(item => {
     const module = getIdMod(item);
@@ -460,7 +460,7 @@ function orderByPriority(items, getKeys, getIdMod) {
 /**
  * @returns PriorityMaps
  */
-function mkPriorityMaps() {
+function mkPriorityMaps () {
   const map = {
     submodules: [],
     global: {},
@@ -469,13 +469,13 @@ function mkPriorityMaps() {
     /**
      * @param {SubmoduleContainer[]} addtlModules
      */
-    refresh(addtlModules = []) {
+    refresh (addtlModules = []) {
       const refreshing = new Set(addtlModules.map(mod => mod.submodule));
       map.submodules = map.submodules.filter((mod) => !refreshing.has(mod.submodule)).concat(addtlModules);
       update();
     }
   }
-  function update() {
+  function update () {
     const modulesById = orderByPriority(
       map.submodules,
       (submod) => Object.keys(submod.idObj ?? {}),
@@ -484,7 +484,7 @@ function mkPriorityMaps() {
     const global = {};
     const bidder = {};
 
-    function activeModuleGetter(key, useGlobals, modules) {
+    function activeModuleGetter (key, useGlobals, modules) {
       return function () {
         for (const {allowed, bidders, module} of modules) {
           if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
@@ -548,7 +548,7 @@ function mkPriorityMaps() {
   return map;
 }
 
-export function enrichEids(ortb2Fragments) {
+export function enrichEids (ortb2Fragments) {
   const {global: globalFpd, bidder: bidderFpd} = ortb2Fragments;
   const {global: globalMods, bidder: bidderMods} = initializedSubmodules;
   const globalEids = getEids(globalMods);
@@ -568,7 +568,7 @@ export function enrichEids(ortb2Fragments) {
   return ortb2Fragments;
 }
 
-export function addIdData({adUnits, ortb2Fragments}) {
+export function addIdData ({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
@@ -594,14 +594,14 @@ export function addIdData({adUnits, ortb2Fragments}) {
 
 const INIT_CANCELED = {};
 
-function idSystemInitializer({mkDelay = delay} = {}) {
+function idSystemInitializer ({mkDelay = delay} = {}) {
   const startInit = defer();
   const startCallbacks = defer();
   let cancel;
   let initialized = false;
   let initMetrics;
 
-  function cancelAndTry(promise) {
+  function cancelAndTry (promise) {
     initMetrics = uidMetrics().fork();
     if (cancel != null) {
       cancel.reject(INIT_CANCELED);
@@ -616,17 +616,17 @@ function idSystemInitializer({mkDelay = delay} = {}) {
   let initModules = initializedSubmodules;
   let allModules = submodules;
 
-  function checkRefs(fn) {
+  function checkRefs (fn) {
     // unfortunately tests have their own global state that needs to be guarded, so even if we keep ours tidy,
     // we cannot let things like submodule callbacks run (they pollute things like the global `server` XHR mock)
-    return function(...args) {
+    return function (...args) {
       if (initModules === initializedSubmodules && allModules === submodules) {
         return fn(...args);
       }
     }
   }
 
-  function timeConsent() {
+  function timeConsent () {
     return allConsent.promise.finally(initMetrics.startTiming('userId.init.consent'))
   }
 
@@ -658,7 +658,7 @@ function idSystemInitializer({mkDelay = delay} = {}) {
       if (auctionDelay > 0) {
         startCallbacks.resolve();
       } else {
-        events.on(EVENTS.AUCTION_END, function auctionEndHandler() {
+        events.on(EVENTS.AUCTION_END, function auctionEndHandler () {
           events.off(EVENTS.AUCTION_END, auctionEndHandler);
           mkDelay(syncDelay).then(startCallbacks.resolve);
         });
@@ -689,7 +689,7 @@ function idSystemInitializer({mkDelay = delay} = {}) {
 
 let initIdSystem;
 
-function getPPID(eids = getUserIdsAsEids() || []) {
+function getPPID (eids = getUserIdsAsEids() || []) {
   // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
   const matchingUserId = ppidSource && eids.find(userID => userID.source === ppidSource);
   if (matchingUserId && typeof matchingUserId?.uids?.[0]?.id === 'string') {
@@ -711,7 +711,7 @@ function getPPID(eids = getUserIdsAsEids() || []) {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
+export const startAuctionHook = timedAuctionHook('userId', function requestBidsHook (fn, reqBidsConfigObj, {mkDelay = delay, getIds = getUserIdsAsync} = {}) {
   PbPromise.race([
     getIds().catch(() => null),
     mkDelay(auctionDelay)
@@ -728,7 +728,7 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
  * @param {function} fn required; The next function in the chain, used by hook.js
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  */
-export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj) {
+export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook (fn, reqBidsConfigObj) {
   addIdData(reqBidsConfigObj);
   // calling fn allows prebid to continue processing
   fn.call(this, reqBidsConfigObj);
@@ -738,7 +738,7 @@ export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHoo
  * Is startAuctionHook added
  * @returns {boolean}
  */
-function addedStartAuctionHook() {
+function addedStartAuctionHook () {
   return !!startAuction.getHooks({hook: startAuctionHook}).length;
 }
 
@@ -746,7 +746,7 @@ function addedStartAuctionHook() {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIds() {
+function getUserIds () {
   return getIds(initializedSubmodules.combined)
 }
 
@@ -754,7 +754,7 @@ function getUserIds() {
  * This function will be exposed in global-name-space so that userIds stored by Prebid UserId module can be used by external codes as well.
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
-function getUserIdsAsEids() {
+function getUserIdsAsEids () {
   return getEids(initializedSubmodules.combined)
 }
 
@@ -763,7 +763,7 @@ function getUserIdsAsEids() {
  * Simple use case will be passing these UserIds to A9 wrapper solution
  */
 
-function getUserIdsAsEidBySource(sourceName) {
+function getUserIdsAsEidBySource (sourceName) {
   return getUserIdsAsEids().filter(eid => eid.source === sourceName)[0];
 }
 
@@ -771,7 +771,7 @@ function getUserIdsAsEidBySource(sourceName) {
  * This function will be exposed in global-name-space so that userIds for a source can be exposed
  * Sample use case is exposing this function to ESP
  */
-function getEncryptedEidsForSource(source, encrypt, customFunction) {
+function getEncryptedEidsForSource (source, encrypt, customFunction) {
   return retryOnCancel().then(() => {
     let eidsSignals = {};
 
@@ -793,7 +793,7 @@ function getEncryptedEidsForSource(source, encrypt, customFunction) {
   })
 }
 
-function encryptSignals(signals, version = 1) {
+function encryptSignals (signals, version = 1) {
   let encryptedSig = '';
   switch (version) {
     case 1: // Base64 Encryption
@@ -808,7 +808,7 @@ function encryptSignals(signals, version = 1) {
 /**
  * This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
  */
-function registerSignalSources() {
+function registerSignalSources () {
   if (!isGptPubadsDefined()) {
     return;
   }
@@ -831,7 +831,7 @@ function registerSignalSources() {
   }
 }
 
-function retryOnCancel(initParams) {
+function retryOnCancel (initParams) {
   return initIdSystem(initParams).then(
     () => getUserIds(),
     (e) => {
@@ -858,7 +858,7 @@ function retryOnCancel(initParams) {
  * @param {string[]} [submoduleNames] submodules to refresh. If omitted, refresh all submodules.
  * @param {Function} [callback] called when the refresh is complete
  */
-function refreshUserIds({submoduleNames} = {}, callback) {
+function refreshUserIds ({submoduleNames} = {}, callback) {
   return retryOnCancel({refresh: true, submoduleNames})
     .then((userIds) => {
       if (callback && isFn(callback)) {
@@ -879,11 +879,11 @@ function refreshUserIds({submoduleNames} = {}, callback) {
  * ```
  */
 
-function getUserIdsAsync() {
+function getUserIdsAsync () {
   return retryOnCancel();
 }
 
-export function getConsentHash() {
+export function getConsentHash () {
   // transform decimal string into base64 to save some space on cookies
   let hash = Number(allConsent.hash);
   const bytes = [];
@@ -894,12 +894,12 @@ export function getConsentHash() {
   return btoa(bytes.join());
 }
 
-function consentChanged(submodule) {
+function consentChanged (submodule) {
   const storedConsent = getStoredValue(submodule, 'cst');
   return !storedConsent || storedConsent !== getConsentHash();
 }
 
-function populateSubmoduleId(submodule, forceRefresh) {
+function populateSubmoduleId (submodule, forceRefresh) {
   const consentData = allConsent.getConsentData();
 
   // There are two submodule configuration types to handle: storage or value
@@ -954,7 +954,7 @@ function populateSubmoduleId(submodule, forceRefresh) {
   }
 }
 
-function updatePPID(priorityMaps) {
+function updatePPID (priorityMaps) {
   const eids = getEids(priorityMaps.combined);
   if (eids.length && ppidSource) {
     const ppid = getPPID(eids);
@@ -964,7 +964,7 @@ function updatePPID(priorityMaps) {
       } else {
         window.googletag = window.googletag || {};
         window.googletag.cmd = window.googletag.cmd || [];
-        window.googletag.cmd.push(function() {
+        window.googletag.cmd.push(function () {
           window.googletag.pubads().setPublisherProvidedId(ppid);
         });
       }
@@ -972,7 +972,7 @@ function updatePPID(priorityMaps) {
   }
 }
 
-function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
+function initSubmodules (priorityMaps, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
 
@@ -1011,11 +1011,11 @@ function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
   })
 }
 
-function getConfiguredStorageTypes(config) {
+function getConfiguredStorageTypes (config) {
   return config?.storage?.type?.trim().split(/\s*&\s*/) || [];
 }
 
-function hasValidStorageTypes(config) {
+function hasValidStorageTypes (config) {
   const storageTypes = getConfiguredStorageTypes(config);
 
   return storageTypes.every(storageType => ALL_STORAGE_TYPES.has(storageType));
@@ -1028,8 +1028,8 @@ function hasValidStorageTypes(config) {
  * @param {SubmoduleConfig[]} configRegistry
  * @returns {SubmoduleConfig[]}
  */
-export function getValidSubmoduleConfigs(configRegistry) {
-  function err(msg, ...args) {
+export function getValidSubmoduleConfigs (configRegistry) {
+  function err (msg, ...args) {
     logWarn(`Invalid userSync.userId config: ${msg}`, ...args)
   }
   if (!Array.isArray(configRegistry)) {
@@ -1066,7 +1066,7 @@ export function getValidSubmoduleConfigs(configRegistry) {
 
 const ALL_STORAGE_TYPES = new Set([LOCAL_STORAGE, COOKIE]);
 
-function canUseLocalStorage(submodule) {
+function canUseLocalStorage (submodule) {
   if (!submodule.storageMgr.localStorageIsEnabled()) {
     return false;
   }
@@ -1079,7 +1079,7 @@ function canUseLocalStorage(submodule) {
   return true;
 }
 
-function canUseCookies(submodule) {
+function canUseCookies (submodule) {
   if (!submodule.storageMgr.cookiesAreEnabled()) {
     return false;
   }
@@ -1092,7 +1092,7 @@ function canUseCookies(submodule) {
   return true
 }
 
-function populateEnabledStorageTypes(submodule) {
+function populateEnabledStorageTypes (submodule) {
   if (submodule.enabledStorageTypes) {
     return;
   }
@@ -1111,11 +1111,11 @@ function populateEnabledStorageTypes(submodule) {
   });
 }
 
-function canUseStorage(submodule) {
+function canUseStorage (submodule) {
   return !!submodule.enabledStorageTypes.length;
 }
 
-function updateEIDConfig(submodules) {
+function updateEIDConfig (submodules) {
   EID_CONFIG.clear();
   Object.entries(
     orderByPriority(
@@ -1129,7 +1129,7 @@ function updateEIDConfig(submodules) {
 /**
  * update submodules by validating against existing configs and storage types
  */
-function updateSubmodules() {
+function updateSubmodules () {
   updateEIDConfig(submoduleRegistry);
   const configs = getValidSubmoduleConfigs(configRegistry);
   if (!configs.length) {
@@ -1172,7 +1172,7 @@ function updateSubmodules() {
  * @param {Object} idPriorityConfig
  * @param {Submodule[]} submodules
  */
-function updateIdPriority(idPriorityConfig, submodules) {
+function updateIdPriority (idPriorityConfig, submodules) {
   if (idPriorityConfig) {
     const result = {};
     const aliasToName = new Map(submodules.map(s => s.aliasName ? [s.aliasName, s.name] : []));
@@ -1188,7 +1188,7 @@ function updateIdPriority(idPriorityConfig, submodules) {
   updateEIDConfig(submodules)
 }
 
-export function requestDataDeletion(next, ...args) {
+export function requestDataDeletion (next, ...args) {
   logInfo('UserID: received data deletion request; deleting all stored IDs...')
   submodules.forEach(submodule => {
     if (typeof submodule.submodule.onDataDeletionRequest === 'function') {
@@ -1207,7 +1207,7 @@ export function requestDataDeletion(next, ...args) {
  * enable submodule in User ID
  * @param {Submodule} submodule
  */
-export function attachIdSystem(submodule) {
+export function attachIdSystem (submodule) {
   submodule.findRootDomain = findRootDomain;
   if (!(submoduleRegistry || []).find(i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
@@ -1219,10 +1219,10 @@ export function attachIdSystem(submodule) {
   }
 }
 
-function normalizePromise(fn) {
+function normalizePromise (fn) {
   // for public methods that return promises, make sure we return a "normal" one - to avoid
   // exposing confusing stack traces
-  return function() {
+  return function () {
     return Promise.resolve(fn.apply(this, arguments));
   }
 }
@@ -1232,7 +1232,7 @@ function normalizePromise(fn) {
  * so a callback is added to fire after the consentManagement module.
  * @param {{getConfig:function}} config
  */
-export function init(config, {mkDelay = delay} = {}) {
+export function init (config, {mkDelay = delay} = {}) {
   ppidSource = undefined;
   submodules = [];
   configRegistry = [];
@@ -1274,7 +1274,7 @@ export function init(config, {mkDelay = delay} = {}) {
   }
 }
 
-export function resetUserIds() {
+export function resetUserIds () {
   config.setConfig({userSync: {}})
   init(config);
 }

@@ -4,11 +4,11 @@ import { spec } from 'modules/justpremiumBidAdapter.js'
 describe('justpremium adapter', function () {
   let sandbox;
 
-  beforeEach(function() {
+  beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 

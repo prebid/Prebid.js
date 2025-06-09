@@ -137,7 +137,7 @@ export const spec = {
     }
     return userSyncs;
   },
-  onTimeout(timeoutData) {
+  onTimeout (timeoutData) {
     logInfo(`${BIDDER_CODE} bidder timed out`, timeoutData);
   },
   onBidderError: function ({error}) {

@@ -29,11 +29,11 @@ const MATCH_METHOD = 3;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-function publisherIdFromLocalStorage(key) {
+function publisherIdFromLocalStorage (key) {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
 }
 
-function publisherIdFromCookie(key) {
+function publisherIdFromCookie (key) {
   return storage.cookiesAreEnabled() ? storage.getCookie(key) : null;
 }
 
@@ -55,7 +55,7 @@ export const openPairIdSubmodule = {
    * @param { string | undefined } value
    * @returns {{pairId:string} | undefined }
    */
-  decode(value) {
+  decode (value) {
     return value && Array.isArray(value) ? {'openPairId': value} : undefined;
   },
   /**
@@ -65,7 +65,7 @@ export const openPairIdSubmodule = {
    * @param {Object} config.params - The parameters from the configuration.
    * @returns {{id: string[] | undefined}} The obtained IDs or undefined if no IDs are found.
    */
-  getId(config) {
+  getId (config) {
     const publisherIdsString = publisherIdFromLocalStorage(DEFAULT_PUBLISHER_ID_KEY) || publisherIdFromCookie(DEFAULT_PUBLISHER_ID_KEY);
     let ids = []
 
@@ -118,7 +118,7 @@ export const openPairIdSubmodule = {
     return {'id': ids};
   },
   eids: {
-    openPairId: function(values, config = {}) {
+    openPairId: function (values, config = {}) {
       const inserter = config.inserter;
       const matcher = config.matcher;
 
@@ -131,7 +131,7 @@ export const openPairIdSubmodule = {
           mm: MATCH_METHOD,
           inserter: inserter,
           matcher: matcher,
-          uids: values.map(function(value) {
+          uids: values.map(function (value) {
             return {
               id: value,
               atype: atype

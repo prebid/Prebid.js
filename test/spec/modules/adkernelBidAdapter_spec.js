@@ -336,12 +336,12 @@ describe('Adkernel adapter', function () {
     config.resetConfig();
   });
 
-  function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
+  function buildBidderRequest (url = 'https://example.com/index.html', params = {}) {
     return Object.assign({}, params, {refererInfo: {page: url, domain: parseDomain(url), reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
-  function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
+  function buildRequest (bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
     let dntmock = sandbox.stub(utils, 'getDNT').callsFake(() => dnt);
     bidderRequest.bids = bidRequests;
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
@@ -421,12 +421,12 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
 
-    it('should copy FPD to imp.banner', function() {
+    it('should copy FPD to imp.banner', function () {
       expect(bidRequest.imp[0].banner).to.have.property('battr');
       expect(bidRequest.imp[0].banner.battr).to.be.eql([6, 7, 9]);
     });
 
-    it('should respect mediatypes attributes over FPD', function() {
+    it('should respect mediatypes attributes over FPD', function () {
       expect(bidRequest.imp[0].banner).to.have.property('pos');
       expect(bidRequest.imp[0].banner.pos).to.be.eql(1);
     });
@@ -474,14 +474,14 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].device).to.not.have.property('dnt');
     });
 
-    it('should forward default bidder timeout', function() {
+    it('should forward default bidder timeout', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.have.property('tmax', 3000);
     });
 
-    it('should set bidfloor if configured', function() {
+    it('should set bidfloor if configured', function () {
       let bid = Object.assign({}, bid1_zone1);
-      bid.getFloor = function() {
+      bid.getFloor = function () {
         return {
           currency: 'USD',
           floor: 0.145
@@ -491,7 +491,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
 
-    it('should forward user ids if available', function() {
+    it('should forward user ids if available', function () {
       let bid = Object.assign({}, bid2_zone2);
       let [_, bidRequests] = buildRequest([bid]);
       expect(bidRequests[0]).to.have.property('user');
@@ -522,7 +522,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].imp[0]).to.have.property('tagid', 'ad-unit-1');
     });
 
-    it('should have openrtb video impression parameters', function() {
+    it('should have openrtb video impression parameters', function () {
       let video = bidRequests[0].imp[0].video;
       expect(video).to.have.property('api');
       expect(video.api).to.be.eql([1, 2]);
@@ -550,7 +550,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].imp[1].id).to.be.not.eql('Bid_01');
       expect(bidRequests[0].imp[1].id).to.be.not.eql(bidRequests[0].imp[0].id);
     });
-    it('should collect ads back to same requestId', function() {
+    it('should collect ads back to same requestId', function () {
       let bids = spec.interpretResponse({body: multiformat_response}, pbRequests[0]);
       expect(bids).to.have.length(2);
       expect(bids[0].requestId).to.be.eql('Bid_01');
@@ -576,8 +576,8 @@ describe('Adkernel adapter', function () {
     });
   });
 
-  describe('User sync request signals', function() {
-    it('should respect syncEnabled option', function() {
+  describe('User sync request signals', function () {
+    it('should respect syncEnabled option', function () {
       config.setConfig({
         userSync: {
           syncEnabled: false,
@@ -594,7 +594,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0]).to.not.have.property('ext');
     });
 
-    it('should respect all config node', function() {
+    it('should respect all config node', function () {
       config.setConfig({
         userSync: {
           syncEnabled: true,
@@ -611,7 +611,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].ext).to.have.property('adk_usersync', 1);
     });
 
-    it('should respect exclude filter', function() {
+    it('should respect exclude filter', function () {
       config.setConfig({
         userSync: {
           syncEnabled: true,
@@ -632,7 +632,7 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].ext).to.have.property('adk_usersync', 2);
     });
 
-    it('should respect total exclusion', function() {
+    it('should respect total exclusion', function () {
       config.setConfig({
         userSync: {
           syncEnabled: true,
@@ -788,10 +788,10 @@ describe('Adkernel adapter', function () {
   });
 
   describe('onBidWon', () => {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('should trigger pixel for nurl', () => {

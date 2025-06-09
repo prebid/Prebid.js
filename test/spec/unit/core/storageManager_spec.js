@@ -21,7 +21,7 @@ import {
 } from '../../../../src/activities/params.js';
 import {activityParams} from '../../../../src/activities/activityParams.js';
 
-describe('storage manager', function() {
+describe('storage manager', function () {
   before(() => {
     hook.ready();
   });
@@ -74,7 +74,7 @@ describe('storage manager', function() {
   describe(`accessDevice activity check`, () => {
     let isAllowed;
 
-    function mkManager(moduleType, moduleName) {
+    function mkManager (moduleType, moduleName) {
       return newStorageManager({moduleType, moduleName}, {isAllowed});
     }
 
@@ -194,9 +194,9 @@ describe('storage manager', function() {
     const ALLOWED_BIDDER = 'allowed-bidder';
     const ALLOW_KEY = 'storageAllowed';
 
-    function mockBidderSettings(val) {
+    function mockBidderSettings (val) {
       return {
-        get(bidder, key) {
+        get (bidder, key) {
           if (bidder === ALLOWED_BIDDER && key === ALLOW_KEY) {
             return val;
           } else {

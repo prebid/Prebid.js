@@ -10,15 +10,15 @@ import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 let submodules = [];
 
-export function registerSubmodules(submodule) {
+export function registerSubmodules (submodule) {
   submodules.push(submodule);
 }
 
-export function reset() {
+export function reset () {
   submodules.length = 0;
 }
 
-export function processFpd({global = {}, bidder = {}} = {}) {
+export function processFpd ({global = {}, bidder = {}} = {}) {
   let modConf = config.getConfig('firstPartyData') || {};
   let result = PbPromise.resolve({global, bidder});
   submodules.sort((a, b) => {
@@ -36,14 +36,14 @@ export function processFpd({global = {}, bidder = {}} = {}) {
   return result;
 }
 
-export const startAuctionHook = timedAuctionHook('fpd', function startAuctionHook(fn, req) {
+export const startAuctionHook = timedAuctionHook('fpd', function startAuctionHook (fn, req) {
   processFpd(req.ortb2Fragments).then((ortb2Fragments) => {
     Object.assign(req.ortb2Fragments, ortb2Fragments);
     fn.call(this, req);
   })
 });
 
-function setupHook() {
+function setupHook () {
   getHook('startAuction').before(startAuctionHook, 10);
 }
 

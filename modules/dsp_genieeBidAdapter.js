@@ -22,22 +22,22 @@ const VALID_CURRENCIES = ['USD', 'JPY'];
 const converter = ortbConverter({
   context: { ttl: 300, netRevenue: true },
   // set optional parameters
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext', bidRequest.params);
     return imp;
   }
 });
 
-function USPConsent(consent) {
+function USPConsent (consent) {
   return typeof consent === 'string' && consent[0] === '1' && consent.toUpperCase()[2] === 'Y';
 }
 
-function invalidCurrency(currency) {
+function invalidCurrency (currency) {
   return typeof currency === 'string' && VALID_CURRENCIES.indexOf(currency.toUpperCase()) === -1;
 }
 
-function hasTest(imp) {
+function hasTest (imp) {
   if (typeof imp !== 'object') {
     return false;
   }

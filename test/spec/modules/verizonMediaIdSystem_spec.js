@@ -38,7 +38,7 @@ describe('Verizon Media ID Submodule', () => {
       getAjaxFnStub.restore();
     });
 
-    function invokeGetIdAPI(configParams, consentData) {
+    function invokeGetIdAPI (configParams, consentData) {
       let result = verizonMediaIdSubmodule.getId({
         params: configParams
       }, consentData);

@@ -57,7 +57,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     // bid.params.host
     if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
       if ((new RegExp(`^(zz.*)\\.*$`, 'i')).test(bid.params.host)) return validBasic(bid)
@@ -76,7 +76,7 @@ export const spec = {
    * @param {*} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
     validBidRequests.forEach(oneValidRequest => {
       requests.push(buildOneRequest(oneValidRequest, bidderRequest));
@@ -90,7 +90,7 @@ export const spec = {
    * @param {*} serverResponse
    * @param {*} originalRequest
    */
-  interpretResponse: function(serverResponse, originalRequest) {
+  interpretResponse: function (serverResponse, originalRequest) {
     const responseBody = serverResponse.body;
     if (!serverResponse.body) {
       logWarn(LOG_PREFIX, 'Empty response body HTTP 204, no bids');
@@ -143,7 +143,7 @@ export const spec = {
   }
 }
 
-function validBasic(bid) {
+function validBasic (bid) {
   if (bid.params == null) {
     logWarn(LOG_PREFIX, 'Please review the mandatory Tappx parameters.');
     return false;
@@ -172,7 +172,7 @@ function validBasic(bid) {
   return true;
 }
 
-function validMediaType(bid) {
+function validMediaType (bid) {
   const video = deepAccess(bid, 'mediaTypes.video');
 
   // Video validations
@@ -192,7 +192,7 @@ function validMediaType(bid) {
  * @param {object} serverBid Bid by OpenRTB 2.5
  * @returns {object} Prebid banner bidObject
  */
-function interpretBid(serverBid, request) {
+function interpretBid (serverBid, request) {
   let bidReturned = {
     requestId: request.bids?.bidId,
     cpm: serverBid.price,
@@ -243,7 +243,7 @@ function interpretBid(serverBid, request) {
  * @param {*} bidderRequest
  * @return response ad
  */
-function buildOneRequest(validBidRequests, bidderRequest) {
+function buildOneRequest (validBidRequests, bidderRequest) {
   let hostInfo = _getHostInfo(validBidRequests);
   const ENDPOINT = hostInfo.endpoint;
   hostDomain = hostInfo.domain;
@@ -500,22 +500,22 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   };
 }
 
-function getLanguage() {
+function getLanguage () {
   const language = navigator.language ? 'language' : 'userLanguage';
   return navigator[language].split('-')[0];
 }
 
-function getOs() {
+function getOs () {
   let ua = navigator.userAgent;
   if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
 }
 
-function getVendor() {
+function getVendor () {
   let ua = navigator.userAgent;
   if (ua.indexOf('Chrome') != -1) { return 'Google'; } else if (ua.indexOf('Firefox') != -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') != -1) { return 'Apple'; } else if (ua.indexOf('Edge') != -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') != -1 || ua.indexOf('Trident') != -1) { return 'Microsoft'; } else { return ''; }
 }
 
-export function _getHostInfo(validBidRequests) {
+export function _getHostInfo (validBidRequests) {
   let domainInfo = {};
   let endpoint = deepAccess(validBidRequests, 'params.endpoint');
   let hostParam = deepAccess(validBidRequests, 'params.host');
@@ -547,7 +547,7 @@ export function _getHostInfo(validBidRequests) {
   return domainInfo;
 }
 
-function outstreamRender(bid, request) {
+function outstreamRender (bid, request) {
   let rendererOptions = {};
   rendererOptions = (typeof bid.params[0].video != 'undefined') ? bid.params[0].video : {};
   rendererOptions.content = bid.vastXml;
@@ -562,7 +562,7 @@ function outstreamRender(bid, request) {
   });
 }
 
-function createRenderer(bid, request, url) {
+function createRenderer (bid, request, url) {
   const rendererInst = Renderer.install({
     id: request.id,
     url: url,
@@ -578,7 +578,7 @@ function createRenderer(bid, request, url) {
   return rendererInst;
 }
 
-export function _checkParamDataType(key, value, datatype) {
+export function _checkParamDataType (key, value, datatype) {
   var errMsg = 'Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value;
   var functionToExecute;
   switch (datatype) {
@@ -602,7 +602,7 @@ export function _checkParamDataType(key, value, datatype) {
   return undefined;
 }
 
-export function _extractPageUrl(validBidRequests, bidderRequest) {
+export function _extractPageUrl (validBidRequests, bidderRequest) {
   let url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
   return parseDomain(url, {noLeadingWww: true});
 }

@@ -4,7 +4,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'adbutler';
 
-function getTrackingPixelsMarkup(pixelURLs) {
+function getTrackingPixelsMarkup (pixelURLs) {
   return pixelURLs
     .map(pixelURL => `<img height="0" width="0" border="0" style="display:none;" src="${pixelURL}"/>`)
     .join();
@@ -16,11 +16,11 @@ export const spec = {
   aliases: ['divreach', 'doceree'],
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return !!(bid.params.accountID && bid.params.zoneID);
   },
 
-  buildRequests(validBidRequests) {
+  buildRequests (validBidRequests) {
     const zoneCounters = {};
 
     return utils._map(validBidRequests, function (bidRequest) {
@@ -54,7 +54,7 @@ export const spec = {
     });
   },
 
-  interpretResponse(serverResponse, serverRequest) {
+  interpretResponse (serverResponse, serverRequest) {
     const bidObj = serverRequest.bidRequest;
     const response = serverResponse.body ?? {};
 

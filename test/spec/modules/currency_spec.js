@@ -29,7 +29,7 @@ describe('currency', function () {
 
   let fn = sinon.spy();
 
-  function makeBid(bidProps) {
+  function makeBid (bidProps) {
     return Object.assign(createBid(STATUS.GOOD), bidProps);
   }
 
@@ -42,7 +42,7 @@ describe('currency', function () {
   });
 
   describe('setConfig', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
     });
@@ -69,7 +69,7 @@ describe('currency', function () {
       expect(currencySupportEnabled).to.equal(true);
     });
 
-    it('currency file is called even when default rates are specified', function() {
+    it('currency file is called even when default rates are specified', function () {
       // RESET to request currency file (specifically url value for this test)
       setConfig({ 'adServerCurrency': undefined });
 
@@ -208,7 +208,7 @@ describe('currency', function () {
         }
       });
 
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
 
@@ -230,7 +230,7 @@ describe('currency', function () {
         }
       });
 
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
 
@@ -252,7 +252,7 @@ describe('currency', function () {
       var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
       var innerBid;
 
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
 
@@ -287,7 +287,7 @@ describe('currency', function () {
       var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
       var innerBid;
 
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
 
@@ -368,7 +368,7 @@ describe('currency', function () {
       let isReady = false;
       responseReady.promise.then(() => { isReady = true });
 
-      addBidResponseHook(Object.assign(function() {
+      addBidResponseHook(Object.assign(function () {
         responseAdded = true;
       }), 'elementId', bid);
 
@@ -396,7 +396,7 @@ describe('currency', function () {
       setConfig({});
       var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal(1);
@@ -407,7 +407,7 @@ describe('currency', function () {
 
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
       let bidAdded = false;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         bidAdded = true;
       }, 'elementId', bid, reject);
       expect(bidAdded).to.be.false;
@@ -420,7 +420,7 @@ describe('currency', function () {
       });
       var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
       expect(bid).to.equal(innerBid);
@@ -435,7 +435,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'ABC' });
       let bidAdded = false;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         bidAdded = true;
       }, 'elementId', bid, reject);
       expect(bidAdded).to.be.false;
@@ -448,7 +448,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
       let bidAdded = false;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         bidAdded = true;
       }, 'elementId', bid, reject);
       expect(bidAdded).to.be.false;
@@ -478,7 +478,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'JPY' });
       var innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal(1);
@@ -491,7 +491,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
       var innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.7798');
@@ -504,7 +504,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'CNY' });
       var innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.1133');
@@ -517,7 +517,7 @@ describe('currency', function () {
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'JPY' });
       var innerBid;
-      addBidResponseHook(function(adCodeId, bid) {
+      addBidResponseHook(function (adCodeId, bid) {
         innerBid = bid;
       }, 'elementId', bid);
       expect(innerBid.cpm).to.equal('0.0623');
@@ -525,8 +525,8 @@ describe('currency', function () {
     });
   });
 
-  describe('enrichFpd', function() {
-    function fpd(ortb2 = {}) {
+  describe('enrichFpd', function () {
+    function fpd (ortb2 = {}) {
       return enrichFPD(Promise.resolve(ortb2));
     }
     it('should set adServerCurrency on ortb', function () {
@@ -542,7 +542,7 @@ describe('currency', function () {
     const continueAuction = sinon.stub();
     let logWarnSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       sandbox = sinon.sandbox.create();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       logWarnSpy = sinon.spy(utils, 'logWarn');

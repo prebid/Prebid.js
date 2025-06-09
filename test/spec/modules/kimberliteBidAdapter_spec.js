@@ -154,7 +154,7 @@ describe('kimberliteBidAdapter', function () {
       'USD'
     ];
 
-    currencies.forEach(function(currency) {
+    currencies.forEach(function (currency) {
       beforeEach(function () {
         bidderResponse = {
           body: {

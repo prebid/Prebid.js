@@ -19,7 +19,7 @@ const gvlid = 410;
 const moduleName = 'adtelligent';
 const syncUrl = 'https://idrs.adtelligent.com/get';
 
-function buildUrl(opts) {
+function buildUrl (opts) {
   const queryPairs = [];
   for (let key in opts) {
     queryPairs.push(`${key}=${encodeURIComponent(opts[key])}`);
@@ -27,7 +27,7 @@ function buildUrl(opts) {
   return `${syncUrl}?${queryPairs.join('&')}`;
 }
 
-function requestRemoteIdAsync(url, cb) {
+function requestRemoteIdAsync (url, cb) {
   ajax.ajaxBuilder()(
     url,
     {
@@ -62,7 +62,7 @@ export const adtelligentIdModule = {
    * @function
    * @returns {{adtelligentId: string}}
    */
-  decode(uid) {
+  decode (uid) {
     return { adtelligentId: uid };
   },
   /**
@@ -72,7 +72,7 @@ export const adtelligentIdModule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse}
    */
-  getId(config, {gdpr: consentData} = {}) {
+  getId (config, {gdpr: consentData} = {}) {
     const gdpr = consentData && consentData.gdprApplies ? 1 : 0;
     const gdprConsent = gdpr ? consentData.consentString : '';
     const url = buildUrl({

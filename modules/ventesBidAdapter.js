@@ -8,7 +8,7 @@ import {hasUserInfo} from '../libraries/adrelevantisUtils/bidderUtils.js';
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'https://ad.ventesavenues.in/va/ad';
 
-function groupBy(values, key) {
+function groupBy (values, key) {
   const groups = values.reduce((acc, value) => {
     const groupId = value[key];
 
@@ -27,7 +27,7 @@ function groupBy(values, key) {
     }));
 }
 
-function validateMediaTypes(mediaTypes, allowedMediaTypes) {
+function validateMediaTypes (mediaTypes, allowedMediaTypes) {
   if (!isPlainObject(mediaTypes)) return false;
   if (!allowedMediaTypes.some(mediaType => mediaType in mediaTypes)) return false;
 
@@ -37,24 +37,24 @@ function validateMediaTypes(mediaTypes, allowedMediaTypes) {
   return true;
 }
 
-function isBanner(mediaTypes) {
+function isBanner (mediaTypes) {
   return isPlainObject(mediaTypes) && isPlainObject(mediaTypes.banner);
 }
 
-function validateBanner(banner) {
+function validateBanner (banner) {
   return isPlainObject(banner) &&
       isArray(banner.sizes) &&
       (banner.sizes.length > 0) &&
       banner.sizes.every(validateMediaSizes);
 }
 
-function validateMediaSizes(mediaSize) {
+function validateMediaSizes (mediaSize) {
   return isArray(mediaSize) &&
       (mediaSize.length === 2) &&
       mediaSize.every(size => (isNumber(size) && size >= 0));
 }
 
-function validateParameters(parameters) {
+function validateParameters (parameters) {
   if (!(parameters.placementId)) {
     return false;
   }
@@ -65,7 +65,7 @@ function validateParameters(parameters) {
   return true;
 }
 
-function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
+function generateSiteFromAdUnitContext (bidRequests, adUnitContext) {
   if (!adUnitContext || !adUnitContext.refererInfo) return null;
 
   const domain = adUnitContext.refererInfo.domain;
@@ -83,13 +83,13 @@ function generateSiteFromAdUnitContext(bidRequests, adUnitContext) {
   };
 }
 
-function validateServerRequest(serverRequest) {
+function validateServerRequest (serverRequest) {
   return isPlainObject(serverRequest) &&
       isPlainObject(serverRequest.data) &&
       isArray(serverRequest.data.imp)
 }
 
-function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
+function createServerRequestFromAdUnits (adUnits, bidRequestId, adUnitContext) {
   return {
     method: BID_METHOD,
     url: BIDDER_URL,
@@ -100,7 +100,7 @@ function createServerRequestFromAdUnits(adUnits, bidRequestId, adUnitContext) {
   }
 }
 
-function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext) {
+function generateBidRequestsFromAdUnits (bidRequests, bidRequestId, adUnitContext) {
   const userObjBid = ((bidRequests) || []).find(hasUserInfo);
   let userObj = {};
   if (userObjBid) {
@@ -165,7 +165,7 @@ function generateBidRequestsFromAdUnits(bidRequests, bidRequestId, adUnitContext
   return payload
 }
 
-function generateImpressionsFromAdUnit(acc, adUnit) {
+function generateImpressionsFromAdUnit (acc, adUnit) {
   const {
     bidId,
     mediaTypes,
@@ -190,7 +190,7 @@ function generateImpressionsFromAdUnit(acc, adUnit) {
   return acc.concat(imps);
 }
 
-function generateBannerFromAdUnit(impId, data, params) {
+function generateBannerFromAdUnit (impId, data, params) {
   const {
     position,
     placementId
@@ -220,20 +220,20 @@ function generateBannerFromAdUnit(impId, data, params) {
   }));
 }
 
-function validateServerResponse(serverResponse) {
+function validateServerResponse (serverResponse) {
   return isPlainObject(serverResponse) &&
       isPlainObject(serverResponse.body) &&
       isStr(serverResponse.body.cur) &&
       isArray(serverResponse.body.seatbid);
 }
 
-function seatBidsToAds(seatBid, bidResponse, serverRequest) {
+function seatBidsToAds (seatBid, bidResponse, serverRequest) {
   return seatBid.bid
     .filter(bid => validateBids(bid))
     .map(bid => generateAdFromBid(bid, bidResponse));
 }
 
-function validateBids(bid) {
+function validateBids (bid) {
   if (!isPlainObject(bid)) return false;
   if (!isStr(bid.impid)) return false;
   if (!isStr(bid.crid)) return false;
@@ -247,7 +247,7 @@ function validateBids(bid) {
   return true;
 }
 
-function getMediaType(adm) {
+function getMediaType (adm) {
   const videoRegex = new RegExp(/VAST\s+version/);
 
   if (videoRegex.test(adm)) {
@@ -263,7 +263,7 @@ function getMediaType(adm) {
   return BANNER;
 }
 
-function safeJSONparse(...args) {
+function safeJSONparse (...args) {
   try {
     return JSON.parse(...args);
   } catch (_) {
@@ -271,7 +271,7 @@ function safeJSONparse(...args) {
   }
 }
 
-function generateAdFromBid(bid, bidResponse) {
+function generateAdFromBid (bid, bidResponse) {
   const mediaType = getMediaType(bid.adm);
   const base = {
     requestId: bid.impid,
@@ -302,7 +302,7 @@ function generateAdFromBid(bid, bidResponse) {
   };
 }
 
-function getSizeFromBid(bid) {
+function getSizeFromBid (bid) {
   if (isNumber(bid.w) && isNumber(bid.h)) {
     return {
       width: bid.w,
@@ -315,7 +315,7 @@ function getSizeFromBid(bid) {
   };
 }
 
-function getCreativeFromBid(bid) {
+function getCreativeFromBid (bid) {
   const shouldUseAdMarkup = !!bid.adm;
   const price = bid.price;
   return {
@@ -324,13 +324,13 @@ function getCreativeFromBid(bid) {
   };
 }
 
-function hasDeviceInfo(bid) {
+function hasDeviceInfo (bid) {
   if (bid.params) {
     return !!bid.params.device
   }
 }
 
-function hasAppInfo(bid) {
+function hasAppInfo (bid) {
   if (bid.params) {
     return !!bid.params.app
   }
@@ -339,7 +339,7 @@ function hasAppInfo(bid) {
 const venavenBidderSpec = {
   code: 'ventes',
   supportedMediaTypes: [BANNER],
-  isBidRequestValid(adUnit) {
+  isBidRequestValid (adUnit) {
     const allowedBidderCodes = [this.code];
 
     return isPlainObject(adUnit) &&
@@ -350,7 +350,7 @@ const venavenBidderSpec = {
           validateMediaTypes(adUnit.mediaTypes, this.supportedMediaTypes) &&
           validateParameters(adUnit.params);
   },
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
 
@@ -366,7 +366,7 @@ const venavenBidderSpec = {
       return createServerRequestFromAdUnits(adUnits, bidRequestId, bidderRequest)
     });
   },
-  interpretResponse(serverResponse, serverRequest) {
+  interpretResponse (serverResponse, serverRequest) {
     if (!validateServerRequest(serverRequest)) return [];
     if (!validateServerResponse(serverResponse)) return [];
 

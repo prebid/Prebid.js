@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/gammaBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
-describe('gammaBidAdapter', function() {
+describe('gammaBidAdapter', function () {
   const adapter = newBidder(spec);
 
   let bid = {
@@ -43,7 +43,7 @@ describe('gammaBidAdapter', function() {
   describe('buildRequests', () => {
     it('should attempt to send bid requests to the endpoint via GET', () => {
       const requests = spec.buildRequests(bidArray);
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('GET');
         expect(requestItem.url).to.match(new RegExp(`hb.gammaplatform.com`));
       });

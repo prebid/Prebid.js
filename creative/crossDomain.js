@@ -26,11 +26,11 @@ const mkFrame = (() => {
   };
 })();
 
-function isPrebidWindow(win) {
+function isPrebidWindow (win) {
   return !!win.frames[PB_LOCATOR];
 }
 
-export function renderer(win) {
+export function renderer (win) {
   let target = win.parent;
   try {
     while (target !== win.top && !isPrebidWindow(target)) {
@@ -43,13 +43,13 @@ export function renderer(win) {
   return function ({adId, pubUrl, clickUrl}) {
     const pubDomain = new URL(pubUrl, window.location).origin;
 
-    function sendMessage(type, payload, responseListener) {
+    function sendMessage (type, payload, responseListener) {
       const channel = new MessageChannel();
       channel.port1.onmessage = guard(responseListener);
       target.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, [channel.port2]);
     }
 
-    function onError(e) {
+    function onError (e) {
       sendMessage(MESSAGE_EVENT, {
         event: EVENT_AD_RENDER_FAILED,
         info: {
@@ -61,7 +61,7 @@ export function renderer(win) {
       e?.stack && console.error(e);
     }
 
-    function guard(fn) {
+    function guard (fn) {
       return function () {
         try {
           return fn.apply(this, arguments);
@@ -71,7 +71,7 @@ export function renderer(win) {
       };
     }
 
-    function onMessage(ev) {
+    function onMessage (ev) {
       let data;
       try {
         data = JSON.parse(ev.data);

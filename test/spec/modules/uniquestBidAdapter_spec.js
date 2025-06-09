@@ -58,7 +58,7 @@ describe('UniquestAdapter', function () {
     })
   })
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     it('should return a valid bid response', function () {
       const serverResponse = {
         request_id: '247f62f777e5e4',

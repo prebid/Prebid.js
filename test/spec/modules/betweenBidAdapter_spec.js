@@ -49,7 +49,7 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.codeType).to.equal('inpage');
   });
 
-  it('validate itu param', function() {
+  it('validate itu param', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -67,7 +67,7 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.itu).to.equal('https://something.url');
   });
-  it('validate cur param', function() {
+  it('validate cur param', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -85,7 +85,7 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.cur).to.equal('THX');
   });
-  it('validate default cur USD', function() {
+  it('validate default cur USD', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -102,7 +102,7 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.cur).to.equal('USD');
   });
-  it('validate subid param', function() {
+  it('validate subid param', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -121,7 +121,7 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.subid).to.equal(1138);
   });
 
-  it('validate eids parameter', function() {
+  it('validate eids parameter', function () {
     const USER_ID_DATA = [
       {
         source: 'admixer.net',
@@ -149,7 +149,7 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.eids).to.have.deep.members(USER_ID_DATA);
   });
 
-  it('validate eids parameter, if userIdAsEids = undefined', function() {
+  it('validate eids parameter, if userIdAsEids = undefined', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -168,7 +168,7 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.eids).to.have.deep.members([]);
   });
 
-  it('validate click3rd param', function() {
+  it('validate click3rd param', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -186,7 +186,7 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.click3rd).to.equal('https://something.url');
   });
-  it('validate pubdata param', function() {
+  it('validate pubdata param', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -206,7 +206,7 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data['pubside_macro[param]']).to.equal('%26test%3Dtset');
   });
-  it('validate gdprConsent', function() {
+  it('validate gdprConsent', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -302,14 +302,14 @@ describe('betweenBidAdapterTests', function () {
     let bid = bids[0];
     expect(bid.currency).to.equal('USD');
   });
-  it('check getUserSyncs', function() {
+  it('check getUserSyncs', function () {
     const syncs = spec.getUserSyncs({}, {});
     expect(syncs).to.be.an('array').that.to.have.lengthOf(2);
     expect(syncs[0]).to.deep.equal({type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe'});
     expect(syncs[1]).to.deep.equal({type: 'image', url: 'https://ads.betweendigital.com/sspmatch'});
   });
 
-  it('check sizes', function() {
+  it('check sizes', function () {
     let bidRequestData = [{
       bidId: 'bid1234',
       bidder: 'between',
@@ -329,7 +329,7 @@ describe('betweenBidAdapterTests', function () {
     expect(req_data.sizes).to.deep.equal(['970x250', '240x400', '728x90'])
   });
 
-  it('check adomain', function() {
+  it('check adomain', function () {
     const serverResponse = {
       body: [{
         bidid: 'bid1234',
@@ -346,7 +346,7 @@ describe('betweenBidAdapterTests', function () {
     const bid = bids[0];
     expect(bid.meta.advertiserDomains).to.deep.equal(['domain1.com', 'domain2.com']);
   });
-  it('check server response without adomain', function() {
+  it('check server response without adomain', function () {
     const serverResponse = {
       body: [{
         bidid: 'bid1234',

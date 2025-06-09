@@ -20,7 +20,7 @@ import {PUC_MIN_VERSION} from 'src/creativeRenderers.js';
 describe('secureCreatives', () => {
   let sandbox;
 
-  function getBidToRenderHook(next, adId) {
+  function getBidToRenderHook (next, adId) {
     // make sure that bids can be retrieved asynchronously
     next(adId, new Promise((resolve) => setTimeout(resolve)))
   }
@@ -39,11 +39,11 @@ describe('secureCreatives', () => {
     sandbox.restore();
   });
 
-  function makeEvent(ev) {
+  function makeEvent (ev) {
     return Object.assign({origin: 'mock-origin', ports: []}, ev)
   }
 
-  function receive(ev) {
+  function receive (ev) {
     return Promise.resolve(receiveMessage(ev));
   }
 
@@ -81,7 +81,7 @@ describe('secureCreatives', () => {
     });
   });
 
-  describe('receiveMessage', function() {
+  describe('receiveMessage', function () {
     const bidId = 1;
     const warning = `Ad id ${bidId} has been rendered before`;
     let auction;
@@ -92,7 +92,7 @@ describe('secureCreatives', () => {
     let stubGetAllAssetsMessage;
     let stubEmit;
 
-    function pushBidResponseToAuction(obj) {
+    function pushBidResponseToAuction (obj) {
       adResponse = Object.assign({
         auctionId: 1,
         adId: bidId,
@@ -100,7 +100,7 @@ describe('secureCreatives', () => {
         height: 250,
         renderer: null
       }, obj);
-      auction.getBidsReceived = function() {
+      auction.getBidsReceived = function () {
         let bidsReceived = getBidResponses();
         bidsReceived.push(adResponse);
         return bidsReceived;
@@ -108,15 +108,15 @@ describe('secureCreatives', () => {
       auction.getAuctionId = () => 1;
     }
 
-    function resetAuction() {
+    function resetAuction () {
       $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
       auction.getBidRequests = getBidRequests;
       auction.getBidsReceived = getBidResponses;
       auction.getAdUnits = getAdUnits;
-      auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
+      auction.getAuctionStatus = function () { return auctionModule.AUCTION_COMPLETED }
     }
 
-    function resetHistories(...others) {
+    function resetHistories (...others) {
       [
         spyAddWinningBid,
         spyLogWarn,
@@ -128,20 +128,20 @@ describe('secureCreatives', () => {
       if (others && others.length > 0) { others.forEach(s => s.resetHistory()); }
     }
 
-    before(function() {
+    before(function () {
       const adUnits = getAdUnits();
       const adUnitCodes = getAdUnits().map(unit => unit.code);
-      const bidsBackHandler = function() {};
+      const bidsBackHandler = function () {};
       const timeout = 2000;
       auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
       resetAuction();
     });
 
-    after(function() {
+    after(function () {
       auctionManager.clearAllAuctions();
     });
 
-    beforeEach(function() {
+    beforeEach(function () {
       spyAddWinningBid = sandbox.spy(auctionManager, 'addWinningBid');
       spyLogWarn = sandbox.spy(utils, 'logWarn');
       stubFireNativeTrackers = sandbox.stub(native, 'fireNativeTrackers').callsFake(message => { return message.action; });
@@ -149,13 +149,13 @@ describe('secureCreatives', () => {
       stubEmit = sandbox.stub(events, 'emit');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       sandbox.restore();
       resetAuction();
       adResponse.adId = bidId;
     });
 
-    describe('Prebid Request', function() {
+    describe('Prebid Request', function () {
       it('should render', function () {
         pushBidResponseToAuction({
           renderer: {render: sinon.stub(), url: 'some url'}
@@ -355,7 +355,7 @@ describe('secureCreatives', () => {
       }
     });
 
-    describe('Prebid Native', function() {
+    describe('Prebid Native', function () {
       if (!FEATURES.NATIVE) {
         return;
       }
@@ -540,7 +540,7 @@ describe('secureCreatives', () => {
     after(() => {
       window.googletag = origGpt;
     });
-    function mockSlot(elementId, pathId) {
+    function mockSlot (elementId, pathId) {
       let targeting = {};
       return {
         getSlotElementId: sinon.stub().callsFake(() => elementId),

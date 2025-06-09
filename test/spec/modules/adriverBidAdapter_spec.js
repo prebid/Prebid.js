@@ -229,13 +229,13 @@ describe('adriverAdapter', function () {
       return floorTestData;
     };
 
-    beforeEach(function() {
-      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function() {
+    beforeEach(function () {
+      getAdUnitsStub = sinon.stub(auctionManager, 'getAdUnits').callsFake(function () {
         return [];
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       getAdUnitsStub.restore();
     });
 

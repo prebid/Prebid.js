@@ -11,7 +11,7 @@ const IDX_COOKIE_STORED = '{ "idx": "' + IDX_DUMMY_VALUE + '" }';
 const ID_COOKIE_OBJECT = { id: IDX_DUMMY_VALUE };
 const IDX_COOKIE_OBJECT = { idx: IDX_DUMMY_VALUE };
 
-function getConfigMock() {
+function getConfigMock () {
   return {
     userSync: {
       syncDelay: 0,
@@ -22,7 +22,7 @@ function getConfigMock() {
   }
 }
 
-function getAdUnitMock(code = 'adUnit-code') {
+function getAdUnitMock (code = 'adUnit-code') {
   return {
     code,
     mediaTypes: {banner: {}, native: {}},

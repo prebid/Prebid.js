@@ -32,7 +32,7 @@ const converter = ortbConverter({
       ]
     }
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     mergeDeep(imp, {
       tagid: bidRequest.params.unit,
@@ -48,7 +48,7 @@ const converter = ortbConverter({
     }
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     mergeDeep(req, {
       at: 1,
@@ -78,7 +78,7 @@ const converter = ortbConverter({
     }
     return req;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const bidResponse = buildBidResponse(bid, context);
     if (bid.ext) {
       bidResponse.meta.networkId = bid.ext.dsp_id;
@@ -87,7 +87,7 @@ const converter = ortbConverter({
     }
     return bidResponse;
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response (buildResponse, bidResponses, ortbResponse, context) {
     // pass these from request to the responses for use in userSync
     const {ortbRequest} = context;
     if (ortbRequest.ext) {
@@ -122,7 +122,7 @@ const converter = ortbConverter({
   },
   overrides: {
     imp: {
-      bidfloor(setBidFloor, imp, bidRequest, context) {
+      bidfloor (setBidFloor, imp, bidRequest, context) {
         // enforce floors should always be in USD
         // TODO: does it make sense that request.cur can be any currency, but request.imp[].bidfloorcur must be USD?
         const floor = {};
@@ -131,7 +131,7 @@ const converter = ortbConverter({
           Object.assign(imp, floor);
         }
       },
-      video(orig, imp, bidRequest, context) {
+      video (orig, imp, bidRequest, context) {
         if (FEATURES.VIDEO) {
           // `orig` is the video imp processor, which looks at bidRequest.mediaTypes[VIDEO]
           // to populate imp.video
@@ -148,7 +148,7 @@ const converter = ortbConverter({
   }
 });
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||
     bidRequest.params.platform;
 
@@ -161,7 +161,7 @@ function isBidRequestValid(bidRequest) {
   return !!(bidRequest.params.unit && hasDelDomainOrPlatform);
 }
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   let videoRequests = bidRequests.filter(bidRequest => isVideoBidRequest(bidRequest));
   let bannerAndNativeRequests = bidRequests.filter(bidRequest => isBannerBidRequest(bidRequest) || isNativeBidRequest(bidRequest))
     // In case of multi-format bids remove `video` from mediaTypes as for video a separate bid request is built
@@ -174,7 +174,7 @@ function buildRequests(bidRequests, bidderRequest) {
   return requests;
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: config.getConfig('openxOrtbUrl') || REQUEST_URL,
@@ -182,20 +182,20 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function isVideoBidRequest(bidRequest) {
+function isVideoBidRequest (bidRequest) {
   return utils.deepAccess(bidRequest, 'mediaTypes.video');
 }
 
-function isNativeBidRequest(bidRequest) {
+function isNativeBidRequest (bidRequest) {
   return utils.deepAccess(bidRequest, 'mediaTypes.native');
 }
 
-function isBannerBidRequest(bidRequest) {
+function isBannerBidRequest (bidRequest) {
   const isNotVideoOrNativeBid = !isVideoBidRequest(bidRequest) && !isNativeBidRequest(bidRequest)
   return utils.deepAccess(bidRequest, 'mediaTypes.banner') || isNotVideoOrNativeBid;
 }
 
-function interpretResponse(resp, req) {
+function interpretResponse (resp, req) {
   if (!resp.body) {
     resp.body = {nbr: 0};
   }
@@ -209,7 +209,7 @@ function interpretResponse(resp, req) {
  * @param uspConsent
  * @return {{type: (string), url: (*|string)}[]}
  */
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
     let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let queryParamStrings = [];

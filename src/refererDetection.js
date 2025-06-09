@@ -14,7 +14,7 @@ import {logWarn} from './utils.js';
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
  */
-export function ensureProtocol(url, win = window) {
+export function ensureProtocol (url, win = window) {
   if (!url) return url;
   if (/\w+:\/\//.exec(url)) {
     // url already has protocol
@@ -40,7 +40,7 @@ export function ensureProtocol(url, win = window) {
  * @param {boolean} options.noPort - If true, do not include the ':[port]' portion.
  * @return {string|undefined} - The extracted domain or undefined if the URL is invalid.
  */
-export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
+export function parseDomain (url, {noLeadingWww = false, noPort = false} = {}) {
   try {
     url = new URL(ensureProtocol(url));
   } catch (e) {
@@ -59,7 +59,7 @@ export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
  * @param {Object} doc document
  * @returns {string|null}
  */
-function getCanonicalUrl(doc) {
+function getCanonicalUrl (doc) {
   try {
     const element = doc.querySelector("link[rel='canonical']");
 
@@ -77,7 +77,7 @@ function getCanonicalUrl(doc) {
  * @param {Window} win Window
  * @returns {Function}
  */
-export function detectReferer(win) {
+export function detectReferer (win) {
   /**
    * This function would return a read-only array of hostnames for all the parent frames.
    * win.location.ancestorOrigins is only supported in webkit browsers. For non-webkit browsers it will return undefined.
@@ -85,7 +85,7 @@ export function detectReferer(win) {
    * @param {Window} win Window object
    * @returns {(undefined|Array)} Ancestor origins or undefined
    */
-  function getAncestorOrigins(win) {
+  function getAncestorOrigins (win) {
     try {
       if (!win.location.ancestorOrigins) {
         return;
@@ -118,7 +118,7 @@ export function detectReferer(win) {
    *
    * @returns {refererInfo} An object containing referer information.
    */
-  function refererInfo() {
+  function refererInfo () {
     const stack = [];
     const ancestors = getAncestorOrigins(win);
     const maxNestedIframes = config.getConfig('maxNestedIframes');
@@ -265,7 +265,7 @@ export function detectReferer(win) {
 // cache result of fn (= referer info) as long as:
 // - we are the top window
 // - canonical URL tag and window location have not changed
-export function cacheWithLocation(fn, win = window) {
+export function cacheWithLocation (fn, win = window) {
   if (win.top !== win) return fn;
   let canonical, href, value;
   return function () {

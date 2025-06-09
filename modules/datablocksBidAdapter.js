@@ -100,7 +100,7 @@ export const spec = {
   db_obj: {metrics_host: 'prebid.dblks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
 
   // STORE THE DATABLOCKS BUYERID IN STORAGE
-  store_dbid: function(dbid) {
+  store_dbid: function (dbid) {
     let stored = false;
 
     // CREATE 1 YEAR EXPIRY DATE
@@ -123,7 +123,7 @@ export const spec = {
   },
 
   // FETCH DATABLOCKS BUYERID FROM STORAGE
-  get_dbid: function() {
+  get_dbid: function () {
     let dbId = '';
     if (storage.cookiesAreEnabled) {
       dbId = storage.getCookie('_db_dbid') || '';
@@ -136,7 +136,7 @@ export const spec = {
   },
 
   // STORE SYNCS IN STORAGE
-  store_syncs: function(syncs) {
+  store_syncs: function (syncs) {
     if (storage.localStorageIsEnabled) {
       let syncObj = {};
       syncs.forEach(sync => {
@@ -152,7 +152,7 @@ export const spec = {
   },
 
   // GET SYNCS FROM STORAGE
-  get_syncs: function() {
+  get_syncs: function () {
     if (storage.localStorageIsEnabled) {
       let syncData = storage.getDataFromLocalStorage('_db_syncs');
       if (syncData) {
@@ -166,7 +166,7 @@ export const spec = {
   },
 
   // ADD METRIC DATA TO THE METRICS RESPONSE QUEUE
-  queue_metric: function(metric) {
+  queue_metric: function (metric) {
     if (typeof metric === 'object') {
       // PUT METRICS IN THE QUEUE
       this.db_obj.metrics.push(metric);
@@ -178,7 +178,7 @@ export const spec = {
 
       // SETUP THE TIMER TO FIRE BACK THE DATA
       let scope = this;
-      this.db_obj.metrics_timer = setTimeout(function() {
+      this.db_obj.metrics_timer = setTimeout(function () {
         scope.send_metrics();
       }, this.db_obj.metrics_queue_time);
 
@@ -189,7 +189,7 @@ export const spec = {
   },
 
   // POST CONSOLIDATED METRICS BACK TO SERVER
-  send_metrics: function() {
+  send_metrics: function () {
     // POST TO SERVER
     ajax(`https://${this.db_obj.metrics_host}/a/pb/`, null, JSON.stringify(this.db_obj.metrics), {method: 'POST', withCredentials: true});
 
@@ -223,7 +223,7 @@ export const spec = {
   },
 
   // LISTEN FOR GPT VIEWABILITY EVENTS
-  get_viewability: function(bid) {
+  get_viewability: function (bid) {
     // ONLY RUN ONCE IF PUBLISHER HAS OPTED IN
     if (!this.db_obj.vis_optout && !this.db_obj.vis_run) {
       this.db_obj.vis_run = true;
@@ -233,10 +233,10 @@ export const spec = {
       if (isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener == 'function') {
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-          window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
+          window['googletag'].pubads().addEventListener('impressionViewable', function (event) {
             scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
           });
-          window['googletag'].pubads().addEventListener('slotRenderEnded', function(event) {
+          window['googletag'].pubads().addEventListener('slotRenderEnded', function (event) {
             scope.queue_metric({type: 'slot_render', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
           })
         }
@@ -245,7 +245,7 @@ export const spec = {
   },
 
   // VALIDATE THE BID REQUEST
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     // SET GLOBAL VARS FROM BIDDER CONFIG
     this.db_obj.source_id = bid.params.source_id;
     if (bid.params.vis_optout) {
@@ -256,7 +256,7 @@ export const spec = {
   },
 
   // GENERATE THE RTB REQUEST
-  buildRequests: function(validRequests, bidderRequest) {
+  buildRequests: function (validRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validRequests = convertOrtbRequestToProprietaryNative(validRequests);
 
@@ -266,7 +266,7 @@ export const spec = {
     }
 
     // CONVERT PREBID NATIVE REQUEST OBJ INTO RTB OBJ
-    function createNativeRequest(bid) {
+    function createNativeRequest (bid) {
       const assets = [];
       if (bid.nativeParams) {
         Object.keys(bid.nativeParams).forEach((key) => {
@@ -416,7 +416,7 @@ export const spec = {
   },
 
   // INITIATE USER SYNCING
-  getUserSyncs: function(options, rtbResponse, gdprConsent) {
+  getUserSyncs: function (options, rtbResponse, gdprConsent) {
     const syncs = [];
     let bidResponse = rtbResponse?.[0]?.body ?? null;
     let scope = this;
@@ -462,7 +462,7 @@ export const spec = {
     }
 
     // APPEND PARAMS TO SYNC URL
-    function addParams(sync) {
+    function addParams (sync) {
       // PARSE THE URL
       try {
         let url = new URL(sync.url);
@@ -487,7 +487,7 @@ export const spec = {
     }
 
     // ENSURE THAT THE SYNC TYPE IS VALID AND HAS PERMISSION
-    function checkValid(sync) {
+    function checkValid (sync) {
       if (!sync.type || !sync.url) {
         return false;
       }
@@ -504,20 +504,20 @@ export const spec = {
   },
 
   // DATABLOCKS WON THE AUCTION - REPORT SUCCESS
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     this.queue_metric({type: 'bid_won', source_id: bid.params[0].source_id, req_id: bid.requestId, slot_id: bid.adUnitCode, auction_id: bid.auctionId, size: bid.size, cpm: bid.cpm, pb: bid.adserverTargeting.hb_pb, rt: bid.timeToRespond, ttl: bid.ttl});
   },
 
   // TARGETING HAS BEEN SET
-  onSetTargeting: function(bid) {
+  onSetTargeting: function (bid) {
     // LISTEN FOR VIEWABILITY EVENTS
     this.get_viewability(bid);
   },
 
   // PARSE THE RTB RESPONSE AND RETURN FINAL RESULTS
-  interpretResponse: function(rtbResponse, bidRequest) {
+  interpretResponse: function (rtbResponse, bidRequest) {
     // CONVERT NATIVE RTB RESPONSE INTO PREBID RESPONSE
-    function parseNative(native) {
+    function parseNative (native) {
       const {assets, link, imptrackers, jstracker} = native;
       const result = {
         clickUrl: link.url,
@@ -574,9 +574,9 @@ export const spec = {
 
 // DETECT BOTS
 export class BotClientTests {
-  constructor() {
+  constructor () {
     this.tests = {
-      headless_chrome: function() {
+      headless_chrome: function () {
         if (self.navigator) {
           if (self.navigator.webdriver) {
             return true;
@@ -621,7 +621,8 @@ export class BotClientTests {
       },
     }
   }
-  doTests() {
+
+  doTests () {
     let response = false;
     for (const i of Object.keys(this.tests)) {
       if (this.tests[i]() === true) {

@@ -6,15 +6,15 @@ export const spec = {
   code: BIDDER_CODE,
   hostname: 'https://addefend-platform.com',
 
-  getHostname() {
+  getHostname () {
     return this.hostname;
   },
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return (bid.sizes !== undefined && bid.bidId !== undefined && bid.params !== undefined &&
               (bid.params.pageId !== undefined && (typeof bid.params.pageId === 'string')) &&
               (bid.params.placementId !== undefined && (typeof bid.params.placementId === 'string')));
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let bid = {
       v: 'v' + '$prebid.version$',
       auctionId: false,
@@ -59,7 +59,7 @@ export const spec = {
       data: bid
     }];
   },
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'advertiserDomains'];
     const validBidResponses = [];
     serverResponse = serverResponse.body;

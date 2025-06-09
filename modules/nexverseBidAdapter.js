@@ -29,7 +29,7 @@ export const spec = {
    * @param {Object} bidderRequest - The bidder request object containing additional data.
    * @returns {Array} Array of server requests to be sent to the endpoint.
    */
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     const requests = validBidRequests.map((bid) => {
       // Build the endpoint URL with query parameters
       const endpointUrl = buildEndpointUrl(BIDDER_ENDPOINT, bid);
@@ -61,7 +61,7 @@ export const spec = {
    * @param {Object} request - The original server request.
    * @returns {Array} Array of bids to be passed to the auction.
    */
-  interpretResponse(serverResponse, request) {
+  interpretResponse (serverResponse, request) {
     if (serverResponse && serverResponse.status === 204) {
       printLog('info', 'No ad available (204 response).');
       return [];
@@ -136,7 +136,7 @@ export const spec = {
  * @param {Object} bidderRequest - The bidder request object.
  * @returns {Object|null} The OpenRTB 2.5 request payload or null if missing mandatory parameters.
  */
-function buildOpenRtbRequest(bid, bidderRequest) {
+function buildOpenRtbRequest (bid, bidderRequest) {
   if (!bid || !bidderRequest) {
     printLog('error', 'Missing required parameters for OpenRTB request.');
     return null;

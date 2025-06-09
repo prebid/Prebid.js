@@ -23,7 +23,7 @@ config.getConfig(LABELS_KEY, (cfg) => {
   allLabels = combineLabels(); ;
 });
 
-export function setLabels(internalLabels) {
+export function setLabels (internalLabels) {
   labels.internal = internalLabels;
   allLabels = combineLabels();
 };
@@ -35,11 +35,11 @@ export const DEFAULT_INCLUDE_EVENTS = Object.values(EVENTS)
 
 let debounceDelay = 100;
 
-export function setDebounceDelay(delay) {
+export function setDebounceDelay (delay) {
   debounceDelay = delay;
 }
 
-export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
+export default function AnalyticsAdapter ({ url, analyticsType, global, handler }) {
   const queue = [];
   let handlers;
   let enabled = false;
@@ -100,7 +100,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     }
   });
 
-  function _track({ eventType, args }) {
+  function _track ({ eventType, args }) {
     if (this.getAdapterType() === BUNDLE) {
       window[global](handler, eventType, args);
     }
@@ -110,11 +110,11 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     }
   }
 
-  function _callEndpoint({ eventType, args, callback }) {
+  function _callEndpoint ({ eventType, args, callback }) {
     _internal.ajax(url, callback, JSON.stringify({ eventType, args, labels: allLabels }));
   }
 
-  function _enqueue({eventType, args}) {
+  function _enqueue ({eventType, args}) {
     queue.push(() => {
       if (Object.keys(allLabels || []).length > 0) {
         args = {
@@ -127,7 +127,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     emptyQueue();
   }
 
-  function _enable(config) {
+  function _enable (config) {
     provider = config?.provider;
     var _this = this;
 
@@ -172,13 +172,13 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
     // finally set this function to return log message, prevents multiple adapter listeners
     this._oldEnable = this.enableAnalytics;
-    this.enableAnalytics = function _enable() {
+    this.enableAnalytics = function _enable () {
       return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
     };
     enabled = true;
   }
 
-  function _disable() {
+  function _disable () {
     Object.entries(handlers || {}).forEach(([event, handler]) => {
       events.off(event, handler);
     })

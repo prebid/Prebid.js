@@ -31,7 +31,7 @@ let tokens = {};
  * @param {string} tempKey A name of the temporary property to be removed
  * @returns {*} An updated object
  */
-function cleanObject(obj, key, tempKey) {
+function cleanObject (obj, key, tempKey) {
   const newObj = {};
 
   for (const prop in obj) {
@@ -58,7 +58,7 @@ function cleanObject(obj, key, tempKey) {
  * @param {string} currency A floor price currency
  * @returns {number} Floor price
  */
-function getFloor(bid, mediaType, width, height, currency) {
+function getFloor (bid, mediaType, width, height, currency) {
   return bid.getFloor?.({ currency, mediaType, size: [width, height] })
     .floor || bid.params.bidfloor || -1;
 }
@@ -67,7 +67,7 @@ function getFloor(bid, mediaType, width, height, currency) {
  * Gets value of the local variable impIdMap
  * @returns {*} Value of impIdMap
  */
-export function getImpIdMap() {
+export function getImpIdMap () {
   return impIdMap;
 };
 
@@ -78,7 +78,7 @@ export function getImpIdMap() {
  * @param {*} bidReq A bid request object to evaluate
  * @returns boolean
  */
-function isValid(bidReq) {
+function isValid (bidReq) {
   return !(bidReq.mediaTypes.video && JSON.stringify(bidReq.mediaTypes.video) === '{}') && !(bidReq.mediaTypes.native && JSON.stringify(bidReq.mediaTypes.native) === '{}');
 }
 
@@ -86,7 +86,7 @@ function isValid(bidReq) {
  * Generates a 14-char string id
  * @returns {string}
  */
-function makeId() {
+function makeId () {
   const length = 14;
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let counter = 0;
@@ -104,7 +104,7 @@ function makeId() {
  * @param {*} req A bid request object to be updated
  * @returns {*} Updated bid request object
  */
-function updateFeedbackData(req) {
+function updateFeedbackData (req) {
   if (req?.ext?.prebid?.previousauctioninfo) {
     req.ext.prebid.previousauctioninfo.forEach(info => {
       if (tokens[info?.bidId]) {
@@ -212,7 +212,7 @@ export const spec = {
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
     if (syncOptions.iframeEnabled) {
-      window.addEventListener('message', function handler(event) {
+      window.addEventListener('message', function handler (event) {
         if (event.origin === COOKIE_SYNC_ORIGIN && event.data.action === 'getConsent') {
           event.source.postMessage({
             action: 'consentResponse',
@@ -244,7 +244,7 @@ export const converter = ortbConverter({
     ttl: DEFAULT_TTL
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const { siteId, pageId, formatId } = bidRequest.params;
 
@@ -265,7 +265,7 @@ export const converter = ortbConverter({
     return imp;
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const bid = context.bidRequests[0];
     const currency = config.getConfig('currency.adServerCurrency') || 'USD';
     const splitImps = [];

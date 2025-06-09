@@ -37,7 +37,7 @@ export const sm = getStorageManager({
  * - window.TRC.user_id
  */
 const userData = {
-  getUserId() {
+  getUserId () {
     try {
       return this.getFromLocalStorage() || this.getFromCookie() || this.getFromTRC();
     } catch (ex) {
@@ -45,7 +45,7 @@ const userData = {
     }
   },
 
-  getFromLocalStorage() {
+  getFromLocalStorage () {
     const {hasLocalStorage, localStorageIsEnabled, getDataFromLocalStorage} = sm;
     if (hasLocalStorage() && localStorageIsEnabled()) {
       return getDataFromLocalStorage(STORAGE_KEY);
@@ -53,7 +53,7 @@ const userData = {
     return undefined;
   },
 
-  getFromCookie() {
+  getFromCookie () {
     const {cookiesAreEnabled, getCookie} = sm;
     if (cookiesAreEnabled()) {
       const mainCookieData = getCookie(COOKIE_KEY);
@@ -83,7 +83,7 @@ const userData = {
   /**
    * Extract a value for a given key out of a multi-value cookie, e.g. "user-id=abc&foo=bar".
    */
-  getCookieDataByKey(cookieData, key) {
+  getCookieDataByKey (cookieData, key) {
     if (!cookieData) {
       return undefined;
     }
@@ -94,7 +94,7 @@ const userData = {
     return undefined;
   },
 
-  getFromTRC() {
+  getFromTRC () {
     if (window.TRC) {
       return window.TRC.user_id;
     }
@@ -105,7 +105,7 @@ const userData = {
 /**
  * Build the Taboola sync URL, adding GDPR, USP, or GPP parameters as needed.
  */
-function buildTaboolaSyncUrl() {
+function buildTaboolaSyncUrl () {
   let paramPrefix = '&';
   let syncUrl = TABOOLA_SYNC_ENDPOINT;
   const extraParams = [];
@@ -141,7 +141,7 @@ function buildTaboolaSyncUrl() {
 /**
  * Store the user ID in local storage.
  */
-function saveUserIdInLocalStorage(id) {
+function saveUserIdInLocalStorage (id) {
   if (!id) {
     return;
   }
@@ -165,7 +165,7 @@ function saveUserIdInLocalStorage(id) {
  * The server also sets a cookie via Set-Cookie, but we do NOT manually set.
  * Instead, we parse "data.user.id" and store it in local storage.
  */
-function callTaboolaUserSync(submoduleConfig, currentId, callback) {
+function callTaboolaUserSync (submoduleConfig, currentId, callback) {
   const skipSync = submoduleConfig?.params?.shouldSkipSync ?? true;
   if (skipSync) {
     callback(currentId ? {taboolaId: currentId} : undefined);
@@ -208,7 +208,7 @@ export const taboolaIdSubmodule = {
   /**
    * decode transforms a stored string ID into { taboolaId: 'xyz' }
    */
-  decode(value) {
+  decode (value) {
     if (typeof value === 'string' && value !== '0') {
       return { taboolaId: value };
     }
@@ -222,7 +222,7 @@ export const taboolaIdSubmodule = {
    * getId is called by Prebid on initialization to retrieve an existing ID
    * and define an async callback for user sync.
    */
-  getId(submoduleConfig) {
+  getId (submoduleConfig) {
     const foundId = userData.getUserId();
     const callbackFn = (cb) => {
       callTaboolaUserSync(submoduleConfig, foundId, cb);

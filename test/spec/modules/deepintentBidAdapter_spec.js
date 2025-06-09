@@ -160,7 +160,7 @@ describe('Deepintent adapter', function () {
         isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
-    it('should check for context if video is present', function() {
+    it('should check for context if video is present', function () {
       let bid = {
           bidder: 'deepintent',
           params: {
@@ -180,7 +180,7 @@ describe('Deepintent adapter', function () {
         isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(true);
     });
-    it('should error out if context is not present and is Video', function() {
+    it('should error out if context is not present and is Video', function () {
       let bid = {
           bidder: 'deepintent',
           params: {
@@ -246,13 +246,13 @@ describe('Deepintent adapter', function () {
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].banner.pos).to.equal(1);
     });
-    it('bid request check: displaymanager check', function() {
+    it('bid request check: displaymanager check', function () {
       let bRequest = spec.buildRequests(request);
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].displaymanager).to.equal('di_prebid');
       expect(data.imp[0].displaymanagerver).to.equal('1.0.0');
     });
-    it('bid request check: bidfloor check', function() {
+    it('bid request check: bidfloor check', function () {
       const requestClone = utils.deepClone(request);
       let bRequest = spec.buildRequests(requestClone);
       let data = JSON.parse(bRequest.data);
@@ -306,7 +306,7 @@ describe('Deepintent adapter', function () {
       expect(data2.regs).to.equal(undefined);
       expect(data2.user.ext).to.equal(undefined);
     });
-    it('bid request check: Video params check ', function() {
+    it('bid request check: Video params check ', function () {
       let bRequest = spec.buildRequests(videoBidRequests);
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].video).to.be.a('object');
@@ -321,7 +321,7 @@ describe('Deepintent adapter', function () {
       expect(data.imp[0].video.maxbitrate).to.be.a('number');
       expect(data.imp[0].video.w).to.be.a('number');
     });
-    it('bid request param check : invalid video params', function() {
+    it('bid request param check : invalid video params', function () {
       let bRequest = spec.buildRequests(videoBidRequests);
       let data = JSON.parse(bRequest.data);
       expect(data.imp[0].video).to.be.a('object');
@@ -357,24 +357,24 @@ describe('Deepintent adapter', function () {
       expect(bResponse[0].creativeId).to.equal(bannerResponse.body.seatbid[0].bid[0].crid);
       expect(bResponse[0].dealId).to.equal(bannerResponse.body.seatbid[0].bid[0].dealId);
     });
-    it('bid response check: valid video bid response', function() {
+    it('bid response check: valid video bid response', function () {
       let request = spec.buildRequests(videoBidRequests);
       let response = spec.interpretResponse(videoBidResponse, request);
       expect(response[0].mediaType).to.equal('video');
       expect(response[0].vastXml).to.not.equal(undefined);
     });
-    it('invalid bid response check ', function() {
+    it('invalid bid response check ', function () {
       let bRequest = spec.buildRequests(request);
       let response = spec.interpretResponse(invalidResponse, bRequest);
       expect(response[0].mediaType).to.equal(undefined);
     });
-    it('invalid bid response check ', function() {
+    it('invalid bid response check ', function () {
       let bRequest = spec.buildRequests(videoBidRequests);
       let response = spec.interpretResponse(invalidResponse, bRequest);
       expect(response[0].mediaType).to.equal(undefined);
     });
   });
-  describe('GPP and coppa', function() {
+  describe('GPP and coppa', function () {
     it('Request params check with GPP Consent', function () {
       let bidderReq = {gppConsent: {gppString: 'gpp-string-test', applicableSections: [5]}};
       let bRequest = spec.buildRequests(request, bidderReq);

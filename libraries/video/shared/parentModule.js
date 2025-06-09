@@ -5,7 +5,7 @@
  * @returns {ParentModule}
  * @class
  */
-export function ParentModule(submoduleBuilder_) {
+export function ParentModule (submoduleBuilder_) {
   const submoduleBuilder = submoduleBuilder_;
   const submodules = {};
 
@@ -16,7 +16,7 @@ export function ParentModule(submoduleBuilder_) {
    * @param {String} vendorCode - identifier to the submodule type that must be built
    * @param {Object} config - additional information necessary to instantiate the submodule
    */
-  function registerSubmodule(id, vendorCode, config) {
+  function registerSubmodule (id, vendorCode, config) {
     if (submodules[id]) {
       return;
     }
@@ -36,7 +36,7 @@ export function ParentModule(submoduleBuilder_) {
    * @param {String} id - unique identifier of the submodule instance
    * @returns {Object} - a submodule instance
    */
-  function getSubmodule(id) {
+  function getSubmodule (id) {
     return submodules[id];
   }
 
@@ -55,7 +55,7 @@ export function ParentModule(submoduleBuilder_) {
  * @returns {SubmoduleBuilder}
  * @class
  */
-export function SubmoduleBuilder(submoduleDirectory_, sharedUtils_) {
+export function SubmoduleBuilder (submoduleDirectory_, sharedUtils_) {
   const submoduleDirectory = submoduleDirectory_;
   const sharedUtils = sharedUtils_;
 
@@ -66,7 +66,7 @@ export function SubmoduleBuilder(submoduleDirectory_, sharedUtils_) {
    * @throws
    * @returns {{init}|*} - a submodule instance
    */
-  function build(vendorCode, config) {
+  function build (vendorCode, config) {
     const submoduleFactory = submoduleDirectory[vendorCode];
     if (!submoduleFactory) {
       throw new Error('Unrecognized submodule vendor code: ' + vendorCode);

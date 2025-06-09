@@ -64,7 +64,7 @@ const converter = ortbConverter({
     ttl: 300
   },
   processors: pbsExtensions,
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     // Set stored request id from placementId
     const imp = buildImp(bidRequest, context);
     const { placementId } = bidRequest.params;
@@ -74,7 +74,7 @@ const converter = ortbConverter({
   },
   overrides: {
     bidResponse: {
-      bidderCode(orig, bidResponse, bid, { bidRequest }) {
+      bidderCode (orig, bidResponse, bid, { bidRequest }) {
         const { bidder, params = {} } = bidRequest || {};
         let useSourceBidderCode = configByBidder[bidder]?.useSourceBidderCode;
         if ('useSourceBidderCode' in params) {
@@ -98,7 +98,7 @@ export const spec = {
   isBidRequestValid: (bid) => bid.params?.placementId && getBidderConfig([bid]).complete,
 
   /** Trigger impression-pixel */
-  onBidWon(bid) {
+  onBidWon (bid) {
     if (bid.pbsWurl) {
       triggerPixel(bid.pbsWurl)
     }
@@ -108,7 +108,7 @@ export const spec = {
   },
 
   /** Build BidRequest for PBS */
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const { bidder } = bidRequests[0];
     const cfg = getBidderConfig(bidRequests);
     const data = converter.toORTB({bidRequests, bidderRequest});
@@ -135,7 +135,7 @@ export const spec = {
   },
 
   /** Read BidResponse from PBS and make necessary adjustments to not make it appear to come from unknown bidders */
-  interpretResponse(response, request) {
+  interpretResponse (response, request) {
     const resp = deepClone(response.body);
     const { bidder } = request.data.ext.prebid.passthrough.relevant;
 
@@ -156,7 +156,7 @@ export const spec = {
   },
 
   /** Do syncing, but avoid running the sync > 1 time for S2S bidders */
-  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }

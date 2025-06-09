@@ -145,15 +145,15 @@ describe('ViouslyAdapter', function () {
 
   describe('buildRequests', function () {
     describe('Check method return', function () {
-      it('should return the right formatted banner requests', function() {
+      it('should return the right formatted banner requests', function () {
         expect(adapter.buildRequests([VALID_BID_BANNER])).to.deep.equal(VALID_REQUEST_BANNER);
       });
 
-      it('should return the right formatted video requests', function() {
+      it('should return the right formatted video requests', function () {
         expect(adapter.buildRequests([VALID_BID_VIDEO])).to.deep.equal(VALID_REQUEST_VIDEO);
       });
 
-      it('should return the right formatted request with the referer info', function() {
+      it('should return the right formatted request with the referer info', function () {
         let bidderRequest = {
           refererInfo: {
             page: 'https://www.example.com/test'
@@ -170,7 +170,7 @@ describe('ViouslyAdapter', function () {
         expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests);
       });
 
-      it('should return the right formatted request with the referer info from config', function() {
+      it('should return the right formatted request with the referer info from config', function () {
         /** Mock the config.getConfig method */
         sinon.stub(config, 'getConfig')
           .withArgs('pageUrl')
@@ -188,7 +188,7 @@ describe('ViouslyAdapter', function () {
         config.getConfig.restore();
       });
 
-      it('should return the right formatted request with GDPR Consent info', function() {
+      it('should return the right formatted request with GDPR Consent info', function () {
         let bidderRequest = {
           gdprConsent: VALID_GDPR
         };
@@ -204,7 +204,7 @@ describe('ViouslyAdapter', function () {
         expect(adapter.buildRequests([VALID_BID_VIDEO], bidderRequest)).to.deep.equal(requests);
       });
 
-      it('should return the right formatted request with US Privacy info', function() {
+      it('should return the right formatted request with US Privacy info', function () {
         let bidderRequest = {
           uspConsent: US_PRIVACY
         };
@@ -219,7 +219,7 @@ describe('ViouslyAdapter', function () {
       });
 
       // TODO: Supply chain
-      it('should return the right formatted request with Supply Chain info', function() {
+      it('should return the right formatted request with Supply Chain info', function () {
         let schain = {
           'ver': '1.0',
           'complete': 1,
@@ -250,7 +250,7 @@ describe('ViouslyAdapter', function () {
         expect(adapter.buildRequests([bid])).to.deep.equal(requests);
       });
 
-      it('should return the right formatted request with User Ids info', function() {
+      it('should return the right formatted request with User Ids info', function () {
         let userIds = {
           idl_env: '1234-5678-9012-3456', // Liveramp
           netId: 'testnetid123', // NetId
@@ -274,7 +274,7 @@ describe('ViouslyAdapter', function () {
         expect(adapter.buildRequests([bid])).to.deep.equal(requests);
       });
 
-      it('should return the right formatted request with endpoint test', function() {
+      it('should return the right formatted request with endpoint test', function () {
         let endpoint = 'https://bid-test.viously.com/prebid';
 
         let bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
@@ -294,9 +294,9 @@ describe('ViouslyAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     describe('Check method return', function () {
-      it('should return the right formatted response', function() {
+      it('should return the right formatted response', function () {
         let response = {
           body: {
             ads: [
@@ -427,9 +427,9 @@ describe('ViouslyAdapter', function () {
     });
   });
 
-  describe('onBidWon', function() {
+  describe('onBidWon', function () {
     describe('Check methods succeed', function () {
-      it('should not throw error', function() {
+      it('should not throw error', function () {
         let bids = [
           {
             requestId: '5678',
@@ -465,7 +465,7 @@ describe('ViouslyAdapter', function () {
           }
         ];
 
-        bids.forEach(function(bid) {
+        bids.forEach(function (bid) {
           expect(adapter.onBidWon.bind(adapter, bid)).to.not.throw();
         });
       });

@@ -35,7 +35,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
       let isValidPlacementId = _validateId(bid.params.placementId);
@@ -55,7 +55,7 @@ export const spec = {
    * @param {Object} bidderRequest
    * @return {Object} Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
     const topWindow = window.top;
 
@@ -144,7 +144,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidderRequest) {
+  interpretResponse: function (serverResponse, bidderRequest) {
     serverResponse = serverResponse.body;
 
     if (!serverResponse.responses) {
@@ -188,7 +188,7 @@ export const spec = {
  * @param validBidRequests an array of bids
  * @returns {{sharedViewerIdKey : 'sharedViewerIdValue'}} object with all sharedviewerids
  */
-function getSharedViewerIdParameters(validBidRequests) {
+function getSharedViewerIdParameters (validBidRequests) {
   const sharedViewerIdMapping = {
     unifiedId2: 'uid2.id', // uid2IdSystem
     liveRampId: 'idl_env', // identityLinkIdSystem
@@ -214,7 +214,7 @@ function getSharedViewerIdParameters(validBidRequests) {
   return sharedViewerIdObject;
 }
 
-function getReferrerInfo(bidderRequest) {
+function getReferrerInfo (bidderRequest) {
   let ref = '';
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     ref = bidderRequest.refererInfo.page;
@@ -222,7 +222,7 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
-function getPageTitle() {
+function getPageTitle () {
   try {
     const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
 
@@ -234,7 +234,7 @@ function getPageTitle() {
   }
 }
 
-function getPageDescription() {
+function getPageDescription () {
   let element;
 
   try {
@@ -248,21 +248,21 @@ function getPageDescription() {
   return (element && element.content) || '';
 }
 
-function getConnectionDownLink(nav) {
+function getConnectionDownLink (nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
-function getNetworkQuality(navigator) {
+function getNetworkQuality (navigator) {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
   return connection?.effectiveType ?? '';
 }
 
-function getDomComplexity(document) {
+function getDomComplexity (document) {
   return document?.querySelectorAll('*')?.length ?? -1;
 }
 
-function findGdprStatus(gdprApplies, gdprData) {
+function findGdprStatus (gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
     if (gdprData && !gdprData.isServiceSpecific) {
@@ -274,7 +274,7 @@ function findGdprStatus(gdprApplies, gdprData) {
   return status;
 }
 
-function buildRequestObject(bid) {
+function buildRequestObject (bid) {
   const reqObj = {};
   let placementId = bid.params.placementId;
   let pageId = bid.params.pageId;
@@ -293,11 +293,11 @@ function buildRequestObject(bid) {
   return reqObj;
 }
 
-function getSizes(bid) {
+function getSizes (bid) {
   return parseSizesInput(concatSizes(bid));
 }
 
-function concatSizes(bid) {
+function concatSizes (bid) {
   let playerSize = bid?.mediaTypes?.video?.playerSize;
   let videoSizes = bid?.mediaTypes?.video?.sizes;
   let bannerSizes = bid?.mediaTypes?.banner?.sizes;
@@ -305,7 +305,7 @@ function concatSizes(bid) {
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
     let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
     return mediaTypesSizes
-      .reduce(function(acc, currSize) {
+      .reduce(function (acc, currSize) {
         if (isArray(currSize)) {
           if (isArray(currSize[0])) {
             currSize.forEach(function (childSize) {
@@ -322,7 +322,7 @@ function concatSizes(bid) {
   }
 }
 
-function _validateId(id) {
+function _validateId (id) {
   return (parseInt(id) > 0);
 }
 
@@ -331,7 +331,7 @@ function _validateId(id) {
  * @param validBidRequests an array of bids
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
-function getFirstPartyTeadsIdParameter(validBidRequests) {
+function getFirstPartyTeadsIdParameter (validBidRequests) {
   const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userId?.teadsId;
 
   if (firstPartyTeadsIdFromUserIdModule) {

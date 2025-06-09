@@ -479,8 +479,8 @@ describe('Copper6SSPBidAdapter', function () {
     });
   });
 
-  describe('getUserSyncs', function() {
-    it('Should return array of objects with proper sync config , include GDPR', function() {
+  describe('getUserSyncs', function () {
+    it('Should return array of objects with proper sync config , include GDPR', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
@@ -492,7 +492,7 @@ describe('Copper6SSPBidAdapter', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://сsync.copper6.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
-    it('Should return array of objects with proper sync config , include CCPA', function() {
+    it('Should return array of objects with proper sync config , include CCPA', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {
         consentString: '1---'
       });
@@ -503,7 +503,7 @@ describe('Copper6SSPBidAdapter', function () {
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://сsync.copper6.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
-    it('Should return array of objects with proper sync config , include GPP', function() {
+    it('Should return array of objects with proper sync config , include GPP', function () {
       const syncData = spec.getUserSyncs({}, {}, {}, {}, {
         gppString: 'abc123',
         applicableSections: [8]

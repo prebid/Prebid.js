@@ -8,34 +8,34 @@ const SCROLL_KEYNAME = 'browsiScroll';
 /** @type {string} */
 const REVENUE_KEYNAME = 'browsiRevenue';
 
-export function isObjectDefined(obj) {
+export function isObjectDefined (obj) {
   return !!(obj && typeof obj === 'object' && Object.keys(obj).length);
 }
 
-export function generateRandomString() {
+export function generateRandomString () {
   const getRandomLetter = () => String.fromCharCode(65 + Math.floor(Math.random() * 26)); // A-Z
   return `_${getRandomLetter()}${getRandomLetter()}b${getRandomLetter()}${getRandomLetter()}`;
 }
 
-export function getUUID() {
+export function getUUID () {
   if (window.crypto && window.crypto.randomUUID) {
     return window.crypto.randomUUID() || undefined;
   }
   return undefined;
 }
 
-function getDaysDifference(firstDate, secondDate) {
+function getDaysDifference (firstDate, secondDate) {
   const diffInMilliseconds = Math.abs(firstDate - secondDate);
   const millisecondsPerDay = 24 * 60 * 60 * 1000;
   return diffInMilliseconds / millisecondsPerDay;
 }
 
-function isEngagingUser() {
+function isEngagingUser () {
   const pageYOffset = window.scrollY || (document.compatMode === 'CSS1Compat' ? document.documentElement?.scrollTop : document.body?.scrollTop);
   return pageYOffset > 0;
 }
 
-function getRevenueTargetingValue(p) {
+function getRevenueTargetingValue (p) {
   if (!p) {
     return undefined;
   } else if (p <= 0) {
@@ -48,11 +48,11 @@ function getRevenueTargetingValue(p) {
   return 'high';
 }
 
-function getTargetingValue(p) {
+function getTargetingValue (p) {
   return (!p || p < 0) ? undefined : (Math.floor(p * 10) / 10).toFixed(2);
 }
 
-export function getTargetingKeys(viewabilityKeyName) {
+export function getTargetingKeys (viewabilityKeyName) {
   return {
     viewabilityKey: (viewabilityKeyName || VIEWABILITY_KEYNAME).toString(),
     scrollKey: SCROLL_KEYNAME,
@@ -60,7 +60,7 @@ export function getTargetingKeys(viewabilityKeyName) {
   }
 }
 
-export function getTargetingValues(v) {
+export function getTargetingValues (v) {
   return {
     viewabilityValue: getTargetingValue(v['viewability']),
     scrollValue: getTargetingValue(v['scrollDepth']),
@@ -74,7 +74,7 @@ export const setKeyValue = (key, random) => setGptKeyValue(key, random.toString(
  * get all slots on page
  * @return {Object[]} slot GoogleTag slots
  */
-export function getAllSlots() {
+export function getAllSlots () {
   return isGptPubadsDefined() && window.googletag.pubads().getSlots();
 }
 
@@ -83,7 +83,7 @@ export function getAllSlots() {
  * @param {string} code placement id
  * @return {?Object}
  */
-export function getSlotByCode(code) {
+export function getSlotByCode (code) {
   const slots = getAllSlots();
   if (!slots || !slots.length) {
     return null;
@@ -91,7 +91,7 @@ export function getSlotByCode(code) {
   return slots.find(s => s.getSlotElementId() === code || s.getAdUnitPath() === code) || null;
 }
 
-function getLocalStorageData(storage) {
+function getLocalStorageData (storage) {
   let brtd = null;
   let bus = null;
   try {
@@ -107,7 +107,7 @@ function getLocalStorageData(storage) {
   return { brtd, bus };
 }
 
-function convertBusData(bus) {
+function convertBusData (bus) {
   try {
     return JSON.parse(bus);
   } catch (e) {
@@ -115,7 +115,7 @@ function convertBusData(bus) {
   }
 }
 
-export function getHbm(bus, timestamp) {
+export function getHbm (bus, timestamp) {
   try {
     if (!isObjectDefined(bus)) {
       return undefined;
@@ -134,7 +134,7 @@ export function getHbm(bus, timestamp) {
   }
 }
 
-export function getLahb(lahb, timestamp) {
+export function getLahb (lahb, timestamp) {
   try {
     if (!isObjectDefined(lahb)) {
       return undefined;
@@ -148,7 +148,7 @@ export function getLahb(lahb, timestamp) {
   }
 }
 
-export function getRahb(rahb, timestamp) {
+export function getRahb (rahb, timestamp) {
   try {
     const rahbByTs = getRahbByTs(rahb, timestamp);
     if (!isObjectDefined(rahbByTs)) {
@@ -169,7 +169,7 @@ export function getRahb(rahb, timestamp) {
   }
 }
 
-export function getRahbByTs(rahb, timestamp) {
+export function getRahbByTs (rahb, timestamp) {
   try {
     if (!isObjectDefined(rahb)) {
       return undefined
@@ -186,7 +186,7 @@ export function getRahbByTs(rahb, timestamp) {
   }
 }
 
-export function getPredictorData(storage, _moduleParams, timestamp, pvid) {
+export function getPredictorData (storage, _moduleParams, timestamp, pvid) {
   const win = window.top;
   const doc = win.document;
   const { brtd, bus } = getLocalStorageData(storage);
@@ -218,7 +218,7 @@ export function getPredictorData(storage, _moduleParams, timestamp, pvid) {
  * @param {Object} data
  * @return {string}
  */
-export function toUrlParams(data) {
+export function toUrlParams (data) {
   return Object.keys(data)
     .map(key => key + '=' + encodeURIComponent(data[key]))
     .join('&');
@@ -230,7 +230,7 @@ export function toUrlParams(data) {
  * @param {Object} slot google slot
  * @return {?Object}
  */
-export function getMacroId(macro, slot) {
+export function getMacroId (macro, slot) {
   if (macro) {
     try {
       const macroResult = evaluate(macro, slot.getSlotElementId(), slot.getAdUnitPath(), (match, p1) => {
@@ -244,7 +244,7 @@ export function getMacroId(macro, slot) {
   return slot.getSlotElementId();
 }
 
-function evaluate(macro, divId, adUnit, replacer) {
+function evaluate (macro, divId, adUnit, replacer) {
   let macroResult = macro.p
     .replace(/['"]+/g, '')
     .replace(/<DIV_ID>/g, divId);

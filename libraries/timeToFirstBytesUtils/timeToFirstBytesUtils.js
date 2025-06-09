@@ -7,7 +7,7 @@
  * @param {Window} win - The window object from which to retrieve performance timing information.
  * @returns {string} The TTFB in milliseconds as a string, or an empty string if the TTFB cannot be determined.
  */
-export function getTimeToFirstByte(win) {
+export function getTimeToFirstByte (win) {
   const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
 
   const ttfbWithTimingV2 = performance &&

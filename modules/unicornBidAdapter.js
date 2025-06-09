@@ -43,7 +43,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @param {any} bidderRequest
  * @returns {string}
  */
-function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
+function buildOpenRtbBidRequestPayload (validBidRequests, bidderRequest) {
   logInfo('[UNICORN] buildOpenRtbBidRequestPayload.validBidRequests:', validBidRequests);
   logInfo('[UNICORN] buildOpenRtbBidRequestPayload.bidderRequest:', bidderRequest);
   const imp = validBidRequests.map(br => {

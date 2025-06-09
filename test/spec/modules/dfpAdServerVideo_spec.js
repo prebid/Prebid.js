@@ -41,7 +41,7 @@ describe('The DFP video support module', function () {
     sandbox.restore();
   });
 
-  function getURL(options) {
+  function getURL (options) {
     return parse(buildDfpVideoUrl(Object.assign({
       adUnit: adUnit,
       bid: bid,
@@ -50,11 +50,11 @@ describe('The DFP video support module', function () {
       }
     }, options)))
   }
-  function getQueryParams(options) {
+  function getQueryParams (options) {
     return utils.parseQS(getURL(options).query);
   }
 
-  function getCustomParams(options) {
+  function getCustomParams (options) {
     return utils.parseQS('?' + decodeURIComponent(getQueryParams(options).cust_params));
   }
 
@@ -348,13 +348,13 @@ describe('The DFP video support module', function () {
       ortb2 = null;
     })
 
-    function getSignals() {
+    function getSignals () {
       const ppsj = JSON.parse(atob(getQueryParams().ppsj));
       return Object.fromEntries(ppsj.PublisherProvidedTaxonomySignals.map(sig => [sig.taxonomy, sig.values]));
     }
 
     Object.entries({
-      'FPD from bid request'() {
+      'FPD from bid request' () {
         bid.requestId = 'req-id';
         sandbox.stub(auctionManager, 'index').get(() => stubAuctionIndex({
           bidRequests: [
@@ -365,7 +365,7 @@ describe('The DFP video support module', function () {
           ]
         }));
       },
-      'global FPD from auction'() {
+      'global FPD from auction' () {
         bid.auctionId = 'auid';
         sandbox.stub(auctionManager, 'index').get(() => new AuctionIndex(() => [{
           getAuctionId: () => 'auid',

@@ -200,7 +200,7 @@ describe('etarget adapter', function () {
     });
 
     it('should set mediaType on bid response', function () {
-      const expected = [ BANNER, BANNER, BANNER, VIDEO, VIDEO ];
+      const expected = [BANNER, BANNER, BANNER, VIDEO, VIDEO];
       const result = spec.interpretResponse(serverResponse, bidRequest);
       for (let i = 0; i < result.length; i++) {
         assert.equal(result[i].mediaType, expected[i]);
@@ -452,7 +452,7 @@ describe('etarget adapter', function () {
   });
 });
 
-function parseUrl(url) {
+function parseUrl (url) {
   const parts = url.split('/');
   const query = parts.pop().split('&');
   return {
@@ -469,7 +469,7 @@ function parseUrl(url) {
   };
 }
 
-function toObject(cache, string) {
+function toObject (cache, string) {
   const keyValue = string.split('=');
   cache[keyValue[0]] = keyValue[1];
   return cache;

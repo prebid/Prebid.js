@@ -141,7 +141,7 @@ const BID_METADATA = {};
  * @param {BidRequest} bid - the bid to check
  * @return {boolean} true if the bid is valid
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   const clientToken = deepAccess(bid, 'params.clientToken');
   if (!clientToken || !isValidClientToken(clientToken)) {
     logWarn(TAG, "missing or invalid parameter 'clientToken'. found value:", clientToken);
@@ -162,7 +162,7 @@ function isBidRequestValid(bid) {
  * @param {string} clientToken - the client token
  * @return {boolean} true if the token is valid
  */
-function isValidClientToken(clientToken) {
+function isValidClientToken (clientToken) {
   return typeof clientToken === 'string' && clientToken.length > 0;
 }
 
@@ -176,7 +176,7 @@ function isValidClientToken(clientToken) {
  * @param placementId - the placement id to verify
  * @returns if the placement ID is valid.
  */
-function isValidPlacementId(placementId) {
+function isValidPlacementId (placementId) {
   return typeof placementId === 'string' &&
     placementId.length > 0 &&
     placementId.length <= 256 &&
@@ -188,7 +188,7 @@ function isValidPlacementId(placementId) {
  * @param {Object} mediaTypes - the media types to check
  * @return {Object} the unsupported settings, empty when all types are supported
  */
-function filterSupportedMediaTypes(mediaTypes) {
+function filterSupportedMediaTypes (mediaTypes) {
   return {
     banner: mediaTypes.banner,
     video: mediaTypes.video && mediaTypes.video.context === 'outstream' ? mediaTypes.video : undefined,
@@ -201,7 +201,7 @@ function filterSupportedMediaTypes(mediaTypes) {
  * @param {Object} mediaTypes - the types to check
  * @return {boolean} true if the types are empty
  */
-function isMediaTypesEmpty(mediaTypes) {
+function isMediaTypesEmpty (mediaTypes) {
   return Object.keys(mediaTypes).every(type => mediaTypes[type] === undefined);
 }
 
@@ -210,7 +210,7 @@ function isMediaTypesEmpty(mediaTypes) {
  * @param {BidRequest} request - the validated prebid bid request
  * @return {FeedAdApiBidRequest}
  */
-function createApiBidRParams(request) {
+function createApiBidRParams (request) {
   return Object.assign({}, request.params, {
     ad_type: 0,
     client_token: request.params.clientToken,
@@ -227,7 +227,7 @@ function createApiBidRParams(request) {
  * @param {object} bidderRequest - meta information
  * @return {ServerRequest|ServerRequest[]}
  */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   if (!bidderRequest) {
     return [];
   }
@@ -265,7 +265,7 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @param {BidRequest} request - the initial bid request
  * @returns {Bid[]} the FeedAd bids
  */
-function interpretResponse(serverResponse, request) {
+function interpretResponse (serverResponse, request) {
   const response = typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
   if (!isArray(response)) {
     return [];
@@ -284,7 +284,7 @@ function interpretResponse(serverResponse, request) {
  * @param {'prebid_bidWon'|'prebid_bidTimeout'} klass - type of tracking call
  * @return {FeedAdApiTrackingParams|null}
  */
-function createTrackingParams(data, klass) {
+function createTrackingParams (data, klass) {
   const bidId = data.bidId || data.requestId;
   if (!BID_METADATA.hasOwnProperty(bidId)) {
     return null;
@@ -310,7 +310,7 @@ function createTrackingParams(data, klass) {
  * @param klass - the event type
  * @return {Function} the tracking handler function
  */
-function trackingHandlerFactory(klass) {
+function trackingHandlerFactory (klass) {
   return (data) => {
     if (!data) {
       return;
@@ -333,7 +333,7 @@ function trackingHandlerFactory(klass) {
  * @param gdprConsent
  * @param uspConsent
  */
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
   return serverResponses.flatMap(response => {
     // merge all response bodies into one
     const body = response.body;

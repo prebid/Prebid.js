@@ -92,7 +92,7 @@ describe('browsi Bid Adapter Test', function () {
         'uspConsent': '1YYY'
       };
     });
-    afterEach(function() {
+    afterEach(function () {
       window[DATA] = undefined;
       config.resetConfig();
     });
@@ -123,12 +123,12 @@ describe('browsi Bid Adapter Test', function () {
       }
       assert.deepEqual(request, requestToExpect);
     });
-    it('should pass on timeout in bidderRequest', function() {
+    it('should pass on timeout in bidderRequest', function () {
       bidderRequest.timeout = 8000;
       const requests = spec.buildRequests(bidRequest, bidderRequest);
       expect(requests[0].data.timeout).to.equal(8000);
     });
-    it('should pass timeout in config', function() {
+    it('should pass timeout in config', function () {
       config.setConfig({'bidderTimeout': 6000});
       const requests = spec.buildRequests(bidRequest, bidderRequest);
       expect(requests[0].data.timeout).to.equal(6000);

@@ -52,7 +52,7 @@ describe('oneKeyData module', () => {
     it(`return a callback that waits for OneKey to be loaded`, () => {
       const moduleIdResponse = oneKeyIdSubmodule.getId(defaultConf);
 
-      moduleIdResponse.callback(function() {})
+      moduleIdResponse.callback(function () {})
 
       expect(window.OneKey.queue.length).to.equal(1);
     });

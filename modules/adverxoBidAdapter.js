@@ -55,7 +55,7 @@ const ortbConverter = OrtbConverter({
     netRevenue: true,
     ttl: 60,
   },
-  request: function request(buildRequest, imps, bidderRequest, context) {
+  request: function request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
 
     utils.deepSetValue(request, 'device.ip', 'caller');
@@ -69,7 +69,7 @@ const ortbConverter = OrtbConverter({
 
     return request;
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const floor = adverxoUtils.getBidFloor(bidRequest);
 

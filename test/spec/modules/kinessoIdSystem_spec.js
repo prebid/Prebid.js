@@ -8,7 +8,7 @@ describe('kinesso ID', () => {
     before(() => {
       attachIdSystem(kinessoIdSubmodule);
     });
-    it('kpuid', function() {
+    it('kpuid', function () {
       const userId = {
         kpuid: 'Sample_Token'
       };

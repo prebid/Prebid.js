@@ -3,7 +3,7 @@ import {spec} from 'modules/adverxoBidAdapter.js';
 import {config} from 'src/config';
 
 describe('Adverxo Bid Adapter', () => {
-  function makeBidRequestWithParams(params) {
+  function makeBidRequestWithParams (params) {
     return {
       bidId: '2e9f38ea93bb9e',
       bidder: 'adverxo',

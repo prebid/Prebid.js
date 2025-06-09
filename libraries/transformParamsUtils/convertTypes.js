@@ -7,7 +7,7 @@ import {isFn} from '../../src/utils.js';
  * @param {string} typeToConvert The target type. e.g. "string", "number", etc.
  * @param {*} value The value to be converted into typeToConvert.
  */
-function tryConvertType(typeToConvert, value) {
+function tryConvertType (typeToConvert, value) {
   if (typeToConvert === 'string') {
     return value && value.toString();
   } else if (typeToConvert === 'number') {
@@ -17,7 +17,7 @@ function tryConvertType(typeToConvert, value) {
   }
 }
 
-export function convertTypes(types, params) {
+export function convertTypes (types, params) {
   Object.keys(types).forEach(key => {
     if (params[key]) {
       if (isFn(types[key])) {

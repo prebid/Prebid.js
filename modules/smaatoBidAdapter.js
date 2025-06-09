@@ -235,12 +235,12 @@ const converter = ortbConverter({
     ttl: TTL,
     currency: CURRENCY
   },
-  request(buildRequest, imps, bidderRequest, context) {
-    function isGdprApplicable() {
+  request (buildRequest, imps, bidderRequest, context) {
+    function isGdprApplicable () {
       return bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies;
     }
 
-    function setPublisherId(node) {
+    function setPublisherId (node) {
       deepSetValue(node, 'publisher.id', bidRequest.params.publisherId);
     }
 
@@ -347,7 +347,7 @@ const converter = ortbConverter({
     return request;
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'tagid', bidRequest.params.adbreakId || bidRequest.params.adspaceId);
     if (imp.bidfloorcur && imp.bidfloorcur !== CURRENCY) {
@@ -359,7 +359,7 @@ const converter = ortbConverter({
 
   overrides: {
     imp: {
-      banner(orig, imp, bidRequest, context) {
+      banner (orig, imp, bidRequest, context) {
         const mediaType = context.mediaType;
 
         if (mediaType === BANNER) {
@@ -369,7 +369,7 @@ const converter = ortbConverter({
         orig(imp, bidRequest, context);
       },
 
-      video(orig, imp, bidRequest, context) {
+      video (orig, imp, bidRequest, context) {
         const mediaType = context.mediaType;
         if (mediaType === VIDEO) {
           const videoParams = bidRequest.mediaTypes[VIDEO];
@@ -384,7 +384,7 @@ const converter = ortbConverter({
         orig(imp, bidRequest, context);
       },
 
-      native(orig, imp, bidRequest, context) {
+      native (orig, imp, bidRequest, context) {
         const mediaType = context.mediaType;
 
         if (mediaType === NATIVE) {
@@ -417,7 +417,7 @@ const createNativeAd = (adm) => {
   }
 };
 
-function getNativeMainImageSize(nativeRequest) {
+function getNativeMainImageSize (nativeRequest) {
   const mainImage = ((nativeRequest.assets) || []).find(asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
   if (mainImage) {
     if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
@@ -430,7 +430,7 @@ function getNativeMainImageSize(nativeRequest) {
   return []
 }
 
-function createAdPodImp(imp, videoMediaType) {
+function createAdPodImp (imp, videoMediaType) {
   const bce = config.getConfig('adpod.brandCategoryExclusion')
   imp.video.ext = {
     context: ADPOD,
@@ -468,7 +468,7 @@ function createAdPodImp(imp, videoMediaType) {
   return imps
 }
 
-function getAdPodNumberOfPlacements(videoMediaType) {
+function getAdPodNumberOfPlacements (videoMediaType) {
   const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
   const minAllowedDuration = Math.min(...durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
@@ -505,7 +505,7 @@ const addOptionalAdpodParameters = (videoMediaType) => {
   }
 }
 
-function getBidFloor(bidRequest, mediaType, sizes) {
+function getBidFloor (bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor === 'function') {
     const size = sizes.length === 1 ? sizes[0] : '*';
     const floor = bidRequest.getFloor({currency: CURRENCY, mediaType: mediaType, size: size});

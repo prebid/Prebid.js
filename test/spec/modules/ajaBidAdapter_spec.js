@@ -265,7 +265,7 @@ describe('AjaAdapter', function () {
       expect(syncs).to.deep.equal([]);
     });
 
-    it('returns pixel syncs when pixel enabled and not iframe enabled', function() {
+    it('returns pixel syncs when pixel enabled and not iframe enabled', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, [bidResponse1]);
       expect(syncs).to.deep.equal([
         {
@@ -275,7 +275,7 @@ describe('AjaAdapter', function () {
       ]);
     });
 
-    it('returns iframe syncs when not pixel enabled and iframe enabled', function() {
+    it('returns iframe syncs when not pixel enabled and iframe enabled', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false, iframeEnabled: true }, [bidResponse1]);
       expect(syncs).to.deep.equal([
         {

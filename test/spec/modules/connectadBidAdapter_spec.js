@@ -172,7 +172,7 @@ describe('ConnectAd Adapter', function () {
         expect(requestparse.placements[0].networkId).to.equal(123456);
       });
 
-      it('should process floors module if available', function() {
+      it('should process floors module if available', function () {
         const floorInfo = {
           currency: 'USD',
           floor: 5.20
@@ -183,13 +183,13 @@ describe('ConnectAd Adapter', function () {
         expect(requestparse.placements[0].bidfloor).to.equal(5.20);
       });
 
-      it('should be bidfloor if no floormodule is available', function() {
+      it('should be bidfloor if no floormodule is available', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
         expect(requestparse.placements[0].bidfloor).to.equal(0.50);
       });
 
-      it('should have 0 bidfloor value', function() {
+      it('should have 0 bidfloor value', function () {
         const request = spec.buildRequests(bidRequestsUserIds, bidderRequest);
         const requestparse = JSON.parse(request.data);
         expect(requestparse.placements[0].bidfloor).to.equal(0);
@@ -309,7 +309,7 @@ describe('ConnectAd Adapter', function () {
         assert.deepEqual(data.regs.ext.dsa, dsa);
       });
 
-      it('should pass auction level tid', function() {
+      it('should pass auction level tid', function () {
         const bidRequest = Object.assign([], bidRequests);
 
         const localBidderRequest = {
@@ -326,19 +326,19 @@ describe('ConnectAd Adapter', function () {
         expect(data.source?.tid).to.equal('9XSL9B79XM')
       });
 
-      it('should pass gpid', function() {
+      it('should pass gpid', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
         expect(requestparse.placements[0].gpid).to.equal('/12345/homepage-leftnav');
       });
 
-      it('should pass impression level tid', function() {
+      it('should pass impression level tid', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
         expect(requestparse.placements[0].tid).to.equal('601bda1a-01a9-4de9-b8f3-649d3bdd0d8f');
       });
 
-      it('should pass first party data', function() {
+      it('should pass first party data', function () {
         const bidRequest = Object.assign([], bidRequests);
 
         const localBidderRequest = {
@@ -363,7 +363,7 @@ describe('ConnectAd Adapter', function () {
         expect(data.regs).to.nested.include({'ext.data': 'some regs data'});
       });
 
-      it('should accept tmax from global config if not set by requestBids method', function() {
+      it('should accept tmax from global config if not set by requestBids method', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         const requestparse = JSON.parse(request.data);
 
@@ -401,7 +401,7 @@ describe('ConnectAd Adapter', function () {
       });
     });
 
-    describe('GPP Implementation', function() {
+    describe('GPP Implementation', function () {
       it('should check with GPP Consent', function () {
         let bidRequest = {
           gppConsent: {
@@ -676,7 +676,7 @@ describe('ConnectAd Adapter', function () {
     });
   });
 
-  describe('GPP Sync', function() {
+  describe('GPP Sync', function () {
     it('should concatenate gppString and applicableSections values in the returned image url', () => {
       const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
       const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, undefined, undefined, undefined, gppConsent);

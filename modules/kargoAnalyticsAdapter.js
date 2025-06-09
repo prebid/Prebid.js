@@ -21,7 +21,7 @@ let _bidResponseDataLogged = [];
 
 var kargoAnalyticsAdapter = Object.assign(
   adapter({ analyticsType }), {
-    track({ eventType, args }) {
+    track ({ eventType, args }) {
       switch (eventType) {
         case EVENTS.AUCTION_INIT: {
           _logBidResponseData.auctionTimeout = args.timeout;

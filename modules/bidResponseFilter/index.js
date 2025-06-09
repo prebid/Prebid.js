@@ -10,7 +10,7 @@ export const BID_ATTR_REJECTION_REASON = 'Attr is not allowed';
 let moduleConfig;
 let enabled = false;
 
-function init() {
+function init () {
   config.getConfig(MODULE_NAME, (cfg) => {
     moduleConfig = cfg[MODULE_NAME];
     if (enabled && !moduleConfig) {
@@ -22,12 +22,12 @@ function init() {
   })
 }
 
-export function reset() {
+export function reset () {
   enabled = false;
   getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
 }
 
-export function addBidResponseHook(next, adUnitCode, bid, reject, index = auctionManager.index) {
+export function addBidResponseHook (next, adUnitCode, bid, reject, index = auctionManager.index) {
   const {bcat = [], badv = []} = index.getOrtb2(bid) || {};
   const battr = index.getBidRequest(bid)?.ortb2Imp[bid.mediaType]?.battr || index.getAdUnit(bid)?.ortb2Imp[bid.mediaType]?.battr || [];
 

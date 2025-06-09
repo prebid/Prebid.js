@@ -2,19 +2,19 @@ import { _map, deepAccess, isFn, isPlainObject, uniques } from '../../src/utils.
 import {mnetGlobals} from './constants.js';
 import {getViewportSize} from '../viewport/viewport.js';
 
-export function findBidObj(list = [], key, value) {
+export function findBidObj (list = [], key, value) {
   return list.find((bid) => {
     return bid[key] === value;
   });
 }
 
-export function filterBidsListByFilters(list = [], filters) {
+export function filterBidsListByFilters (list = [], filters) {
   return list.filter((bid) => {
     return Object.entries(filters).every(([key, value]) => bid[key] === value);
   });
 }
 
-export function flattenObj(obj, parent, res = {}) {
+export function flattenObj (obj, parent, res = {}) {
   for (let key in obj) {
     if (Array.isArray(obj[key])) {
       continue;
@@ -29,7 +29,7 @@ export function flattenObj(obj, parent, res = {}) {
   return res;
 }
 
-export function formatQS(data) {
+export function formatQS (data) {
   return _map(data, (value, key) => {
     if (value === undefined) {
       return key + '=';
@@ -41,14 +41,14 @@ export function formatQS(data) {
   }).join('&');
 }
 
-export function getWindowSize() {
+export function getWindowSize () {
   const { width, height } = getViewportSize();
   let w = width || -1;
   let h = height || -1;
   return `${w}x${h}`;
 }
 
-export function getRequestedSizes({ mediaTypes, sizes }) {
+export function getRequestedSizes ({ mediaTypes, sizes }) {
   const banner = deepAccess(mediaTypes, 'banner.sizes') || sizes || [];
   const native = deepAccess(mediaTypes, 'native') ? [[1, 1]] : [];
   const playerSize = deepAccess(mediaTypes, 'video.playerSize') || [];
@@ -59,14 +59,14 @@ export function getRequestedSizes({ mediaTypes, sizes }) {
   return [...banner, ...native, ...video].filter(uniques).map((size) => size.join('x'));
 }
 
-export function getBidResponseSize(width, height) {
+export function getBidResponseSize (width, height) {
   if (isNaN(width) || isNaN(height)) {
     return '';
   }
   return width + 'x' + height;
 }
 
-export function calculateRoundTripTime(metrics) {
+export function calculateRoundTripTime (metrics) {
   if (!metrics || !isFn(metrics.getMetrics)) {
     return -1;
   }
@@ -79,7 +79,7 @@ export function calculateRoundTripTime(metrics) {
   return parseFloat(ltime.toFixed(2));
 }
 
-export function pick(context, properties, omitKeys = false) {
+export function pick (context, properties, omitKeys = false) {
   if (typeof context !== 'object' || context === null) return {};
   const acc = {};
   properties.forEach((prop, index) => {
@@ -125,7 +125,7 @@ export const onHidden = (cb, once = true) => {
   onHiddenOrPageHide({});
 };
 
-export function getTopWindowReferrer(ref) {
+export function getTopWindowReferrer (ref) {
   try {
     if (ref) return ref;
     return window.top.document.referrer;
@@ -134,6 +134,6 @@ export function getTopWindowReferrer(ref) {
   }
 }
 
-export function isSampledForLogging() {
+export function isSampledForLogging () {
   return Math.random() * 100 < parseFloat(mnetGlobals.configuration.loggingPercent);
 }

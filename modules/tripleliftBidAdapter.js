@@ -23,7 +23,7 @@ export const tripleliftAdapterSpec = {
     return typeof bid.params.inventoryCode !== 'undefined';
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     let tlCall = STR_ENDPOINT;
     let data = _buildPostBody(bidRequests, bidderRequest);
 
@@ -79,7 +79,7 @@ export const tripleliftAdapterSpec = {
     };
   },
 
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
     const paapi = serverResponse.body.paapi || [];
 
@@ -103,7 +103,7 @@ export const tripleliftAdapterSpec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
     let syncType = _getSyncType(syncOptions);
     if (!syncType) return;
 
@@ -139,25 +139,25 @@ export const tripleliftAdapterSpec = {
   }
 };
 
-function _getSyncType(syncOptions) {
+function _getSyncType (syncOptions) {
   if (!syncOptions) return;
   if (syncOptions.iframeEnabled) return 'iframe';
   if (syncOptions.pixelEnabled) return 'image';
 }
 
-function _filterSid(sid) {
+function _filterSid (sid) {
   return sid.filter(element => {
     return Number.isInteger(element);
   })
     .join(',');
 }
 
-function _buildPostBody(bidRequests, bidderRequest) {
+function _buildPostBody (bidRequests, bidderRequest) {
   let data = {};
   let { schain } = bidRequests[0];
   const globalFpd = _getGlobalFpd(bidderRequest);
 
-  data.imp = bidRequests.map(function(bidRequest, index) {
+  data.imp = bidRequests.map(function (bidRequest, index) {
     let imp = {
       id: index,
       tagid: bidRequest.params.inventoryCode,
@@ -211,23 +211,23 @@ function _buildPostBody(bidRequests, bidderRequest) {
   return data;
 }
 
-function _isVideoBidRequest(bidRequest) {
+function _isVideoBidRequest (bidRequest) {
   return _isValidVideoObject(bidRequest) && (_isInstream(bidRequest) || _isOutstream(bidRequest));
 }
 
-function _isOutstream(bidRequest) {
+function _isOutstream (bidRequest) {
   return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'outstream';
 }
 
-function _isInstream(bidRequest) {
+function _isInstream (bidRequest) {
   return _isValidVideoObject(bidRequest) && bidRequest.mediaTypes.video.context.toLowerCase() === 'instream';
 }
 
-function _isValidVideoObject(bidRequest) {
+function _isValidVideoObject (bidRequest) {
   return bidRequest.mediaTypes.video && bidRequest.mediaTypes.video.context;
 }
 
-function _getORTBVideo(bidRequest) {
+function _getORTBVideo (bidRequest) {
   // give precedent to mediaTypes.video
   let video = { ...bidRequest.params.video, ...bidRequest.mediaTypes.video };
   try {
@@ -266,7 +266,7 @@ function _getFloor (bid) {
   return floor !== null ? floor : bid.params.floor;
 }
 
-function _getGlobalFpd(bidderRequest) {
+function _getGlobalFpd (bidderRequest) {
   const fpd = {};
   const context = {}
   const user = {};
@@ -300,7 +300,7 @@ function _getGlobalFpd(bidderRequest) {
   return fpd;
 }
 
-function _fetchOpeCloud() {
+function _fetchOpeCloud () {
   const opeCloud = storage.getDataFromLocalStorage('opecloud_ctx');
   if (!opeCloud) return null;
   try {
@@ -312,7 +312,7 @@ function _fetchOpeCloud() {
   }
 }
 
-function _getAdUnitFpd(adUnitFpd) {
+function _getAdUnitFpd (adUnitFpd) {
   const fpd = {};
   const context = {};
 
@@ -325,7 +325,7 @@ function _getAdUnitFpd(adUnitFpd) {
   return fpd;
 }
 
-function _addEntries(target, source) {
+function _addEntries (target, source) {
   if (!isEmpty(source)) {
     Object.keys(source).forEach(key => {
       if (source[key] != null) {
@@ -335,7 +335,7 @@ function _addEntries(target, source) {
   }
 }
 
-function _getExt(schain, fpd) {
+function _getExt (schain, fpd) {
   let ext = {};
   if (!isEmpty(schain)) {
     ext.schain = { ...schain };
@@ -346,9 +346,9 @@ function _getExt(schain, fpd) {
   return ext;
 }
 
-function _sizes(sizeArray) {
+function _sizes (sizeArray) {
   let sizes = sizeArray.filter(_isValidSize);
-  return sizes.map(function(size) {
+  return sizes.map(function (size) {
     return {
       w: size[0],
       h: size[1]
@@ -356,11 +356,11 @@ function _sizes(sizeArray) {
   });
 }
 
-function _isValidSize(size) {
+function _isValidSize (size) {
   return (size.length === 2 && typeof size[0] === 'number' && typeof size[1] === 'number');
 }
 
-function _buildResponseObject(bidderRequest, bid) {
+function _buildResponseObject (bidderRequest, bid) {
   let bidResponse = {};
   let width = bid.width || 1;
   let height = bid.height || 1;

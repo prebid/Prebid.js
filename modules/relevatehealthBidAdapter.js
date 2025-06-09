@@ -14,7 +14,7 @@ import {
 const BIDDER_CODE = 'relevatehealth';
 const ENDPOINT_URL = 'https://rtb.relevate.health/prebid/relevate';
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   const requests = [];
   // Loop through each bid request
   bidRequests.forEach(bid => {
@@ -60,7 +60,7 @@ function buildRequests(bidRequests, bidderRequest) {
   };
 }
 // Format the response as per the standards
-function interpretResponse(bidResponse, bidRequest) {
+function interpretResponse (bidResponse, bidRequest) {
   let resp = [];
   if (bidResponse && bidResponse.body) {
     try {
@@ -79,11 +79,11 @@ function interpretResponse(bidResponse, bidRequest) {
   return resp;
 }
 // Function to check if Bid is valid
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   return !!(bid.params.placement_id && bid.params.user_id);
 }
 // Function to get banner details
-function getBanner(bid) {
+function getBanner (bid) {
   if (deepAccess(bid, 'mediaTypes.banner')) {
     // Fetch width and height from MediaTypes object, if not provided in bid params
     if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
@@ -103,7 +103,7 @@ function getBanner(bid) {
   }
 }
 // Function to get bid_floor
-function getFloor(bid) {
+function getFloor (bid) {
   if (bid.params && bid.params.bid_floor) {
     return bid.params.bid_floor;
   } else {
@@ -111,7 +111,7 @@ function getFloor(bid) {
   }
 }
 // Function to get site details
-function getSite(bidderRequest) {
+function getSite (bidderRequest) {
   let site = {};
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     site.name = bidderRequest.refererInfo.domain;
@@ -121,7 +121,7 @@ function getSite(bidderRequest) {
   return site;
 }
 // Function to build the user object
-function buildUser(bid) {
+function buildUser (bid) {
   if (bid && bid.params) {
     return {
       id: bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '',

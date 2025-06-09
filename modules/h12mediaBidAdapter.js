@@ -12,11 +12,11 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['h12'],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params && bid.params.pubid);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     const isiframe = inIframe();
     const screenSize = getClientDimensions();
     const docSize = getDocumentDimensions();
@@ -94,7 +94,7 @@ export const spec = {
     });
   },
 
-  interpretResponse: function(serverResponse, bidRequests) {
+  interpretResponse: function (serverResponse, bidRequests) {
     let bidResponses = [];
     try {
       const serverBody = serverResponse.body;
@@ -129,7 +129,7 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
     const uspApplies = !!deepAccess(usPrivacy, 'uspConsent', false);
     const uspString = deepAccess(usPrivacy, 'uspConsent', '');
@@ -167,7 +167,7 @@ export const spec = {
   },
 }
 
-function getContext(elem) {
+function getContext (elem) {
   try {
     return elem && window.document.body.contains(elem) ? window : (window.top.document.body.contains(elem) ? top : undefined);
   } catch (e) {
@@ -175,11 +175,11 @@ function getContext(elem) {
   }
 }
 
-function isDefined(val) {
+function isDefined (val) {
   return (val !== null) && (typeof val !== 'undefined');
 }
 
-function getIsHidden(elem) {
+function getIsHidden (elem) {
   let lastElem = elem;
   let elemHidden = false;
   let m;
@@ -204,11 +204,11 @@ function getIsHidden(elem) {
   return elemHidden;
 }
 
-function isVisible(element) {
+function isVisible (element) {
   return element && isDefined(getContext(element)) && !getIsHidden(element);
 }
 
-function getClientDimensions() {
+function getClientDimensions () {
   try {
     const { width: t, height: e } = getViewportSize();
     return [Math.round(t), Math.round(e)];
@@ -217,7 +217,7 @@ function getClientDimensions() {
   }
 }
 
-function getDocumentDimensions() {
+function getDocumentDimensions () {
   try {
     const {document: {documentElement, body}} = getWinDimensions();
     const width = body.clientWidth;
@@ -228,13 +228,13 @@ function getDocumentDimensions() {
   }
 }
 
-function getLocalDateFormatted() {
+function getLocalDateFormatted () {
   const two = num => ('0' + num).slice(-2);
   const d = new Date();
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;
 }
 
-function getFramePos() {
+function getFramePos () {
   let t = window;
   let m = 0;
   let frmLeft = 0;

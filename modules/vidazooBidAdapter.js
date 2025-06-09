@@ -21,11 +21,11 @@ const BIDDER_VERSION = '1.0.0';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const webSessionId = createSessionId();
 
-export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
+export function createDomain (subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
 }
 
-function createUniqueRequestData(hashUrl) {
+function createUniqueRequestData (hashUrl) {
   const dealId = getNextDealId(storage, hashUrl);
   const sessionId = getVidazooSessionId(storage);
   const ptrace = getCacheOpt(storage, OPT_CACHE_KEY);

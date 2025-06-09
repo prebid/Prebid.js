@@ -59,7 +59,7 @@ export const spec = {
 
 };
 
-function newBidRequest(bid, bidderRequest) {
+function newBidRequest (bid, bidderRequest) {
   const currencyObj = config.getConfig('currency');
   const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
 

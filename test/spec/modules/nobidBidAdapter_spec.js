@@ -116,9 +116,9 @@ describe('Nobid Adapter', function () {
         site: {
           name: siteName,
           domain: siteDomain,
-          cat: [ siteCat ],
-          sectioncat: [ siteSectionCat ],
-          pagecat: [ sitePageCat ],
+          cat: [siteCat],
+          sectioncat: [siteSectionCat],
+          pagecat: [sitePageCat],
           page: sitePage,
           ref: siteRef,
           keywords: siteKeywords,

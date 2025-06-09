@@ -243,7 +243,7 @@ export const spec = {
   }
 };
 
-function _getBiggestSize(sizes) {
+function _getBiggestSize (sizes) {
   if (sizes.length <= 0) return false
   var acreage = 0;
   var index = 0;
@@ -257,7 +257,7 @@ function _getBiggestSize(sizes) {
   return sizes[index][0] + 'x' + sizes[index][1];
 }
 
-function _getDoNotTrack() {
+function _getDoNotTrack () {
   try {
     if (window.top.doNotTrack && window.top.doNotTrack == '1') {
       return 1;
@@ -285,7 +285,7 @@ function _getDoNotTrack() {
  * @param {*} bidderRequest
  * @returns {string}
  */
-function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
+function _extractTopWindowUrlFromBidderRequest (bidderRequest) {
   // TODO: does it make sense to fall back to window.location?
   return bidderRequest?.refererInfo?.page || window.location.href;
 }
@@ -296,7 +296,7 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
  * @param {*} bidderRequest
  * @returns {string}
  */
-function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
+function _extractTopWindowReferrerFromBidderRequest (bidderRequest) {
   // TODO: does it make sense to fall back to window.document.referrer?
   return bidderRequest?.refererInfo?.ref || window.document.referrer;
 }
@@ -307,7 +307,7 @@ function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
  * @param {Object} geo
  * @returns {boolean}
  */
-export function validateGeoObject(geo) {
+export function validateGeoObject (geo) {
   if (!isPlainObject(geo)) {
     return false;
   }
@@ -329,7 +329,7 @@ export function validateGeoObject(geo) {
  * @param {Object} bid
  * @returns {?number}
  */
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return (bid.params.floorPrice) ? bid.params.floorPrice : null;
   }

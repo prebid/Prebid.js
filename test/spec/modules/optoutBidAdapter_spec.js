@@ -73,14 +73,14 @@ describe('optoutAdapterTest', function () {
 
     it('bidRequest HTTP method', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.method).to.equal('POST');
       });
     });
 
     it('bidRequest url without consent', function () {
       const requests = spec.buildRequests(bidRequests, {});
-      requests.forEach(function(requestItem) {
+      requests.forEach(function (requestItem) {
         expect(requestItem.url).to.match(new RegExp('adscience-nocookie\\.nl/prebid/display'));
       });
     });

@@ -27,7 +27,7 @@ export const apiDomain = 'sync6.im-apps.net';
 const storageMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
 
-function setImDataInCookie(value) {
+function setImDataInCookie (value) {
   storage.setCookie(
     cookieKey,
     value,
@@ -36,13 +36,13 @@ function setImDataInCookie(value) {
   );
 }
 
-export function removeImDataFromLocalStorage() {
+export function removeImDataFromLocalStorage () {
   storage.removeDataFromLocalStorage(storageKey);
   storage.removeDataFromLocalStorage(`${storageKey}_mt`);
   storage.removeDataFromLocalStorage(storagePpKey);
 }
 
-export function getLocalData() {
+export function getLocalData () {
   const mt = storage.getDataFromLocalStorage(`${storageKey}_mt`);
   let expired = true;
   if (Date.parse(mt) && Date.now() - (new Date(mt)).getTime() < storageMaxAge) {
@@ -56,14 +56,14 @@ export function getLocalData() {
   };
 }
 
-export function getApiUrl(cid, url) {
+export function getApiUrl (cid, url) {
   if (url) {
     return `${url}?cid=${cid}`;
   }
   return `https://${apiDomain}/${cid}/pid`;
 }
 
-export function apiSuccessProcess(jsonResponse) {
+export function apiSuccessProcess (jsonResponse) {
   if (!jsonResponse) {
     return;
   }
@@ -79,7 +79,7 @@ export function apiSuccessProcess(jsonResponse) {
   }
 }
 
-export function getApiCallback(callback) {
+export function getApiCallback (callback) {
   return {
     success: response => {
       let responseObj = {};
@@ -108,7 +108,7 @@ export function getApiCallback(callback) {
   };
 }
 
-export function callImuidApi(apiUrl) {
+export function callImuidApi (apiUrl) {
   return function (callback) {
     ajax(apiUrl, getApiCallback(callback), undefined, {method: 'GET', withCredentials: true});
   };
@@ -126,7 +126,7 @@ export const imuIdSubmodule = {
    * @function
    * @returns {{imuid: string, imppid: string} | undefined}
    */
-  decode(ids) {
+  decode (ids) {
     if (ids && typeof ids === 'object') {
       return {
         imuid: ids.imuid,
@@ -140,7 +140,7 @@ export const imuIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {{id:{imuid: string, imppid: string}} | undefined | {callback:function}}}
    */
-  getId(config) {
+  getId (config) {
     const configParams = (config && config.params) || {};
     if (!configParams || typeof configParams.cid !== 'number') {
       logError('User ID - imuid submodule requires a valid cid to be defined');

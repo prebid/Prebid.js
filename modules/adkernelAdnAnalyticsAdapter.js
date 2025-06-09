@@ -23,7 +23,7 @@ const ADK_HB_EVENTS = {
   TIMEOUT: 'adapterTimedOut'
 };
 
-function buildRequestTemplate(pubId) {
+function buildRequestTemplate (pubId) {
   const {loc, ref} = getNavigationInfo();
 
   return {
@@ -45,7 +45,7 @@ function buildRequestTemplate(pubId) {
 
 let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
   {
-    track({eventType, args}) {
+    track ({eventType, args}) {
       if (!analyticsAdapter.context) {
         return;
       }
@@ -112,7 +112,7 @@ adapterManager.registerAnalyticsAdapter({
 
 export default analyticsAdapter;
 
-function sendAll() {
+function sendAll () {
   let events = analyticsAdapter.context.queue.popAll();
   if (events.length !== 0) {
     let req = Object.assign({}, analyticsAdapter.context.requestTemplate, {hb_ev: events});
@@ -120,44 +120,44 @@ function sendAll() {
   }
 }
 
-analyticsAdapter.ajaxCall = function ajaxCall(data) {
+analyticsAdapter.ajaxCall = function ajaxCall (data) {
   ajax(`https://${analyticsAdapter.context.host}/hb-analytics`, () => {
   }, data);
 };
 
-function trackAuctionInit() {
+function trackAuctionInit () {
   analyticsAdapter.context.auctionTimeStart = Date.now();
   const event = createHbEvent(undefined, ADK_HB_EVENTS.AUCTION_INIT);
   return [event];
 }
 
-function trackBidRequest(args) {
+function trackBidRequest (args) {
   return args.bids.map(bid =>
     createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_REQUEST, bid.adUnitCode));
 }
 
-function trackBidResponse(args) {
+function trackBidResponse (args) {
   const event = createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_RESPONSE,
     args.adUnitCode, args.cpm, args.timeToRespond / 1000);
   return [event];
 }
 
-function trackBidWon(args) {
+function trackBidWon (args) {
   const event = createHbEvent(args.bidderCode, ADK_HB_EVENTS.BID_WON, args.adUnitCode, args.cpm);
   return [event];
 }
 
-function trackAuctionEnd(args) {
+function trackAuctionEnd (args) {
   const event = createHbEvent(undefined, ADK_HB_EVENTS.AUCTION_END, undefined,
     undefined, (Date.now() - analyticsAdapter.context.auctionTimeStart) / 1000);
   return [event];
 }
 
-function trackBidTimeout(args) {
+function trackBidTimeout (args) {
   return args.map(bidderName => createHbEvent(bidderName, ADK_HB_EVENTS.TIMEOUT));
 }
 
-function createHbEvent(adapter, event, tagid = undefined, value = 0, time = 0) {
+function createHbEvent (adapter, event, tagid = undefined, value = 0, time = 0) {
   let ev = {event: event};
   if (adapter) {
     ev.adapter = adapter
@@ -190,7 +190,7 @@ export let storage = {
   }
 };
 
-export function getUmtSource(pageUrl, referrer) {
+export function getUmtSource (pageUrl, referrer) {
   let prevUtm = getPreviousTrafficSource();
   let currUtm = getCurrentTrafficSource(pageUrl, referrer);
   let [updated, actual] = chooseActualUtm(prevUtm, currUtm);
@@ -199,7 +199,7 @@ export function getUmtSource(pageUrl, referrer) {
   }
   return actual;
 
-  function getPreviousTrafficSource() {
+  function getPreviousTrafficSource () {
     let val = storage.getItem(ADKERNEL_PREBID_KEY);
     if (!val) {
       return getDirect();
@@ -207,7 +207,7 @@ export function getUmtSource(pageUrl, referrer) {
     return JSON.parse(val);
   }
 
-  function getCurrentTrafficSource(pageUrl, referrer) {
+  function getCurrentTrafficSource (pageUrl, referrer) {
     var source = getUTM(pageUrl);
     if (source) {
       return source;
@@ -226,7 +226,7 @@ export function getUmtSource(pageUrl, referrer) {
     return getDirect();
   }
 
-  function getSearchEngine(pageUrl) {
+  function getSearchEngine (pageUrl) {
     let engines = {
       'google': /^https?\:\/\/(?:www\.)?(?:google\.(?:com?\.)?(?:com|cat|[a-z]{2})|g.cn)\//i,
       'yandex': /^https?\:\/\/(?:www\.)?ya(?:ndex\.(?:com|net)?\.?(?:asia|mobi|org|[a-z]{2})?|\.ru)\//i,
@@ -243,12 +243,12 @@ export function getUmtSource(pageUrl, referrer) {
     }
   }
 
-  function getReferrer(referrer) {
+  function getReferrer (referrer) {
     let ref = parseUrl(referrer);
     return [ref.hostname, ref.pathname];
   }
 
-  function getUTM(pageUrl) {
+  function getUTM (pageUrl) {
     let urlParameters = parseUrl(pageUrl).search;
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
       return;
@@ -261,16 +261,16 @@ export function getUmtSource(pageUrl, referrer) {
     return asUtm.apply(this, utmArgs);
   }
 
-  function getDirect() {
+  function getDirect () {
     return asUtm(DIRECT, DIRECT, DIRECT);
   }
 
-  function storeUtm(utm) {
+  function storeUtm (utm) {
     let val = JSON.stringify(utm);
     storage.setItem(ADKERNEL_PREBID_KEY, val);
   }
 
-  function asUtm(source, medium, campaign, term = '', content = '', c1 = '', c2 = '', c3 = '', c4 = '', c5 = '') {
+  function asUtm (source, medium, campaign, term = '', content = '', c1 = '', c2 = '', c3 = '', c4 = '', c5 = '') {
     let result = {
       source: source,
       medium: medium,
@@ -300,7 +300,7 @@ export function getUmtSource(pageUrl, referrer) {
     return result;
   }
 
-  function chooseActualUtm(prev, curr) {
+  function chooseActualUtm (prev, curr) {
     if (ord(prev) < ord(curr)) {
       return [true, curr];
     } else if (ord(prev) > ord(curr)) {
@@ -317,7 +317,7 @@ export function getUmtSource(pageUrl, referrer) {
     return [false, prev];
   }
 
-  function ord(utm) {
+  function ord (utm) {
     switch (utm.campaign) {
       case DIRECT:
         return 0;
@@ -330,7 +330,7 @@ export function getUmtSource(pageUrl, referrer) {
     }
   }
 
-  function isCampaignTraffic(utm) {
+  function isCampaignTraffic (utm) {
     return [DIRECT, REFERRAL, ORGANIC].indexOf(utm.campaign) === -1;
   }
 }
@@ -341,7 +341,7 @@ export function getUmtSource(pageUrl, referrer) {
  * @param ttl
  * @class
  */
-export function ExpiringQueue(callback, ttl) {
+export function ExpiringQueue (callback, ttl) {
   let queue = [];
   let timeoutId;
 
@@ -371,7 +371,7 @@ export function ExpiringQueue(callback, ttl) {
 
   this.init = reset;
 
-  function reset() {
+  function reset () {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -384,7 +384,7 @@ export function ExpiringQueue(callback, ttl) {
 }
 
 // TODO: this should reuse logic from refererDetection
-function getNavigationInfo() {
+function getNavigationInfo () {
   try {
     return getLocationAndReferrer(self.top);
   } catch (e) {
@@ -392,14 +392,14 @@ function getNavigationInfo() {
   }
 }
 
-function getLocationAndReferrer(win) {
+function getLocationAndReferrer (win) {
   return {
     ref: win.document.referrer,
     loc: win.location
   };
 }
 
-function initPrivacy(template, requests) {
+function initPrivacy (template, requests) {
   let consent = requests[0].gdprConsent;
   if (consent && consent.gdprApplies) {
     template.user.gdpr = ~~consent.gdprApplies;

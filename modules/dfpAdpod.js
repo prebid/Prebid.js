@@ -20,7 +20,7 @@ export const adpodUtils = {};
  * @param {DfpAdpodOptions} options
  * @returns {string} A URL which calls DFP with custom adpod targeting key values to compete with rest of the demand in DFP
  */
-export function buildAdpodVideoUrl({code, params, callback} = {}) {
+export function buildAdpodVideoUrl ({code, params, callback} = {}) {
   // TODO: the public API for this does not take in enough info to fill all DFP params (adUnit/bid),
   // and is marked "alpha": https://docs.prebid.org/dev-docs/publisher-api-reference/adServers.dfp.buildAdpodVideoUrl.html
   if (!params || !callback) {
@@ -34,7 +34,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     url: encodeURIComponent(location.href),
   };
 
-  function getSizeForAdUnit(code) {
+  function getSizeForAdUnit (code) {
     let adUnit = auctionManager.getAdUnits()
       .filter((adUnit) => adUnit.code === code)
     let sizes = deepAccess(adUnit[0], 'mediaTypes.video.playerSize');
@@ -46,7 +46,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     'callback': createMasterTag
   });
 
-  function createMasterTag(err, targeting) {
+  function createMasterTag (err, targeting) {
     if (err) {
       callback(err, null);
       return;

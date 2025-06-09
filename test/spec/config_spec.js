@@ -440,7 +440,7 @@ describe('config API', function () {
     expect(getConfig('ortb2')).to.deep.equal(expected);
   });
 
-  it('input should take precedence over existing config if keys are the same', function() {
+  it('input should take precedence over existing config if keys are the same', function () {
     const input = {
       ortb2: {
         user: {
@@ -604,7 +604,7 @@ describe('config API', function () {
     assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
   });
 
-  it('should merge without array duplication', function() {
+  it('should merge without array duplication', function () {
     const userObj1 = {
       name: 'www.dataprovider1.com',
       ext: { taxonomyname: 'iab_audience_taxonomy' },

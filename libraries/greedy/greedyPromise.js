@@ -8,7 +8,7 @@ export class GreedyPromise {
   #result;
   #callbacks;
 
-  constructor(resolver) {
+  constructor (resolver) {
     if (typeof resolver !== 'function') {
       throw new Error('resolver not a function');
     }
@@ -33,7 +33,7 @@ export class GreedyPromise {
     this.#callbacks = callbacks;
   }
 
-  then(onSuccess, onError) {
+  then (onSuccess, onError) {
     const result = this.#result;
     return new this.constructor((resolve, reject) => {
       const continuation = () => {
@@ -54,11 +54,11 @@ export class GreedyPromise {
     });
   }
 
-  catch(onError) {
+  catch (onError) {
     return this.then(null, onError);
   }
 
-  finally(onFinally) {
+  finally (onFinally) {
     let val;
     return this.then(
       (v) => { val = v; return onFinally(); },
@@ -66,9 +66,9 @@ export class GreedyPromise {
     ).then(() => val);
   }
 
-  static #collect(promises, collector, done) {
+  static #collect (promises, collector, done) {
     let cnt = promises.length;
-    function clt() {
+    function clt () {
       collector.apply(this, arguments);
       if (--cnt <= 0 && done) done();
     }
@@ -78,36 +78,36 @@ export class GreedyPromise {
     ));
   }
 
-  static race(promises) {
+  static race (promises) {
     return new this((resolve, reject) => {
       this.#collect(promises, (success, result) => success ? resolve(result) : reject(result));
     })
   }
 
-  static all(promises) {
+  static all (promises) {
     return new this((resolve, reject) => {
       let res = [];
       this.#collect(promises, (success, val, i) => success ? res[i] = val : reject(val), () => resolve(res));
     })
   }
 
-  static allSettled(promises) {
+  static allSettled (promises) {
     return new this((resolve) => {
       let res = [];
       this.#collect(promises, (success, val, i) => res[i] = success ? {status: 'fulfilled', value: val} : {status: 'rejected', reason: val}, () => resolve(res))
     })
   }
 
-  static resolve(value) {
+  static resolve (value) {
     return new this(resolve => resolve(value))
   }
 
-  static reject(error) {
+  static reject (error) {
     return new this((resolve, reject) => reject(error))
   }
 }
 
-export function greedySetTimeout(fn, delayMs = 0) {
+export function greedySetTimeout (fn, delayMs = 0) {
   if (delayMs > 0) {
     return setTimeout(fn, delayMs)
   } else {

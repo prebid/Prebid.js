@@ -232,7 +232,7 @@ export const spec = {
  * @param {BidderRequest} bidderRequest
  * @returns {Request}
  */
-function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
+function buildOpenRtbBidRequest (bidRequest, bidderRequest) {
   // build OpenRTB request body
   const payload = {
     id: bidderRequest.bidderRequestId,
@@ -293,7 +293,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
  * @param {Object} responseBody
  * @returns {Object} bid response
  */
-function buildBidResponse(bid, bidRequest, responseBody) {
+function buildBidResponse (bid, bidRequest, responseBody) {
   let mediaType = BANNER;
   let nativeResponse;
 
@@ -390,7 +390,7 @@ function buildBidResponse(bid, bidRequest, responseBody) {
  * @param {String} cpm
  * @returns {Object} native
  */
-function interpretNativeAd(nativeResponse, currency, cpm) {
+function interpretNativeAd (nativeResponse, currency, cpm) {
   const native = {};
 
   // OpenRtb Link Object
@@ -490,7 +490,7 @@ function interpretNativeAd(nativeResponse, currency, cpm) {
  * @param {Object} bidRequest
  * @returns {Array}
  */
-function createImp(bidRequest) {
+function createImp (bidRequest) {
   const imp = [];
 
   const impItem = {
@@ -567,7 +567,7 @@ function createImp(bidRequest) {
  * @param {number[]|number[][]} sizes
  * @returns {number[][]}
  */
-function canonicalizeSizesArray(sizes) {
+function canonicalizeSizesArray (sizes) {
   if (sizes.length === 2 && !isArray(sizes[0])) {
     return [sizes];
   }
@@ -580,7 +580,7 @@ function canonicalizeSizesArray(sizes) {
  * @param {Object} params
  * @returns {Object[]}
  */
-function createNativeAssets(params) {
+function createNativeAssets (params) {
   const assets = [];
 
   if (params.title) {
@@ -652,7 +652,7 @@ function createNativeAssets(params) {
  * @param {Number} type
  * @returns {Object}
  */
-function mapNativeImage(image, type) {
+function mapNativeImage (image, type) {
   const img = { type: type };
 
   if (image.aspect_ratios) {
@@ -679,7 +679,7 @@ function mapNativeImage(image, type) {
  * @param {BidRequest} bidRequest
  * @returns {String} userId
  */
-function getUserId(bidRequest) {
+function getUserId (bidRequest) {
   let operaId = deepAccess(bidRequest, 'userId.operaId');
   if (operaId) {
     return operaId;
@@ -709,7 +709,7 @@ function getUserId(bidRequest) {
  * @param {*} params.size
  * @returns {Object} floor price
  */
-function getBidFloor(bid, {mediaType = '*', size = '*'}) {
+function getBidFloor (bid, {mediaType = '*', size = '*'}) {
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,
@@ -737,7 +737,7 @@ function getBidFloor(bid, {mediaType = '*', size = '*'}) {
  * @param {BidRequest} bidRequest
  * @returns {String[]}
  */
-function getBcat(bidRequest) {
+function getBcat (bidRequest) {
   let bcat = [];
 
   const pBcat = deepAccess(bidRequest, 'params.bcat');
@@ -753,7 +753,7 @@ function getBcat(bidRequest) {
  *
  * @returns {Object}
  */
-function getDevice() {
+function getDevice () {
   const device = config.getConfig('device') || {};
 
   device.w = device.w || window.screen.width;
@@ -773,7 +773,7 @@ function getDevice() {
  * @param bidRequest
  * @param bidderRequest
  */
-function fulfillInventoryInfo(payload, bidRequest, bidderRequest) {
+function fulfillInventoryInfo (payload, bidRequest, bidderRequest) {
   let info = deepAccess(bidRequest, 'params.site');
   // 1.If the inventory info for site specified, use the site object provided in params.
   let key = 'site';
@@ -803,7 +803,7 @@ function fulfillInventoryInfo(payload, bidRequest, bidderRequest) {
  *
  * @returns {String} language
  */
-function getLanguage() {
+function getLanguage () {
   const lang = (navigator.languages && navigator.languages[0]) ||
     navigator.language || navigator.userLanguage;
   return lang ? lang.split('-')[0] : DEFAULT_LANGUAGE;
@@ -815,7 +815,7 @@ function getLanguage() {
  * @param {BidRequest} bidRequest
  * @returns
  */
-function createRenderer(bidRequest) {
+function createRenderer (bidRequest) {
   const globalRenderer = deepAccess(bidRequest, 'renderer');
   const currentRenderer = deepAccess(bidRequest, 'mediaTypes.video.renderer');
 

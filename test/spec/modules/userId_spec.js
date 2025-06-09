@@ -47,7 +47,7 @@ const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const CONSENT_LOCAL_STORAGE_NAME = '_pbjs_userid_consent_data';
 
 describe('User ID', function () {
-  function getConfigMock(...configArrays) {
+  function getConfigMock (...configArrays) {
     return {
       userSync: {
         syncDelay: 0,
@@ -56,23 +56,23 @@ describe('User ID', function () {
     }
   }
 
-  function getStorageMock(name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30, refreshInSeconds) {
+  function getStorageMock (name = 'pubCommonId', key = 'pubcid', type = 'cookie', expires = 30, refreshInSeconds) {
     return {name: name, storage: {name: key, type: type, expires: expires, refreshInSeconds: refreshInSeconds}}
   }
 
-  function getConfigValueMock(name, value) {
+  function getConfigValueMock (name, value) {
     return {
       userSync: {syncDelay: 0, userIds: [{name: name, value: value}]}
     }
   }
 
-  function createMockIdSubmodule(name, value, aliasName, eids) {
+  function createMockIdSubmodule (name, value, aliasName, eids) {
     return {
       name,
-      getId() {
+      getId () {
         return value;
       },
-      decode(v) {
+      decode (v) {
         return v;
       },
       primaryIds: [],
@@ -81,26 +81,26 @@ describe('User ID', function () {
     }
   }
 
-  function createMockEid(name, source) {
+  function createMockEid (name, source) {
     return {
       [name]: {
         source: source || `${name}Source`,
         atype: 3,
-        getValue: function(data) {
+        getValue: function (data) {
           if (data.id) {
             return data.id;
           } else {
             return data;
           }
         },
-        getUidExt: function(data) {
+        getUidExt: function (data) {
           return data.ext
         }
       }
     }
   }
 
-  function getAdUnitMock(code = 'adUnit-code') {
+  function getAdUnitMock (code = 'adUnit-code') {
     return {
       code,
       mediaTypes: {banner: {}, native: {}},
@@ -109,7 +109,7 @@ describe('User ID', function () {
     };
   }
 
-  function addConfig(cfg, name, value) {
+  function addConfig (cfg, name, value) {
     if (cfg && cfg.userSync && cfg.userSync.userIds) {
       cfg.userSync.userIds.forEach(element => {
         if (element[name] !== undefined) {
@@ -125,11 +125,11 @@ describe('User ID', function () {
 
   let sandbox, consentData, startDelay, callbackDelay;
 
-  function clearStack() {
+  function clearStack () {
     return new Promise((resolve) => setTimeout(resolve));
   }
 
-  function delay() {
+  function delay () {
     const stub = sinon.stub().callsFake(() => new Promise((resolve) => {
       stub.resolve = () => {
         resolve();
@@ -139,21 +139,21 @@ describe('User ID', function () {
     return stub;
   }
 
-  function runBidsHook(...args) {
+  function runBidsHook (...args) {
     startDelay = delay();
 
     const result = startAuctionHook(...args, {mkDelay: startDelay});
     return new Promise((resolve) => setTimeout(() => resolve(result)));
   }
 
-  function expectImmediateBidHook(...args) {
+  function expectImmediateBidHook (...args) {
     return runBidsHook(...args).then(() => {
       startDelay.calledWith(0);
       return startDelay.resolve();
     })
   }
 
-  function initModule(config) {
+  function initModule (config) {
     callbackDelay = delay();
     return init(config, {mkDelay: callbackDelay});
   }
@@ -203,7 +203,7 @@ describe('User ID', function () {
       sandbox.stub(utils, 'logWarn');
     });
 
-    function mockConfig(storageConfig = {}) {
+    function mockConfig (storageConfig = {}) {
       return {
         name: 'mockModule',
         storage: {
@@ -456,7 +456,7 @@ describe('User ID', function () {
           createMockIdSubmodule('mockId2v2', null, null,
             {'mockId2v2': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 2})}}),
           createMockIdSubmodule('mockId2v3', null, null, {
-            'mockId2v3'(ids) {
+            'mockId2v3' (ids) {
               return {
                 source: 'mock2source',
                 inserter: 'ins',
@@ -466,7 +466,7 @@ describe('User ID', function () {
             }
           }),
           createMockIdSubmodule('mockId2v4', null, null, {
-            'mockId2v4'(ids) {
+            'mockId2v4' (ids) {
               return ids.map(id => ({
                 uids: [{id, atype: 0}],
                 source: 'mock2source',
@@ -876,7 +876,7 @@ describe('User ID', function () {
     });
 
     describe('EID updateConfig', () => {
-      function mockSubmod(name, eids) {
+      function mockSubmod (name, eids) {
         return createMockIdSubmodule(name, null, null, eids);
       }
 
@@ -964,7 +964,7 @@ describe('User ID', function () {
         }, null, {
           uid2: {
             source: 'uidapi.com',
-            getValue(data) { return data.id }
+            getValue (data) { return data.id }
           }
         }),
         createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value_7ac66c0f148de9519b8bd264312c4d64'}}})
@@ -997,7 +997,7 @@ describe('User ID', function () {
     describe('submodule callback', () => {
       const TEST_KEY = 'testKey';
 
-      function setVal(val) {
+      function setVal (val) {
         if (val) {
           coreStorage.setDataInLocalStorage(TEST_KEY, val);
           coreStorage.setDataInLocalStorage(TEST_KEY + '_exp', '');
@@ -1019,13 +1019,13 @@ describe('User ID', function () {
             expect(storedId).to.not.exist;
             setVal('laterValue');
             return {
-              callback(_, readId) {
+              callback (_, readId) {
                 expect(readId()).to.eql('laterValue');
                 done();
               }
             }
           },
-          decode(d) {
+          decode (d) {
             return d
           }
         }]);
@@ -1055,7 +1055,7 @@ describe('User ID', function () {
         getId: function () {
           return {callback}
         },
-        decode(d) {
+        decode (d) {
           return d
         },
         eids: {
@@ -1146,7 +1146,7 @@ describe('User ID', function () {
         }, null, {
           uid2: {
             source: 'uidapi.com',
-            getValue(data) { return data.id }
+            getValue (data) { return data.id }
           }
         }),
         createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value_7ac66c0f148de9519b8bd264312c4d64'}}})
@@ -1186,7 +1186,7 @@ describe('User ID', function () {
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         let mockIdSystem = {
           name: 'mockId',
-          decode: function(value) {
+          decode: function (value) {
             return {
               'mid': value['MOCKID']
             };
@@ -1259,10 +1259,10 @@ describe('User ID', function () {
     });
 
     describe('when ID systems throw errors', () => {
-      function mockIdSystem(name) {
+      function mockIdSystem (name) {
         return {
           name,
-          decode: function(value) {
+          decode: function (value) {
             return {
               [name]: value
             };
@@ -1309,12 +1309,12 @@ describe('User ID', function () {
         })
       })
     });
-    it('pbjs.refreshUserIds updates submodules', function(done) {
+    it('pbjs.refreshUserIds updates submodules', function (done) {
       let sandbox = sinon.createSandbox();
       let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
       let mockIdSystem = {
         name: 'mockId',
-        decode: function(value) {
+        decode: function (value) {
           return {
             'mid': value['MOCKID']
           };
@@ -1410,7 +1410,7 @@ describe('User ID', function () {
       });
     });
 
-    it('pbjs.refreshUserIds refreshes single', function() {
+    it('pbjs.refreshUserIds refreshes single', function () {
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('refreshedid', '', EXPIRED_COOKIE_DATE);
 
@@ -1420,7 +1420,7 @@ describe('User ID', function () {
 
       let mockIdSystem = {
         name: 'mockId',
-        decode: function(value) {
+        decode: function (value) {
           return {
             'mid': value['MOCKID']
           };
@@ -1432,7 +1432,7 @@ describe('User ID', function () {
 
       let refreshedIdSystem = {
         name: 'refreshedId',
-        decode: function(value) {
+        decode: function (value) {
           return {
             'refresh': value['REFRESH']
           };
@@ -2241,7 +2241,7 @@ describe('User ID', function () {
         delete window.__tcfapi;
       });
 
-      function endAuction() {
+      function endAuction () {
         events.emit(EVENTS.AUCTION_END, {});
         return new Promise((resolve) => setTimeout(resolve));
       }
@@ -2285,7 +2285,7 @@ describe('User ID', function () {
           }
         });
         it('should allow submodules to override the domain', function () {
-          submodule.submodule.domainOverride = function() {
+          submodule.submodule.domainOverride = function () {
             return 'foo.com'
           }
           setStoredValue(submodule, 'bar');
@@ -2353,7 +2353,7 @@ describe('User ID', function () {
         config.resetConfig();
       });
 
-      function setStorage({
+      function setStorage ({
         val = JSON.stringify({id: '1234'}),
         lastDelta = 60 * 1000,
         cst = null
@@ -2440,7 +2440,7 @@ describe('User ID', function () {
         });
       });
 
-      it('calls getId with the list of enabled storage types', function() {
+      it('calls getId with the list of enabled storage types', function () {
         setStorage({lastDelta: 1000});
         config.setConfig(userIdConfig);
 
@@ -2450,19 +2450,19 @@ describe('User ID', function () {
         }, {adUnits}).then(() => {
           sinon.assert.calledOnce(mockGetId);
 
-          expect(mockGetId.getCall(0).args[0].enabledStorageTypes).to.deep.equal([ userIdConfig.userSync.userIds[0].storage.type ]);
+          expect(mockGetId.getCall(0).args[0].enabledStorageTypes).to.deep.equal([userIdConfig.userSync.userIds[0].storage.type]);
         });
       });
     });
 
     describe('requestDataDeletion', () => {
-      function idMod(name, value) {
+      function idMod (name, value) {
         return {
           name,
-          getId() {
+          getId () {
             return {id: value}
           },
-          decode(d) {
+          decode (d) {
             return {[name]: d}
           },
           onDataDeletionRequest: sinon.stub()
@@ -2536,7 +2536,7 @@ describe('User ID', function () {
       };
       let adUnits;
       let startAuctionStub;
-      function saHook(fn, ...args) {
+      function saHook (fn, ...args) {
         return startAuctionStub(...args);
       }
       beforeEach(() => {
@@ -2586,14 +2586,14 @@ describe('User ID', function () {
     });
   });
 
-  describe('handles config with ESP configuration in user sync object', function() {
+  describe('handles config with ESP configuration in user sync object', function () {
     describe('Call registerSignalSources to register signal sources with gtag', function () {
       it('pbjs.registerSignalSources should be defined', () => {
         expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
       });
     })
 
-    describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
+    describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function () {
       const signalSources = ['pubcid.org'];
 
       it('pbjs.getEncryptedEidsForSource should be defined', () => {
@@ -2633,7 +2633,7 @@ describe('User ID', function () {
         const EIDS = {
           uid2: {
             source: 'uidapi.com',
-            getValue(data) {
+            getValue (data) {
               return data.id
             }
           },
@@ -2642,13 +2642,13 @@ describe('User ID', function () {
           },
           lipb: {
             source: 'liveintent.com',
-            getValue(data) {
+            getValue (data) {
               return data.lipbid
             }
           },
           merkleId: {
             source: 'merkleinc.com',
-            getValue(data) {
+            getValue (data) {
               return data.id
             }
           }
@@ -2806,11 +2806,11 @@ describe('User ID', function () {
   describe('enrichEids', () => {
     let idValues;
 
-    function mockIdSubmodule(key, ...extraKeys) {
+    function mockIdSubmodule (key, ...extraKeys) {
       return {
         name: `${key}Module`,
-        decode(v) { return v },
-        getId() {
+        decode (v) { return v },
+        getId () {
           return {
             id: Object.fromEntries(
               idValues[key]?.map(mod => [mod, key === mod ? `${key}_value` : `${mod}_value_from_${key}Module`])
@@ -2826,7 +2826,7 @@ describe('User ID', function () {
           ...Object.fromEntries(extraKeys.map(extraKey => [extraKey, {
             source: `${extraKey}.com`,
             atype: 1,
-            getUidExt() {
+            getUidExt () {
               return {provider: `${key}Module`}
             }
           }]))
@@ -2851,14 +2851,14 @@ describe('User ID', function () {
       ]);
     })
 
-    function enrich({global = {}, bidder = {}} = {}) {
+    function enrich ({global = {}, bidder = {}} = {}) {
       return getGlobal().getUserIdsAsync().then(() => {
         enrichEids({global, bidder});
         return {global, bidder};
       })
     }
 
-    function eidsFrom(nameFromModuleMapping) {
+    function eidsFrom (nameFromModuleMapping) {
       return Object.entries(nameFromModuleMapping).map(([key, module]) => {
         const owner = `${key}Module` === module
         const uid = {
@@ -2875,7 +2875,7 @@ describe('User ID', function () {
       })
     }
 
-    function bidderEids(bidderMappings) {
+    function bidderEids (bidderMappings) {
       return Object.fromEntries(
         Object.entries(bidderMappings).map(([bidder, mapping]) => [bidder, {user: {ext: {eids: eidsFrom(mapping)}}}])
       )
@@ -2974,7 +2974,7 @@ describe('User ID', function () {
         ]);
       })
 
-      function bidderEids(bidderEidMap) {
+      function bidderEids (bidderEidMap) {
         return Object.fromEntries(
           Object.entries(bidderEidMap).map(([bidder, eidMap]) => [bidder, {
             user: {
@@ -2986,7 +2986,7 @@ describe('User ID', function () {
         )
       }
       describe('primary provider is restricted', () => {
-        function setup() {
+        function setup () {
           config.setConfig({
             userSync: {
               idPriority: {
@@ -3048,7 +3048,7 @@ describe('User ID', function () {
         });
       });
       describe('secondary provider is restricted', () => {
-        function setup() {
+        function setup () {
           config.setConfig({
             userSync: {
               idPriority: {

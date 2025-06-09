@@ -31,7 +31,7 @@ export const fabrickIdSubmodule = {
    * @param {(Object|string)} value
    * @returns {(Object|undefined)}
    */
-  decode(value) {
+  decode (value) {
     if (value && value.fabrickId) {
       return { 'fabrickId': value.fabrickId };
     } else {
@@ -47,7 +47,7 @@ export const fabrickIdSubmodule = {
    * @param {Object} cacheIdObj - existing id, if any
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData, cacheIdObj) {
+  getId (config, consentData, cacheIdObj) {
     try {
       const configParams = (config && config.params) || {};
       if (window.fabrickMod1) {
@@ -133,7 +133,7 @@ export const fabrickIdSubmodule = {
   }
 };
 
-function _getRefererInfo(configParams) {
+function _getRefererInfo (configParams) {
   if (configParams.refererInfo) {
     return configParams.refererInfo;
   } else {
@@ -141,7 +141,7 @@ function _getRefererInfo(configParams) {
   }
 }
 
-function _getBaseUrl(configParams) {
+function _getBaseUrl (configParams) {
   if (configParams.url) {
     return configParams.url;
   } else {
@@ -149,7 +149,7 @@ function _getBaseUrl(configParams) {
   }
 }
 
-function _setReferrer(refs, s) {
+function _setReferrer (refs, s) {
   if (s) {
     // store the longest one for the same URI
     const url = s.split('?')[0];
@@ -166,7 +166,7 @@ function _setReferrer(refs, s) {
   }
 }
 
-export function appendUrl(url, paramName, s, configParams) {
+export function appendUrl (url, paramName, s, configParams) {
   const maxUrlLen = (configParams && configParams.maxUrlLen) || 2000;
   const maxRefLen = (configParams && configParams.maxRefLen) || 1000;
   const maxSpaceAvailable = (configParams && configParams.maxSpaceAvailable) || 50;

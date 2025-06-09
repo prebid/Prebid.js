@@ -18,15 +18,15 @@ const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_VENDOR_ID = 301;
 const ZEOTAP_MODULE_NAME = 'zeotapIdPlus';
 
-function readCookie() {
+function readCookie () {
   return storage.cookiesAreEnabled() ? storage.getCookie(ZEOTAP_COOKIE_NAME) : null;
 }
 
-function readFromLocalStorage() {
+function readFromLocalStorage () {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ZEOTAP_COOKIE_NAME) : null;
 }
 
-export function getStorage() {
+export function getStorage () {
   return getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: ZEOTAP_MODULE_NAME});
 }
 
@@ -50,7 +50,7 @@ export const zeotapIdPlusSubmodule = {
    * @param { Object | string | undefined } value
    * @return { Object | string | undefined }
    */
-  decode(value) {
+  decode (value) {
     const id = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return id ? {
       'IDP': JSON.parse(atob(id))
@@ -61,7 +61,7 @@ export const zeotapIdPlusSubmodule = {
    * @function
    * @return {{id: string | undefined} | undefined}
    */
-  getId() {
+  getId () {
     const id = readCookie() || readFromLocalStorage();
     return id ? { id } : undefined;
   },

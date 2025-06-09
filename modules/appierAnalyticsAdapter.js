@@ -47,7 +47,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
 
   cachedAuctions: {},
 
-  initConfig(config) {
+  initConfig (config) {
     /**
      * Required option: affiliateId
      * Required option: configId
@@ -86,7 +86,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
 
     return true;
   },
-  sendEventMessage(endPoint, data) {
+  sendEventMessage (endPoint, data) {
     logInfo(`AJAX: ${endPoint}: ` + JSON.stringify(data));
 
     ajax(`${analyticsOptions.server}/${endPoint}`, null, JSON.stringify(data), {
@@ -94,7 +94,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       withCredentials: true
     });
   },
-  createCommonMessage(auctionId) {
+  createCommonMessage (auctionId) {
     return {
       version: ANALYTICS_VERSION,
       auctionId: auctionId,
@@ -109,7 +109,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       adUnits: {},
     };
   },
-  serializeBidResponse(bid, status) {
+  serializeBidResponse (bid, status) {
     const result = {
       prebidWon: (status === BIDDER_STATUS.BID_WON),
       isTimeout: (status === BIDDER_STATUS.TIMEOUT),
@@ -127,14 +127,14 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     }
     return result;
   },
-  addBidResponseToMessage(message, bid, status) {
+  addBidResponseToMessage (message, bid, status) {
     const adUnitCode = parseAdUnitCode(bid);
     message.adUnits[adUnitCode] = message.adUnits[adUnitCode] || {};
     const bidder = parseBidderCode(bid);
     const bidResponse = this.serializeBidResponse(bid, status);
     message.adUnits[adUnitCode][bidder] = bidResponse;
   },
-  createBidMessage(auctionEndArgs, winningBids, timeoutBids) {
+  createBidMessage (auctionEndArgs, winningBids, timeoutBids) {
     const {auctionId, timestamp, timeout, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
@@ -165,12 +165,12 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     });
     return message;
   },
-  createImpressionMessage(bid) {
+  createImpressionMessage (bid) {
     const message = this.createCommonMessage(bid.auctionId);
     this.addBidResponseToMessage(message, bid, BIDDER_STATUS.BID_WON);
     return message;
   },
-  createCreativeMessage(auctionId, bids) {
+  createCreativeMessage (auctionId, bids) {
     const message = this.createCommonMessage(auctionId);
     bids.forEach((bid) => {
       const adUnitCode = parseAdUnitCode(bid);
@@ -180,13 +180,13 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
     });
     return message;
   },
-  getCachedAuction(auctionId) {
+  getCachedAuction (auctionId) {
     this.cachedAuctions[auctionId] = this.cachedAuctions[auctionId] || {
       timeoutBids: [],
     };
     return this.cachedAuctions[auctionId];
   },
-  handleAuctionEnd(auctionEndArgs) {
+  handleAuctionEnd (auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
     const highestCpmBids = getGlobal().getHighestCpmBids();
     this.sendEventMessage('bid',
@@ -198,16 +198,16 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       );
     }
   },
-  handleBidTimeout(timeoutBids) {
+  handleBidTimeout (timeoutBids) {
     timeoutBids.forEach((bid) => {
       const cachedAuction = this.getCachedAuction(bid.auctionId);
       cachedAuction.timeoutBids.push(bid);
     });
   },
-  handleBidWon(bidWonArgs) {
+  handleBidWon (bidWonArgs) {
     this.sendEventMessage('imp', this.createImpressionMessage(bidWonArgs));
   },
-  track({eventType, args}) {
+  track ({eventType, args}) {
     if (analyticsOptions.sampled) {
       switch (eventType) {
         case BID_WON:
@@ -222,7 +222,7 @@ export const appierAnalyticsAdapter = Object.assign(adapter({DEFAULT_SERVER, ana
       }
     }
   },
-  getAnalyticsOptions() {
+  getAnalyticsOptions () {
     return analyticsOptions;
   },
 });

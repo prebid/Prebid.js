@@ -93,13 +93,13 @@ describe('ConcertAdapter', function () {
     sandbox.restore();
   });
 
-  describe('spec.isBidRequestValid', function() {
-    it('should return when it received all the required params', function() {
+  describe('spec.isBidRequestValid', function () {
+    it('should return when it received all the required params', function () {
       const bid = bidRequests[0];
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when partner id is missing', function() {
+    it('should return false when partner id is missing', function () {
       const bid = {
         bidder: 'concert',
         params: {}
@@ -109,8 +109,8 @@ describe('ConcertAdapter', function () {
     });
   });
 
-  describe('spec.buildRequests', function() {
-    it('should build a payload object with the shape expected by server', function() {
+  describe('spec.buildRequests', function () {
+    it('should build a payload object with the shape expected by server', function () {
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
       expect(payload).to.have.property('meta');
@@ -132,15 +132,15 @@ describe('ConcertAdapter', function () {
       ];
       const slotsRequiredFields = ['name', 'bidId', 'transactionId', 'sizes', 'partnerId', 'slotType'];
 
-      metaRequiredFields.forEach(function(field) {
+      metaRequiredFields.forEach(function (field) {
         expect(payload.meta).to.have.property(field);
       });
-      slotsRequiredFields.forEach(function(field) {
+      slotsRequiredFields.forEach(function (field) {
         expect(payload.slots[0]).to.have.property(field);
       });
     });
 
-    it('should not generate uid if the user has opted out', function() {
+    it('should not generate uid if the user has opted out', function () {
       storage.setDataInLocalStorage('c_nap', 'true');
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
@@ -148,7 +148,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.uid).to.equal(false);
     });
 
-    it('should generate uid if the user has not opted out', function() {
+    it('should generate uid if the user has not opted out', function () {
       storage.removeDataFromLocalStorage('c_nap');
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
@@ -156,7 +156,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.uid).to.not.equal(false);
     });
 
-    it('should not generate uid if USP consent disallows', function() {
+    it('should not generate uid if USP consent disallows', function () {
       storage.removeDataFromLocalStorage('c_nap');
       const request = spec.buildRequests(bidRequests, { ...bidRequest, uspConsent: '1YY' });
       const payload = JSON.parse(request.data);
@@ -164,7 +164,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.uid).to.equal(false);
     });
 
-    it('should use sharedid if it exists', function() {
+    it('should use sharedid if it exists', function () {
       storage.removeDataFromLocalStorage('c_nap');
       const bidRequestsWithSharedId = [{
         ...bidRequests[0],
@@ -179,7 +179,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.uid).to.equal('123abc');
     });
 
-    it('should grab uid from local storage if it exists and sharedid does not', function() {
+    it('should grab uid from local storage if it exists and sharedid does not', function () {
       storage.setDataInLocalStorage('vmconcert_uid', 'foo');
       storage.removeDataFromLocalStorage('c_nap');
       const request = spec.buildRequests(bidRequests, bidRequest);
@@ -188,7 +188,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.uid).to.equal('foo');
     });
 
-    it('should add uid2 to eids list if available', function() {
+    it('should add uid2 to eids list if available', function () {
       bidRequests[0].userIdAsEids = [{
         source: 'uidapi.com',
         uids: [{ id: 'uid123', atype: 3 }]
@@ -203,7 +203,7 @@ describe('ConcertAdapter', function () {
       expect(meta.eids[0].uids[0].atype).to.equal(3)
     })
 
-    it('should return empty eids list if none are available', function() {
+    it('should return empty eids list if none are available', function () {
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
       const meta = payload.meta
@@ -211,7 +211,7 @@ describe('ConcertAdapter', function () {
       expect(meta.eids.length).to.equal(0);
     });
 
-    it('should return x/y offset coordiantes when element is present', function() {
+    it('should return x/y offset coordiantes when element is present', function () {
       Object.assign(element, { x: 100, y: 0, width: 400, height: 400 })
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
@@ -221,7 +221,7 @@ describe('ConcertAdapter', function () {
       expect(slot.offsetCoordinates.y).to.equal(0)
     })
 
-    it('should not pass along tdid if the user has opted out', function() {
+    it('should not pass along tdid if the user has opted out', function () {
       storage.setDataInLocalStorage('c_nap', 'true');
       const request = spec.buildRequests(bidRequests, bidRequest);
       const payload = JSON.parse(request.data);
@@ -229,7 +229,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.tdid).to.be.null;
     });
 
-    it('should not pass along tdid if USP consent disallows', function() {
+    it('should not pass along tdid if USP consent disallows', function () {
       storage.removeDataFromLocalStorage('c_nap');
       const request = spec.buildRequests(bidRequests, { ...bidRequest, uspConsent: '1YY' });
       const payload = JSON.parse(request.data);
@@ -237,7 +237,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.tdid).to.be.null;
     });
 
-    it('should pass along tdid if the user has not opted out', function() {
+    it('should pass along tdid if the user has not opted out', function () {
       storage.removeDataFromLocalStorage('c_nap', 'true');
       const tdid = '123abc';
       const bidRequestsWithTdid = [{
@@ -252,7 +252,7 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.tdid).to.equal(tdid);
     });
 
-    it('should use pubcId if it exists and sharedId does not', function() {
+    it('should use pubcId if it exists and sharedId does not', function () {
       storage.removeDataFromLocalStorage('c_nap');
       const bidRequestsWithPubcId = [{
         ...bidRequests[0],
@@ -268,17 +268,17 @@ describe('ConcertAdapter', function () {
     });
   });
 
-  describe('spec.interpretResponse', function() {
-    it('should return bids in the shape expected by prebid', function() {
+  describe('spec.interpretResponse', function () {
+    it('should return bids in the shape expected by prebid', function () {
       const bids = spec.interpretResponse(bidResponse, bidRequest);
       const requiredFields = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'meta', 'creativeId', 'netRevenue', 'currency'];
 
-      requiredFields.forEach(function(field) {
+      requiredFields.forEach(function (field) {
         expect(bids[0]).to.have.property(field);
       });
     });
 
-    it('should include dealId when present in bidResponse', function() {
+    it('should include dealId when present in bidResponse', function () {
       const bids = spec.interpretResponse({
         body: {
           bids: [
@@ -289,17 +289,17 @@ describe('ConcertAdapter', function () {
       expect(bids[0]).to.have.property('dealId');
     });
 
-    it('should exclude dealId when absent in bidResponse', function() {
+    it('should exclude dealId when absent in bidResponse', function () {
       const bids = spec.interpretResponse(bidResponse, bidRequest);
       expect(bids[0]).to.not.have.property('dealId');
     });
 
-    it('should return empty bids if there is no response from server', function() {
+    it('should return empty bids if there is no response from server', function () {
       const bids = spec.interpretResponse({ body: null }, bidRequest);
       expect(bids).to.have.lengthOf(0);
     });
 
-    it('should return empty bids if there are no bids from the server', function() {
+    it('should return empty bids if there are no bids from the server', function () {
       const bids = spec.interpretResponse({ body: {bids: []} }, bidRequest);
       expect(bids).to.have.lengthOf(0);
     });

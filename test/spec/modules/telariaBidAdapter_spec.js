@@ -294,11 +294,11 @@ describe('TelariaAdapter', () => {
       }]
     }];
 
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 

@@ -88,7 +88,7 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @param {SubmoduleConfig|undefined} config
    * @returns {(Object|undefined)}
    */
-  decode(value, config) {
+  decode (value, config) {
     return value
   },
 
@@ -100,7 +100,7 @@ export const permutiveIdentityManagerIdSubmodule = {
    * @param {(Object|undefined)} cacheIdObj
    * @returns {IdResponse|undefined}
    */
-  getId(submoduleConfig, consentData, cacheIdObj) {
+  getId (submoduleConfig, consentData, cacheIdObj) {
     const id = readFromSdkLocalStorage()
     if (Object.entries(id).length > 0) {
       logger.logInfo('found id in sdk storage')
@@ -136,10 +136,10 @@ export const permutiveIdentityManagerIdSubmodule = {
     'uid2': {
       source: UID_DOMAIN,
       atype: 3,
-      getValue: function(data) {
+      getValue: function (data) {
         return data.id
       },
-      getUidExt: function(data) {
+      getUidExt: function (data) {
         if (data.ext) {
           return data.ext
         }

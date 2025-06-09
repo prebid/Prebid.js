@@ -2,7 +2,7 @@ import adapterManager from '../../../src/adapterManager.js';
 import {config} from '../../../src/config.js';
 import {deepSetValue} from '../../../src/utils.js';
 
-export function setRequestExtPrebidAliases(ortbRequest, bidderRequest, context, {am = adapterManager} = {}) {
+export function setRequestExtPrebidAliases (ortbRequest, bidderRequest, context, {am = adapterManager} = {}) {
   if (am.aliasRegistry[bidderRequest.bidderCode]) {
     const bidder = am.bidderRegistry[bidderRequest.bidderCode];
     // adding alias only if alias source bidder exists and alias isn't configured to be standalone

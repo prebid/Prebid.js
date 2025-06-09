@@ -317,7 +317,7 @@ describe('YieldmoAdapter', function () {
         expect(placementsData[1].bidFloor).to.equal(1.23);
       });
 
-      it('should use bidFloor if no floors module is available', function() {
+      it('should use bidFloor if no floors module is available', function () {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([
           mockBannerBid({}, { bidFloor: 1.2 }),
           mockBannerBid({}, { bidFloor: 0.7 }),
@@ -326,7 +326,7 @@ describe('YieldmoAdapter', function () {
         expect(placementsData[1].bidFloor).to.equal(0.7);
       });
 
-      it('should not write 0 bidfloor value by default', function() {
+      it('should not write 0 bidfloor value by default', function () {
         const placementsData = JSON.parse(buildAndGetPlacementInfo([mockBannerBid()]));
         expect(placementsData[0].bidfloor).to.undefined;
       });
@@ -378,7 +378,7 @@ describe('YieldmoAdapter', function () {
         localWindow.document.title = originalTitle;
       });
 
-      it('should add ats_envelope to banner bid request', function() {
+      it('should add ats_envelope to banner bid request', function () {
         const envelope = 'test_envelope';
         const requests = build([mockBannerBid({}, { lr_env: envelope })]);
 
@@ -582,7 +582,7 @@ describe('YieldmoAdapter', function () {
         expect(imps[1].bidfloor).to.equal(1.23);
       });
 
-      it('should use bidfloor if no floors module is available', function() {
+      it('should use bidfloor if no floors module is available', function () {
         const requests = build([
           mockVideoBid({}, { bidfloor: 1.2 }),
           mockVideoBid({}, { bidfloor: 0.7 }),
@@ -592,19 +592,19 @@ describe('YieldmoAdapter', function () {
         expect(imps[1].bidfloor).to.equal(0.7);
       });
 
-      it('should have 0 bidfloor value by default', function() {
+      it('should have 0 bidfloor value by default', function () {
         const requests = build([mockVideoBid()]);
         expect(requests[0].data.imp[0].bidfloor).to.equal(0);
       });
 
-      it('should add ats_envelope to video bid request', function() {
+      it('should add ats_envelope to video bid request', function () {
         const envelope = 'test_envelope';
         const requests = build([mockVideoBid({}, { lr_env: envelope })]);
 
         expect(requests[0].data.ats_envelope).to.equal(envelope);
       });
 
-      it('should add transaction id to video bid request', function() {
+      it('should add transaction id to video bid request', function () {
         const transactionId = '54a58774-7a41-494e-8cbc-fa7b79164f0c';
         const requestData = {
           ortb2Imp: {
@@ -616,7 +616,7 @@ describe('YieldmoAdapter', function () {
         expect(buildAndGetData([mockVideoBid({...requestData})]).imp[0].ext.tid).to.equal(transactionId);
       });
 
-      it('should add auction id to video bid request', function() {
+      it('should add auction id to video bid request', function () {
         const auctionId = '1d1a03073455';
         expect(buildAndGetData([mockVideoBid({})]).auctionId).to.deep.equal(auctionId);
       });
@@ -752,20 +752,20 @@ describe('YieldmoAdapter', function () {
             sua: {
               platform: {
                 brand: 'macOS',
-                version: [ '12', '4', '0' ]
+                version: ['12', '4', '0']
               },
               browsers: [
                 {
                   brand: 'Chromium',
-                  version: [ '106', '0', '5249', '119' ]
+                  version: ['106', '0', '5249', '119']
                 },
                 {
                   brand: 'Google Chrome',
-                  version: [ '106', '0', '5249', '119' ]
+                  version: ['106', '0', '5249', '119']
                 },
                 {
                   brand: 'Not;A=Brand',
-                  version: [ '99', '0', '0', '0' ]
+                  version: ['99', '0', '0', '0']
                 }
               ],
               mobile: 0,
@@ -780,20 +780,20 @@ describe('YieldmoAdapter', function () {
         expect(payload.device.sua).to.deep.equal({
           platform: {
             brand: 'macOS',
-            version: [ '12', '4', '0' ]
+            version: ['12', '4', '0']
           },
           browsers: [
             {
               brand: 'Chromium',
-              version: [ '106', '0', '5249', '119' ]
+              version: ['106', '0', '5249', '119']
             },
             {
               brand: 'Google Chrome',
-              version: [ '106', '0', '5249', '119' ]
+              version: ['106', '0', '5249', '119']
             },
             {
               brand: 'Not;A=Brand',
-              version: [ '99', '0', '0', '0' ]
+              version: ['99', '0', '0', '0']
             }
           ],
           mobile: 0,
@@ -923,11 +923,11 @@ describe('YieldmoAdapter', function () {
     const usPrivacy = `us_privacy=`;
     const gdprString = `&gdpr_consent=`;
     const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
-    it('should use type iframe when iframeEnabled', function() {
+    it('should use type iframe when iframeEnabled', function () {
       const syncs = spec.getUserSyncs({iframeEnabled: true});
       expect(syncs).to.deep.equal([{type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe'}])
     });
-    it('should use type image when pixelEnabled', function() {
+    it('should use type image when pixelEnabled', function () {
       const syncs = spec.getUserSyncs({pixelEnabled: true});
       expect(syncs).to.deep.equal([{type: 'image', url: pbCookieAssistSyncUrl + '&type=image'}])
     });

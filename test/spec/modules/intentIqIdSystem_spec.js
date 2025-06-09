@@ -613,7 +613,7 @@ describe('IntentIQ tests', function () {
     let gppData;
     let gdprData;
 
-    function mockConsentHandlers(usp, gpp, gdpr) {
+    function mockConsentHandlers (usp, gpp, gdpr) {
       uspDataHandlerStub.returns(usp);
       gppDataHandlerStub.returns(gpp);
       gdprDataHandlerStub.returns(gdpr);
@@ -728,7 +728,7 @@ describe('IntentIQ tests', function () {
       expect(callbackArgument).to.deep.equal({ eids: [] }); // Ensure that runtimeEids was updated to { eids: [] }
     });
 
-    it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', function() {
+    it('should make request to correct address api-gdpr.intentiq.com if gdpr is detected', function () {
       const ENDPOINT_GDPR = 'https://api-gdpr.intentiq.com';
       mockConsentHandlers(uspData, gppData, gdprData);
       let callBackSpy = sinon.spy();
@@ -740,7 +740,7 @@ describe('IntentIQ tests', function () {
       expect(request.url).to.contain(ENDPOINT_GDPR);
     });
 
-    it('should make request to correct address with iiqServerAddress parameter', function() {
+    it('should make request to correct address with iiqServerAddress parameter', function () {
       defaultConfigParams.params.iiqServerAddress = testAPILink
       let callBackSpy = sinon.spy();
       let submoduleCallback = intentIqIdSubmodule.getId({...defaultConfigParams}).callback;
@@ -751,7 +751,7 @@ describe('IntentIQ tests', function () {
       expect(request.url).to.contain(testAPILink);
     });
 
-    it('should make request to correct address with iiqPixelServerAddress parameter', function() {
+    it('should make request to correct address with iiqPixelServerAddress parameter', function () {
       let wasCallbackCalled = false
       const callbackConfigParams = { params: { partner: partner,
         pai,

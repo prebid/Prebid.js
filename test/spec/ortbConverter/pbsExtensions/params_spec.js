@@ -6,13 +6,13 @@ describe('pbjs -> ortb bid params to imp[].ext.prebid.BIDDER', () => {
     bidderRegistry = {};
     adUnit = {code: 'mockAdUnit'};
     index = {
-      getAdUnit() {
+      getAdUnit () {
         return adUnit;
       }
     }
   });
 
-  function setParams(bidRequest, context, deps = {}) {
+  function setParams (bidRequest, context, deps = {}) {
     const imp = {};
     setImpBidParams(imp, bidRequest, context, Object.assign({bidderRegistry, index}, deps))
     return imp;

@@ -65,7 +65,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.placementId);
   },
 
@@ -75,7 +75,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
 
@@ -162,7 +162,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, {bidderRequest}) {
+  interpretResponse: function (serverResponse, {bidderRequest}) {
     serverResponse = serverResponse.body;
     const bids = [];
     if (!serverResponse || serverResponse.error) {
@@ -189,7 +189,7 @@ export const spec = {
   }
 };
 
-function formatRequest(payload, bidderRequest) {
+function formatRequest (payload, bidderRequest) {
   let request = [];
 
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
@@ -218,7 +218,7 @@ function formatRequest(payload, bidderRequest) {
   return request;
 }
 
-function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
+function newRenderer (adUnitCode, rtbBid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: rtbBid.renderer_id,
     url: rtbBid.renderer_url,
@@ -248,14 +248,14 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  * This function hides google div container for outstream bids to remove unwanted space on page. Appnexus renderer creates a new iframe outside of google iframe to render the outstream creative.
  * @param {string} elementId element id
  */
-function hidedfpContainer(elementId) {
+function hidedfpContainer (elementId) {
   var el = document.getElementById(elementId).querySelectorAll("div[id^='google_ads']");
   if (el[0]) {
     el[0].style.setProperty('display', 'none');
   }
 }
 
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   // push to render queue because ANOutstreamVideo may not be loaded yet
   hidedfpContainer(bid.adUnitCode);
   bid.renderer.push(() => {
@@ -270,7 +270,7 @@ function outstreamRender(bid) {
   });
 }
 
-function handleOutstreamRendererEvents(bid, id, eventName) {
+function handleOutstreamRendererEvents (bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
 }
 
@@ -281,7 +281,7 @@ function handleOutstreamRendererEvents(bid, id, eventName) {
  * @param bidderRequest
  * @return Bid
  */
-function newBid(serverBid, rtbBid, bidderRequest) {
+function newBid (serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
@@ -398,7 +398,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   return bid;
 }
 
-function bidToTag(bid) {
+function bidToTag (bid) {
   const tag = {};
   tag.sizes = transformSizes(bid.sizes);
   tag.primary_size = tag.sizes[0];
@@ -494,11 +494,11 @@ function bidToTag(bid) {
   return tag;
 }
 
-function getRtbBid(tag) {
+function getRtbBid (tag) {
   return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
 }
 
-function buildNativeRequest(params) {
+function buildNativeRequest (params) {
   const request = {};
 
   // map standard prebid native asset identifier to /ut parameters
@@ -534,7 +534,7 @@ function buildNativeRequest(params) {
   return request;
 }
 
-function parseMediaType(rtbBid) {
+function parseMediaType (rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType === VIDEO) {
     return VIDEO;

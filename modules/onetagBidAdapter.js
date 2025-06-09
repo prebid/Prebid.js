@@ -28,22 +28,22 @@ const storage = getStorageManager({ bidderCode: BIDDER_CODE });
  * @param {BidRequest} bid The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (typeof bid === 'undefined' || typeof bid.params === 'undefined' || typeof bid.params.pubId !== 'string') {
     return false;
   }
   return isValid(BANNER, bid) || isValid(VIDEO, bid) || isValid(NATIVE, bid);
 }
 
-export function hasTypeVideo(bid) {
+export function hasTypeVideo (bid) {
   return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.video !== 'undefined';
 }
 
-export function hasTypeNative(bid) {
+export function hasTypeNative (bid) {
   return typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.native !== 'undefined';
 }
 
-export function isValid(type, bid) {
+export function isValid (type, bid) {
   if (type === BANNER) {
     return parseSizes(bid).length > 0;
   } else if (type === VIDEO && hasTypeVideo(bid)) {
@@ -81,14 +81,14 @@ export function isValid(type, bid) {
   return false;
 }
 
-const isValidEventTracker = function(et) {
+const isValidEventTracker = function (et) {
   if (!et.event || !et.methods || !Number.isInteger(et.event) || !Array.isArray(et.methods) || !et.methods.length > 0) {
     return false;
   }
   return true;
 }
 
-const isValidAsset = function(asset) {
+const isValidAsset = function (asset) {
   if (!asset.hasOwnProperty("id") || !Number.isInteger(asset.id)) return false;
   const hasValidContent = asset.title || asset.img || asset.data || asset.video;
   if (!hasValidContent) return false;
@@ -105,7 +105,7 @@ const isValidAsset = function(asset) {
  * @param bidderRequest
  * @return ServerRequest Info describing the request to the server.
  */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const payload = {
     bids: requestsToBids(validBidRequests),
     ...getPageInfo(bidderRequest)
@@ -151,7 +151,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 }
 
-function interpretResponse(serverResponse, bidderRequest) {
+function interpretResponse (serverResponse, bidderRequest) {
   const body = serverResponse.body;
   const bids = [];
   const requestData = JSON.parse(bidderRequest.data);
@@ -214,7 +214,7 @@ function interpretResponse(serverResponse, bidderRequest) {
   }
 }
 
-function createRenderer(bid, rendererOptions = {}) {
+function createRenderer (bid, rendererOptions = {}) {
   const renderer = Renderer.install({
     id: bid.requestId,
     url: bid.rendererUrl,
@@ -241,7 +241,7 @@ function createRenderer(bid, rendererOptions = {}) {
   return renderer;
 }
 
-function getFrameNesting() {
+function getFrameNesting () {
   let topmostFrame = window;
   let parent = window.parent;
   try {
@@ -255,7 +255,7 @@ function getFrameNesting() {
   return topmostFrame;
 }
 
-function getDocumentVisibility(window) {
+function getDocumentVisibility (window) {
   try {
     if (typeof window.document.hidden !== 'undefined') {
       return window.document.hidden;
@@ -275,7 +275,7 @@ function getDocumentVisibility(window) {
  * Returns information about the page needed by the server in an object to be converted in JSON
  * @returns {{location: *, referrer: (*|string), stack: (*|Array.<String>), numIframes: (*|Number), wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
-function getPageInfo(bidderRequest) {
+function getPageInfo (bidderRequest) {
   const winDimensions = getWinDimensions();
   const topmostFrame = getFrameNesting();
   return {
@@ -306,7 +306,7 @@ function getPageInfo(bidderRequest) {
   };
 }
 
-function requestsToBids(bidRequests) {
+function requestsToBids (bidRequests) {
   const videoBidRequests = bidRequests.filter(bidRequest => hasTypeVideo(bidRequest)).map(bidRequest => {
     const videoObj = {};
     setGeneralInfo.call(videoObj, bidRequest);
@@ -348,11 +348,11 @@ function requestsToBids(bidRequests) {
   return videoBidRequests.concat(bannerBidRequests).concat(nativeBidRequests);
 }
 
-function isNativeOrtbVersion(bidRequest) {
+function isNativeOrtbVersion (bidRequest) {
   return bidRequest.mediaTypes.native.ortb && typeof bidRequest.mediaTypes.native.ortb === 'object';
 }
 
-function setGeneralInfo(bidRequest) {
+function setGeneralInfo (bidRequest) {
   const params = bidRequest.params;
   this['adUnitCode'] = bidRequest.adUnitCode;
   this['bidId'] = bidRequest.bidId;
@@ -375,7 +375,7 @@ function setGeneralInfo(bidRequest) {
   }
 }
 
-function getSpaceCoords(id) {
+function getSpaceCoords (id) {
   const space = document.getElementById(id);
   try {
     const { top, left, width, height } = getBoundingClientRect(space);
@@ -395,7 +395,7 @@ function getSpaceCoords(id) {
   }
 }
 
-function getTiming() {
+function getTiming () {
   try {
     if (window.performance != null && window.performance.timing != null) {
       const timing = {};
@@ -411,7 +411,7 @@ function getTiming() {
   return null;
 }
 
-function parseVideoSize(bid) {
+function parseVideoSize (bid) {
   const playerSize = bid.mediaTypes.video.playerSize;
   if (typeof playerSize !== 'undefined' && Array.isArray(playerSize) && playerSize.length > 0) {
     return getSizes(playerSize)
@@ -419,7 +419,7 @@ function parseVideoSize(bid) {
   return [];
 }
 
-function parseSizes(bid) {
+function parseSizes (bid) {
   let ret = [];
   if (typeof bid.mediaTypes !== 'undefined' && typeof bid.mediaTypes.banner !== 'undefined' && typeof bid.mediaTypes.banner.sizes !== 'undefined' && Array.isArray(bid.mediaTypes.banner.sizes) && bid.mediaTypes.banner.sizes.length > 0) {
     return getSizes(bid.mediaTypes.banner.sizes)
@@ -431,7 +431,7 @@ function parseSizes(bid) {
   return ret;
 }
 
-function getSizes(sizes) {
+function getSizes (sizes) {
   const ret = [];
   for (let i = 0; i < sizes.length; i++) {
     const size = sizes[i];
@@ -440,7 +440,7 @@ function getSizes(sizes) {
   return ret;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   let syncs = [];
   let params = '';
   if (gdprConsent) {
@@ -474,7 +474,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   return syncs;
 }
 
-function getBidFloor(bidRequest, mediaType, sizes) {
+function getBidFloor (bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor !== 'function') return [];
   const getFloorObject = (size) => {
     const floorData = bidRequest.getFloor({
@@ -495,7 +495,7 @@ function getBidFloor(bidRequest, mediaType, sizes) {
   return [getFloorObject('*')];
 }
 
-export function isSchainValid(schain) {
+export function isSchainValid (schain) {
   let isValid = false;
   const requiredFields = ['asi', 'sid', 'hp'];
   if (!schain || !schain.nodes) return isValid;

@@ -9,7 +9,7 @@ const BIDDER_CODE = 'djax';
 const DOMAIN = 'https://revphpe.djaxbidder.com/header_bidding_vast/';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
-function outstreamRender(bidAd) {
+function outstreamRender (bidAd) {
   bidAd.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       sizes: [bidAd.width, bidAd.height],
@@ -25,7 +25,7 @@ function outstreamRender(bidAd) {
   });
 }
 
-function createRenderer(bidAd, rendererParams, adUnitCode) {
+function createRenderer (bidAd, rendererParams, adUnitCode) {
   const renderer = Renderer.install({
     id: rendererParams.id,
     url: rendererParams.url,
@@ -41,7 +41,7 @@ function createRenderer(bidAd, rendererParams, adUnitCode) {
   return renderer;
 }
 
-function sendResponseToServer(data) {
+function sendResponseToServer (data) {
   ajax(DOMAIN + 'www/admin/plugins/Prebid/tracking/track.php', null, JSON.stringify(data), {
     withCredentials: false,
     method: 'POST',
@@ -53,11 +53,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return (typeof bid.params !== 'undefined' && parseInt(utils.getValue(bid.params, 'publisherId')) > 0);
   },
 
-  buildRequests: function(validBidRequests) {
+  buildRequests: function (validBidRequests) {
     return {
       method: 'POST',
       url: DOMAIN + 'www/admin/plugins/Prebid/getAd.php',
@@ -69,12 +69,12 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     const response = serverResponse.body;
     const bidResponses = [];
     var bidRequestResponses = [];
 
-    utils._each(response, function(bidAd) {
+    utils._each(response, function (bidAd) {
       bidAd.adResponse = {
         content: bidAd.vastXml,
         height: bidAd.height,
@@ -97,14 +97,14 @@ export const spec = {
     return bidResponses;
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     let wonBids = [];
     wonBids.push(bid);
     wonBids[0].function = 'onBidWon';
     sendResponseToServer(wonBids);
   },
 
-  onTimeout: function(details) {
+  onTimeout: function (details) {
     details.unshift({ 'function': 'onTimeout' });
     sendResponseToServer(details);
   }

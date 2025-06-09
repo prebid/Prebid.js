@@ -22,7 +22,7 @@ export const ortbConverterProps = {
     mediaType: 'banner'
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     req.tmax = DEFAULT_TIMEOUT;
     deepSetValue(req, 'device.pxratio', window.devicePixelRatio);
@@ -42,7 +42,7 @@ export const ortbConverterProps = {
     return req;
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const timeSpentOnPage = document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0
     const gpid = bidRequest.adUnitCode;
@@ -60,7 +60,7 @@ export const ortbConverterProps = {
     return imp;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const nurl = bid.nurl;
     delete bid.nurl;
 
@@ -74,7 +74,7 @@ export const ortbConverterProps = {
 
 export const converter = ortbConverter(ortbConverterProps);
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   const adUnitSizes = getAdUnitSizes(bid);
 
   const isValidSize = (Boolean(adUnitSizes) && adUnitSizes.length > 0);
@@ -84,7 +84,7 @@ function isBidRequestValid(bid) {
   return isValidSize && (hasAssetKeyAndAdUnitId || hasPublisherIdAndAdUnitCode);
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   const consent = (gdprConsent && gdprConsent.consentString) || '';
   const gpp = (gppConsent && gppConsent.gppString) || '';
   const gppSid = (gppConsent && gppConsent.applicableSections && gppConsent.applicableSections.toString()) || '';
@@ -118,7 +118,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   return [];
 }
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   const data = converter.toORTB({bidRequests, bidderRequest});
 
   return {
@@ -129,11 +129,11 @@ function buildRequests(bidRequests, bidderRequest) {
   };
 }
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   return converter.fromORTB({response: response.body, request: request.data}).bids;
 }
 
-function getFloor(bid) {
+function getFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
@@ -146,7 +146,7 @@ function getFloor(bid) {
   return (isPlainObject(floorResult) && floorResult.currency === 'USD') ? floorResult.floor : 0;
 }
 
-function getWindowContext() {
+function getWindowContext () {
   try {
     return getWindowTop()
   } catch (e) {
@@ -154,7 +154,7 @@ function getWindowContext() {
   }
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   const w = getWindowContext()
   w.OG_PREBID_BID_OBJECT = {
     ...(bid && { ...bid }),
@@ -162,7 +162,7 @@ function onBidWon(bid) {
   if (bid && bid.nurl) ajax(bid.nurl, null);
 }
 
-function onTimeout(timeoutData) {
+function onTimeout (timeoutData) {
   ajax(`${TIMEOUT_MONITORING_HOST}/bid_timeout`, null, JSON.stringify({...timeoutData[0], location: window.location.href}), {
     method: 'POST',
     contentType: 'application/json'

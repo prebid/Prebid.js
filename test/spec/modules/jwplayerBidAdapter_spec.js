@@ -1,8 +1,8 @@
 import { expect, assert } from 'chai';
 import { spec } from 'modules/jwplayerBidAdapter.js';
 
-describe('jwplayerBidAdapter', function() {
-  beforeEach(function() {
+describe('jwplayerBidAdapter', function () {
+  beforeEach(function () {
     this.defaultBidderRequest = {
       gdprConsent: {
         consentString: 'testConsentString',
@@ -57,37 +57,37 @@ describe('jwplayerBidAdapter', function() {
     expect(spec.supportedMediaTypes[0]).to.equal('video');
   });
 
-  describe('isBidRequestValid', function() {
-    it('should be invalid when bidRequest is undefined', function() {
+  describe('isBidRequestValid', function () {
+    it('should be invalid when bidRequest is undefined', function () {
       assert(spec.isBidRequestValid() === false);
     });
 
-    it('should be invalid when bidRequest is null', function() {
+    it('should be invalid when bidRequest is null', function () {
       assert(spec.isBidRequestValid(null) === false);
     });
 
-    it('should be invalid when the bidRequest has no params', function() {
+    it('should be invalid when the bidRequest has no params', function () {
       assert(spec.isBidRequestValid({}) === false);
     });
 
-    it('should be invalid when the bid request only includes a publisher ID', function() {
+    it('should be invalid when the bid request only includes a publisher ID', function () {
       assert(spec.isBidRequestValid({params: {publisherId: 'foo'}}) === false);
     });
 
-    it('should be invalid when the bid request only includes a placement ID', function() {
+    it('should be invalid when the bid request only includes a placement ID', function () {
       assert(spec.isBidRequestValid({params: {placementId: 'foo'}}) === false);
     });
 
-    it('should be invalid when the bid request only includes a site ID', function() {
+    it('should be invalid when the bid request only includes a site ID', function () {
       assert(spec.isBidRequestValid({params: {siteId: 'foo'}}) === false);
     });
 
-    it('should be valid when the bid includes a placement ID, a publisher ID and a site ID', function() {
+    it('should be valid when the bid includes a placement ID, a publisher ID and a site ID', function () {
       assert(spec.isBidRequestValid({params: {placementId: 'foo', publisherId: 'bar', siteId: 'siteId '}}) === true);
     });
   });
 
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     it('should return undefined when bidRequests is undefined', function () {
       expect(spec.buildRequests()).to.be.undefined;
     });
@@ -110,7 +110,7 @@ describe('jwplayerBidAdapter', function() {
       expect(request).to.be.undefined;
     });
 
-    it('should build a valid request when bid request is complete', function() {
+    it('should build a valid request when bid request is complete', function () {
       const incomingBidRequests = [
         {
           bidder: 'jwplayer',
@@ -254,7 +254,7 @@ describe('jwplayerBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     const serverResponse = {
       body: {
         id: 'test-request-id',
@@ -304,7 +304,7 @@ describe('jwplayerBidAdapter', function() {
     expect(bid.meta.primaryCatId[0]).to.equal('test-iab-category');
   });
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const consentString = 'test_consent_string';
     const baseGdprConsent = {
       gdprApplies: true,
@@ -319,7 +319,7 @@ describe('jwplayerBidAdapter', function() {
 
     const expectedBaseUrl = 'https://ib.adnxs.com/getuid?https://vpb-server.jwplayer.com/setuid?bidder=jwplayer&uid=$UID&f=i';
 
-    it('should return empty when Purpose 1 consent is not granted', function() {
+    it('should return empty when Purpose 1 consent is not granted', function () {
       expect(spec.getUserSyncs({}, {})).to.be.empty;
       expect(spec.getUserSyncs({}, {}, {})).to.be.empty;
       expect(spec.getUserSyncs({}, {}, { gdprApplies: false })).to.be.empty;

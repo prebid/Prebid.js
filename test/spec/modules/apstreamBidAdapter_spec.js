@@ -18,8 +18,8 @@ const validBidRequests = [{
   }
 }];
 
-describe('AP Stream adapter', function() {
-  describe('isBidRequestValid', function() {
+describe('AP Stream adapter', function () {
+  describe('isBidRequestValid', function () {
     const bid = {
       bidder: 'apstream',
       mediaTypes: {
@@ -53,25 +53,25 @@ describe('AP Stream adapter', function() {
       config.getConfig.restore();
     });
 
-    it('should return true when publisherId is configured and one media type', function() {
+    it('should return true when publisherId is configured and one media type', function () {
       bid.params.publisherId = '1234';
       assert(spec.isBidRequestValid(bid))
     });
 
-    it('should return false when publisherId is configured and two media types', function() {
+    it('should return false when publisherId is configured and two media types', function () {
       bid.mediaTypes.video = {sizes: [300, 250]};
       assert.isFalse(spec.isBidRequestValid(bid))
     });
 
-    it('should return true when publisherId is configured via config', function() {
+    it('should return true when publisherId is configured via config', function () {
       delete bid.mediaTypes.video;
       delete bid.params.publisherId;
       assert.isTrue(spec.isBidRequestValid(bid))
     });
   });
 
-  describe('buildRequests', function() {
-    it('should send request with correct structure', function() {
+  describe('buildRequests', function () {
+    it('should send request with correct structure', function () {
       const request = spec.buildRequests(validBidRequests, { })[0];
 
       assert.equal(request.method, 'GET');
@@ -79,7 +79,7 @@ describe('AP Stream adapter', function() {
       assert.ok(request.data);
     });
 
-    it('should send request with different endpoints', function() {
+    it('should send request with different endpoints', function () {
       const validTwoBidRequests = [
         ...validBidRequests,
         ...[{
@@ -104,7 +104,7 @@ describe('AP Stream adapter', function() {
       assert.equal(request[1].data.bids, 'bidId2:t=b,s=980x980_980x900,c=/id/site1/header-ad');
     });
 
-    it('should send request with adUnit code', function() {
+    it('should send request with adUnit code', function () {
       const adunitCodeValidBidRequests = [
         {
           ...validBidRequests[0],
@@ -120,7 +120,7 @@ describe('AP Stream adapter', function() {
       assert.equal(request.data.bids, 'bidId:t=b,s=980x120_980x180,c=Site1_Leaderboard');
     });
 
-    it('should send request with adUnit id', function() {
+    it('should send request with adUnit id', function () {
       const adunitIdValidBidRequests = [
         {
           ...validBidRequests[0],
@@ -136,7 +136,7 @@ describe('AP Stream adapter', function() {
       assert.equal(request.data.bids, 'bidId:t=b,s=980x120_980x180,u=12345');
     });
 
-    it('should send request with different media type', function() {
+    it('should send request with different media type', function () {
       const types = {
         'audio': 'a',
         'banner': 'b',
@@ -162,7 +162,7 @@ describe('AP Stream adapter', function() {
       })
     });
 
-    describe('gdpr', function() {
+    describe('gdpr', function () {
       let mockConfig;
 
       beforeEach(function () {
@@ -180,7 +180,7 @@ describe('AP Stream adapter', function() {
         config.getConfig.restore();
       });
 
-      it('should send GDPR Consent data', function() {
+      it('should send GDPR Consent data', function () {
         const bidderRequest = {
           gdprConsent: {
             gdprApplies: true,
@@ -198,8 +198,8 @@ describe('AP Stream adapter', function() {
       });
     });
 
-    describe('dsu', function() {
-      it('should pass DSU from local storage if set', function() {
+    describe('dsu', function () {
+      it('should pass DSU from local storage if set', function () {
         const bidderRequest = {
           gdprConsent: {
             gdprApplies: true,
@@ -218,7 +218,7 @@ describe('AP Stream adapter', function() {
     });
   });
 
-  describe('dsu config', function() {
+  describe('dsu config', function () {
     let mockConfig;
     beforeEach(function () {
       mockConfig = {
@@ -235,7 +235,7 @@ describe('AP Stream adapter', function() {
       config.getConfig.restore();
     });
 
-    it('should not send DSU if it is disabled in config', function() {
+    it('should not send DSU if it is disabled in config', function () {
       const request = spec.buildRequests(validBidRequests, { })[0];
 
       assert.equal(request.data.dsu, '');

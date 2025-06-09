@@ -11,7 +11,7 @@ const SUPPORTED_SIZES = [
   [100, 75], [236, 202], [100, 100], [130, 130], [200, 200], [250, 250], [300, 272], [300, 250], [300, 230], [300, 214], [300, 187], [300, 166], [300, 150], [300, 133], [300, 120], [400, 200], [300, 200], [250, 377], [620, 410], [207, 311], [310, 166], [310, 333], [190, 106], [228, 132], [300, 174], [80, 60], [600, 500], [600, 600], [1080, 610], [1080, 610], [624, 350], [650, 1168], [1080, 1920], [300, 374], [336, 280]
 ];
 
-function getPageUrl(bidRequest, bidderRequest) {
+function getPageUrl (bidRequest, bidderRequest) {
   if (bidRequest.params.pageUrl && bidRequest.params.pageUrl != '[PAGE_URL]') {
     return bidRequest.params.pageUrl;
   }
@@ -25,7 +25,7 @@ function getPageUrl(bidRequest, bidderRequest) {
   return encodeURIComponent(pageUrl);
 }
 
-function isInIframe() {
+function isInIframe () {
   try {
     var isInIframe = (window.self !== window.top);
   } catch (e) {
@@ -34,11 +34,11 @@ function isInIframe() {
   return isInIframe;
 }
 
-function getImageSrc(rec) {
+function getImageSrc (rec) {
   return rec.thumbnail_path.indexOf('http') === -1 ? 'https:' + rec.thumbnail_path : rec.thumbnail_path;
 }
 
-function getImpressionTrackers(rec, response) {
+function getImpressionTrackers (rec, response) {
   const responseTrackers = [response.viewPxl];
   if (!rec.trackers) {
     return responseTrackers;
@@ -48,7 +48,7 @@ function getImpressionTrackers(rec, response) {
   return [...impressionTrackers, ...viewTrackers, ...responseTrackers];
 }
 
-function parseNativeResponse(rec, response) {
+function parseNativeResponse (rec, response) {
   return {
     title: rec.title,
     body: '',
@@ -66,7 +66,7 @@ function parseNativeResponse(rec, response) {
   };
 }
 
-function parseBannerResponse(rec, response) {
+function parseBannerResponse (rec, response) {
   if (rec.tag) {
     return rec.tag;
   }
@@ -86,7 +86,7 @@ function parseBannerResponse(rec, response) {
   return `<html><body>${style}<div id="ENG_TAG"><a href="${rec.clickUrl}" target=_blank><img class="eng_tag_img" src="${getImageSrc(rec)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${rec.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
 }
 
-function getImageSize(bidRequest) {
+function getImageSize (bidRequest) {
   if (bidRequest.sizes && bidRequest.sizes.length > 0) {
     return bidRequest.sizes[0];
   } else if (bidRequest.nativeParams && bidRequest.nativeParams.image && bidRequest.nativeParams.image.sizes) {
@@ -95,7 +95,7 @@ function getImageSize(bidRequest) {
   return [-1, -1];
 }
 
-function isValidSize([width, height]) {
+function isValidSize ([width, height]) {
   if (!width || !height) {
     return false;
   }

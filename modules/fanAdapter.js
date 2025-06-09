@@ -20,7 +20,7 @@ const BASE_URL = 'https://srv.freedomadnetwork.com';
  * @param {BidderRequest} bidderRequest
  * @returns {Request}
  */
-function buildBidRequest(bid, bidderRequest) {
+function buildBidRequest (bid, bidderRequest) {
   const payload = {
     id: bid.bidId,
     tmax: bidderRequest.timeout,
@@ -57,7 +57,7 @@ function buildBidRequest(bid, bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (!bid) {
       utils.logWarn(BIDDER_CODE, 'Invalid bid', bid);
 
@@ -84,7 +84,7 @@ export const spec = {
     return true;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => buildBidRequest(bid, bidderRequest));
   },
 
@@ -161,15 +161,15 @@ export const spec = {
       }
     }
   },
-  onSetTargeting: function(bid) {},
-  onBidderError: function(error) {
+  onSetTargeting: function (bid) {},
+  onBidderError: function (error) {
     utils.logError(`${BIDDER_CODE} bidder error`, error);
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
     return syncs;
   },
-  onTimeout: function(timeoutData) {},
+  onTimeout: function (timeoutData) {},
   supportedMediaTypes: [BANNER, NATIVE]
 }
 

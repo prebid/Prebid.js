@@ -28,7 +28,7 @@ let moduleConfig = null;
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-function fixURL(config, ns) {
+function fixURL (config, ns) {
   config.params = (config && config.params) ? config.params : {};
   config.params.url = config.params.url || TNC_API_URL;
   let url = parseUrl(config.params.url);
@@ -40,7 +40,7 @@ function fixURL(config, ns) {
   return url;
 }
 
-const loadRemoteScript = function(url) {
+const loadRemoteScript = function (url) {
   return new Promise((resolve, reject) => {
     let endpoint = buildUrl(url);
     logMessage('TNC Endpoint', endpoint);
@@ -48,16 +48,16 @@ const loadRemoteScript = function(url) {
   });
 }
 
-function TNCObject(ns) {
+function TNCObject (ns) {
   let tnc = window[ns];
   tnc = typeof tnc !== 'undefined' && tnc !== null && typeof tnc.ready == 'function' ? tnc : {
-    ready: function(f) { this.ready.q = this.ready.q || []; return typeof f == 'function' ? (this.ready.q.push(f), this) : new Promise(resolve => this.ready.q.push(resolve)); },
+    ready: function (f) { this.ready.q = this.ready.q || []; return typeof f == 'function' ? (this.ready.q.push(f), this) : new Promise(resolve => this.ready.q.push(resolve)); },
   };
   window[ns] = tnc;
   return tnc;
 }
 
-function getlocalValue(key) {
+function getlocalValue (key) {
   let value;
   if (storage.hasLocalStorage()) {
     value = storage.getDataFromLocalStorage(key);
@@ -84,7 +84,7 @@ function getlocalValue(key) {
   return null;
 }
 
-const tncCallback = async function(cb) {
+const tncCallback = async function (cb) {
   try {
     let tncNS = TNC_DEFAULT_NS;
     let tncid = getlocalValue(TNC_LOCAL_VALUE_KEY);
@@ -113,7 +113,7 @@ const tncCallback = async function(cb) {
 
 export const tncidSubModule = {
   name: MODULE_NAME,
-  decode(id) {
+  decode (id) {
     return {
       tncid: id
     };
@@ -127,7 +127,7 @@ export const tncidSubModule = {
    * @param {ConsentData} [consentData] GDPR consent
    * @returns {IdResponse}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     const gdpr = (consentData?.gdpr?.gdprApplies === true) ? 1 : 0;
     const consentString = gdpr ? consentData.gdpr.consentString : '';
 

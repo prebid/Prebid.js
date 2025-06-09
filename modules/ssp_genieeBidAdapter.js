@@ -15,7 +15,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
 // export const ENDPOINT_USERSYNC = '';
-const SUPPORTED_MEDIA_TYPES = [ BANNER ];
+const SUPPORTED_MEDIA_TYPES = [BANNER];
 const DEFAULT_CURRENCY = 'JPY';
 const ALLOWED_CURRENCIES = ['USD', 'JPY'];
 const NET_REVENUE = true;
@@ -103,7 +103,7 @@ const GECUPARAMS_KEY = {
  * @param {string} str
  * @returns
  */
-function encodeURIComponentIncludeSingleQuotation(str) {
+function encodeURIComponentIncludeSingleQuotation (str) {
   return encodeURIComponent(str).replace(/'/g, '%27');
 }
 
@@ -114,7 +114,7 @@ function encodeURIComponentIncludeSingleQuotation(str) {
  * @param {string} key
  * @returns {boolean}
  */
-function hasParamsNotBlankString(params, key) {
+function hasParamsNotBlankString (params, key) {
   return (
     key in params &&
     typeof params[key] !== 'undefined' &&
@@ -138,7 +138,7 @@ export const buildExtuidQuery = ({id5, imuId}) => {
  * making request data be used commonly banner and native
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
-function makeCommonRequestData(bid, geparameter, refererInfo) {
+function makeCommonRequestData (bid, geparameter, refererInfo) {
   const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid') || utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
 
   const data = {
@@ -256,7 +256,7 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
 /**
  * making request data for banner
  */
-function makeBannerRequestData(bid, geparameter, refererInfo) {
+function makeBannerRequestData (bid, geparameter, refererInfo) {
   const data = makeCommonRequestData(bid, geparameter, refererInfo);
 
   // this query is not used in nad endpoint but used in ad_call endpoint
@@ -270,7 +270,7 @@ function makeBannerRequestData(bid, geparameter, refererInfo) {
 /**
  * making bid response be used commonly banner and native
  */
-function makeCommonBidResponse(bid, width, height) {
+function makeCommonBidResponse (bid, width, height) {
   return {
     requestId: bid.requestid,
     cpm: bid.price,
@@ -286,7 +286,7 @@ function makeCommonBidResponse(bid, width, height) {
 /**
  * making bid response for banner
  */
-function makeBannerBidResponse(bid, request) {
+function makeBannerBidResponse (bid, request) {
   const bidResponse = makeCommonBidResponse(bid, bid.width, bid.height);
   const loc = encodeURIComponentIncludeSingleQuotation(
     window.top === window.self ? location.href : window.top.document.referrer
@@ -308,7 +308,7 @@ function makeBannerBidResponse(bid, request) {
 /**
  * making change height event markup for af iframe. About passback ad, it is possible that ad image is cut off. To handle this, we add this event to change height after ad is loaded.
  */
-function makeChangeHeightEventMarkup(request) {
+function makeChangeHeightEventMarkup (request) {
   return (
     '<script>window.addEventListener("load",function(){window.parent.document.getElementById("' + request.bid.adUnitCode + '").height=document.body.scrollHeight})</script>'
   );
@@ -319,11 +319,11 @@ function makeChangeHeightEventMarkup(request) {
  * @param {string} innerHTML
  * @returns
  */
-function makeBidResponseAd(innerHTML) {
+function makeBidResponseAd (innerHTML) {
   return '<body marginwidth="0" marginheight="0">' + innerHTML + '</body>';
 }
 
-function getUserAgent() {
+function getUserAgent () {
   return storage.getDataFromLocalStorage('key') || null;
 }
 

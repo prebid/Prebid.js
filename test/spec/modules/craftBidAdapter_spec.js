@@ -13,7 +13,7 @@ describe('craftAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    before(function() {
+    before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         craft: {
           storageAllowed: true
@@ -23,7 +23,7 @@ describe('craftAdapter', function () {
       window.context = null;
     });
 
-    after(function() {
+    after(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
       window.context = this.windowContext;
     });
@@ -113,7 +113,7 @@ describe('craftAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('interpretResponse', function () {
     let serverResponse = {
       body: {
         tags: [{
@@ -143,7 +143,7 @@ describe('craftAdapter', function () {
         adUnitCode: 'craft-prebid-example'
       }]
     };
-    it('should get correct bid response', function() {
+    it('should get correct bid response', function () {
       let bids = spec.interpretResponse(serverResponse, {bidderRequest: bidderRequest});
       expect(bids).to.have.lengthOf(1);
       expect(bids[0]).to.deep.equals({

@@ -3,10 +3,10 @@ import { server } from 'test/mocks/xhr.js';
 import * as utils from '../../../src/utils.js';
 
 describe('AdriverIdSystem', function () {
-  describe('getId', function() {
+  describe('getId', function () {
     let setCookieStub, setLocalStorageStub, removeFromLocalStorageStub, logErrorStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       setCookieStub = sinon.stub(storage, 'setCookie');
       setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
       removeFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
@@ -34,7 +34,7 @@ describe('AdriverIdSystem', function () {
       expect(logErrorStub.calledOnce).to.be.true;
     });
 
-    it('test call user sync url with the right params', function() {
+    it('test call user sync url with the right params', function () {
       const config = {
         params: {}
       };
@@ -70,7 +70,7 @@ describe('AdriverIdSystem', function () {
         expectedExpiration.setTime(expectedExpiration.getTime() + 86400 * 1825 * 1000);
         const minimalDate = new Date(0).toString();
 
-        function dateStringFor(date, maxDeltaMs = 2000) {
+        function dateStringFor (date, maxDeltaMs = 2000) {
           return sinon.match((val) => Math.abs(date.getTime() - new Date(val).getTime()) <= maxDeltaMs)
         }
 

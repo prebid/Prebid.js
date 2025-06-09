@@ -9,13 +9,13 @@ const GVLID = 732
 const ENDPOINT = 'https://dale.performax.cz/ortb'
 export const converter = ortbConverter({
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'tagid', bidRequest.params.tagid);
     return imp;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     context.netRevenue = deepAccess(bid, 'netRevenue');
     context.mediaType = deepAccess(bid, 'mediaType');
     context.currency = deepAccess(bid, 'currency');

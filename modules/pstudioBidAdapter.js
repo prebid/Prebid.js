@@ -108,7 +108,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs(_optionsType, _serverResponse, _gdprConsent, _uspConsent) {
+  getUserSyncs (_optionsType, _serverResponse, _gdprConsent, _uspConsent) {
     const syncs = [];
 
     let userId = readUserIdFromCookie(COOKIE_NAME);
@@ -131,7 +131,7 @@ export const spec = {
   },
 };
 
-function buildRequestData(bid, bidderRequest) {
+function buildRequestData (bid, bidderRequest) {
   let payloadObject = buildBaseObject(bid, bidderRequest);
 
   if (bid.mediaTypes.banner) {
@@ -141,7 +141,7 @@ function buildRequestData(bid, bidderRequest) {
   }
 }
 
-function buildBaseObject(bid, bidderRequest) {
+function buildBaseObject (bid, bidderRequest) {
   const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
   const { pubid, adtagid, bcat, badv, bapp } = bid.params;
   const { userId } = bid;
@@ -174,7 +174,7 @@ function buildBaseObject(bid, bidderRequest) {
   };
 }
 
-function buildBannerObject(bid, payloadObject) {
+function buildBannerObject (bid, payloadObject) {
   const { sizes, pos, name } = bid.mediaTypes.banner;
 
   payloadObject.banner_properties = {
@@ -186,7 +186,7 @@ function buildBannerObject(bid, payloadObject) {
   return payloadObject;
 }
 
-function buildVideoObject(bid, payloadObject) {
+function buildVideoObject (bid, payloadObject) {
   const { context, playerSize, w, h } = bid.mediaTypes.video;
 
   payloadObject.video_properties = {
@@ -206,7 +206,7 @@ function buildVideoObject(bid, payloadObject) {
   return payloadObject;
 }
 
-function readUserIdFromCookie(key) {
+function readUserIdFromCookie (key) {
   try {
     const storedValue = storage.getCookie(key);
 
@@ -217,15 +217,15 @@ function readUserIdFromCookie(key) {
   }
 }
 
-function generateId() {
+function generateId () {
   return generateUUID();
 }
 
-function daysToMs(days) {
+function daysToMs (days) {
   return days * DAY_IN_MS;
 }
 
-function writeIdToCookie(key, value) {
+function writeIdToCookie (key, value) {
   if (storage.cookiesAreEnabled()) {
     const expires = new Date(
       Date.now() + daysToMs(parseInt(COOKIE_TTL_DAYS))
@@ -234,7 +234,7 @@ function writeIdToCookie(key, value) {
   }
 }
 
-function prepareFirstPartyData({ user, device, site, app, regs }) {
+function prepareFirstPartyData ({ user, device, site, app, regs }) {
   let userData;
   let deviceData;
   let siteData;
@@ -370,7 +370,7 @@ function prepareFirstPartyData({ user, device, site, app, regs }) {
   });
 }
 
-function cleanObject(data) {
+function cleanObject (data) {
   for (let key in data) {
     if (typeof data[key] == 'object') {
       cleanObject(data[key]);
@@ -384,7 +384,7 @@ function cleanObject(data) {
   return data;
 }
 
-function isVideoRequestValid(bidRequest) {
+function isVideoRequestValid (bidRequest) {
   if (bidRequest.mediaTypes.video) {
     const { w, h, playerSize, mimes, protocols } = deepAccess(
       bidRequest,
@@ -404,7 +404,7 @@ function isVideoRequestValid(bidRequest) {
   return true;
 }
 
-function validateSizes(sizes) {
+function validateSizes (sizes) {
   return (
     isArray(sizes) &&
     sizes.length > 0 &&

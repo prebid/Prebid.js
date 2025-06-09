@@ -2493,16 +2493,16 @@ describe('IndexexchangeAdapter', function () {
             sua: {
               platform: {
                 brand: 'macOS',
-                version: [ '12', '6', '1' ]
+                version: ['12', '6', '1']
               },
               browsers: [
                 {
                   brand: 'Chromium',
-                  version: [ '107', '0', '5249', '119' ]
+                  version: ['107', '0', '5249', '119']
                 },
                 {
                   brand: 'Google Chrome',
-                  version: [ '107', '0', '5249', '119' ]
+                  version: ['107', '0', '5249', '119']
                 },
               ],
               mobile: 0,
@@ -4246,7 +4246,7 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
-    describe('interpretResponse when server response is empty', function() {
+    describe('interpretResponse when server response is empty', function () {
       let serverResponseWithoutBody;
       let serverResponseWithoutSeatbid;
       let bidderRequestWithFledgeEnabled;
@@ -5020,7 +5020,7 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('apply floors test', function () {
-    it('video test', function() {
+    it('video test', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 'USD';
@@ -5030,7 +5030,7 @@ describe('IndexexchangeAdapter', function () {
       expect(imp.bidfloorcur).to.equal('USD');
       expect(imp.video.ext.fl).to.equal('x');
     });
-    it('native test', function() {
+    it('native test', function () {
       const bid = utils.deepClone(DEFAULT_NATIVE_VALID_BID[0]);
       bid.params.bidFloor = 50;
       bid.params.bidFloorCur = 'USD';

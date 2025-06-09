@@ -27,7 +27,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let videoParams = deepAccess(bid, 'mediaTypes.video');
     let bannerParams = deepAccess(bid, 'mediaTypes.banner');
 
@@ -60,7 +60,7 @@ export const spec = {
     let areParamsValid = true;
 
     if (videoParams) {
-      REQUIRED_VIDEO_PARAMS.forEach(function(videoParam) {
+      REQUIRED_VIDEO_PARAMS.forEach(function (videoParam) {
         if (typeof videoParams[videoParam] === 'undefined') {
           logError('mediaTypes.video.' + videoParam + ' must be set for video placement.');
           areParamsValid = false;
@@ -77,7 +77,7 @@ export const spec = {
      * Viously checks
      */
 
-    REQUIRED_VIOUSLY_PARAMS.forEach(function(viouslyParam) {
+    REQUIRED_VIOUSLY_PARAMS.forEach(function (viouslyParam) {
       if (typeof bid.params[viouslyParam] === 'undefined') {
         logError('The ' + viouslyParam + ' is missing.');
         areParamsValid = false;
@@ -91,7 +91,7 @@ export const spec = {
     return true;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let payload = {};
 
     /** Viously Publisher ID */
@@ -178,12 +178,12 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(serverResponse, requests) {
+  interpretResponse: function (serverResponse, requests) {
     const bidResponses = [];
     const responseBody = serverResponse.body;
 
     if (responseBody.ads && responseBody.ads.length > 0) {
-      responseBody.ads.forEach(function(bidResponse) {
+      responseBody.ads.forEach(function (bidResponse) {
         if (bidResponse.bid) {
           let bidRequest = ((requests.data.placements) || []).find(bid => bid.bid_id === bidResponse.bid_id);
 
@@ -225,19 +225,19 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {},
 
-  onTimeout: function(timeoutData) {},
+  onTimeout: function (timeoutData) {},
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     if (bid && bid.nurl && bid.nurl.length > 0) {
-      bid.nurl.forEach(function(winUrl) {
+      bid.nurl.forEach(function (winUrl) {
         triggerPixel(winUrl, null);
       });
     }
   },
 
-  onSetTargeting: function(bid) {}
+  onSetTargeting: function (bid) {}
 };
 
 registerBidder(spec);

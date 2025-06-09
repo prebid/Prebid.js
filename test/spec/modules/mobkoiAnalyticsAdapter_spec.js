@@ -435,7 +435,7 @@ describe('mobkoiAnalyticsAdapter', function () {
 
     describe('determineObjType', function () {
       [null, undefined, 123, 'string', true].forEach(value => {
-        it(`should throw an error when input is ${value}`, function() {
+        it(`should throw an error when input is ${value}`, function () {
           expect(() => {
             utils.determineObjType(value);
           }).to.throw();

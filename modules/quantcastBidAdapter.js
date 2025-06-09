@@ -28,7 +28,7 @@ export const QUANTCAST_FPA = '__qca';
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
-function makeVideoImp(bid) {
+function makeVideoImp (bid) {
   const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};
   const videoInParams = deepAccess(bid, 'params.video') || {};
   const video = Object.assign({}, videoInParams, videoInMediaType);
@@ -60,7 +60,7 @@ function makeVideoImp(bid) {
   };
 }
 
-function makeBannerImp(bid) {
+function makeBannerImp (bid) {
   const sizes = bid.sizes || bid.mediaTypes.banner.sizes;
 
   return {
@@ -78,7 +78,7 @@ function makeBannerImp(bid) {
   };
 }
 
-function checkTCF(tcData) {
+function checkTCF (tcData) {
   let restrictions = tcData.publisher ? tcData.publisher.restrictions : {};
   let qcRestriction = restrictions && restrictions[PURPOSE_DATA_COLLECT]
     ? restrictions[PURPOSE_DATA_COLLECT][QUANTCAST_VENDOR_ID]
@@ -95,7 +95,7 @@ function checkTCF(tcData) {
   return !!(vendorConsent && purposeConsent);
 }
 
-function getQuantcastFPA() {
+function getQuantcastFPA () {
   let fpa = storage.getCookie(QUANTCAST_FPA)
   return fpa || ''
 }
@@ -118,7 +118,7 @@ export const spec = {
    * @param {object} bid
    * @return boolean `true` is this is a valid bid, and `false` otherwise
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return !!bid.params.publisherId;
   },
 
@@ -130,7 +130,7 @@ export const spec = {
    * @param bidderRequest
    * @return ServerRequest information describing the request to the server.
    */
-  buildRequests(bidRequests, bidderRequest) {
+  buildRequests (bidRequests, bidderRequest) {
     const bids = bidRequests || [];
     const gdprConsent = deepAccess(bidderRequest, 'gdprConsent') || {};
     const uspConsent = deepAccess(bidderRequest, 'uspConsent');
@@ -215,7 +215,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    *
    */
-  interpretResponse(serverResponse) {
+  interpretResponse (serverResponse) {
     if (serverResponse === undefined) {
       logError('Server Response is undefined');
       return [];
@@ -267,11 +267,11 @@ export const spec = {
 
     return bidResponsesList;
   },
-  onTimeout(timeoutData) {
+  onTimeout (timeoutData) {
     const url = `${QUANTCAST_PROTOCOL}://${QUANTCAST_DOMAIN}:${QUANTCAST_PORT}/qchb_notify?type=timeout`;
     ajax(url, null, null);
   },
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs (syncOptions, serverResponses) {
     const syncs = []
     if (!hasUserSynced && syncOptions.pixelEnabled) {
       const responseWithUrl = ((serverResponses) || []).find(serverResponse =>
@@ -289,7 +289,7 @@ export const spec = {
     }
     return syncs;
   },
-  resetUserSync() {
+  resetUserSync () {
     hasUserSynced = false;
   }
 };

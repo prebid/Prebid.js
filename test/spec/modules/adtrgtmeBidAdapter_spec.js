@@ -275,7 +275,7 @@ describe('Adtrgtme Bid Adapter:', () => {
   });
 
   describe('Check Site obj support (ortb2):', () => {
-    const BAD_ORTB2_TYPES = [ null, [], 123, 'invalidID', true, false, undefined ];
+    const BAD_ORTB2_TYPES = [null, [], 123, 'invalidID', true, false, undefined];
     BAD_ORTB2_TYPES.forEach(key => {
       it(`should remove bad site data: ${JSON.stringify(key)}`, () => {
         const ortb2 = { site: key }
@@ -355,7 +355,7 @@ describe('Adtrgtme Bid Adapter:', () => {
   });
 
   describe('Check ortb2 user support:', () => {
-    const BAD_ORTB2_TYPES = [ null, [], 'unsupportedKeyName', true, false, undefined ];
+    const BAD_ORTB2_TYPES = [null, [], 'unsupportedKeyName', true, false, undefined];
     BAD_ORTB2_TYPES.forEach(key => {
       it(`should not allow bad site types to be added to bid request: ${JSON.stringify(key)}`, () => {
         const ortb2 = { user: key }

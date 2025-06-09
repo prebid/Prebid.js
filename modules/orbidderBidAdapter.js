@@ -16,7 +16,7 @@ const storageManager = getStorageManager({ bidderCode: 'orbidder' });
  * @param {object} bidResponse The bid response to validate.
  * @return boolean True if this is a valid bid response, and false if it is not valid.
  */
-function isBidResponseValid(bidResponse) {
+function isBidResponseValid (bidResponse) {
   let requiredKeys = ['requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
   switch (bidResponse.mediaType) {
@@ -53,7 +53,7 @@ export const spec = {
    *
    * @return The hostname bid requests should be sent to.
    */
-  getHostname() {
+  getHostname () {
     let ret = this.hostname;
     try {
       ret = storageManager.getDataFromLocalStorage('ov_orbidder_host') || ret;
@@ -68,7 +68,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false if it is not valid.
    */
-  isBidRequestValid(bid) {
+  isBidRequestValid (bid) {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
@@ -82,7 +82,7 @@ export const spec = {
    * i.e. the server.
    * @return The requests for the orbidder /bid endpoint, i.e. the server.
    */
-  buildRequests(validBidRequests, bidderRequest) {
+  buildRequests (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -125,7 +125,7 @@ export const spec = {
    * @param {*} serverResponse A successful response from the orbidder /bid endpoint, i.e. the server.
    * @return {Bid[]} An array of bids from orbidder.
    */
-  interpretResponse(serverResponse) {
+  interpretResponse (serverResponse) {
     const bidResponses = [];
     serverResponse = serverResponse.body;
     if (serverResponse && (serverResponse.length > 0)) {
@@ -149,7 +149,7 @@ export const spec = {
  * @param {Object} bid
  * @returns {(number|undefined)}
  */
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor;
   }

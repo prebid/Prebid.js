@@ -92,7 +92,7 @@ describe('shinezAdapter', function () {
         'mediaTypes': {
           'banner': {
             'sizes': [
-              [ 300, 250 ]
+              [300, 250]
             ]
           },
           'video': {
@@ -199,7 +199,7 @@ describe('shinezAdapter', function () {
       expect(request.data.bids[2].mediaType.split(',')).to.include.members([VIDEO, NATIVE, BANNER])
     });
 
-    it('should respect syncEnabled option', function() {
+    it('should respect syncEnabled option', function () {
       config.setConfig({
         userSync: {
           syncEnabled: false,
@@ -262,7 +262,7 @@ describe('shinezAdapter', function () {
       expect(request.data.params).to.have.property('cs_method', 'pixel');
     });
 
-    it('should respect total exclusion', function() {
+    it('should respect total exclusion', function () {
       config.setConfig({
         userSync: {
           syncEnabled: true,
@@ -324,7 +324,7 @@ describe('shinezAdapter', function () {
       expect(request.data.params).to.have.property('schain', '1.0,1!indirectseller.com,00001,1,,,');
     });
 
-    it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function() {
+    it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function () {
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
@@ -338,7 +338,7 @@ describe('shinezAdapter', function () {
       expect(request.data.bids[0]).to.have.property('floorPrice', 3.32);
     });
 
-    it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function() {
+    it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function () {
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
@@ -495,7 +495,7 @@ describe('shinezAdapter', function () {
     });
   })
 
-  describe('getUserSyncs', function() {
+  describe('getUserSyncs', function () {
     const imageSyncResponse = {
       body: {
         params: {
@@ -516,7 +516,7 @@ describe('shinezAdapter', function () {
       }
     };
 
-    it('should register all img urls from the response', function() {
+    it('should register all img urls from the response', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -534,7 +534,7 @@ describe('shinezAdapter', function () {
       ]);
     });
 
-    it('should register the iframe url from the response', function() {
+    it('should register the iframe url from the response', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, [iframeSyncResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -544,7 +544,7 @@ describe('shinezAdapter', function () {
       ]);
     });
 
-    it('should register both image and iframe urls from the responses', function() {
+    it('should register both image and iframe urls from the responses', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: true }, [iframeSyncResponse, imageSyncResponse]);
       expect(syncs).to.deep.equal([
         {
@@ -566,26 +566,26 @@ describe('shinezAdapter', function () {
       ]);
     });
 
-    it('should handle an empty response', function() {
+    it('should handle an empty response', function () {
       const syncs = spec.getUserSyncs({ iframeEnabled: true }, []);
       expect(syncs).to.deep.equal([]);
     });
 
-    it('should handle when user syncs are disabled', function() {
+    it('should handle when user syncs are disabled', function () {
       const syncs = spec.getUserSyncs({ pixelEnabled: false }, [imageSyncResponse]);
       expect(syncs).to.deep.equal([]);
     });
   })
 
-  describe('onBidWon', function() {
-    beforeEach(function() {
+  describe('onBidWon', function () {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
 
-    it('Should trigger pixel if bid nurl', function() {
+    it('Should trigger pixel if bid nurl', function () {
       const bid = {
         'bidder': spec.code,
         'adUnitCode': 'adunit-code',

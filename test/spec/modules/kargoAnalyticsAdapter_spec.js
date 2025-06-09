@@ -23,7 +23,7 @@ describe('Kargo Analytics Adapter', function () {
       events.getEvents.restore();
     });
 
-    it('bid response data should send one request with auction ID, auction timeout, and response time', function() {
+    it('bid response data should send one request with auction ID, auction timeout, and response time', function () {
       const bidResponse = {
         bidder: 'kargo',
         auctionId: '66529d4c-8998-47c2-ab3e-5b953490b98f',

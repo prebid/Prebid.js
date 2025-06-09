@@ -41,10 +41,10 @@ export const spec = {
   buildRequests,
   interpretResponse,
   onBidWon,
-  getRequest: function(endpoint) {
+  getRequest: function (endpoint) {
     ajax(endpoint, null, undefined, {method: 'GET'});
   },
-  getOS: function(ua) {
+  getOS: function (ua) {
     if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
   }
 };
@@ -56,7 +56,7 @@ export const CONVERTER = ortbConverter({
     netRevenue: true,
     ttl: 300
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
 
     if (bidRequest.mediaTypes[VIDEO]) {
@@ -75,7 +75,7 @@ export const CONVERTER = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     mergeDeep(req, {
       at: 1,
@@ -96,7 +96,7 @@ export const CONVERTER = ortbConverter({
     return req;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     let bidResponse = buildBidResponse(bid, context);
 
     if (bid.ext) {
@@ -115,7 +115,7 @@ export const CONVERTER = ortbConverter({
 
     return bidResponse;
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response (buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
 
     let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
@@ -136,29 +136,29 @@ export const CONVERTER = ortbConverter({
   }
 });
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   return (isPublisherIdValid(bidRequest) && (isValidBannerRequest(bidRequest) || isValidVideoRequest(bidRequest)));
 }
 
-function isPublisherIdValid(bidRequest) {
+function isPublisherIdValid (bidRequest) {
   let pubId = utils.deepAccess(bidRequest, 'params.publisherId');
   return (pubId != null && utils.isStr(pubId) && pubId != '');
 }
 
-function isValidBannerRequest(bidRequest) {
+function isValidBannerRequest (bidRequest) {
   const bannerSizes = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}.sizes`);
 
   return utils.isArray(bannerSizes) && bannerSizes.length > 0 && bannerSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
 }
 
-function isValidVideoRequest(bidRequest) {
+function isValidVideoRequest (bidRequest) {
   const videoSizes = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.playerSize`);
   const PARAM_EXISTS = VIDEO_ORTB_REQUIRED.every(param => utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.${param}`) != null);
 
   return PARAM_EXISTS && utils.isArray(videoSizes) && videoSizes.length > 0 && videoSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
 }
 
-function buildRequests(validBids, bidderRequest) {
+function buildRequests (validBids, bidderRequest) {
   let videoBids = validBids.filter(bid => isVideoBid(bid));
   let bannerBids = validBids.filter(bid => isBannerBid(bid));
   let requests = [];
@@ -174,7 +174,7 @@ function buildRequests(validBids, bidderRequest) {
   return requests;
 }
 
-function buildVideoImp(bidRequest, imp) {
+function buildVideoImp (bidRequest, imp) {
   if (bidRequest.mediaTypes[VIDEO]?.context === 'outstream') {
     imp.video.placement = imp.video.placement || 4;
   }
@@ -201,7 +201,7 @@ function buildVideoImp(bidRequest, imp) {
   return { ...imp };
 }
 
-function buildBannerImp(bidRequest, imp) {
+function buildBannerImp (bidRequest, imp) {
   const bannerSizes = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}.sizes`, []);
 
   if (bannerSizes && bannerSizes.length > 0) {
@@ -212,7 +212,7 @@ function buildBannerImp(bidRequest, imp) {
   return {...imp};
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: REQUEST_URL,
@@ -221,7 +221,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function buildVideoVastResponse(bidResponse) {
+function buildVideoVastResponse (bidResponse) {
   if (bidResponse.mediaType == VIDEO && bidResponse.vastXml) {
     bidResponse.vastUrl = bidResponse.vastXml;
   }
@@ -229,7 +229,7 @@ function buildVideoVastResponse(bidResponse) {
   return { ...bidResponse }
 }
 
-function buildVideoOutstreamResponse(bidResponse, context) {
+function buildVideoOutstreamResponse (bidResponse, context) {
   if (context.bidRequest.mediaTypes[VIDEO]?.context === 'outstream') {
     bidResponse.rendererUrl = SP_OUTSTREAM_PLAYER_URL;
     bidResponse.adUnitCode = context.bidRequest.adUnitCode;
@@ -248,7 +248,7 @@ function buildVideoOutstreamResponse(bidResponse, context) {
   return {...bidResponse};
 }
 
-function getBidFloor(bid, bidderRequest) {
+function getBidFloor (bid, bidderRequest) {
   const currency = getCurrencyFromBidderRequest(bidderRequest) || DEFAULT_CURRENCY;
 
   if (typeof bid.getFloor !== 'function') {
@@ -263,7 +263,7 @@ function getBidFloor(bid, bidderRequest) {
   return bidFloor?.floor;
 }
 
-function _renderer(bid) {
+function _renderer (bid) {
   bid.renderer.push(() => {
     if (typeof window.SPOutStreamPlayer === 'function') {
       const spoplayer = new window.SPOutStreamPlayer(bid);
@@ -274,10 +274,10 @@ function _renderer(bid) {
 
       try {
         let vastUrlbt = 'data:text/xml;charset=utf-8;base64,' + btoa(bid.vastUrl.replace(/\\"/g, '"'));
-        spoplayer.load(vastUrlbt).then(function() {
+        spoplayer.load(vastUrlbt).then(function () {
           window.spoplayer = spoplayer;
-        }).catch(function(reason) {
-          setTimeout(function() { throw reason; }, 0);
+        }).catch(function (reason) {
+          setTimeout(function () { throw reason; }, 0);
         });
       } catch (err) {
         utils.logMessage(err);
@@ -288,15 +288,15 @@ function _renderer(bid) {
   });
 }
 
-function isVideoBid(bid) {
+function isVideoBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
-function isBannerBid(bid) {
+function isBannerBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
 }
 
-function interpretResponse(resp, req) {
+function interpretResponse (resp, req) {
   if (!resp.body) {
     resp.body = { nbr: 0 };
   }
@@ -304,7 +304,7 @@ function interpretResponse(resp, req) {
   return CONVERTER.fromORTB({ request: req.data, response: resp.body });
 }
 
-function onBidWon(bid) {
+function onBidWon (bid) {
   if (bid == null) { return; }
   if (bid['burl'] == null) { return; }
 
@@ -318,10 +318,10 @@ function onBidWon(bid) {
   spec.getRequest(burlMac);
 }
 
-function _isMobile() {
+function _isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
-function _isConnectedTV() {
+function _isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }

@@ -13,7 +13,7 @@ describe('FPD enrichment USP', () => {
     sandbox.restore();
   });
 
-  function callHook() {
+  function callHook () {
     let result;
     enrichFPDHook((res) => {
       result = res;

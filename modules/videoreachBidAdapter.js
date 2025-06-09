@@ -9,13 +9,13 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: ['banner'],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!(bid.params.TagId);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let data = {
-      data: validBidRequests.map(function(bid) {
+      data: validBidRequests.map(function (bid) {
         return {
           TagId: getValue(bid.params, 'TagId'),
           adUnitCode: getBidIdParameter('adUnitCode', bid),
@@ -47,7 +47,7 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const bidResponses = [];
     serverResponse = serverResponse.body;
 
@@ -73,7 +73,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent) {
     const syncs = [];
 
     if (responses.length && responses[0].body.responses.length) {

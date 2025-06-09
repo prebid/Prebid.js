@@ -8,7 +8,7 @@ export const ENDPOINT_DOMAIN = 'server.smartytech.io';
 export const ENDPOINT_PATH = '/hb/v2/bidder';
 
 export const spec = {
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   code: BIDDER_CODE,
 
   isBidRequestValid: function (bidRequest) {
@@ -19,7 +19,7 @@ export const spec = {
     );
   },
 
-  _validateBanner: function(bidRequest) {
+  _validateBanner: function (bidRequest) {
     const bannerAdUnit = deepAccess(bidRequest, 'mediaTypes.banner');
 
     if (bannerAdUnit === undefined) {
@@ -33,7 +33,7 @@ export const spec = {
     return true;
   },
 
-  _validateVideo: function(bidRequest) {
+  _validateVideo: function (bidRequest) {
     const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video');
 
     if (videoAdUnit === undefined) {

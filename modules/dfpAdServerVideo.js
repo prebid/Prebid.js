@@ -72,7 +72,7 @@ export const VAST_TAG_URI_TAGNAME = 'VASTAdTagURI';
  *   (or the auction's winning bid for this adUnit, if undefined) compete alongside the rest of the
  *   demand in DFP.
  */
-export function buildDfpVideoUrl(options) {
+export function buildDfpVideoUrl (options) {
   if (!options.params && !options.url) {
     logError(`A params object or a url is required to use $$PREBID_GLOBAL$$.adServers.dfp.buildVideoUrl`);
     return;
@@ -131,7 +131,7 @@ export function buildDfpVideoUrl(options) {
     plcmt: () => video?.plcmt,
     min_ad_duration: () => isNumber(video?.minduration) ? video.minduration * 1000 : null,
     max_ad_duration: () => isNumber(video?.maxduration) ? video.maxduration * 1000 : null,
-    vpos() {
+    vpos () {
       const startdelay = video?.startdelay;
       if (isNumber(startdelay)) {
         if (startdelay === -2) return 'postroll';
@@ -140,7 +140,7 @@ export function buildDfpVideoUrl(options) {
       }
     },
     vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.some(m => m === 7) ? '2' : undefined,
-    vpa() {
+    vpa () {
       // playbackmethod = 3 is play on click; 1, 2, 4, 5, 6 are autoplay
       if (Array.isArray(video?.playbackmethod)) {
         const click = video.playbackmethod.some(m => m === 3);
@@ -149,7 +149,7 @@ export function buildDfpVideoUrl(options) {
         if (auto && !click) return 'auto';
       }
     },
-    vpmute() {
+    vpmute () {
       // playbackmethod = 2, 6 are muted; 1, 3, 4, 5 are not
       if (Array.isArray(video?.playbackmethod)) {
         const muted = video.playbackmethod.some(m => [2, 6].includes(m));
@@ -180,7 +180,7 @@ export function buildDfpVideoUrl(options) {
   return buildUrl(Object.assign({}, DFP_ENDPOINT, urlComponents, { search: queryParams }));
 }
 
-export function notifyTranslationModule(fn) {
+export function notifyTranslationModule (fn) {
   fn.call(this, 'dfp');
 }
 
@@ -194,7 +194,7 @@ if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('reg
  * @param {Object} options Options which should be used to construct the URL (used for custom params).
  * @return {string} video url
  */
-function buildUrlFromAdserverUrlComponents(components, bid, options) {
+function buildUrlFromAdserverUrlComponents (components, bid, options) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) {
     components.search.description_url = descriptionUrl;
@@ -212,7 +212,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
  * @param {string} prop the property of components that would contain description_url
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
-function getDescriptionUrl(bid, components, prop) {
+function getDescriptionUrl (bid, components, prop) {
   return components?.[prop]?.description_url || encodeURIComponent(dep.ri().page);
 }
 
@@ -222,7 +222,7 @@ function getDescriptionUrl(bid, components, prop) {
  * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
  * @return {Object} Encoded key value pairs for cust_params
  */
-function getCustParams(bid, options, urlCustParams) {
+function getCustParams (bid, options, urlCustParams) {
   const adserverTargeting = (bid && bid.adserverTargeting) || {};
 
   let allTargetingData = {};
@@ -255,7 +255,7 @@ function getCustParams(bid, options, urlCustParams) {
   return encodedParams;
 }
 
-async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
+async function getVastForLocallyCachedBids (gamVastWrapper, localCacheMap) {
   try {
     const xmlUtil = XMLUtil();
     const xmlDoc = xmlUtil.parse(gamVastWrapper);
@@ -289,7 +289,7 @@ async function getVastForLocallyCachedBids(gamVastWrapper, localCacheMap) {
   }
 };
 
-export async function getVastXml(options, localCacheMap = vastLocalCache) {
+export async function getVastXml (options, localCacheMap = vastLocalCache) {
   const vastUrl = buildDfpVideoUrl(options);
   const response = await fetch(vastUrl);
   if (!response.ok) {
@@ -306,7 +306,7 @@ export async function getVastXml(options, localCacheMap = vastLocalCache) {
   return gamVastWrapper;
 }
 
-export async function getBase64BlobContent(blobUrl) {
+export async function getBase64BlobContent (blobUrl) {
   const response = await fetch(blobUrl);
   if (!response.ok) {
     logError('Unable to fetch blob');

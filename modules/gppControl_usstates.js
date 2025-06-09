@@ -39,7 +39,7 @@ const FIELDS = {
  * @param {Object} [fields]
  * @returns {function(Object): Object}
  */
-export function normalizer({nullify = [], move = {}, fn}, fields = FIELDS) {
+export function normalizer ({nullify = [], move = {}, fn}, fields = FIELDS) {
   move = Object.fromEntries(Object.entries(move).map(([k, map]) => [k,
     Object.fromEntries(Object.entries(map)
       .map(([k, v]) => [k, Array.isArray(v) ? v : [v]])
@@ -76,7 +76,7 @@ export function normalizer({nullify = [], move = {}, fn}, fields = FIELDS) {
   };
 }
 
-function scalarMinorsAreChildren(original, normalized) {
+function scalarMinorsAreChildren (original, normalized) {
   normalized.KnownChildSensitiveDataConsents = original.KnownChildSensitiveDataConsents === 0 ? [0, 0] : [1, 1];
 }
 
@@ -96,7 +96,7 @@ export const NORMALIZATIONS = {
         9: 4,
       }
     },
-    fn(original, normalized) {
+    fn (original, normalized) {
       if (original.KnownChildSensitiveDataConsents.some(el => el !== 0)) {
         normalized.KnownChildSensitiveDataConsents = [1, 1];
       }
@@ -115,7 +115,7 @@ export const NORMALIZATIONS = {
     fn: scalarMinorsAreChildren
   }),
   12: normalizer({
-    fn(original, normalized) {
+    fn (original, normalized) {
       const cc = original.KnownChildSensitiveDataConsents;
       let repl;
       if (!cc.some(el => el !== 0)) {

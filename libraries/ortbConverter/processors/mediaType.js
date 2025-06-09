@@ -11,7 +11,7 @@ export const ORTB_MTYPES = {
  *
  * Note that this will throw away bids if there is no `mtype` in the response.
  */
-export function setResponseMediaType(bidResponse, bid, context) {
+export function setResponseMediaType (bidResponse, bid, context) {
   if (bidResponse.mediaType) return;
   const mediaType = context.mediaType;
   if (!mediaType && !ORTB_MTYPES.hasOwnProperty(bid.mtype)) {

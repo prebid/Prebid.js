@@ -120,7 +120,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return !!((typeof bid.params === 'object') && bid.params.placement_id && bid.params.publisher_id);
   },
 
@@ -131,7 +131,7 @@ export const spec = {
    * @param {bidderRequest} bidderRequest bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -235,7 +235,7 @@ export const spec = {
    * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse || !serverResponse.body) {
       return [];
     }
@@ -296,7 +296,7 @@ export const spec = {
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} bid - The bid that won the auction
    */
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
     if (isStr(bid.burl) && bid.burl !== '') {
       bid.burl = replaceAuctionPrice(bid.burl, bid.originalCpm || cpm);
@@ -307,12 +307,12 @@ export const spec = {
 
 registerBidder(spec);
 
-function getLanguage() {
+function getLanguage () {
   const language = navigator.language ? 'language' : 'userLanguage';
   return navigator[language].split('-')[0];
 }
 
-function createBannerRequest(bid) {
+function createBannerRequest (bid) {
   const sizes = bid.mediaTypes.banner.sizes;
   if (!sizes.length) return;
 
@@ -327,7 +327,7 @@ function createBannerRequest(bid) {
   return r
 }
 
-function parseNative(native) {
+function parseNative (native) {
   const {assets, link, imptrackers, jstracker} = native;
   const result = {
     clickUrl: link.url,
@@ -357,7 +357,7 @@ function parseNative(native) {
   return result;
 }
 
-function createNativeRequest(bid) {
+function createNativeRequest (bid) {
   const assets = [];
   if (bid.nativeParams) {
     Object.keys(bid.nativeParams).forEach((key) => {
@@ -397,7 +397,7 @@ function createNativeRequest(bid) {
   }
 }
 
-function createVideoRequest(bid) {
+function createVideoRequest (bid) {
   const video = bid.mediaTypes.video;
   if (!video || !video.playerSize) return;
 
@@ -439,7 +439,7 @@ function createVideoRequest(bid) {
  * @param {ExtendedBidRequest} bid - The bid object
  * @returns {number} - Highest bid floor found
  */
-export function resolveFloor(bid) {
+export function resolveFloor (bid) {
   const floors = [0];
 
   if (typeof bid.getFloor === 'function') {
@@ -471,7 +471,7 @@ export function resolveFloor(bid) {
  * @param {Object} mediaTypeDef - Definition object for the media type
  * @returns {(number[]|string)[]} An array of sizes or undefined
  */
-function getMediaTypeSizes(mediaType, mediaTypeDef) {
+function getMediaTypeSizes (mediaType, mediaTypeDef) {
   let sizes;
   switch (mediaType) {
     case BANNER:

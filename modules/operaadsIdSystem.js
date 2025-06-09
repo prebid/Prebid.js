@@ -20,7 +20,7 @@ const SYNC_URL = 'https://t.adx.opera.com/identity/';
 const AJAX_TIMEOUT = 300;
 const AJAX_OPTIONS = {method: 'GET', withCredentials: true, contentType: 'application/json'};
 
-function constructUrl(pairs) {
+function constructUrl (pairs) {
   const queries = [];
   for (let key in pairs) {
     queries.push(`${key}=${encodeURIComponent(pairs[key])}`);
@@ -28,7 +28,7 @@ function constructUrl(pairs) {
   return `${SYNC_URL}?${queries.join('&')}`;
 }
 
-function asyncRequest(url, cb) {
+function asyncRequest (url, cb) {
   ajax.ajaxBuilder(AJAX_TIMEOUT)(
     url,
     {
@@ -82,7 +82,7 @@ export const operaIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     logMessage(`${MODULE_NAME}: start synchronizing opera uid`);
     const params = (config && config.params) || {};
     if (typeof params.pid !== 'string' || params.pid.length == 0) {

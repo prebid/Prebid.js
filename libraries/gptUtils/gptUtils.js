@@ -6,14 +6,14 @@ import {compareCodeAndSlot, deepAccess, isGptPubadsDefined, uniques} from '../..
  * @param {string} adUnitCode AdUnit code
  * @return {function} filter function
  */
-export function isSlotMatchingAdUnitCode(adUnitCode) {
+export function isSlotMatchingAdUnitCode (adUnitCode) {
   return (slot) => compareCodeAndSlot(slot, adUnitCode);
 }
 
 /**
  * @summary Export a k-v pair to GAM
  */
-export function setKeyValue(key, value) {
+export function setKeyValue (key, value) {
   if (!key || typeof key !== 'string') return false;
   window.googletag = window.googletag || {cmd: []};
   window.googletag.cmd = window.googletag.cmd || [];
@@ -25,7 +25,7 @@ export function setKeyValue(key, value) {
 /**
  * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
  */
-export function getGptSlotForAdUnitCode(adUnitCode) {
+export function getGptSlotForAdUnitCode (adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
@@ -37,7 +37,7 @@ export function getGptSlotForAdUnitCode(adUnitCode) {
 /**
  * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
  */
-export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+export function getGptSlotInfoForAdUnitCode (adUnitCode) {
   const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (matchingSlot) {
     return {
@@ -50,7 +50,7 @@ export function getGptSlotInfoForAdUnitCode(adUnitCode) {
 
 export const taxonomies = ['IAB_AUDIENCE_1_1', 'IAB_CONTENT_2_2'];
 
-export function getSignals(fpd) {
+export function getSignals (fpd) {
   const signals = Object.entries({
     [taxonomies[0]]: getSegments(fpd, ['user.data'], 4),
     [taxonomies[1]]: getSegments(fpd, CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
@@ -60,7 +60,7 @@ export function getSignals(fpd) {
   return signals;
 }
 
-export function getSegments(fpd, sections, segtax) {
+export function getSegments (fpd, sections, segtax) {
   return sections
     .flatMap(section => deepAccess(fpd, section) || [])
     .filter(datum => datum.ext?.segtax === segtax)
@@ -75,7 +75,7 @@ export function getSegments(fpd, sections, segtax) {
  * @param {String} event
  * @param {Function} callback
  */
-export function subscribeToGamEvent(event, callback) {
+export function subscribeToGamEvent (event, callback) {
   const register = () => window.googletag.pubads().addEventListener(event, callback);
   if (isGptPubadsDefined()) {
     register();
@@ -129,6 +129,6 @@ export function subscribeToGamEvent(event, callback) {
  * Add an event listener on the GAM event 'slotRenderEnded'.
  * @param {SlotRenderEndedEventCallback} callback
  */
-export function subscribeToGamSlotRenderEndedEvent(callback) {
+export function subscribeToGamSlotRenderEndedEvent (callback) {
   subscribeToGamEvent('slotRenderEnded', callback)
 }

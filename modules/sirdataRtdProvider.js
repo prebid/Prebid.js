@@ -97,7 +97,7 @@ let params = {
  * @param {boolean} deleteCookie - The cookie must be deleted
  * @returns {boolean} - True if the cookie was successfully set, otherwise false
  */
-export function setCookieOnTopDomain(key, value, hostname, deleteCookie) {
+export function setCookieOnTopDomain (key, value, hostname, deleteCookie) {
   const subDomains = hostname.split('.');
   let expTime = new Date();
   expTime.setTime(expTime.getTime() + (deleteCookie ? -1 : 365 * 24 * 60 * 60 * 1000)); // Set expiration time
@@ -119,7 +119,7 @@ export function setCookieOnTopDomain(key, value, hostname, deleteCookie) {
  * Retrieves the UID from storage (cookies or local storage)
  * @returns {Array|null} - Array of UID objects or null if no UID found
  */
-export function getUidFromStorage() {
+export function getUidFromStorage () {
   let cUid = STORAGE.getCookie(EUIDS_STORAGE_NAME, null);
   let lsUid = STORAGE.getDataFromLocalStorage(EUIDS_STORAGE_NAME, null);
   if (cUid && (!lsUid || cUid !== lsUid)) {
@@ -136,7 +136,7 @@ export function getUidFromStorage() {
  * @param {string} sddanId - The UID to be set
  * @returns {boolean} - True if the UID was successfully set, otherwise false
  */
-export function setUidInStorage(sddanId) {
+export function setUidInStorage (sddanId) {
   if (!sddanId) return false;
   sddanId = encodeURI(sddanId.toString());
   setCookieOnTopDomain(EUIDS_STORAGE_NAME, sddanId, cookieDomain, false);
@@ -151,7 +151,7 @@ export function setUidInStorage(sddanId) {
  * @param {Array} euids2 - The second array to process and merge.
  * @returns {Array} The merged array with unique sources and uid ids.
  */
-export function mergeEuidsArrays(euids1, euids2) {
+export function mergeEuidsArrays (euids1, euids2) {
   if (isEmpty(euids1)) return euids2;
   if (isEmpty(euids2)) return euids1;
   const mergedArray = [];
@@ -187,7 +187,7 @@ export function mergeEuidsArrays(euids1, euids2) {
  * @param {Object} moduleConfig - The module configuration
  * @returns {boolean} - True if data was deleted successfully
  */
-export function onDataDeletionRequest(moduleConfig) {
+export function onDataDeletionRequest (moduleConfig) {
   if (moduleConfig && moduleConfig.params) {
     setCookieOnTopDomain(EUIDS_STORAGE_NAME, '', window.location.hostname, true);
     STORAGE.removeDataFromLocalStorage(EUIDS_STORAGE_NAME, null);
@@ -201,7 +201,7 @@ export function onDataDeletionRequest(moduleConfig) {
  * @param {string} actualUrl - The actual URL of the current page.
  * @returns {boolean} - True if the content was sent successfully
  */
-export function postContentForSemanticAnalysis(postContentToken, actualUrl) {
+export function postContentForSemanticAnalysis (postContentToken, actualUrl) {
   if (!postContentToken || !actualUrl) return false;
 
   try {
@@ -238,7 +238,7 @@ export function postContentForSemanticAnalysis(postContentToken, actualUrl) {
  * Executes a callback function when the document is fully loaded.
  * @param {function} callback - The function to execute when the document is ready.
  */
-export function onDocumentReady(callback) {
+export function onDocumentReady (callback) {
   if (typeof callback !== 'function') return false;
   try {
     if (document.readyState && document.readyState !== 'loading') {
@@ -257,7 +257,7 @@ export function onDocumentReady(callback) {
  * @param {string} content - The content to be sanitized
  * @returns {string} - The sanitized content
  */
-export function removePII(content) {
+export function removePII (content) {
   const patterns = [
     /\b(?:\d{4}[ -]?){3}\d{4}\b/g, // Credit card numbers
     /\b\d{10,12}\b/g, // US bank account numbers
@@ -279,7 +279,7 @@ export function removePII(content) {
  * @param {Object} content - The content to be sanitized
  * @returns {Object} - The sanitized content
  */
-export function sanitizeContent(content) {
+export function sanitizeContent (content) {
   if (content && content.documentElement.textContent && content.documentElement.textContent.length > 500) {
     // Reduce size by removing useless content
     // Allowed tags
@@ -348,7 +348,7 @@ export function sanitizeContent(content) {
  * @param {Object} moduleConfig - The module Config
  * @param {Object} userConsent - The user consent information
  */
-export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
+export function getSegmentsAndCategories (reqBidsConfigObj, onDone, moduleConfig, userConsent) {
   logInfo(LOG_PREFIX, 'get Segments And Categories');
   const adUnits = (reqBidsConfigObj && reqBidsConfigObj.adUnits) || getGlobal().adUnits;
   if (!adUnits) {
@@ -453,7 +453,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
  * @param {number} cattaxid - The category taxonomy ID
  * @returns {boolean} - True if data was pushed successfully
  */
-export function pushToOrtb2(ortb2Fragments, bidder, data, segtaxid, cattaxid) {
+export function pushToOrtb2 (ortb2Fragments, bidder, data, segtaxid, cattaxid) {
   try {
     if (!isEmpty(data.segments)) {
       if (segtaxid) {
@@ -487,7 +487,7 @@ export function pushToOrtb2(ortb2Fragments, bidder, data, segtaxid, cattaxid) {
  * @param {number} segtaxValue - The segment taxonomy value
  * @returns {boolean} - True if data was set successfully
  */
-export function setOrtb2Sda(ortb2Fragments, bidder, type, segments, segtaxValue) {
+export function setOrtb2Sda (ortb2Fragments, bidder, type, segments, segtaxValue) {
   try {
     let ortb2Data = [{ name: ORTB2_NAME, segment: segments.map(segmentId => ({ id: segmentId })) }];
     if (segtaxValue) ortb2Data[0].ext = { segtax: segtaxValue };
@@ -508,7 +508,7 @@ export function setOrtb2Sda(ortb2Fragments, bidder, type, segments, segtaxValue)
  * @param {Object} segments - The segments to be set
  * @returns {boolean} - True if data was set successfully
  */
-export function setOrtb2(ortb2Fragments, bidder, path, segments) {
+export function setOrtb2 (ortb2Fragments, bidder, path, segments) {
   try {
     if (isEmpty(segments)) return false;
     let ortb2Conf = {};
@@ -530,7 +530,7 @@ export function setOrtb2(ortb2Fragments, bidder, path, segments) {
  * @param {Object} bid - The bid object
  * @returns {boolean} - True if the function was executed successfully
  */
-export function loadCustomFunction(todo, adUnit, list, data, bid) {
+export function loadCustomFunction (todo, adUnit, list, data, bid) {
   try {
     if (typeof todo === 'function') todo(adUnit, list, data, bid);
   } catch (e) {
@@ -546,7 +546,7 @@ export function loadCustomFunction(todo, adUnit, list, data, bid) {
  * @param {string} pid - The partner ID (attributed by Sirdata to bidder)
  * @returns {Object} - The segments and categories data
  */
-export function getSegAndCatsArray(data, minScore, pid) {
+export function getSegAndCatsArray (data, minScore, pid) {
   let sirdataData = { segments: [], categories: [], categories_score: {} };
   minScore = typeof minScore === 'number' ? minScore : 30;
   const { cattaxid, segtaxid, segments } = data;
@@ -603,7 +603,7 @@ export function getSegAndCatsArray(data, minScore, pid) {
  * @param {string} aliasActualBidder - The bidder Alias
  * @returns {Object} - The modified Sirdata data
  */
-export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, bidderIndex, adUnit, aliasActualBidder) {
+export function applySdaGetSpecificData (data, sirdataData, biddersParamsExist, reqBids, bid, bidderIndex, adUnit, aliasActualBidder) {
   // Apply custom function or return Bidder Specific Data if publisher is ok
   if (bidderIndex && params.bidders[bidderIndex]?.customFunction && typeof (params.bidders[bidderIndex]?.customFunction) === 'function') {
     return loadCustomFunction(params.bidders[bidderIndex].customFunction, adUnit, sirdataData, data, bid);
@@ -640,7 +640,7 @@ export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, r
  * @param {function} onDone - The callback function to be called upon completion
  * @returns {Array} - The ad units array
  */
-export function addSegmentData(reqBids, data, adUnits, onDone) {
+export function addSegmentData (reqBids, data, adUnits, onDone) {
   logInfo(LOG_PREFIX, 'Dispatch Segments And Categories');
   const minScore = params.contextualMinRelevancyScore || 30;
   let sirdataData = getSegAndCatsArray(data, minScore, '');
@@ -726,7 +726,7 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
  * @param {Object} moduleConfig - The module configuration
  * @returns {boolean} - True if the initialization was successful
  */
-export function init(moduleConfig) {
+export function init (moduleConfig) {
   logInfo(LOG_PREFIX, moduleConfig);
   if (typeof (moduleConfig.params) !== 'object' || !moduleConfig.params.key) return false;
   if (typeof (moduleConfig.params.authorizedEids) !== 'object' || !Array.isArray(moduleConfig.params.authorizedEids)) {

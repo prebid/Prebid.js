@@ -15,7 +15,7 @@ describe('DSL', () => {
 
   let onError;
 
-  function scan(obj) {
+  function scan (obj) {
     spec(null, null, null, obj, onError);
   }
 

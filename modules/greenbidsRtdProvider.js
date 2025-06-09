@@ -10,7 +10,7 @@ const ENDPOINT = 'https://t.greenbids.ai';
 
 const rtdOptions = {};
 
-function init(moduleConfig) {
+function init (moduleConfig) {
   let params = moduleConfig?.params;
   if (!params?.pbuid) {
     logError('Greenbids pbuid is not set!');
@@ -22,7 +22,7 @@ function init(moduleConfig) {
   }
 }
 
-function onAuctionInitEvent(auctionDetails) {
+function onAuctionInitEvent (auctionDetails) {
   /* Emitting one billing event per auction */
   let defaultId = 'default_id';
   let greenbidsId = deepAccess(auctionDetails.adUnits[0], 'ortb2Imp.ext.greenbids.greenbidsId', defaultId);
@@ -37,13 +37,13 @@ function onAuctionInitEvent(auctionDetails) {
   }
 }
 
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+function getBidRequestData (reqBidsConfigObj, callback, config, userConsent) {
   let greenbidsId = generateUUID();
   let promise = createPromise(reqBidsConfigObj, greenbidsId);
   promise.then(callback);
 }
 
-function createPromise(reqBidsConfigObj, greenbidsId) {
+function createPromise (reqBidsConfigObj, greenbidsId) {
   return new Promise((resolve) => {
     const timeoutId = setTimeout(() => {
       logWarn('GreenbidsRtdProvider: Greenbids API timeout, skipping shaping');
@@ -73,7 +73,7 @@ function createPromise(reqBidsConfigObj, greenbidsId) {
   });
 }
 
-function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbidsId) {
+function processSuccessResponse (response, timeoutId, reqBidsConfigObj, greenbidsId) {
   clearTimeout(timeoutId);
   try {
     const responseAdUnits = JSON.parse(response);
@@ -83,7 +83,7 @@ function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbids
   }
 }
 
-function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
+function updateAdUnitsBasedOnResponse (adUnits, responseAdUnits, greenbidsId) {
   const isFilteringForced = getParameterByName('greenbids_force_filtering');
   const isFilteringDisabled = getParameterByName('greenbids_disable_filtering');
   adUnits.forEach((adUnit) => {
@@ -106,22 +106,22 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
   });
 }
 
-function findMatchingAdUnit(responseAdUnits, adUnitCode) {
+function findMatchingAdUnit (responseAdUnits, adUnitCode) {
   return responseAdUnits.find((responseAdUnit) => responseAdUnit.code === adUnitCode);
 }
 
-function removeFalseBidders(adUnit, matchingAdUnit) {
+function removeFalseBidders (adUnit, matchingAdUnit) {
   const falseBidders = getFalseBidders(matchingAdUnit.bidders);
   adUnit.bids = adUnit.bids.filter((bidRequest) => !falseBidders.includes(bidRequest.bidder));
 }
 
-function getFalseBidders(bidders) {
+function getFalseBidders (bidders) {
   return Object.entries(bidders)
     .filter(([bidder, shouldKeep]) => !shouldKeep)
     .map(([bidder]) => bidder);
 }
 
-function stripAdUnits(adUnits) {
+function stripAdUnits (adUnits) {
   const stripedAdUnits = deepClone(adUnits);
   return stripedAdUnits.map(adUnit => {
     adUnit.bids = adUnit.bids.map(bid => {
@@ -131,7 +131,7 @@ function stripAdUnits(adUnits) {
   });
 }
 
-function createPayload(reqBidsConfigObj, greenbidsId) {
+function createPayload (reqBidsConfigObj, greenbidsId) {
   return JSON.stringify({
     version: MODULE_VERSION,
     ...rtdOptions,

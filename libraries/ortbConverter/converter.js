@@ -4,7 +4,7 @@ import {DEFAULT_PROCESSORS} from './processors/default.js';
 import {BID_RESPONSE, DEFAULT, getProcessors, IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
 import {mergeProcessors} from './lib/mergeProcessors.js';
 
-export function ortbConverter({
+export function ortbConverter ({
   context: defaultContext = {},
   processors = defaultProcessors,
   overrides = {},
@@ -15,7 +15,7 @@ export function ortbConverter({
 } = {}) {
   const REQ_CTX = new WeakMap();
 
-  function builder(slot, wrapperFn, builderFn, errorHandler) {
+  function builder (slot, wrapperFn, builderFn, errorHandler) {
     let build;
     return function () {
       if (build == null) {
@@ -84,7 +84,7 @@ export function ortbConverter({
   );
 
   return {
-    toORTB({bidderRequest, bidRequests, context = {}}) {
+    toORTB ({bidderRequest, bidRequests, context = {}}) {
       bidRequests = bidRequests || bidderRequest.bids;
       const ctx = {
         req: Object.assign({bidRequests}, defaultContext, context),
@@ -111,12 +111,12 @@ export function ortbConverter({
       }
       return request;
     },
-    fromORTB({request, response}) {
+    fromORTB ({request, response}) {
       const ctx = REQ_CTX.get(request);
       if (ctx == null) {
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`')
       }
-      function augmentContext(ctx, extraParams = {}) {
+      function augmentContext (ctx, extraParams = {}) {
         return Object.assign(ctx, {ortbRequest: request}, extraParams);
       }
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));

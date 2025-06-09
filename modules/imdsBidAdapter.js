@@ -11,7 +11,7 @@ const BID_SCHEME = 'https://';
 const BID_DOMAIN = 'technoratimedia.com';
 const USER_SYNC_IFRAME_URL = 'https://ad-cdn.technoratimedia.com/html/usersync.html';
 const USER_SYNC_PIXEL_URL = 'https://sync.technoratimedia.com/services';
-const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'plcmt', 'linearity', 'mimes', 'protocols', 'api' ];
+const VIDEO_PARAMS = ['minduration', 'maxduration', 'startdelay', 'placement', 'plcmt', 'linearity', 'mimes', 'protocols', 'api'];
 const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
@@ -22,20 +22,20 @@ export const spec = {
   aliases: [
     { code: 'synacormedia' }
   ],
-  supportedMediaTypes: [ BANNER, VIDEO ],
+  supportedMediaTypes: [BANNER, VIDEO],
   sizeMap: {},
 
-  isVideoBid: function(bid) {
+  isVideoBid: function (bid) {
     return bid.mediaTypes !== undefined &&
       bid.mediaTypes.hasOwnProperty('video');
   },
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const hasRequiredParams = bid && bid.params && (bid.params.hasOwnProperty('placementId') || bid.params.hasOwnProperty('tagId')) && bid.params.hasOwnProperty('seatId');
     const hasAdSizes = bid && getAdUnitSizes(bid).filter(size => BLOCKED_AD_SIZES.indexOf(size.join('x')) === -1).length > 0
     return !!(hasRequiredParams && hasAdSizes);
   },
 
-  buildRequests: function(validBidReqs, bidderRequest) {
+  buildRequests: function (validBidReqs, bidderRequest) {
     if (!validBidReqs || !validBidReqs.length || !bidderRequest) {
       return;
     }
@@ -172,7 +172,7 @@ export const spec = {
     return imps;
   },
 
-  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
+  buildVideoImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     let imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length != 2) {
@@ -218,7 +218,7 @@ export const spec = {
       .filter(param => VIDEO_PARAMS.includes(param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !(sourceObj[param].length < 1)))
       .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const updateMacros = (bid, r) => {
       return r ? r.replace(/\${AUCTION_PRICE}/g, bid.price) : r;
     };
@@ -303,7 +303,7 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
     const queryParams = ['src=pbjs%2F$prebid.version$'];
     if (gdprConsent) {
@@ -332,7 +332,7 @@ export const spec = {
   }
 };
 
-function getBidFloor(bid, mediaType, size) {
+function getBidFloor (bid, mediaType, size) {
   if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
   }

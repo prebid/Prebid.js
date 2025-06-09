@@ -26,7 +26,7 @@ const BIDDER_SPECIFIC_REQUEST_PROPS = new Set(['bidderCode', 'bidderRequestId', 
 
 const getMinimumFloor = (() => {
   const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
-  return function(candidates) {
+  return function (candidates) {
     let min;
     for (const candidate of candidates) {
       if (candidate?.bidfloorcur == null || candidate?.bidfloor == null) return null;
@@ -41,7 +41,7 @@ const PBS_CONVERTER = ortbConverter({
   context: {
     netRevenue: DEFAULT_S2S_NETREVENUE,
   },
-  imp(buildImp, proxyBidRequest, context) {
+  imp (buildImp, proxyBidRequest, context) {
     Object.assign(context, proxyBidRequest.pbsData);
     const imp = buildImp(proxyBidRequest, context);
     (proxyBidRequest.bids || []).forEach(bid => {
@@ -55,7 +55,7 @@ const PBS_CONVERTER = ortbConverter({
       return imp;
     }
   },
-  request(buildRequest, imps, proxyBidderRequest, context) {
+  request (buildRequest, imps, proxyBidderRequest, context) {
     if (!imps.length) {
       logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
     } else {
@@ -78,7 +78,7 @@ const PBS_CONVERTER = ortbConverter({
       return request;
     }
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     // before sending the response throgh "stock" ortb conversion, here we need to:
     // - filter out ones that come from an "unknown" bidder (if allowUnknownBidderCode is not set)
     // - overwrite context.bidRequest with the actual bid request for this seat / imp combination
@@ -125,10 +125,10 @@ const PBS_CONVERTER = ortbConverter({
   },
   overrides: {
     [IMP]: {
-      id(orig, imp, proxyBidRequest, context) {
+      id (orig, imp, proxyBidRequest, context) {
         imp.id = context.impId;
       },
-      params(orig, imp, proxyBidRequest, context) {
+      params (orig, imp, proxyBidRequest, context) {
         // override params processing to do it for each bidRequest in this imp;
         // also, take overrides from s2sConfig.adapterOptions
         const adapterOptions = context.s2sBidRequest.s2sConfig.adapterOptions;
@@ -141,7 +141,7 @@ const PBS_CONVERTER = ortbConverter({
       },
       // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor/extBidfloor processing,
       // and aggregate all of them into a single, minimum floor to put in the request
-      bidfloor(orig, imp, proxyBidRequest, context) {
+      bidfloor (orig, imp, proxyBidRequest, context) {
         const min = getMinimumFloor((function * () {
           for (const req of context.actualBidRequests.values()) {
             const floor = {};
@@ -153,8 +153,8 @@ const PBS_CONVERTER = ortbConverter({
           Object.assign(imp, min);
         }
       },
-      extBidfloor(orig, imp, proxyBidRequest, context) {
-        function setExtFloor(target, minFloor) {
+      extBidfloor (orig, imp, proxyBidRequest, context) {
+        function setExtFloor (target, minFloor) {
           if (minFloor != null) {
             deepSetValue(target, 'ext.bidfloor', minFloor.bidfloor);
             deepSetValue(target, 'ext.bidfloorcur', minFloor.bidfloorcur);
@@ -175,7 +175,7 @@ const PBS_CONVERTER = ortbConverter({
       }
     },
     [REQUEST]: {
-      fpd(orig, ortbRequest, proxyBidderRequest, context) {
+      fpd (orig, ortbRequest, proxyBidderRequest, context) {
         // FPD is handled different for PBS - the base request will only contain global FPD;
         // bidder-specific values are set in ext.prebid.bidderconfig
 
@@ -206,11 +206,11 @@ const PBS_CONVERTER = ortbConverter({
           deepSetValue(ortbRequest, 'ext.prebid.bidderconfig', fpdConfigs);
         }
       },
-      extPrebidAliases(orig, ortbRequest, proxyBidderRequest, context) {
+      extPrebidAliases (orig, ortbRequest, proxyBidderRequest, context) {
         // override alias processing to do it for each bidder in the request
         context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       },
-      sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
+      sourceExtSchain (orig, ortbRequest, proxyBidderRequest, context) {
         // pass schains in ext.prebid.schains
         let chains = ortbRequest?.ext?.prebid?.schains || [];
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
@@ -240,11 +240,11 @@ const PBS_CONVERTER = ortbConverter({
       }
     },
     [RESPONSE]: {
-      serverSideStats(orig, response, ortbResponse, context) {
+      serverSideStats (orig, response, ortbResponse, context) {
         // override to process each request
         context.actualBidderRequests.forEach(req => orig(response, ortbResponse, {...context, bidderRequest: req, bidRequests: req.bids}));
       },
-      paapiConfigs(orig, response, ortbResponse, context) {
+      paapiConfigs (orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
           .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => {
             const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
@@ -265,7 +265,7 @@ const PBS_CONVERTER = ortbConverter({
   },
 });
 
-export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
+export function buildPBSRequest (s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   const requestTimestamp = timestamp();
   const impIds = new Set();
   const proxyBidRequests = [];
@@ -338,6 +338,6 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
   });
 }
 
-export function interpretPBSResponse(response, request) {
+export function interpretPBSResponse (response, request) {
   return PBS_CONVERTER.fromORTB({response, request});
 }

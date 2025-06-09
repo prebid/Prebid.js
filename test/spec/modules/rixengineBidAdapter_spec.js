@@ -98,7 +98,7 @@ describe('rixengine bid adapter', function () {
       expect(bids).to.be.an('array').that.is.not.empty;
       validateBidOnIndex(0);
 
-      function validateBidOnIndex(index) {
+      function validateBidOnIndex (index) {
         expect(bids[index]).to.have.property('currency', 'USD');
         expect(bids[index]).to.have.property(
           'requestId',
@@ -130,7 +130,7 @@ describe('rixengine bid adapter', function () {
     });
 
     it('handles empty response', function () {
-      it('No bid response', function() {
+      it('No bid response', function () {
         var noBidResponse = spec.interpretResponse({
           body: '',
         });

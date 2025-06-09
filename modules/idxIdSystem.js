@@ -18,11 +18,11 @@ const IDX_MODULE_NAME = 'idx';
 const IDX_COOKIE_NAME = '_idx';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: IDX_MODULE_NAME});
 
-function readIDxFromCookie() {
+function readIDxFromCookie () {
   return storage.cookiesAreEnabled ? storage.getCookie(IDX_COOKIE_NAME) : null;
 }
 
-function readIDxFromLocalStorage() {
+function readIDxFromLocalStorage () {
   return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(IDX_COOKIE_NAME) : null;
 }
 
@@ -39,7 +39,7 @@ export const idxIdSubmodule = {
    * @param { Object | string | undefined } value
    * @return { Object | string | undefined }
    */
-  decode(value) {
+  decode (value) {
     const idxVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return idxVal ? {
       'idx': idxVal
@@ -50,7 +50,7 @@ export const idxIdSubmodule = {
    * @function
    * @return {{id: string | undefined } | undefined}
    */
-  getId() {
+  getId () {
     const idxString = readIDxFromLocalStorage() || readIDxFromCookie();
     if (typeof idxString == 'string' && idxString) {
       try {

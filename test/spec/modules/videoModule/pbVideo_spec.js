@@ -18,7 +18,7 @@ let videoImpressionVerifierMock;
 let adQueueCoordinatorMock;
 let adQueueCoordinatorFactoryMock;
 
-function resetTestVars() {
+function resetTestVars () {
   ortbVideoMock = {};
   ortbContentMock = {};
   videoCoreMock = {
@@ -128,7 +128,7 @@ describe('Prebid Video', function () {
       });
     });
 
-    describe('Ad Server configuration', function() {
+    describe('Ad Server configuration', function () {
       const test_vendor_code = 5;
       const test_params = { test: 'params' };
       providers[0].adServer = { vendorCode: test_vendor_code, params: test_params };
@@ -145,7 +145,7 @@ describe('Prebid Video', function () {
       expect(requestBidsMock.before.calledOnce).to.be.true;
     });
 
-    it('requests oRtb params and writes them to ad unit and config', function() {
+    it('requests oRtb params and writes them to ad unit and config', function () {
       const getOrtbVideoSpy = videoCoreMock.getOrtbVideo = sinon.spy(() => ({
         test: 'videoTestValue'
       }));
@@ -246,7 +246,7 @@ describe('Prebid Video', function () {
         }
       }
     };
-    const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
+    const auctionResults = { adUnits: [expectedAdUnit, {}] };
 
     beforeEach(() => {
       gamSubmoduleMock.getAdTagUrl.resetHistory();
@@ -315,7 +315,7 @@ describe('Prebid Video', function () {
         code: expectedAdUnitCode,
         video: { divId: expectedDivId }
       };
-      const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
+      const auctionResults = { adUnits: [expectedAdUnit, {}] };
 
       pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, pbEvents);
       beforeBidRequestCallback(() => {}, {});

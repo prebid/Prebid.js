@@ -34,7 +34,7 @@ export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
+  supportedMediaTypes: [NATIVE, BANNER, VIDEO],
   isBidRequestValid: (bid) => {
     if (typeof bid.params !== 'object') {
       return false;
@@ -257,7 +257,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function parseNative(bid) {
+function parseNative (bid) {
   const { assets, link, privacy, eventtrackers } = JSON.parse(bid.adm);
   const result = {
     clickUrl: link.url,
@@ -290,7 +290,7 @@ function parseNative(bid) {
   return result;
 }
 
-function getNativeAssets(bid) {
+function getNativeAssets (bid) {
   return _map(bid.nativeParams, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
@@ -327,7 +327,7 @@ function getNativeAssets(bid) {
   }).filter(Boolean);
 }
 
-function getVideoAsset(bid) {
+function getVideoAsset (bid) {
   const sizes = bid.mediaTypes.video.playerSize.flat();
   return {
     w: parseInt(sizes[0], 10),
@@ -349,7 +349,7 @@ function getVideoAsset(bid) {
   };
 }
 
-function _getFloor(bid, type) {
+function _getFloor (bid, type) {
   const floorInfo = bid.getFloor({
     currency: CURRENCY,
     mediaType: type,
@@ -361,11 +361,11 @@ function _getFloor(bid, type) {
   return null;
 }
 
-function isVideoRequest(bid) {
+function isVideoRequest (bid) {
   return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
 }
 
-function createRenderer(bid) {
+function createRenderer (bid) {
   let config = {};
   let playerUrl = OUTSTREAM_RENDERER_URL;
   let render = function (bid) {
@@ -404,7 +404,7 @@ function createRenderer(bid) {
   return renderer;
 }
 
-function isValidVideoRequest(bid) {
+function isValidVideoRequest (bid) {
   const videoAdUnit = deepAccess(bid, 'mediaTypes.video')
   if (!videoAdUnit) {
     return false;

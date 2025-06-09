@@ -160,13 +160,13 @@ describe('Improve Digital Adapter Tests', function () {
     },
   };
 
-  function updateNativeParams(bidRequests) {
+  function updateNativeParams (bidRequests) {
     bidRequests = deepClone(bidRequests);
     decorateAdUnitsWithNativeParams(bidRequests);
     return bidRequests;
   }
 
-  function formatPublisherUrl(baseUrl, publisherId) {
+  function formatPublisherUrl (baseUrl, publisherId) {
     return `${baseUrl}/${publisherId}/${PB_ENDPOINT}`;
   }
 
@@ -478,7 +478,7 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     if (FEATURES.VIDEO) {
-      it('should set video params for instream', function() {
+      it('should set video params for instream', function () {
         const bidRequest = deepClone(instreamBidRequest);
         delete bidRequest.mediaTypes.video.playerSize;
         const videoParams = {
@@ -511,7 +511,7 @@ describe('Improve Digital Adapter Tests', function () {
         expect(payload.imp[0].video.w).equal(640);
       });
 
-      it('should ignore invalid/unexpected video params', function() {
+      it('should ignore invalid/unexpected video params', function () {
         const bidRequest = deepClone(instreamBidRequest);
         // 1
         const videoTest = {
@@ -527,7 +527,7 @@ describe('Improve Digital Adapter Tests', function () {
         expect(payload.imp[0].video.blah).not.to.exist;
       });
 
-      it('should set video params for outstream', function() {
+      it('should set video params for outstream', function () {
         const bidRequest = deepClone(outstreamBidRequest);
         bidRequest.params.video = videoParams;
         const request = spec.buildRequests([bidRequest], {})[0];
@@ -540,7 +540,7 @@ describe('Improve Digital Adapter Tests', function () {
         ...videoParams});
       });
       //
-      it('should set video params for multi-format', function() {
+      it('should set video params for multi-format', function () {
         const bidRequest = deepClone(multiFormatBidRequest);
         bidRequest.params.video = videoParams;
         const request = spec.buildRequests([bidRequest], {})[0];
@@ -600,7 +600,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should return one request in a single request mode', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
-      const requests = spec.buildRequests([ simpleBidRequest, instreamBidRequest ], bidderRequest);
+      const requests = spec.buildRequests([simpleBidRequest, instreamBidRequest], bidderRequest);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
@@ -613,7 +613,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should create one request per endpoint in a single request mode', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.singleRequest').returns(true);
-      const requests = spec.buildRequests([ extendBidRequest, simpleBidRequest, instreamBidRequest ], bidderRequest);
+      const requests = spec.buildRequests([extendBidRequest, simpleBidRequest, instreamBidRequest], bidderRequest);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(2);
       expect(requests[0].url).to.equal(EXTEND_URL);
@@ -688,7 +688,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should set extend params when extend mode enabled from global configuration', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       const bannerRequest = deepClone(simpleBidRequest);
-      const keyValues = { testKey: [ 'testValue' ] };
+      const keyValues = { testKey: ['testValue'] };
       bannerRequest.params.keyValues = keyValues;
 
       getConfigStub.withArgs('improvedigital.extend').returns(true);
@@ -757,7 +757,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(requests[1].url).to.equal(EXTEND_URL);
     });
 
-    it('should add publisherId to request URL when available in request params', function() {
+    it('should add publisherId to request URL when available in request params', function () {
       const bidRequest = deepClone(simpleBidRequest);
       bidRequest.params.publisherId = 1000;
       let request = spec.buildRequests([bidRequest], bidderRequest)[0];
@@ -1085,13 +1085,13 @@ describe('Improve Digital Adapter Tests', function () {
       content: expectedBidOutstreamVideo[0].vastXml
     };
 
-    function makeRequest(bidderRequest) {
+    function makeRequest (bidderRequest) {
       return {
         ortbRequest: CONVERTER.toORTB({bidderRequest})
       }
     }
 
-    function expectMatch(actual, expected) {
+    function expectMatch (actual, expected) {
       sinon.assert.match(actual, expected.map(i => sinon.match(i)));
     }
 
@@ -1256,7 +1256,7 @@ describe('Improve Digital Adapter Tests', function () {
   });
 
   describe('getUserSyncs', function () {
-    const serverResponses = [ serverResponse, serverResponseTwoBids ];
+    const serverResponses = [serverResponse, serverResponseTwoBids];
     const pixelSyncs = [
       { type: 'image', url: 'https://link1' },
       { type: 'image', url: 'https://link2' },

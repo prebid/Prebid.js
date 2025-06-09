@@ -26,7 +26,7 @@ const converter = ortbConverter({
     ttl: 300,
     currency: DEFAULT_CURRENCY,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     const floor = getBidFloor(bidRequest);
     if (floor) {
@@ -36,7 +36,7 @@ const converter = ortbConverter({
 
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const req = buildRequest(imps, bidderRequest, context);
     const bid = context.bidRequests[0];
     utils.mergeDeep(req, {
@@ -50,13 +50,13 @@ const converter = ortbConverter({
     });
     return req;
   },
-  response(buildResponse, bidResponses, ortbResponse, context) {
+  response (buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
     return response.bids;
   },
 });
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   const isValid = bidRequest.params.accountId;
   if (!isValid) {
     utils.logError('AdFusion adapter bidRequest has no accountId');
@@ -65,7 +65,7 @@ function isBidRequestValid(bidRequest) {
   return true;
 }
 
-function buildRequests(bids, bidderRequest) {
+function buildRequests (bids, bidderRequest) {
   let videoBids = bids.filter((bid) => isVideoBid(bid));
   let bannerBids = bids.filter((bid) => isBannerBid(bid));
   let requests = bannerBids.length
@@ -77,7 +77,7 @@ function buildRequests(bids, bidderRequest) {
   return requests;
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: REQUEST_URL,
@@ -89,19 +89,19 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   };
 }
 
-function isVideoBid(bid) {
+function isVideoBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.video');
 }
 
-function isBannerBid(bid) {
+function isBannerBid (bid) {
   return utils.deepAccess(bid, 'mediaTypes.banner');
 }
 
-function interpretResponse(resp, req) {
+function interpretResponse (resp, req) {
   return converter.fromORTB({ request: req.data, response: resp.body });
 }
 
-function getBidFloor(bid) {
+function getBidFloor (bid) {
   if (utils.isFn(bid.getFloor)) {
     let floor = bid.getFloor({
       currency: DEFAULT_CURRENCY,

@@ -21,7 +21,7 @@ describe('ValuadAdapter', function () {
   let sandbox;
   let clock;
 
-  before(function() {
+  before(function () {
     validBidRequests = [
       {
         bidder: 'valuad',
@@ -291,7 +291,7 @@ describe('ValuadAdapter', function () {
   describe('interpretResponse', function () {
     let serverResponse;
 
-    beforeEach(function() {
+    beforeEach(function () {
       serverResponse = {
         body: {
           id: 'test-response-id',
@@ -371,7 +371,7 @@ describe('ValuadAdapter', function () {
   describe('getUserSyncs', function () {
     let serverResponses;
 
-    beforeEach(function() {
+    beforeEach(function () {
       serverResponses = [
         {
           body: {

@@ -6,7 +6,7 @@ import {deepAccess, getBidIdParameter, isArray, logError} from '../src/utils.js'
 const BIDDER_CODE = 'adipolo';
 const ENDPOINT = 'https://prebid.adipolo.live';
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (bid && typeof bid.params !== 'object') {
     logError('Params is not defined or is incorrect in the bidder settings');
     return false;

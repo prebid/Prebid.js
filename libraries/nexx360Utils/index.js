@@ -26,7 +26,7 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
   * @param {ServerResponse[]} serverResponses List of server's responses.
   * @return {UserSync[]} The user syncs which should be dropped.
   */
-export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+export function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
   if (typeof serverResponses === 'object' &&
   serverResponses != null &&
   serverResponses.length > 0 &&
@@ -40,7 +40,7 @@ export function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConse
   }
 };
 
-function outstreamRender(response) {
+function outstreamRender (response) {
   response.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       sizes: [response.width, response.height],
@@ -58,7 +58,7 @@ function outstreamRender(response) {
   });
 };
 
-export function createRenderer(bid, url) {
+export function createRenderer (bid, url) {
   const renderer = Renderer.install({
     id: bid.id,
     url: url,
@@ -70,7 +70,7 @@ export function createRenderer(bid, url) {
   return renderer;
 };
 
-export function enrichImp(imp, bidRequest) {
+export function enrichImp (imp, bidRequest) {
   deepSetValue(imp, 'tagid', bidRequest.adUnitCode);
   deepSetValue(imp, 'ext.adUnitCode', bidRequest.adUnitCode);
   const divId = bidRequest.params.divId || bidRequest.adUnitCode;
@@ -84,7 +84,7 @@ export function enrichImp(imp, bidRequest) {
   return imp;
 }
 
-export function enrichRequest(request, amxId, bidderRequest, pageViewId, bidderVersion) {
+export function enrichRequest (request, amxId, bidderRequest, pageViewId, bidderVersion) {
   if (amxId) {
     deepSetValue(request, 'ext.localStorage.amxId', amxId);
     if (!request.user) request.user = {};
@@ -107,7 +107,7 @@ export function enrichRequest(request, amxId, bidderRequest, pageViewId, bidderV
   return request;
 };
 
-export function createResponse(bid, respBody) {
+export function createResponse (bid, respBody) {
   const response = {
     requestId: bid.impid,
     cpm: bid.price,
@@ -145,7 +145,7 @@ export function createResponse(bid, respBody) {
  * Get the AMX ID
  * @return { string | false } false if localstorageNotEnabled
  */
-export function getAmxId(storage, bidderCode) {
+export function getAmxId (storage, bidderCode) {
   if (!storage.localStorageIsEnabled()) {
     logInfo(`localstorage not enabled for ${bidderCode}`);
     return false;

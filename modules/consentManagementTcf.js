@@ -25,9 +25,9 @@ const cmpCallMap = {
 /**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  */
-function lookupIabConsent(setProvisionalConsent) {
+function lookupIabConsent (setProvisionalConsent) {
   return new Promise((resolve, reject) => {
-    function cmpResponseCallback(tcfData, success) {
+    function cmpResponseCallback (tcfData, success) {
       logInfo('Received a response from CMP', tcfData);
       if (success) {
         try {
@@ -70,8 +70,8 @@ function lookupIabConsent(setProvisionalConsent) {
   })
 }
 
-function parseConsentData(consentObject) {
-  function checkData() {
+function parseConsentData (consentObject) {
+  function checkData () {
     // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
     const gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
     const tcString = consentObject && consentObject.tcString;
@@ -88,7 +88,7 @@ function parseConsentData(consentObject) {
   }
 }
 
-function toConsentData(cmpConsentObject) {
+function toConsentData (cmpConsentObject) {
   const consentData = {
     consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
     vendorData: (cmpConsentObject) || undefined,
@@ -104,7 +104,7 @@ function toConsentData(cmpConsentObject) {
 /**
  * Simply resets the module's consentData variable back to undefined, mainly for testing purposes
  */
-export function resetConsentData() {
+export function resetConsentData () {
   consentConfig = {};
   gdprDataHandler.reset();
 }
@@ -121,7 +121,7 @@ const parseConfig = configParser({
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
  * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
  */
-export function setConsentConfig(config) {
+export function setConsentConfig (config) {
   // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
   // else for backward compatability, just use `config`
   config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
@@ -135,7 +135,7 @@ export function setConsentConfig(config) {
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
-export function enrichFPDHook(next, fpd) {
+export function enrichFPDHook (next, fpd) {
   return next(fpd.then(ortb2 => {
     const consent = gdprDataHandler.getConsentData();
     if (consent) {
@@ -153,7 +153,7 @@ export function enrichFPDHook(next, fpd) {
 
 enrichFPD.before(enrichFPDHook);
 
-export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
+export function setOrtbAdditionalConsent (ortbRequest, bidderRequest) {
   // this is not a standardized name for addtlConsent, so keep this as an ORTB library processor rather than an FPD enrichment
   const addtl = bidderRequest.gdprConsent?.addtlConsent;
   if (addtl && typeof addtl === 'string') {

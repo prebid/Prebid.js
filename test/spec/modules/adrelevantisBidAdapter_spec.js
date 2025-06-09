@@ -204,7 +204,7 @@ describe('AdrelevantisAdapter', function () {
       });
     });
 
-    it('should contain hb_source value for other media', function() {
+    it('should contain hb_source value for other media', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
@@ -220,7 +220,7 @@ describe('AdrelevantisAdapter', function () {
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
 
-    it('adds context data (category and keywords) to request when set', function() {
+    it('adds context data (category and keywords) to request when set', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
       const ortb2 = {
         site: {
@@ -723,7 +723,7 @@ describe('AdrelevantisAdapter', function () {
       );
     });
 
-    it('should add deal_priority and deal_code', function() {
+    it('should add deal_priority and deal_code', function () {
       let responseWithDeal = deepClone(response);
       responseWithDeal.tags[0].ads[0].deal_priority = 'high';
       responseWithDeal.tags[0].ads[0].deal_code = '123';
@@ -738,7 +738,7 @@ describe('AdrelevantisAdapter', function () {
       expect(Object.keys(result[0].adrelevantis)).to.include.members(['buyerMemberId', 'dealPriority', 'dealCode']);
     });
 
-    it('should add advertiser id', function() {
+    it('should add advertiser id', function () {
       let responseAdvertiserId = deepClone(response);
       responseAdvertiserId.tags[0].ads[0].advertiser_id = '123';
 

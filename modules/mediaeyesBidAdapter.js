@@ -85,7 +85,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function cookingImp(bidReq) {
+function cookingImp (bidReq) {
   let imp = {};
   if (bidReq) {
     const bidfloor = getBidFloor(bidReq);
@@ -111,7 +111,7 @@ const cookImpBanner = ({ mediaTypes, params }) => {
   }
 };
 
-function getBidFloor(bidRequest) {
+function getBidFloor (bidRequest) {
   let bidfloor = deepAccess(bidRequest, 'params.bidFloor', 0)
 
   if (!bidfloor && isFn(bidRequest.getFloor)) {

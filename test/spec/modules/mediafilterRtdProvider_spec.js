@@ -10,7 +10,7 @@ import {
 } from '../../../modules/mediafilterRtdProvider.js';
 
 describe('The Media Filter RTD module', function () {
-  describe('register()', function() {
+  describe('register()', function () {
     let submoduleSpy, generateInitHandlerSpy;
 
     beforeEach(function () {
@@ -32,20 +32,20 @@ describe('The Media Filter RTD module', function () {
     });
   });
 
-  describe('setup()', function() {
+  describe('setup()', function () {
     let setupEventListenerSpy, setupScriptSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       setupEventListenerSpy = sinon.spy(MediaFilter, 'setupEventListener');
       setupScriptSpy = sinon.spy(MediaFilter, 'setupScript');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       setupEventListenerSpy.restore();
       setupScriptSpy.restore();
     });
 
-    it('should call setupEventListener and setupScript function(s)', function() {
+    it('should call setupEventListener and setupScript function(s)', function () {
       MediaFilter.setup({ configurationHash: 'abc123' });
 
       expect(setupEventListenerSpy.called).to.be.true;
@@ -53,42 +53,42 @@ describe('The Media Filter RTD module', function () {
     });
   });
 
-  describe('setupEventListener()', function() {
+  describe('setupEventListener()', function () {
     let setupEventListenerSpy, addEventListenerSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       setupEventListenerSpy = sinon.spy(MediaFilter, 'setupEventListener');
       addEventListenerSpy = sinon.spy(window, 'addEventListener');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       setupEventListenerSpy.restore();
       addEventListenerSpy.restore();
     });
 
-    it('should call addEventListener function(s)', function() {
+    it('should call addEventListener function(s)', function () {
       MediaFilter.setupEventListener();
       expect(addEventListenerSpy.called).to.be.true;
       expect(addEventListenerSpy.calledWith('message', sinon.match.func)).to.be.true;
     });
   });
 
-  describe('generateInitHandler()', function() {
+  describe('generateInitHandler()', function () {
     let generateInitHandlerSpy, setupMock, logErrorSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       generateInitHandlerSpy = sinon.spy(MediaFilter, 'generateInitHandler');
       setupMock = sinon.stub(MediaFilter, 'setup').throws(new Error('Mocked error!'));
       logErrorSpy = sinon.spy(utils, 'logError');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       generateInitHandlerSpy.restore();
       setupMock.restore();
       logErrorSpy.restore();
     });
 
-    it('should handle errors in the catch block when setup throws an error', function() {
+    it('should handle errors in the catch block when setup throws an error', function () {
       const initHandler = MediaFilter.generateInitHandler();
       initHandler({});
 
@@ -96,20 +96,20 @@ describe('The Media Filter RTD module', function () {
     });
   });
 
-  describe('generateEventHandler()', function() {
+  describe('generateEventHandler()', function () {
     let generateEventHandlerSpy, eventsEmitSpy;
 
-    beforeEach(function() {
+    beforeEach(function () {
       generateEventHandlerSpy = sinon.spy(MediaFilter, 'generateEventHandler');
       eventsEmitSpy = sinon.spy(events, 'emit');
     });
 
-    afterEach(function() {
+    afterEach(function () {
       generateEventHandlerSpy.restore();
       eventsEmitSpy.restore();
     });
 
-    it('should emit a billable event when the event type matches', function() {
+    it('should emit a billable event when the event type matches', function () {
       const configurationHash = 'abc123';
       const eventHandler = MediaFilter.generateEventHandler(configurationHash);
 
@@ -129,7 +129,7 @@ describe('The Media Filter RTD module', function () {
       })).to.be.true;
     });
 
-    it('should not emit a billable event when the event type does not match', function() {
+    it('should not emit a billable event when the event type does not match', function () {
       const configurationHash = 'abc123';
       const eventHandler = MediaFilter.generateEventHandler(configurationHash);
 

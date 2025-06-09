@@ -11,7 +11,7 @@ const defaultConfigParams = {
 };
 const responseHeader = {'Content-Type': 'application/json'}
 
-describe('Fabrick ID System', function() {
+describe('Fabrick ID System', function () {
   let logErrorStub;
 
   beforeEach(function () {
@@ -27,7 +27,7 @@ describe('Fabrick ID System', function() {
     logErrorStub.restore();
   });
 
-  it('should error on json parsing', function() {
+  it('should error on json parsing', function () {
     logErrorStub = sinon.stub(utils, 'logError');
     let submoduleCallback = fabrickIdSubmodule.getId({
       name: 'fabrickId',
@@ -46,7 +46,7 @@ describe('Fabrick ID System', function() {
     logErrorStub.restore();
   });
 
-  it('should truncate the params', function() {
+  it('should truncate the params', function () {
     let r = '';
     for (let i = 0; i < 1500; i++) {
       r += 'r';
@@ -78,7 +78,7 @@ describe('Fabrick ID System', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should complete successfully', function() {
+  it('should complete successfully', function () {
     let configParams = Object.assign({}, defaultConfigParams, {
       refererInfo: {
         topmostLocation: 'r-0',
@@ -102,7 +102,7 @@ describe('Fabrick ID System', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should truncate 2', function() {
+  it('should truncate 2', function () {
     let configParams = {
       maxUrlLen: 10,
       maxRefLen: 5,

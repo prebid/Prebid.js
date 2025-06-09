@@ -34,7 +34,7 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 window.msna_ik = window.msna_ik || generateUUID();
 
 /* Get Floor price information */
-function getFloor(bidRequest) {
+function getFloor (bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return {};
   }
@@ -50,7 +50,7 @@ function getFloor(bidRequest) {
 }
 
 /* Helper function that converts the prebid data to the payload expected by our servers */
-function toPayload(bidRequest, bidderRequest) {
+function toPayload (bidRequest, bidderRequest) {
   const payload = {
     adunit: bidRequest.adUnitCode,
     ik: window.msna_ik,
@@ -168,7 +168,7 @@ export const spec = {
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {TimedOutBid} timeoutData - Containing timeout specific data
    */
-  onTimeout: function onTimeout(timeoutData) {
+  onTimeout: function onTimeout (timeoutData) {
     logInfo('Missena - Timeout from adapter', timeoutData);
   },
 

@@ -26,7 +26,7 @@ const setGoogletag = () => {
   return window.googletag;
 }
 
-describe('Yieldmo Synthetic Inventory Module', function() {
+describe('Yieldmo Synthetic Inventory Module', function () {
   let config = Object.assign({}, mockedYmConfig);
   let googletagBkp;
 
@@ -39,13 +39,13 @@ describe('Yieldmo Synthetic Inventory Module', function() {
     window.googletag = googletagBkp;
   });
 
-  it('should be enabled with valid required params', function() {
+  it('should be enabled with valid required params', function () {
     expect(function () {
       init(mockedYmConfig);
     }).not.to.throw()
   });
 
-  it('should throw an error if placementId is missed', function() {
+  it('should throw an error if placementId is missed', function () {
     const {placementId, ...config} = mockedYmConfig;
 
     expect(function () {
@@ -53,7 +53,7 @@ describe('Yieldmo Synthetic Inventory Module', function() {
     }).throw(`${MODULE_NAME}: placementId required`)
   });
 
-  it('should throw an error if adUnitPath is missed', function() {
+  it('should throw an error if adUnitPath is missed', function () {
     const {adUnitPath, ...config} = mockedYmConfig;
 
     expect(function () {
@@ -61,7 +61,7 @@ describe('Yieldmo Synthetic Inventory Module', function() {
     }).throw(`${MODULE_NAME}: adUnitPath required`)
   });
 
-  it('should add correct googletag.cmd', function() {
+  it('should add correct googletag.cmd', function () {
     const containerName = 'ym_sim_container_' + mockedYmConfig.placementId;
     const gtag = setGoogletag();
 

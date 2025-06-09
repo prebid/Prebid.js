@@ -11,14 +11,14 @@ let handlersAttached = false;
 
 export let auctionState = {};
 
-export function resetPreviousAuctionInfo() {
+export function resetPreviousAuctionInfo () {
   previousAuctionInfoEnabled = false;
   enabledBidders = [];
   auctionState = {};
   deinitHandlers();
 }
 
-function initPreviousAuctionInfo() {
+function initPreviousAuctionInfo () {
   config.getConfig('previousAuctionInfo', ({[CONFIG_NS]: config = {}}) => {
     if (!config?.enabled) {
       resetPreviousAuctionInfo();
@@ -119,7 +119,7 @@ export const onBidWonHandler = (winningBid) => {
   });
 };
 
-export function startAuctionHook(next, req) {
+export function startAuctionHook (next, req) {
   const bidders = enabledBidders.length ? enabledBidders : Object.keys(auctionState);
   bidders
     .filter(bidder => auctionState[bidder]?.length)

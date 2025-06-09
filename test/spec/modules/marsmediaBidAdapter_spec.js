@@ -9,7 +9,7 @@ describe('marsmedia adapter tests', function () {
   let element, win;
   let sandbox;
 
-  beforeEach(function() {
+  beforeEach(function () {
     element = {
       x: 0,
       y: 0,
@@ -75,7 +75,7 @@ describe('marsmedia adapter tests', function () {
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -126,7 +126,7 @@ describe('marsmedia adapter tests', function () {
     }); */
   });
 
-  describe('Verify POST Video Bid Request', function() {
+  describe('Verify POST Video Bid Request', function () {
     it('buildRequests works', function () {
       var bidRequestList = [
         {
@@ -173,7 +173,7 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].video.api).to.eql([1, 2, 5]);
     });
 
-    it('interpretResponse with vast url works', function() {
+    it('interpretResponse with vast url works', function () {
       var bidList = {
         'body': [
           {
@@ -207,7 +207,7 @@ describe('marsmedia adapter tests', function () {
       expect(bid.ttl).to.equal(600);
     });
 
-    it('interpretResponse with xml works', function() {
+    it('interpretResponse with xml works', function () {
       var bidList = {
         'body': [
           {
@@ -242,7 +242,7 @@ describe('marsmedia adapter tests', function () {
     });
   });
 
-  describe('misc buildRequests', function() {
+  describe('misc buildRequests', function () {
     it('should send GDPR Consent data to Marsmedia tag', function () {
       var consentString = 'testConsentString';
       var gdprBidderRequest = this.defaultBidderRequest;
@@ -277,7 +277,7 @@ describe('marsmedia adapter tests', function () {
       config.getConfig.restore();
     });
 
-    it('should process floors module if available', function() {
+    it('should process floors module if available', function () {
       const floorBidderRequest = this.defaultBidRequestList;
       const floorInfo = {
         currency: 'USD',
@@ -289,7 +289,7 @@ describe('marsmedia adapter tests', function () {
       expect(requestparse.imp[0].bidfloor).to.equal(1.20);
     });
 
-    it('should have 0 bidfloor value', function() {
+    it('should have 0 bidfloor value', function () {
       const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
       const requestparse = JSON.parse(request.data);
       expect(requestparse.imp[0].bidfloor).to.equal(0);
@@ -493,7 +493,7 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.imp[0].video.h).to.be.undefined;
     });
 
-    it('should return empty site data when refererInfo is missing', function() {
+    it('should return empty site data when refererInfo is missing', function () {
       delete this.defaultBidderRequest.refererInfo;
       var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
       const openrtbRequest = JSON.parse(bidRequest.data);
@@ -503,8 +503,8 @@ describe('marsmedia adapter tests', function () {
       expect(openrtbRequest.site.ref).to.equal('');
     });
 
-    context('when element is fully in view', function() {
-      it('returns 100', function() {
+    context('when element is fully in view', function () {
+      it('returns 100', function () {
         Object.assign(element, { width: 600, height: 400 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
@@ -512,8 +512,8 @@ describe('marsmedia adapter tests', function () {
       });
     });
 
-    context('when element is out of view', function() {
-      it('returns 0', function() {
+    context('when element is out of view', function () {
+      it('returns 0', function () {
         Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
         const request = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
         const openrtbRequest = JSON.parse(request.data);
@@ -521,8 +521,8 @@ describe('marsmedia adapter tests', function () {
       });
     });
 
-    context('when element is partially in view', function() {
-      it('returns percentage', function() {
+    context('when element is partially in view', function () {
+      it('returns percentage', function () {
         sandbox.stub(internal, 'getWindowTop').returns(win);
         resetWinDimensions();
         Object.assign(element, { width: 800, height: 800 });
@@ -533,8 +533,8 @@ describe('marsmedia adapter tests', function () {
       });
     });
 
-    context('when nested iframes', function() {
-      it('returns \'na\'', function() {
+    context('when nested iframes', function () {
+      it('returns \'na\'', function () {
         Object.assign(element, { width: 600, height: 400 });
 
         utils.getWindowTop.restore();
@@ -548,8 +548,8 @@ describe('marsmedia adapter tests', function () {
       });
     });
 
-    context('when tab is inactive', function() {
-      it('returns 0', function() {
+    context('when tab is inactive', function () {
+      it('returns 0', function () {
         Object.assign(element, { width: 600, height: 400 });
 
         utils.getWindowTop.restore();
@@ -563,7 +563,7 @@ describe('marsmedia adapter tests', function () {
     });
   });
 
-  it('should return empty site.domain and site.page when refererInfo.stack is empty', function() {
+  it('should return empty site.domain and site.page when refererInfo.stack is empty', function () {
     this.defaultBidderRequest.refererInfo.stack = [];
     var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
@@ -573,7 +573,7 @@ describe('marsmedia adapter tests', function () {
     expect(openrtbRequest.site.ref).to.equal('Reference Page');
   });
 
-  it('should secure correctly', function() {
+  it('should secure correctly', function () {
     this.defaultBidderRequest.refererInfo.stack[0] = ['https://securesite.dvl'];
     var bidRequest = marsAdapter.buildRequests(this.defaultBidRequestList, this.defaultBidderRequest);
     const openrtbRequest = JSON.parse(bidRequest.data);
@@ -581,7 +581,7 @@ describe('marsmedia adapter tests', function () {
     expect(openrtbRequest.imp[0].secure).to.equal(1);
   });
 
-  it('should pass schain', function() {
+  it('should pass schain', function () {
     var schain = {
       'ver': '1.0',
       'complete': 1,
@@ -623,7 +623,7 @@ describe('marsmedia adapter tests', function () {
   });
 
   describe('misc interpretResponse', function () {
-    it('No bid response', function() {
+    it('No bid response', function () {
       var noBidResponse = marsAdapter.interpretResponse({
         'body': ''
       });
@@ -662,10 +662,10 @@ describe('marsmedia adapter tests', function () {
   });
 
   describe('on bidWon', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('exists and is a function', () => {
@@ -679,10 +679,10 @@ describe('marsmedia adapter tests', function () {
   });
 
   describe('on Timeout', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('exists and is a function', () => {
@@ -696,10 +696,10 @@ describe('marsmedia adapter tests', function () {
   });
 
   describe('on Set Targeting', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('exists and is a function', () => {

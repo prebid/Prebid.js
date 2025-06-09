@@ -17,7 +17,7 @@ const BIDDER_CODE = 'vdoai';
  * @param {object} vdoresponse The bid to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
-function vdoIsBidResponseValid(vdoresponse) {
+function vdoIsBidResponseValid (vdoresponse) {
   if (!vdoresponse.requestId || !vdoresponse.cpm || !vdoresponse.creativeId || !vdoresponse.ttl || !vdoresponse.currency || !vdoresponse.meta.advertiserDomains) {
     return false;
   }
@@ -119,7 +119,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function vdoBuildRequest(windowTop, hostname, vdoAdUnits, bidderRequest) {
+function vdoBuildRequest (windowTop, hostname, vdoAdUnits, bidderRequest) {
   return {
     url: `https://${hostname}/hb`,
     method: 'POST',
@@ -136,7 +136,7 @@ function vdoBuildRequest(windowTop, hostname, vdoAdUnits, bidderRequest) {
   }
 }
 
-function vdoBuildPlacement(vdoBidRequest) {
+function vdoBuildPlacement (vdoBidRequest) {
   let sizes;
   if (vdoBidRequest.mediaTypes) {
     switch (vdoBidRequest.params.adUnitType) {

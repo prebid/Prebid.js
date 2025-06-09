@@ -44,7 +44,7 @@ export const spec = {
       validBidRequests: validBidRequests,
     }
   },
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     if (serverResponse.body) {
       const vHB = serverResponse.body.bids;

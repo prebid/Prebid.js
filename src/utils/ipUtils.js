@@ -1,4 +1,4 @@
-export function scrubIPv4(ip) {
+export function scrubIPv4 (ip) {
   if (!ip) {
     return null;
   }
@@ -22,7 +22,7 @@ export function scrubIPv4(ip) {
   return maskedIP.join('.');
 }
 
-export function scrubIPv6(ip) {
+export function scrubIPv6 (ip) {
   if (!ip) {
     return null;
   }

@@ -65,7 +65,7 @@ export const spec = {
   }
 };
 
-function parseRTBResponse(serverResponse, bidderRequest) {
+function parseRTBResponse (serverResponse, bidderRequest) {
   const isInvalidValidResp = !serverResponse || !isArray(serverResponse.bids);
 
   const bids = [];
@@ -95,7 +95,7 @@ function parseRTBResponse(serverResponse, bidderRequest) {
   return bids;
 }
 
-function bidToTag(bidRequests, bidderRequest) {
+function bidToTag (bidRequests, bidderRequest) {
   const tag = {
     // TODO: is 'page' the right value here?
     domain: deepAccess(bidderRequest, 'refererInfo.page')
@@ -123,7 +123,7 @@ function bidToTag(bidRequests, bidderRequest) {
  * @param bid {object}
  * @returns {object}
  */
-function prepareRTBRequestParams(_index, bid) {
+function prepareRTBRequestParams (_index, bid) {
   const mediaType = deepAccess(bid, 'mediaTypes.video') ? VIDEO : DISPLAY;
   const index = !_index ? '' : `${_index + 1}`;
   const sizes = bid.sizes ? bid.sizes : (mediaType === VIDEO ? deepAccess(bid, 'mediaTypes.video.playerSize') : deepAccess(bid, 'mediaTypes.banner.sizes'));
@@ -140,7 +140,7 @@ function prepareRTBRequestParams(_index, bid) {
  * @param bidderRequest {object}
  * @returns {object}
  */
-function getMediaType(bidderRequest) {
+function getMediaType (bidderRequest) {
   const videoMediaType = deepAccess(bidderRequest, 'mediaTypes.video');
   const context = deepAccess(bidderRequest, 'mediaTypes.video.context');
 
@@ -153,7 +153,7 @@ function getMediaType(bidderRequest) {
  * @param mediaType {Object}
  * @returns {object}
  */
-function createBid(bidResponse, mediaType, bidderParams) {
+function createBid (bidResponse, mediaType, bidderParams) {
   const bid = {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
@@ -196,7 +196,7 @@ function createBid(bidResponse, mediaType, bidderParams) {
  * @param bidderParams
  * @returns {*}
  */
-function newRenderer(requestId, bidderParams) {
+function newRenderer (requestId, bidderParams) {
   const renderer = Renderer.install({
     id: requestId,
     url: OUTSTREAM_SRC,
@@ -213,7 +213,7 @@ function newRenderer(requestId, bidderParams) {
  * Initialise outstream
  * @param bid
  */
-function outstreamRender(bid) {
+function outstreamRender (bid) {
   bid.renderer.push(() => {
     const opts = Object.assign({}, bid.renderer.getConfig(), {
       width: bid.width,

@@ -48,7 +48,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @function
  * @param {Object} obj
  */
-function storeObject(obj) {
+function storeObject (obj) {
   const expires = Date.now() + STORAGE_DURATION;
   if (storage.cookiesAreEnabled()) {
     setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
@@ -67,7 +67,7 @@ function storeObject(obj) {
  * @param {Date} expirationDate
  * @param {String} hostname
  */
-function setEtldPlusOneCookie(key, value, expirationDate, hostname) {
+function setEtldPlusOneCookie (key, value, expirationDate, hostname) {
   const subDomains = hostname.split('.');
   for (let i = 0; i < subDomains.length; ++i) {
     const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
@@ -81,7 +81,7 @@ function setEtldPlusOneCookie(key, value, expirationDate, hostname) {
   }
 }
 
-function getIdFromCookie() {
+function getIdFromCookie () {
   if (storage.cookiesAreEnabled()) {
     try {
       return JSON.parse(storage.getCookie(MODULE_NAME));
@@ -90,7 +90,7 @@ function getIdFromCookie() {
   return null;
 }
 
-function getIdFromLocalStorage() {
+function getIdFromLocalStorage () {
   if (storage.localStorageIsEnabled()) {
     let storedIdData = storage.getDataFromLocalStorage(MODULE_NAME);
     if (storedIdData) {
@@ -110,7 +110,7 @@ function getIdFromLocalStorage() {
   return null;
 }
 
-function syncLocalStorageToCookie() {
+function syncLocalStorageToCookie () {
   if (!storage.cookiesAreEnabled()) {
     return;
   }
@@ -119,7 +119,7 @@ function syncLocalStorageToCookie() {
   setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(value), new Date(newCookieExpireTime), getSiteHostname());
 }
 
-function isStale(storedIdData) {
+function isStale (storedIdData) {
   if (isOAndOTraffic()) {
     return true;
   } else if (isPlainObject(storedIdData) && storedIdData.lastSynced) {
@@ -129,7 +129,7 @@ function isStale(storedIdData) {
   return false;
 }
 
-function getStoredId() {
+function getStoredId () {
   let storedId = getIdFromCookie();
   if (!storedId) {
     storedId = getIdFromLocalStorage();
@@ -140,12 +140,12 @@ function getStoredId() {
   return storedId;
 }
 
-function getSiteHostname() {
+function getSiteHostname () {
   const pageInfo = parseUrl(getRefererInfo().page);
   return pageInfo.hostname;
 }
 
-function isOAndOTraffic() {
+function isOAndOTraffic () {
   let referer = getRefererInfo().ref;
 
   if (referer) {
@@ -172,7 +172,7 @@ export const connectIdSubmodule = {
    * @function
    * @returns {{connectId: string} | undefined}
    */
-  decode(value) {
+  decode (value) {
     if (connectIdSubmodule.userHasOptedOut()) {
       return undefined;
     }
@@ -186,7 +186,7 @@ export const connectIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
-  getId(config, consentData) {
+  getId (config, consentData) {
     if (connectIdSubmodule.userHasOptedOut()) {
       return;
     }
@@ -306,7 +306,7 @@ export const connectIdSubmodule = {
    * is subject to GDPR
    * @returns {Boolean}
    */
-  isEUConsentRequired(consentData) {
+  isEUConsentRequired (consentData) {
     return !!(consentData?.gdprApplies);
   },
 
@@ -315,7 +315,7 @@ export const connectIdSubmodule = {
    * has opted out via the Yahoo easy-opt-out mechanism.
    * @returns {Boolean}
    */
-  userHasOptedOut() {
+  userHasOptedOut () {
     try {
       if (storage.localStorageIsEnabled()) {
         return storage.getDataFromLocalStorage(OVERRIDE_OPT_OUT_KEY) === '1';
@@ -332,7 +332,7 @@ export const connectIdSubmodule = {
    * Utilised for each of testing.
    * @returns {Function}
    */
-  getAjaxFn() {
+  getAjaxFn () {
     return ajax;
   },
   eids: {

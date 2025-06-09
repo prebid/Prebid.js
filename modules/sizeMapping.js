@@ -21,7 +21,7 @@ let sizeConfig = [];
  *
  * @param {Array<SizeConfig>} config
  */
-export function setSizeConfig(config) {
+export function setSizeConfig (config) {
   sizeConfig = config;
 }
 
@@ -34,7 +34,7 @@ config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
  * @param activeLabels the labels passed to requestBids
  * @returns {object}
  */
-export function getLabels(bidOrAdUnit, activeLabels) {
+export function getLabels (bidOrAdUnit, activeLabels) {
   if (bidOrAdUnit.labelAll) {
     return {labelAll: true, labels: bidOrAdUnit.labelAll, activeLabels};
   }
@@ -47,7 +47,7 @@ export function getLabels(bidOrAdUnit, activeLabels) {
  * @param {Array<SizeConfig>} configs
  * @returns {boolean}
  */
-export function sizeSupported(size, configs = sizeConfig) {
+export function sizeSupported (size, configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);
   if (!maps.shouldFilter) {
     return true;
@@ -76,7 +76,7 @@ if (FEATURES.VIDEO) {
  * @returns {Object} return.mediaTypes - The media types object.
  * @returns {Object} [return.filterResults] - The filter results before and after applying size filtering.
  */
-export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
+export function resolveStatus ({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);
 
   let filtered = false;
@@ -131,7 +131,7 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
   return results;
 }
 
-function evaluateSizeConfig(configs) {
+function evaluateSizeConfig (configs) {
   return configs.reduce((results, config) => {
     if (
       typeof config === 'object' &&
@@ -169,7 +169,7 @@ function evaluateSizeConfig(configs) {
   });
 }
 
-export function processAdUnitsForLabels(adUnits, activeLabels) {
+export function processAdUnitsForLabels (adUnits, activeLabels) {
   return adUnits.reduce((adUnits, adUnit) => {
     let {
       active,

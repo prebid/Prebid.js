@@ -9,7 +9,7 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.params', bidRequest.params);
     return imp;
@@ -22,11 +22,11 @@ const METHOD = 'POST';
 const DEFAULT_RTB_DOMAIN = 'pbjs.baristartb.com';
 const DEFAULT_SYNC_DOMAIN = 'sync.baristartb.com';
 
-function isBidRequestValid(bidRequest) {
+function isBidRequestValid (bidRequest) {
   return !!bidRequest.params.lineItemId;
 }
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   const data = converter.toORTB({ bidderRequest, bidRequests });
   const domain = config.getConfig('rtbDomain') || DEFAULT_RTB_DOMAIN;
 
@@ -40,13 +40,13 @@ function buildRequests(bidRequests, bidderRequest) {
   }]
 }
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   const bids = converter.fromORTB({ response: response.body, request: request.data });
 
   return bids;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
   const syncs = []
 
   let syncParams = '';

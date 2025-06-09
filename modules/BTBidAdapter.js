@@ -26,7 +26,7 @@ const CONVERTER = ortbConverter({
  * @param {Object} context - The context object.
  * @returns {Object} The ORTB 2.5 imp object.
  */
-function imp(buildImp, bidRequest, context) {
+function imp (buildImp, bidRequest, context) {
   const imp = buildImp(bidRequest, context);
   const { params, ortb2Imp } = bidRequest;
 
@@ -49,7 +49,7 @@ function imp(buildImp, bidRequest, context) {
  * @param {Object} context - The context object.
  * @returns {Object} The ORTB 2.5 request object.
  */
-function request(buildRequest, imps, bidderRequest, context) {
+function request (buildRequest, imps, bidderRequest, context) {
   const request = buildRequest(imps, bidderRequest, context);
   deepSetValue(request, 'ext.prebid.channel', {
     name: 'pbjs',
@@ -71,7 +71,7 @@ function request(buildRequest, imps, bidderRequest, context) {
  * @param {Object} context - The context object containing additional information.
  * @returns {Object} - The processed bid response.
  */
-function bidResponse(buildBidResponse, bid, context) {
+function bidResponse (buildBidResponse, bid, context) {
   const bidResponse = buildBidResponse(bid, context);
   const { seat } = context.seatbid || {};
   bidResponse.btBidderCode = seat;
@@ -85,7 +85,7 @@ function bidResponse(buildBidResponse, bid, context) {
  * @param {Object} bid - The bid request object.
  * @returns {boolean} True if the bid request is valid, false otherwise.
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (!isPlainObject(bid.params) || !Object.keys(bid.params).length) {
     logWarn('BT Bid Adapter: bid params must be provided.');
     return false;
@@ -101,7 +101,7 @@ function isBidRequestValid(bid) {
  * @param {Object} bidderRequest - The bidder request object.
  * @returns {Array} An array of BT Service bid requests.
  */
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   const data = CONVERTER.toORTB({
     bidRequests: validBidRequests,
     bidderRequest,
@@ -124,7 +124,7 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @param {Object} request - The request object.
  * @returns {Array} An array of bid objects.
  */
-function interpretResponse(serverResponse, request) {
+function interpretResponse (serverResponse, request) {
   if (!serverResponse || !request) {
     return [];
   }
@@ -145,7 +145,7 @@ function interpretResponse(serverResponse, request) {
  * @param {Object} gppConsent - Google Publisher Policies (GPP) consent information.
  * @returns {Object[]} An array of user synchronization objects.
  */
-function getUserSyncs(
+function getUserSyncs (
   syncOptions,
   serverResponses,
   gdprConsent,

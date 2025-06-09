@@ -33,8 +33,8 @@ const VIDEO_ORTB_PARAMS = [
   'linearity'
 ];
 
-function getBidAdapter() {
-  function isBidRequestValid(bid) {
+function getBidAdapter () {
+  function isBidRequestValid (bid) {
     const params = bid && bid.params;
     if (!params) {
       return false;
@@ -43,7 +43,7 @@ function getBidAdapter() {
     return !!params.placementId && !!params.publisherId && !!params.siteId;
   }
 
-  function buildRequests(bidRequests, bidderRequest) {
+  function buildRequests (bidRequests, bidderRequest) {
     if (!bidRequests) {
       return;
     }
@@ -69,7 +69,7 @@ function getBidAdapter() {
     });
   }
 
-  function interpretResponse(serverResponse) {
+  function interpretResponse (serverResponse) {
     const outgoingBidResponses = [];
     const serverResponseBody = serverResponse.body;
 
@@ -110,7 +110,7 @@ function getBidAdapter() {
     return outgoingBidResponses;
   }
 
-  function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (!hasPurpose1Consent(gdprConsent)) {
       return [];
     }
@@ -146,7 +146,7 @@ function getBidAdapter() {
     getUserSyncs
   }
 
-  function getUserSyncConsentQueryParams(gdprConsent) {
+  function getUserSyncConsentQueryParams (gdprConsent) {
     if (!gdprConsent) {
       return '';
     }
@@ -165,7 +165,7 @@ function getBidAdapter() {
     return `&gdpr=${gdpr}&gdpr_consent=${consentString}`;
   }
 
-  function buildRequest(bidRequest, bidderRequest) {
+  function buildRequest (bidRequest, bidderRequest) {
     const openrtbRequest = {
       id: bidRequest.bidId,
       imp: getRequestImpressions(bidRequest, bidderRequest),
@@ -194,7 +194,7 @@ function getBidAdapter() {
     return JSON.stringify(openrtbRequest);
   }
 
-  function getRequestImpressions(bidRequest) {
+  function getRequestImpressions (bidRequest) {
     const impressionObject = {
       id: bidRequest.adUnitCode,
     };
@@ -212,7 +212,7 @@ function getBidAdapter() {
     return [impressionObject];
   }
 
-  function getImpressionVideo(bidRequest) {
+  function getImpressionVideo (bidRequest) {
     const videoParams = deepAccess(bidRequest, 'mediaTypes.video', {});
 
     const video = {};
@@ -232,7 +232,7 @@ function getBidAdapter() {
     return video;
   }
 
-  function getImpressionExtension(bidRequest) {
+  function getImpressionExtension (bidRequest) {
     return {
       prebid: {
         bidder: {
@@ -244,7 +244,7 @@ function getBidAdapter() {
     };
   }
 
-  function setPlayerSize(videoImp, videoParams) {
+  function setPlayerSize (videoImp, videoParams) {
     if (videoImp.w !== undefined && videoImp.h !== undefined) {
       return;
     }
@@ -264,7 +264,7 @@ function getBidAdapter() {
     }
   }
 
-  function getNormalizedPlayerSize(playerSize) {
+  function getNormalizedPlayerSize (playerSize) {
     if (!Array.isArray(playerSize)) {
       return [];
     }
@@ -280,7 +280,7 @@ function getBidAdapter() {
     return playerSize;
   }
 
-  function getBidFloorData(bidRequest) {
+  function getBidFloorData (bidRequest) {
     const { params } = bidRequest;
     const currency = params.currency || 'USD';
 
@@ -299,7 +299,7 @@ function getBidAdapter() {
     return floorData;
   }
 
-  function getRequestSite(bidRequest, bidderRequest) {
+  function getRequestSite (bidRequest, bidderRequest) {
     const site = bidderRequest.ortb2.site || {};
 
     site.domain = site.domain || config.publisherDomain || window.location.hostname;
@@ -318,7 +318,7 @@ function getBidAdapter() {
     return site;
   }
 
-  function getRequestDevice(ortb2) {
+  function getRequestDevice (ortb2) {
     const device = Object.assign({
       h: screen.height,
       w: screen.width,
@@ -335,7 +335,7 @@ function getBidAdapter() {
     return device;
   }
 
-  function getLanguage() {
+  function getLanguage () {
     const navigatorLanguage = navigator.language;
     if (!navigatorLanguage) {
       return;
@@ -349,7 +349,7 @@ function getBidAdapter() {
     return languageCodeSegments[0];
   }
 
-  function getRequestUser(ortb2) {
+  function getRequestUser (ortb2) {
     const user = ortb2.user || {};
     if (config.getConfig('coppa') === true) {
       user.coppa = true;
@@ -358,13 +358,13 @@ function getBidAdapter() {
     return user;
   }
 
-  function hasContentUrl(ortb2) {
+  function hasContentUrl (ortb2) {
     const site = ortb2.site;
     const content = site && site.content;
     return !!(content && content.url);
   }
 
-  function getWarnings(bidderRequest) {
+  function getWarnings (bidderRequest) {
     const content = bidderRequest.ortb2.site.content;
     const contentChain = 'ortb2.site.content.';
     const warnings = [];
@@ -383,11 +383,11 @@ function getBidAdapter() {
     return warnings;
   }
 
-  function getMissingFieldMessage(fieldName) {
+  function getMissingFieldMessage (fieldName) {
     return `Optional field ${fieldName} is not populated; we recommend populating for maximum performance.`
   }
 
-  function logResponseWarnings(serverResponseBody) {
+  function logResponseWarnings (serverResponseBody) {
     const warningPayload = deepAccess(serverResponseBody, 'ext.warnings');
     if (!warningPayload) {
       return;

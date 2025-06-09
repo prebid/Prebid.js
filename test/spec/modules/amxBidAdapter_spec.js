@@ -71,7 +71,7 @@ const sampleBidRequestBase = {
     ext: sampleImpExt,
   },
   sizes: [[320, 50]],
-  getFloor(params) {
+  getFloor (params) {
     if (
       params.size == null ||
       params.currency == null ||
@@ -717,11 +717,11 @@ describe('AmxBidAdapter', () => {
       window.Image = class FakeImage {
         _src = '';
 
-        get src() {
+        get src () {
           return this._src;
         }
 
-        set src(value) {
+        set src (value) {
           this._src = value;
           firedPixels.push(value);
         }

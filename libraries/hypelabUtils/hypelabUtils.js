@@ -1,4 +1,4 @@
-export function getWalletPresence() {
+export function getWalletPresence () {
   return {
     ada: typeof window != 'undefined' && !!window.cardano,
     bnb: typeof window != 'undefined' && !!window.BinanceChain,
@@ -8,7 +8,7 @@ export function getWalletPresence() {
   };
 }
 
-function tryCatch(fn, fallback) {
+function tryCatch (fn, fallback) {
   try {
     return fn();
   } catch (e) {
@@ -16,7 +16,7 @@ function tryCatch(fn, fallback) {
   }
 }
 
-export function getWalletProviderFlags() {
+export function getWalletProviderFlags () {
   return {
     ada: tryCatch(getAdaWalletProviderFlags, []),
     bnb: tryCatch(getBnbWalletProviderFlags, []),
@@ -26,7 +26,7 @@ export function getWalletProviderFlags() {
   };
 }
 
-function getAdaWalletProviderFlags() {
+function getAdaWalletProviderFlags () {
   const flags = [];
   if (typeof window === 'undefined') return flags;
   if (window.cardano) {
@@ -49,7 +49,7 @@ function getAdaWalletProviderFlags() {
   return flags;
 }
 
-function getBnbWalletProviderFlags() {
+function getBnbWalletProviderFlags () {
   const flags = [];
   if (typeof window === 'undefined') return flags;
   if (window.BinanceChain) {
@@ -77,7 +77,7 @@ function getBnbWalletProviderFlags() {
   return flags;
 }
 
-function getEthWalletProviderFlags() {
+function getEthWalletProviderFlags () {
   const flags = [];
   if (typeof window === 'undefined') return flags;
   if (window.ethereum) {
@@ -152,7 +152,7 @@ function getEthWalletProviderFlags() {
   return flags;
 }
 
-function getSolWalletProviderFlags() {
+function getSolWalletProviderFlags () {
   const flags = [];
   if (typeof window === 'undefined') return flags;
   if (window.solana) {
@@ -169,7 +169,7 @@ function getSolWalletProviderFlags() {
   return flags;
 }
 
-function getTronWalletProviderFlags() {
+function getTronWalletProviderFlags () {
   const flags = [];
   if (typeof window === 'undefined') return flags;
   if (window.tron) {

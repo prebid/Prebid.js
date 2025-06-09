@@ -5,7 +5,7 @@ describe('ORTB 2.5 translation', () => {
   describe('moveRule', () => {
     const rule = moveRule('f1.f2.f3', (prefix, field) => `${prefix}.m1.m2.${field}`);
 
-    function applyRule(rule, obj, del = true) {
+    function applyRule (rule, obj, del = true) {
       obj = deepClone(obj);
       const deleter = rule(obj);
       if (typeof deleter === 'function' && del) {

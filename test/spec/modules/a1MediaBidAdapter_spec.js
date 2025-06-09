@@ -6,7 +6,7 @@ import 'modules/priceFloors.js';
 import { replaceAuctionPrice } from '../../../src/utils';
 
 const ortbBlockParams = {
-  battr: [ 13 ],
+  battr: [13],
   bcat: ['IAB1-1']
 };
 const getBidderRequest = (isMulti = false) => {
@@ -22,7 +22,7 @@ const getBidderRequest = (isMulti = false) => {
         mediaTypes: {
           banner: {
             sizes: [
-              [ 320, 100 ],
+              [320, 100],
             ]
           },
           ...(isMulti && {
@@ -108,8 +108,8 @@ const macroAdm = '<div><img src="http://d11.contentsfeed.com/pixel/${AUCTION_PRI
 const macroNurl = 'https://d11.contentsfeed.com/dsp/win/example.com/SITE/a1/${AUCTION_PRICE}';
 const interpretedNurl = `<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${macroNurl}"></div>`;
 
-describe('a1MediaBidAdapter', function() {
-  describe('isValidRequest', function() {
+describe('a1MediaBidAdapter', function () {
+  describe('isValidRequest', function () {
     const bid = {
       bidder: 'a1media',
     };
@@ -119,14 +119,14 @@ describe('a1MediaBidAdapter', function() {
     });
   });
 
-  describe('buildRequests', function() {
+  describe('buildRequests', function () {
     let bidderRequest, convertedRequest;
-    beforeEach(function() {
+    beforeEach(function () {
       bidderRequest = getBidderRequest();
       convertedRequest = getConvertedBidReq();
     });
 
-    it('should return expected request object', function() {
+    it('should return expected request object', function () {
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
       convertedRequest.id = bidRequest.data.id;
 
@@ -134,7 +134,7 @@ describe('a1MediaBidAdapter', function() {
       expect(bidRequest.url).equal('https://d11.contentsfeed.com/dsp/breq/a1');
       expect(bidRequest.data).deep.equal(convertedRequest);
     });
-    it('should set ortb blocking using params', function() {
+    it('should set ortb blocking using params', function () {
       bidderRequest.bids[0].params = ortbBlockParams;
 
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -145,7 +145,7 @@ describe('a1MediaBidAdapter', function() {
       expect(bidRequest.data).deep.equal(convertedRequest);
     });
 
-    it('should set bidfloor when getFloor is available', function() {
+    it('should set bidfloor when getFloor is available', function () {
       bidderRequest.bids[0].getFloor = () => ({ currency: 'USD', floor: 999 });
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
@@ -153,7 +153,7 @@ describe('a1MediaBidAdapter', function() {
       expect(bidRequest.data.imp[0].bidfloorcur).equal('USD');
     });
 
-    it('should set cur when currency config is configured', function() {
+    it('should set cur when currency config is configured', function () {
       config.setConfig({
         currency: {
           adServerCurrency: 'USD',
@@ -164,7 +164,7 @@ describe('a1MediaBidAdapter', function() {
       expect(bidRequest.data.cur[0]).equal('USD');
     });
 
-    it('should set bidfloor and currency using params when modules not available', function() {
+    it('should set bidfloor and currency using params when modules not available', function () {
       bidderRequest.bids[0].params.currency = 'USD';
       bidderRequest.bids[0].params.bidfloor = 0.99;
 
@@ -178,62 +178,62 @@ describe('a1MediaBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', function() {
-    describe('when request mediaType is single', function() {
+  describe('interpretResponse', function () {
+    describe('when request mediaType is single', function () {
       let bidRequest, bidderResponse;
-      beforeEach(function() {
+      beforeEach(function () {
         const bidderRequest = getBidderRequest();
         bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
       });
-      it('should set cpm using price attribute', function() {
+      it('should set cpm using price attribute', function () {
         const bidResPrice = 9;
         bidderResponse.body.seatbid[0].bid[0].price = bidResPrice;
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
         expect(interpretedRes[0].cpm).equal(bidResPrice);
       });
-      it('should set mediaType using request mediaTypes', function() {
+      it('should set mediaType using request mediaTypes', function () {
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
         expect(interpretedRes[0].mediaType).equal(BANNER);
       });
     });
 
-    describe('when request mediaType is multi', function() {
+    describe('when request mediaType is multi', function () {
       let bidRequest, bidderResponse;
-      beforeEach(function() {
+      beforeEach(function () {
         const bidderRequest = getBidderRequest(true);
         bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
         bidderResponse = getBidderResponse();
       });
-      it('should set mediaType to video', function() {
+      it('should set mediaType to video', function () {
         bidderResponse.body.seatbid[0].bid[0].adm = videoAdm;
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
         expect(interpretedRes[0].mediaType).equal(VIDEO);
       });
-      it('should set mediaType to native', function() {
+      it('should set mediaType to native', function () {
         bidderResponse.body.seatbid[0].bid[0].adm = nativeAdm;
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
         expect(interpretedRes[0].mediaType).equal(NATIVE);
       });
-      it('should set mediaType to banner when adm is neither native or video', function() {
+      it('should set mediaType to banner when adm is neither native or video', function () {
         bidderResponse.body.seatbid[0].bid[0].adm = bannerAdm;
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
         expect(interpretedRes[0].mediaType).equal(BANNER);
       });
     });
 
-    describe('resolve the AUCTION_PRICE macro', function() {
+    describe('resolve the AUCTION_PRICE macro', function () {
       let bidRequest;
-      beforeEach(function() {
+      beforeEach(function () {
         const bidderRequest = getBidderRequest(true);
         bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
       });
-      it('should return empty array when bid response has not contents', function() {
+      it('should return empty array when bid response has not contents', function () {
         const emptyResponse = { body: '' };
         const interpretedRes = spec.interpretResponse(emptyResponse, bidRequest);
         expect(interpretedRes.length).equal(0);
       });
-      it('should replace macro keyword if is exist', function() {
+      it('should replace macro keyword if is exist', function () {
         const bidderResponse = getBidderResponse();
         bidderResponse.body.seatbid[0].bid[0].adm = macroAdm;
         bidderResponse.body.seatbid[0].bid[0].nurl = macroNurl;

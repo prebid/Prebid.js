@@ -365,7 +365,7 @@ describe('CriteoId module', function () {
     before(() => {
       attachIdSystem(criteoIdSubmodule);
     });
-    it('criteo', function() {
+    it('criteo', function () {
       const userId = {
         criteoId: 'some-random-id-value'
       };

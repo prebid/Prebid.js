@@ -12,7 +12,7 @@ const AD_RENDERED_URI = 'pbaars';
 
 let sid;
 
-function sendEvent(event, uri) {
+function sendEvent (event, uri) {
   ajax(
     BASE_URL + uri,
     null,
@@ -20,7 +20,7 @@ function sendEvent(event, uri) {
   );
 }
 
-function adRenderSucceededHandler(eventType, args, pageUrl) {
+function adRenderSucceededHandler (eventType, args, pageUrl) {
   const event = {
     event_type: eventType,
     url: pageUrl,
@@ -43,7 +43,7 @@ function adRenderSucceededHandler(eventType, args, pageUrl) {
   sendEvent(event, AD_RENDERED_URI);
 }
 
-function auctionEndHandler(eventType, args, pageUrl) {
+function auctionEndHandler (eventType, args, pageUrl) {
   if (args.bidsReceived.length > 0) {
     const event = {
       event_type: eventType,
@@ -71,7 +71,7 @@ function auctionEndHandler(eventType, args, pageUrl) {
 let baseAdapter = adapter({analyticsType: 'endpoint'});
 let uniquestAdapter = Object.assign({}, baseAdapter, {
 
-  enableAnalytics(config = {}) {
+  enableAnalytics (config = {}) {
     if (config.options && config.options.sid) {
       sid = config.options.sid;
       baseAdapter.enableAnalytics.call(this, config);
@@ -80,12 +80,12 @@ let uniquestAdapter = Object.assign({}, baseAdapter, {
     }
   },
 
-  disableAnalytics() {
+  disableAnalytics () {
     sid = undefined;
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({eventType, args}) {
+  track ({eventType, args}) {
     const refererInfo = getRefererInfo();
     let pageUrl = refererInfo.page;
 

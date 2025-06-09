@@ -3,13 +3,13 @@ import { spec } from 'modules/nextrollBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { deepClone } from '../../../src/utils';
 
-describe('nextrollBidAdapter', function() {
+describe('nextrollBidAdapter', function () {
   let utilsMock;
   beforeEach(function () {
     utilsMock = sinon.mock(utils);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     global.NextRoll = undefined;
     utilsMock.restore();
   });
@@ -66,19 +66,19 @@ describe('nextrollBidAdapter', function() {
     })
   })
 
-  describe('isBidRequestValid', function() {
-    it('validates the bids correctly when the bid has an id', function() {
+  describe('isBidRequestValid', function () {
+    it('validates the bids correctly when the bid has an id', function () {
       expect(spec.isBidRequestValid(validBid)).to.be.true;
     });
 
-    it('validates the bids correcly when the bid does not have an id', function() {
+    it('validates the bids correcly when the bid does not have an id', function () {
       expect(spec.isBidRequestValid(bidWithoutValidId)).to.be.false;
       expect(spec.isBidRequestValid(bidWithoutId)).to.be.false;
     });
   });
 
-  describe('buildRequests', function() {
-    it('builds the same amount of requests as valid requests it takes', function() {
+  describe('buildRequests', function () {
+    it('builds the same amount of requests as valid requests it takes', function () {
       expect(spec.buildRequests([validBid, validBid], {})).to.be.lengthOf(2);
     });
 

@@ -12,13 +12,13 @@ const TIME_TO_LIVE = 360;
 export const spec = {
   code: BIDDER_CODE,
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     let valid = bid.params.siteId && bid.params.placementId;
 
     return !!valid;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
     for (const bid of validBidRequests) {
       let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
@@ -38,7 +38,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse, request) {
+  interpretResponse: function (serverResponse, request) {
     if (!serverResponse?.body?.content?.data) {
       return [];
     }
@@ -102,7 +102,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = []
 
     if (!hasPurpose1Consent(gdprConsent)) {
@@ -131,16 +131,16 @@ export const spec = {
     return syncs;
   },
 
-  onTimeout: function(timeoutData) {},
-  onBidWon: function(bid) {},
-  onSetTargeting: function(bid) {},
-  onBidderError: function() {},
-  supportedMediaTypes: [ BANNER, VIDEO ]
+  onTimeout: function (timeoutData) {},
+  onBidWon: function (bid) {},
+  onSetTargeting: function (bid) {},
+  onBidderError: function () {},
+  supportedMediaTypes: [BANNER, VIDEO]
 }
 
 registerBidder(spec);
 
-function getSize(paramSizes) {
+function getSize (paramSizes) {
   const parsedSizes = parseSizesInput(paramSizes);
   const sizes = parsedSizes.map(size => {
     const [width, height] = size.split('x');

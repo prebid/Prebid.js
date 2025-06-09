@@ -129,7 +129,7 @@ describe('multibid adapter', function () {
       result = bidderRequests;
     };
 
-    beforeEach(function() {
+    beforeEach(function () {
       result = null;
     });
 
@@ -190,7 +190,7 @@ describe('multibid adapter', function () {
       };
     };
 
-    beforeEach(function() {
+    beforeEach(function () {
       result = null;
     });
 
@@ -537,7 +537,7 @@ describe('multibid adapter', function () {
       bidResult = bid;
     };
 
-    beforeEach(function() {
+    beforeEach(function () {
       result = null;
       bidResult = null;
     });

@@ -42,20 +42,20 @@ export const spec = {
   }
 }
 
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   return (isValidInventoryId(bid) && (isValidBannerRequest(bid) || isValidVideoRequest(bid)));
 }
 
-function isValidInventoryId(bid) {
+function isValidInventoryId (bid) {
   return 'params' in bid && 'inventoryId' in bid.params && utils.isNumber(bid.params.inventoryId);
 }
 
-function isValidBannerRequest(bid) {
+function isValidBannerRequest (bid) {
   const bannerSizes = utils.deepAccess(bid, `mediaTypes.${BANNER}.sizes`);
   return utils.isArray(bannerSizes) && bannerSizes.length > 0 && bannerSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
 }
 
-function isValidVideoRequest(bid) {
+function isValidVideoRequest (bid) {
   const videoSizes = utils.deepAccess(bid, `mediaTypes.${VIDEO}.playerSize`);
   const videoMimes = utils.deepAccess(bid, `mediaTypes.${VIDEO}.mimes`);
 
@@ -64,7 +64,7 @@ function isValidVideoRequest(bid) {
   return isValidVideoSize && isValidVideoMimes;
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   let requests = [];
   try {
     if (validBidRequests.length === 0 || !bidderRequest) return [];
@@ -85,7 +85,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   return requests;
 }
 
-function createRequest(bidRequests, bidderRequest, mediaType) {
+function createRequest (bidRequests, bidderRequest, mediaType) {
   const rtbData = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
 
   const bid = bidRequests.find((b) => b.params.inventoryId)
@@ -115,7 +115,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function interpretResponse(response, request) {
+function interpretResponse (response, request) {
   return CONVERTER.fromORTB({ request: request.data, response: response.body }).bids;
 }
 
@@ -127,7 +127,7 @@ const CONVERTER = ortbConverter({
     ttl: DEFAULT_BID_TTL,
     currency: DEFAULT_CURRENCY
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
@@ -141,7 +141,7 @@ const CONVERTER = ortbConverter({
     })
     return imp;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const {bidRequest} = context;
     const bidResponse = buildBidResponse(bid, context);
     if (bidResponse.mediaType === BANNER) {
@@ -156,7 +156,7 @@ const CONVERTER = ortbConverter({
   },
   overrides: {
     imp: {
-      video(orig, imp, bidRequest, context) {
+      video (orig, imp, bidRequest, context) {
         let videoParams = bidRequest.mediaTypes[VIDEO];
         if (videoParams) {
           videoParams = Object.assign({}, videoParams, bidRequest.params.video);
@@ -168,7 +168,7 @@ const CONVERTER = ortbConverter({
   }
 });
 
-function createRenderer(bid) {
+function createRenderer (bid) {
   const renderer = Renderer.install({
     id: bid.bidId,
     url: VIDEO_RENDERER_URL,
@@ -185,7 +185,7 @@ function createRenderer(bid) {
   return renderer;
 }
 
-function outstreamRender(bid, doc) {
+function outstreamRender (bid, doc) {
   bid.renderer.push(() => {
     const win = (doc) ? doc.defaultView : window;
     win.ANOutstreamVideo.renderAd({
@@ -198,11 +198,11 @@ function outstreamRender(bid, doc) {
   });
 }
 
-function handleOutstreamRendererEvents(bid, id, eventName) {
+function handleOutstreamRendererEvents (bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent) {
   const syncArr = [];
   if (syncOptions.iframeEnabled) {
     let policyParam = '';

@@ -9,7 +9,7 @@ const NEXVERSE_USER_COOKIE_KEY = 'user_nexverse';
  * Determines the device model (if possible).
  * @returns {string} The device model or a fallback message if not identifiable.
  */
-export function getDeviceModel() {
+export function getDeviceModel () {
   const ua = navigator.userAgent;
   if (/iPhone/i.test(ua)) {
     return 'iPhone';
@@ -36,7 +36,7 @@ export function getDeviceModel() {
  * @param {object} bid - Bid details.
  * @returns {string} The Endpoint URL with required parameters.
  */
-export function buildEndpointUrl(bidderEndPoint, bid) {
+export function buildEndpointUrl (bidderEndPoint, bid) {
   const { uid, pubId, pubEpid } = bid.params;
   const isDebug = bid.isDebug;
   let endPoint = `${bidderEndPoint}?uid=${encodeURIComponent(uid)}&pub_id=${encodeURIComponent(pubId)}&pub_epid=${encodeURIComponent(pubEpid)}`;
@@ -50,7 +50,7 @@ export function buildEndpointUrl(bidderEndPoint, bid) {
  * @param {Object} bid - The bid request object.
  * @returns {boolean} True if the bid request is valid, false otherwise.
  */
-export function isBidRequestValid(bid) {
+export function isBidRequestValid (bid) {
   const isValid = !!(
     bid.params &&
     bid.params.uid && bid.params.uid.trim() &&
@@ -70,7 +70,7 @@ export function isBidRequestValid(bid) {
  * @param {string} adm - The adm field from the bid response (JSON string).
  * @returns {Object} The parsed native response object.
  */
-export function parseNativeResponse(adm) {
+export function parseNativeResponse (adm) {
   try {
     const admObj = JSON.parse(adm);
     return admObj.native;
@@ -86,7 +86,7 @@ export function parseNativeResponse(adm) {
  * @param {type} type - Type of log. default is info
  * @param {args} args - Log data.
  */
-export function printLog(type, ...args) {
+export function printLog (type, ...args) {
   // Determine the prefix based on the log type
   const prefixes = {
     error: LOG_ERROR_PREFIX,

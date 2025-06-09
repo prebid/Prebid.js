@@ -30,13 +30,13 @@ describe('DSA transparency', () => {
       sandbox.stub(auctionManager, 'index').get(() => new AuctionIndex(() => [auction]));
     });
 
-    function expectRejection(reason) {
+    function expectRejection (reason) {
       addBidResponseHook(next, 'adUnit', bid, reject);
       sinon.assert.calledWith(reject, reason);
       sinon.assert.notCalled(next);
     }
 
-    function expectAcceptance() {
+    function expectAcceptance () {
       addBidResponseHook(next, 'adUnit', bid, reject);
       sinon.assert.notCalled(reject);
       sinon.assert.calledWith(next, 'adUnit', bid, reject);

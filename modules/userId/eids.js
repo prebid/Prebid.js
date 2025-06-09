@@ -7,7 +7,7 @@ import {logError, deepClone, isFn, isStr} from '../../src/utils.js';
 export const EID_CONFIG = new Map();
 
 // this function will create an eid object for the given UserId sub-module
-function createEidObject(userIdData, subModuleKey, eidConf) {
+function createEidObject (userIdData, subModuleKey, eidConf) {
   if (eidConf && userIdData) {
     let eid = {};
     eid.source = isFn(eidConf['getSource']) ? eidConf['getSource'](userIdData) : eidConf['source'];
@@ -50,9 +50,9 @@ function createEidObject(userIdData, subModuleKey, eidConf) {
   return null;
 }
 
-export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
+export function createEidsArray (bidRequestUserId, eidConfigs = EID_CONFIG) {
   const allEids = {};
-  function collect(eid) {
+  function collect (eid) {
     const key = JSON.stringify([
       eid.source?.toLowerCase(),
       ...Object.keys(eid).filter(k => !['uids', 'source'].includes(k)).sort().map(k => eid[k])
@@ -94,7 +94,7 @@ export function createEidsArray(bidRequestUserId, eidConfigs = EID_CONFIG) {
 /**
  * @param {SubmodulePriorityMap} priorityMap
  */
-export function getEids(priorityMap) {
+export function getEids (priorityMap) {
   const eidConfigs = new Map();
   const idValues = {};
   Object.entries(priorityMap).forEach(([key, getActiveModule]) => {

@@ -37,7 +37,7 @@ const BID1 = {
     data: 'value1'
   },
   dealId: 'dealid',
-  getStatusCode() {
+  getStatusCode () {
     return STATUS.GOOD;
   }
 };
@@ -65,7 +65,7 @@ const BID3 = {
   adId: '4ecff0db240757',
   auctionId: '1234-4567-7890',
   mediaType: 'banner',
-  getStatusCode() {
+  getStatusCode () {
     return STATUS.GOOD;
   }
 };
@@ -274,7 +274,7 @@ const ANALYTICS_MESSAGE = {
   ]
 };
 
-function performStandardAuction() {
+function performStandardAuction () {
   events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
   events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
@@ -295,7 +295,7 @@ describe('Adnuntius analytics adapter', function () {
     sandbox = sinon.sandbox.create();
 
     let element = {
-      getAttribute: function() {
+      getAttribute: function () {
         return 'adunitid';
       }
     }

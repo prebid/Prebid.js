@@ -2,7 +2,7 @@ import {ORTB_MTYPES, setResponseMediaType} from '../../../libraries/ortbConverte
 import {BANNER} from '../../../src/mediaTypes.js';
 import {extPrebidMediaType} from '../../../libraries/pbsExtensions/processors/mediaType.js';
 
-function testMtype(processor) {
+function testMtype (processor) {
   describe('respects 2.6 mtype', () => {
     Object.entries(ORTB_MTYPES).forEach(([mtype, pbtype]) => {
       it(`${mtype} -> ${pbtype}`, () => {

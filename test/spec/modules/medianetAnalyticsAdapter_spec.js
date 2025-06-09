@@ -27,7 +27,7 @@ const {
   BID_REJECTED
 } = EVENTS;
 
-function createBidResponse(bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') {
+function createBidResponse (bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') {
   return {
     bidderCode,
     width: 300,
@@ -75,7 +75,7 @@ function createBidResponse(bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') 
   };
 }
 
-function createBidRequest(bidderCode, auctionId, bidId, adUnits) {
+function createBidRequest (bidderCode, auctionId, bidId, adUnits) {
   return {
     bidderCode,
     auctionId,
@@ -96,7 +96,7 @@ function createBidRequest(bidderCode, auctionId, bidId, adUnits) {
   };
 }
 
-function createNoBid(bidder, params) {
+function createNoBid (bidder, params) {
   return {
     bidder,
     params,
@@ -111,7 +111,7 @@ function createNoBid(bidder, params) {
   };
 }
 
-function createBidTimeout(bidId, bidder, auctionId, params) {
+function createBidTimeout (bidId, bidder, auctionId, params) {
   return [{
     bidId: '28248b0e6aece2',
     bidder: 'medianet',
@@ -122,7 +122,7 @@ function createBidTimeout(bidId, bidder, auctionId, params) {
   }];
 }
 
-function createBidWon(bidderCode, adId, requestId, cpm) {
+function createBidWon (bidderCode, adId, requestId, cpm) {
   return {
     bidderCode,
     width: 300,
@@ -192,7 +192,7 @@ const BANNER_NATIVE_VIDEO_AD_UNIT = {
   }
 };
 
-function createS2SBidRequest(bidderCode, auctionId, bidId, adUnits) {
+function createS2SBidRequest (bidderCode, auctionId, bidId, adUnits) {
   const bidRequest = createBidRequest(bidderCode, auctionId, bidId, adUnits);
   // Update to mark as S2S
   bidRequest.src = 's2s';
@@ -202,7 +202,7 @@ function createS2SBidRequest(bidderCode, auctionId, bidId, adUnits) {
   return bidRequest;
 }
 
-function createS2SBidResponse(bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') {
+function createS2SBidResponse (bidderCode, requestId, cpm, adId = '3e6e4bce5c8fb3') {
   const bidResponse = createBidResponse(bidderCode, requestId, cpm, adId);
   // Update to mark as S2S
   bidResponse.source = 's2s';
@@ -296,7 +296,7 @@ const MOCK = {
   })
 };
 
-function getQueryData(url, decode = false) {
+function getQueryData (url, decode = false) {
   const queryArgs = url.split('?')[1].split('&');
   return queryArgs.reduce((data, arg) => {
     let [key, val] = arg.split('=');
@@ -315,13 +315,13 @@ function getQueryData(url, decode = false) {
   }, {});
 }
 
-function waitForPromiseResolve(promise) {
+function waitForPromiseResolve (promise) {
   return new Promise((resolve, reject) => {
     promise.then(resolve).catch(reject);
   });
 }
 
-function performNoBidAuction() {
+function performNoBidAuction () {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(NO_BID, MOCK.MNET_NO_BID);
@@ -329,7 +329,7 @@ function performNoBidAuction() {
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
-function performBidWonAuction() {
+function performBidWonAuction () {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_BID_RESPONSE);
@@ -337,7 +337,7 @@ function performBidWonAuction() {
   events.emit(BID_WON, MOCK.MNET_BID_WON);
 }
 
-function performBidTimeoutAuction() {
+function performBidTimeoutAuction () {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_TIMEOUT, MOCK.MNET_BID_TIMEOUT);
@@ -345,7 +345,7 @@ function performBidTimeoutAuction() {
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
-function performAuctionWithSameRequestIdBids(bidRespArray) {
+function performAuctionWithSameRequestIdBids (bidRespArray) {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   bidRespArray.forEach(bidResp => events.emit(BID_RESPONSE, bidResp));
@@ -354,7 +354,7 @@ function performAuctionWithSameRequestIdBids(bidRespArray) {
   events.emit(BID_WON, MOCK.MNET_BID_WON);
 }
 
-function performAuctionNoWin() {
+function performAuctionNoWin () {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   MOCK.COMMON_REQ_ID_BID_REQUESTS.forEach(bidReq => events.emit(BID_REQUESTED, bidReq));
   MOCK.COMMON_REQ_ID_BID_RESPONSES.forEach(bidResp => events.emit(BID_RESPONSE, bidResp));
@@ -362,7 +362,7 @@ function performAuctionNoWin() {
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
-function performMultiBidAuction() {
+function performMultiBidAuction () {
   let bidRequest = createBidRequest('medianet', '8e0d5245-deb3-406c-96ca-9b609e077ff7', '28248b0e6aece2', [BANNER_AD_UNIT]);
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, bidRequest);
@@ -371,7 +371,7 @@ function performMultiBidAuction() {
   events.emit(SET_TARGETING, MOCK.MNET_SET_TARGETING);
 }
 
-function performBidRejectedAuction() {
+function performBidRejectedAuction () {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_BID_RESPONSE);
@@ -381,7 +381,7 @@ function performBidRejectedAuction() {
   events.emit(AUCTION_END, Object.assign({}, MOCK.AUCTION_END, {bidderRequests: [MOCK.MNET_BID_REQUESTED]}));
 }
 
-function performS2SAuction() {
+function performS2SAuction () {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, MOCK.MNET_S2S_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_S2S_BID_RESPONSE);
@@ -390,7 +390,7 @@ function performS2SAuction() {
   events.emit(BID_WON, MOCK.MNET_S2S_BID_WON);
 }
 
-function performCurrencyConversionAuction() {
+function performCurrencyConversionAuction () {
   events.emit(AUCTION_INIT, Object.assign({}, MOCK.AUCTION_INIT, {adUnits: MOCK.AD_UNITS}));
   events.emit(BID_REQUESTED, MOCK.MNET_BID_REQUESTED);
   events.emit(BID_RESPONSE, MOCK.MNET_JPY_BID_RESPONSE);

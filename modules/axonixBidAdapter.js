@@ -10,7 +10,7 @@ const BIDDER_VERSION = '1.0.2';
 const CURRENCY = 'USD';
 const DEFAULT_REGION = 'us-east-1';
 
-function getBidFloor(bidRequest) {
+function getBidFloor (bidRequest) {
   let floorInfo = {};
 
   if (typeof bidRequest.getFloor === 'function') {
@@ -24,7 +24,7 @@ function getBidFloor(bidRequest) {
   return floorInfo?.floor || 0;
 }
 
-function getPageUrl(bidRequest, bidderRequest) {
+function getPageUrl (bidRequest, bidderRequest) {
   let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
@@ -35,15 +35,15 @@ function getPageUrl(bidRequest, bidderRequest) {
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }
 
-function isMobile() {
+function isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
-function isConnectedTV() {
+function isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
-function getURL(params, path) {
+function getURL (params, path) {
   let { supplyId, region, endpoint } = params;
   let url;
 
@@ -63,7 +63,7 @@ export const spec = {
   version: BIDDER_VERSION,
   supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     // video bid request validation
     if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
       if (!bid.mediaTypes[VIDEO].hasOwnProperty('mimes') ||
@@ -78,7 +78,7 @@ export const spec = {
     return !!(bid.params && bid.params.supplyId);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // device.connectiontype
     let connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
     let connectionType = 'unknown';
@@ -138,7 +138,7 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const response = serverResponse ? serverResponse.body : [];
 
     if (!isArray(response)) {
@@ -158,7 +158,7 @@ export const spec = {
     return responses;
   },
 
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     const params = deepAccess(timeoutData, '0.params.0');
 
     if (!isEmpty(params)) {
@@ -172,7 +172,7 @@ export const spec = {
     }
   },
 
-  onBidWon: function(bid) {
+  onBidWon: function (bid) {
     const { nurl } = bid || {};
 
     if (bid.nurl) {

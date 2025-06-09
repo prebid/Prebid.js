@@ -34,10 +34,10 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
  * @return {boolean} true if the given bid request contains at least one supported media request with valid details,
  *                   otherwise false.
  */
-const areValidSupportedMediaTypesPresent = function(bidRequest) {
+const areValidSupportedMediaTypesPresent = function (bidRequest) {
   const mediaTypes = Object.keys(bidRequest.mediaTypes);
 
-  return mediaTypes.some(function(mediaType) {
+  return mediaTypes.some(function (mediaType) {
     if (mediaType === BANNER) {
       return true;
     } else if (mediaType === VIDEO) {
@@ -55,7 +55,7 @@ const areValidSupportedMediaTypesPresent = function(bidRequest) {
  * @param {string} url the URL to check.
  * @returns {boolean} whether the URL contains just a domain.
  */
-const isBaseUrl = function(url) {
+const isBaseUrl = function (url) {
   const urlMinusScheme = url.substring(url.indexOf('://') + 3);
   const endOfDomain = urlMinusScheme.indexOf('/');
   return (endOfDomain === -1) || (endOfDomain === (urlMinusScheme.length - 1));
@@ -72,10 +72,10 @@ const isValidPixelUrl = function (candidateUrl) {
  *
  * @returns {*[]} the transformed bid requests.
  */
-const transformBidRequests = function(bidRequests) {
+const transformBidRequests = function (bidRequests) {
   const transformedBidRequests = [];
 
-  bidRequests.forEach(function(bidRequest) {
+  bidRequests.forEach(function (bidRequest) {
     const params = bidRequest.params || {};
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
@@ -107,7 +107,7 @@ export const spec = {
    * @return {boolean} true if this is a valid bid, otherwise false.
    * @see SUPPORTED_MEDIA_TYPES
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     const areBidRequestParamsValid = !!(bid.params.placementId || (bid.params.member && bid.params.invCode));
     return areBidRequestParamsValid && areValidSupportedMediaTypesPresent(bid);
   },
@@ -120,7 +120,7 @@ export const spec = {
    *
    * @return ServerRequest Info describing the request to the prebid server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -160,10 +160,10 @@ export const spec = {
    *
    * @return {Bid[]} an array of bids returned by the prebid server, translated into the expected Prebid.js format.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     const bids = serverResponse.body;
 
-    bids.forEach(function(bid) {
+    bids.forEach(function (bid) {
       bid.adResponse = serverResponse;
     });
 
@@ -188,7 +188,7 @@ export const spec = {
    *
    * @param {{}} timeoutData data relating to the timeout.
    */
-  onTimeout: function(timeoutData) {
+  onTimeout: function (timeoutData) {
     logError('Timed out waiting for bids: ' + JSON.stringify(timeoutData));
   },
 
@@ -218,7 +218,7 @@ export const spec = {
    *
    * @param {*} bidData the data associated with the won bid. See example above for data format.
    */
-  onBidWon: function(bidData) {
+  onBidWon: function (bidData) {
     if (bidData && bidData.meta && isValidPixelUrl(bidData.meta.wp)) {
       triggerPixel(`${bidData.meta.wp}${bidData.status}`);
     }

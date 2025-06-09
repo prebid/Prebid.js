@@ -40,7 +40,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return (bid.params.adUnitId || ((bid.params.adUnitName || bid.adUnitCode || bid.placementCode) && bid.params.publisherId)) !== undefined;
   },
 
@@ -50,7 +50,7 @@ export const spec = {
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     const userId = ((bidRequests) || []).find(hasUserId);
     const pubcid = ((bidRequests) || []).find(hasPubcid);
     const publisherId = ((bidRequests) || []).find(hasPublisherId);
@@ -121,14 +121,14 @@ export const spec = {
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const bidResponses = [];
 
     if (serverResponse.body.dbg && window.livewrapped && window.livewrapped.s2sDebug) {
       window.livewrapped.s2sDebug(serverResponse.body.dbg);
     }
 
-    serverResponse.body.ads.forEach(function(ad) {
+    serverResponse.body.ads.forEach(function (ad) {
       var bidResponse = {
         requestId: ad.bidId,
         cpm: ad.cpmBid,
@@ -166,13 +166,13 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (serverResponses.length == 0) return [];
 
     let syncList = [];
     let userSync = serverResponses[0].body.pixels || [];
 
-    userSync.forEach(function(sync) {
+    userSync.forEach(function (sync) {
       if (syncOptions.pixelEnabled && sync.type == 'Redirect') {
         syncList.push({type: 'image', url: sync.url});
       }
@@ -186,55 +186,55 @@ export const spec = {
   }
 }
 
-function hasUserId(bid) {
+function hasUserId (bid) {
   return !!bid.params.userId;
 }
 
-function hasPublisherId(bid) {
+function hasPublisherId (bid) {
   return !!bid.params.publisherId;
 }
 
-function hasUrl(bid) {
+function hasUrl (bid) {
   return !!bid.params.url;
 }
 
-function hasBidUrl(bid) {
+function hasBidUrl (bid) {
   return !!bid.params.bidUrl;
 }
 
-function hasAuctionId(bid) {
+function hasAuctionId (bid) {
   return !!bid.auctionId;
 }
 
-function hasTestParam(bid) {
+function hasTestParam (bid) {
   return !!bid.params.test;
 }
 
-function hasSeatsParam(bid) {
+function hasSeatsParam (bid) {
   return !!bid.params.seats;
 }
 
-function hasDeviceIdParam(bid) {
+function hasDeviceIdParam (bid) {
   return !!bid.params.deviceId;
 }
 
-function hasIfaParam(bid) {
+function hasIfaParam (bid) {
   return !!bid.params.ifa;
 }
 
-function hasBundleParam(bid) {
+function hasBundleParam (bid) {
   return !!bid.params.bundle;
 }
 
-function hasTidParam(bid) {
+function hasTidParam (bid) {
   return !!bid.params.tid;
 }
 
-function hasPubcid(bid) {
+function hasPubcid (bid) {
   return !!bid.crumbs && !!bid.crumbs.pubcid;
 }
 
-function bidToAdRequest(bid, currency) {
+function bidToAdRequest (bid, currency) {
   var adRequest = {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
@@ -260,7 +260,7 @@ function bidToAdRequest(bid, currency) {
   return adRequest;
 }
 
-function getSizes(bid) {
+function getSizes (bid) {
   if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
     return bid.mediaTypes.banner.sizes;
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
@@ -269,14 +269,14 @@ function getSizes(bid) {
   return [];
 }
 
-function sizeToFormat(size) {
+function sizeToFormat (size) {
   return {
     width: size[0],
     height: size[1]
   }
 }
 
-function getBidFloor(bid, currency) {
+function getBidFloor (bid, currency) {
   if (!isFn(bid.getFloor)) {
     return undefined;
   }
@@ -292,13 +292,13 @@ function getBidFloor(bid, currency) {
     : undefined;
 }
 
-function getAdblockerRecovered() {
+function getAdblockerRecovered () {
   try {
     return getWindowTop().I12C && getWindowTop().I12C.Morph === 1;
   } catch (e) {}
 }
 
-function handleEids(bidRequests) {
+function handleEids (bidRequests) {
   const bidRequest = bidRequests[0];
   if (bidRequest && bidRequest.userIdAsEids) {
     return {user: {ext: {eids: bidRequest.userIdAsEids}}};
@@ -307,39 +307,39 @@ function handleEids(bidRequests) {
   return undefined;
 }
 
-function getTopWindowLocation(bidderRequest) {
+function getTopWindowLocation (bidderRequest) {
   return bidderRequest?.refererInfo?.page;
 }
 
-function getAppBundle() {
+function getAppBundle () {
   if (typeof config.getConfig('app') === 'object') {
     return config.getConfig('app').bundle;
   }
 }
 
-function getAppDomain() {
+function getAppDomain () {
   if (typeof config.getConfig('app') === 'object') {
     return config.getConfig('app').domain;
   }
 }
 
-function getDeviceIfa() {
+function getDeviceIfa () {
   if (typeof config.getConfig('device') === 'object') {
     return config.getConfig('device').ifa;
   }
 }
 
-function getDeviceWidth() {
+function getDeviceWidth () {
   const device = config.getConfig('device') || {};
   return device.w || getWinDimensions().innerWidth;
 }
 
-function getDeviceHeight() {
+function getDeviceHeight () {
   const device = config.getConfig('device') || {};
   return device.h || getWinDimensions().innerHeight;
 }
 
-function getCoppa() {
+function getCoppa () {
   if (typeof config.getConfig('coppa') === 'boolean') {
     return config.getConfig('coppa');
   }

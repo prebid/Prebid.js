@@ -272,7 +272,7 @@ const MOCK = {
   STALE_RENDER: R2B2_AD_UNIT_2_BID,
   BID_VIEWABLE: R2B2_AD_UNIT_2_BID
 }
-function fireEvents(events) {
+function fireEvents (events) {
   return events.map((ev, i) => {
     ev = Array.isArray(ev) ? ev : [ev, {i: i}];
     pbEvents.emit.apply(null, ev)
@@ -280,16 +280,16 @@ function fireEvents(events) {
   });
 }
 
-function expectEvents(events, sandbox) {
+function expectEvents (events, sandbox) {
   events = fireEvents(events);
   return {
     to: {
-      beTrackedBy(trackFn) {
+      beTrackedBy (trackFn) {
         events.forEach(([eventType, args]) => {
           sandbox.assert.calledWithMatch(trackFn, sandbox.match({eventType, args}));
         });
       },
-      beBundledTo(bundleFn) {
+      beBundledTo (bundleFn) {
         events.forEach(([eventType, args]) => {
           sandbox.assert.calledWithMatch(bundleFn, sandbox.match.any, eventType, sandbox.match(args))
         });
@@ -298,7 +298,7 @@ function expectEvents(events, sandbox) {
   };
 }
 
-function validateAndExtractEvents(ajaxStub) {
+function validateAndExtractEvents (ajaxStub) {
   expect(ajaxStub.calledOnce).to.equal(true);
   let eventArgs = ajaxStub.firstCall.args[2];
   expect(typeof eventArgs).to.be.equal('string');
@@ -310,7 +310,7 @@ function validateAndExtractEvents(ajaxStub) {
   return events;
 }
 
-function getQueryData(url, decode = false) {
+function getQueryData (url, decode = false) {
   const queryArgs = url.split('?')[1].split('&');
   return queryArgs.reduce((data, arg) => {
     let [key, val] = arg.split('=');
@@ -329,10 +329,10 @@ function getQueryData(url, decode = false) {
   }, {});
 }
 
-function getPrebidEvents(events) {
+function getPrebidEvents (events) {
   return events && events.prebid && events.prebid.e;
 }
-function getPrebidEventsByName(events, name) {
+function getPrebidEventsByName (events, name) {
   let prebidEvents = getPrebidEvents(events);
   if (!prebidEvents) return [];
 
@@ -347,7 +347,7 @@ function getPrebidEventsByName(events, name) {
   return result;
 }
 
-function tryParseJSON(value) {
+function tryParseJSON (value) {
   try {
     return JSON.parse(value);
   } catch (e) {

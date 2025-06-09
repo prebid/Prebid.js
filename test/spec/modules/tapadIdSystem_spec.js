@@ -7,9 +7,9 @@ import {expect} from 'chai/index.mjs';
 import {attachIdSystem} from '../../../modules/userId/index.js';
 
 describe('TapadIdSystem', function () {
-  describe('getId', function() {
+  describe('getId', function () {
     const config = { params: { companyId: 12345 } };
-    it('should call to real time graph endpoint and handle valid response', function() {
+    it('should call to real time graph endpoint and handle valid response', function () {
       const callbackSpy = sinon.spy();
       const callback = tapadIdSubmodule.getId(config).callback;
       callback(callbackSpy);
@@ -21,7 +21,7 @@ describe('TapadIdSystem', function () {
       expect(callbackSpy.lastCall.lastArg).to.eq('your-tapad-id');
     });
 
-    it('should remove stored tapadId if not found', function() {
+    it('should remove stored tapadId if not found', function () {
       const callbackSpy = sinon.spy();
       const callback = tapadIdSubmodule.getId(config).callback;
       callback(callbackSpy);
@@ -32,7 +32,7 @@ describe('TapadIdSystem', function () {
       expect(callbackSpy.lastCall.lastArg).to.be.undefined;
     });
 
-    it('should log message with invalid company id', function() {
+    it('should log message with invalid company id', function () {
       const logMessageSpy = sinon.spy(utils, 'logMessage');
       const callbackSpy = sinon.spy();
       const callback = tapadIdSubmodule.getId(config).callback;
@@ -45,7 +45,7 @@ describe('TapadIdSystem', function () {
       logMessageSpy.restore();
     });
 
-    it('should log message if company id not given', function() {
+    it('should log message if company id not given', function () {
       const logMessageSpy = sinon.spy(utils, 'logMessage');
       const callbackSpy = sinon.spy();
       const callback = tapadIdSubmodule.getId({}).callback;
@@ -55,7 +55,7 @@ describe('TapadIdSystem', function () {
       logMessageSpy.restore();
     });
 
-    it('should log message if company id is incorrect format', function() {
+    it('should log message if company id is incorrect format', function () {
       const logMessageSpy = sinon.spy(utils, 'logMessage');
       const callbackSpy = sinon.spy();
       const callback = tapadIdSubmodule.getId({ params: { companyId: 'notANumber' } }).callback;
@@ -69,7 +69,7 @@ describe('TapadIdSystem', function () {
     before(() => {
       attachIdSystem(tapadIdSubmodule);
     });
-    it('tapadId', function() {
+    it('tapadId', function () {
       const userId = {
         tapadId: 'some-random-id-value'
       };

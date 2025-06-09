@@ -161,8 +161,8 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
     mediaTypes: {
       banner: {
         sizes: [
-          [ 300, 250 ],
-          [ 300, 600 ]
+          [300, 250],
+          [300, 600]
         ]
       }
     },
@@ -336,7 +336,7 @@ const ERROR_NOTICE = {
   'timeout': 1000,
   'bidderCode': 'aidem',
   metrics: {
-    getMetrics() {
+    getMetrics () {
       return {
 
       }

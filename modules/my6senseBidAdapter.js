@@ -7,11 +7,11 @@ const END_POINT = 'https://hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.jso
 const END_POINT_METHOD = 'POST';
 
 // called first
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   return !(bid.bidder !== BIDDER_CODE || !bid.params || !bid.params.key);
 }
 
-function getUrl(url) {
+function getUrl (url) {
   // TODO: this should probably look at refererInfo
   if (!url) {
     url = window.location.href;// "clean" url of current web page
@@ -44,8 +44,8 @@ function getUrl(url) {
  * @param value
  * @returns {{value: *, fromUser: boolean}}
  */
-function fixRequestParamForServer(key, value) {
-  function isEmptyValue(key, value) {
+function fixRequestParamForServer (key, value) {
+  function isEmptyValue (key, value) {
     return value === parametersMap[key].emptyValue;
   }
 
@@ -101,7 +101,7 @@ function fixRequestParamForServer(key, value) {
 
 // called second
 
-function buildGdprServerProperty(bidderRequest) {
+function buildGdprServerProperty (bidderRequest) {
   var gdprObj = {
     gdpr_consent: null,
     gdpr: null
@@ -119,7 +119,7 @@ function buildGdprServerProperty(bidderRequest) {
   return gdprObj;
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
+function buildRequests (validBidRequests, bidderRequest) {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -178,7 +178,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
 // called third
 
-function interpretResponse(serverResponse) {
+function interpretResponse (serverResponse) {
   const bidResponses = [];
   // currently server returns a single response which is the body property
   if (serverResponse.body) {

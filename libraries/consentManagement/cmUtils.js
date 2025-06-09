@@ -5,9 +5,9 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 import {PbPromise} from '../../src/utils/promise.js';
 import {buildActivityParams} from '../../src/activities/params.js';
 
-export function consentManagementHook(name, loadConsentData) {
+export function consentManagementHook (name, loadConsentData) {
   const SEEN = new WeakSet();
-  return timedAuctionHook(name, function requestBidsHook(fn, reqBidsConfigObj) {
+  return timedAuctionHook(name, function requestBidsHook (fn, reqBidsConfigObj) {
     return loadConsentData().then(({consentData, error}) => {
       if (error && (!consentData || !SEEN.has(error))) {
         SEEN.add(error);
@@ -51,7 +51,7 @@ export function consentManagementHook(name, loadConsentData) {
  * @param {() => {}} options.getNullConsent consent data to use on timeout
  * @returns {Promise<{error: Error, consentData: {}}>}
  */
-export function lookupConsentData(
+export function lookupConsentData (
   {
     name,
     consentDataHandler,
@@ -68,7 +68,7 @@ export function lookupConsentData(
     let provisionalConsent;
     let cmpLoaded = false;
 
-    function setProvisionalConsent(consentData) {
+    function setProvisionalConsent (consentData) {
       provisionalConsent = consentData;
       if (!cmpLoaded) {
         cmpLoaded = true;
@@ -76,7 +76,7 @@ export function lookupConsentData(
       }
     }
 
-    function resetTimeout(timeout) {
+    function resetTimeout (timeout) {
       if (timeoutHandle != null) clearTimeout(timeoutHandle);
       if (timeout != null) {
         timeoutHandle = setTimeout(() => {
@@ -100,7 +100,7 @@ export function lookupConsentData(
   });
 }
 
-export function configParser(
+export function configParser (
   {
     namespace,
     displayName,
@@ -112,20 +112,20 @@ export function configParser(
     DEFAULT_CONSENT_TIMEOUT = 10000
   } = {}
 ) {
-  function msg(message) {
+  function msg (message) {
     return `consentManagement.${namespace} ${message}`;
   }
   let requestBidsHook, cdLoader, staticConsentData;
 
-  function attachActivityParams(next, params) {
+  function attachActivityParams (next, params) {
     return next(Object.assign({[`${namespace}Consent`]: consentDataHandler.getConsentData()}, params));
   }
 
-  function loadConsentData() {
+  function loadConsentData () {
     return cdLoader().then(({error}) => ({error, consentData: consentDataHandler.getConsentData()}))
   }
 
-  function activate() {
+  function activate () {
     if (requestBidsHook == null) {
       requestBidsHook = consentManagementHook(namespace, () => cdLoader());
       getGlobal().requestBids.before(requestBidsHook, 50);
@@ -134,7 +134,7 @@ export function configParser(
     }
   }
 
-  function reset() {
+  function reset () {
     if (requestBidsHook != null) {
       getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
       buildActivityParams.getHooks({hook: attachActivityParams}).remove();
@@ -142,7 +142,7 @@ export function configParser(
     }
   }
 
-  return function getConsentConfig(config) {
+  return function getConsentConfig (config) {
     config = config?.[namespace];
     if (!config || typeof config !== 'object') {
       logWarn(msg(`config not defined, exiting consent manager module`));

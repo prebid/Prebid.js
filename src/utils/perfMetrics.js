@@ -3,15 +3,15 @@ export const CONFIG_TOGGLE = 'performanceMetrics';
 const getTime = window.performance && window.performance.now ? () => window.performance.now() : () => Date.now();
 const NODES = new WeakMap();
 
-export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = makeTimer, mkRenamer = (rename) => rename, nodes = NODES} = {}) {
-  return function newMetrics() {
-    function makeMetrics(self, rename = (n) => ({forEach(fn) { fn(n); }})) {
+export function metricsFactory ({now = getTime, mkNode = makeNode, mkTimer = makeTimer, mkRenamer = (rename) => rename, nodes = NODES} = {}) {
+  return function newMetrics () {
+    function makeMetrics (self, rename = (n) => ({forEach (fn) { fn(n); }})) {
       rename = mkRenamer(rename);
 
-      function accessor(slot) {
+      function accessor (slot) {
         return function (name) {
           return self.dfWalk({
-            visit(edge, node) {
+            visit (edge, node) {
               const obj = node[slot];
               if (obj.hasOwnProperty(name)) {
                 return obj[name];
@@ -29,13 +29,13 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * @param name metric name
        * @param value metric valiue
        */
-      function setMetric(name, value) {
+      function setMetric (name, value) {
         const names = rename(name);
         self.dfWalk({
-          follow(inEdge, outEdge) {
+          follow (inEdge, outEdge) {
             return outEdge.propagate && (!inEdge || !inEdge.stopPropagation)
           },
-          visit(edge, node) {
+          visit (edge, node) {
             names.forEach(name => {
               if (edge == null) {
                 node.metrics[name] = value;
@@ -56,7 +56,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *
        * @param name checkpoint name
        */
-      function checkpoint(name) {
+      function checkpoint (name) {
         self.timestamps[name] = now();
       }
 
@@ -67,7 +67,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * @param {string} [metric] - The name of the metric to save. Optional.
        * @returns {number|null} - The time in milliseconds between now and the checkpoint, or `null` if the checkpoint is not found.
        */
-      function timeSince(checkpoint, metric) {
+      function timeSince (checkpoint, metric) {
         const ts = getTimestamp(checkpoint);
         const elapsed = ts != null ? now() - ts : null;
         if (metric != null) {
@@ -84,7 +84,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * @param {string} [metric] - The name of the metric to save. Optional.
        * @returns {number|null} - The time in milliseconds between `startCheckpoint` and `endCheckpoint`, or `null` if either checkpoint is not found.
        */
-      function timeBetween(startCheckpoint, endCheckpoint, metric) {
+      function timeBetween (startCheckpoint, endCheckpoint, metric) {
         const start = getTimestamp(startCheckpoint);
         const end = getTimestamp(endCheckpoint);
         const elapsed = start != null && end != null ? end - start : null;
@@ -111,7 +111,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * @param name metric name
        * @return {MetricsTimer}
        */
-      function startTiming(name) {
+      function startTiming (name) {
         return mkTimer(now, (val) => setMetric(name, val))
       }
 
@@ -123,7 +123,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * @param {function(): T} fn
        * @return {T} the return value of `fn`
        */
-      function measureTime(name, fn) {
+      function measureTime (name, fn) {
         return startTiming(name).stopAfter(fn)();
       }
 
@@ -148,7 +148,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *    call `stopTiming` before continuing with the original hook.
        * @return {T} - The return value of `fn`.
        */
-      function measureHookTime(name, next, fn) {
+      function measureHookTime (name, next, fn) {
         const stopTiming = startTiming(name);
         return fn((function (orig) {
           const next = stopTiming.stopBefore(orig);
@@ -163,10 +163,10 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        * Get all registered metrics.
        * @return {{}}
        */
-      function getMetrics() {
+      function getMetrics () {
         let result = {}
         self.dfWalk({
-          visit(edge, node) {
+          visit (edge, node) {
             result = Object.assign({}, !edge || edge.includeGroups ? node.groups : null, node.metrics, result);
           }
         });
@@ -225,7 +225,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *   ```
        * @returns {Object} - The new metrics object.
        */
-      function fork({propagate = true, stopPropagation = false, includeGroups = false} = {}) {
+      function fork ({propagate = true, stopPropagation = false, includeGroups = false} = {}) {
         return makeMetrics(mkNode([[self, {propagate, stopPropagation, includeGroups}]]), rename);
       }
 
@@ -235,7 +235,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *
        * `propagate`, `stopPropagation` and `includeGroups` have the same semantics as in `.fork()`.
        */
-      function join(otherMetrics, {propagate = true, stopPropagation = false, includeGroups = false} = {}) {
+      function join (otherMetrics, {propagate = true, stopPropagation = false, includeGroups = false} = {}) {
         const other = nodes.get(otherMetrics);
         if (other != null) {
           other.addParent(self, {propagate, stopPropagation, includeGroups});
@@ -247,14 +247,14 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
        *
        * @param {function(String): Array[String]} renameFn
        */
-      function renameWith(renameFn) {
+      function renameWith (renameFn) {
         return makeMetrics(self, renameFn);
       }
 
       /**
        * Create a new metrics object that uses the same propagation and renaming rules as this one.
        */
-      function newMetrics() {
+      function newMetrics () {
         return makeMetrics(self.newSibling(), rename);
       }
 
@@ -271,7 +271,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
         join,
         newMetrics,
         renameWith,
-        toJSON() {
+        toJSON () {
           return getMetrics();
         }
       };
@@ -283,7 +283,7 @@ export function metricsFactory({now = getTime, mkNode = makeNode, mkTimer = make
   }
 }
 
-function wrapFn(fn, before, after) {
+function wrapFn (fn, before, after) {
   return function () {
     before && before();
     try {
@@ -294,10 +294,10 @@ function wrapFn(fn, before, after) {
   };
 }
 
-function makeTimer(now, cb) {
+function makeTimer (now, cb) {
   const start = now();
   let done = false;
-  function stopTiming() {
+  function stopTiming () {
     if (!done) {
       cb(now() - start);
       done = true;
@@ -308,18 +308,18 @@ function makeTimer(now, cb) {
   return stopTiming;
 }
 
-function makeNode(parents) {
+function makeNode (parents) {
   return {
     metrics: {},
     timestamps: {},
     groups: {},
-    addParent(node, edge) {
+    addParent (node, edge) {
       parents.push([node, edge]);
     },
-    newSibling() {
+    newSibling () {
       return makeNode(parents.slice());
     },
-    dfWalk({visit, follow = () => true, visited = new Set(), inEdge} = {}) {
+    dfWalk ({visit, follow = () => true, visited = new Set(), inEdge} = {}) {
       let res;
       if (!visited.has(this)) {
         visited.add(this);
@@ -361,7 +361,7 @@ config.getConfig(CONFIG_TOGGLE, (cfg) => { enabled = !!cfg[CONFIG_TOGGLE] });
 /**
  * convenience fallback function for metrics that may be undefined, especially during tests.
  */
-export function useMetrics(metrics) {
+export function useMetrics (metrics) {
   return (enabled && metrics) || nullMetrics;
 }
 
@@ -372,8 +372,8 @@ export const newMetrics = (() => {
   }
 })();
 
-export function hookTimer(prefix, getMetrics) {
-  return function(name, hookFn) {
+export function hookTimer (prefix, getMetrics) {
+  return function (name, hookFn) {
     return function (next, ...args) {
       const that = this;
       return useMetrics(getMetrics.apply(that, args)).measureHookTime(prefix + name, next, function (next) {

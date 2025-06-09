@@ -51,7 +51,7 @@ export const STORAGE = getStorageManager({
  * @return {object | false } false if localstorageNotEnabled
  */
 
-export function getNexx360LocalStorage() {
+export function getNexx360LocalStorage () {
   if (!STORAGE.localStorageIsEnabled()) {
     logInfo(`localstorage not enabled for Nexx360`);
     return false;
@@ -74,7 +74,7 @@ const converter = ortbConverter({
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
     ttl: 90, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
     imp = enrichImp(imp, bidRequest);
     const divId = bidRequest.params.divId || bidRequest.adUnitCode;
@@ -94,7 +94,7 @@ const converter = ortbConverter({
     if (bidRequest.params.allBids) deepSetValue(imp, 'ext.nexx360.allBids', bidRequest.params.allBids);
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     let request = buildRequest(imps, bidderRequest, context);
     const amxId = getAmxId(STORAGE, BIDDER_CODE);
     request = enrichRequest(request, amxId, bidderRequest, PAGE_VIEW_ID, BIDDER_VERSION);
@@ -108,7 +108,7 @@ const converter = ortbConverter({
  * @param {BidRequest} bid The bid params to validate.
  * @return boolean True if this is a valid bid, and false otherwise.
  */
-function isBidRequestValid(bid) {
+function isBidRequestValid (bid) {
   if (bid.params.adUnitName && (typeof bid.params.adUnitName !== 'string' || bid.params.adUnitName === '')) {
     logError('bid.params.adUnitName needs to be a string');
     return false;
@@ -138,7 +138,7 @@ function isBidRequestValid(bid) {
  * @return ServerRequest Info describing the request to the server.
  */
 
-function buildRequests(bidRequests, bidderRequest) {
+function buildRequests (bidRequests, bidderRequest) {
   const data = converter.toORTB({bidRequests, bidderRequest})
   return {
     method: 'POST',
@@ -154,7 +154,7 @@ function buildRequests(bidRequests, bidderRequest) {
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
 
-function interpretResponse(serverResponse) {
+function interpretResponse (serverResponse) {
   const respBody = serverResponse.body;
   if (!respBody || !Array.isArray(respBody.seatbid)) {
     return [];

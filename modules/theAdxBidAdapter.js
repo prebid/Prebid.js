@@ -356,11 +356,11 @@ let buildSiteComponent = (bidRequest, bidderRequest) => {
   return site;
 }
 
-function isMobile() {
+function isMobile () {
   return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
 }
 
-function isConnectedTV() {
+function isConnectedTV () {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
 }
 
@@ -529,7 +529,7 @@ let generatePayload = (bidRequest, bidderRequest) => {
   return JSON.stringify(payload);
 };
 
-function getEids(bidRequest) {
+function getEids (bidRequest) {
   let eids = {}
 
   let uId2 = deepAccess(bidRequest, 'userId.uid2.id');

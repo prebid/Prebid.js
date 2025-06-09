@@ -35,7 +35,7 @@ export const unifiedIdSubmodule = {
    * @param {{TDID:string}} value
    * @returns {{tdid:Object}}
    */
-  decode(value) {
+  decode (value) {
     return (value && typeof value['TDID'] === 'string') ? { 'tdid': value['TDID'] } : undefined;
   },
   /**
@@ -44,7 +44,7 @@ export const unifiedIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     const configParams = (config && config.params) || {};
     if (!configParams || (typeof configParams.partner !== 'string' && typeof configParams.url !== 'string')) {
       logError('User ID - unifiedId submodule requires either partner or url to be defined');

@@ -309,17 +309,17 @@ describe('Codefuel Adapter', function () {
       expect(ret).to.be.an('array').that.is.empty
     })
 
-    it('should not pass GDPR consent', function() {
+    it('should not pass GDPR consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.to.be.an('array').that.is.empty
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.be.an('array').that.is.empty
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.be.an('array').that.is.empty
     });
 
-    it('should not pass US consent', function() {
+    it('should not pass US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.be.an('array').that.is.empty
     });
 
-    it('should pass GDPR and US consent', function() {
+    it('should pass GDPR and US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.be.an('array').that.is.empty
     });
   })

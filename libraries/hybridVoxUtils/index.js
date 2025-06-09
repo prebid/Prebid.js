@@ -19,7 +19,7 @@ export const outstreamRender = bid => {
   });
 };
 
-export function createRenderer(bid, url) {
+export function createRenderer (bid, url) {
   const renderer = Renderer.install({
     targetId: bid.adUnitCode,
     url,
@@ -33,11 +33,11 @@ export function createRenderer(bid, url) {
   return renderer;
 }
 
-export function getMediaTypeFromBid(bid) {
+export function getMediaTypeFromBid (bid) {
   return bid.mediaTypes && Object.keys(bid.mediaTypes)[0];
 }
 
-export function hasVideoMandatoryParams(mediaTypes) {
+export function hasVideoMandatoryParams (mediaTypes) {
   const isHasVideoContext = !!mediaTypes.video &&
     (mediaTypes.video.context === 'instream' || mediaTypes.video.context === 'outstream');
   const isPlayerSize = !!deepAccess(mediaTypes, 'video.playerSize') &&

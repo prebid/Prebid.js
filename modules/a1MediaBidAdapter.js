@@ -12,7 +12,7 @@ const converter = ortbConverter({
     netRevenue: true,
     ttl: 30,
   },
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     if (!imp.bidfloor) {
       imp.bidfloor = bidRequest.params.bidfloor || 0;
@@ -25,7 +25,7 @@ const converter = ortbConverter({
     }
     return imp;
   },
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const bid = context.bidRequests[0];
     if (!request.cur) {
@@ -36,7 +36,7 @@ const converter = ortbConverter({
     }
     return request;
   },
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const { bidRequest } = context;
 
     let resMediaType;

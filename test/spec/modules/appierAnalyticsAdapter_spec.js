@@ -36,8 +36,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       appierAnalyticsAdapter.disableAnalytics();
     });
 
-    describe('#getCpmInUsd()', function() {
-      it('should get bid cpm as currency is USD', function() {
+    describe('#getCpmInUsd()', function () {
+      it('should get bid cpm as currency is USD', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -58,8 +58,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       });
     });
 
-    describe('#parseBidderCode()', function() {
-      it('should get lower case bidder code from bidderCode field value', function() {
+    describe('#parseBidderCode()', function () {
+      it('should get lower case bidder code from bidderCode field value', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -78,7 +78,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
         const result = parseBidderCode(receivedBids[0]);
         expect(result).to.equal('appier');
       });
-      it('should get lower case bidder code from bidder field value as bidderCode field is missing', function() {
+      it('should get lower case bidder code from bidder field value as bidderCode field is missing', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -99,8 +99,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       });
     });
 
-    describe('#parseAdUnitCode()', function() {
-      it('should get lower case adUnit code from adUnitCode field value', function() {
+    describe('#parseAdUnitCode()', function () {
+      it('should get lower case adUnit code from adUnitCode field value', function () {
         const receivedBids = [
           {
             auctionId: auctionId,
@@ -121,17 +121,17 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       });
     });
 
-    describe('#getCachedAuction()', function() {
+    describe('#getCachedAuction()', function () {
       const existing = {timeoutBids: [{}]};
       appierAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
 
-      it('should get the existing cached object if it exists', function() {
+      it('should get the existing cached object if it exists', function () {
         const result = appierAnalyticsAdapter.getCachedAuction('test_auction_id');
 
         expect(result).to.equal(existing);
       });
 
-      it('should create a new object and store it in the cache on cache miss', function() {
+      it('should create a new object and store it in the cache on cache miss', function () {
         const result = appierAnalyticsAdapter.getCachedAuction('no_such_id');
 
         expect(result).to.deep.include({
@@ -140,7 +140,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       });
     });
 
-    describe('when formatting JSON payload sent to backend', function() {
+    describe('when formatting JSON payload sent to backend', function () {
       const receivedBids = [
         {
           auctionId: auctionId,
@@ -245,7 +245,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           ad: '<html>fake ad3</html>'
         },
       ];
-      function assertHavingRequiredMessageFields(message) {
+      function assertHavingRequiredMessageFields (message) {
         expect(message).to.include({
           version: ANALYTICS_VERSION,
           auctionId: auctionId,
@@ -259,16 +259,16 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
         });
       }
 
-      describe('#createCommonMessage', function() {
-        it('should correctly serialize some common fields', function() {
+      describe('#createCommonMessage', function () {
+        it('should correctly serialize some common fields', function () {
           const message = appierAnalyticsAdapter.createCommonMessage(auctionId);
 
           assertHavingRequiredMessageFields(message);
         });
       });
 
-      describe('#serializeBidResponse', function() {
-        it('should handle BID properly and serialize bid price related fields', function() {
+      describe('#serializeBidResponse', function () {
+        it('should handle BID properly and serialize bid price related fields', function () {
           const result = appierAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID);
 
           expect(result).to.include({
@@ -284,7 +284,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           });
         });
 
-        it('should handle NO_BID properly and set status to noBid', function() {
+        it('should handle NO_BID properly and set status to noBid', function () {
           const result = appierAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID);
 
           expect(result).to.include({
@@ -294,7 +294,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           });
         });
 
-        it('should handle BID_WON properly and serialize bid price related fields', function() {
+        it('should handle BID_WON properly and serialize bid price related fields', function () {
           const result = appierAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID_WON);
 
           expect(result).to.include({
@@ -310,7 +310,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           });
         });
 
-        it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function() {
+        it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function () {
           const result = appierAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT);
 
           expect(result).to.include({
@@ -320,7 +320,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           });
         });
 
-        it('should handle BID_WON properly and fill originalCpm field with cpm in missing originalCpm case', function() {
+        it('should handle BID_WON properly and fill originalCpm field with cpm in missing originalCpm case', function () {
           const result = appierAnalyticsAdapter.serializeBidResponse(withoutOriginalCpmBids[0], BIDDER_STATUS.BID_WON);
 
           expect(result).to.include({
@@ -336,7 +336,7 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           });
         });
 
-        it('should handle BID_WON properly and fill originalCurrency field with currency in missing originalCurrency case', function() {
+        it('should handle BID_WON properly and fill originalCurrency field with currency in missing originalCurrency case', function () {
           const result = appierAnalyticsAdapter.serializeBidResponse(withoutOriginalCurrencyBids[0], BIDDER_STATUS.BID_WON);
           expect(result).to.include({
             prebidWon: true,
@@ -352,8 +352,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
         });
       });
 
-      describe('#addBidResponseToMessage()', function() {
-        it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
+      describe('#addBidResponseToMessage()', function () {
+        it('should add a bid response in the output message, grouped by adunit_id and bidder', function () {
           const message = {
             adUnits: {}
           };
@@ -371,8 +371,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
         });
       });
 
-      describe('#createBidMessage()', function() {
-        it('should format auction message sent to the backend', function() {
+      describe('#createBidMessage()', function () {
+        it('should format auction message sent to the backend', function () {
           const args = {
             auctionId: auctionId,
             timestamp: 1234567890,
@@ -438,8 +438,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
         });
       });
 
-      describe('#createImpressionMessage()', function() {
-        it('should format message sent to the backend with the bid result', function() {
+      describe('#createImpressionMessage()', function () {
+        it('should format message sent to the backend with the bid result', function () {
           const bid = receivedBids[0];
           const result = appierAnalyticsAdapter.createImpressionMessage(bid);
 
@@ -462,8 +462,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
         });
       });
 
-      describe('#createCreativeMessage()', function() {
-        it('should generate message sent to the backend with ad html grouped by adunit and bidder', function() {
+      describe('#createCreativeMessage()', function () {
+        it('should generate message sent to the backend with ad html grouped by adunit and bidder', function () {
           const result = appierAnalyticsAdapter.createCreativeMessage(auctionId, receivedBids);
 
           assertHavingRequiredMessageFields(result);
@@ -484,8 +484,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           });
         });
       });
-      describe('#handleBidTimeout()', function() {
-        it('should cached the timeout bid as BID_TIMEOUT event was triggered', function() {
+      describe('#handleBidTimeout()', function () {
+        it('should cached the timeout bid as BID_TIMEOUT event was triggered', function () {
           appierAnalyticsAdapter.cachedAuctions['test_timeout_auction_id'] = { 'timeoutBids': [] };
           const args = [{
             auctionId: 'test_timeout_auction_id',
@@ -510,8 +510,8 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
           });
         });
       });
-      describe('#handleBidWon()', function() {
-        it('should call createImpressionMessage once as BID_WON event was triggered', function() {
+      describe('#handleBidWon()', function () {
+        it('should call createImpressionMessage once as BID_WON event was triggered', function () {
           sinon.spy(appierAnalyticsAdapter, 'createImpressionMessage');
           const receivedBids = [
             {
@@ -560,28 +560,28 @@ describe('Appier Prebid AnalyticsAdapter Testing', function () {
       events.getEvents.restore();
     });
 
-    it('should call handleBidWon as BID_WON trigger event', function() {
+    it('should call handleBidWon as BID_WON trigger event', function () {
       sinon.spy(appierAnalyticsAdapter, 'handleBidWon');
       events.emit(constants.EVENTS.BID_WON, {});
       sinon.assert.callCount(appierAnalyticsAdapter.handleBidWon, 1);
       appierAnalyticsAdapter.handleBidWon.restore();
     });
 
-    it('should call handleBidTimeout as BID_TIMEOUT trigger event', function() {
+    it('should call handleBidTimeout as BID_TIMEOUT trigger event', function () {
       sinon.spy(appierAnalyticsAdapter, 'handleBidTimeout');
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
       sinon.assert.callCount(appierAnalyticsAdapter.handleBidTimeout, 1);
       appierAnalyticsAdapter.handleBidTimeout.restore();
     });
 
-    it('should call handleAuctionEnd as AUCTION_END trigger event', function() {
+    it('should call handleAuctionEnd as AUCTION_END trigger event', function () {
       sinon.spy(appierAnalyticsAdapter, 'handleAuctionEnd');
       events.emit(constants.EVENTS.AUCTION_END, {});
       sinon.assert.callCount(appierAnalyticsAdapter.handleAuctionEnd, 1);
       appierAnalyticsAdapter.handleAuctionEnd.restore();
     });
 
-    it('should call createCreativeMessage as AUCTION_END trigger event in adSampled is true', function() {
+    it('should call createCreativeMessage as AUCTION_END trigger event in adSampled is true', function () {
       const configOptions = {
         options: {
           affiliateId: affiliateId,

@@ -46,7 +46,7 @@ let context = {};
  * Get the bid floor value from the bid object, either using the getFloor function or by accessing the 'params.bidfloor' property.
  * If the bid floor cannot be determined, return 0 as a fallback value.
  */
-export function getBidFloor(bid) {
+export function getBidFloor (bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidfloor', 0);
   }
@@ -64,7 +64,7 @@ export function getBidFloor(bid) {
   }
 }
 
-export function validateBanner(mediaTypes) {
+export function validateBanner (mediaTypes) {
   if (!mediaTypes[BANNER]) {
     return true;
   }
@@ -73,7 +73,7 @@ export function validateBanner(mediaTypes) {
   return (Boolean(banner.sizes) && isArray(mediaTypes[BANNER].sizes) && mediaTypes[BANNER].sizes.length > 0);
 }
 
-export function validateVideo(mediaTypes) {
+export function validateVideo (mediaTypes) {
   const video = mediaTypes[VIDEO];
   if (!video) {
     return true;
@@ -82,7 +82,7 @@ export function validateVideo(mediaTypes) {
   return video.context !== ADPOD;
 }
 
-export function _getMinSize(sizes) {
+export function _getMinSize (sizes) {
   if (!sizes || sizes.length === 0) return undefined;
   return sizes.reduce((minSize, currentSize) => {
     const minArea = minSize.w * minSize.h;
@@ -91,7 +91,7 @@ export function _getMinSize(sizes) {
   });
 }
 
-export function _canSelectViewabilityContainer() {
+export function _canSelectViewabilityContainer () {
   try {
     window.top.document.querySelector('#viewability-container');
     return true;
@@ -100,18 +100,18 @@ export function _canSelectViewabilityContainer() {
   }
 }
 
-export function _isViewabilityMeasurable(element) {
+export function _isViewabilityMeasurable (element) {
   if (!element) return false;
   return _canSelectViewabilityContainer(element);
 }
 
-export function _getViewability(element, topWin, { w, h } = {}) {
+export function _getViewability (element, topWin, { w, h } = {}) {
   return topWin.document.visibilityState === 'visible'
     ? percentInView(element, { w, h })
     : 0;
 }
 
-export function detectViewability(bid) {
+export function detectViewability (bid) {
   const { params, adUnitCode } = bid;
 
   const viewabilityContainerIdentifier = params.viewabilityContainerIdentifier;
@@ -152,7 +152,7 @@ export function detectViewability(bid) {
   return null;
 }
 
-export function _getBidRequests(validBidRequests) {
+export function _getBidRequests (validBidRequests) {
   return validBidRequests.map(bid => {
     const {
       bidId,
@@ -181,14 +181,14 @@ export function _getBidRequests(validBidRequests) {
 /**
  * Get ids from Prebid User ID Modules and add them to the payload
  */
-function _handleEids(payload, validBidRequests) {
+function _handleEids (payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'userIdList', bidUserIdAsEids);
   }
 }
 
-export function hasQueryParams(url) {
+export function hasQueryParams (url) {
   try {
     const urlObject = new URL(url);
     return !!urlObject.search;
@@ -197,7 +197,7 @@ export function hasQueryParams(url) {
   }
 }
 
-export function saveOnAllStorages(name, value, expirationTimeMs) {
+export function saveOnAllStorages (name, value, expirationTimeMs) {
   const date = new Date();
   date.setTime(date.getTime() + expirationTimeMs);
   const expires = `expires=${date.toUTCString()}`;
@@ -206,7 +206,7 @@ export function saveOnAllStorages(name, value, expirationTimeMs) {
   cnxIdsValues = value;
 }
 
-export function readFromAllStorages(name) {
+export function readFromAllStorages (name) {
   const fromCookie = storage.getCookie(name);
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
 
@@ -349,7 +349,7 @@ export const spec = {
       params['us_privacy'] = encodeURIComponent(uspConsent);
     }
 
-    window.addEventListener('message', function handler(event) {
+    window.addEventListener('message', function handler (event) {
       if (!event.data || event.origin !== 'https://cds.connatix.com' || !event.data.cnx) {
         return;
       }
@@ -410,7 +410,7 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    */
-  onBidWon(bidWinData) {
+  onBidWon (bidWinData) {
     if (bidWinData == null) {
       return;
     }
@@ -419,7 +419,7 @@ export const spec = {
     spec.triggerEvent({type: 'BidWon', bestBidBidder: bidder, bestBidPrice: cpm, requestId, bidId, adUnitCode, timeToRespond, auctionId, context});
   },
 
-  triggerEvent(data) {
+  triggerEvent (data) {
     ajax(EVENTS_URL, null, JSON.stringify(data), {
       method: 'POST',
       withCredentials: false

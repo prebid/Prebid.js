@@ -56,7 +56,7 @@ describe('Quantcast adapter', function () {
     storage.setCookie('__qca', '', 'Thu, 01 Jan 1970 00:00:00 GMT');
   });
 
-  function setupVideoBidRequest(videoParams, mediaTypesParams) {
+  function setupVideoBidRequest (videoParams, mediaTypesParams) {
     bidRequest.params = {
       publisherId: 'test-publisher', // REQUIRED - Publisher ID provided by Quantcast
       // Video object as specified in OpenRTB 2.5
@@ -228,7 +228,7 @@ describe('Quantcast adapter', function () {
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
     });
 
-    it('sends video bid requests containing all the required parameters from mediaTypes', function() {
+    it('sends video bid requests containing all the required parameters from mediaTypes', function () {
       setupVideoBidRequest(null, {
         mimes: ['video/mp4'], // required
         minduration: 3, // optional
@@ -286,7 +286,7 @@ describe('Quantcast adapter', function () {
       expect(requests[0].data).to.equal(JSON.stringify(expectedVideoBidRequest));
     });
 
-    it('overrides video parameters with parameters from adunit', function() {
+    it('overrides video parameters with parameters from adunit', function () {
       setupVideoBidRequest({
         mimes: ['video/mp4']
       }, {
@@ -443,7 +443,7 @@ describe('Quantcast adapter', function () {
     expect(parsed.gdprConsent).to.equal('consentString');
   });
 
-  it('allows TCF v2 request when Quantcast has consent for purpose 1', function() {
+  it('allows TCF v2 request when Quantcast has consent for purpose 1', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
@@ -471,7 +471,7 @@ describe('Quantcast adapter', function () {
     expect(parsed.gdprConsent).to.equal('consentString');
   });
 
-  it('blocks TCF v2 request when no consent for Quantcast', function() {
+  it('blocks TCF v2 request when no consent for Quantcast', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
@@ -497,7 +497,7 @@ describe('Quantcast adapter', function () {
     expect(requests).to.equal(undefined);
   });
 
-  it('blocks TCF v2 request when no consent for purpose 1', function() {
+  it('blocks TCF v2 request when no consent for purpose 1', function () {
     const bidderRequest = {
       gdprConsent: {
         gdprApplies: true,
@@ -597,14 +597,14 @@ describe('Quantcast adapter', function () {
     expect(parsed.uspConsent).to.equal('consentString');
   });
 
-  it('propagates Quantcast first-party cookie (fpa)', function() {
+  it('propagates Quantcast first-party cookie (fpa)', function () {
     storage.setCookie('__qca', 'P0-TestFPA');
     const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
     const parsed = JSON.parse(requests[0].data);
     expect(parsed.fpa).to.equal('P0-TestFPA');
   });
 
-  describe('propagates coppa', function() {
+  describe('propagates coppa', function () {
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
@@ -759,7 +759,7 @@ describe('Quantcast adapter', function () {
       expect(interpretedResponse[0]).to.deep.equal(expectedResponse);
     });
 
-    it('should get correct bid response for instream video', function() {
+    it('should get correct bid response for instream video', function () {
       const expectedResponse = {
         requestId: 'erlangcluster@qa-rtb002.us-ec.adtech.com-11417780270886458',
         cpm: 4.5,

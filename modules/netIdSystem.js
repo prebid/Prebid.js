@@ -27,7 +27,7 @@ export const netIdSubmodule = {
    * @param {(Object|string)} value
    * @returns {(Object|undefined)}
    */
-  decode(value) {
+  decode (value) {
     return (value && typeof value['netId'] === 'string') ? { 'netId': value['netId'] } : undefined;
   },
   /**
@@ -36,7 +36,7 @@ export const netIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId(config) {
+  getId (config) {
     /* currently not possible */
     return {};
   },

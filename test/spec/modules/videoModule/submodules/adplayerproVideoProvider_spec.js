@@ -26,7 +26,7 @@ const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, VPAID_MIME_TYPE, PLCMT
 } = require('libraries/video/constants/ortb.js');
 
-function getPlayerMock() {
+function getPlayerMock () {
   return {
     setup: function () {
       return this;
@@ -52,11 +52,11 @@ function getPlayerMock() {
   };
 }
 
-function makePlayerFactoryMock(playerMock_) {
+function makePlayerFactoryMock (playerMock_) {
   return () => playerMock_;
 }
 
-function getUtilsMock() {
+function getUtilsMock () {
   return {
     getConfig: function () {
     },
@@ -72,13 +72,13 @@ function getUtilsMock() {
   };
 }
 
-function addDiv() {
+function addDiv () {
   const div = document.createElement('div');
   div.setAttribute('id', 'test');
   document.body.appendChild(div);
 }
 
-function removeDiv() {
+function removeDiv () {
   const div = document.getElementById('test');
   if (div) {
     div.remove();
@@ -363,7 +363,7 @@ describe('AdPlayerProProvider utils', function () {
   });
 
   it('getPlayerEvent', function () {
-    function test(event, expected) {
+    function test (event, expected) {
       expect(utils.getPlayerEvent(event)).to.be.equal(expected);
     }
 
@@ -392,7 +392,7 @@ describe('AdPlayerProProvider utils', function () {
   });
 
   it('getPlacement', function () {
-    function test(config, expected) {
+    function test (config, expected) {
       expect(utils.getPlacement(config)).to.be.equal(expected);
     }
 
@@ -405,7 +405,7 @@ describe('AdPlayerProProvider utils', function () {
   });
 
   it('getPlaybackMethod', function () {
-    function test(autoplay, mute, expected) {
+    function test (autoplay, mute, expected) {
       expect(utils.getPlaybackMethod({autoplay, mute})).to.be.equal(expected);
     }
 
@@ -416,7 +416,7 @@ describe('AdPlayerProProvider utils', function () {
   });
 
   it('getPlcmt', function () {
-    function test(type, autoplay, muted, file, expected) {
+    function test (type, autoplay, muted, file, expected) {
       expect(utils.getPlcmt({type, autoplay, muted, file})).to.be.equal(expected);
     }
 

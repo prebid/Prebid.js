@@ -220,7 +220,7 @@ describe('YieldLift', function () {
       validateBidOnIndex(0);
       validateBidOnIndex(1);
 
-      function validateBidOnIndex(index) {
+      function validateBidOnIndex (index) {
         expect(bids[index]).to.have.property('currency', 'USD');
         expect(bids[index]).to.have.property('requestId', RESPONSE.body.seatbid[0].bid[index].impid);
         expect(bids[index]).to.have.property('cpm', RESPONSE.body.seatbid[0].bid[index].price);

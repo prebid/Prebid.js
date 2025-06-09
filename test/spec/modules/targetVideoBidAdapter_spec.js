@@ -2,7 +2,7 @@ import { spec } from '../../../modules/targetVideoBidAdapter.js'
 import { SYNC_URL } from '../../../libraries/targetVideoUtils/constants.js';
 import { deepClone } from '../../../src/utils.js';
 
-describe('TargetVideo Bid Adapter', function() {
+describe('TargetVideo Bid Adapter', function () {
   const bidder = 'targetVideo';
   const params = {
     placementId: 12345,
@@ -34,7 +34,7 @@ describe('TargetVideo Bid Adapter', function() {
     }
   }];
 
-  it('Test the bid validation function', function() {
+  it('Test the bid validation function', function () {
     const validBid = spec.isBidRequestValid(bannerRequest[0]) && spec.isBidRequestValid(videoRequest[0]);
     const invalidBid = spec.isBidRequestValid(null);
 
@@ -42,7 +42,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(invalidBid).to.be.false;
   });
 
-  it('Test the BANNER request processing function', function() {
+  it('Test the BANNER request processing function', function () {
     const request = spec.buildRequests(bannerRequest, defaultBidderRequest);
     expect(request).to.not.be.empty;
 
@@ -57,7 +57,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.tags[0].ad_types[0]).to.equal('video');
   });
 
-  it('Test the VIDEO request processing function', function() {
+  it('Test the VIDEO request processing function', function () {
     const request = spec.buildRequests(videoRequest, defaultBidderRequest);
     expect(request).to.not.be.empty;
 
@@ -70,7 +70,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal(12345);
   })
 
-  it('Test the VIDEO request schain sending', function() {
+  it('Test the VIDEO request schain sending', function () {
     const globalSchain = {
       ver: '1.0',
       complete: 1,
@@ -93,7 +93,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.source.ext.schain).to.deep.equal(globalSchain);
   });
 
-  it('Handle BANNER nobid responses', function() {
+  it('Handle BANNER nobid responses', function () {
     const responseBody = {
       'version': '0.0.1',
       'tags': [{
@@ -109,7 +109,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(bidResponse.length).to.equal(0);
   });
 
-  it('Handle VIDEO nobid responses', function() {
+  it('Handle VIDEO nobid responses', function () {
     const responseBody = {
       'id': 'test-id',
       'cur': 'USD',
@@ -122,7 +122,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(bidResponse.length).to.equal(0);
   })
 
-  it('Test the BANNER response parsing function', function() {
+  it('Test the BANNER response parsing function', function () {
     const responseBody = {
       'tags': [{
         'uuid': '84ab500420319d',
@@ -164,7 +164,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(bid.ad).to.include('initPlayer')
   });
 
-  it('Test the VIDEO response parsing function', function() {
+  it('Test the VIDEO response parsing function', function () {
     const responseBody = {
       'id': 'test-id',
       'cur': 'USD',
@@ -200,7 +200,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(bid.currency).to.equal('USD');
   });
 
-  it('Test BANNER GDPR consent information is present in the request', function() {
+  it('Test BANNER GDPR consent information is present in the request', function () {
     let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
     let bidderRequest = {
       'bidderCode': 'targetVideo',
@@ -225,7 +225,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.gdpr_consent.addtl_consent).to.exist.and.to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
   });
 
-  it('Test BANNER US Privacy string is present in the request', function() {
+  it('Test BANNER US Privacy string is present in the request', function () {
     let consentString = '1YA-';
     let bidderRequest = {
       'bidderCode': 'targetVideo',
@@ -243,7 +243,7 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.us_privacy).to.exist.and.to.equal(consentString);
   });
 
-  it('Test VIDEO GDPR and USP consents  are present in the request', function() {
+  it('Test VIDEO GDPR and USP consents  are present in the request', function () {
     let gdprConsentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
     let uspConsentString = '1YA-';
     let bidderRequest = {

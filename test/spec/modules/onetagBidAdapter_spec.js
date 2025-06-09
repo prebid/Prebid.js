@@ -8,7 +8,7 @@ import { hasTypeNative } from '../../../modules/onetagBidAdapter';
 const NATIVE_SUFFIX = 'Ad';
 
 describe('onetag', function () {
-  function createBid() {
+  function createBid () {
     return {
       'bidder': 'onetag',
       'params': {
@@ -45,7 +45,7 @@ describe('onetag', function () {
     };
   }
 
-  function createNativeLegacyBid(bidRequest) {
+  function createNativeLegacyBid (bidRequest) {
     let bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
     bid.mediaTypes.native = {
@@ -87,7 +87,7 @@ describe('onetag', function () {
     return bid;
   }
 
-  function addNativeParams(bidRequest) {
+  function addNativeParams (bidRequest) {
     let bidParams = bidRequest.nativeParams || {};
     for (const property in bidRequest.mediaTypes.native) {
       bidParams[property] = bidRequest.mediaTypes.native[property];
@@ -96,7 +96,7 @@ describe('onetag', function () {
     return bidRequest;
   }
 
-  function createNativeBid(bidRequest) {
+  function createNativeBid (bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
 
@@ -145,7 +145,7 @@ describe('onetag', function () {
     return bid;
   }
 
-  function createBannerBid(bidRequest) {
+  function createBannerBid (bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
     bid.mediaTypes.banner = {
@@ -154,7 +154,7 @@ describe('onetag', function () {
     return bid;
   }
 
-  function createInstreamVideoBid(bidRequest) {
+  function createInstreamVideoBid (bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
     bid.mediaTypes.video = {
@@ -165,7 +165,7 @@ describe('onetag', function () {
     return bid;
   }
 
-  function createOutstreamVideoBid(bidRequest) {
+  function createOutstreamVideoBid (bidRequest) {
     const bid = bidRequest || createBid();
     bid.mediaTypes = bid.mediaTypes || {};
     bid.mediaTypes.video = {
@@ -176,7 +176,7 @@ describe('onetag', function () {
     return bid;
   }
 
-  function createMultiFormatBid() {
+  function createMultiFormatBid () {
     return createInstreamVideoBid(createBannerBid());
   }
 
@@ -585,7 +585,7 @@ describe('onetag', function () {
                 cids: ['iris_c73g5jq96mwso4d8']
               },
               // the bare minimum are the IDs. These IDs are the ones from the new IAB Content Taxonomy v3
-              segment: [ { id: '687' }, { id: '123' } ]
+              segment: [{ id: '687' }, { id: '123' }]
             }]
           },
           ext: {
@@ -885,7 +885,7 @@ describe('onetag', function () {
   });
 });
 
-function getBannerVideoNativeResponse() {
+function getBannerVideoNativeResponse () {
   return {
     body: {
       nobid: false,
@@ -968,7 +968,7 @@ function getBannerVideoNativeResponse() {
   };
 }
 
-function getFledgeBannerResponse() {
+function getFledgeBannerResponse () {
   const bannerVideoResponse = getBannerVideoNativeResponse();
   bannerVideoResponse.body.fledgeAuctionConfigs = [
     {
@@ -986,7 +986,7 @@ function getFledgeBannerResponse() {
   return bannerVideoResponse;
 }
 
-function getBannerVideoRequest() {
+function getBannerVideoRequest () {
   return {
     data: JSON.stringify({
       bids: [

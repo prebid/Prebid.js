@@ -129,11 +129,11 @@ describe('Renderer', function () {
       utilsSpy = sinon.spy(utils, 'logWarn');
     });
 
-    after(function() {
+    after(function () {
       utilsSpy.restore();
     });
 
-    it('should not load renderer and log warn message', function() {
+    it('should not load renderer and log warn message', function () {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         renderer: {
@@ -154,7 +154,7 @@ describe('Renderer', function () {
       expect(utilsSpy.callCount).to.equal(1);
     });
 
-    it('should load renderer adunit renderer when backupOnly', function() {
+    it('should load renderer adunit renderer when backupOnly', function () {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         renderer: {
@@ -177,7 +177,7 @@ describe('Renderer', function () {
       expect(loadExternalScript.called).to.be.true;
     });
 
-    it('should load external script instead of publisher-defined one when backupOnly option is true in mediaTypes.video options', function() {
+    it('should load external script instead of publisher-defined one when backupOnly option is true in mediaTypes.video options', function () {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         mediaTypes: {
@@ -207,7 +207,7 @@ describe('Renderer', function () {
       expect(loadExternalScript.called).to.be.true;
     });
 
-    it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
+    it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function () {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         renderer: {
@@ -228,7 +228,7 @@ describe('Renderer', function () {
     });
 
     it('call\'s documentResolver when configured', function () {
-      const documentResolver = sinon.spy(function(bid, sDoc, tDoc) {
+      const documentResolver = sinon.spy(function (bid, sDoc, tDoc) {
         return document;
       });
 

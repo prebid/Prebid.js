@@ -40,7 +40,7 @@ const setupFailMessage = 'Failed to instantiate the player';
  * @param {Object} utils
  * @returns {Object} - VideoProvider
  */
-export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, utils) {
+export function AdPlayerProProvider (config, adPlayerPro_, callbackStorage_, utils) {
   const adPlayerPro = adPlayerPro_;
   let player = null;
   let playerVersion = null;
@@ -58,7 +58,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     VIDEO_MIME_TYPE.HLS
   ];
 
-  function init() {
+  function init () {
     if (!adPlayerPro) {
       triggerSetupFailure(-1, setupFailMessage + ': player not present');
       return;
@@ -82,11 +82,11 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     triggerSetupComplete();
   }
 
-  function getId() {
+  function getId () {
     return divId;
   }
 
-  function getOrtbVideo() {
+  function getOrtbVideo () {
     supportedMediaTypes = supportedMediaTypes || utils.getSupportedMediaTypes(MEDIA_TYPES);
 
     const video = {
@@ -116,18 +116,18 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     return video;
   }
 
-  function getOrtbContent() {
+  function getOrtbContent () {
   }
 
-  function setAdTagUrl(adTagUrl, options) {
+  function setAdTagUrl (adTagUrl, options) {
     setupPlayer(playerConfig, adTagUrl || options.adXml)
   }
 
-  function setAdXml(vastXml) {
+  function setAdXml (vastXml) {
     setupPlayer(playerConfig, vastXml);
   }
 
-  function onEvent(externalEventName, callback, basePayload) {
+  function onEvent (externalEventName, callback, basePayload) {
     if (externalEventName === SETUP_COMPLETE) {
       setupCompleteCallbacks.push(callback);
       return;
@@ -170,7 +170,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     callbackStorage.storeCallback(playerEventName, eventHandler, callback);
   }
 
-  function offEvent(event, callback) {
+  function offEvent (event, callback) {
     const playerEventName = utils.getPlayerEvent(event);
     const eventHandler = callbackStorage.getCallback(playerEventName, callback);
     if (eventHandler) {
@@ -181,7 +181,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     callbackStorage.clearCallback(playerEventName, callback);
   }
 
-  function destroy() {
+  function destroy () {
     if (!player) {
       return;
     }
@@ -201,7 +201,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     destroy
   };
 
-  function setupPlayer(config, urlOrXml) {
+  function setupPlayer (config, urlOrXml) {
     if (!config || player) {
       return;
     }
@@ -217,7 +217,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     player.setup(playerConfig);
   }
 
-  function triggerSetupComplete() {
+  function triggerSetupComplete () {
     if (!setupCompleteCallbacks.length) {
       return;
     }
@@ -227,7 +227,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     setupCompleteCallbacks = [];
   }
 
-  function getSetupCompletePayload() {
+  function getSetupCompletePayload () {
     return {
       divId,
       playerVersion,
@@ -235,7 +235,7 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
     };
   }
 
-  function triggerSetupFailure(errorCode, msg, sourceError) {
+  function triggerSetupFailure (errorCode, msg, sourceError) {
     if (!setupFailedCallbacks.length) {
       return;
     }
@@ -379,11 +379,11 @@ export const utils = {
 /**
  * @returns {CallbackStorage}
  */
-export function callbackStorageFactory() {
+export function callbackStorageFactory () {
   let storage = {};
   let storageHandlers = {};
 
-  function storeCallback(eventType, eventHandler, callback) {
+  function storeCallback (eventType, eventHandler, callback) {
     let eventHandlers = storage[eventType];
     if (!eventHandlers) {
       eventHandlers = storage[eventType] = {};
@@ -393,14 +393,14 @@ export function callbackStorageFactory() {
     addHandler(eventType, eventHandler);
   }
 
-  function getCallback(eventType, callback) {
+  function getCallback (eventType, callback) {
     let eventHandlers = storage[eventType];
     if (eventHandlers) {
       return eventHandlers[callback];
     }
   }
 
-  function clearCallback(eventType, callback) {
+  function clearCallback (eventType, callback) {
     if (!callback) {
       delete storage[eventType];
       delete storageHandlers[eventType];
@@ -416,12 +416,12 @@ export function callbackStorageFactory() {
     }
   }
 
-  function clearStorage() {
+  function clearStorage () {
     storage = {};
     storageHandlers = {};
   }
 
-  function addHandler(eventType, eventHandler) {
+  function addHandler (eventType, eventHandler) {
     let eventHandlers = storageHandlers[eventType];
     if (!eventHandlers) {
       eventHandlers = storageHandlers[eventType] = [];
@@ -429,7 +429,7 @@ export function callbackStorageFactory() {
     eventHandlers.push(eventHandler);
   }
 
-  function clearHandler(eventType, eventHandler) {
+  function clearHandler (eventType, eventHandler) {
     let eventHandlers = storageHandlers[eventType];
     eventHandlers = eventHandlers.filter(handler => handler !== eventHandler);
     if (eventHandlers.length) {
@@ -439,7 +439,7 @@ export function callbackStorageFactory() {
     }
   }
 
-  function addAllCallbacks(functionOnPlayer) {
+  function addAllCallbacks (functionOnPlayer) {
     for (let eventType in storageHandlers) {
       storageHandlers[eventType].forEach(handler => functionOnPlayer(eventType, handler));
     }

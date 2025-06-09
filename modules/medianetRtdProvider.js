@@ -15,7 +15,7 @@ const getClientUrl = (customerId, domain) => `https://warp.media.net/js/tags/pre
 window.mnjs = window.mnjs || {};
 window.mnjs.que = window.mnjs.que || [];
 
-function init(config) {
+function init (config) {
   const customerId = config.params && config.params.cid;
   if (!customerId || !isStr(customerId) || isEmptyStr(customerId)) {
     logError(`${SOURCE}: cid should be a string`);
@@ -31,7 +31,7 @@ function init(config) {
   return true;
 }
 
-function getBidRequestData(requestBidsProps, callback, config, userConsent) {
+function getBidRequestData (requestBidsProps, callback, config, userConsent) {
   executeCommand(() => {
     let adUnits = getAdUnits(requestBidsProps.adUnits, requestBidsProps.adUnitCodes);
     const request = window.mnjs.onPrebidRequestBid({requestBidsProps, config, userConsent});
@@ -52,7 +52,7 @@ function getBidRequestData(requestBidsProps, callback, config, userConsent) {
   });
 }
 
-function onAuctionInitEvent(auctionInit) {
+function onAuctionInitEvent (auctionInit) {
   executeCommand(() => window.mnjs.setData({
     module: 'iref',
     name: 'auctionInit',
@@ -60,7 +60,7 @@ function onAuctionInitEvent(auctionInit) {
   }, SOURCE));
 }
 
-function getTargetingData(adUnitCodes, config, consent, auction) {
+function getTargetingData (adUnitCodes, config, consent, auction) {
   const adUnits = getAdUnits(auction.adUnits, adUnitCodes);
   let targetingData = {};
   if (window.mnjs.loaded && isFn(window.mnjs.getTargetingData)) {
@@ -79,16 +79,16 @@ function getTargetingData(adUnitCodes, config, consent, auction) {
   return targeting;
 }
 
-function executeCommand(command) {
+function executeCommand (command) {
   window.mnjs.que.push(command);
 }
 
-function loadRtdScript(customerId) {
+function loadRtdScript (customerId) {
   const url = getClientUrl(customerId, window.location.hostname);
   loadExternalScript(url, MODULE_TYPE_RTD, MODULE_NAME)
 }
 
-function getAdUnits(adUnits, adUnitCodes) {
+function getAdUnits (adUnits, adUnitCodes) {
   adUnits = adUnits || getGlobal().adUnits || [];
   if (adUnitCodes && adUnitCodes.length) {
     adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
@@ -104,7 +104,7 @@ export const medianetRtdModule = {
   getTargetingData,
 };
 
-function registerSubModule() {
+function registerSubModule () {
   submodule('realTimeData', medianetRtdModule);
 }
 

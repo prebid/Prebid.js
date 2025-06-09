@@ -16,7 +16,7 @@ export const converter = ortbConverter({
     currency: CURRENCY,
   },
 
-  request(buildRequest, imps, bidderRequest, context) {
+  request (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     const bid = context.bidRequests[0];
     request.id = bidderRequest.bidderRequestId
@@ -27,7 +27,7 @@ export const converter = ortbConverter({
     return request;
   },
 
-  imp(buildImp, bidRequest, context) {
+  imp (buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
 
     if (bidRequest.params.placementId) {
@@ -50,7 +50,7 @@ export const converter = ortbConverter({
     return imp;
   },
 
-  bidResponse(buildBidResponse, bid, context) {
+  bidResponse (buildBidResponse, bid, context) {
     const { bidRequest } = context;
     const requestMediaTypes = Object.keys(bidRequest.mediaTypes);
 
@@ -74,7 +74,7 @@ export const spec = {
   gvlid: 238,
   supportedMediaTypes: [BANNER, VIDEO],
 
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     if (!bid || !bid.params) {
       logWarn('StackAdapt bidder adapter - Missing bid.params');
       return false;
@@ -129,7 +129,7 @@ export const spec = {
     return true;
   },
 
-  buildRequests: function(bidRequests, bidderRequest) {
+  buildRequests: function (bidRequests, bidderRequest) {
     if (!Array.isArray(bidRequests)) {
       throw new TypeError('Expected bidRequests to be an array');
     }
@@ -149,7 +149,7 @@ export const spec = {
     };
   },
 
-  interpretResponse: function(response, request) {
+  interpretResponse: function (response, request) {
     if (!response || !response.body || !request || !request.data) {
       return [];
     }
@@ -162,7 +162,7 @@ export const spec = {
     return result.bids;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
 
     if (syncOptions.pixelEnabled) {
@@ -179,7 +179,7 @@ export const spec = {
   },
 };
 
-function getBidFloor(bidRequest) {
+function getBidFloor (bidRequest) {
   if (bidRequest.params.bidfloor) {
     return bidRequest.params.bidfloor;
   }

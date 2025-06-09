@@ -91,7 +91,7 @@ let expectedDataArgs = {
   visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
   aid: auctionId,
   as: 1627973484504,
-  auctionData: [ {
+  auctionData: [{
     au: 'div-gpt-ad-mrec1',
     auc: 'div-gpt-ad-mrec1',
     aus: '300x250',
