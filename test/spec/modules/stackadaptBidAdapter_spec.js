@@ -920,7 +920,7 @@ describe('stackadaptBidAdapter', function () {
         }
       };
       clonedBidderRequest.bids = clonedBidRequests;
-      
+
       // Add schain to bidderRequest as well
       clonedBidderRequest.ortb2 = {
         source: {
