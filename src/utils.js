@@ -314,17 +314,34 @@ export function prefixLog(prefix) {
 function decorateLog(args, prefix) {
   args = [].slice.call(args);
   let bidder = config.getCurrentBidder();
+  const inBrowser = typeof window !== 'undefined' && window.console && window.console.log;
 
-  prefix && args.unshift(prefix);
-  if (bidder) {
-    args.unshift(label('#aaa'));
+  if (inBrowser) {
+    prefix && args.unshift(prefix);
+    if (bidder) {
+      args.unshift(label('#aaa'));
+    }
+    args.unshift(label('#3b88c3'));
+    args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
+  } else {
+    const parts = [ansiLabel('#3b88c3', 'Prebid')];
+    if (bidder) {
+      parts.push(ansiLabel('#aaa', bidder));
+    }
+    if (prefix) parts.push(prefix);
+    args.unshift(parts.join(' '));
   }
-  args.unshift(label('#3b88c3'));
-  args.unshift('%cPrebid' + (bidder ? `%c${bidder}` : ''));
   return args;
 
   function label(color) {
     return `display: inline-block; color: #fff; background: ${color}; padding: 1px 4px; border-radius: 3px;`
+  }
+
+  function ansiLabel(hex, text) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `\x1b[38;2;255;255;255m\x1b[48;2;${r};${g};${b}m ${text} \x1b[0m`;
   }
 }
 
