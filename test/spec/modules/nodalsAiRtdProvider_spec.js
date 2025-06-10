@@ -150,7 +150,7 @@ describe('NodalsAI RTD Provider', () => {
   const outsideGdprUserConsent = generateGdprConsent({ gdprApplies: false });
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     validConfig = { params: { propertyId: '10312dd2' } };
 
