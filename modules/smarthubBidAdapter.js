@@ -87,7 +87,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gpp
   const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
   const syncUrl = SYNC_URLS[adapterState.area];
   const pidParam = adapterState.pid;
-  const mainUrl = `${syncUrl}/${type}?pid=${pidParam}&pbjs=1`;
+  const mainUrl = `${syncUrl}/${type}?pid=${pidParam}`;
   const regParams = [mainUrl];
 
   if (gdprConsent && gdprConsent.consentString) {
