@@ -4,9 +4,10 @@ import {
   buildPlacementProcessingFunction,
   buildRequestsBase,
   interpretResponseBuilder,
-  isBidRequestValid
+  isBidRequestValid,
+  getUserSyncs as baseSync
 } from '../libraries/teqblazeUtils/bidderUtils.js';
-import { config } from '../src/config.js';
+// import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'smarthub';
 const SYNC_URLS = {
@@ -84,36 +85,15 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 }
 
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  const syncs = baseSync('')(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent);
   const syncUrl = SYNC_URLS[adapterState.area];
-  const pidParam = adapterState.pid;
-  const mainUrl = `${syncUrl}/${type}?pid=${pidParam}`;
-  const regParams = [mainUrl];
+  const pid = adapterState.pid;
 
-  if (gdprConsent && gdprConsent.consentString) {
-    if (typeof gdprConsent.gdprApplies === 'boolean') {
-      regParams.push(`&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
-    } else {
-      regParams.push(`&gdpr=0&gdpr_consent=${gdprConsent.consentString}`);
-    }
-  }
-
-  if (uspConsent && uspConsent.consentString) {
-    regParams.push(`&ccpa_consent=${uspConsent.consentString}`);
-  }
-
-  if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-    regParams.push(`&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections.join(',')}`);
-  }
-
-  const coppa = config.getConfig('coppa') ? 1 : 0;
-  regParams.push(`&coppa=${coppa}`);
-
-  return [{
-    type,
-    url: regParams.join('')
-  }];
-}
+  return syncs.map(sync => ({
+    ...sync,
+    url: `${syncUrl}${sync.url}&pid=${pid}`
+  }));
+};
 
 export const spec = {
   code: BIDDER_CODE,
