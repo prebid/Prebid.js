@@ -735,6 +735,20 @@ describe('gumgumAdapter', function () {
 
       expect(bidRequest.data).to.not.have.property('idl_env');
     });
+    it('should add a uid2 parameter if request contains uid2 id', function () {
+      const uid2 = { id: 'sample-uid2' };
+      const request = { ...bidRequests[0], userId: { uid2 } };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.have.property('uid2');
+      expect(bidRequest.data.uid2).to.equal(uid2.id);
+    });
+    it('should not add uid2 parameter if uid2 id is not found', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.not.have.property('uid2');
+    });
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
       const request = spec.buildRequests(bidRequests)[0];
