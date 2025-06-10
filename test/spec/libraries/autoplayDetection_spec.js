@@ -10,7 +10,7 @@ describe('autoplay detection', () => {
   let createElementStub;
   afterEach(() => {
     if (createElementStub) {
-      createElementStub.restore();
+      createElementStub?.restore();
     }
     delete require.cache[require.resolve('../../../libraries/autoplayDetection/autoplay.js')];
   });
