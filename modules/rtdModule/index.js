@@ -301,7 +301,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
   });
 
-  const shouldDelayAuction = prioritySubModules.length && _moduleConfig.auctionDelay && _moduleConfig.auctionDelay > 0;
+  const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0;
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
