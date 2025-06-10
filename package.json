@@ -98,6 +98,7 @@
     "karma-spec-reporter": "^0.0.32",
     "karma-webpack": "^5.0.0",
     "lodash": "^4.17.21",
+    "mixpanel": "^0.18.1",
     "mocha": "^10.7.3",
     "morgan": "^1.10.0",
     "neostandard": "^0.12.1",
@@ -132,8 +133,7 @@
     "fun-hooks": "^1.1.0",
     "gulp-wrap": "^0.15.0",
     "klona": "^2.0.6",
-    "live-connect-js": "^7.2.0",
-    "mixpanel": "^0.18.1"
+    "live-connect-js": "^7.2.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
