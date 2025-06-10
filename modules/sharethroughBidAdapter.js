@@ -1,7 +1,7 @@
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { cleanObject, getFloor, makeId } from '../libraries/equativUtils/equativUtils.js';
+import { prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepAccess, generateUUID, inIframe, isPlainObject, logWarn, mergeDeep } from '../src/utils.js';
 
@@ -10,7 +10,6 @@ const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
 const EQT_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=169';
-// const EQT_ENDPOINT = 'https://ssb.eqtv.dev/api/bid?callerId=169';
 const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 const IDENTIFIER_PREFIX = 'Sharethrough:';
 
@@ -239,70 +238,12 @@ export const sharethroughAdapterSpec = {
       })
       .filter((imp) => !!imp);
 
-    const splitImps = [];
+    let splitImps = []
     if (isEqtvTest) {
       const bid = bidRequests[0];
       const currency = config.getConfig('currency.adServerCurrency') || 'USD';
-
-      imps.forEach(item => {
-        const floorMap = {};
-
-        const updateFloorMap = (type, name, width = 0, height = 0) => {
-          const floor = getFloor(bid, type, width, height, currency);
-
-          if (!floorMap[floor]) {
-            floorMap[floor] = {
-              ...item,
-              bidfloor: floor
-            };
-          }
-
-          if (!floorMap[floor][name]) {
-            floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type];
-          }
-
-          if (type === 'banner') {
-            floorMap[floor][name].format.push({ w: width, h: height });
-          }
-        };
-
-        if (item.banner?.format?.length) {
-          item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
-        }
-
-        updateFloorMap('native', 'nativeTemp');
-        updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
-
-        Object.values(floorMap).forEach(obj => {
-          [
-            ['banner', 'bannerTemp'],
-            ['native', 'nativeTemp'],
-            ['video', 'videoTemp']
-          ].forEach(([name, tempName]) => obj = cleanObject(obj, name, tempName));
-
-          if (obj.banner || obj.video || obj.native) {
-            const id = makeId();
-            impIdMap[id] = obj.id;
-            obj.id = id;
-
-            if (obj.banner) {
-              obj.banner.pos = item.banner.pos;
-              obj.banner.topframe = item.banner.topframe;
-            }
-
-            splitImps.push(obj);
-          }
-        });
-      });
+      splitImps = prepareSplitImps(imps, bid, currency, impIdMap, 'stx');
     }
-
-    // test data
-    // const hash =
-    //   '6708e3aeca04848e919e9c8c'; // banner
-    // // '67ff7ea9b4590cf0ca852f94'; // banner + ttl
-    // // '682c50e92634fafa0d974114'; // native
-    // // '67c8545f9d44a9f4fd5de345'; // video
-    // const options = isEqtvTest ? { options: { customHeaders: { 'X-Eqtv-Debug': hash } } } : undefined;
 
     return imps.map((impression) => {
       return {

@@ -1,5 +1,5 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { cleanObject, getFloor, makeId } from '../libraries/equativUtils/equativUtils.js';
+import { prepareSplitImps } from '../libraries/equativUtils/equativUtils.js';
 import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -99,14 +99,6 @@ export const spec = {
         data,
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169',
-        // url: 'https://ssb.eqtv.dev/api/bid?callerId=169',
-        // options: {
-        //   customHeaders: {
-        //     'X-Eqtv-Debug': '6708e3aeca04848e919e9c8c'  // banner
-        //     // 'X-Eqtv-Debug': '682c50e92634fafa0d974114'  // native
-        //     // 'X-Eqtv-Debug': '67c8545f9d44a9f4fd5de345'  // video
-        //   }
-        // },
       })
     });
 
@@ -220,52 +212,7 @@ export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const bid = context.bidRequests[0];
     const currency = config.getConfig('currency.adServerCurrency') || 'USD';
-    const splitImps = [];
-
-    imps.forEach(item => {
-      const floorMap = {};
-
-      const updateFloorMap = (type, name, width = 0, height = 0) => {
-        const floor = getFloor(bid, type, width, height, currency);
-
-        if (!floorMap[floor]) {
-          floorMap[floor] = {
-            ...item,
-            bidfloor: floor
-          };
-        }
-
-        if (!floorMap[floor][name]) {
-          floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type];
-        }
-
-        if (type === 'banner') {
-          floorMap[floor][name].format.push({ w: width, h: height });
-        }
-      };
-
-      if (item.banner?.format?.length) {
-        item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
-      }
-      updateFloorMap('native', 'nativeTemp');
-      updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
-
-      Object.values(floorMap).forEach(obj => {
-        [
-          ['banner', 'bannerTemp'],
-          ['native', 'nativeTemp'],
-          ['video', 'videoTemp']
-        ].forEach(([name, tempName]) => obj = cleanObject(obj, name, tempName));
-
-        if (obj.banner || obj.video || obj.native) {
-          const id = makeId();
-          impIdMap[id] = obj.id;
-          obj.id = id;
-
-          splitImps.push(obj);
-        }
-      });
-    });
+    const splitImps = prepareSplitImps(imps, bid, currency, impIdMap, 'eqtv');
 
     let req = buildRequest(splitImps, bidderRequest, context);
 

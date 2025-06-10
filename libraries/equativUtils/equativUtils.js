@@ -11,7 +11,7 @@ const DEFAULT_FLOOR = 0.0;
  * @param {string} tempKey A name of the temporary property to be removed
  * @returns {*} An updated object
  */
-export function cleanObject(obj, key, tempKey) {
+function cleanObject(obj, key, tempKey) {
   const newObj = {};
 
   for (const prop in obj) {
@@ -37,7 +37,7 @@ export function cleanObject(obj, key, tempKey) {
  * @param {string} mediaType Bid media type
  * @return {number} Floor price
  */
-export function getBidFloor (bid, currency, mediaType) {
+export function getBidFloor(bid, currency, mediaType) {
   const floors = [];
 
   if (isFn(bid.getFloor)) {
@@ -64,7 +64,7 @@ export function getBidFloor (bid, currency, mediaType) {
  * @param {string} currency A floor price currency
  * @returns {number} Floor price
  */
-export function getFloor(bid, mediaType, width, height, currency) {
+function getFloor(bid, mediaType, width, height, currency) {
   return bid.getFloor?.({ currency, mediaType, size: [width, height] })
     .floor || bid.params.bidfloor || -1;
 }
@@ -73,7 +73,7 @@ export function getFloor(bid, mediaType, width, height, currency) {
  * Generates a 14-char string id
  * @returns {string}
  */
-export function makeId() {
+function makeId() {
   const length = 14;
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let counter = 0;
@@ -84,4 +84,73 @@ export function makeId() {
   }
 
   return str;
+}
+
+
+/**
+ * Prepares impressions for the request
+ *
+ * @export
+ * @param {*} imps An imps array
+ * @param {*} bid A bid
+ * @param {string} currency A currency
+ * @param {*} impIdMap An impIdMap
+ * @param {string} adapter An adapter (may be 'stx' or 'eqtv')
+ * @return {*}
+ */
+export function prepareSplitImps(imps, bid, currency, impIdMap, adapter) {
+  const splitImps = [];
+
+  imps.forEach(item => {
+    const floorMap = {};
+
+    const updateFloorMap = (type, name, width = 0, height = 0) => {
+      const floor = getFloor(bid, type, width, height, currency);
+
+      if (!floorMap[floor]) {
+        floorMap[floor] = {
+          ...item,
+          bidfloor: floor
+        };
+      }
+
+      if (!floorMap[floor][name]) {
+        floorMap[floor][name] = type === 'banner' ? { format: [] } : item[type];
+      }
+
+      if (type === 'banner') {
+        floorMap[floor][name].format.push({ w: width, h: height });
+      }
+    };
+
+    if (item.banner?.format?.length) {
+      item.banner.format.forEach(format => updateFloorMap('banner', 'bannerTemp', format?.w, format?.h));
+    }
+
+    updateFloorMap('native', 'nativeTemp');
+    updateFloorMap('video', 'videoTemp', item.video?.w, item.video?.h);
+
+    Object.values(floorMap).forEach(obj => {
+      [
+        ['banner', 'bannerTemp'],
+        ['native', 'nativeTemp'],
+        ['video', 'videoTemp']
+      ].forEach(([name, tempName]) => obj = cleanObject(obj, name, tempName));
+
+      if (obj.banner || obj.video || obj.native) {
+        const id = makeId();
+        impIdMap[id] = obj.id;
+        obj.id = id;
+
+        if (obj.banner && adapter === 'stx') {
+          obj.banner.pos = item.banner.pos;
+          obj.banner.topframe = item.banner.topframe;
+        }
+
+        splitImps.push(obj);
+      }
+    });
+  });
+
+  return splitImps;
 }
