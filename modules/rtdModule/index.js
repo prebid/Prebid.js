@@ -302,8 +302,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
   });
 
-  const auctionDelay = _moduleConfig && _moduleConfig.auctionDelay;
-  const shouldDelayAuction = prioritySubModules.length && auctionDelay && auctionDelay > 0;
+  const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0;
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
@@ -313,7 +312,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     return exitHook();
   }
 
-  const timeout = shouldDelayAuction ? auctionDelay : 0;
+  const timeout = shouldDelayAuction ? _moduleConfig.auctionDelay : 0;
   waitTimeout = setTimeout(exitHook, timeout);
 
   relevantSubModules.forEach(sm => {
