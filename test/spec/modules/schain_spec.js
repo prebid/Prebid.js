@@ -1,7 +1,7 @@
 import {expect} from 'chai/index.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import {schainPrecedence, moveSchainToExt} from 'src/fpd/schain.js';
+import {applySchainConfig} from 'modules/schain.js';
 
 describe('Supply Chain fpd', function() {
   const SAMPLE_SCHAIN = {
@@ -17,13 +17,13 @@ describe('Supply Chain fpd', function() {
   };
 
   let sandbox;
-  let logInfoStub;
+  let logWarnStub;
   let configGetConfigStub;
   let configGetBidderConfigStub;
 
   beforeEach(function() {
     sandbox = sinon.createSandbox();
-    logInfoStub = sandbox.stub(utils, 'logInfo');
+    logWarnStub = sandbox.stub(utils, 'logWarn');
     configGetConfigStub = sandbox.stub(config, 'getConfig');
     configGetBidderConfigStub = sandbox.stub(config, 'getBidderConfig');
   });
@@ -33,7 +33,7 @@ describe('Supply Chain fpd', function() {
   });
 
 
-  describe('schainPrecedence', function() {
+  describe('applySchainConfig', function() {
     describe('preserves existing schain values', function() {
       it('should preserve existing global.source.schain', function() {
         const existingSchain = {
@@ -57,11 +57,11 @@ describe('Supply Chain fpd', function() {
         configGetConfigStub.returns(schainConfig);
         configGetBidderConfigStub.returns(null);
 
-        const result = schainPrecedence(input);
+        const result = applySchainConfig(input);
 
         expect(result.global.source.schain).to.deep.equal(existingSchain);
         expect(result.global.source.schain).to.not.deep.equal(SAMPLE_SCHAIN);
-        expect(logInfoStub.calledWith('Preserving existing global.source.schain from ortb2')).to.be.true;
+        sinon.assert.called(logWarnStub);
       });
 
       it('should preserve existing bidder-specific schain ', function() {
@@ -92,19 +92,19 @@ describe('Supply Chain fpd', function() {
         configGetConfigStub.returns(null);
         configGetBidderConfigStub.returns(bidderConfigs);
 
-        const result = schainPrecedence(input);
+        const result = applySchainConfig(input);
 
         expect(result.bidder.bidderA.source.schain).to.deep.equal(existingBidderSchain);
         expect(result.bidder.bidderA.source.schain).to.not.deep.equal(SAMPLE_SCHAIN);
-        expect(logInfoStub.calledWith('Preserving existing schain for bidder bidderA from ortb2')).to.be.true;
+        sinon.assert.called(logWarnStub);
       });
     });
 
     describe('handles edge cases', function() {
       it('should handle edge cases and no-op scenarios', function() {
-        expect(schainPrecedence(null)).to.be.null;
-        expect(schainPrecedence(undefined)).to.be.undefined;
-        expect(schainPrecedence({})).to.deep.equal({});
+        expect(applySchainConfig(null)).to.be.null;
+        expect(applySchainConfig(undefined)).to.be.undefined;
+        expect(applySchainConfig({})).to.deep.equal({});
 
         const input = {
           global: {
@@ -116,9 +116,8 @@ describe('Supply Chain fpd', function() {
         configGetConfigStub.returns(null);
         configGetBidderConfigStub.returns(null);
 
-        const result = schainPrecedence(input);
+        const result = applySchainConfig(input);
         expect(result).to.deep.equal(input);
-        expect(logInfoStub.called).to.be.false;
       });
     });
 
@@ -140,11 +139,10 @@ describe('Supply Chain fpd', function() {
         };
         configGetConfigStub.returns(validSchainConfig);
 
-        let result = schainPrecedence(input);
+        let result = applySchainConfig(input);
         expect(result.global.source.schain).to.deep.equal(SAMPLE_SCHAIN);
-        expect(logInfoStub.calledWith('Applying global schain config with precedence')).to.be.true;
 
-        logInfoStub.reset();
+        logWarnStub.reset();
         input = { global: { source: {} } };
 
         const invalidSchainConfig = {
@@ -152,7 +150,7 @@ describe('Supply Chain fpd', function() {
         };
         configGetConfigStub.returns(invalidSchainConfig);
 
-        result = schainPrecedence(input);
+        result = applySchainConfig(input);
         expect(result.global.source.schain).to.be.undefined;
       });
     });
@@ -166,7 +164,7 @@ describe('Supply Chain fpd', function() {
           bidder: {}
         };
         configGetConfigStub.returns(null);
-        logInfoStub.reset();
+        logWarnStub.reset();
       });
 
       it('should handle various bidder-specific schain scenarios', function() {
@@ -179,11 +177,10 @@ describe('Supply Chain fpd', function() {
         };
         configGetBidderConfigStub.returns(singleBidderConfig);
 
-        let result = schainPrecedence(input);
+        let result = applySchainConfig(input);
         expect(result.bidder.bidderA.source.schain).to.deep.equal(SAMPLE_SCHAIN);
-        expect(logInfoStub.calledWith('Applying bidder schain config for bidderA')).to.be.true;
 
-        logInfoStub.reset();
+        logWarnStub.reset();
         input = { global: {}, bidder: {} };
 
         const multiBidderConfig = {
@@ -202,14 +199,10 @@ describe('Supply Chain fpd', function() {
         };
         configGetBidderConfigStub.returns(multiBidderConfig);
 
-        result = schainPrecedence(input);
+        result = applySchainConfig(input);
         expect(result.bidder.bidderA.source.schain).to.deep.equal(SAMPLE_SCHAIN);
         expect(result.bidder.bidderB.source.schain).to.deep.equal(SAMPLE_SCHAIN_2);
         expect(result.bidder.bidderC).to.be.undefined;
-        expect(logInfoStub.calledWith('Applying bidder schain config for bidderA')).to.be.true;
-        expect(logInfoStub.calledWith('Applying bidder schain config for bidderB')).to.be.true;
-
-        logInfoStub.reset();
         input = { global: {}, bidder: {} };
 
         const invalidBidderConfig = {
@@ -221,7 +214,7 @@ describe('Supply Chain fpd', function() {
         };
         configGetBidderConfigStub.returns(invalidBidderConfig);
 
-        result = schainPrecedence(input);
+        result = applySchainConfig(input);
         expect(result.bidder.bidderA.source.schain).to.deep.equal({});
       });
     });
@@ -253,133 +246,9 @@ describe('Supply Chain fpd', function() {
       configGetConfigStub.returns(globalSchainConfig);
       configGetBidderConfigStub.returns(bidderConfigs);
 
-      const result = schainPrecedence(input);
+      const result = applySchainConfig(input);
       expect(result.global.source.schain).to.deep.equal(globalSchainConfig.config);
       expect(result.bidder.bidderA.source.schain).to.deep.equal(bidderConfigs.bidderA.schain.config);
-    });
-  });
-
-  describe('moveSchainToExt', function() {
-    it('should handle various input scenarios correctly', function() {
-      expect(moveSchainToExt(null)).to.be.null;
-      expect(moveSchainToExt(undefined)).to.be.undefined;
-
-      const inputNoSource = { user: { id: '123' } };
-      expect(moveSchainToExt(inputNoSource)).to.deep.equal(inputNoSource);
-
-      const inputNoSchain = { source: { tid: '123' } };
-      expect(moveSchainToExt(inputNoSchain)).to.deep.equal(inputNoSchain);
-
-      const basicInput = {
-        source: {
-          tid: '123',
-          schain: SAMPLE_SCHAIN
-        }
-      };
-      let result = moveSchainToExt(basicInput);
-      expect(result.source.schain).to.be.undefined;
-      expect(result.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
-      expect(result.source.tid).to.equal('123');
-
-      const inputWithExt = {
-        source: {
-          tid: '123',
-          schain: SAMPLE_SCHAIN,
-          ext: {
-            dchain: { ver: '1.0' }
-          }
-        }
-      };
-      result = moveSchainToExt(inputWithExt);
-      expect(result.source.schain).to.be.undefined;
-      expect(result.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
-      expect(result.source.ext.dchain).to.deep.equal({ ver: '1.0' });
-    });
-
-    describe('bidderOrtb2 parameter handling', function() {
-      const createFreshFpd = () => ({
-        source: {
-          tid: '123',
-          schain: SAMPLE_SCHAIN
-        }
-      });
-
-      it('should handle bidderOrtb2 parameter variations', function() {
-        const bidderOrtb2WithSchain = {
-          source: {
-            schain: SAMPLE_SCHAIN_2
-          }
-        };
-
-        let fpd = createFreshFpd();
-        let result = moveSchainToExt(fpd, bidderOrtb2WithSchain);
-        expect(result.source.schain).to.be.undefined;
-        expect(result.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN_2);
-
-        const bidderOrtb2WithoutSchain = {
-          source: {}
-        };
-
-        fpd = createFreshFpd();
-        result = moveSchainToExt(fpd, bidderOrtb2WithoutSchain);
-        expect(result.source.schain).to.be.undefined;
-        expect(result.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
-
-        fpd = createFreshFpd();
-        result = moveSchainToExt(fpd, null);
-        expect(result.source.schain).to.be.undefined;
-        expect(result.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
-      });
-    });
-  });
-
-  describe('Integration', function() {
-    it('should handle the full schain workflow with both global and bidder configs', function() {
-      const ortb2Fragments = {
-        global: {
-          source: {
-            tid: '123'
-          }
-        },
-        bidder: {
-          'bidderA': {
-            source: {}
-          }
-        }
-      };
-
-      configGetConfigStub.returns({ config: SAMPLE_SCHAIN });
-      configGetBidderConfigStub.returns({
-        'bidderA': {
-          schain: {
-            config: SAMPLE_SCHAIN_2
-          }
-        }
-      });
-
-      const updatedFragments = schainPrecedence(ortb2Fragments);
-
-      expect(updatedFragments.global.source.schain).to.deep.equal(SAMPLE_SCHAIN);
-      expect(updatedFragments.bidder.bidderA.source.schain).to.deep.equal(SAMPLE_SCHAIN_2);
-
-      const merged = {
-        source: {
-          tid: '123',
-          schain: SAMPLE_SCHAIN
-        }
-      };
-
-      const bidderOrtb2 = {
-        source: {
-          schain: SAMPLE_SCHAIN_2
-        }
-      };
-
-      const finalFpd = moveSchainToExt(merged, bidderOrtb2);
-
-      expect(finalFpd.source.schain).to.be.undefined;
-      expect(finalFpd.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN_2);
-      expect(finalFpd.source.tid).to.equal('123');
     });
   });
 });

@@ -40,7 +40,6 @@ import {
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
-import {moveSchainToExt} from './fpd/schain.js';
 import {EVENTS, S2S} from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
@@ -309,15 +308,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const ortb2 = ortb2Fragments.global || {};
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
-  function moveUserEidsToExt(o) {
-    const eids = o.user?.eids;
-    if (Array.isArray(eids) && eids.length) {
-      o.user.ext = o.user.ext || {};
-      o.user.ext.eids = [...(o.user.ext.eids || []), ...eids];
-      delete o.user.eids;
-    }
-  }
-
   function addOrtb2(bidderRequest, s2sActivityParams) {
     const redact = dep.redact(
       s2sActivityParams != null
@@ -326,8 +316,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     );
 
     const merged = mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]);
-    moveUserEidsToExt(merged);
-    moveSchainToExt(merged, bidderOrtb2[bidderRequest.bidderCode]);
     const fpd = Object.freeze(redact.ortb2(merged));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {

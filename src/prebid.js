@@ -37,7 +37,6 @@ import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
-import {schainPrecedence} from './fpd/schain.js';
 import {allConsent} from './consentHandler.js';
 import {
   insertLocatorFrame,
@@ -52,6 +51,7 @@ import { ORTB_BANNER_PARAMS } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import { newBidder } from './adapters/bidderFactory.js';
+import {normalizeFPD} from './fpd/normalize.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -591,8 +591,7 @@ pbjsInstance.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
     }
-    // Apply schain precedence rules before enrichment
-    ortb2Fragments = schainPrecedence(ortb2Fragments);
+    ortb2Fragments = normalizeFPD(ortb2Fragments);
 
     return enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
