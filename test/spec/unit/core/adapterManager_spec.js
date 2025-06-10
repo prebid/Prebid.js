@@ -107,7 +107,7 @@ describe('adapterManager tests', function () {
   });
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     s2sTesting.clientTestBidders.clear();
@@ -2310,7 +2310,7 @@ describe('adapterManager tests', function () {
     describe('sizeMapping', function () {
       let sandbox;
       beforeEach(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         // always have matchMedia return true for us
         sandbox.stub(utils.getWindowTop(), 'matchMedia').callsFake(() => ({matches: true}));
       });

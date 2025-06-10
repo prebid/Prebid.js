@@ -616,7 +616,7 @@ describe('triplelift adapter', function () {
           gdprApplies: true
         },
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       logErrorSpy = sinon.spy(utils, 'logError');
 
       $$PREBID_GLOBAL$$.bidderSettings = {

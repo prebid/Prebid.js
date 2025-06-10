@@ -318,7 +318,7 @@ describe('InsticatorBidAdapter', function () {
       getCookieStub = sinon.stub(storage, 'getCookie');
       cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
 
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'generateUUID').returns(USER_ID_STUBBED);
     });
 

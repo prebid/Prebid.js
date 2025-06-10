@@ -216,7 +216,7 @@ describe('Unit: Prebid Module', function () {
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     mockFpdEnrichments(sandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
@@ -1762,7 +1762,7 @@ describe('Unit: Prebid Module', function () {
   describe('requestBids', function () {
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       sandbox.restore();
