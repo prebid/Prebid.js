@@ -893,6 +893,71 @@ describe('Pubmatic RTD Provider', () => {
             // This matches the actual behavior of the function
             expect(result['ad-unit-1']['pm_ym_bid_s']).to.equal(2);
         });
+
+       
+        // Test for multiplier extraction logic in fetchData
+        it('should correctly extract only existing multiplier keys from floors.json', function () {
+            // Reset sandbox for a clean test
+            sandbox.restore();
+            sandbox = sinon.createSandbox();
+            
+            // Stub logInfo instead of console.info
+            sandbox.stub(utils, 'logInfo');
+            
+            // Mock fetch with specific multiplier data where 'nobid' is intentionally missing
+            global.fetch = sandbox.stub().returns(Promise.resolve({
+                ok: true,
+                status: 200,
+                json: function() {
+                    return Promise.resolve({
+                        multiplier: {
+                            win: 1.5,      // present key
+                            floored: 1.8   // present key
+                            // nobid is deliberately missing to test selective extraction
+                        }
+                    });
+                },
+                headers: {
+                    get: function() { return null; }
+                }
+            }));
+            
+            // Call fetchData with FLOORS type
+            return fetchData('test-publisher', 'test-profile', 'FLOORS').then(() => {
+                // Verify the log message was generated
+                sinon.assert.called(utils.logInfo);
+                
+                // Find the call with multiplier information
+                const logCalls = utils.logInfo.getCalls();
+                const multiplierLogCall = logCalls.find(call => 
+                    call.args.some(arg => 
+                        typeof arg === 'string' && arg.includes('multiplier')
+                    )
+                );
+                
+                // Verify we found the log message
+                expect(multiplierLogCall).to.exist;
+                
+                if (multiplierLogCall) {
+                    // For debugging: log the actual arguments
+                    console.log("Log call arguments:", JSON.stringify(multiplierLogCall.args));
+                    
+                    // Find the argument that contains our multiplier info
+                    const logArg = multiplierLogCall.args.find(arg => 
+                        typeof arg === 'string' && (arg.includes('WIN') || arg.includes('multiplier'))
+                    );
+                    
+                    // Verify the message contains the expected multiplier values
+                    expect(logArg).to.include('WIN');
+                    expect(logArg).to.include('1.5');
+                    expect(logArg).to.include('FLOORED');
+                    expect(logArg).to.include('1.8');
+                    
+                    // Verify the log doesn't include NOBID (since it wasn't in the source)
+                    expect(logArg).to.not.include('NOBID');
+                }
+            });
+        });
         
         describe('should handle the floor rejected bid scenario correctly', function () {
             // Create profileConfigs with pmTargetingKeys enabled
