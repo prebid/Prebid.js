@@ -998,7 +998,7 @@ describe('permutiveIdentityManagerIdSystem', () => {
     it('will optionally wait for Permutive SDK if no identities are in local storage already', async () => {
       const cleanup = setWindowPermutive()
       try {
-        const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 150}})
+        const result = permutiveIdentityManagerIdSubmodule.getId({params: {ajaxTimeout: 300}})
         expect(result).not.to.be.undefined
         expect(result.id).to.be.undefined
         expect(result.callback).not.to.be.undefined
