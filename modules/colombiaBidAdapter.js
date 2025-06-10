@@ -65,10 +65,8 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
-    const res = Array.isArray(serverResponse?.body)
-      ? serverResponse.body
-      : (Array.isArray(serverResponse) ? serverResponse : []);
-    if (res.length === 0) {
+    const res = serverResponse.body || serverResponse;
+    if (!res || res.length === 0) {
       return bidResponses;
     }
     try {
