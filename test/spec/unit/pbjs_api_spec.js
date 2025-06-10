@@ -1818,6 +1818,46 @@ describe('Unit: Prebid Module', function () {
         await auctionStarted;
       }
 
+      it('with normalized FPD', async () => {
+        configObj.setBidderConfig({
+          bidders: ['test'],
+          config: {
+            ortb2: {
+              user: {
+                eids: [{source: 'id'}]
+              }
+            }
+          }
+        });
+        configObj.setConfig({
+          ortb2: {
+            user: {
+              eids: [{source: 'id'}]
+            }
+          }
+        });
+        await runAuction();
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          ortb2Fragments: {
+            global: {
+              user: {
+                ext: {
+                  eids: [{source: 'id'}]
+                }
+              }
+            },
+            bidder: {
+              test: {
+                user: {
+                  ext: {
+                    eids: [{source: 'id'}]
+                  }
+                }
+              }
+            }
+          }
+        }));
+      })
       describe('with FPD', () => {
         let globalFPD, auctionFPD, mergedFPD;
         beforeEach(() => {
