@@ -48,14 +48,14 @@ function handleSyncResponse(client, response, params, callback) {
   }
 
   if (response.u == null || response.u.length === 0) {
-    callback(undefined);
+    callback(null);
     return;
   }
 
   client(response.u, {
     error(e) {
       logError(`${NAME} failed on ${response.u}`, e);
-      callback(undefined);
+      callback(null);
     },
     success(complete) {
       if (complete != null && complete.length > 0) {
@@ -67,7 +67,7 @@ function handleSyncResponse(client, response, params, callback) {
       }
 
       logError(`${NAME} invalid value`, complete);
-      callback(undefined);
+      callback(null);
     },
   }, params, AJAX_OPTIONS);
 }
