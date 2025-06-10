@@ -86,10 +86,10 @@ describe('AMX ID', () => {
   });
 
   describe('getId', () => {
-    const spy = sinon.spy();
+    let spy;
 
     beforeEach(() => {
-      spy.resetHistory();
+      spy = sinon.spy();
     });
 
     it('should call the sync endpoint and accept a valid response', () => {
