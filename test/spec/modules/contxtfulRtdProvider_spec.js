@@ -62,7 +62,7 @@ function fakeGetElementById(width, height, x, y) {
 }
 
 describe('contxtfulRtdProvider', function () {
-  let sandbox = sinon.sandbox.create();
+  let sandbox = sinon.createSandbox();
   let loadExternalScriptTag;
   let eventsEmitSpy;
 

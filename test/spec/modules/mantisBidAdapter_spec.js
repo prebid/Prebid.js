@@ -5,7 +5,7 @@ import {sfPostMessage, iframePostMessage} from 'modules/mantisBidAdapter';
 
 describe('MantisAdapter', function () {
   const adapter = newBidder(spec);
-  const sandbox = sinon.sandbox.create();
+  const sandbox = sinon.createSandbox();
   let clock;
 
   beforeEach(function () {

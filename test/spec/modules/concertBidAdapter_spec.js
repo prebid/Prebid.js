@@ -84,7 +84,7 @@ describe('ConcertAdapter', function () {
       }
     }
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('desktop_leaderboard_variable').returns(element)
   });
 
