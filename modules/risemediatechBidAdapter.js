@@ -163,10 +163,10 @@ const interpretResponse = (serverResponse, request) => {
       }
       switch (bid.mtype) {
         case 1:
-          bidResponse.meta.mediaType = BANNER;
+          bidResponse.mediaType = BANNER;
           break;
         case 2:
-          bidResponse.meta.mediaType = VIDEO;
+          bidResponse.mediaType = VIDEO;
           bidResponse.vastXml = bid.adm;
           break;
         default:
