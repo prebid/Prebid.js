@@ -196,6 +196,14 @@ describe('NodalsAI RTD Provider', () => {
         expect(server.requests.length).to.equal(1);
       });
 
+      it('should return true when initialised with valid config and gdpr consent is null', function () {
+        const result = nodalsAiRtdSubmodule.init(validConfig, {gdpr: null});
+        server.respond();
+
+        expect(result).to.be.true;
+        expect(server.requests.length).to.equal(1);
+      });
+
       it('should return false when initialised with invalid config', () => {
         const config = { params: { invalid: true } };
         const result = nodalsAiRtdSubmodule.init(config, {});
