@@ -255,16 +255,16 @@ function selectMultiplier(multiplierKey, profileConfigs) {
   // Define sources in priority order
   const multiplierSources = [
     {
-      name: 'floor.json',
-      getValue: () => _multipliers && multiplierKey in _multipliers ? _multipliers[multiplierKey] : null
-    },
-    {
       name: 'config.json',
       getValue: () => {
         const configPath = profileConfigs?.plugins?.dynamicFloors?.pmTargetingKeys?.multiplier;
         const lowerKey = multiplierKey.toLowerCase();
         return configPath && lowerKey in configPath ? configPath[lowerKey] : null;
       }
+    },
+    {
+      name: 'floor.json',
+      getValue: () => _multipliers && multiplierKey in _multipliers ? _multipliers[multiplierKey] : null
     },
     {
       name: 'default',
