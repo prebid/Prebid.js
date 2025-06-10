@@ -107,7 +107,6 @@ export const spec = {
         //     // 'X-Eqtv-Debug': '67c8545f9d44a9f4fd5de345'  // video
         //   }
         // },
-        url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
       })
     });
 

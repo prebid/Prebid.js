@@ -168,7 +168,6 @@ describe('sharethrough adapter spec', function () {
         },
       },
       nativeOrtbRequest,
-      bidder: 'sharethrough',
       params: {
         networkId: 777,
         publisherId: 73
@@ -1086,7 +1085,6 @@ describe('sharethrough adapter spec', function () {
         expect(asset3.required).to.equal(1);
         expect(asset3.data).to.deep.equal({'type': 1})
       })
-
     });
 
     describe('interpretResponse', function () {

@@ -9,8 +9,8 @@ const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
 const SUPPLY_ID = 'WYu2BXv1';
 
-// const EQT_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=169';
-const EQT_ENDPOINT = 'https://ssb.eqtv.dev/api/bid?callerId=169';
+const EQT_ENDPOINT = 'https://ssb.smartadserver.com/api/bid?callerId=169';
+// const EQT_ENDPOINT = 'https://ssb.eqtv.dev/api/bid?callerId=169';
 const STR_ENDPOINT = `https://btlr.sharethrough.com/universal/v1?supply_id=${SUPPLY_ID}`;
 const IDENTIFIER_PREFIX = 'Sharethrough:';
 
@@ -296,12 +296,13 @@ export const sharethroughAdapterSpec = {
       });
     }
 
-    const hash =
-      '6708e3aeca04848e919e9c8c'; // banner
-    // '67ff7ea9b4590cf0ca852f94'; // banner + ttl
-    // '682c50e92634fafa0d974114'; // native
-    // '67c8545f9d44a9f4fd5de345'; // video
-    const options = isEqtvTest ? { options: { customHeaders: { 'X-Eqtv-Debug': hash } } } : undefined;
+    // test data
+    // const hash =
+    //   '6708e3aeca04848e919e9c8c'; // banner
+    // // '67ff7ea9b4590cf0ca852f94'; // banner + ttl
+    // // '682c50e92634fafa0d974114'; // native
+    // // '67c8545f9d44a9f4fd5de345'; // video
+    // const options = isEqtvTest ? { options: { customHeaders: { 'X-Eqtv-Debug': hash } } } : undefined;
 
     return imps.map((impression) => {
       return {
@@ -311,7 +312,6 @@ export const sharethroughAdapterSpec = {
           ...req,
           imp: isEqtvTest ? splitImps : [impression],
         },
-        ...options
       };
     });
   },
