@@ -54,7 +54,6 @@ function validateMediaSizes(mediaSize) {
       mediaSize.every(size => (isNumber(size) && size >= 0));
 }
 
-
 function validateParameters(parameters) {
   if (!(parameters.placementId)) {
     return false;
