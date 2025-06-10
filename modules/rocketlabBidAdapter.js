@@ -9,7 +9,7 @@ import {
 
 const BIDDER_CODE = "rocketlab";
 const AD_URL = "https://traffic1.rocketlab.ai/pbjs";
-const SYNC_URL = "https://sync.rocketlab.ai";
+const SYNC_URL = "https://usync.rocketlab.ai";
 
 export const spec = {
   code: BIDDER_CODE,
