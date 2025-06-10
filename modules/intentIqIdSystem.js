@@ -458,6 +458,7 @@ export const intentIqIdSubmodule = {
       if (partnerData.data.length) { // encrypted data
         decryptedData = tryParse(decryptData(partnerData.data));
         runtimeEids = decryptedData;
+        setPPID(gamObjectReference, configParams.shouldSetPPID, runtimeEids.eids);
       }
     }
 
@@ -484,7 +485,6 @@ export const intentIqIdSubmodule = {
 
     if (firstPartyData.group === WITHOUT_IIQ || (firstPartyData.group !== WITHOUT_IIQ && runtimeEids?.eids?.length)) {
       firePartnerCallback()
-      setPPID(gamObjectReference, configParams.shouldSetPPID, runtimeEids.eids);
     }
 
     // Check if current browser is in blacklist
