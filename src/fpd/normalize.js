@@ -1,12 +1,13 @@
 import {deepEqual, deepSetValue, logWarn} from '../utils.js';
+import {hook} from '../hook.js';
 
-export function normalizeFPD(ortb2Fragments) {
+export const normalizeFPD = hook('sync', function(ortb2Fragments) {
   [
     normalizeEIDs,
     normalizeSchain
   ].forEach(normalizer => applyNormalizer(normalizer, ortb2Fragments));
   return ortb2Fragments;
-}
+})
 
 function applyNormalizer(normalizer, ortb2Fragments) {
   ortb2Fragments.global = normalizer(ortb2Fragments.global, 'global FPD');
