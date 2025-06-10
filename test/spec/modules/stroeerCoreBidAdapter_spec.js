@@ -2,18 +2,17 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
-  let fakeServer;
   let bidderRequest;
   let clock;
 
   beforeEach(() => {
     bidderRequest = buildBidderRequest();
     sandbox = sinon.sandbox.create();
-    fakeServer = sandbox.useFakeServer();
     clock = sandbox.useFakeTimers();
   });
 
@@ -436,6 +435,9 @@ describe('stroeerCore bid adapter', function () {
           }],
           'user': {
             'eids': eids
+          },
+          'ver': {
+            'pb': getGlobal().version,
           }
         };
 
@@ -633,6 +635,7 @@ describe('stroeerCore bid adapter', function () {
           assert.deepEqual(serverRequestInfo.data.bids, [...expectedBannerBids, ...expectedVideoBids]);
         });
       });
+
       describe('optional fields', () => {
         it('should skip viz field when unable to determine visibility of placement', () => {
           placementElements.length = 0;
@@ -1010,15 +1013,7 @@ describe('stroeerCore bid adapter', function () {
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
 
-    it('should add advertiser domains to meta object', () => {
-      const response = buildBidderResponse();
-      response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
-      const result = spec.interpretResponse({body: response});
-      assert.deepPropertyVal(result[0].meta, 'advertiserDomains', ['website.org', 'domain.com']);
-      assert.propertyVal(result[1].meta, 'advertiserDomains', undefined);
-    });
-
-    it('should add dsa info to meta object', () => {
+    it('should set meta object', () => {
       const dsaResponse = {
         behalf: 'AdvertiserA',
         paid: 'AdvertiserB',
@@ -1026,26 +1021,28 @@ describe('stroeerCore bid adapter', function () {
           domain: 'dspexample.com',
           dsaparams: [1, 2],
         }],
-        adrender: 1
+        adrender: 1,
       };
 
       const response = buildBidderResponse();
-      response.bids[0] = Object.assign(response.bids[0], {dsa: utils.deepClone(dsaResponse)});
+      response.bids[0] = Object.assign(response.bids[0], {
+        meta: {
+          advertiserDomains: ['website.org', 'domain.com'],
+          dsa: utils.deepClone(dsaResponse),
+          campaignType: 'RTB',
+          another: 'thing',
+        },
+      });
 
       const result = spec.interpretResponse({body: response});
 
-      assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
-      assert.propertyVal(result[1].meta, 'dsa', undefined);
-    });
+      const firstBidMeta = result[0].meta;
+      assert.deepPropertyVal(firstBidMeta, 'advertiserDomains', ['website.org', 'domain.com']);
+      assert.deepPropertyVal(firstBidMeta, 'dsa', dsaResponse);
+      assert.propertyVal(firstBidMeta, 'campaignType', 'RTB');
+      assert.propertyVal(firstBidMeta, 'another', 'thing');
 
-    it('should add campaignType to meta object', () => {
-      const response = buildBidderResponse();
-      response.bids[1] = Object.assign(response.bids[1], {campaignType: 'RTB'});
-
-      const result = spec.interpretResponse({body: response});
-
-      assert.propertyVal(result[0].meta, 'campaignType', undefined);
-      assert.propertyVal(result[1].meta, 'campaignType', 'RTB');
+      assert.isEmpty(result[1].meta)
     });
   });
 
