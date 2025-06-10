@@ -79,26 +79,17 @@ export const spec = {
         pbver: '$prebid.version$',
       };
 
-      payload.pfilter = {};
-      if (params.pfilter !== undefined) {
-        payload.pfilter = params.pfilter;
-      }
+      payload.pfilter = params.pfilter ?? {};
+      payload.bcat = deepAccess(bidderRequest.ortb2, 'bcat') ? bidderRequest.ortb2.bcat.join(",") : (params.bcat ?? null);
+      payload.pcat = deepAccess(bidderRequest.ortb2, 'site.pagecat') ? bidderRequest.ortb2.site.pagecat.join(",") : null;
+      payload.dvt = params.dvt ?? null;
+      isDev && (payload.prebidDevMode = 1);
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         if (!payload.pfilter.gdpr_consent) {
           payload.pfilter.gdpr_consent = bidderRequest.gdprConsent.consentString;
           payload.pfilter.gdpr = bidderRequest.gdprConsent.gdprApplies;
         }
-      }
-
-      if (params.bcat !== undefined) {
-        payload.bcat = deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat;
-      }
-      if (params.dvt !== undefined) {
-        payload.dvt = params.dvt;
-      }
-      if (isDev) {
-        payload.prebidDevMode = 1;
       }
 
       if (!payload.pfilter.floorprice) {
@@ -149,8 +140,20 @@ export const spec = {
       }
 
       // schain
-      if (bidRequest.schain) {
-        payload.schain = bidRequest.schain;
+      if (bidRequest.schain && bidRequest.schain.ver && bidRequest.schain.complete && bidRequest.schain.nodes) {
+        let schain = bidRequest.schain;
+        let schainString = schain.ver + "," + schain.complete;
+        for (let node of schain.nodes) {
+            schainString += '!' + [
+              node.asi ?? '',
+              node.sid ?? '',
+              node.hp ?? '',
+              node.rid ?? '',
+              node.name ?? '',
+              node.domain ?? '',
+            ].join(",");
+        }
+        payload.schain = schainString;
       }
 
       // fill userId params
