@@ -151,7 +151,7 @@ export const appendPbAdSlot = adUnit => {
   // use data attribute 'data-adslotid' if set
   try {
     const adUnitCodeDiv = document.getElementById(adUnit.code);
-    if (adUnitCodeDiv && adUnitCodeDiv.dataset && adUnitCodeDiv.dataset.adslotid) {
+    if (adUnitCodeDiv.dataset.adslotid) {
       context.pbadslot = adUnitCodeDiv.dataset.adslotid;
       return;
     }
