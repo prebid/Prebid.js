@@ -52,10 +52,9 @@ The age consent data is added to the bid request in the following format:
         user: {
             ext: {
                 age_consent: {
-                        status: 'accepted', //represents the age consent status.
+                        status: 'accepted', //The acceptance indicates that the user has confirmed they are 21 years of age or older (accepted/declined)
                         id: "123456789123456789", //unique identifier for the consent decision // Optional
                         decisionDate: "2011-10-05T14:48:00.000Z", //ISO 8601 date string (e.g.,"2011-10-05T14:48:00.000Z") // Optional, represents the date when the age consent decision was made
-                        dob: "01-01-1980", //ISO 8601 date string (e.g., "01-01-1980") // Optional, represents the user's date of birth if provided
                 }
             }
         }

@@ -29,8 +29,8 @@ export function getAgeConsentByLocalStorage(storage) {
   try {
     const parsedAgeConsent = JSON.parse(storedAgeConsent);
     if (parsedAgeConsent && 'status' in parsedAgeConsent && parsedAgeConsent.status) {
-      const { status, consentId, decisionDate, dob } = parsedAgeConsent;
-      return { id: consentId, status, decisionDate, dob };
+      const { status, consentId, decisionDate } = parsedAgeConsent;
+      return { id: consentId, status, decisionDate };
     }
   } catch (e) {
     logError('Error parsing stored age consent:', e);
@@ -43,8 +43,8 @@ export function getAgeConsent(windowTop, storage) {
     const adlCmpConsent = windowTop.AdlCmp.getAgeConsent();
 
     if (adlCmpConsent && adlCmpConsent.status) {
-      const { status, consentId, decisionDate, dob } = adlCmpConsent;
-      return cleanObj({ id: consentId, status, decisionDate, dob });
+      const { status, consentId, decisionDate } = adlCmpConsent;
+      return cleanObj({ id: consentId, status, decisionDate });
     }
   }
 

@@ -47,10 +47,9 @@ describe('adlaneRtd Module', () => {
   describe('getAgeConsentByLocalStorage', () => {
     it('should return parsed ageConsent from localStorage if valid', () => {
       const mockData = {
-        status: 'granted',
-        consentId: 'abc123',
-        decisionDate: '2024-01-01',
-        dob: '2000-01-01'
+        status: 'accepted',
+        consentId: '123456789123456789',
+        decisionDate: '2011-10-05T14:48:00.000Z'
       };
       const storage = {
         getDataFromLocalStorage: () => JSON.stringify(mockData)
@@ -58,10 +57,9 @@ describe('adlaneRtd Module', () => {
 
       const result = getAgeConsentByLocalStorage(storage);
       expect(result).to.deep.equal({
-        id: 'abc123',
-        status: 'granted',
-        decisionDate: '2024-01-01',
-        dob: '2000-01-01'
+        id: '123456789123456789',
+        status: 'accepted',
+        decisionDate: '2011-10-05T14:48:00.000Z'
       });
     });
 
@@ -87,17 +85,15 @@ describe('adlaneRtd Module', () => {
   describe('getAgeConsent', () => {
     it('should get consent from AdlCmp if available', () => {
       const mockConsent = {
-        status: 'granted',
-        consentId: 'id123',
-        decisionDate: '2024-06-01',
-        dob: '2001-01-01'
+        status: 'accepted',
+        consentId: '123456789123456789',
+        decisionDate: '2011-10-05T14:48:00.000Z'
       }
 
       const resultMockConnsent = {
-        id: 'id123',
-        status: 'granted',
-        decisionDate: '2024-06-01',
-        dob: '2001-01-01'
+        id: '123456789123456789',
+        status: 'accepted',
+        decisionDate: '2011-10-05T14:48:00.000Z'
       }
 
       const win = {
@@ -119,10 +115,9 @@ describe('adlaneRtd Module', () => {
       const storage = {
         getDataFromLocalStorage: () =>
           JSON.stringify({
-            status: 'denied',
-            consentId: 'idX',
-            decisionDate: '2023-01-01',
-            dob: '1995-05-05'
+            status: 'declined',
+            consentId: '123456789123456789',
+            decisionDate: '2011-10-05T14:48:00.000Z'
           })
       };
 
@@ -130,7 +125,7 @@ describe('adlaneRtd Module', () => {
       const logInfoStub = sandbox.stub(utils, 'logInfo');
 
       const result = getAgeConsent(win, storage);
-      expect(result.status).to.equal('denied');
+      expect(result.status).to.equal('declined');
       expect(logInfoStub.calledOnce).to.be.true;
     });
   });
@@ -138,7 +133,7 @@ describe('adlaneRtd Module', () => {
   describe('setAgeConsentConfig', () => {
     it('should merge config with provided ageConsent', () => {
       const mergeStub = sandbox.stub(utils, 'mergeDeep');
-      const consent = { id: 'cid', status: 'granted', decisionDate: '2024-05-01', dob: '1999-01-01' };
+      const consent = { id: '123456789123456789', status: 'accepted', decisionDate: '2011-10-05T14:48:00.000Z' };
       const config = { ortb2Fragments: { global: {} } };
 
       setAgeConsentConfig(config, consent);
@@ -154,7 +149,7 @@ describe('adlaneRtd Module', () => {
       const logStub = sandbox.stub(utils, 'logError');
       const config = { ortb2Fragments: { global: {} } };
 
-      setAgeConsentConfig(config, { status: 'x' });
+      setAgeConsentConfig(config, { status: 'accepted' });
       expect(logStub.calledOnce).to.be.true;
     });
   });
@@ -162,7 +157,7 @@ describe('adlaneRtd Module', () => {
   describe('adlaneSubmodule', () => {
     it('should init with AdlCmp present', () => {
       const winStub = sandbox.stub(utils, 'getWindowTop').returns({
-        AdlCmp: { getAgeConsent: () => ({ status: 'granted' }) }
+        AdlCmp: { getAgeConsent: () => ({ status: 'accepted' }) }
       });
       expect(adlaneSubmodule.init()).to.be.true;
     });
@@ -171,7 +166,7 @@ describe('adlaneRtd Module', () => {
       const winStub = sandbox.stub(utils, 'getWindowTop').returns({});
       const storage = {
         hasLocalStorage: () => true,
-        getDataFromLocalStorage: () => JSON.stringify({ status: 'granted' })
+        getDataFromLocalStorage: () => JSON.stringify({ status: 'accepted' })
       };
       sandbox.stub(storageManager, 'getStorageManager').returns(storage);
 
@@ -192,7 +187,7 @@ describe('adlaneRtd Module', () => {
     });
 
     it('should call setAgeConsentConfig in getBidRequestData if valid', (done) => {
-      const consent = { id: 'abc', status: 'granted', decisionDate: 'today', dob: '2000-01-01' };
+      const consent = { id: '123456789123456789', status: 'accepted', decisionDate: '2011-10-05T14:48:00.000Z' };
       const cleanStub = sandbox.stub(utils, 'cleanObj').returns(consent);
       sandbox.stub(utils, 'getWindowTop').returns({
         AdlCmp: {
