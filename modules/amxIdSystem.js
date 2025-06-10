@@ -130,7 +130,7 @@ export const amxIdSubmodule = {
         {
           error(e) {
             logError(`${NAME} failed to load`, e);
-            done(undefined);
+            done(null);
           },
           success(responseText) {
             if (responseText != null && responseText.length > 0) {
@@ -142,8 +142,7 @@ export const amxIdSubmodule = {
                 logError(`${NAME} invalid response`, responseText);
               }
             }
-
-            done(undefined);
+            done(null);
           },
         },
         params,
