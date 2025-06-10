@@ -40,7 +40,6 @@ import {
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
-import {moveSchainToExt} from './fpd/schain.js';
 import {EVENTS, S2S} from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
@@ -317,7 +316,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     );
 
     const merged = mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode]);
-    moveSchainToExt(merged, bidderOrtb2[bidderRequest.bidderCode]);
     const fpd = Object.freeze(redact.ortb2(merged));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {

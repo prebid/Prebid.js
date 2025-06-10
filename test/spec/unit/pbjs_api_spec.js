@@ -1823,16 +1823,16 @@ describe('Unit: Prebid Module', function () {
           bidders: ['test'],
           config: {
             ortb2: {
-              user: {
-                eids: [{source: 'id'}]
+              source: {
+                schain: 'foo'
               }
             }
           }
         });
         configObj.setConfig({
           ortb2: {
-            user: {
-              eids: [{source: 'id'}]
+            source: {
+              schain: 'bar'
             }
           }
         });
@@ -1840,17 +1840,17 @@ describe('Unit: Prebid Module', function () {
         sinon.assert.calledWith(startAuctionStub, sinon.match({
           ortb2Fragments: {
             global: {
-              user: {
+              source: {
                 ext: {
-                  eids: [{source: 'id'}]
+                  schain: 'bar'
                 }
               }
             },
             bidder: {
               test: {
-                user: {
+                source: {
                   ext: {
-                    eids: [{source: 'id'}]
+                    schain: 'foo'
                   }
                 }
               }

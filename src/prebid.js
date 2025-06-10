@@ -37,7 +37,6 @@ import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, PbPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
-import {schainPrecedence} from './fpd/schain.js';
 import {allConsent} from './consentHandler.js';
 import {
   insertLocatorFrame,
