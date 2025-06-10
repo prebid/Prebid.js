@@ -246,7 +246,7 @@ class NodalsAiRtdProvider {
    */
 
   #hasRequiredUserConsent(userConsent) {
-    if (userConsent.gdpr === undefined || userConsent.gdpr?.gdprApplies === false) {
+    if (!userConsent.gdpr || userConsent.gdpr?.gdprApplies === false) {
       return true;
     }
     if (

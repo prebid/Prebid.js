@@ -24,7 +24,7 @@ describe('humansecurity RTD module', function () {
   const stubWindow = { [sonarStubId]: undefined };
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'getWindowSelf').returns(stubWindow);
     sandbox.stub(utils, 'generateUUID').returns(stubUuid);
     sandbox.stub(refererDetection, 'getRefererInfo').returns({ domain: 'example.com' });
@@ -37,7 +37,7 @@ describe('humansecurity RTD module', function () {
     let sandbox2;
     let connectSpy;
     beforeEach(function() {
-      sandbox2 = sinon.sandbox.create();
+      sandbox2 = sinon.createSandbox();
       connectSpy = sandbox.spy();
       // Once the impl script is loaded, it registers the API using session ID
       sandbox2.stub(stubWindow, sonarStubId).value({ connect: connectSpy });
@@ -103,7 +103,7 @@ describe('humansecurity RTD module', function () {
     let callbackSpy;
     let reqBidsConfig;
     beforeEach(function() {
-      sandbox2 = sinon.sandbox.create();
+      sandbox2 = sinon.createSandbox();
       callbackSpy = sandbox2.spy();
       reqBidsConfig = { ortb2Fragments: { bidder: {}, global: {} } };
     });
@@ -164,7 +164,7 @@ describe('humansecurity RTD module', function () {
     let sandbox2;
     let submoduleStub;
     beforeEach(function() {
-      sandbox2 = sinon.sandbox.create();
+      sandbox2 = sinon.createSandbox();
       submoduleStub = sandbox2.stub(hook, 'submodule');
     });
     afterEach(function () {

@@ -10,7 +10,7 @@ describe('Mgid bid adapter', function () {
   let logErrorSpy;
   let logWarnSpy;
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     logErrorSpy = sinon.spy(utils, 'logError');
     logWarnSpy = sinon.spy(utils, 'logWarn');
   });
