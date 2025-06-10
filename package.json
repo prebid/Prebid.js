@@ -132,7 +132,8 @@
     "fun-hooks": "^1.1.0",
     "gulp-wrap": "^0.15.0",
     "klona": "^2.0.6",
-    "live-connect-js": "^7.2.0"
+    "live-connect-js": "^7.2.0",
+    "mixpanel": "^0.18.1"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

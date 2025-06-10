@@ -27,6 +27,8 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+const os = require('os');
+const crypto = require('crypto');
 
 function execaTask(cmd) {
   return () => execaCmd.shell(cmd, {stdio: 'inherit'});
@@ -319,6 +321,20 @@ function bundle(dev, moduleArr) {
   fancyLog('Concatenating files:\n', entries);
   fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
   fancyLog('Generating bundle:', outputFileName);
+
+  if (!dev) {
+    const mixpanel = require('mixpanel');
+    const mixpanelClient = mixpanel.init('dd9c18694ad175ed06e5dbde077d3063', {
+      host: 'api-eu.mixpanel.com'
+    });
+    const machineId = os.hostname() + os.arch() + os.platform();
+    const distinctId = crypto.createHash('sha256').update(machineId).digest('hex');
+    mixpanelClient.track('Production Build', {
+      distinct_id: distinctId,
+      modules: modules,
+      version: prebid.version,
+    });
+  }
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
   return wrap(gulp.src(entries, {sourcemaps: sm}))
