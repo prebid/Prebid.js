@@ -1105,7 +1105,7 @@ describe('gdpr enforcement', function () {
       const options = {
         withCredentials: true
       }
-      
+
       checkIfCredentialsAllowed(nextSpy, options);
 
       sinon.assert.calledWith(nextSpy, {withCredentials: false});
