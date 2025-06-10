@@ -16,7 +16,7 @@ describe('discovery:BidAdapterTests', function () {
   let sandbox;
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(storage, 'getCookie');
     sandbox.stub(storage, 'setCookie');
     sandbox.stub(storage, 'getDataFromLocalStorage');
