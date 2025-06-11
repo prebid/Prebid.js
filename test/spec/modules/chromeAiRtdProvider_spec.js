@@ -278,7 +278,7 @@ describe('Chrome AI RTD Provider', () => {
       expect(result).to.be.true;
     });
   });
-  
+
   describe('getBidRequestData', () => {
     beforeEach(() => {
       storageStub.hasLocalStorage.returns(true);
