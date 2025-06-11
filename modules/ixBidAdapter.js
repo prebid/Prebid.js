@@ -1272,10 +1272,16 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
  *
  * @returns {Array} ID providers that are present in userIds
  */
+// codex bot note: automation applied fix for issue #12772
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
 
-  return PROVIDERS.filter(provider => userIds[provider]);
+  return PROVIDERS.filter(provider => {
+    if (provider === 'lipbid') {
+      return deepAccess(userIds, 'lipb.lipbid');
+    }
+    return userIds[provider];
+  });
 }
 
 /**
