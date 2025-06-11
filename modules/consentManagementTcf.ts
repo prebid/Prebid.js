@@ -40,8 +40,9 @@ export type TCFConsentData = {
     vendorData: Record<string, unknown>;
     /**
      * Additional consent string, if provided by the CMP.
+     * @see https://support.google.com/admanager/answer/9681920?hl=en
      */
-    addtlConsent?: string;
+    addtlConsent?:`${number}~${string}~${string}`;
 }
 
 export interface TCFConfig {
