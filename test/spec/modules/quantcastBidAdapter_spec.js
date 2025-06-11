@@ -607,7 +607,7 @@ describe('Quantcast adapter', function () {
   describe('propagates coppa', function() {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
 
     afterEach(() => {

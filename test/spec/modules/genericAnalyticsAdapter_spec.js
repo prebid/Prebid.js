@@ -8,7 +8,7 @@ describe('Generic analytics', () => {
   describe('adapter', () => {
     let adapter, sandbox, clock;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(events, 'getEvents').returns([]);
       clock = sandbox.useFakeTimers();
       adapter = new GenericAnalytics();
