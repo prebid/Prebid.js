@@ -62,8 +62,7 @@ function copyVerbatim() {
  *   - removes the need for awkward "index" imports, e.g. userId/index
  *   - hides their exports from NPM consumers
  */
-function generatePublicModules(ext) {
-  const template = _.template(`import '<%= modulePath %>';`);
+function generatePublicModules(ext, template) {
   const publicDir = helpers.getPrecompiledPath('public');
 
   function getNames(file) {
@@ -122,7 +121,10 @@ const generateCoreSummary = generateTypeSummary(
   helpers.getPrecompiledPath('src/types/summary/**/*')
 );
 const generateModuleSummary = generateTypeSummary(helpers.getPrecompiledPath('modules'), helpers.getPrecompiledPath('src/types/summary/modules.d.ts'))
-const publicModules = gulp.parallel(['js', 'd.ts'].map(generatePublicModules));
+const publicModules = gulp.parallel(Object.entries({
+  'js':  _.template(`import '<%= modulePath %>';`),
+  'd.ts': _.template(`export type * from '<%= modulePath %>'`)
+}).map(args => generatePublicModules.apply(null, args)));
 
 
 const globalTemplate = _.template(`<% if (defineGlobal) {%>
