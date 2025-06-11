@@ -428,6 +428,8 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   let keyValues = {};
   const adUnit = index.getAdUnit(bid);
 
+  const globalSendTargetingKeys = adUnit?.nativeParams?.ortb == null && adUnit?.nativeParams?.sendTargetingKeys !== false;
+
   const nativeKeys = getNativeKeys(adUnit);
 
   const flatBidNativeKeys = { ...bid.native, ...bid.native.ext };
@@ -449,6 +451,17 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
     if (sendPlaceholder) {
       const placeholder = `${key}:${bid.adId}`;
       value = placeholder;
+    }
+
+    let assetSendTargetingKeys = adUnit?.nativeParams?.[asset]?.sendTargetingKeys;
+    if (typeof assetSendTargetingKeys !== 'boolean') {
+      assetSendTargetingKeys = adUnit?.nativeParams?.ext?.[asset]?.sendTargetingKeys;
+    }
+
+    const sendTargeting = typeof assetSendTargetingKeys === 'boolean' ? assetSendTargetingKeys : globalSendTargetingKeys;
+
+    if (sendTargeting) {
+      keyValues[key] = value;
     }
   });
 

@@ -545,6 +545,7 @@ describe('ringieraxelspringerBidAdapter', function () {
       privacy: '//dsa.url'
     };
     const expectedTeaserStandardResponse = {
+      sendTargetingKeys: false,
       title: 'Headline',
       image: {
         url: '//img.url',
@@ -632,6 +633,7 @@ describe('ringieraxelspringerBidAdapter', function () {
       privacy: '//dsa.url',
     };
     const expectedNativeInFeedResponse = {
+      sendTargetingKeys: false,
       title: 'Headline',
       image: {
         url: '//img.url',

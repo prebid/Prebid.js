@@ -1877,6 +1877,7 @@ describe('The inmobi bidding adapter', function () {
                 required: true,
                 sizes: [120, 60],
                 sendId: true,
+                sendTargetingKeys: false
               }
             }
           }
@@ -1920,6 +1921,7 @@ describe('The inmobi bidding adapter', function () {
                 required: true,
                 sizes: [120, 60],
                 sendId: true,
+                sendTargetingKeys: false
               }
             }
           }
