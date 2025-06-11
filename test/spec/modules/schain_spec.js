@@ -32,7 +32,6 @@ describe('Supply Chain fpd', function() {
     sandbox.restore();
   });
 
-
   describe('applySchainConfig', function() {
     describe('preserves existing schain values', function() {
       it('should preserve existing global.source.schain', function() {

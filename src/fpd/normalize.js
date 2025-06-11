@@ -40,7 +40,6 @@ export function normalizeEIDs(target, context) {
   return target;
 }
 
-
 export function normalizeSchain(target, context) {
   if (!target) return target;
   const schain = target.source?.schain;

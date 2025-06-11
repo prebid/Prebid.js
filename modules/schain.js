@@ -2,7 +2,6 @@ import {config} from '../src/config.js';
 import {deepClone, logWarn} from '../src/utils.js';
 import {normalizeFPD} from '../src/fpd/normalize.js';
 
-
 export function applySchainConfig(ortb2Fragments) {
   if (!ortb2Fragments) return ortb2Fragments;
 

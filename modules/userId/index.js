@@ -1175,7 +1175,6 @@ function updateSubmodules(options = {}) {
   submodules.splice(0, submodules.length);
   submodules.push(...updatedContainers);
 
-
   if (submodules.length) {
     if (!addedStartAuctionHook()) {
       startAuction.getHooks({hook: addUserIdsHook}).remove();
