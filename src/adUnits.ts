@@ -70,7 +70,7 @@ export interface AdUnitModuleBid extends BaseAdUnitBidDefinition {
      * Module code - for requesting bids from modules that are not bid adapters
      */
     module: AdUnitModuleBidder;
-    bidder?: undefined | null;
+    bidder?: never;
     params?: {
         /**
          * Name given to a PBS configuration. Used to identify specific PBS instances when multiple are in use.
