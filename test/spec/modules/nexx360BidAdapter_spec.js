@@ -33,7 +33,6 @@ describe('Nexx360 bid adapter tests', () => {
     },
   };
 
-
   describe('isBidRequestValid()', () => {
     let bannerBid;
     beforeEach(() => {

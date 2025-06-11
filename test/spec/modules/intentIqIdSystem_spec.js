@@ -201,7 +201,6 @@ describe('IntentIQ tests', function () {
     }
   });
 
-
   it('should send at=39 request and send source in it', function () {
     const callBackSpy = sinon.spy();
     const submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
