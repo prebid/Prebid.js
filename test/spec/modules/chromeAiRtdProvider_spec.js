@@ -41,7 +41,7 @@ describe('Chrome AI RTD Provider', () => {
     logErrorStub = sandbox.stub(utils, 'logError');
     mergeDeepStub = sandbox.stub(utils, 'mergeDeep');
     submoduleStub = sandbox.stub(hook, 'submodule');
-    
+
     // Create storage stub for each test
     storageStub = {
       hasLocalStorage: sinon.stub(),
@@ -49,16 +49,16 @@ describe('Chrome AI RTD Provider', () => {
       getDataFromLocalStorage: sinon.stub(),
       setDataInLocalStorage: sinon.stub()
     };
-    
+
     // Set up default storage stubs
     storageStub.hasLocalStorage.returns(true);
     storageStub.localStorageIsEnabled.returns(true);
     storageStub.getDataFromLocalStorage.returns(null);
     storageStub.setDataInLocalStorage.returns(true);
-    
+
     // Stub getCoreStorageManager for each test
     getCoreStorageManagerStub = sandbox.stub(storageManager, 'getCoreStorageManager').returns(storageStub);
-    
+
     // Set up global LanguageDetector mock
     global.LanguageDetector = {
       availability: sandbox.stub().resolves('available'),
@@ -67,7 +67,7 @@ describe('Chrome AI RTD Provider', () => {
         ready: Promise.resolve()
       })
     };
-    
+
     // Set up document.body.innerText for language detection
     stubDom(LONG_TEXT);
   });
@@ -75,12 +75,12 @@ describe('Chrome AI RTD Provider', () => {
   afterEach(() => {
     // Restore all sandbox stubs
     sandbox.restore();
-    
+
     // Restore document.body.innerText if it was stubbed
     if (document.body.innerText && document.body.innerText.restore) {
       document.body.innerText.restore();
     }
-    
+
     // Legacy cleanup for textContent if needed
     if (document.body.textContent && document.body.textContent.restore) {
       document.body.textContent.restore();
@@ -105,14 +105,14 @@ describe('Chrome AI RTD Provider', () => {
       storageStub.hasLocalStorage.returns(true);
       storageStub.localStorageIsEnabled.returns(true);
       storageStub.setDataInLocalStorage.returns(true);
-      
+
       sandbox.stub(conf, 'getAnyConfig').returns({});
-      
+
       // Add correctly formatted document text content
       if (document.body.textContent && document.body.textContent.restore) document.body.textContent.restore();
       if (document.body.innerText && document.body.innerText.restore) document.body.innerText.restore();
       sinon.stub(document.body, 'innerText').value('This is a sufficiently long text for language detection.');
-      
+
       global.LanguageDetector = {
         availability: sandbox.stub().resolves('available'),
         create: sandbox.stub().resolves({
@@ -120,9 +120,9 @@ describe('Chrome AI RTD Provider', () => {
           ready: Promise.resolve()
         })
       };
-      
+
       const result = await chromeAiSubmodule.init({});
-      
+
       expect(result).to.be.true;
     });
   });
@@ -138,14 +138,14 @@ describe('Chrome AI RTD Provider', () => {
       const testUrl = window.location.href;
       const data = { [testUrl]: { language: 'en', confidence: 0.99 } };
       storageStub.getDataFromLocalStorage.returns(JSON.stringify(data));
-      
+
       const req = { ortb2Fragments: { global: {} } };
       const callback = sinon.stub();
-      
+
       chromeAiSubmodule.getBidRequestData(req, callback);
-      
+
       expect(callback.calledOnce).to.be.true;
-      
+
       expect(mergeDeepStub.called).to.be.true;
     });
   });
@@ -160,16 +160,16 @@ describe('Chrome AI RTD Provider', () => {
     });
     it('should skip detection if ortb2.site.content.language exists (bid request)', async () => {
       // Simulate ortb2Fragments.global.site.content.language in reqBidsConfigObj
-      const reqBidsConfigObj = { 
-        ortb2Fragments: { 
-          global: { 
-            site: { 
-              content: { 
-                language: 'fr' 
-              } 
-            } 
-          } 
-        } 
+      const reqBidsConfigObj = {
+        ortb2Fragments: {
+          global: {
+            site: {
+              content: {
+                language: 'fr'
+              }
+            }
+          }
+        }
       };
       const cb = sinon.stub();
       chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, cb);
@@ -184,29 +184,29 @@ describe('Chrome AI RTD Provider', () => {
       storageStub.localStorageIsEnabled.returns(true);
       storageStub.getDataFromLocalStorage.returns(null);
       storageStub.setDataInLocalStorage.returns(true);
-      
+
       if (window.localStorage) {
         window.localStorage.removeItem('chromeAi_detected_language');
       }
     });
-    
+
     it('should return false if text is exactly at MIN_TEXT_LENGTH - 1', async () => {
       if (document.body.textContent && document.body.textContent.restore) document.body.textContent.restore();
       if (document.body.innerText && document.body.innerText.restore) document.body.innerText.restore();
       sinon.stub(document.body, 'innerText').value('a'.repeat(19));
       expect(await chromeAiSubmodule.init({})).to.equal(false);
     });
-    
+
     it('should work if text is exactly at MIN_TEXT_LENGTH', async () => {
       if (document.body.textContent && document.body.textContent.restore) document.body.textContent.restore();
       if (document.body.innerText && document.body.innerText.restore) document.body.innerText.restore();
       sinon.stub(document.body, 'innerText').value('a'.repeat(20));
       expect(await chromeAiSubmodule.init({})).to.equal(true);
     });
-    
+
     it('should handle undefined detection result', async () => {
       logErrorStub.reset();
-      
+
       global.LanguageDetector = {
         availability: sandbox.stub().resolves('available'),
         create: sandbox.stub().resolves({
@@ -214,9 +214,9 @@ describe('Chrome AI RTD Provider', () => {
           ready: Promise.resolve()
         })
       };
-      
+
       const result = await chromeAiSubmodule.init({});
-      
+
       expect(result).to.equal(false);
       expect(logErrorStub.called).to.be.true;
     });
@@ -231,73 +231,72 @@ describe('Chrome AI RTD Provider', () => {
           ready: Promise.resolve()
         })
       };
-      
+
       sandbox.stub(conf, 'getAnyConfig').returns({});
-      
+
       storageStub.getDataFromLocalStorage.returns(null);
-      
+
       const result = await chromeAiSubmodule.init({});
       expect(result).to.be.true;
     });
     it('should detect language when localStorage returns null', async () => {
       sandbox.stub(conf, 'getAnyConfig').returns({});
-      
+
       storageStub.getDataFromLocalStorage.returns(null);
-      
+
       const result = await chromeAiSubmodule.init({});
       expect(result).to.be.true;
     });
-    
+
     it('should detect language even if parsing localStorage fails', async () => {
       logErrorStub.reset();
       sandbox.stub(conf, 'getAnyConfig').returns({});
-      
+
       storageStub.getDataFromLocalStorage.returns('not-json');
-      
+
       const result = await chromeAiSubmodule.init({});
       expect(result).to.be.true;
     });
-    
+
     it('should return true if language data exists in localStorage', async () => {
       sandbox.stub(conf, 'getAnyConfig').returns({});
       const url = window.location && window.location.href ? window.location.href : DEFAULT_URL;
       const data = { [url]: { language: 'en', confidence: 0.99 } };
-      
+
       storageStub.getDataFromLocalStorage.returns(JSON.stringify(data));
-      
+
       const result = await chromeAiSubmodule.init({});
       expect(result).to.be.true;
     });
-    
+
     it('should detect language if data exists but not for current URL', async () => {
       sandbox.stub(conf, 'getAnyConfig').returns({});
       const data = { 'https://other-url.com': { language: 'en', confidence: 0.99 } };
       storageStub.getDataFromLocalStorage.returns(JSON.stringify(data));
-      
+
       const result = await chromeAiSubmodule.init({});
       expect(result).to.be.true;
     });
   });
-
-
+  
   describe('getBidRequestData', () => {
     beforeEach(() => {
       storageStub.hasLocalStorage.returns(true);
       storageStub.localStorageIsEnabled.returns(true);
       storageStub.getDataFromLocalStorage.returns(null);
       storageStub.setDataInLocalStorage.returns(true);
-      
+
       if (window.localStorage) {
         window.localStorage.removeItem('chromeAi_detected_language');
       }
     });
-    
+
     it('should not add language if not present in storage', () => {
       storageStub.getDataFromLocalStorage.returns(null);
       const req = { ortb2: {} };
       const cb = sinon.stub();
       chromeAiSubmodule.getBidRequestData(req, cb);
-      
+
       expect(cb.calledOnce).to.be.true;
       expect(req.ortb2).to.deep.equal({});
     });
@@ -340,10 +339,10 @@ describe('Chrome AI RTD Provider', () => {
     it('should store language data correctly', () => {
       const testUrl = 'https://example.com';
       const result = storeDetectedLanguage('en', 0.99, testUrl);
-      
+
       expect(result).to.be.true;
     });
-    
+
     it('should return false when language is missing', () => {
       const result = storeDetectedLanguage(null, 0.99, DEFAULT_URL);
       expect(result).to.be.false;
@@ -360,36 +359,36 @@ describe('Chrome AI RTD Provider', () => {
         })
       };
     });
-    
+
     it('should detect language successfully', async () => {
       const result = await detectLanguage('This is a test text in English');
-      
+
       expect(result).to.not.be.null;
       expect(result.language).to.equal('en');
       expect(result.confidence).to.equal(0.99);
     });
-    
+
     it('should return null when LanguageDetector is not available', async () => {
       delete global.LanguageDetector;
-      
+
       const result = await detectLanguage('This is a test text');
-      
+
       expect(result).to.be.null;
       expect(logErrorStub.called).to.be.true;
     });
-    
+
     it('should return null when availability is unavailable', async () => {
       global.LanguageDetector.availability.resolves('unavailable');
-      
+
       const result = await detectLanguage('This is a test text');
-      
+
       expect(result).to.be.null;
       expect(logErrorStub.called).to.be.true;
     });
-    
+
     it('should handle downloadable model', async () => {
       global.LanguageDetector.availability.resolves('downloadable');
-      
+
       let monitorCalled = false;
       global.LanguageDetector.create.callsFake(async (opts) => {
         if (opts && typeof opts.monitor === 'function') {
@@ -402,35 +401,35 @@ describe('Chrome AI RTD Provider', () => {
           ready: Promise.resolve()
         };
       });
-      
+
       const result = await detectLanguage('Ceci est un texte en français');
-      
+
       expect(result).to.not.be.null;
       expect(result.language).to.equal('fr');
       expect(result.confidence).to.equal(0.85);
       expect(monitorCalled).to.be.true;
     });
-    
+
     it('should return null when detection returns empty results', async () => {
       global.LanguageDetector.create.resolves({
         detect: sandbox.stub().resolves([]),
         ready: Promise.resolve()
       });
-      
+
       const result = await detectLanguage('This is a test text');
-      
+
       expect(result).to.be.null;
       expect(logErrorStub.called).to.be.true;
     });
-    
+
     it('should return null when detection throws an error', async () => {
       global.LanguageDetector.create.resolves({
         detect: sandbox.stub().rejects(new Error('Detection failed')),
         ready: Promise.resolve()
       });
-      
+
       const result = await detectLanguage('This is a test text');
-      
+
       expect(result).to.be.null;
       expect(logErrorStub.called).to.be.true;
     });
