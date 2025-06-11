@@ -75,7 +75,6 @@ prebidmanagerAnalytics.disableAnalytics = function () {
   prebidmanagerAnalytics.originDisableAnalytics();
 };
 
-
 function collectPageInfo() {
   const pageInfo = {
     domain: window.location.hostname,
@@ -126,7 +125,6 @@ function flush() {
     ];
   }
 }
-
 
 function handleEvent(eventType, eventArgs) {
   if (eventArgs) {
