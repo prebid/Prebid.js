@@ -5,6 +5,7 @@ import {
 import {getGlobal} from './prebidGlobal.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
+
 const pbjsInstance = getGlobal();
 const moduleCode = 'outstream';
 
