@@ -1272,7 +1272,6 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
  *
  * @returns {Array} ID providers that are present in userIds
  */
-// codex bot note: automation applied fix for issue #12772
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
 
