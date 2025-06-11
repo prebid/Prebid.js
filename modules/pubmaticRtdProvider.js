@@ -215,7 +215,7 @@ const init = (config, _userConsent) => {
     _fetchConfigPromise = fetchData(publisherId, profileId, "CONFIGS");
 
     _fetchConfigPromise.then(async (profileConfigs) => {
-      const auctionDelay = conf.getConfig('realTimeData').auctionDelay;
+      const auctionDelay = conf?.getConfig('realTimeData')?.auctionDelay || 300;
       const maxWaitTime = 0.8 * auctionDelay;
 
       const elapsedTime = Date.now() - initTime;
@@ -223,7 +223,7 @@ const init = (config, _userConsent) => {
       const floorsData = await withTimeout(_fetchFloorRulesPromise, remainingTime);
 
       const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
-      floorsConfig && conf.setConfig(floorsConfig);
+      floorsConfig && conf?.setConfig(floorsConfig);
       configMerged();
     });
 
