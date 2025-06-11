@@ -59,6 +59,7 @@ Please find below list of parameters that could be used in configuring Intent IQ
 | params.additionalParameters [0].parameterName | Required | String | Name of the custom parameter. This will be sent as a query parameter. | `"abc"` |
 | params.additionalParameters [0].parameterValue | Required | String / Number | Value to assign to the parameter. | `123` |
 | params.additionalParameters [0].destination | Required | Array | Array of numbers either `1` or `0`. Controls where this parameter is sent `[sendWithSync, sendWithVr, winreport]`. | `[1, 0, 0]` |
+| params.shouldSetPPID | Optional | Boolean | Enables the Intent IQ ID to be sent to Google Ad Manager as a Publisher Provided ID (PPID). Requires  `gamObjectReference`  to be provided in the configuration. | `true` |
 
 ### Configuration example
 
@@ -81,6 +82,7 @@ pbjs.setConfig({
                 sourceMetaData: "123.123.123.123", // Optional parameter
                 sourceMetaDataExternal: 123456, // Optional parameter
                 reportMethod: "GET", // Optional parameter
+                shouldSetPPID: true, // Optional parameter
                 additionalParameters: [ // Optional parameter
                     {
                       parameterName: "abc",
