@@ -322,24 +322,37 @@ function bundle(dev, moduleArr) {
   fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
   fancyLog('Generating bundle:', outputFileName);
 
-  if (!dev) {
-    const mixpanel = require('mixpanel');
-    const mixpanelClient = mixpanel.init('dd9c18694ad175ed06e5dbde077d3063', {
-      host: 'api-eu.mixpanel.com'
-    });
-    const machineId = os.hostname() + os.arch() + os.platform();
-    const distinctId = crypto.createHash('sha256').update(machineId).digest('hex');
-    mixpanelClient.track('Production Build', {
-      distinct_id: distinctId,
-      modules: modules,
-      version: prebid.version,
-    });
-  }
+  sendMixpanelData(dev, modules, prebid.version);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
   return wrap(gulp.src(entries, {sourcemaps: sm}))
     .pipe(concat(outputFileName));
 }
+
+  async function sendMixpanelData(dev, modules, version) {
+    try {  
+      if (!dev) {
+        const mixpanel = require('mixpanel');
+        const mixpanelClient = mixpanel.init('dd9c18694ad175ed06e5dbde077d3063', {
+          host: 'api-eu.mixpanel.com'
+        });
+
+        const machineId = os.hostname() + os.arch() + os.platform();
+        const distinctId = crypto.createHash('sha256').update(machineId).digest('hex');
+
+        const { promisify } = require('util');
+        const trackAsync = promisify(mixpanelClient.track).bind(mixpanelClient);
+
+        trackAsync('Production Build', {
+          distinct_id: distinctId,
+          modules: modules,
+          version: version,
+        });
+      }
+    } catch (err) {
+      // Mixpanel failing should not block the build process
+    }
+  }
 
 function setupDist() {
   return gulp.src(['build/dist/**/*'])
