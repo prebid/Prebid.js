@@ -654,8 +654,6 @@ const _handleCustomParams = (params, conf) => {
   return conf;
 };
 
-
-
 /**
  * Gets the minimum size from an array of sizes
  * @param {Array} sizes - Array of size objects with w and h properties
