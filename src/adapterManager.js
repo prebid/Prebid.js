@@ -208,7 +208,7 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   // don't send empty requests
   adUnitsCopy = adUnitsCopy.filter(adUnit => {
-    if (s2sConfig.filterInvalidImps) {
+    if (s2sConfig.filterBidderlessCalls) {
       const onlyNull = adUnit.bids.length === 1 && adUnit.bids[0].bidder == null;
       const hasStored = deepAccess(adUnit, 'ortb2Imp.ext.prebid.storedrequest.id') != null;
       if (onlyNull && !hasStored) return false;

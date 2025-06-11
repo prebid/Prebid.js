@@ -932,8 +932,8 @@ describe('S2S Adapter', function () {
       expect(server.requests.length).to.equal(0);
     });
 
-    it('filters ad units without bidders when filterInvalidImps is true', function () {
-      const cfg = {...CONFIG, filterInvalidImps: true};
+    it('filters ad units without bidders when filterBidderlessCalls is true', function () {
+      const cfg = {...CONFIG, filterBidderlessCalls: true};
       config.setConfig({s2sConfig: cfg});
 
       const badReq = utils.deepClone(REQUEST);
