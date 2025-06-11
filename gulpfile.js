@@ -434,7 +434,7 @@ function testCoverage(done) {
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
-  return execaTask('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js')();
+  return execaTask('cat build/coverage/lcov.info | node_modules/coveralls-next/bin/coveralls.js')();
 }
 
 // This task creates postbid.js. Postbid setup is different from prebid.js
