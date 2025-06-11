@@ -42,7 +42,6 @@ function buildBidRequests(validBidRequests, bidderRequest) {
   })
 }
 
-
 function buildBid(bidData) {
   const bid = {
     requestId: bidData.bidId,
@@ -82,7 +81,6 @@ function buildBid(bidData) {
 
   return bid;
 }
-
 
 function wrapInImageBanner(bid, bidData) {
   return `<!DOCTYPE html>

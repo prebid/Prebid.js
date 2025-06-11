@@ -1,4 +1,3 @@
-
 import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
