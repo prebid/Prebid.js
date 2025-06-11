@@ -66,6 +66,7 @@ let _s2sConfigs;
  * @property {number} [maxBids=1]
  * @property {AdapterOptions} [adapterOptions] adds arguments to resulting OpenRTB payload to Prebid Server
  * @property {Object} [syncUrlModifier]
+ * @property {boolean} [filterInvalidImps=false] filter out ad units without bidders or storedrequest before sending to PBS
  */
 
 /**
@@ -97,7 +98,8 @@ export const s2sDefaultConfig = {
       {event: 1, methods: [1, 2]}
     ],
   },
-  maxTimeout: 1500
+  maxTimeout: 1500,
+  filterInvalidImps: false
 };
 
 config.setDefaults({

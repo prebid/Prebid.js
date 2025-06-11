@@ -932,6 +932,23 @@ describe('S2S Adapter', function () {
       expect(server.requests.length).to.equal(0);
     });
 
+    it('filters ad units without bidders when filterInvalidImps is true', function () {
+      const cfg = {...CONFIG, filterInvalidImps: true};
+      config.setConfig({s2sConfig: cfg});
+
+      const badReq = utils.deepClone(REQUEST);
+      badReq.s2sConfig = cfg;
+      badReq.ad_units = [{...REQUEST.ad_units[0], bids: [{bidder: null}]}];
+
+      const badBidderRequest = utils.deepClone(BID_REQUESTS);
+      badBidderRequest[0].bidderCode = null;
+      badBidderRequest[0].bids = [{...badBidderRequest[0].bids[0], bidder: null}];
+
+      adapter.callBids(badReq, badBidderRequest, addBidResponse, done, ajax);
+
+      expect(server.requests.length).to.equal(0);
+    });
+
     if (FEATURES.VIDEO) {
       it('should add outstream bc renderer exists on mediatype', function () {
         config.setConfig({ s2sConfig: CONFIG });
