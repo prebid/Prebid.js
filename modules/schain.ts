@@ -3,7 +3,7 @@ import {deepClone, logWarn} from '../src/utils.js';
 import {normalizeFPD} from '../src/fpd/normalize.js';
 import type {ORTBRequest} from "../src/types/ortb/request";
 
-type SchainConfig = {
+export type SchainConfig = {
     config: ORTBRequest['source']['schain'];
 }
 
