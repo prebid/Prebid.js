@@ -44,19 +44,57 @@ const RTD_CONFIG = {
 };
 
 describe('rayn RTD Submodule', function () {
-  let getDataFromLocalStorageStub, sandbox;
+  let sandbox;
+  let getDataFromLocalStorageStub;
 
   beforeEach(function () {
+    sandbox = sinon.createSandbox();
     config.resetConfig();
-    sandbox = sinon.sandbox.create();
+
+    // reset RTD_CONFIG mutations
+    RTD_CONFIG.dataProviders[0].params.bidders = [];
+    RTD_CONFIG.dataProviders[0].params.integration = {
+      iabAudienceCategories: {
+        v1_1: {
+          tier: 6,
+          enabled: true,
+        },
+      },
+      iabContentCategories: {
+        v3_0: {
+          tier: 4,
+          enabled: true,
+        },
+        v2_2: {
+          tier: 4,
+          enabled: true,
+        },
+      },
+    };
+
+    // reset TEST_SEGMENTS mutations
+    TEST_SEGMENTS[TEST_CHECKSUM] = {
+      7: {
+        2: ['51', '246', '652', '48', '324']
+      }
+    };
+    delete TEST_SEGMENTS['4'];
+    delete TEST_SEGMENTS['103015'];
+    delete TEST_SEGMENTS[TEST_CHECKSUM]['6'];
+
     getDataFromLocalStorageStub = sandbox.stub(
       raynRTD.storage,
       'getDataFromLocalStorage',
     );
+
+    sandbox.stub(raynRTD, 'generateChecksum').returns(TEST_CHECKSUM);
+
+    delete global.window.raynJS;
   });
 
   afterEach(function () {
     sandbox.restore();
+    delete global.window.raynJS;
   });
 
   function expectLog(spy, message) {

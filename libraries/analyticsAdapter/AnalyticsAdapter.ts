@@ -4,7 +4,6 @@ import {logError, logMessage} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import {config} from '../../src/config.js';
 
-
 export const _internal = {
   ajax
 };

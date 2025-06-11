@@ -33,22 +33,28 @@ describe('AdTrueBidAdapter', function () {
             tid: '92489f71-1bf2-49a0-adf9-000cea934729',
           }
         },
-        schain: {
-          'ver': '1.0',
-          'complete': 1,
-          'nodes': [
-            {
-              'asi': 'indirectseller.com',
-              'sid': '00001',
-              'hp': 1
-            },
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                'ver': '1.0',
+                'complete': 1,
+                'nodes': [
+                  {
+                    'asi': 'indirectseller.com',
+                    'sid': '00001',
+                    'hp': 1
+                  },
 
-            {
-              'asi': 'indirectseller-2.com',
-              'sid': '00002',
-              'hp': 2
+                  {
+                    'asi': 'indirectseller-2.com',
+                    'sid': '00002',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];
@@ -291,7 +297,7 @@ describe('AdTrueBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
       it('Request params check with GDPR Consent', function () {
         let bidRequest = {
@@ -314,7 +320,7 @@ describe('AdTrueBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
       it('Request params check with USP/CCPA Consent', function () {
         let bidRequest = {
@@ -334,7 +340,7 @@ describe('AdTrueBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
 
       it('should NOT include coppa flag in bid request if coppa config is not present', () => {
@@ -348,7 +354,7 @@ describe('AdTrueBidAdapter', function () {
         }
       });
       it('should include coppa flag in bid request if coppa is set to true', () => {
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         sandbox.stub(config, 'getConfig').callsFake(key => {
           const config = {
             'coppa': true
@@ -361,7 +367,7 @@ describe('AdTrueBidAdapter', function () {
         sandbox.restore();
       });
       it('should NOT include coppa flag in bid request if coppa is set to false', () => {
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         sandbox.stub(config, 'getConfig').callsFake(key => {
           const config = {
             'coppa': false
@@ -403,11 +409,81 @@ describe('AdTrueBidAdapter', function () {
       expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
       expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
     });
+
+    it('should parse native responses correctly', function () {
+      const nativeAdm = {
+        native: {
+          assets: [
+            { id: 1, title: { text: 'Native Title' } },
+            { id: 2, img: { url: 'img-url', h: 90, w: 728 } }
+          ],
+          link: { url: 'https://native.example', clicktrackers: ['https://ct.example'] },
+          imptrackers: ['https://imp.example'],
+          jstracker: 'tracker'
+        }
+      };
+      const serverResp = {
+        body: {
+          id: '2',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: 'b',
+                  impid: bidRequests[0].bidId,
+                  price: 1,
+                  adm: JSON.stringify(nativeAdm),
+                  w: 728,
+                  h: 90
+                }
+              ],
+              seat: 'adtrue'
+            }
+          ],
+          cur: 'USD'
+        }
+      };
+      const request = spec.buildRequests(bidRequests, { auctionId: 'native-auction' });
+      const res = spec.interpretResponse(serverResp, request);
+      expect(res[0].mediaType).to.equal('native');
+      expect(res[0].native.title).to.equal('Native Title');
+      expect(res[0].native.image.url).to.equal('img-url');
+      expect(res[0].native.clickUrl).to.equal('https://native.example');
+      expect(res[0].native.clickTrackers[0]).to.equal('https://ct.example');
+      expect(res[0].native.impressionTrackers[0]).to.equal('https://imp.example');
+      expect(res[0].native.jstracker).to.equal('tracker');
+    });
+
+    it('should identify video responses', function () {
+      const serverResp = {
+        body: {
+          id: '3',
+          seatbid: [
+            {
+              bid: [
+                {
+                  id: 'v',
+                  impid: bidRequests[0].bidId,
+                  price: 1,
+                  adm: '<VAST version="3.0"></VAST>',
+                  w: 640,
+                  h: 480
+                }
+              ]
+            }
+          ],
+          cur: 'USD'
+        }
+      };
+      const request = spec.buildRequests(bidRequests, { auctionId: 'video-auction' });
+      const res = spec.interpretResponse(serverResp, request);
+      expect(res[0].mediaType).to.equal('video');
+    });
   });
   describe('getUserSyncs', function () {
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       sandbox.restore();
@@ -430,6 +506,20 @@ describe('AdTrueBidAdapter', function () {
           url: 'https://hb.adtrue.com/prebid/usersync?bidder=appnexus&publisherId=1212&zoneId=21423&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
         }
       ]);
+    });
+
+    it('should include gdpr and usp values in the sync url', function () {
+      // build request to set zoneId and publisherId globals
+      spec.buildRequests(bidRequests, { auctionId: 'sync-test' });
+      const syncs = spec.getUserSyncs(
+        { pixelEnabled: true },
+        [bidResponses],
+        { gdprApplies: true, consentString: 'consentData' },
+        '1YNN'
+      );
+      expect(syncs[0].url).to.contain('gdpr=1');
+      expect(syncs[0].url).to.contain('gdpr_consent=consentData');
+      expect(syncs[0].url).to.contain('us_privacy=1YNN');
     });
   });
 });

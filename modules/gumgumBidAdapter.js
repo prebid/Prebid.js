@@ -3,7 +3,7 @@ import {_each, deepAccess, getWinDimensions, logError, logWarn, parseSizesInput}
 
 import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {includes} from '../src/polyfill.js';
+
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
@@ -277,6 +277,7 @@ function _getDeviceData(ortb2Data) {
     ip: _device.ip,
     ipv6: _device.ipv6,
     ua: _device.ua,
+    sua: _device.sua ? JSON.stringify(_device.sua) : undefined,
     dnt: _device.dnt,
     os: _device.os,
     osv: _device.osv,
@@ -326,7 +327,8 @@ function getEids(userId) {
     'uid',
     'eid',
     'lipbid',
-    'envelope'
+    'envelope',
+    'id'
   ];
 
   return Object.keys(userId).reduce(function (eids, provider) {
@@ -365,14 +367,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidId,
       mediaTypes = {},
       params = {},
-      schain,
       userId = {},
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
-    const gpid = deepAccess(ortb2Imp, 'ext.gpid') || deepAccess(ortb2Imp, 'ext.data.pbadslot');
+    const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
     let sizes = [1, 1];
     let data = {};
@@ -488,6 +489,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (coppa) {
       data.coppa = coppa;
     }
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
@@ -642,10 +644,10 @@ function interpretResponse(serverResponse, bidRequest) {
   let sizes = parseSizesInput(bidRequest.sizes);
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
-  } else if (product === 5 && includes(sizes, '1x1')) {
+  } else if (product === 5 && sizes.includes('1x1')) {
     sizes = ['1x1'];
   // added logic for in-slot multi-szie
-  } else if ((product === 2 && includes(sizes, '1x1')) || product === 3) {
+  } else if ((product === 2 && sizes.includes('1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
       const [ width, height ] = current;
       if (responseWidth === width && responseHeight === height) result.push(current.join('x'));

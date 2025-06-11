@@ -101,7 +101,6 @@ type Overrides<B extends BidderCode> = {
     }
 }
 
-
 type ConverterConfig<B extends BidderCode> = Customizers<B> & {
     context?: Context;
     processors?: () => Processors<B>;

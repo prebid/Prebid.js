@@ -438,6 +438,9 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
 
   describe('isSampled when analytic isforced', function () {
     before(() => {
+      if (utils.getParameterByName.restore) {
+        utils.getParameterByName.restore();
+      }
       sinon.stub(utils, 'getParameterByName').callsFake(par => par === 'greenbids_force_sampling' ? true : undefined);
     });
     it('should return determinist true when sampling flag activated', function () {

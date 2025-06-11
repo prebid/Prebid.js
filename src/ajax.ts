@@ -189,7 +189,6 @@ export type AjaxSuccessCallback = (responseText: string, xhr: XHR) => void;
 export type AjaxErrorCallback = (statusText: string, xhr: XHR) => void;
 export type AjaxCallback = AjaxSuccessCallback | { success?: AjaxErrorCallback; error?: AjaxSuccessCallback };
 
-
 export function ajaxBuilder(timeout = 3000, {request, done} = {} as any) {
   const fetcher = fetcherFactory(timeout, {request, done});
   return function (url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {

@@ -65,9 +65,8 @@ const videoBidReq = [{
   },
   ortb2Imp: {
     ext: {
-      data: {
-        pbadslot: '/1111/pbadslot#728x90'
-      }
+      data: {},
+      gpid: '/1111/pbadslot#728x90'
     }
   },
   mediaTypes: {
@@ -117,7 +116,7 @@ const bidReq = [{
   sizes: [[1, 1]],
   bidId: '453cf42d72bb3c',
   auctionId: '6c22f5a5-59df-4dc6-b92c-f433bcf0a874',
-  schain: schainObj
+  ortb2: { source: { ext: { schain: schainObj } } }
 }];
 
 const supplyChainedBidReqs = [{
@@ -130,7 +129,7 @@ const supplyChainedBidReqs = [{
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
-  schain: schainObj
+  ortb2: { source: { ext: { schain: schainObj } } }
 }, {
   adUnitCode: 'div-gpt-ad-1460505748561-0',
   bidder: BIDDER_CODE,
@@ -310,10 +309,11 @@ describe('Undertone Adapter', () => {
         offsetLeft: 100,
         offsetTop: 100,
         offsetWidth: 300,
-        offsetHeight: 250
+        offsetHeight: 250,
+        getBoundingClientRect() { return { left: 100, top: 100, width: 300, height: 250 }; }
       };
 
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(document, 'getElementById').withArgs('div-gpt-ad-1460505748561-0').returns(element);
     });
 
@@ -518,8 +518,8 @@ describe('Undertone Adapter', () => {
       const request = spec.buildRequests(bidReq, bidderReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
       expect(bid1.coordinates).to.be.an('array');
-      expect(bid1.coordinates[0]).to.equal(200);
-      expect(bid1.coordinates[1]).to.equal(200);
+      expect(bid1.coordinates[0]).to.equal(100);
+      expect(bid1.coordinates[1]).to.equal(100);
     });
   });
 

@@ -34,7 +34,6 @@ type Payloads<M extends EventMapping> = {
     [H in keyof M]: M[H] extends AnyFunction ? ReturnType<M[H]> : never
 }[keyof M];
 
-
 type CustomHandlersOptions<M extends EventMapping> = BaseOptions & {
     /**
      * Custom handler function.

@@ -1,7 +1,6 @@
 const gulp = require('gulp');
 const helpers = require('./gulpHelpers.js');
 const {argv} = require('yargs');
-const {default: run} = require('gulp-run-command');
 const sourcemaps = require('gulp-sourcemaps');
 const babel = require('gulp-babel');
 const {glob} = require('glob');
@@ -150,7 +149,7 @@ function precompile(options = {}) {
 }
 
 
-gulp.task('ts', run('tsc'));
+gulp.task('ts', helpers.execaTask('tsc'));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());

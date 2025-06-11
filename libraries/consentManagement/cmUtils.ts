@@ -170,7 +170,6 @@ export function configParser(
     }
   }
 
-
   return function getConsentConfig(config: { [key: string]: CMConfig<any> }) {
     const cmConfig = config?.[namespace];
     if (!cmConfig || typeof cmConfig !== 'object') {

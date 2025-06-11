@@ -87,7 +87,6 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse) {
@@ -252,8 +251,9 @@ function buildRequestData(bidRequest, bidderRequest) {
   }
 
   // adding schain object
-  if (bidRequest.schain) {
-    deepSetValue(openrtbRequest, 'source.ext.schain', bidRequest.schain);
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    deepSetValue(openrtbRequest, 'source.ext.schain', schain);
     openrtbRequest.source.ext.schain.nodes[0].rid = openrtbRequest.id;
   }
 

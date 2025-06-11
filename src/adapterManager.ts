@@ -27,7 +27,6 @@ import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
-import {find, includes} from './polyfill.js';
 import {
     type AdUnit,
     type AdUnitBid,
@@ -102,7 +101,6 @@ function getConfigName(s2sConfig) {
     // Keep allowing s2sConfig.configName to avoid the breaking change
     return s2sConfig.configName ?? s2sConfig.name;
 }
-
 
 export function s2sActivityParams(s2sConfig) {
   return activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
@@ -239,13 +237,11 @@ export type AliasBidderOptions = {
     skipPbsAliasing?: boolean
 }
 
-
 export type AnalyticsAdapter<P extends AnalyticsProvider> = {
     code?: P;
     enableAnalytics(config: AnalyticsConfig<P>): void;
     gvlid?: number | ((config: AnalyticsConfig<P>) => number);
 }
-
 
 function getBids<SRC extends BidSource, BIDDER extends BidderCode | null>({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}: GetBidsOptions<SRC, BIDDER>): BidRequest<BIDDER>[] {
   return adUnits.reduce((result, adUnit) => {
@@ -536,8 +532,8 @@ const adapterManager = {
                 // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
                 adUnitsS2SCopy.forEach((adUnitCopy) => {
                     let validBids = adUnitCopy.bids.filter((adUnitBid) =>
-                        find(bidRequests, request =>
-                            find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id)));
+                        bidRequests.find(request =>
+                            request.bids.find((reqBid) => reqBid.bidId === adUnitBid.bid_id)));
                     adUnitCopy.bids = validBids;
                 });
 
@@ -706,10 +702,10 @@ const adapterManager = {
                 _bidderRegistry[bidderCode] = bidAdapter;
                 GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
 
-                if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
+                if (FEATURES.VIDEO && supportedMediaTypes.includes('video')) {
                     adapterManager.videoAdapters.push(bidderCode);
                 }
-                if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
+                if (FEATURES.NATIVE && supportedMediaTypes.includes('native')) {
                     nativeAdapters.push(bidderCode);
                 }
             } else {
@@ -730,7 +726,7 @@ const adapterManager = {
                 _s2sConfigs.forEach(s2sConfig => {
                     if (s2sConfig.bidders && s2sConfig.bidders.length) {
                         const s2sBidders = s2sConfig && s2sConfig.bidders;
-                        if (!(s2sConfig && includes(s2sBidders, alias))) {
+                        if (!(s2sConfig && s2sBidders.includes(alias))) {
                             nonS2SAlias.push(bidderCode);
                         } else {
                             _aliasRegistry[alias] = bidderCode;
@@ -901,11 +897,10 @@ const adapterManager = {
 
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
-  if (FEATURES.VIDEO && includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
-  if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
+  if (FEATURES.VIDEO && adapterManager.videoAdapters.includes(bidderCode)) supportedMediaTypes.push('video');
+  if (FEATURES.NATIVE && nativeAdapters.includes(bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
-
 
 function getBidderMethod(bidder, method): [string, string] {
   const adapter = _bidderRegistry[bidder];
@@ -932,7 +927,6 @@ function tryCallBidderMethod(bidder, method, param) {
     }
   }
 }
-
 
 function resolveAlias(alias) {
   const seen = new Set();

@@ -38,7 +38,6 @@ declare module '../config' {
     }
 }
 
-
 /**
  * Enrich an ortb2 object with first-party data.
  * @param {Promise<Object>} fpd - A promise that resolves to an ortb2 object.

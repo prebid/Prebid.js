@@ -39,4 +39,3 @@ export const BANNER = 'banner';
 export const ADPOD = 'adpod';
 
 export const ALL_MEDIATYPES: MediaType[] = [NATIVE, VIDEO, BANNER];
-

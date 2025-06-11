@@ -1,4 +1,3 @@
-import {includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {_each, deepAccess, deepClone, isArray, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
@@ -37,7 +36,7 @@ export function checkDchainSyntax(bid, mode) {
 
   let dchainProps = Object.keys(dchainObj);
   dchainProps.forEach(prop => {
-    if (!includes(dchainPropList, prop)) {
+    if (!dchainPropList.includes(prop)) {
       appendFailMsg(`dchain.${prop}` + shouldBeValid);
     }
   });
@@ -68,7 +67,7 @@ export function checkDchainSyntax(bid, mode) {
       } else {
         let nodeProps = Object.keys(node);
         nodeProps.forEach(prop => {
-          if (!includes(nodesPropList, prop)) {
+          if (!nodesPropList.includes(prop)) {
             appendFailMsg(`dchain.nodes[${index}].${prop}` + shouldBeValid);
           }
 
@@ -119,7 +118,6 @@ function isValidDchain(bid) {
     return checkDchainSyntax(bid, mode);
   }
 }
-
 
 export const addBidResponseHook = timedBidResponseHook('dchain', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   const basicDchain: DemandChain = {

@@ -25,7 +25,6 @@ type BaseConfig<P extends RTDProvider> = {
     waitForIt?: boolean;
 }
 
-
 export type RTDProviderConfig<P extends RTDProvider> = BaseConfig<P> & (
     P extends keyof ProviderConfig ? ProviderConfig[P] : Record<string, unknown>
 );
@@ -57,7 +56,6 @@ export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> &
     getBidRequestData?: (request: StartAuctionOptions, callback: () => void, config: RTDProviderConfig<P>, consent: AllConsentData, timeout: number) => void;
     onDataDeletionRequest?: (config: RTDProviderConfig<P>) => void;
 }
-
 
 declare module '../../src/hook' {
     interface Submodules {

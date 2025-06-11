@@ -7,6 +7,7 @@ var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 const path = require('path');
 const helpers = require('./gulpHelpers.js');
+const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 
 function newWebpackConfig(codeCoverage, disableFeatures) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
@@ -15,6 +16,10 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
   Object.assign(webpackConfig, {
     mode: 'development',
     devtool: 'inline-source-map',
+    cache: {
+      type: 'filesystem',
+      cacheDirectory: path.resolve(__dirname, '.cache/webpack-test')
+    },
   });
   ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
   webpackConfig.module = webpackConfig.module || {};
@@ -24,6 +29,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     exclude: path.resolve('./node_modules'),
     loader: 'babel-loader',
     options: {
+      cacheDirectory: cacheDir, cacheCompression: false,
       presets: [['@babel/preset-env', {modules: 'commonjs'}]],
       plugins: codeCoverage ? ['babel-plugin-istanbul'] : []
     }
@@ -35,7 +41,6 @@ function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
     'karma-coverage',
-    'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
     'karma-sinon',
@@ -51,7 +56,6 @@ function newPluginsArray(browserstack) {
   plugins.push('karma-opera-launcher');
   plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
-  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
@@ -130,7 +134,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon', 'webpack'],
+    frameworks: ['mocha', 'chai', 'sinon', 'webpack'],
 
     // test files should not be watched or they'll run twice after an update
     // (they are still, in fact, watched through autoWatch: true)

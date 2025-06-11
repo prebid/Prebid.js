@@ -2,7 +2,6 @@ import {PbPromise} from './promise.js';
 import {binarySearch, logError, timestamp} from '../utils.js';
 import {setFocusTimeout} from './focusTimeout.js';
 
-
 export type TTLCollection<T> = ReturnType<typeof ttlCollection<T>>;
 
 /**

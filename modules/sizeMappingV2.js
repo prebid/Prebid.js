@@ -14,9 +14,13 @@ import {
   logInfo,
   logWarn
 } from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
+
 import {getHook} from '../src/hook.js';
 import {adUnitSetupChecks} from '../src/prebid.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ */
 
 // Allows for stubbing of these functions while writing unit tests.
 export const internal = {
@@ -86,7 +90,7 @@ export function checkAdUnitSetupHook(adUnits) {
           Verify that all config objects include 'minViewPort' and 'sizes' property.
           If they do not, return 'false'.
         */
-        if (!(includes(keys, 'minViewPort') && includes(keys, propertyName))) {
+        if (!(keys.includes('minViewPort') && keys.includes(propertyName))) {
           logError(`Ad unit ${adUnitCode}: Missing required property 'minViewPort' or 'sizes' from 'mediaTypes.${mediaType}.sizeConfig[${index}]'. ${conditionalLogMessages[mediaType]}`);
           isValid = false;
           return;
@@ -244,12 +248,12 @@ export function checkBidderSizeConfigFormat(sizeConfig) {
   if (Array.isArray(sizeConfig) && sizeConfig.length > 0) {
     sizeConfig.forEach(config => {
       const keys = Object.keys(config);
-      if ((includes(keys, 'minViewPort') &&
-        includes(keys, 'relevantMediaTypes')) &&
+      if ((keys.includes('minViewPort') &&
+        keys.includes('relevantMediaTypes')) &&
         isArrayOfNums(config.minViewPort, 2) &&
         Array.isArray(config.relevantMediaTypes) &&
         config.relevantMediaTypes.length > 0 &&
-        (config.relevantMediaTypes.length > 1 ? (config.relevantMediaTypes.every(mt => (includes(['banner', 'video', 'native'], mt))))
+        (config.relevantMediaTypes.length > 1 ? (config.relevantMediaTypes.every(mt => (['banner', 'video', 'native'].includes(mt))))
           : (['none', 'banner', 'video', 'native'].indexOf(config.relevantMediaTypes[0]) > -1))) {
         didCheckPass = didCheckPass && true;
       } else {
@@ -300,13 +304,13 @@ export function isLabelActivated(bidOrAdUnit, activeLabels, adUnitCode, adUnitIn
       logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Ad unit has declared property 'labelAll' with an empty array.`);
       return true;
     }
-    return bidOrAdUnit.labelAll.every(label => includes(activeLabels, label));
+    return bidOrAdUnit.labelAll.every(label => activeLabels.includes(label));
   } else if (labelOperator === 'labelAny' && Array.isArray(bidOrAdUnit[labelOperator])) {
     if (bidOrAdUnit.labelAny.length === 0) {
       logWarn(`Size Mapping V2:: Ad Unit: ${bidOrAdUnit.code}(${adUnitInstance}) => Ad unit has declared property 'labelAny' with an empty array.`);
       return true;
     }
-    return bidOrAdUnit.labelAny.some(label => includes(activeLabels, label));
+    return bidOrAdUnit.labelAny.some(label => activeLabels.includes(label));
   }
   return true;
 }

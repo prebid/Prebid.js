@@ -52,22 +52,28 @@ const DEFAULT_REQUEST = () => ({
       atype: 2,
     }],
   }],
-  schain: {
-    ver: '1.0',
-    complete: 1,
-    nodes: [
-      {
-        asi: 'indirectseller.com',
-        sid: '1',
-        hp: 1,
-      },
-      {
-        asi: 'indirectseller2.com',
-        name: 'indirectseller2 name with comma , and bang !',
-        sid: '2',
-        hp: 1,
-      },
-    ],
+  ortb2: {
+    source: {
+      ext: {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '1',
+              hp: 1,
+            },
+            {
+              asi: 'indirectseller2.com',
+              name: 'indirectseller2 name with comma , and bang !',
+              sid: '2',
+              hp: 1,
+            },
+          ],
+        }
+      }
+    }
   },
 });
 
@@ -430,7 +436,7 @@ describe('yieldlabBidAdapter', () => {
 
     it('passes unencoded schain string to bid request when complete == 0', () => {
       const schainRequest = DEFAULT_REQUEST();
-      schainRequest.schain.complete = 0; //
+      schainRequest.ortb2.source.ext.schain.complete = 0;
       const request = spec.buildRequests([schainRequest]);
       expect(request.url).to.include('schain=1.0,0!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,');
     });

@@ -1,5 +1,4 @@
 import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
-import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -93,8 +92,7 @@ export const spec = {
             data: JSON.stringify(data),
             options: {
               withCredentials: true,
-              crossOrigin: true,
-            },
+              crossOrigin: true},
             bidderRequest
           })
         }
@@ -340,7 +338,7 @@ const converter = ortbConverter({
 
     request.source = {
       ext: {
-        schain: bidRequest.schain
+        schain: bidRequest?.ortb2?.source?.ext?.schain
       }
     };
     request.ext = {
@@ -420,7 +418,7 @@ const createNativeAd = (adm) => {
 };
 
 function getNativeMainImageSize(nativeRequest) {
-  const mainImage = find(nativeRequest.assets, asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
+  const mainImage = ((nativeRequest.assets) || []).find(asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
   if (mainImage) {
     if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
       return [[mainImage.img.w, mainImage.img.h]]

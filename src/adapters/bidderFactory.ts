@@ -9,20 +9,24 @@ import {BannerBid, Bid, BidResponse, createBid} from '../bidfactory.js';
 import {type SyncType, userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
-import {EVENTS, REJECTION_REASON, STATUS} from '../constants.js';
+import {EVENTS, REJECTION_REASON, DEBUG_MODE} from '../constants.js';
 import * as events from '../events.js';
-import {includes} from '../polyfill.js';
+
 import {
-    delayExecution,
-    isArray,
-    isPlainObject,
-    logError,
-    logWarn,
-    memoize,
-    parseQueryStringParameters,
-    parseSizesInput,
-    pick,
-    uniques
+  delayExecution,
+  isArray,
+  isPlainObject,
+  logError,
+  logWarn,
+  memoize,
+  parseQueryStringParameters,
+  parseSizesInput,
+  pick,
+  uniques,
+  isGzipCompressionSupported,
+  compressDataWithGZip,
+  getParameterByName,
+  debugTurnedOn
 } from '../utils.js';
 import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
@@ -38,7 +42,6 @@ import type {Ajax, AjaxOptions, XHR} from "../ajax.ts";
 import type {AddBidResponse} from "../auction.ts";
 import type {MediaType} from "../mediaTypes.ts";
 import {CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData} from "../consentHandler.ts";
-
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -62,7 +65,6 @@ import {CONSENT_GDPR, CONSENT_GPP, CONSENT_USP, type ConsentData} from "../conse
  * @see BidderSpec for the full API and more thorough descriptions.
  *
  */
-
 
 /**
  * @typedef {object} ServerResponse
@@ -99,7 +101,7 @@ export interface AdapterRequest {
     url: string;
     data: any;
     method?: 'GET' | 'POST';
-    options?: Omit<AjaxOptions, 'method'>;
+    options?: Omit<AjaxOptions, 'method'> & { endpointCompression?: boolean };
 }
 
 export interface ServerResponse {
@@ -342,7 +344,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
             bid.meta = bidResponse.meta || Object.assign({}, bidResponse[bidRequest.bidder]);
             bid.deferBilling = bidRequest.deferBilling;
             bid.deferRendering = bid.deferBilling && (bidResponse.deferRendering ?? typeof spec.onBidBillable !== 'function');
-            const prebidBid: Bid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
+            const prebidBid: Bid = Object.assign(createBid(bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bidResponse.requestId}. Ignoring.`);
@@ -517,6 +519,7 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
           : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
       })
     }
+
     switch (request.method) {
       case 'GET':
         ajax(
@@ -533,19 +536,39 @@ export const processBidderRequests = hook('async', function<B extends BidderCode
         );
         break;
       case 'POST':
-        ajax(
-          request.url,
-          {
-            success: onSuccess,
-            error: onFailure
-          },
-          typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-          getOptions({
-            method: 'POST',
-            contentType: 'text/plain',
-            withCredentials: true
-          })
-        );
+        const enableGZipCompression = request.options?.endpointCompression;
+        const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
+        const callAjax = ({ url, payload }) => {
+          ajax(
+            url,
+            {
+              success: onSuccess,
+              error: onFailure
+            },
+            payload,
+            getOptions({
+              method: 'POST',
+              contentType: 'text/plain',
+              withCredentials: true
+            })
+          );
+        };
+
+        if (enableGZipCompression && debugMode) {
+          logWarn(`Skipping GZIP compression for ${spec.code} as debug mode is enabled`);
+        }
+
+        if (enableGZipCompression && !debugMode && isGzipCompressionSupported()) {
+          compressDataWithGZip(request.data).then(compressedPayload => {
+            const url = new URL(request.url, window.location.origin);
+            if (!url.searchParams.has('gzip')) {
+              url.searchParams.set('gzip', '1');
+            }
+            callAjax({ url: url.href, payload: compressedPayload });
+          });
+        } else {
+          callAjax({ url: request.url, payload: typeof request.data === 'string' ? request.data : JSON.stringify(request.data) });
+        }
         break;
       default:
         logWarn(`Skipping invalid request from ${spec.code}. Request type ${request.method} must be GET or POST`);
@@ -583,7 +606,6 @@ export const registerSyncInner = hook('async', function(spec: BidderSpec<BidderC
 
 export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
 }, 'addPaapiConfig');
-
 
 declare module '../bidfactory' {
     interface BannerBidProperties {
@@ -630,7 +652,7 @@ function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index}
 export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index} = {}) {
   function hasValidKeys() {
     let bidKeys = Object.keys(bid);
-    return COMMON_BID_RESPONSE_KEYS.every(key => includes(bidKeys, key) && !includes([undefined, null], bid[key]));
+    return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key) && ![undefined, null].includes(bid[key]));
   }
 
   function errorMessage(msg) {

@@ -2,7 +2,6 @@ export type DeepPartial<T> = {
     [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
 };
 
-
 type DotNotation<PREFIX extends string, REST extends string> = `${PREFIX}.${REST}`;
 
 export type DeepProperty<T extends object> = keyof T | {

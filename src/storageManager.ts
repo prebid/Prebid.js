@@ -51,7 +51,6 @@ export type StorageManager = {
     findSimilarCookies: AcceptsCallback<(contains: string) => string[]>
 }
 
-
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */

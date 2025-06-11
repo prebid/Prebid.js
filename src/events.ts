@@ -6,7 +6,6 @@ import { EVENTS, EVENT_ID_PATHS } from './constants.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {config} from './config.js';
 
-
 type CoreEvent = {[K in keyof typeof EVENTS]: typeof EVENTS[K]}[keyof typeof EVENTS];
 
 // hide video events (unless the video module is included) with this one weird trick

@@ -3,7 +3,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn, getWinDimensions} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'insticator';
 const ENDPOINT = 'https://ex.ingage.tech/v1/openrtb'; // production endpoint
@@ -30,8 +29,7 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
   'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
-  'api': (value) => isArrayOfNums(value),
-};
+  'api': (value) => isArrayOfNums(value)};
 
 const ORTB_SITE_FIRST_PARTY_DATA = {
   'cat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
@@ -357,9 +355,10 @@ function buildUser(bid) {
 }
 
 function extractSchain(bids, requestId) {
-  if (!bids || bids.length === 0 || !bids[0].schain) return;
+  if (!bids || bids.length === 0) return;
 
-  const schain = bids[0].schain;
+  const schain = bids[0]?.ortb2?.source?.ext?.schain;
+  if (!schain) return;
   if (schain && schain.nodes && schain.nodes.length && schain.nodes[0]) {
     schain.nodes[0].rid = requestId;
   }
@@ -444,7 +443,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 }
 
 function buildBid(bid, bidderRequest) {
-  const originalBid = find(bidderRequest.bids, (b) => b.bidId === bid.impid);
+  const originalBid = ((bidderRequest.bids) || []).find((b) => b.bidId === bid.impid);
   let meta = {}
 
   if (bid.ext && bid.ext.meta) {

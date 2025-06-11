@@ -104,7 +104,6 @@ export function wrapHook<TYP extends HookType, FN extends AnyFunction>(hook: Hoo
   return (wrapper as unknown) as Hookable<TYP, FN>;
 }
 
-
 /**
  * 'async' hooks expect the last argument to be a callback, and have special treatment for it if it's a function;
  * which prevents it from being used as a normal argument in 'before' hooks - and presents a modified version of it
@@ -119,4 +118,3 @@ export function ignoreCallbackArg<FN extends AnyFunction>(hook: Hookable<'async'
         return hook.apply(this, args);
     } as any) as any;
 }
-

@@ -39,8 +39,6 @@ export function getGlobal() {
   return global;
 }
 
-
-
 export function registerModule(name: string) {
   global.installedModules.push(name);
 }

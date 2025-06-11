@@ -56,7 +56,6 @@ export interface TCFConfig {
     dsaPlatform?: boolean;
 }
 
-
 type TCFCMConfig = TCFConfig & CMConfig<TCFConsentData>;
 
 declare module '../src/consentHandler' {

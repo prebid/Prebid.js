@@ -817,18 +817,24 @@ describe('Richaudience adapter tests', function () {
       }]
     }
 
-    DEFAULT_PARAMS_NEW_SIZES[0].schain = {
-      'ver': '1.0',
-      'complete': 1,
-      'nodes': [{
-        'asi': 'richaudience.com',
-        'sid': '00001',
-        'hp': 1
-      }, {
-        'asi': 'richaudience-2.com',
-        'sid': '00002',
-        'hp': 1
-      }]
+    DEFAULT_PARAMS_NEW_SIZES[0].ortb2 = {
+      source: {
+        ext: {
+          schain: {
+            'ver': '1.0',
+            'complete': 1,
+            'nodes': [{
+              'asi': 'richaudience.com',
+              'sid': '00001',
+              'hp': 1
+            }, {
+              'asi': 'richaudience-2.com',
+              'sid': '00002',
+              'hp': 1
+            }]
+          }
+        }
+      }
     }
 
     const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
@@ -890,7 +896,7 @@ describe('Richaudience adapter tests', function () {
   describe('userSync', function () {
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       sandbox.restore();

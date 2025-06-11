@@ -133,7 +133,7 @@ describe('gdpr enforcement', function () {
   }
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     gvlids = {};
     sandbox.stub(GDPR_GVLIDS, 'get').callsFake((name) => ({gvlid: gvlids[name], modules: {}}));
   });
@@ -995,7 +995,7 @@ describe('gdpr enforcement', function () {
 
       beforeEach(function() {
         entry = {modules: {}};
-        GDPR_GVLIDS.get.reset();
+        GDPR_GVLIDS.get.resetHistory();
         GDPR_GVLIDS.get.callsFake((mod) => mod === MOCK_MODULE ? entry : {modules: {}});
       });
 

@@ -1,179 +1,9 @@
 import {config} from '../src/config.js';
-import adapterManager from '../src/adapterManager.js';
-import {
-  _each,
-  deepAccess,
-  deepClone,
-  deepSetValue,
-  isArray,
-  isInteger,
-  isNumber,
-  isPlainObject,
-  isStr,
-  logError,
-  logWarn
-} from '../src/utils.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import {deepClone, logWarn} from '../src/utils.js';
+import {normalizeFPD} from '../src/fpd/normalize.js';
 import type {ORTBRequest} from "../src/types/ortb/request";
 
-// https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
-
-const schainErrorPrefix = 'Invalid schain object found: ';
-const shouldBeAString = ' should be a string';
-const shouldBeAnInteger = ' should be an Integer';
-const shouldBeAnObject = ' should be an object';
-const shouldBeAnArray = ' should be an Array';
-const MODE = {
-  STRICT: 'strict',
-  RELAXED: 'relaxed',
-  OFF: 'off'
-} as const;
-const MODES = []; // an array of modes
-_each(MODE, mode => MODES.push(mode));
-
-// validate the supply chain object
-export function isSchainObjectValid(schainObject, returnOnError) {
-  let failPrefix = 'Detected something wrong within an schain config:';
-  let failMsg = '';
-
-  function appendFailMsg(msg) {
-    failMsg += '\n' + msg;
-  }
-
-  function printFailMsg() {
-    if (returnOnError === true) {
-      logError(failPrefix, schainObject, failMsg);
-    } else {
-      logWarn(failPrefix, schainObject, failMsg);
-    }
-  }
-
-  if (!isPlainObject(schainObject)) {
-    appendFailMsg(`schain.config` + shouldBeAnObject);
-    printFailMsg();
-    if (returnOnError) return false;
-  }
-
-  // complete: Integer
-  if (!isNumber(schainObject.complete) || !isInteger(schainObject.complete)) {
-    appendFailMsg(`schain.config.complete` + shouldBeAnInteger);
-  }
-
-  // ver: String
-  if (!isStr(schainObject.ver)) {
-    appendFailMsg(`schain.config.ver` + shouldBeAString);
-  }
-
-  // ext: Object [optional]
-  if (schainObject.hasOwnProperty('ext')) {
-    if (!isPlainObject(schainObject.ext)) {
-      appendFailMsg(`schain.config.ext` + shouldBeAnObject);
-    }
-  }
-
-  // nodes: Array of objects
-  if (!isArray(schainObject.nodes)) {
-    appendFailMsg(`schain.config.nodes` + shouldBeAnArray);
-    printFailMsg();
-    if (returnOnError) return false;
-  } else {
-    schainObject.nodes.forEach((node, index) => {
-      // asi: String
-      if (!isStr(node.asi)) {
-        appendFailMsg(`schain.config.nodes[${index}].asi` + shouldBeAString);
-      }
-
-      // sid: String
-      if (!isStr(node.sid)) {
-        appendFailMsg(`schain.config.nodes[${index}].sid` + shouldBeAString);
-      }
-
-      // hp: Integer
-      if (!isNumber(node.hp) || !isInteger(node.hp)) {
-        appendFailMsg(`schain.config.nodes[${index}].hp` + shouldBeAnInteger);
-      }
-
-      // rid: String [Optional]
-      if (node.hasOwnProperty('rid')) {
-        if (!isStr(node.rid)) {
-          appendFailMsg(`schain.config.nodes[${index}].rid` + shouldBeAString);
-        }
-      }
-
-      // name: String [Optional]
-      if (node.hasOwnProperty('name')) {
-        if (!isStr(node.name)) {
-          appendFailMsg(`schain.config.nodes[${index}].name` + shouldBeAString);
-        }
-      }
-
-      // domain: String [Optional]
-      if (node.hasOwnProperty('domain')) {
-        if (!isStr(node.domain)) {
-          appendFailMsg(`schain.config.nodes[${index}].domain` + shouldBeAString);
-        }
-      }
-
-      // ext: Object [Optional]
-      if (node.hasOwnProperty('ext')) {
-        if (!isPlainObject(node.ext)) {
-          appendFailMsg(`schain.config.nodes[${index}].ext` + shouldBeAnObject);
-        }
-      }
-    });
-  }
-
-  if (failMsg.length > 0) {
-    printFailMsg();
-    if (returnOnError) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-export function isValidSchainConfig(schainObject) {
-  if (schainObject === undefined) {
-    return false;
-  }
-  if (!isPlainObject(schainObject)) {
-    logError(schainErrorPrefix + 'the following schain config will not be used as schain is not an object.', schainObject);
-    return false;
-  }
-  return true;
-}
-
-function resolveSchainConfig(schainObject, bidder) {
-  let mode: string = MODE.STRICT;
-
-  if (isValidSchainConfig(schainObject)) {
-    if (isStr(schainObject.validation) && MODES.indexOf(schainObject.validation) != -1) {
-      mode = schainObject.validation;
-    }
-    if (mode === MODE.OFF) {
-      // no need to validate
-      return schainObject.config;
-    } else {
-      // if strict mode and config is invalid, reject config + throw error; otherwise allow config to go through
-      if (isSchainObjectValid(schainObject.config, !!(mode === MODE.STRICT))) {
-        return schainObject.config;
-      } else {
-        logError(schainErrorPrefix + `due to the 'strict' validation setting, this schain config will not be passed to bidder '${bidder}'.  See above error for details.`);
-      }
-    }
-  }
-  return null;
-}
-
 type SchainConfig = {
-    /**
-     * 'strict':  schain object will not be passed to adapters if it is invalid. Errors are thrown for invalid schain object.
-     * 'relaxed': Errors are thrown for an invalid schain object but the invalid schain object is still passed to adapters.
-     * 'off':  No validations are performed and schain object is passed as-is to adapters.
-     * Default is 'strict'.
-     */
-    validation?: (typeof MODE)[keyof typeof MODE];
     config: ORTBRequest['source']['schain'];
 }
 
@@ -183,49 +13,64 @@ declare module '../src/config' {
     }
 }
 
-declare module '../src/adapterManager' {
-    interface BaseBidRequest {
-        schain?: ORTBRequest['source']['schain'];
-    }
-}
+export function applySchainConfig(ortb2Fragments) {
+  if (!ortb2Fragments) return ortb2Fragments;
 
-export function makeBidRequestsHook(fn, bidderRequests) {
-  function getSchainForBidder(bidder): SchainConfig {
-    let bidderSchain = bidderConfigs[bidder] && bidderConfigs[bidder].schain;
-    return bidderSchain || globalSchainConfig;
+  let warned = false;
+  function warnDeprecated() {
+    if (!warned) {
+      logWarn('The schain module is deprecated and no longer needed; you may provide schain directly as FPD (e.g., "setConfig({ortb2: {source: {schain: {...}})")');
+      warned = true;
+    }
   }
 
+  // Apply global schain config if available
+  // config's schain will have more precedence over ortb2.source.schain
   const globalSchainConfig = config.getConfig('schain');
+  if (globalSchainConfig && globalSchainConfig.config) {
+    warnDeprecated();
+    if (!ortb2Fragments?.global?.source?.schain) {
+      applySchainToPath(ortb2Fragments, 'global.source', globalSchainConfig.config);
+    } else {
+      logWarn('Disregarding global schain config as schain is already provided in FPD')
+    }
+  }
+
+  // Apply bidder-specific schain configs
   const bidderConfigs = config.getBidderConfig();
+  if (!bidderConfigs) return ortb2Fragments;
 
-  bidderRequests.forEach(bidderRequest => {
-    let bidder = bidderRequest.bidderCode;
-    let schainConfig = getSchainForBidder(bidder);
-
-    bidderRequest.bids.forEach(bid => {
-      let result = resolveSchainConfig(schainConfig, bidder);
-      if (result) {
-        bid.schain = deepClone(result);
+  Object.entries(bidderConfigs)
+    .filter(([_, cfg]) => cfg.schain)
+    .forEach(([bidderCode, cfg]) => {
+      warnDeprecated();
+      const bidderPath = `bidder.${bidderCode}.source`;
+      const hasSchain = ortb2Fragments?.bidder?.[bidderCode]?.source?.schain;
+      if (!hasSchain) {
+        applySchainToPath(ortb2Fragments, bidderPath, cfg.schain?.config);
+      } else {
+        logWarn(`Disregarding schain config for bidder "${bidderCode}" as schain is already provided in FPD`);
       }
     });
+
+  return ortb2Fragments;
+}
+
+function applySchainToPath(fragments, path, schainConfig) {
+  const parts = path.split('.');
+  let current = fragments;
+
+  // Create path if it doesn't exist
+  parts.forEach(part => {
+    current[part] = current[part] || {};
+    current = current[part];
   });
 
-  fn(bidderRequests);
+  // Apply the schain config
+  current.schain = deepClone(schainConfig);
 }
 
-export function init() {
-  adapterManager.makeBidRequests.after(makeBidRequestsHook);
-}
-
-init()
-
-export function setOrtbSourceExtSchain(ortbRequest, bidderRequest, context) {
-  if (!deepAccess(ortbRequest, 'source.ext.schain')) {
-    const schain = deepAccess(context, 'bidRequests.0.schain');
-    if (schain) {
-      deepSetValue(ortbRequest, 'source.ext.schain', schain);
-    }
-  }
-}
-
-registerOrtbProcessor({type: REQUEST, name: 'sourceExtSchain', fn: setOrtbSourceExtSchain});
+normalizeFPD.before((next, ortb2Fragments) => {
+  applySchainConfig(ortb2Fragments);
+  next(ortb2Fragments);
+})

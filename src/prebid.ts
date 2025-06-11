@@ -30,7 +30,6 @@ import {auctionManager} from './auctionManager.js';
 import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
-import {includes} from './polyfill.js';
 import {storageCallbacks} from './storageManager.js';
 import {
     type AliasBidderOptions,
@@ -58,6 +57,7 @@ import {ORTB_BANNER_PARAMS} from './banner.js';
 import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
+import {normalizeFPD} from './fpd/normalize.js';
 import type {Bid} from "./bidfactory.ts";
 import type {AdUnit, AdUnitDefinition, BidderParams} from "./adUnits.ts";
 import type {AdUnitCode, BidderCode, ByAdUnit, Identifier, ORTBFragments} from "./types/common.d.ts";
@@ -109,7 +109,6 @@ logInfo('Prebid.js v$prebid.version$ loaded');
 
 // create adUnit array
 pbjsInstance.adUnits = pbjsInstance.adUnits || [];
-
 
 function validateSizes(sizes, targLength?: number) {
   let cleanSizes = [];
@@ -234,23 +233,12 @@ function validateNativeMediaType(adUnit: AdUnit) {
     delete validatedAdUnit.mediaTypes.native;
     return validatedAdUnit;
   }
-  function checkDeprecated(onDeprecated) {
-    for (const key of ['sendTargetingKeys', 'types']) {
-      if (native.hasOwnProperty(key)) {
-        const res = onDeprecated(key);
-        if (res) return res;
-      }
-    }
-  }
   const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
     if (native.ortb.assets?.some(asset => !isNumber(asset.id) || asset.id < 0 || asset.id % 1 !== 0)) {
       return err('native asset ID must be a nonnegative integer');
-    }
-    if (checkDeprecated(key => err(`ORTB native requests cannot specify "${key}"`))) {
-      return validatedAdUnit;
     }
     const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
     const nativeKeys = Object.keys(native);
@@ -259,8 +247,6 @@ function validateNativeMediaType(adUnit: AdUnit) {
       logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
       intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
     }
-  } else {
-    checkDeprecated(key => `mediaTypes.native.${key} is deprecated, consider using native ORTB instead`);
   }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
@@ -379,7 +365,6 @@ export function addApiMethod<N extends keyof PrebidJS>(name: N, method: PrebidJS
     getGlobal()[name] = log ? logInvocation(name, method) as PrebidJS[N] : method;
 }
 
-
 /// ///////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -474,7 +459,6 @@ function getAdserverTargetingForAdUnitCode(adUnitCode) {
 }
 addApiMethod('getAdserverTargetingForAdUnitCode', getAdserverTargetingForAdUnitCode);
 
-
 /**
  * returns all ad server targeting, optionally scoped to the given ad unit(s).
  * @return Map of adUnitCodes to targeting key-value pairs
@@ -484,14 +468,19 @@ function getAdserverTargeting(adUnitCode?: AdUnitCode | AdUnitCode[]) {
 }
 addApiMethod('getAdserverTargeting', getAdserverTargeting);
 
-
 function getConsentMetadata() {
     return allConsent.getConsentMeta()
 }
 addApiMethod('getConsentMetadata', getConsentMetadata);
 
-type WrapsInBids<T> = {
+type WrapsInBids<T> = T[] & {
     bids: T[]
+}
+
+function wrapInBids(arr) {
+    arr = arr.slice();
+    arr.bids = arr;
+    return arr;
 }
 
 function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
@@ -508,7 +497,7 @@ function getBids<T>(type): ByAdUnit<WrapsInBids<T>> {
     .filter(bids => bids && bids[0] && bids[0].adUnitCode)
     .map(bids => {
       return {
-        [bids[0].adUnitCode]: { bids }
+        [bids[0].adUnitCode]: wrapInBids(bids)
       };
     })
     .reduce((a, b) => Object.assign(a, b), {});
@@ -527,7 +516,7 @@ addApiMethod('getNoBids', getNoBids);
  */
 function getNoBidsForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<BidRequest<BidderCode>> {
     const bids = auctionManager.getNoBids().filter(bid => bid.adUnitCode === adUnitCode);
-    return { bids };
+    return wrapInBids(bids);
 }
 addApiMethod('getNoBidsForAdUnitCode', getNoBidsForAdUnitCode);
 
@@ -545,7 +534,7 @@ addApiMethod('getBidResponses', getBidResponses);
  */
 function getBidResponsesForAdUnitCode(adUnitCode: AdUnitCode): WrapsInBids<Bid> {
     const bids = auctionManager.getBidsReceived().filter(bid => bid.adUnitCode === adUnitCode);
-    return { bids };
+    return wrapInBids(bids);
 }
 addApiMethod('getBidResponsesForAdUnitCode', getBidResponsesForAdUnitCode);
 
@@ -579,7 +568,6 @@ function setTargetingForAst(adUnitCodes?: AdUnitCode | AdUnitCode[]) {
 
 addApiMethod('setTargetingForAst', setTargetingForAst);
 
-
 type RenderAdOptions = {
     /**
      * Click through URL. Used to replace ${CLICKTHROUGH} macro in ad markup.
@@ -597,7 +585,6 @@ function renderAd(doc: Document, id: Bid['adId'], options?: RenderAdOptions) {
     renderAdDirect(doc, id, options);
 }
 addApiMethod('renderAd', renderAd);
-
 
 /**
  * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
@@ -725,16 +712,18 @@ export const requestBids = (function() {
     }
     if (adUnitCodes && adUnitCodes.length) {
       // if specific adUnitCodes supplied filter adUnits for those codes
-      adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
+        adUnits = adUnits.filter(unit => adUnitCodes.includes(unit.code));
     } else {
       // otherwise derive adUnitCodes from adUnits
       adUnitCodes = adUnits && adUnits.map(unit => unit.code);
     }
     adUnitCodes = adUnitCodes.filter(uniques);
-    const ortb2Fragments = {
+    let ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries<any>(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, deepClone(cfg.ortb2)]).filter(([_, ortb2]) => ortb2 != null))
     }
+    ortb2Fragments = normalizeFPD(ortb2Fragments);
+
     enrichFPD(PbPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
       return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
@@ -813,7 +802,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
 
       // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
-      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+      const bidderEligible = adUnitMediaTypes.some(type => bidderMediaTypes.includes(type));
       if (!bidderEligible) {
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
@@ -907,8 +896,6 @@ const eventIdValidators = {
 function validateEventId(event, id) {
     return eventIdValidators.hasOwnProperty(event) && eventIdValidators[event](id);
 }
-
-
 
 /**
  * @param event the name of the event
@@ -1027,6 +1014,7 @@ addApiMethod('getAllWinningBids', getAllWinningBids)
  * @return Bids that have won their respective auctions but have not been rendered yet.
  */
 function getAllPrebidWinningBids(): Bid[] {
+    logWarn('getAllPrebidWinningBids may be removed or renamed in a future version. This function returns bids that have won in prebid and have had targeting set but have not (yet?) won in the ad server. It excludes bids that have been rendered.');
     return auctionManager.getBidsReceived()
         .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 }

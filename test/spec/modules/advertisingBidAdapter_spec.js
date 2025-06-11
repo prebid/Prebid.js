@@ -878,16 +878,22 @@ describe('advertisingBidAdapter ', function () {
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0,
-      schain: {
-        ver: '1.0',
-        complete: 1,
-        nodes: [
-          {
-            asi: 'indirectseller.com',
-            sid: '00001',
-            hp: 1
+      ortb2: {
+        source: {
+          ext: {
+            schain: {
+              ver: '1.0',
+              complete: 1,
+              nodes: [
+                {
+                  asi: 'indirectseller.com',
+                  sid: '00001',
+                  hp: 1
+                }
+              ]
+            }
           }
-        ]
+        }
       }
     };
     let bidderRequest = {
@@ -1144,7 +1150,7 @@ describe('advertisingBidAdapter ', function () {
     });
 
     it('should not include videoCacheKey property on the returned response when cache url is present in the config', function () {
-      let sandbox = sinon.sandbox.create();
+      let sandbox = sinon.createSandbox();
       let serverRespVideo = {
         body: {
           id: 'abcd1234',

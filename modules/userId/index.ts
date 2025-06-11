@@ -3,7 +3,6 @@
  * @module modules/userId
  */
 
-import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {addApiMethod, startAuction, type StartAuctionOptions} from '../../src/prebid.js';
@@ -1022,7 +1021,6 @@ function updateEIDConfig(submodules) {
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
 }
 
-
 type SubmoduleContainer<P extends UserIdProvider> = {
     submodule: IdProviderSpec<P>;
     enabledStorageTypes?: StorageType[];
@@ -1134,7 +1132,7 @@ export function requestDataDeletion(next, ...args) {
  */
 export function attachIdSystem(submodule: IdProviderSpec<UserIdProvider>) {
   submodule.findRootDomain = findRootDomain;
-  if (!find(submoduleRegistry, i => i.name === submodule.name)) {
+  if (!(submoduleRegistry || []).find(i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid)
     updateSubmodules();

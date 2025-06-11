@@ -59,7 +59,6 @@ export interface BidderScopedSettings<B extends BidderCode> extends BidderSettin
     })[];
 }
 
-
 export class ScopedSettings<SETTINGS extends Record<string, any>, SCOPED extends SETTINGS> {
   getSettings;
   defaultScope;

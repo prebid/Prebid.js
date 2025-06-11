@@ -14,19 +14,6 @@ type BidIdentifiers = ContextIdentifiers & {
     bidId: Identifier;
 };
 
-function statusMessage(statusCode) {
-    switch (statusCode) {
-        case 0:
-            return 'Pending';
-        case 1:
-            return 'Bid available';
-        case 2:
-            return 'Bid returned empty or error response';
-        case 3:
-            return 'Bid timed out';
-    }
-}
-
 /**
  * Bid metadata.
  */
@@ -144,7 +131,6 @@ export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidRespon
     adId: Identifier;
     getSize(): string;
     getStatusCode(): number;
-    statusMessage: ReturnType<typeof statusMessage>;
     status?: (typeof BID_STATUS)[keyof typeof BID_STATUS]
     bidderCode: BidderCode;
     adapterCode?: BidderCode;
@@ -179,7 +165,6 @@ export interface VideoBidProperties {
     mediaType: 'video';
 }
 
-
 type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;
 
 type _BannerBid = BidFrom<BannerBidResponse, BannerBidProperties>;
@@ -202,15 +187,13 @@ export type NativeBid = ExtendBid<_NativeBid>;
 export type Bid = BannerBid | VideoBid | NativeBid;
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-function Bid(statusCode: number, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId}: Partial<BidIdentifiers> = {}) {
+function Bid({src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId}: Partial<BidIdentifiers> = {}) {
   var _bidSrc = src;
-  var _statusCode = statusCode || 0;
 
   Object.assign(this, {
     bidderCode: bidder,
     width: 0,
     height: 0,
-    statusMessage: statusMessage(_statusCode),
     adId: getUniqueIdentifierStr(),
     requestId: bidId,
     transactionId,
@@ -220,19 +203,12 @@ function Bid(statusCode: number, {src = 'client', bidder = '', bidId, transactio
     source: _bidSrc
   })
 
-
-  this.getStatusCode = function () {
-    return _statusCode;
-  };
-
   // returns the size of the bid creative. Concatenation of width and height by ‘x’.
   this.getSize = function () {
     return this.width + 'x' + this.height;
   };
 }
 
-export function createBid(statusCode: number, identifiers?: Partial<BidIdentifiers>): Partial<Bid> {
-  return new Bid(statusCode, identifiers);
+export function createBid(identifiers?: Partial<BidIdentifiers>): Partial<Bid> {
+  return new Bid(identifiers);
 }
-
-

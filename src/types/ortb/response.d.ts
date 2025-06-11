@@ -1,4 +1,3 @@
-
 import type {BidResponse, SeatBid, Bid} from "iab-openrtb/v26";
 import type {Ext} from './common.d.ts';
 import type {DSAResponse} from "./ext/dsa.d.ts";

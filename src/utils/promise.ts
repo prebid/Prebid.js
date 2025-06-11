@@ -23,7 +23,6 @@ export function delay(delayMs = 0): Promise<void> {
   });
 }
 
-
 export interface Defer<T> {
     promise: Promise<T>;
     resolve: Parameters<ConstructorParameters<typeof Promise<T>>[0]>[0],

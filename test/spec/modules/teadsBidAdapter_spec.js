@@ -11,7 +11,7 @@ describe('teadsBidAdapter', () => {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -743,14 +743,20 @@ describe('teadsBidAdapter', () => {
 
     it('should add schain info to payload if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{
-            asi: 'example.com',
-            sid: '00001',
-            hp: 1
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [{
+                  asi: 'example.com',
+                  sid: '00001',
+                  hp: 1
+                }]
+              }
+            }
+          }
         }
       });
 

@@ -4,7 +4,6 @@ import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
-import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
@@ -12,7 +11,6 @@ import {guardOrtb2Fragments} from '../../libraries/objectGuard/ortbGuard.js';
 import {activityParamsBuilder} from '../../src/activities/params.js';
 import type {StartAuctionOptions} from "../../src/prebid.ts";
 import type {ProviderConfig, RTDProvider, RTDProviderConfig} from "./spec.ts";
-
 
 const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
@@ -121,7 +119,7 @@ function initSubModules() {
   _userConsent = getConsentData();
   let subModulesByOrder = [];
   _dataProviders.forEach(provider => {
-    const sm = find(registeredSubModules, s => s.name === provider.name);
+    const sm = ((registeredSubModules) || []).find(s => s.name === provider.name);
     const initResponse = sm && sm.init && sm.init(provider, _userConsent);
     if (initResponse) {
       subModulesByOrder.push(Object.assign(sm, {config: provider}));
@@ -154,7 +152,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
   });
 
-  const shouldDelayAuction = prioritySubModules.length && _moduleConfig.auctionDelay && _moduleConfig.auctionDelay > 0;
+  const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0;
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;

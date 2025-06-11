@@ -10,7 +10,6 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
 import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
 
 const ADAPTER_VERSION = '1.21';
@@ -133,7 +132,7 @@ export const spec = {
       return response
         .filter(bid => bid.adm)
         .map((bid) => {
-          let request = find(bidRequest, req => req.adUnitCode === bid.slot);
+          let request = ((bidRequest) || []).find(req => req.adUnitCode === bid.slot);
           let responseMeta = Object.assign({ mediaType: BANNER, advertiserDomains: [] }, bid.meta);
           return {
             requestId: request.bidId,
@@ -156,7 +155,7 @@ export const spec = {
   getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = {}) {
     let { gdprApplies, consentString = '' } = gdprConsent;
     let { gppString = '', applicableSections = [] } = gppConsent;
-    let bannerResponse = find(serverResponses, (res) => isArray(res.body));
+    let bannerResponse = ((serverResponses) || []).find((res) => isArray(res.body));
 
     let syncs = [];
     let params = {
@@ -329,8 +328,9 @@ function createVideoRequestData(bid, bidderRequest) {
     deepSetValue(payload, 'regs.gpp_sid', applicableSections);
   }
 
-  if (bid.schain) {
-    deepSetValue(payload, 'source.ext.schain', bid.schain);
+  const schain = bid?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    deepSetValue(payload, 'source.ext.schain', schain);
   }
 
   if (eids.length > 0) {
@@ -390,8 +390,9 @@ function createBannerRequestData(bids, bidderRequest) {
     payload.gppSid = applicableSections;
   }
 
-  if (bids[0] && bids[0].schain) {
-    payload.schain = bids[0].schain;
+  const schain = bids[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    payload.schain = schain;
   }
 
   SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {

@@ -171,27 +171,33 @@ describe('gumgumAdapter', function () {
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'exchange1.com',
-              sid: '1234',
-              hp: 1,
-              rid: 'bid-request-1',
-              name: 'publisher',
-              domain: 'publisher.com'
-            },
-            {
-              asi: 'exchange2.com',
-              sid: 'abcd',
-              hp: 1,
-              rid: 'bid-request-2',
-              name: 'intermediary',
-              domain: 'intermediary.com'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'exchange1.com',
+                    sid: '1234',
+                    hp: 1,
+                    rid: 'bid-request-1',
+                    name: 'publisher',
+                    domain: 'publisher.com'
+                  },
+                  {
+                    asi: 'exchange2.com',
+                    sid: 'abcd',
+                    hp: 1,
+                    rid: 'bid-request-2',
+                    name: 'intermediary',
+                    domain: 'intermediary.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];
@@ -344,20 +350,20 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.ae).to.equal(true);
     });
 
-    it('should set the global placement id (gpid) if in pbadslot property', function () {
-      const pbadslot = 'abc123'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } } }
+    it('should set the global placement id (gpid) if in gpid property', function () {
+      const gpid = 'abc123'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(pbadslot);
+      expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the global placement id (gpid) if media type is video', function () {
-      const pbadslot = 'cde456'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } }, params: zoneParam, mediaTypes: vidMediaTypes }
+      const gpid = 'cde456'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } }, params: zoneParam, mediaTypes: vidMediaTypes }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(pbadslot);
+      expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
@@ -735,6 +741,20 @@ describe('gumgumAdapter', function () {
 
       expect(bidRequest.data).to.not.have.property('idl_env');
     });
+    it('should add a uid2 parameter if request contains uid2 id', function () {
+      const uid2 = { id: 'sample-uid2' };
+      const request = { ...bidRequests[0], userId: { uid2 } };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.have.property('uid2');
+      expect(bidRequest.data.uid2).to.equal(uid2.id);
+    });
+    it('should not add uid2 parameter if uid2 id is not found', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.not.have.property('uid2');
+    });
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
       const request = spec.buildRequests(bidRequests)[0];
@@ -812,6 +832,30 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle ORTB2 device data', function () {
+      const suaObject = {
+        source: 2,
+        platform: {
+          brand: 'macOS',
+          version: ['15', '5', '0']
+        },
+        browsers: [
+          {
+            brand: 'Google Chrome',
+            version: ['137', '0', '7151', '41']
+          },
+          {
+            brand: 'Chromium',
+            version: ['137', '0', '7151', '41']
+          },
+          {
+            brand: 'Not/A)Brand',
+            version: ['24', '0', '0', '0']
+          }
+        ],
+        mobile: 0,
+        model: '',
+        architecture: 'arm'
+      };
       const ortb2 = {
         device: {
           w: 980,
@@ -827,6 +871,8 @@ describe('gumgumAdapter', function () {
           ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
+          sua: suaObject
+
         },
       };
 
@@ -843,6 +889,9 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
+      expect(bidRequest.data).to.have.property('sua');
+      expect(() => JSON.parse(bidRequest.data.sua)).to.not.throw();
+      expect(JSON.parse(bidRequest.data.sua)).to.deep.equal(suaObject);
     });
 
     it('should set tId from ortb2Imp.ext.tid if available', function () {

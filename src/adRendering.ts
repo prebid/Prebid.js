@@ -100,7 +100,6 @@ export function emitAdRenderFail({ reason, message, bid, id }: Omit<AdRenderFail
   events.emit(AD_RENDER_FAILED, data);
 }
 
-
 type AdRenderSucceededData = {
     /**
      * document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in

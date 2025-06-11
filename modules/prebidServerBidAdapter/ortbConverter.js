@@ -1,7 +1,7 @@
 import {ortbConverter} from '../../libraries/ortbConverter/converter.js';
 import {deepClone, deepSetValue, getBidRequest, logError, logWarn, mergeDeep, timestamp} from '../../src/utils.js';
 import {config} from '../../src/config.js';
-import {S2S, STATUS} from '../../src/constants.js';
+import {S2S} from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
@@ -62,7 +62,7 @@ const PBS_CONVERTER = ortbConverter({
       let {s2sBidRequest} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
-      request.tmax = s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout);
+      request.tmax = Math.floor(s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout));
       request.ext.tmaxmax = request.ext.tmaxmax || s2sBidRequest.requestBidsTimeout;
 
       [request.app, request.dooh, request.site].forEach(section => {
@@ -110,7 +110,7 @@ const PBS_CONVERTER = ortbConverter({
     // because core has special treatment for PBS adapter responses, we need some additional processing
     bidResponse.requestTimestamp = context.requestTimestamp;
     return {
-      bid: Object.assign(createBid(STATUS.GOOD, {
+      bid: Object.assign(createBid({
         src: S2S.SRC,
         bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
         transactionId: context.adUnit.transactionId,
@@ -205,13 +205,9 @@ const PBS_CONVERTER = ortbConverter({
         if (fpdConfigs.length) {
           deepSetValue(ortbRequest, 'ext.prebid.bidderconfig', fpdConfigs);
         }
-      },
-      extPrebidAliases(orig, ortbRequest, proxyBidderRequest, context) {
-        // override alias processing to do it for each bidder in the request
-        context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
-      },
-      sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
-        // pass schains in ext.prebid.schains
+
+        // Handle schain information after FPD processing
+        // Collect schains from bidder requests and organize into ext.prebid.schains
         let chains = ortbRequest?.ext?.prebid?.schains || [];
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
@@ -221,7 +217,7 @@ const PBS_CONVERTER = ortbConverter({
               .filter((req) => !chainBidders.has(req.bidderCode)) // schain defined in s2sConfig.extPrebid takes precedence
               .map((req) => ({
                 bidders: [req.bidderCode],
-                schain: req?.bids?.[0]?.schain
+                schain: req?.bids?.[0]?.ortb2?.source?.schain
               })))
             .filter(({bidders, schain}) => bidders?.length > 0 && schain)
             .reduce((chains, {bidders, schain}) => {
@@ -237,6 +233,10 @@ const PBS_CONVERTER = ortbConverter({
         if (chains.length) {
           deepSetValue(ortbRequest, 'ext.prebid.schains', chains);
         }
+      },
+      extPrebidAliases(orig, ortbRequest, proxyBidderRequest, context) {
+        // override alias processing to do it for each bidder in the request
+        context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       }
     },
     [RESPONSE]: {

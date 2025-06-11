@@ -3,7 +3,7 @@
 import {deepAccess, deepSetValue, isFn, isPlainObject, logWarn, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {includes} from '../src/polyfill.js';
+
 import {config} from '../src/config.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
@@ -60,7 +60,7 @@ export const spec = {
       openRtbBidRequest.tmax = tmax;
     }
 
-    const schain = validBidReqs[0].schain;
+    const schain = validBidReqs[0]?.ortb2?.source?.ext?.schain;
     if (schain) {
       openRtbBidRequest.source = { ext: { schain } };
     }
@@ -216,7 +216,7 @@ export const spec = {
 
   setValidVideoParams: function (sourceObj, destObj) {
     Object.keys(sourceObj)
-      .filter(param => includes(VIDEO_PARAMS, param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !(sourceObj[param].length < 1)))
+      .filter(param => VIDEO_PARAMS.includes(param) && sourceObj[param] !== null && (!isNaN(parseInt(sourceObj[param], 10)) || !(sourceObj[param].length < 1)))
       .forEach(param => destObj[param] = Array.isArray(sourceObj[param]) ? sourceObj[param] : parseInt(sourceObj[param], 10));
   },
   interpretResponse: function(serverResponse, bidRequest) {

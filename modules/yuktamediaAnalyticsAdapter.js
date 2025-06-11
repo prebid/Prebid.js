@@ -2,10 +2,10 @@ import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizes
 import {ajax, fetch} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { EVENTS, STATUS } from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import {includes as strIncludes} from '../src/polyfill.js';
+
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'yuktamedia';
@@ -140,7 +140,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
               events.auctions[args.auctionId] = { bids: {} };
             } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
               let bidResponse = events.auctions[args.auctionId]['bids'][args.requestId];
-              bidResponse.isBid = args.getStatusCode() === STATUS.GOOD;
+              bidResponse.isBid = true;
               bidResponse.cpm = args.cpm;
               bidResponse.currency = args.currency;
               bidResponse.netRevenue = args.netRevenue;
@@ -155,7 +155,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
               bidResponse.responseTimestamp = args.responseTimestamp;
               bidResponse.bidForSize = args.size;
               for (const [adserverTargetingKey, adserverTargetingValue] of Object.entries(args.adserverTargeting)) {
-                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !strIncludes(adserverTargetingKey, ele))) {
+                if (['body', 'icon', 'image', 'linkurl', 'host', 'path'].every((ele) => !adserverTargetingKey.includes(ele))) {
                   bidResponse['adserverTargeting-' + adserverTargetingKey] = adserverTargetingValue;
                 }
               }

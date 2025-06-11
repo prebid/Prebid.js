@@ -11,8 +11,6 @@ import {
 } from 'modules/rubiconBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {find} from 'src/polyfill.js';
-import 'modules/schain.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
@@ -48,7 +46,7 @@ describe('the rubicon adapter', function () {
    * @return {sizeMapConverted}
    */
   function getSizeIdForBid(sizesMapConverted, bid) {
-    return find(sizesMapConverted, item => (item.width === bid.width && item.height === bid.height));
+    return sizesMapConverted.find(item => (item.width === bid.width && item.height === bid.height));
   }
 
   /**
@@ -57,7 +55,7 @@ describe('the rubicon adapter', function () {
    * @return {Object}
    */
   function getResponseAdBySize(ads, size) {
-    return find(ads, item => item.size_id === size.sizeId);
+    return ads.find(item => item.size_id === size.sizeId);
   }
 
   /**
@@ -66,7 +64,7 @@ describe('the rubicon adapter', function () {
    * @return {BidRequest}
    */
   function getBidRequestBySize(bidRequests, size) {
-    return find(bidRequests, item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
+    return bidRequests.find(item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
   }
 
   /**
@@ -131,6 +129,9 @@ describe('the rubicon adapter', function () {
               tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             }
           },
+          ortb2: {
+            source: {}
+          }
         }
       ],
       start: 1472239426002,
@@ -398,7 +399,7 @@ describe('the rubicon adapter', function () {
   }
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     logErrorSpy = sinon.spy(utils, 'logError');
     getFloorResponse = {};
     bidderRequest = {
@@ -2092,6 +2093,39 @@ describe('the rubicon adapter', function () {
 
             // make sure high entropy keys are not present
             let highEntropyHints = ['m_ch_full_ver', 'm_ch_arch', 'm_ch_bitness', 'm_ch_platform_ver'];
+            highEntropyHints.forEach((hint) => { expect(data.get(hint)).to.be.null; });
+          });
+          it('should ignore invalid browser hints (missing version)', function () {
+            let bidRequestSua = utils.deepClone(bidderRequest);
+            bidRequestSua.bids[0].ortb2 = { device: { sua: {
+              'browsers': [
+                {
+                  'brand': 'Not A(Brand',
+                  // 'version': ['8'], // missing version
+                },
+              ],
+            } } };
+
+            // How should fastlane query be constructed with default SUA
+            let expectedValues = {
+              m_ch_ua: `"Not A(Brand"|v="undefined"`,
+            }
+
+            // Build Fastlane call
+            let [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
+            let data = new URLSearchParams(request.data);
+
+            // Loop through expected values and if they do not match push an error
+            const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
+              if (data.get(key) !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              return accum;
+            }, []);
+
+            // should be no errors
+            expect(errors).to.deep.equal([]);
+
+            // make sure high entropy keys are not present
+            let highEntropyHints = ['m_ch_full_ver'];
             highEntropyHints.forEach((hint) => { expect(data.get(hint)).to.be.null; });
           });
         });
@@ -4623,7 +4657,8 @@ describe('the rubicon adapter', function () {
     beforeEach(() => {
       bidRequests = getBidderRequest();
       schainConfig = getSupplyChainConfig();
-      bidRequests.bids[0].schain = schainConfig;
+      bidRequests.bids[0].ortb2.source.ext = bidRequests.bids[0].ortb2.source.ext || {};
+      bidRequests.bids[0].ortb2.source.ext.schain = schainConfig;
     });
 
     it('should properly serialize schain object with correct delimiters', () => {
@@ -4642,14 +4677,14 @@ describe('the rubicon adapter', function () {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
       const schain = new URLSearchParams(results[0].data).get('rp_schain').split('!');
       const version = schain.shift().split(',')[0];
-      expect(version).to.equal(bidRequests.bids[0].schain.ver);
+      expect(version).to.equal(bidRequests.bids[0].ortb2.source.ext.schain.ver);
     });
 
     it('should send the correct value for complete in schain', () => {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
       const schain = new URLSearchParams(results[0].data).get('rp_schain').split('!');
       const complete = schain.shift().split(',')[1];
-      expect(complete).to.equal(String(bidRequests.bids[0].schain.complete));
+      expect(complete).to.equal(String(bidRequests.bids[0].ortb2.source.ext.schain.complete));
     });
 
     it('should send available params in the right order', () => {
@@ -4670,7 +4705,7 @@ describe('the rubicon adapter', function () {
     it('should copy the schain JSON to to bid.source.ext.schain', () => {
       const bidderRequest = createVideoBidderRequest();
       const schain = getSupplyChainConfig();
-      bidderRequest.bids[0].schain = schain;
+      bidderRequest.bids[0].ortb2.source.ext = { schain: schain };
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(request[0].data.source.ext.schain).to.deep.equal(schain);
     });

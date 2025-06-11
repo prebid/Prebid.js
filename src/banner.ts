@@ -25,7 +25,6 @@ const ORTB_PARAMS = [
  */
 export const ORTB_BANNER_PARAMS = new Map(ORTB_PARAMS);
 
-
 export interface BannerMediaType extends BaseMediaType, Partial<Pick<ORTBImp['banner'], (typeof ORTB_PARAMS)[number][0]>> {
     /**
      * All sizes this ad unit can accept.
