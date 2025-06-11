@@ -220,12 +220,23 @@ function validateNativeMediaType(adUnit) {
     delete validatedAdUnit.mediaTypes.native;
     return validatedAdUnit;
   }
+  function checkDeprecated(onDeprecated) {
+    for (const key of ['sendTargetingKeys', 'types']) {
+      if (native.hasOwnProperty(key)) {
+        const res = onDeprecated(key);
+        if (res) return res;
+      }
+    }
+  }
   const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
     if (native.ortb.assets?.some(asset => !isNumber(asset.id) || asset.id < 0 || asset.id % 1 !== 0)) {
       return err('native asset ID must be a nonnegative integer');
+    }
+    if (checkDeprecated(key => err(`ORTB native requests cannot specify "${key}"`))) {
+      return validatedAdUnit;
     }
     const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
     const nativeKeys = Object.keys(native);
@@ -234,6 +245,8 @@ function validateNativeMediaType(adUnit) {
       logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
       intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
     }
+  } else {
+    checkDeprecated(key => `mediaTypes.native.${key} is deprecated, consider using native ORTB instead`, adUnit);
   }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
