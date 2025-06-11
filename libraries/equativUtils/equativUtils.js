@@ -90,12 +90,11 @@ function makeId() {
 /**
  * Prepares impressions for the request
  *
- * @export
  * @param {*} imps An imps array
  * @param {*} bid A bid
  * @param {string} currency A currency
  * @param {*} impIdMap An impIdMap
- * @param {string} adapter An adapter (may be 'stx' or 'eqtv')
+ * @param {string} adapter A type of adapter (may be 'stx' or 'eqtv')
  * @return {*}
  */
 export function prepareSplitImps(imps, bid, currency, impIdMap, adapter) {
