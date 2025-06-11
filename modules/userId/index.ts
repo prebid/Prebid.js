@@ -125,7 +125,6 @@ function submoduleMetrics(moduleName) {
   return uidMetrics().fork().renameWith(n => [`userId.mod.${n}`, `userId.mods.${moduleName}.${n}`])
 }
 
-/** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
   submoduleRegistry = submodules;
   updateEIDConfig(submodules);
@@ -163,14 +162,7 @@ function setValueInLocalStorage(submodule, valueStr, expiresStr) {
   }
 }
 
-/**
- * @param {SubmoduleContainer} submodule
- * @param {(Object|string)} value
- */
 export function setStoredValue(submodule, value) {
-  /**
-   * @type {SubmoduleStorage}
-   */
   const storage = submodule.config.storage;
 
   try {
@@ -920,8 +912,6 @@ function hasValidStorageTypes(config) {
  * list of submodule configurations with valid 'storage' or 'value' obj definitions
  * storage config: contains values for storing/retrieving User ID data in browser storage
  * value config: object properties that are copied to bids (without saving to storage)
- * @param {SubmoduleConfig[]} configRegistry
- * @returns {SubmoduleConfig[]}
  */
 export function getValidSubmoduleConfigs(configRegistry) {
   function err(msg, ...args) {
@@ -1092,8 +1082,6 @@ function updateSubmodules(options = {}) {
 
 /**
  * This function will update the idPriority according to the provided configuration
- * @param {Object} idPriorityConfig
- * @param {Submodule[]} submodules
  */
 function updateIdPriority(idPriorityConfig, submodules) {
   if (idPriorityConfig) {
@@ -1128,7 +1116,6 @@ export function requestDataDeletion(next, ...args) {
 
 /**
  * enable submodule in User ID
- * @param {Submodule} submodule
  */
 export function attachIdSystem(submodule: IdProviderSpec<UserIdProvider>) {
   submodule.findRootDomain = findRootDomain;
