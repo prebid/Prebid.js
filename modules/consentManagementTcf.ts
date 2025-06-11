@@ -24,6 +24,10 @@ const cmpCallMap = {
   'iab': lookupIabConsent,
 };
 
+/**
+ * @see https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework
+ * @see https://github.com/InteractiveAdvertisingBureau/iabtcf-es/tree/master/modules/core#iabtcfcore
+ */
 export type TCFConsentData = {
     apiVersion: typeof CMP_VERSION;
     /**
