@@ -58,7 +58,7 @@ export const testClientHints = {
 const testAPILink = 'https://new-test-api.intentiq.com'
 const syncTestAPILink = 'https://new-test-sync.intentiq.com'
 
-const mockGAM = () => {
+const mockGAM = (ppidSpy = sinon.spy()) => {
   const targetingObject = {};
   return {
     cmd: [],
@@ -71,7 +71,8 @@ const mockGAM = () => {
       },
       getTargetingKeys: () => {
         return Object.keys(targetingObject);
-      }
+      },
+      setPublisherProvidedId: ppidSpy
     })
   };
 };
@@ -317,15 +318,8 @@ describe('IntentIQ tests', function () {
 
   it('should call setPublisherProvidedId if shouldSetPPID=true', function () {
     const ppidSpy = sinon.spy();
-    const gam = {
-      cmd: [],
-      pubads: function () {
-        return {
-          setTargeting: sinon.spy(),
-          setPublisherProvidedId: ppidSpy
-        };
-      }
-    };
+    const gam = mockGAM(ppidSpy);
+
     defaultConfigParams.params.gamObjectReference = gam;
     defaultConfigParams.params.shouldSetPPID = true;
 
@@ -358,15 +352,7 @@ describe('IntentIQ tests', function () {
 
   it('should call setPublisherProvidedId if shouldSetPPID=true and ids are present in LS', function () {
     const ppidSpy = sinon.spy();
-    const gam = {
-      cmd: [],
-      pubads: function () {
-        return {
-          setTargeting: sinon.spy(),
-          setPublisherProvidedId: ppidSpy
-        };
-      }
-    };
+    const gam = mockGAM(ppidSpy);
 
     defaultConfigParams.params.gamObjectReference = gam;
     defaultConfigParams.params.shouldSetPPID = true;
