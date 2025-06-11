@@ -89,7 +89,7 @@ describe('IDx ID System', () => {
     let sandbox;
 
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
       init(config);

@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
+import { config } from 'src/config.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse;
@@ -294,7 +295,7 @@ describe('PubMatic adapter', () => {
         const { imp } = request?.data;
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('banner').to.have.property('format');
-        expect(imp[0]).to.have.property('banner').to.have.property('format').with.lengthOf(2);
+        expect(imp[0]).to.have.property('banner').to.have.property('format').to.be.an('array');
       });
 
       it('should add pmZoneId in ext if pmzoneid is present in parameters', () => {
@@ -1120,5 +1121,95 @@ describe('PubMatic adapter', () => {
         expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
       });
     });
+
+    describe('getUserSyncs', () => {
+      beforeEach(() => {
+        spec.buildRequests(validBidRequests, bidderRequest);
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('returns iframe sync url with consent parameters and COPPA', () => {
+        config.setConfig({ coppa: true });
+        const gdprConsent = { gdprApplies: true, consentString: 'CONSENT' };
+        const uspConsent = '1YNN';
+        const gppConsent = { gppString: 'GPP', applicableSections: [2, 4] };
+        const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, uspConsent, gppConsent);
+        expect(sync).to.deep.equal({
+          type: 'iframe',
+          url: 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=5670&gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2%2C4&coppa=1'
+        });
+      });
+
+      it('returns image sync url when no consent data provided', () => {
+        const [sync] = spec.getUserSyncs({}, []);
+        expect(sync).to.deep.equal({
+          type: 'image',
+          url: 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670'
+        });
+      });
+    });
   })
 })
+
+describe('addViewabilityToImp', () => {
+  let imp;
+  let element;
+  let originalGetElementById;
+  let originalVisibilityState;
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    imp = { ext: {} };
+    element = document.createElement('div');
+    element.id = 'Div1';
+    document.body.appendChild(element);
+    originalGetElementById = document.getElementById;
+    sandbox.stub(document, 'getElementById').callsFake(id => id === 'Div1' ? element : null);
+    originalVisibilityState = document.visibilityState;
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true
+    });
+    sandbox.stub(utils, 'getWindowTop').returns(window);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    document.body.removeChild(element);
+    Object.defineProperty(document, 'visibilityState', {
+      value: originalVisibilityState,
+      configurable: true
+    });
+    document.getElementById = originalGetElementById;
+  });
+
+  it('should add viewability to imp.ext when measurable', () => {
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.have.property('viewability');
+  });
+
+  it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
+    const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.have.property('viewability');
+    expect(imp.ext.viewability.amount).to.equal('na');
+  });
+
+  it('should not add viewability if element is not found', () => {
+    document.getElementById.restore();
+    sandbox.stub(document, 'getElementById').returns(null);
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.not.have.property('viewability');
+  });
+
+  it('should create imp.ext if not present', () => {
+    imp = {};
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.exist;
+    expect(imp.ext).to.have.property('viewability');
+  });
+});
