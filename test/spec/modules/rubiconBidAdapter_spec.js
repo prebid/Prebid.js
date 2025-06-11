@@ -399,7 +399,7 @@ describe('the rubicon adapter', function () {
   }
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     logErrorSpy = sinon.spy(utils, 'logError');
     getFloorResponse = {};
     bidderRequest = {

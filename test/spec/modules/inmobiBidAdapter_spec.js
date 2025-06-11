@@ -26,7 +26,7 @@ describe('The inmobi bidding adapter', function () {
   beforeEach(function () {
     // mock objects
     utilsMock = sinon.mock(utils);
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     ajaxStub = sandbox.stub(ajax, 'ajax');
     fetchStub = sinon.stub(global, 'fetch').resolves(new Response('OK'));
   });

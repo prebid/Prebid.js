@@ -122,7 +122,7 @@ const VIDEO_BID_RESPONSE = {
 };
 
 describe('tpmnAdapterTests', function () {
-  let sandbox = sinon.sandbox.create();
+  let sandbox = sinon.createSandbox();
   let getCookieStub;
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -130,7 +130,7 @@ describe('tpmnAdapterTests', function () {
         storageAllowed: true
       }
     };
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     getCookieStub = sinon.stub(storage, 'getCookie');
   });
 

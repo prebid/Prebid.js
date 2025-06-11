@@ -38,7 +38,7 @@ describe('browsi Real time data sub module', function () {
   let timestampStub;
 
   before(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     eventsEmitSpy = sandbox.spy(events, ['emit']);
     timestampStub = sandbox.stub(utils, 'timestamp');
     sandbox.stub(Global, 'getGlobal').callsFake(() => {

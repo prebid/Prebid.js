@@ -216,7 +216,7 @@ describe('Unit: Prebid Module', function () {
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     mockFpdEnrichments(sandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
@@ -1762,7 +1762,7 @@ describe('Unit: Prebid Module', function () {
   describe('requestBids', function () {
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       sandbox.restore();
@@ -1818,6 +1818,46 @@ describe('Unit: Prebid Module', function () {
         await auctionStarted;
       }
 
+      it('with normalized FPD', async () => {
+        configObj.setBidderConfig({
+          bidders: ['test'],
+          config: {
+            ortb2: {
+              source: {
+                schain: 'foo'
+              }
+            }
+          }
+        });
+        configObj.setConfig({
+          ortb2: {
+            source: {
+              schain: 'bar'
+            }
+          }
+        });
+        await runAuction();
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          ortb2Fragments: {
+            global: {
+              source: {
+                ext: {
+                  schain: 'bar'
+                }
+              }
+            },
+            bidder: {
+              test: {
+                source: {
+                  ext: {
+                    schain: 'foo'
+                  }
+                }
+              }
+            }
+          }
+        }));
+      })
       describe('with FPD', () => {
         let globalFPD, auctionFPD, mergedFPD;
         beforeEach(() => {
