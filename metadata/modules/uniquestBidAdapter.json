@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "uniquest",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "uniquest",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

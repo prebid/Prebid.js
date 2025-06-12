@@ -1,9 +1,11 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "jwplayer",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "jwplayer",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "zeta_global_ssp",
-    "aliasOf": null,
-    "gvlid": 469,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://zetaglobal.com/ZetaDeviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "zeta_global_ssp",
+      "aliasOf": null,
+      "gvlid": 469,
+      "disclosureURL": "https://zetaglobal.com/ZetaDeviceStorageDisclosure.json"
+    }
+  ]
+}

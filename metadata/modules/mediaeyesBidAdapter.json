@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mediaeyes",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mediaeyes",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

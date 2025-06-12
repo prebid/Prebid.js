@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "vidoomy",
-    "aliasOf": null,
-    "gvlid": 380,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://vidoomy.com/storageurl/devicestoragediscurl.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "vidoomy",
+      "aliasOf": null,
+      "gvlid": 380,
+      "disclosureURL": "https://vidoomy.com/storageurl/devicestoragediscurl.json"
+    }
+  ]
+}

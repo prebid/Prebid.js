@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "justpremium",
-    "aliasOf": null,
-    "gvlid": 62,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.justpremium.com/devicestoragedisclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "justpremium",
+      "aliasOf": null,
+      "gvlid": 62,
+      "disclosureURL": "https://cdn.justpremium.com/devicestoragedisclosures.json"
+    }
+  ]
+}

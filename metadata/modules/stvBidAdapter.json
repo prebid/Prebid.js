@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "stv",
-    "aliasOf": null,
-    "gvlid": 134,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://tcf.adtech.app/gen/deviceStorageDisclosure/stv.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "stv",
+      "aliasOf": null,
+      "gvlid": 134,
+      "disclosureURL": "https://tcf.adtech.app/gen/deviceStorageDisclosure/stv.json"
+    }
+  ]
+}

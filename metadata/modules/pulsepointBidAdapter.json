@@ -1,26 +1,28 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "pulsepoint",
-    "aliasOf": null,
-    "gvlid": 81,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://bh.contextweb.com/tcf/vendorInfo.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "pulseLite",
-    "aliasOf": "pulsepoint",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "pulsepointLite",
-    "aliasOf": "pulsepoint",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "pulsepoint",
+      "aliasOf": null,
+      "gvlid": 81,
+      "disclosureURL": "https://bh.contextweb.com/tcf/vendorInfo.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pulseLite",
+      "aliasOf": "pulsepoint",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pulsepointLite",
+      "aliasOf": "pulsepoint",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

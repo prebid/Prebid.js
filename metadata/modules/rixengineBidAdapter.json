@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "rixengine",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://www.algorix.co/gdpr-disclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "algorix",
-    "aliasOf": "rixengine",
-    "gvlid": 1176,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "rixengine",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "algorix",
+      "aliasOf": "rixengine",
+      "gvlid": 1176,
+      "disclosureURL": "https://www.algorix.co/gdpr-disclosure.json"
+    }
+  ]
+}

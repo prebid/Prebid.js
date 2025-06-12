@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "bedigitech",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "bedigitech",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

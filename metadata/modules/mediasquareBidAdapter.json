@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mediasquare",
-    "aliasOf": null,
-    "gvlid": 791,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://mediasquare.fr/deviceStorage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "msq",
-    "aliasOf": "mediasquare",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mediasquare",
+      "aliasOf": null,
+      "gvlid": 791,
+      "disclosureURL": "https://mediasquare.fr/deviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "msq",
+      "aliasOf": "mediasquare",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

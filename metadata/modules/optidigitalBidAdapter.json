@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "optidigital",
-    "aliasOf": null,
-    "gvlid": 915,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://scripts.opti-digital.com/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "optidigital",
+      "aliasOf": null,
+      "gvlid": 915,
+      "disclosureURL": "https://scripts.opti-digital.com/deviceStorageDisclosure.json"
+    }
+  ]
+}

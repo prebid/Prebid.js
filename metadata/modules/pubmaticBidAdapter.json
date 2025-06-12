@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "pubmatic",
-    "aliasOf": null,
-    "gvlid": 76,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.pubmatic.com/devicestorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "pubmatic",
+      "aliasOf": null,
+      "gvlid": 76,
+      "disclosureURL": "https://cdn.pubmatic.com/devicestorage.json"
+    }
+  ]
+}

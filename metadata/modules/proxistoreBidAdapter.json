@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "proxistore",
-    "aliasOf": null,
-    "gvlid": 418,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://abs.proxistore.com/assets/json/proxistore_device_storage_disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "proxistore",
+      "aliasOf": null,
+      "gvlid": 418,
+      "disclosureURL": "https://abs.proxistore.com/assets/json/proxistore_device_storage_disclosure.json"
+    }
+  ]
+}

@@ -1,26 +1,26 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "advertising",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "synacormedia",
-    "aliasOf": "advertising",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "imds",
-    "aliasOf": "advertising",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "advertising",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "synacormedia",
+      "aliasOf": "advertising",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "imds",
+      "aliasOf": "advertising",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

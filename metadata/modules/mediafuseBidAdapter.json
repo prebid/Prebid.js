@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mediafuse",
-    "aliasOf": null,
-    "gvlid": 32,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://acdn.adnxs.com/gvl/1d/xandrdevicestoragedisclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mediafuse",
+      "aliasOf": null,
+      "gvlid": 32,
+      "disclosureURL": "https://acdn.adnxs.com/gvl/1d/xandrdevicestoragedisclosures.json"
+    }
+  ]
+}

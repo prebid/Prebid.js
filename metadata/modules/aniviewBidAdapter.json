@@ -1,66 +1,75 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "aniview",
-    "aliasOf": null,
-    "gvlid": 780,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://player.aniview.com/gdpr/gdpr.json": [
+      {
+        "identifier": "av_*",
+        "type": "web",
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7
+        ]
+      }
+    ]
   },
-  {
-    "componentType": "bidder",
-    "componentName": "avantisvideo",
-    "aliasOf": "aniview",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "selectmediavideo",
-    "aliasOf": "aniview",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "vidcrunch",
-    "aliasOf": "aniview",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "openwebvideo",
-    "aliasOf": "aniview",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "didnavideo",
-    "aliasOf": "aniview",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "ottadvisors",
-    "aliasOf": "aniview",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "pgammedia",
-    "aliasOf": "aniview",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "aniview",
+      "aliasOf": null,
+      "gvlid": 780,
+      "disclosureURL": "https://player.aniview.com/gdpr/gdpr.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "avantisvideo",
+      "aliasOf": "aniview",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "selectmediavideo",
+      "aliasOf": "aniview",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "vidcrunch",
+      "aliasOf": "aniview",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "openwebvideo",
+      "aliasOf": "aniview",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "didnavideo",
+      "aliasOf": "aniview",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ottadvisors",
+      "aliasOf": "aniview",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pgammedia",
+      "aliasOf": "aniview",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

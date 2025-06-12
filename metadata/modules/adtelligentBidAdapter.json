@@ -1,66 +1,65 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adtelligent",
-    "aliasOf": null,
-    "gvlid": 410,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://adtelligent.com/.well-known/deviceStorage.json": [],
+    "https://sm1.selectmedia.asia/cdn/gdpr/devicestorage.json": null,
+    "https://orangeclickmedia.com/device_storage_disclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "streamkey",
-    "aliasOf": "adtelligent",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "janet",
-    "aliasOf": "adtelligent",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "selectmedia",
-    "aliasOf": "adtelligent",
-    "gvlid": 775,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "ocm",
-    "aliasOf": "adtelligent",
-    "gvlid": 1148,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "9dotsmedia",
-    "aliasOf": "adtelligent",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "indicue",
-    "aliasOf": "adtelligent",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "stellormedia",
-    "aliasOf": "adtelligent",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adtelligent",
+      "aliasOf": null,
+      "gvlid": 410,
+      "disclosureURL": "https://adtelligent.com/.well-known/deviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "streamkey",
+      "aliasOf": "adtelligent",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "janet",
+      "aliasOf": "adtelligent",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "selectmedia",
+      "aliasOf": "adtelligent",
+      "gvlid": 775,
+      "disclosureURL": "https://sm1.selectmedia.asia/cdn/gdpr/devicestorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ocm",
+      "aliasOf": "adtelligent",
+      "gvlid": 1148,
+      "disclosureURL": "https://orangeclickmedia.com/device_storage_disclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "9dotsmedia",
+      "aliasOf": "adtelligent",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "indicue",
+      "aliasOf": "adtelligent",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "stellormedia",
+      "aliasOf": "adtelligent",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

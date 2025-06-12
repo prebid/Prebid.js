@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mobilefuse",
-    "aliasOf": null,
-    "gvlid": 909,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://mobilefuse.com/storage-disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mobilefuse",
+      "aliasOf": null,
+      "gvlid": 909,
+      "disclosureURL": "https://mobilefuse.com/storage-disclosures.json"
+    }
+  ]
+}

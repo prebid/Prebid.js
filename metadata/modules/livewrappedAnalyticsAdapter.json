@@ -1,8 +1,10 @@
-[
-  {
-    "componentType": "analytics",
-    "componentName": "livewrapped",
-    "gvlid": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "analytics",
+      "componentName": "livewrapped",
+      "gvlid": null
+    }
+  ]
+}

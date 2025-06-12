@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "bliink",
-    "aliasOf": null,
-    "gvlid": 658,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://bliink.io/disclosures.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "bk",
-    "aliasOf": "bliink",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "bliink",
+      "aliasOf": null,
+      "gvlid": 658,
+      "disclosureURL": "https://bliink.io/disclosures.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bk",
+      "aliasOf": "bliink",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

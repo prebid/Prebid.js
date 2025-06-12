@@ -1,8 +1,10 @@
-[
-  {
-    "componentType": "analytics",
-    "componentName": "ucfunnelAnalytics",
-    "gvlid": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "analytics",
+      "componentName": "ucfunnelAnalytics",
+      "gvlid": null
+    }
+  ]
+}

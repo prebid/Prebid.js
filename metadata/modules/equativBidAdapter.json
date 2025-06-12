@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "equativ",
-    "aliasOf": null,
-    "gvlid": 45,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://apps.smartadserver.com/device-storage-disclosures/equativDeviceStorageDisclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "equativ",
+      "aliasOf": null,
+      "gvlid": 45,
+      "disclosureURL": "https://apps.smartadserver.com/device-storage-disclosures/equativDeviceStorageDisclosures.json"
+    }
+  ]
+}

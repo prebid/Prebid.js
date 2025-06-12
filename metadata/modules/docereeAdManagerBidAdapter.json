@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "docereeadmanager",
-    "aliasOf": null,
-    "gvlid": 1063,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://doceree.com/.well-known/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "docereeadmanager",
+      "aliasOf": null,
+      "gvlid": 1063,
+      "disclosureURL": "https://doceree.com/.well-known/deviceStorage.json"
+    }
+  ]
+}

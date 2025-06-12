@@ -1,10 +1,11 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "pubProvidedId",
-    "gvlid": "1stParty",
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "pubProvidedId",
+      "gvlid": "1stParty",
+      "aliasOf": null
+    }
+  ]
+}

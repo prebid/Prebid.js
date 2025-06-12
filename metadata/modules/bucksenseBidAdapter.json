@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "bucksense",
-    "aliasOf": null,
-    "gvlid": 235,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://j.bksnimages.com/iab/devsto02.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "bucksense",
+      "aliasOf": null,
+      "gvlid": 235,
+      "disclosureURL": "https://j.bksnimages.com/iab/devsto02.json"
+    }
+  ]
+}

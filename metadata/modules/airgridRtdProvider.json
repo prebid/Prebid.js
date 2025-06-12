@@ -1,9 +1,13 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "airgrid",
-    "gvlid": 101,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.wearemiq.com/privacy-and-compliance/devicestoragedisclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "airgrid",
+      "gvlid": 101,
+      "disclosureURL": "https://www.wearemiq.com/privacy-and-compliance/devicestoragedisclosures.json"
+    }
+  ]
+}

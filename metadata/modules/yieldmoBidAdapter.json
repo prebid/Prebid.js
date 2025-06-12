@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "yieldmo",
-    "aliasOf": null,
-    "gvlid": 173,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://devicestoragedisclosureurl.yieldmo.com/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "yieldmo",
+      "aliasOf": null,
+      "gvlid": 173,
+      "disclosureURL": "https://devicestoragedisclosureurl.yieldmo.com/deviceStorage.json"
+    }
+  ]
+}

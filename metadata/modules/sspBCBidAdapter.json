@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "sspBC",
-    "aliasOf": null,
-    "gvlid": 676,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://ssp.wp.pl/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "sspBC",
+      "aliasOf": null,
+      "gvlid": 676,
+      "disclosureURL": "https://ssp.wp.pl/deviceStorage.json"
+    }
+  ]
+}

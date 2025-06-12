@@ -1,26 +1,39 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adkernelAdn",
-    "aliasOf": null,
-    "gvlid": 14,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://static.adkernel.com/deviceStorage.json": [
+      {
+        "identifier": "adk_rtb_conv_id",
+        "type": "cookie",
+        "maxAgeSeconds": 15552000,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          7
+        ]
+      }
+    ]
   },
-  {
-    "componentType": "bidder",
-    "componentName": "engagesimply",
-    "aliasOf": "adkernelAdn",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "adpluto_dsp",
-    "aliasOf": "adkernelAdn",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adkernelAdn",
+      "aliasOf": null,
+      "gvlid": 14,
+      "disclosureURL": "https://static.adkernel.com/deviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "engagesimply",
+      "aliasOf": "adkernelAdn",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adpluto_dsp",
+      "aliasOf": "adkernelAdn",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

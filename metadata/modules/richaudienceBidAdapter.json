@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "richaudience",
-    "aliasOf": null,
-    "gvlid": 108,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://cdnj.richaudience.com/52a26ab9400b2a9f5aabfa20acf3196g.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "ra",
-    "aliasOf": "richaudience",
-    "gvlid": 108,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "richaudience",
+      "aliasOf": null,
+      "gvlid": 108,
+      "disclosureURL": "https://cdnj.richaudience.com/52a26ab9400b2a9f5aabfa20acf3196g.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ra",
+      "aliasOf": "richaudience",
+      "gvlid": 108,
+      "disclosureURL": "https://cdnj.richaudience.com/52a26ab9400b2a9f5aabfa20acf3196g.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "pixfuture",
-    "aliasOf": null,
-    "gvlid": 839,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://pixfuture.com/vendor-disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "pixfuture",
+      "aliasOf": null,
+      "gvlid": 839,
+      "disclosureURL": "https://pixfuture.com/vendor-disclosures.json"
+    }
+  ]
+}

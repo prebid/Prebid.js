@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "qid",
-    "gvlid": 902,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://api.adquery.io/tcf/adQuery.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "qid",
+      "gvlid": 902,
+      "disclosureURL": "https://api.adquery.io/tcf/adQuery.json",
+      "aliasOf": null
+    }
+  ]
+}

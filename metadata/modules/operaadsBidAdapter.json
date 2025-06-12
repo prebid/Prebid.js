@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "operaads",
-    "aliasOf": null,
-    "gvlid": 1135,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://res.adx.opera.com/sellers.json": null
   },
-  {
-    "componentType": "bidder",
-    "componentName": "opera",
-    "aliasOf": "operaads",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "operaads",
+      "aliasOf": null,
+      "gvlid": 1135,
+      "disclosureURL": "https://res.adx.opera.com/sellers.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "opera",
+      "aliasOf": "operaads",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

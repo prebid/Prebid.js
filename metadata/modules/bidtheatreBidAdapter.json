@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "bidtheatre",
-    "aliasOf": null,
-    "gvlid": 30,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://privacy.bidtheatre.com/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "bidtheatre",
+      "aliasOf": null,
+      "gvlid": 30,
+      "disclosureURL": "https://privacy.bidtheatre.com/deviceStorage.json"
+    }
+  ]
+}

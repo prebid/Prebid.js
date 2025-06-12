@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "mobkoiId",
-    "gvlid": 898,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.maximus.mobkoi.com/tcf/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "mobkoiId",
+      "gvlid": 898,
+      "disclosureURL": "https://cdn.maximus.mobkoi.com/tcf/deviceStorageDisclosure.json",
+      "aliasOf": null
+    }
+  ]
+}

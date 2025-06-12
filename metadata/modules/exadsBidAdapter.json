@@ -1,10 +1,48 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "exads",
-    "aliasOf": "exads",
-    "gvlid": 1084,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://a.native7.com/tcf/deviceStorage.php": [
+      {
+        "identifier": "pn-zone-*",
+        "type": "cookie",
+        "maxAgeSeconds": 3888000,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          4
+        ]
+      },
+      {
+        "identifier": "zone-cap-*",
+        "type": "cookie",
+        "maxAgeSeconds": 21600,
+        "cookieRefresh": true,
+        "purposes": [
+          1,
+          2,
+          4
+        ]
+      },
+      {
+        "identifier": "zone-closed-*",
+        "type": "cookie",
+        "maxAgeSeconds": 86400,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          4
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "exads",
+      "aliasOf": "exads",
+      "gvlid": 1084,
+      "disclosureURL": "https://a.native7.com/tcf/deviceStorage.php"
+    }
+  ]
+}

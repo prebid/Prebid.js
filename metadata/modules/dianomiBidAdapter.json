@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "dianomi",
-    "aliasOf": null,
-    "gvlid": 885,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://www.dianomi.com/device_storage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "dia",
-    "aliasOf": "dianomi",
-    "gvlid": 885,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "dianomi",
+      "aliasOf": null,
+      "gvlid": 885,
+      "disclosureURL": "https://www.dianomi.com/device_storage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "dia",
+      "aliasOf": "dianomi",
+      "gvlid": 885,
+      "disclosureURL": "https://www.dianomi.com/device_storage.json"
+    }
+  ]
+}

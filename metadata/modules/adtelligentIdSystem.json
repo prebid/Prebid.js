@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "adtelligent",
-    "gvlid": 410,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://adtelligent.com/.well-known/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "adtelligent",
+      "gvlid": 410,
+      "disclosureURL": "https://adtelligent.com/.well-known/deviceStorage.json",
+      "aliasOf": null
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "playdigo",
-    "aliasOf": null,
-    "gvlid": 1302,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://playdigo.com/file.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "playdigo",
+      "aliasOf": null,
+      "gvlid": 1302,
+      "disclosureURL": "https://playdigo.com/file.json"
+    }
+  ]
+}

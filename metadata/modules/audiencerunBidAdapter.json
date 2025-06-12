@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "audiencerun",
-    "aliasOf": null,
-    "gvlid": 944,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.audiencerun.com/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "audiencerun",
+      "aliasOf": null,
+      "gvlid": 944,
+      "disclosureURL": "https://www.audiencerun.com/tcf.json"
+    }
+  ]
+}

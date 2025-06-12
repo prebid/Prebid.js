@@ -1,8 +1,10 @@
-[
-  {
-    "componentType": "analytics",
-    "componentName": "zeta_global_ssp",
-    "gvlid": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "analytics",
+      "componentName": "zeta_global_ssp",
+      "gvlid": null
+    }
+  ]
+}

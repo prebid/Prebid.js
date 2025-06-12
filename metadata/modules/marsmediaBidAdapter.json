@@ -1,18 +1,19 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "marsmedia",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "mars",
-    "aliasOf": "marsmedia",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "marsmedia",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "mars",
+      "aliasOf": "marsmedia",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

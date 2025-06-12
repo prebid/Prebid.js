@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "retailspot",
-    "aliasOf": null,
-    "gvlid": 1319,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://static.retailspotads.com/tcf_disclosures.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "rs",
-    "aliasOf": "retailspot",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "retailspot",
+      "aliasOf": null,
+      "gvlid": 1319,
+      "disclosureURL": "https://static.retailspotads.com/tcf_disclosures.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "rs",
+      "aliasOf": "retailspot",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

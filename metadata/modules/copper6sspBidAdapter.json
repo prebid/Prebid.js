@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "copper6ssp",
-    "aliasOf": null,
-    "gvlid": 1356,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://ssp.copper6.com/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "copper6ssp",
+      "aliasOf": null,
+      "gvlid": 1356,
+      "disclosureURL": "https://ssp.copper6.com/deviceStorage.json"
+    }
+  ]
+}

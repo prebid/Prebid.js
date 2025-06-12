@@ -563,13 +563,12 @@ gulp.task('extract-metadata', function (done) {
       fs.writeFileSync('./metadata/modules.json', JSON.stringify(metadata, null, 2))
     }).finally(() => {
       server.close()
-    }).then(done, done);
+    }).then(() => done(), done);
   });
 })
 gulp.task('compile-metadata', function (done) {
   import('./metadata/compileMetadata.mjs').then(({default: compile}) => {
-    compile();
-    done();
+    compile().then(() => done(), done);
   })
 })
 module.exports = nodeBundle;

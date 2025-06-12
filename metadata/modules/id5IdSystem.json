@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "id5Id",
-    "gvlid": 131,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://id5-sync.com/tcf/disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "id5Id",
+      "gvlid": 131,
+      "disclosureURL": "https://id5-sync.com/tcf/disclosures.json",
+      "aliasOf": null
+    }
+  ]
+}

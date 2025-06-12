@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "mwOpenLinkId",
-    "gvlid": null,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "mwOpenLinkId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    }
+  ]
+}

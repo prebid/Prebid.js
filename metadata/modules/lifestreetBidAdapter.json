@@ -1,18 +1,19 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "lifestreet",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "lsm",
-    "aliasOf": "lifestreet",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "lifestreet",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "lsm",
+      "aliasOf": "lifestreet",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

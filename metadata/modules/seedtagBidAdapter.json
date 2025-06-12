@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "seedtag",
-    "aliasOf": null,
-    "gvlid": 157,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://tcf.seedtag.com/vendor.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "st",
-    "aliasOf": "seedtag",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "seedtag",
+      "aliasOf": null,
+      "gvlid": 157,
+      "disclosureURL": "https://tcf.seedtag.com/vendor.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "st",
+      "aliasOf": "seedtag",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

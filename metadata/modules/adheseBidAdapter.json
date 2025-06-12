@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adhese",
-    "aliasOf": null,
-    "gvlid": 553,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://adhese.com/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adhese",
+      "aliasOf": null,
+      "gvlid": 553,
+      "disclosureURL": "https://adhese.com/deviceStorage.json"
+    }
+  ]
+}

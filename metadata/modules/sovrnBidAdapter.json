@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "sovrn",
-    "aliasOf": null,
-    "gvlid": 13,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://vendor-list.consensu.org/v3/vendor-list.json": null
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "sovrn",
+      "aliasOf": null,
+      "gvlid": 13,
+      "disclosureURL": "https://vendor-list.consensu.org/v3/vendor-list.json"
+    }
+  ]
+}

@@ -1,26 +1,26 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "gamoshi",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "gambid",
-    "aliasOf": "gamoshi",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "cleanmedianet",
-    "aliasOf": "gamoshi",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "gamoshi",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "gambid",
+      "aliasOf": "gamoshi",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "cleanmedianet",
+      "aliasOf": "gamoshi",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

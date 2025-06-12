@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "amxId",
-    "gvlid": 737,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://assets.a-mo.net/tcf/device-storage.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "amxId",
+      "gvlid": 737,
+      "disclosureURL": "https://assets.a-mo.net/tcf/device-storage.json",
+      "aliasOf": null
+    }
+  ]
+}

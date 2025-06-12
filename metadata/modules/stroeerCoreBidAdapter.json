@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "stroeerCore",
-    "aliasOf": null,
-    "gvlid": 136,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.stroeer.de/StroeerSSP_deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "stroeerCore",
+      "aliasOf": null,
+      "gvlid": 136,
+      "disclosureURL": "https://www.stroeer.de/StroeerSSP_deviceStorage.json"
+    }
+  ]
+}

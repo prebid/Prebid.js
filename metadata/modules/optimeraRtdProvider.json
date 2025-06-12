@@ -1,9 +1,11 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "optimeraRTD",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "optimeraRTD",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

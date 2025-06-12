@@ -1,10 +1,28 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "rtbhouse",
-    "aliasOf": null,
-    "gvlid": 16,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://rtbhouse.com/DeviceStorage.json": [
+      {
+        "identifier": "_rtbh.*",
+        "type": "web",
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          9,
+          10
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "rtbhouse",
+      "aliasOf": null,
+      "gvlid": 16,
+      "disclosureURL": "https://rtbhouse.com/DeviceStorage.json"
+    }
+  ]
+}

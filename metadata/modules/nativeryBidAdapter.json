@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "nativery",
-    "aliasOf": null,
-    "gvlid": 1133,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://cdnimg.nativery.com/widget/js/deviceStorageDisclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "nat",
-    "aliasOf": "nativery",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "nativery",
+      "aliasOf": null,
+      "gvlid": 1133,
+      "disclosureURL": "https://cdnimg.nativery.com/widget/js/deviceStorageDisclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "nat",
+      "aliasOf": "nativery",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

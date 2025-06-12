@@ -1,9 +1,13 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "semantiq",
-    "gvlid": 783,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://audienzz.com/device_storage_disclosure_vendor_783.json": []
+  },
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "semantiq",
+      "gvlid": 783,
+      "disclosureURL": "https://audienzz.com/device_storage_disclosure_vendor_783.json"
+    }
+  ]
+}

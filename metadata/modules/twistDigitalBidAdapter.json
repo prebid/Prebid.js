@@ -1,10 +1,39 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "twistdigital",
-    "aliasOf": null,
-    "gvlid": 1292,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://twistdigital.net/iab.json": [
+      {
+        "identifier": "vdzj1_{id}",
+        "type": "cookie",
+        "maxAgeSeconds": 2592000,
+        "cookieRefresh": false,
+        "purposes": [
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      {
+        "identifier": "vdz_sync",
+        "type": "cookie",
+        "maxAgeSeconds": 2592000,
+        "cookieRefresh": false,
+        "purposes": [
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "twistdigital",
+      "aliasOf": null,
+      "gvlid": 1292,
+      "disclosureURL": "https://twistdigital.net/iab.json"
+    }
+  ]
+}

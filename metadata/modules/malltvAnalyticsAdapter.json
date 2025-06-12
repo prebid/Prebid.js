@@ -1,8 +1,10 @@
-[
-  {
-    "componentType": "analytics",
-    "componentName": "malltv",
-    "gvlid": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "analytics",
+      "componentName": "malltv",
+      "gvlid": null
+    }
+  ]
+}

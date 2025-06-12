@@ -1,8 +1,10 @@
-[
-  {
-    "componentType": "analytics",
-    "componentName": "smartyads",
-    "gvlid": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "analytics",
+      "componentName": "smartyads",
+      "gvlid": null
+    }
+  ]
+}

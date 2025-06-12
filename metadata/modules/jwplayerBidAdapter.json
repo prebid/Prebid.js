@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "jwplayer",
-    "aliasOf": null,
-    "gvlid": 1046,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.jwplayer.com/devicestorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "jwplayer",
+      "aliasOf": null,
+      "gvlid": 1046,
+      "disclosureURL": "https://www.jwplayer.com/devicestorage.json"
+    }
+  ]
+}

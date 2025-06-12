@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "beop",
-    "aliasOf": null,
-    "gvlid": 666,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://beop.io/deviceStorage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "bp",
-    "aliasOf": "beop",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "beop",
+      "aliasOf": null,
+      "gvlid": 666,
+      "disclosureURL": "https://beop.io/deviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bp",
+      "aliasOf": "beop",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

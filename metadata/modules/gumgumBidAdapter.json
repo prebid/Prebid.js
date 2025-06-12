@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "gumgum",
-    "aliasOf": null,
-    "gvlid": 61,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://marketing.gumgum.com/devicestoragedisclosures.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "gg",
-    "aliasOf": "gumgum",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "gumgum",
+      "aliasOf": null,
+      "gvlid": 61,
+      "disclosureURL": "https://marketing.gumgum.com/devicestoragedisclosures.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "gg",
+      "aliasOf": "gumgum",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

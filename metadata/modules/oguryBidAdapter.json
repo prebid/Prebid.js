@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ogury",
-    "aliasOf": null,
-    "gvlid": 31,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://privacy.ogury.co/disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ogury",
+      "aliasOf": null,
+      "gvlid": 31,
+      "disclosureURL": "https://privacy.ogury.co/disclosure.json"
+    }
+  ]
+}

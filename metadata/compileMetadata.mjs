@@ -1,8 +1,9 @@
 import path from 'path';
 import fs from 'fs';
 import helpers from '../gulpHelpers.js';
-import moduleMeta from './modules.json' with {type: 'json'};
+import allMetadata from './modules.json' with {type: 'json'};
 import overrides from './overrides.mjs';
+import {fetchDisclosure, getDisclosureUrl} from './storageDisclosure.mjs';
 
 function matches(moduleName, moduleSuffix) {
     moduleSuffix = moduleSuffix.toLowerCase();
@@ -20,10 +21,29 @@ const modules = {
     RtdProvider: 'rtd'
 }
 
-export default function compileMetadata() {
-    const allMeta = moduleMeta.map(item => Object.assign({}, item));
+async function metadataFor(metas) {
+    let disclosures = {}
+    for (const meta of metas) {
+        if (meta.disclosureURL == null && meta.gvlid != null) {
+            meta.disclosureURL = await getDisclosureUrl(meta.gvlid)
+        }
+        if (meta.disclosureURL) {
+            disclosures[meta.disclosureURL] = fetchDisclosure(meta);
+        }
+    }
+    for (const [url, promise] of Object.entries(disclosures)) {
+        disclosures[url] = await promise;
+    }
+    return {
+        disclosures,
+        components: metas
+    }
+}
+
+export default async function compileMetadata() {
+    const found = new WeakSet();
     let err = false;
-    helpers.getModuleNames().forEach(moduleName => {
+    for (const moduleName of helpers.getModuleNames()) {
         let predicate;
         for (const [suffix, moduleType] of Object.entries(modules)) {
             if (moduleName.endsWith(suffix)) {
@@ -31,11 +51,12 @@ export default function compileMetadata() {
                     ? ({componentName, aliasOf}) => componentName === overrides[moduleName] || aliasOf === overrides[moduleName]
                     : matches(moduleName, suffix)
                 predicate = ((orig) => (entry) => entry.componentType === moduleType && orig(entry))(predicate);
+                break;
             }
         }
         if (predicate) {
-            const meta = allMeta.filter(predicate);
-            meta.forEach(entry => entry.found = true);
+            const meta = allMetadata.filter(predicate);
+            meta.forEach((entry) => found.add(entry));
             const names = new Set(meta.map(({componentName, aliasOf}) => aliasOf ?? componentName));
             if (names.size === 0) {
                 console.error('Cannot determine module name for module file: ', moduleName);
@@ -44,12 +65,13 @@ export default function compileMetadata() {
                 console.error('More than one module name matches module file:', moduleName, names);
                 err = true;
             } else {
-                fs.writeFileSync(path.resolve(`./metadata/modules/${moduleName}.json`), JSON.stringify(meta, null, 2));
+                const moduleMetadata = await metadataFor(meta);
+                fs.writeFileSync(path.resolve(`./metadata/modules/${moduleName}.json`), JSON.stringify(moduleMetadata, null, 2));
             }
         }
-    });
+    }
 
-    const notFound = allMeta.filter(entry => !entry.found);
+    const notFound = allMetadata.filter(entry => !found.has(entry));
     if (notFound.length > 0) {
         console.error(`Could not find module name for metadata`, notFound);
         err = true;

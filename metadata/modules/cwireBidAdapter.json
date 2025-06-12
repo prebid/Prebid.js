@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "cwire",
-    "aliasOf": null,
-    "gvlid": 1081,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.cwi.re/artifacts/iab/iab.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "cwire",
+      "aliasOf": null,
+      "gvlid": 1081,
+      "disclosureURL": "https://cdn.cwi.re/artifacts/iab/iab.json"
+    }
+  ]
+}

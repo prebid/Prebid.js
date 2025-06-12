@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "dmdId",
-    "gvlid": null,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "dmdId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    }
+  ]
+}

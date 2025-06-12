@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "driftpixel",
-    "aliasOf": "driftpixel",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "driftpixel",
+      "aliasOf": "driftpixel",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

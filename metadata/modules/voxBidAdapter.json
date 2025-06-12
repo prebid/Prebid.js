@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "vox",
-    "aliasOf": null,
-    "gvlid": 206,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://st.hybrid.ai/policy/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "vox",
+      "aliasOf": null,
+      "gvlid": 206,
+      "disclosureURL": "https://st.hybrid.ai/policy/deviceStorage.json"
+    }
+  ]
+}

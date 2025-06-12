@@ -27,4 +27,5 @@ export default {
     operaadsIdSystem: 'operaId',
     relevadRtdProvider: 'RelevadRTDModule',
     sirdataRtdProvider: 'SirdataRTDModule',
+    fanBidAdapter: 'freedomadnetwork'
 }

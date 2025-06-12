@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "e_volution",
-    "aliasOf": null,
-    "gvlid": 957,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://e-volution.ai/file.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "e_volution",
+      "aliasOf": null,
+      "gvlid": 957,
+      "disclosureURL": "https://e-volution.ai/file.json"
+    }
+  ]
+}

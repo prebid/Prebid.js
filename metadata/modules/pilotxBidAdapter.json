@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "pilotx",
-    "aliasOf": "pilotx",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "pilotx",
+      "aliasOf": "pilotx",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

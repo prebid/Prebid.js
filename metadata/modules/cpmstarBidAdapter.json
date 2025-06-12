@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "cpmstar",
-    "aliasOf": null,
-    "gvlid": 1317,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.aditude.com/storageaccess.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "cpmstar",
+      "aliasOf": null,
+      "gvlid": 1317,
+      "disclosureURL": "https://www.aditude.com/storageaccess.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "ceeId",
-    "gvlid": 676,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://ssp.wp.pl/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "ceeId",
+      "gvlid": 676,
+      "disclosureURL": "https://ssp.wp.pl/deviceStorage.json",
+      "aliasOf": null
+    }
+  ]
+}

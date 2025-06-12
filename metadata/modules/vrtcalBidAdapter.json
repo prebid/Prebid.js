@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "vrtcal",
-    "aliasOf": null,
-    "gvlid": 706,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://vrtcal.com/docs/gdpr-tcf-disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "vrtcal",
+      "aliasOf": null,
+      "gvlid": 706,
+      "disclosureURL": "https://vrtcal.com/docs/gdpr-tcf-disclosures.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "kubient",
-    "aliasOf": null,
-    "gvlid": 794,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://kubient.com/wp-content/uploads/2022/08/TCFv2.json": null
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "kubient",
+      "aliasOf": null,
+      "gvlid": 794,
+      "disclosureURL": "https://kubient.com/wp-content/uploads/2022/08/TCFv2.json"
+    }
+  ]
+}

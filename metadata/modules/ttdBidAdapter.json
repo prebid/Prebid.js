@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ttd",
-    "aliasOf": null,
-    "gvlid": 21,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://ttd-misc-public-assets.s3.us-west-2.amazonaws.com/deviceStorageDisclosureURL.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "thetradedesk",
-    "aliasOf": "ttd",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ttd",
+      "aliasOf": null,
+      "gvlid": 21,
+      "disclosureURL": "https://ttd-misc-public-assets.s3.us-west-2.amazonaws.com/deviceStorageDisclosureURL.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "thetradedesk",
+      "aliasOf": "ttd",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adyoulike",
-    "aliasOf": null,
-    "gvlid": 259,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://adyoulike.com/deviceStorageDisclosureURL.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "ayl",
-    "aliasOf": "adyoulike",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adyoulike",
+      "aliasOf": null,
+      "gvlid": 259,
+      "disclosureURL": "https://adyoulike.com/deviceStorageDisclosureURL.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ayl",
+      "aliasOf": "adyoulike",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

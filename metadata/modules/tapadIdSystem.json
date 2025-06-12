@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "tapadId",
-    "gvlid": null,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "tapadId",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    }
+  ]
+}

@@ -1,10 +1,76 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "insticator",
-    "aliasOf": null,
-    "gvlid": 910,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.insticator.com/iab/device-storage-disclosure.json": [
+      {
+        "identifier": "visitorGeo",
+        "type": "cookie",
+        "maxAgeSeconds": 86400,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          7,
+          9,
+          10
+        ]
+      },
+      {
+        "identifier": "visitorCity",
+        "type": "cookie",
+        "maxAgeSeconds": 86400,
+        "cookieRefresh": false,
+        "purposes": [
+          1
+        ]
+      },
+      {
+        "identifier": "visitorIp",
+        "type": "cookie",
+        "maxAgeSeconds": 86400,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          7,
+          9,
+          10
+        ]
+      },
+      {
+        "identifier": "heCooldown",
+        "type": "cookie",
+        "maxAgeSeconds": 10800,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          7,
+          9,
+          10
+        ]
+      },
+      {
+        "identifier": "AMZN-Token",
+        "type": "cookie",
+        "maxAgeSeconds": 604800,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          7,
+          9,
+          10
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "insticator",
+      "aliasOf": null,
+      "gvlid": 910,
+      "disclosureURL": "https://cdn.insticator.com/iab/device-storage-disclosure.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "bidmatic",
-    "aliasOf": null,
-    "gvlid": 1134,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://bidmatic.io/.well-known/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "bidmatic",
+      "aliasOf": null,
+      "gvlid": 1134,
+      "disclosureURL": "https://bidmatic.io/.well-known/deviceStorage.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "czechAdId",
-    "gvlid": 570,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cpex.cz/storagedisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "czechAdId",
+      "gvlid": 570,
+      "disclosureURL": "https://cpex.cz/storagedisclosure.json",
+      "aliasOf": null
+    }
+  ]
+}

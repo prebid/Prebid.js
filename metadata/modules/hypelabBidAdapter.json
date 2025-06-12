@@ -1,18 +1,19 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "hypelab",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "hype",
-    "aliasOf": "hypelab",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "hypelab",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "hype",
+      "aliasOf": "hypelab",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

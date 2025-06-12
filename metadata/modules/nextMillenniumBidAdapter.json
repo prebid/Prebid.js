@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "nextMillennium",
-    "aliasOf": null,
-    "gvlid": 1060,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://nextmillennium.io/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "nextMillennium",
+      "aliasOf": null,
+      "gvlid": 1060,
+      "disclosureURL": "https://nextmillennium.io/deviceStorage.json"
+    }
+  ]
+}

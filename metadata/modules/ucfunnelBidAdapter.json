@@ -1,10 +1,11 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ucfunnel",
-    "aliasOf": null,
-    "gvlid": 607,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ucfunnel",
+      "aliasOf": null,
+      "gvlid": 607
+    }
+  ]
+}

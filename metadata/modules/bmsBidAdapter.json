@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "bms",
-    "aliasOf": null,
-    "gvlid": 1105,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.bluems.com/iab.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "bms",
+      "aliasOf": null,
+      "gvlid": 1105,
+      "disclosureURL": "https://www.bluems.com/iab.json"
+    }
+  ]
+}

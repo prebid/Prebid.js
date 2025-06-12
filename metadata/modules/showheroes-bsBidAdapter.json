@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "showheroes-bs",
-    "aliasOf": null,
-    "gvlid": 111,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://static-origin.showheroes.com/gvl_storage_disclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "showheroesBs",
-    "aliasOf": "showheroes-bs",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "showheroes-bs",
+      "aliasOf": null,
+      "gvlid": 111,
+      "disclosureURL": "https://static-origin.showheroes.com/gvl_storage_disclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "showheroesBs",
+      "aliasOf": "showheroes-bs",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

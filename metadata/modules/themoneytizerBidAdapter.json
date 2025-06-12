@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "themoneytizer",
-    "aliasOf": "themoneytizer",
-    "gvlid": 1265,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.themoneytizer.com/deviceStorage.php": null
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "themoneytizer",
+      "aliasOf": "themoneytizer",
+      "gvlid": 1265,
+      "disclosureURL": "https://www.themoneytizer.com/deviceStorage.php"
+    }
+  ]
+}

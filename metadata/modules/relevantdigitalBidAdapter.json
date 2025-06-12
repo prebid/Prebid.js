@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "relevantdigital",
-    "aliasOf": null,
-    "gvlid": 1100,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.relevant-digital.com/resources/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "relevantdigital",
+      "aliasOf": null,
+      "gvlid": 1100,
+      "disclosureURL": "https://cdn.relevant-digital.com/resources/deviceStorage.json"
+    }
+  ]
+}

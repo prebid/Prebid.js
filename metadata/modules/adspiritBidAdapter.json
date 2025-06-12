@@ -1,18 +1,19 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adspirit",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "twiago",
-    "aliasOf": "adspirit",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adspirit",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "twiago",
+      "aliasOf": "adspirit",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

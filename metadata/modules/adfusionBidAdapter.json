@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adfusion",
-    "aliasOf": null,
-    "gvlid": 844,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://spicyrtb.com/static/iab-disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adfusion",
+      "aliasOf": null,
+      "gvlid": 844,
+      "disclosureURL": "https://spicyrtb.com/static/iab-disclosure.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mgidX",
-    "aliasOf": null,
-    "gvlid": 358,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.mgid.com/assets/devicestorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mgidX",
+      "aliasOf": null,
+      "gvlid": 358,
+      "disclosureURL": "https://www.mgid.com/assets/devicestorage.json"
+    }
+  ]
+}

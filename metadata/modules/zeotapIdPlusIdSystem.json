@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "zeotapIdPlus",
-    "gvlid": 301,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://spl.zeotap.com/assets/iab-disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "zeotapIdPlus",
+      "gvlid": 301,
+      "disclosureURL": "https://spl.zeotap.com/assets/iab-disclosure.json",
+      "aliasOf": null
+    }
+  ]
+}

@@ -1,26 +1,26 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adverxo",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "adport",
-    "aliasOf": "adverxo",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "bidsmind",
-    "aliasOf": "adverxo",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adverxo",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adport",
+      "aliasOf": "adverxo",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bidsmind",
+      "aliasOf": "adverxo",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

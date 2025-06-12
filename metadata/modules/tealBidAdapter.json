@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "teal",
-    "aliasOf": null,
-    "gvlid": 1378,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://c.bids.ws/iab/disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "teal",
+      "aliasOf": null,
+      "gvlid": 1378,
+      "disclosureURL": "https://c.bids.ws/iab/disclosures.json"
+    }
+  ]
+}

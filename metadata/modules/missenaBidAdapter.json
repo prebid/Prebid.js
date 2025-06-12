@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "missena",
-    "aliasOf": null,
-    "gvlid": 687,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://ad.missena.io/iab.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "msna",
-    "aliasOf": "missena",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "missena",
+      "aliasOf": null,
+      "gvlid": 687,
+      "disclosureURL": "https://ad.missena.io/iab.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "msna",
+      "aliasOf": "missena",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

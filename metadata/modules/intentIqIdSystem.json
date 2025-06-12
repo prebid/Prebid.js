@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "intentIqId",
-    "gvlid": "1323",
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://agent.intentiq.com/GDPR/gdpr.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "intentIqId",
+      "gvlid": "1323",
+      "disclosureURL": "https://agent.intentiq.com/GDPR/gdpr.json",
+      "aliasOf": null
+    }
+  ]
+}

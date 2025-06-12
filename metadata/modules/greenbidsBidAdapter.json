@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "greenbids",
-    "aliasOf": null,
-    "gvlid": 1232,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://swipette.fr/vendorjson.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "greenbids",
+      "aliasOf": null,
+      "gvlid": 1232,
+      "disclosureURL": "https://swipette.fr/vendorjson.json"
+    }
+  ]
+}

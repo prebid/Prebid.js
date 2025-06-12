@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adtarget",
-    "aliasOf": null,
-    "gvlid": 779,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://adtarget.com.tr/.well-known/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adtarget",
+      "aliasOf": null,
+      "gvlid": 779,
+      "disclosureURL": "https://adtarget.com.tr/.well-known/deviceStorage.json"
+    }
+  ]
+}

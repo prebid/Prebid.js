@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adot",
-    "aliasOf": null,
-    "gvlid": 272,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://assets.adotmob.com/tcf/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adot",
+      "aliasOf": null,
+      "gvlid": 272,
+      "disclosureURL": "https://assets.adotmob.com/tcf/tcf.json"
+    }
+  ]
+}

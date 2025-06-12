@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "blue",
-    "aliasOf": null,
-    "gvlid": 620,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://getblue.io/iab/iab.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "blue",
+      "aliasOf": null,
+      "gvlid": 620,
+      "disclosureURL": "https://getblue.io/iab/iab.json"
+    }
+  ]
+}

@@ -1,18 +1,19 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "between",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "btw",
-    "aliasOf": "between",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "between",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "btw",
+      "aliasOf": "between",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

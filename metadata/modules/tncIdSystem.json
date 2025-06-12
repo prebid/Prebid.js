@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "tncId",
-    "gvlid": 750,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://js.tncid.app/iab-tcf-device-storage-disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "tncId",
+      "gvlid": 750,
+      "disclosureURL": "https://js.tncid.app/iab-tcf-device-storage-disclosure.json",
+      "aliasOf": null
+    }
+  ]
+}

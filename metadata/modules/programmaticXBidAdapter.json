@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "programmaticX",
-    "aliasOf": null,
-    "gvlid": 1344,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://progrtb.com/tcf-vendor-disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "programmaticX",
+      "aliasOf": null,
+      "gvlid": 1344,
+      "disclosureURL": "https://progrtb.com/tcf-vendor-disclosures.json"
+    }
+  ]
+}

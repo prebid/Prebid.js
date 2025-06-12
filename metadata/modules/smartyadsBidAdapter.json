@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "smartyads",
-    "aliasOf": null,
-    "gvlid": 534,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://smartyads.com/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "smartyads",
+      "aliasOf": null,
+      "gvlid": 534,
+      "disclosureURL": "https://smartyads.com/tcf.json"
+    }
+  ]
+}

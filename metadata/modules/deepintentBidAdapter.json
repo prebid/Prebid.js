@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "deepintent",
-    "aliasOf": null,
-    "gvlid": 541,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.deepintent.com/iabeurope_vendor_disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "deepintent",
+      "aliasOf": null,
+      "gvlid": 541,
+      "disclosureURL": "https://www.deepintent.com/iabeurope_vendor_disclosures.json"
+    }
+  ]
+}

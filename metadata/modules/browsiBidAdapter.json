@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "browsi",
-    "aliasOf": null,
-    "gvlid": 329,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.browsiprod.com/ads/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "browsi",
+      "aliasOf": null,
+      "gvlid": 329,
+      "disclosureURL": "https://cdn.browsiprod.com/ads/tcf.json"
+    }
+  ]
+}

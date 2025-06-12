@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "distroscale",
-    "aliasOf": null,
-    "gvlid": 754,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://a.jsrdn.com/tcf/tcf-vendor-disclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "ds",
-    "aliasOf": "distroscale",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "distroscale",
+      "aliasOf": null,
+      "gvlid": 754,
+      "disclosureURL": "https://a.jsrdn.com/tcf/tcf-vendor-disclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "ds",
+      "aliasOf": "distroscale",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

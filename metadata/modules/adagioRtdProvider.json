@@ -1,9 +1,13 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "adagio",
-    "gvlid": 617,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://adagio.io/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "adagio",
+      "gvlid": 617,
+      "disclosureURL": "https://adagio.io/deviceStorageDisclosure.json"
+    }
+  ]
+}

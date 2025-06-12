@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "slimcut",
-    "aliasOf": null,
-    "gvlid": 102,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://gdpr.rubiconproject.com/slimcut/devicestoragedisclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "scm",
-    "aliasOf": "slimcut",
-    "gvlid": 102,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "slimcut",
+      "aliasOf": null,
+      "gvlid": 102,
+      "disclosureURL": "https://gdpr.rubiconproject.com/slimcut/devicestoragedisclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "scm",
+      "aliasOf": "slimcut",
+      "gvlid": 102,
+      "disclosureURL": "https://gdpr.rubiconproject.com/slimcut/devicestoragedisclosure.json"
+    }
+  ]
+}

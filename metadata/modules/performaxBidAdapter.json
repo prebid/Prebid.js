@@ -1,18 +1,31 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "performax",
-    "aliasOf": null,
-    "gvlid": 732,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://dale.performax.cz/device-storage": [
+      {
+        "identifier": "px2uid",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "purposes": [
+          3
+        ],
+        "__comment": "px2"
+      }
+    ]
   },
-  {
-    "componentType": "bidder",
-    "componentName": "px",
-    "aliasOf": "performax",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "performax",
+      "aliasOf": null,
+      "gvlid": 732,
+      "disclosureURL": "https://dale.performax.cz/device-storage"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "px",
+      "aliasOf": "performax",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

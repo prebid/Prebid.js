@@ -1,9 +1,11 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "contxtful",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "contxtful",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "silvermob",
-    "aliasOf": null,
-    "gvlid": 1058,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://silvermob.com/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "silvermob",
+      "aliasOf": null,
+      "gvlid": 1058,
+      "disclosureURL": "https://silvermob.com/deviceStorageDisclosure.json"
+    }
+  ]
+}

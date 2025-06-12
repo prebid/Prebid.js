@@ -1,18 +1,32 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "impactify",
-    "aliasOf": null,
-    "gvlid": 606,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://ad.impactify.io/tcfvendors.json": [
+      {
+        "identifier": "_im*",
+        "type": "web",
+        "purposes": [
+          3,
+          4,
+          7,
+          10
+        ]
+      }
+    ]
   },
-  {
-    "componentType": "bidder",
-    "componentName": "imp",
-    "aliasOf": "impactify",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "impactify",
+      "aliasOf": null,
+      "gvlid": 606,
+      "disclosureURL": "https://ad.impactify.io/tcfvendors.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "imp",
+      "aliasOf": "impactify",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

@@ -1,10 +1,47 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ix",
-    "aliasOf": null,
-    "gvlid": 10,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.indexexchange.com/device_storage_disclosure.json": [
+      {
+        "identifier": "IXWRAPPERLiveRampIp",
+        "type": "web",
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "IXWRAPPERMerkleIp",
+        "type": "web",
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "IXWRAPPERAdserverOrgIp",
+        "type": "web",
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "IXWRAPPERlib_mem",
+        "type": "web",
+        "purposes": [
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ix",
+      "aliasOf": null,
+      "gvlid": 10,
+      "disclosureURL": "https://cdn.indexexchange.com/device_storage_disclosure.json"
+    }
+  ]
+}

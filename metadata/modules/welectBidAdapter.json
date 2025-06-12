@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "welect",
-    "aliasOf": null,
-    "gvlid": 282,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://www.welect.de/deviceStorage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "wlt",
-    "aliasOf": "welect",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "welect",
+      "aliasOf": null,
+      "gvlid": 282,
+      "disclosureURL": "https://www.welect.de/deviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "wlt",
+      "aliasOf": "welect",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

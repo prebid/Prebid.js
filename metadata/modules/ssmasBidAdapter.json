@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ssmas",
-    "aliasOf": null,
-    "gvlid": 1183,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://semseoymas.com/iab.json": null
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ssmas",
+      "aliasOf": null,
+      "gvlid": 1183,
+      "disclosureURL": "https://semseoymas.com/iab.json"
+    }
+  ]
+}

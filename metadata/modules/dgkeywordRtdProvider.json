@@ -1,9 +1,11 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "dgkeyword",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "dgkeyword",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

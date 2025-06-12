@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "setupad",
-    "aliasOf": null,
-    "gvlid": 1241,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cookies.stpd.cloud/disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "setupad",
+      "aliasOf": null,
+      "gvlid": 1241,
+      "disclosureURL": "https://cookies.stpd.cloud/disclosures.json"
+    }
+  ]
+}

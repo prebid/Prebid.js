@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "conceptx",
-    "aliasOf": null,
-    "gvlid": 1340,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cncptx.com/device_storage_disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "conceptx",
+      "aliasOf": null,
+      "gvlid": 1340,
+      "disclosureURL": "https://cncptx.com/device_storage_disclosure.json"
+    }
+  ]
+}

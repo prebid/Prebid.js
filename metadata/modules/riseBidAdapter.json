@@ -1,26 +1,29 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "rise",
-    "aliasOf": null,
-    "gvlid": 1043,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://d2pm7iglz0b6eq.cloudfront.net/RiseDeviceStorage.json": [],
+    "https://spotim-prd-static-assets.s3.amazonaws.com/iab/device-storage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "risexchange",
-    "aliasOf": "rise",
-    "gvlid": 1043,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "openwebxchange",
-    "aliasOf": "rise",
-    "gvlid": 280,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "rise",
+      "aliasOf": null,
+      "gvlid": 1043,
+      "disclosureURL": "https://d2pm7iglz0b6eq.cloudfront.net/RiseDeviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "risexchange",
+      "aliasOf": "rise",
+      "gvlid": 1043,
+      "disclosureURL": "https://d2pm7iglz0b6eq.cloudfront.net/RiseDeviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "openwebxchange",
+      "aliasOf": "rise",
+      "gvlid": 280,
+      "disclosureURL": "https://spotim-prd-static-assets.s3.amazonaws.com/iab/device-storage.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "sharethrough",
-    "aliasOf": null,
-    "gvlid": 80,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://assets.sharethrough.com/gvl.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "sharethrough",
+      "aliasOf": null,
+      "gvlid": 80,
+      "disclosureURL": "https://assets.sharethrough.com/gvl.json"
+    }
+  ]
+}

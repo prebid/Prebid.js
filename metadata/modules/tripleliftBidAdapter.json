@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "triplelift",
-    "aliasOf": null,
-    "gvlid": 28,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://triplelift.com/.well-known/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "triplelift",
+      "aliasOf": null,
+      "gvlid": 28,
+      "disclosureURL": "https://triplelift.com/.well-known/deviceStorage.json"
+    }
+  ]
+}

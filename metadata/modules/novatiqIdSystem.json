@@ -1,10 +1,26 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "novatiq",
-    "gvlid": 1119,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://novatiq.com/privacy/iab/novatiq.json": [
+      {
+        "identifier": "novatiq",
+        "type": "cookie",
+        "maxAgeSeconds": 31536000,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          7,
+          10
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "novatiq",
+      "gvlid": 1119,
+      "disclosureURL": "https://novatiq.com/privacy/iab/novatiq.json",
+      "aliasOf": null
+    }
+  ]
+}

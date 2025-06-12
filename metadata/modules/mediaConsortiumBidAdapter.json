@@ -1,10 +1,60 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mediaConsortium",
-    "aliasOf": null,
-    "gvlid": 1112,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.hubvisor.io/assets/deviceStorage.json": [
+      {
+        "identifier": "hbv:turbo-cmp",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1
+        ]
+      },
+      {
+        "identifier": "hbv:remote-configuration",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1
+        ]
+      },
+      {
+        "identifier": "hbv:dynamic-timeout",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1
+        ]
+      },
+      {
+        "identifier": "hbv:ttdid",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1
+        ]
+      },
+      {
+        "identifier": "hbv:client-context",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mediaConsortium",
+      "aliasOf": null,
+      "gvlid": 1112,
+      "disclosureURL": "https://cdn.hubvisor.io/assets/deviceStorage.json"
+    }
+  ]
+}

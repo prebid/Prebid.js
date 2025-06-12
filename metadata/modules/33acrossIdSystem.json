@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "33acrossId",
-    "gvlid": 58,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://platform.33across.com/disclosures.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "33acrossId",
+      "gvlid": 58,
+      "disclosureURL": "https://platform.33across.com/disclosures.json",
+      "aliasOf": null
+    }
+  ]
+}

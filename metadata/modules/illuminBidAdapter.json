@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "illumin",
-    "aliasOf": null,
-    "gvlid": 149,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://admanmedia.com/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "illumin",
+      "aliasOf": null,
+      "gvlid": 149,
+      "disclosureURL": "https://admanmedia.com/deviceStorage.json"
+    }
+  ]
+}

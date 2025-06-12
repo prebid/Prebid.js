@@ -1,26 +1,26 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "xe",
-    "aliasOf": null,
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "xeworks",
-    "aliasOf": "xe",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "lunamediax",
-    "aliasOf": "xe",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "xe",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "xeworks",
+      "aliasOf": "xe",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "lunamediax",
+      "aliasOf": "xe",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "tappx",
-    "aliasOf": null,
-    "gvlid": 628,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://tappx.com/devicestorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "tappx",
+      "aliasOf": null,
+      "gvlid": 628,
+      "disclosureURL": "https://tappx.com/devicestorage.json"
+    }
+  ]
+}

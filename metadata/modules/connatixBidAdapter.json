@@ -1,10 +1,41 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "connatix",
-    "aliasOf": null,
-    "gvlid": 143,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://connatix.com/iab-tcf-disclosure.json": [
+      {
+        "identifier": "cnx_userId",
+        "type": "cookie",
+        "maxAgeSeconds": 2592000,
+        "cookieRefresh": true,
+        "purposes": [
+          1,
+          2,
+          4,
+          7,
+          8
+        ]
+      },
+      {
+        "identifier": "cnx_player_reload",
+        "type": "cookie",
+        "maxAgeSeconds": 60,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          4,
+          7,
+          8
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "connatix",
+      "aliasOf": null,
+      "gvlid": 143,
+      "disclosureURL": "https://connatix.com/iab-tcf-disclosure.json"
+    }
+  ]
+}

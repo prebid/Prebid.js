@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "smaato",
-    "aliasOf": null,
-    "gvlid": 82,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://resources.smaato.com/hubfs/Smaato/IAB/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "smaato",
+      "aliasOf": null,
+      "gvlid": 82,
+      "disclosureURL": "https://resources.smaato.com/hubfs/Smaato/IAB/deviceStorage.json"
+    }
+  ]
+}

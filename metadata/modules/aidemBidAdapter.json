@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "aidem",
-    "aliasOf": null,
-    "gvlid": 1218,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://www.aidem.com/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "aidem",
+      "aliasOf": null,
+      "gvlid": 1218,
+      "disclosureURL": "https://www.aidem.com/tcf.json"
+    }
+  ]
+}

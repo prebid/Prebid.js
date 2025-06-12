@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "minutemedia",
-    "aliasOf": null,
-    "gvlid": 918,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://disclosures.mmctsvc.com/device-storage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "minutemedia",
+      "aliasOf": null,
+      "gvlid": 918,
+      "disclosureURL": "https://disclosures.mmctsvc.com/device-storage.json"
+    }
+  ]
+}

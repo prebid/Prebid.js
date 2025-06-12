@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "loopme",
-    "aliasOf": null,
-    "gvlid": 109,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://co.loopme.com/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "loopme",
+      "aliasOf": null,
+      "gvlid": 109,
+      "disclosureURL": "https://co.loopme.com/deviceStorageDisclosure.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "rubicon",
-    "aliasOf": null,
-    "gvlid": 52,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://gdpr.rubiconproject.com/dvplus/devicestoragedisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "rubicon",
+      "aliasOf": null,
+      "gvlid": 52,
+      "disclosureURL": "https://gdpr.rubiconproject.com/dvplus/devicestoragedisclosure.json"
+    }
+  ]
+}

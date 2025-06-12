@@ -1,9 +1,13 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "mobianBrandSafety",
-    "gvlid": 1348,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://js.outcomes.net/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "mobianBrandSafety",
+      "gvlid": 1348,
+      "disclosureURL": "https://js.outcomes.net/tcf.json"
+    }
+  ]
+}

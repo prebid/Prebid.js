@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "undertone",
-    "aliasOf": null,
-    "gvlid": 677,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.undertone.com/js/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "undertone",
+      "aliasOf": null,
+      "gvlid": 677,
+      "disclosureURL": "https://cdn.undertone.com/js/deviceStorage.json"
+    }
+  ]
+}

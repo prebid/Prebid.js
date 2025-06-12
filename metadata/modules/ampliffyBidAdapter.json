@@ -1,34 +1,35 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ampliffy",
-    "aliasOf": "ampliffy",
-    "gvlid": 1258,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://ads-static.ampliffy.com/iab/device-storage-disclosures.json": null
   },
-  {
-    "componentType": "bidder",
-    "componentName": "amp",
-    "aliasOf": "ampliffy",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "videoffy",
-    "aliasOf": "ampliffy",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "publiffy",
-    "aliasOf": "ampliffy",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ampliffy",
+      "aliasOf": "ampliffy",
+      "gvlid": 1258,
+      "disclosureURL": "https://ads-static.ampliffy.com/iab/device-storage-disclosures.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "amp",
+      "aliasOf": "ampliffy",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "videoffy",
+      "aliasOf": "ampliffy",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "publiffy",
+      "aliasOf": "ampliffy",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

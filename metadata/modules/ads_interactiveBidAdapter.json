@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ads_interactive",
-    "aliasOf": null,
-    "gvlid": 1212,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://adsinteractive.com/vendor.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "adsinteractive",
-    "aliasOf": "ads_interactive",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ads_interactive",
+      "aliasOf": null,
+      "gvlid": 1212,
+      "disclosureURL": "https://adsinteractive.com/vendor.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adsinteractive",
+      "aliasOf": "ads_interactive",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "viewdeosDX",
-    "aliasOf": null,
-    "gvlid": 924,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://www.viewdeos.com/data-storage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "viewdeos",
-    "aliasOf": "viewdeosDX",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "viewdeosDX",
+      "aliasOf": null,
+      "gvlid": 924,
+      "disclosureURL": "https://www.viewdeos.com/data-storage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "viewdeos",
+      "aliasOf": "viewdeosDX",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

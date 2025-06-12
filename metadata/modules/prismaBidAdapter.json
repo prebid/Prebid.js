@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "prisma",
-    "aliasOf": null,
-    "gvlid": 965,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://fast.nexx360.io/deviceStorage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "prismadirect",
-    "aliasOf": "prisma",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "prisma",
+      "aliasOf": null,
+      "gvlid": 965,
+      "disclosureURL": "https://fast.nexx360.io/deviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "prismadirect",
+      "aliasOf": "prisma",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "aduptech",
-    "aliasOf": null,
-    "gvlid": 647,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://s.d.adup-tech.com/gdpr/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "aduptech",
+      "aliasOf": null,
+      "gvlid": 647,
+      "disclosureURL": "https://s.d.adup-tech.com/gdpr/deviceStorage.json"
+    }
+  ]
+}

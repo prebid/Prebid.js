@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adquery",
-    "aliasOf": null,
-    "gvlid": 902,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://api.adquery.io/tcf/adQuery.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adquery",
+      "aliasOf": null,
+      "gvlid": 902,
+      "disclosureURL": "https://api.adquery.io/tcf/adQuery.json"
+    }
+  ]
+}

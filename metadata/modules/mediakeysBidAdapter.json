@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mediakeys",
-    "aliasOf": null,
-    "gvlid": 498,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://resourcekeys.com/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mediakeys",
+      "aliasOf": null,
+      "gvlid": 498,
+      "disclosureURL": "https://resourcekeys.com/deviceStorageDisclosure.json"
+    }
+  ]
+}

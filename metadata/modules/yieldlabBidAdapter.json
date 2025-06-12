@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "yieldlab",
-    "aliasOf": null,
-    "gvlid": 70,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://ad.yieldlab.net/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "yieldlab",
+      "aliasOf": null,
+      "gvlid": 70,
+      "disclosureURL": "https://ad.yieldlab.net/deviceStorage.json"
+    }
+  ]
+}

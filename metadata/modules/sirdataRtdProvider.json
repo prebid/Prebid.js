@@ -1,9 +1,13 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "SirdataRTDModule",
-    "gvlid": 53,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.sirdata.eu/sirdata_device_storage_disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "SirdataRTDModule",
+      "gvlid": 53,
+      "disclosureURL": "https://cdn.sirdata.eu/sirdata_device_storage_disclosure.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adrino",
-    "aliasOf": null,
-    "gvlid": 1072,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.adrino.cloud/iab/device-storage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adrino",
+      "aliasOf": null,
+      "gvlid": 1072,
+      "disclosureURL": "https://cdn.adrino.cloud/iab/device-storage.json"
+    }
+  ]
+}

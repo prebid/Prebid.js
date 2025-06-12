@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "orbidder",
-    "aliasOf": null,
-    "gvlid": 559,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://orbidder.otto.de/disclosure/dsd.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "orbidder",
+      "aliasOf": null,
+      "gvlid": 559,
+      "disclosureURL": "https://orbidder.otto.de/disclosure/dsd.json"
+    }
+  ]
+}

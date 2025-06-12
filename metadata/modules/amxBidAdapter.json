@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "amx",
-    "aliasOf": null,
-    "gvlid": 737,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://assets.a-mo.net/tcf/device-storage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "amx",
+      "aliasOf": null,
+      "gvlid": 737,
+      "disclosureURL": "https://assets.a-mo.net/tcf/device-storage.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "acuityads",
-    "aliasOf": null,
-    "gvlid": 231,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://privacy.acuityads.com/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "acuityads",
+      "aliasOf": null,
+      "gvlid": 231,
+      "disclosureURL": "https://privacy.acuityads.com/deviceStorageDisclosure.json"
+    }
+  ]
+}

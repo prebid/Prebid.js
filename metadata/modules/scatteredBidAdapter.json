@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "scattered",
-    "aliasOf": null,
-    "gvlid": 1179,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://static.scattered.eu/tcf-disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "scattered",
+      "aliasOf": null,
+      "gvlid": 1179,
+      "disclosureURL": "https://static.scattered.eu/tcf-disclosure.json"
+    }
+  ]
+}

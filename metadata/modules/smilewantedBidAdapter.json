@@ -1,26 +1,28 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "smilewanted",
-    "aliasOf": null,
-    "gvlid": 639,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://smilewanted.com/vendor-device-storage-disclosures.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "smile",
-    "aliasOf": "smilewanted",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "sw",
-    "aliasOf": "smilewanted",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "smilewanted",
+      "aliasOf": null,
+      "gvlid": 639,
+      "disclosureURL": "https://smilewanted.com/vendor-device-storage-disclosures.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "smile",
+      "aliasOf": "smilewanted",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "sw",
+      "aliasOf": "smilewanted",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

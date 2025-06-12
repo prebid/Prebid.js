@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "openweb",
-    "aliasOf": null,
-    "gvlid": 280,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://spotim-prd-static-assets.s3.amazonaws.com/iab/device-storage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "openweb",
+      "aliasOf": null,
+      "gvlid": 280,
+      "disclosureURL": "https://spotim-prd-static-assets.s3.amazonaws.com/iab/device-storage.json"
+    }
+  ]
+}

@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "caroda",
-    "aliasOf": null,
-    "gvlid": 954,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn2.caroda.io/tcfvds/2022-05-17/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "caroda",
+      "aliasOf": null,
+      "gvlid": 954,
+      "disclosureURL": "https://cdn2.caroda.io/tcfvds/2022-05-17/deviceStorage.json"
+    }
+  ]
+}

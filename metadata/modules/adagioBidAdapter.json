@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adagio",
-    "aliasOf": null,
-    "gvlid": 617,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://adagio.io/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adagio",
+      "aliasOf": null,
+      "gvlid": 617,
+      "disclosureURL": "https://adagio.io/deviceStorageDisclosure.json"
+    }
+  ]
+}

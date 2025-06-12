@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "mediago",
-    "aliasOf": null,
-    "gvlid": 1020,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.mediago.io/js/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "mediago",
+      "aliasOf": null,
+      "gvlid": 1020,
+      "disclosureURL": "https://cdn.mediago.io/js/tcf.json"
+    }
+  ]
+}

@@ -1,10 +1,12 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "kpuid",
-    "gvlid": null,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "kpuid",
+      "gvlid": null,
+      "disclosureURL": null,
+      "aliasOf": null
+    }
+  ]
+}

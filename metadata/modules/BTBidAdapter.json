@@ -1,10 +1,309 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "blockthrough",
-    "aliasOf": null,
-    "gvlid": 815,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://blockthrough.com/tcf_disclosures.json": [
+      {
+        "identifier": "BT_AA_DETECTION",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "btUserCountry",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "btUserCountryExpiry",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "btUserIsFromRestrictedCountry",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_BUNDLE_VERSION",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_DIGEST_VERSION",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_sid",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "btUserPPID",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "pid",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "uids",
+        "type": "cookie",
+        "maxAgeSeconds": 7776000,
+        "cookieRefresh": true,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_pvSent",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_WHITELISTING_IFRAME_ACCESS",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_MedianBidCPM",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "SOFTWALL_RENDERED",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_SOFTWALL_DISMISSED",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_SOFTWALL_RECOVERED",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_SOFTWALL_RENDER_COUNT",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_SOFTWALL_ABTEST",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_ATTRIBUTION_EXPIRY",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_PREMIUM_ADBLOCK_USER_DETECTED",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_PREMIUM_ADBLOCK_USER_DETECTION_DATE",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          10
+        ]
+      }
+    ]
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "blockthrough",
+      "aliasOf": null,
+      "gvlid": 815,
+      "disclosureURL": "https://blockthrough.com/tcf_disclosures.json"
+    }
+  ]
+}

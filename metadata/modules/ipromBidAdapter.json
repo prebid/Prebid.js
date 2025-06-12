@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "iprom",
-    "aliasOf": null,
-    "gvlid": 811,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://core.iprom.net/info/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "iprom",
+      "aliasOf": null,
+      "gvlid": 811,
+      "disclosureURL": "https://core.iprom.net/info/deviceStorage.json"
+    }
+  ]
+}

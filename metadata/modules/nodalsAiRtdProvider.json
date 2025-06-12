@@ -1,9 +1,13 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "nodalsAi",
-    "gvlid": 1360,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://static.nodals.ai/vendor.json": []
+  },
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "nodalsAi",
+      "gvlid": 1360,
+      "disclosureURL": "https://static.nodals.ai/vendor.json"
+    }
+  ]
+}

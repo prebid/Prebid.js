@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "teads",
-    "aliasOf": null,
-    "gvlid": 132,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://iab-cookie-disclosure.teads.tv/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "teads",
+      "aliasOf": null,
+      "gvlid": 132,
+      "disclosureURL": "https://iab-cookie-disclosure.teads.tv/deviceStorage.json"
+    }
+  ]
+}

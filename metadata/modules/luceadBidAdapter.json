@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "lucead",
-    "aliasOf": null,
-    "gvlid": 1309,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://lucead.com/devicestorage.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "adliveplus",
-    "aliasOf": "lucead",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "lucead",
+      "aliasOf": null,
+      "gvlid": 1309,
+      "disclosureURL": "https://lucead.com/devicestorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adliveplus",
+      "aliasOf": "lucead",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

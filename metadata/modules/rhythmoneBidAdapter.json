@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "rhythmone",
-    "aliasOf": null,
-    "gvlid": 36,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://video.unrulymedia.com/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "rhythmone",
+      "aliasOf": null,
+      "gvlid": 36,
+      "disclosureURL": "https://video.unrulymedia.com/deviceStorageDisclosure.json"
+    }
+  ]
+}

@@ -1,9 +1,10 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "geolocation",
-    "gvlid": "1stParty",
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {},
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "geolocation",
+      "gvlid": "1stParty"
+    }
+  ]
+}

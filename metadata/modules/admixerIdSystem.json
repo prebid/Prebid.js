@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "userId",
-    "componentName": "admixerId",
-    "gvlid": 511,
-    "disclosureURL": null,
-    "aliasOf": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://admixer.com/tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "userId",
+      "componentName": "admixerId",
+      "gvlid": 511,
+      "disclosureURL": "https://admixer.com/tcf.json",
+      "aliasOf": null
+    }
+  ]
+}

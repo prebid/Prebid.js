@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "alkimi",
-    "aliasOf": null,
-    "gvlid": 1169,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://d1xjh92lb8fey3.cloudfront.net/tcf/alkimi_exchange_tcf.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "alkimi",
+      "aliasOf": null,
+      "gvlid": 1169,
+      "disclosureURL": "https://d1xjh92lb8fey3.cloudfront.net/tcf/alkimi_exchange_tcf.json"
+    }
+  ]
+}

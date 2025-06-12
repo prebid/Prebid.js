@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "dspx",
-    "aliasOf": null,
-    "gvlid": 602,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://tcf.adtech.app/gen/deviceStorageDisclosure/os.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "dspx",
+      "aliasOf": null,
+      "gvlid": 602,
+      "disclosureURL": "https://tcf.adtech.app/gen/deviceStorageDisclosure/os.json"
+    }
+  ]
+}

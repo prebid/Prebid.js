@@ -1,26 +1,28 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "freewheel-ssp",
-    "aliasOf": null,
-    "gvlid": 285,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://iab.fwmrm.net/g/devicedisclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "stickyadstv",
-    "aliasOf": "freewheel-ssp",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "freewheelssp",
-    "aliasOf": "freewheel-ssp",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "freewheel-ssp",
+      "aliasOf": null,
+      "gvlid": 285,
+      "disclosureURL": "https://iab.fwmrm.net/g/devicedisclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "stickyadstv",
+      "aliasOf": "freewheel-ssp",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "freewheelssp",
+      "aliasOf": "freewheel-ssp",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

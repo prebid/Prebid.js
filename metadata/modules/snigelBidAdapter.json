@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "snigel",
-    "aliasOf": null,
-    "gvlid": 1076,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://cdn.snigelweb.com/gvl/deviceStorageDisclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "snigel",
+      "aliasOf": null,
+      "gvlid": 1076,
+      "disclosureURL": "https://cdn.snigelweb.com/gvl/deviceStorageDisclosure.json"
+    }
+  ]
+}

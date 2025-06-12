@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "ozone",
-    "aliasOf": null,
-    "gvlid": 524,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://prebid.the-ozone-project.com/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "ozone",
+      "aliasOf": null,
+      "gvlid": 524,
+      "disclosureURL": "https://prebid.the-ozone-project.com/deviceStorage.json"
+    }
+  ]
+}

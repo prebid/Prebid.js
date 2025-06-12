@@ -1,9 +1,13 @@
-[
-  {
-    "componentType": "rtd",
-    "componentName": "weborama",
-    "gvlid": 284,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://weborama.com/deviceStorage.json": []
+  },
+  "components": [
+    {
+      "componentType": "rtd",
+      "componentName": "weborama",
+      "gvlid": 284,
+      "disclosureURL": "https://weborama.com/deviceStorage.json"
+    }
+  ]
+}

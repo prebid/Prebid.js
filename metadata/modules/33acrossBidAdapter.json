@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "33across",
-    "aliasOf": null,
-    "gvlid": 58,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://platform.33across.com/disclosures.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "33across_mgni",
-    "aliasOf": "33across",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "33across",
+      "aliasOf": null,
+      "gvlid": 58,
+      "disclosureURL": "https://platform.33across.com/disclosures.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "33across_mgni",
+      "aliasOf": "33across",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

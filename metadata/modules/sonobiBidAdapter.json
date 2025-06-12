@@ -1,10 +1,14 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "sonobi",
-    "aliasOf": null,
-    "gvlid": 104,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+{
+  "disclosures": {
+    "https://sonobi.com/tcf2-device-storage-disclosure.json": []
+  },
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "sonobi",
+      "aliasOf": null,
+      "gvlid": 104,
+      "disclosureURL": "https://sonobi.com/tcf2-device-storage-disclosure.json"
+    }
+  ]
+}

@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "connectad",
-    "aliasOf": null,
-    "gvlid": 138,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://cdn.connectad.io/tcf_storage_info.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "connectadrealtime",
-    "aliasOf": "connectad",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "connectad",
+      "aliasOf": null,
+      "gvlid": 138,
+      "disclosureURL": "https://cdn.connectad.io/tcf_storage_info.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "connectadrealtime",
+      "aliasOf": "connectad",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

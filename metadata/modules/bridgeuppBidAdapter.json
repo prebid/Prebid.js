@@ -1,18 +1,21 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "sonarads",
-    "aliasOf": null,
-    "gvlid": 1300,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://bridgeupp.com/device-storage-disclosure.json": []
   },
-  {
-    "componentType": "bidder",
-    "componentName": "bridgeupp",
-    "aliasOf": "sonarads",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "sonarads",
+      "aliasOf": null,
+      "gvlid": 1300,
+      "disclosureURL": "https://bridgeupp.com/device-storage-disclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bridgeupp",
+      "aliasOf": "sonarads",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}

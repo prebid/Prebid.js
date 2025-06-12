@@ -1,50 +1,61 @@
-[
-  {
-    "componentType": "bidder",
-    "componentName": "adnuntius",
-    "aliasOf": null,
-    "gvlid": 855,
-    "disclosureURL": null,
-    "found": true
+{
+  "disclosures": {
+    "https://delivery.adnuntius.com/.well-known/deviceStorage.json": [
+      {
+        "identifier": "adn.metaData",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "purposes": [
+          1,
+          2,
+          4,
+          7
+        ]
+      }
+    ]
   },
-  {
-    "componentType": "bidder",
-    "componentName": "adndeal1",
-    "aliasOf": "adnuntius",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "adndeal2",
-    "aliasOf": "adnuntius",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "adndeal3",
-    "aliasOf": "adnuntius",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "adndeal4",
-    "aliasOf": "adnuntius",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "adndeal5",
-    "aliasOf": "adnuntius",
-    "gvlid": null,
-    "disclosureURL": null,
-    "found": true
-  }
-]
+  "components": [
+    {
+      "componentType": "bidder",
+      "componentName": "adnuntius",
+      "aliasOf": null,
+      "gvlid": 855,
+      "disclosureURL": "https://delivery.adnuntius.com/.well-known/deviceStorage.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adndeal1",
+      "aliasOf": "adnuntius",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adndeal2",
+      "aliasOf": "adnuntius",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adndeal3",
+      "aliasOf": "adnuntius",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adndeal4",
+      "aliasOf": "adnuntius",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "adndeal5",
+      "aliasOf": "adnuntius",
+      "gvlid": null,
+      "disclosureURL": null
+    }
+  ]
+}
