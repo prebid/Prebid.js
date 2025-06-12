@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "rtbsape",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "sape",
+    "aliasOf": "rtbsape",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

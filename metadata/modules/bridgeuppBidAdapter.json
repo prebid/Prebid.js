@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "sonarads",
+    "aliasOf": null,
+    "gvlid": 1300,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "bridgeupp",
+    "aliasOf": "sonarads",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

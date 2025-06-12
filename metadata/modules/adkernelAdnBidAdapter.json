@@ -1,0 +1,26 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "adkernelAdn",
+    "aliasOf": null,
+    "gvlid": 14,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "engagesimply",
+    "aliasOf": "adkernelAdn",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adpluto_dsp",
+    "aliasOf": "adkernelAdn",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

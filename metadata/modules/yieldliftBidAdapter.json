@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "yieldlift",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "yl",
+    "aliasOf": "yieldlift",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

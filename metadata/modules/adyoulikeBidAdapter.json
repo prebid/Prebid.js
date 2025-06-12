@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "adyoulike",
+    "aliasOf": null,
+    "gvlid": 259,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "ayl",
+    "aliasOf": "adyoulike",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

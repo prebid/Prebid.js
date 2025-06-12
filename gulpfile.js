@@ -566,5 +566,10 @@ gulp.task('extract-metadata', function (done) {
     }).then(done, done);
   });
 })
-
+gulp.task('compile-metadata', function (done) {
+  import('./metadata/compileMetadata.mjs').then(({default: compile}) => {
+    compile();
+    done();
+  })
+})
 module.exports = nodeBundle;

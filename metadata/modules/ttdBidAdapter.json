@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "ttd",
+    "aliasOf": null,
+    "gvlid": 21,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "thetradedesk",
+    "aliasOf": "ttd",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

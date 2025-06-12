@@ -1,0 +1,34 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "appier",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "appierBR",
+    "aliasOf": "appier",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "appierExt",
+    "aliasOf": "appier",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "appierGM",
+    "aliasOf": "appier",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

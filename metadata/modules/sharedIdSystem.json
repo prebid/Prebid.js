@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "userId",
+    "componentName": "sharedId",
+    "gvlid": "1stParty",
+    "disclosureURL": null,
+    "aliasOf": null,
+    "found": true
+  },
+  {
+    "componentType": "userId",
+    "componentName": "pubCommonId",
+    "gvlid": null,
+    "disclosureURL": null,
+    "aliasOf": "sharedId",
+    "found": true
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "adxcg",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "mediaopti",
+    "aliasOf": "adxcg",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

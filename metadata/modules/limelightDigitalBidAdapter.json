@@ -1,0 +1,82 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "limelightDigital",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "pll",
+    "aliasOf": "limelightDigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "iionads",
+    "aliasOf": "limelightDigital",
+    "gvlid": 1358,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "apester",
+    "aliasOf": "limelightDigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adsyield",
+    "aliasOf": "limelightDigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "tgm",
+    "aliasOf": "limelightDigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adtg_org",
+    "aliasOf": "limelightDigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "velonium",
+    "aliasOf": "limelightDigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "orangeclickmedia",
+    "aliasOf": "limelightDigital",
+    "gvlid": 1148,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "streamvision",
+    "aliasOf": "limelightDigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

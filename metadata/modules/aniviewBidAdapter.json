@@ -1,0 +1,66 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "aniview",
+    "aliasOf": null,
+    "gvlid": 780,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "avantisvideo",
+    "aliasOf": "aniview",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "selectmediavideo",
+    "aliasOf": "aniview",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "vidcrunch",
+    "aliasOf": "aniview",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "openwebvideo",
+    "aliasOf": "aniview",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "didnavideo",
+    "aliasOf": "aniview",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "ottadvisors",
+    "aliasOf": "aniview",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "pgammedia",
+    "aliasOf": "aniview",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "admatic",
+    "aliasOf": null,
+    "gvlid": 1281,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "admaticde",
+    "aliasOf": "admatic",
+    "gvlid": 1281,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "pixad",
+    "aliasOf": "admatic",
+    "gvlid": 1281,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "monetixads",
+    "aliasOf": "admatic",
+    "gvlid": 1281,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "netaddiction",
+    "aliasOf": "admatic",
+    "gvlid": 1281,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adt",
+    "aliasOf": "admatic",
+    "gvlid": 779,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "yobee",
+    "aliasOf": "admatic",
+    "gvlid": 1281,
+    "disclosureURL": null,
+    "found": true
+  }
+]

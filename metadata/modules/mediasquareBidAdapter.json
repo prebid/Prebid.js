@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "mediasquare",
+    "aliasOf": null,
+    "gvlid": 791,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "msq",
+    "aliasOf": "mediasquare",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "cwire",
+    "aliasOf": null,
+    "gvlid": 1081,
+    "disclosureURL": null,
+    "found": true
+  }
+]

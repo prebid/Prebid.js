@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "winr",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "wnr",
+    "aliasOf": "winr",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

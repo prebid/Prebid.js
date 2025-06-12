@@ -1,0 +1,26 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "aseal",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "aotter",
+    "aliasOf": "aseal",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "trek",
+    "aliasOf": "aseal",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

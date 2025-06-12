@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "ads_interactive",
+    "aliasOf": null,
+    "gvlid": 1212,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adsinteractive",
+    "aliasOf": "ads_interactive",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

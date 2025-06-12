@@ -1,0 +1,34 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "orbitsoft",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "oas",
+    "aliasOf": "orbitsoft",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "152media",
+    "aliasOf": "orbitsoft",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "paradocs",
+    "aliasOf": "orbitsoft",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

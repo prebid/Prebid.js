@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "performax",
+    "aliasOf": null,
+    "gvlid": 732,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "px",
+    "aliasOf": "performax",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

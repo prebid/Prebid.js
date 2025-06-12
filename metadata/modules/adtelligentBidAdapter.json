@@ -1,0 +1,66 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "adtelligent",
+    "aliasOf": null,
+    "gvlid": 410,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "streamkey",
+    "aliasOf": "adtelligent",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "janet",
+    "aliasOf": "adtelligent",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "selectmedia",
+    "aliasOf": "adtelligent",
+    "gvlid": 775,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "ocm",
+    "aliasOf": "adtelligent",
+    "gvlid": 1148,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "9dotsmedia",
+    "aliasOf": "adtelligent",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "indicue",
+    "aliasOf": "adtelligent",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "stellormedia",
+    "aliasOf": "adtelligent",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

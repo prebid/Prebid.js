@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "ad2iction",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "ad2",
+    "aliasOf": "ad2iction",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

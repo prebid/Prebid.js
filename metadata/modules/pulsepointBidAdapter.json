@@ -1,0 +1,26 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "pulsepoint",
+    "aliasOf": null,
+    "gvlid": 81,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "pulseLite",
+    "aliasOf": "pulsepoint",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "pulsepointLite",
+    "aliasOf": "pulsepoint",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

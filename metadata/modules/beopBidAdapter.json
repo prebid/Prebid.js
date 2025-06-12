@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "beop",
+    "aliasOf": null,
+    "gvlid": 666,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "bp",
+    "aliasOf": "beop",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

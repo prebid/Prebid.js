@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "connectad",
+    "aliasOf": null,
+    "gvlid": 138,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "connectadrealtime",
+    "aliasOf": "connectad",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

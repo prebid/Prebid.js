@@ -1,0 +1,34 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "adrelevantis",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adr",
+    "aliasOf": "adrelevantis",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adsmart",
+    "aliasOf": "adrelevantis",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "compariola",
+    "aliasOf": "adrelevantis",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

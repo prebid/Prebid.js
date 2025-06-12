@@ -1,0 +1,42 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "grid",
+    "aliasOf": null,
+    "gvlid": 686,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "playwire",
+    "aliasOf": "grid",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adlivetech",
+    "aliasOf": "grid",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "gridNM",
+    "aliasOf": "grid",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "trustx",
+    "aliasOf": "grid",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

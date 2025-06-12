@@ -1,0 +1,122 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "nexx360",
+    "aliasOf": null,
+    "gvlid": 965,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "revenuemaker",
+    "aliasOf": "nexx360",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "first-id",
+    "aliasOf": "nexx360",
+    "gvlid": 1178,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adwebone",
+    "aliasOf": "nexx360",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "league-m",
+    "aliasOf": "nexx360",
+    "gvlid": 965,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "prjads",
+    "aliasOf": "nexx360",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "pubtech",
+    "aliasOf": "nexx360",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "1accord",
+    "aliasOf": "nexx360",
+    "gvlid": 965,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "easybid",
+    "aliasOf": "nexx360",
+    "gvlid": 1068,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "prismassp",
+    "aliasOf": "nexx360",
+    "gvlid": 965,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "spm",
+    "aliasOf": "nexx360",
+    "gvlid": 965,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "bidstailamedia",
+    "aliasOf": "nexx360",
+    "gvlid": 965,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "scoremedia",
+    "aliasOf": "nexx360",
+    "gvlid": 965,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "movingup",
+    "aliasOf": "nexx360",
+    "gvlid": 1416,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "glomexbidder",
+    "aliasOf": "nexx360",
+    "gvlid": 967,
+    "disclosureURL": null,
+    "found": true
+  }
+]

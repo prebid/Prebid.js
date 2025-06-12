@@ -1,0 +1,26 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "oms",
+    "aliasOf": null,
+    "gvlid": 883,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "brightcom",
+    "aliasOf": "oms",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "bcmssp",
+    "aliasOf": "oms",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

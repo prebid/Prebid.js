@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "bmtm",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "brightmountainmedia",
+    "aliasOf": "bmtm",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

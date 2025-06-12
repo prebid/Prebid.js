@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "distroscale",
+    "aliasOf": null,
+    "gvlid": 754,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "ds",
+    "aliasOf": "distroscale",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

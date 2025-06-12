@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "improvedigital",
+    "aliasOf": null,
+    "gvlid": 253,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "id",
+    "aliasOf": "improvedigital",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "aso",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "bcmint",
+    "aliasOf": "aso",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "bidgency",
+    "aliasOf": "aso",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "kuantyx",
+    "aliasOf": "aso",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "cordless",
+    "aliasOf": "aso",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

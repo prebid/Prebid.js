@@ -1,0 +1,34 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "ampliffy",
+    "aliasOf": "ampliffy",
+    "gvlid": 1258,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "amp",
+    "aliasOf": "ampliffy",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "videoffy",
+    "aliasOf": "ampliffy",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "publiffy",
+    "aliasOf": "ampliffy",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

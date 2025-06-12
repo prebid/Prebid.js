@@ -1,0 +1,26 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "apacdex",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "quantumdex",
+    "aliasOf": "apacdex",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "valueimpression",
+    "aliasOf": "apacdex",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "seedtag",
+    "aliasOf": null,
+    "gvlid": 157,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "st",
+    "aliasOf": "seedtag",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "coinzilla",
+    "aliasOf": null,
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "czlla",
+    "aliasOf": "coinzilla",
+    "gvlid": null,
+    "disclosureURL": null,
+    "found": true
+  }
+]

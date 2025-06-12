@@ -1,0 +1,26 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "adf",
+    "aliasOf": null,
+    "gvlid": 50,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adformOpenRTB",
+    "aliasOf": "adf",
+    "gvlid": 50,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "adform",
+    "aliasOf": "adf",
+    "gvlid": 50,
+    "disclosureURL": null,
+    "found": true
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "componentType": "bidder",
+    "componentName": "dianomi",
+    "aliasOf": null,
+    "gvlid": 885,
+    "disclosureURL": null,
+    "found": true
+  },
+  {
+    "componentType": "bidder",
+    "componentName": "dia",
+    "aliasOf": "dianomi",
+    "gvlid": 885,
+    "disclosureURL": null,
+    "found": true
+  }
+]

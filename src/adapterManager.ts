@@ -435,6 +435,7 @@ declare module './hook' {
 
 const adapterManager = {
     bidderRegistry: _bidderRegistry,
+    analyticsRegistry: _analyticsRegistry,
     /**
      * Map from alias codes to the bidder code they alias.
      */
