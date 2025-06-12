@@ -22,7 +22,7 @@ export interface PrebidJS {
     /**
      * Optional scheduler used by pbYield().
      */
-    scheduler?: { yield?: () => Promise<void> }
+    scheduler?: { yield: () => Promise<void> }
 }
 
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
