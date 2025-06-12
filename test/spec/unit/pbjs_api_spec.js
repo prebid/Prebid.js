@@ -208,7 +208,7 @@ describe('Unit: Prebid Module', function () {
   }
   before((done) => {
     hook.ready();
-    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    pbjsModule.requestBids.getHooks().remove();
     resetDebugging();
     getBidToRender.before(getBidToRenderHook, 100);
     // preload creative renderer
@@ -284,7 +284,7 @@ describe('Unit: Prebid Module', function () {
     }
 
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
+      pbjsModule.requestBids.before(deferringHook, 99);
       hookRan = new Promise((resolve) => {
         done = resolve;
       });
@@ -292,7 +292,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     afterEach(() => {
-      $$PREBID_GLOBAL$$.requestBids.getHooks({hook: deferringHook}).remove();
+      pbjsModule.requestBids.getHooks({hook: deferringHook}).remove();
       $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length);
     })
 
@@ -1281,13 +1281,6 @@ describe('Unit: Prebid Module', function () {
       })
     });
 
-    it('should log message with bid id', function () {
-      return renderAd(doc, bidId).then(() => {
-        var message = 'Calling renderAd with adId :' + bidId;
-        assert.ok(spyLogMessage.calledWith(message), 'expected message was logged');
-      })
-    });
-
     it('should write the ad to the doc', function () {
       pushBidResponseToAuction({
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
@@ -1397,16 +1390,12 @@ describe('Unit: Prebid Module', function () {
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
       });
       return renderAd(doc, bidId).then(() => {
-        var message = 'Calling renderAd with adId :' + bidId;
-        sinon.assert.calledWith(spyLogMessage, message);
-
         sinon.assert.calledOnce(spyAddWinningBid);
         sinon.assert.calledWith(spyAddWinningBid, adResponse);
       });
     });
 
     it('should warn stale rendering', function () {
-      var message = 'Calling renderAd with adId :' + bidId;
       var warning = `Ad id ${bidId} has been rendered before`;
       var onWonEvent = sinon.stub();
       var onStaleEvent = sinon.stub();
@@ -1420,7 +1409,6 @@ describe('Unit: Prebid Module', function () {
 
       // First render should pass with no warning and added to winning bids
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.neverCalledWith(spyLogWarn, warning);
 
         sinon.assert.calledOnce(spyAddWinningBid);
@@ -1440,7 +1428,6 @@ describe('Unit: Prebid Module', function () {
         return renderAd(doc, bidId);
       }).then(() => {
         // Second render should have a warning but still be rendered
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.calledWith(spyLogWarn, warning);
         sinon.assert.calledWith(onStaleEvent, adResponse);
         sinon.assert.called(doc.write);
@@ -1452,7 +1439,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should stop stale rendering', function () {
-      var message = 'Calling renderAd with adId :' + bidId;
       var warning = `Ad id ${bidId} has been rendered before`;
       var onWonEvent = sinon.stub();
       var onStaleEvent = sinon.stub();
@@ -1469,7 +1455,6 @@ describe('Unit: Prebid Module', function () {
 
       // First render should pass with no warning and added to winning bids
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.neverCalledWith(spyLogWarn, warning);
 
         sinon.assert.calledOnce(spyAddWinningBid);
@@ -1489,7 +1474,6 @@ describe('Unit: Prebid Module', function () {
         // Second render should have a warning and do not proceed further
         return renderAd(doc, bidId);
       }).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.calledWith(spyLogWarn, warning);
 
         sinon.assert.notCalled(spyAddWinningBid);
@@ -1680,11 +1664,11 @@ describe('Unit: Prebid Module', function () {
 
       beforeEach(() => {
         // make sure the return value works correctly when hooks give up priority
-        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+        pbjsModule.requestBids.before(delayHook)
       });
 
       afterEach(() => {
-        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+        pbjsModule.requestBids.getHooks({hook: delayHook}).remove();
       });
 
       Object.entries({

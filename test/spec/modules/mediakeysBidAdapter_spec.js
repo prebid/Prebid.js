@@ -692,15 +692,6 @@ describe('mediakeysBidAdapter', function () {
       expect(response06.length).to.equal(0);
     });
 
-    it('Log an error', function () {
-      const bidRequests = [utils.deepClone(bid)];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      sinon.stub(utils, 'isArray').throws();
-      utilsMock.expects('logError').once();
-      spec.interpretResponse(rawServerResponse, request);
-      utils.isArray.restore();
-    });
-
     it('Meta Primary category handling', function() {
       const rawServerResponseCopy = utils.deepClone(rawServerResponse);
       const rawServerResponseCopy2 = utils.deepClone(rawServerResponse);

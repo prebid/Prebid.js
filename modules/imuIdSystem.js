@@ -8,8 +8,9 @@
 import { timestamp, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js'
 import { submodule } from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -57,10 +58,11 @@ export function getLocalData() {
 }
 
 export function getApiUrl(cid, url) {
-  if (url) {
-    return `${url}?cid=${cid}`;
-  }
-  return `https://${apiDomain}/${cid}/pid`;
+  const baseUrl = url ? `${url}?cid=${cid}&` : `https://${apiDomain}/${cid}/pid?`;
+  const refererInfo = getRefererInfo();
+  return baseUrl +
+    `page=${encodeURIComponent(refererInfo.page || '')}` +
+    `&ref=${encodeURIComponent(refererInfo.ref || '')}`;
 }
 
 export function apiSuccessProcess(jsonResponse) {

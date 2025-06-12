@@ -7,7 +7,6 @@ var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
 const fs = require('fs');
-const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
 const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
 var plugins = [
@@ -45,10 +44,21 @@ module.exports = {
     type: 'filesystem',
     cacheDirectory: path.resolve(__dirname, '.cache/webpack')
   },
+  context: helpers.getPrecompiledPath(),
   resolve: {
     modules: [
-      path.resolve('.'),
+      helpers.getPrecompiledPath(),
       'node_modules'
+    ],
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: path.resolve('./node_modules'),
+        enforce: "pre",
+        use: ["source-map-loader"],
+      },
     ],
   },
   entry: (() => {
@@ -75,34 +85,6 @@ module.exports = {
     chunkLoadingGlobal: prebid.globalVarName + 'Chunk',
     chunkLoading: 'jsonp',
   },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: path.resolve('./node_modules'), // required to prevent loader from choking non-Prebid.js node_modules
-        use: [
-          {
-            loader: 'babel-loader',
-            options: Object.assign(
-              {cacheDirectory: cacheDir, cacheCompression: false},
-              babelConfig,
-              helpers.getAnalyticsOptions()
-            ),
-          }
-        ]
-      },
-      { // This makes sure babel-loader is ran on our intended Prebid.js modules that happen to be in node_modules
-        test: /\.js$/,
-        include: helpers.getArgModules().map(module => new RegExp('node_modules/' + module + '/')),
-        use: [
-          {
-            loader: 'babel-loader',
-            options: Object.assign({cacheDirectory: cacheDir, cacheCompression: false}, babelConfig)
-          }
-        ],
-      }
-    ]
-  },
   optimization: {
     usedExports: true,
     sideEffects: true,
@@ -124,7 +106,7 @@ module.exports = {
           fs.readdirSync(libRoot)
             .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
             .map(lib => {
-              const dir = path.resolve(libRoot, lib)
+              const dir = helpers.getPrecompiledPath(lib)
               const def = {
                 name: lib,
                 test: (module) => {
@@ -134,13 +116,22 @@ module.exports = {
               return [lib, def];
             })
         );
-        const core = path.resolve('./src');
+        const core = helpers.getPrecompiledPath('./src');
+        const nodeMods = path.resolve(__dirname, 'node_modules')
+        const precompiled = helpers.getPrecompiledPath();
 
         return Object.assign(libraries, {
           core: {
             name: 'chunk-core',
             test: (module) => {
-              return module.resource && module.resource.startsWith(core);
+              let resource = module.resource;
+              if (resource) {
+                if (resource.startsWith(__dirname) &&
+                  !(resource.startsWith(precompiled) || resource.startsWith(nodeMods))) {
+                  throw new Error(`Un-precompiled module: ${resource}`)
+                }
+                return resource.startsWith(core);
+              }
             }
           },
         }, {
