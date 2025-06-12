@@ -187,7 +187,7 @@ Features that can be disabled this way are:
 - `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
 - `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).
 
-`GREEDY` is disabled by default. Use `--enable GREEDY` on the `gulp build` command or remove it from `disableFeatures` to restore the original behavior.
+`GREEDY` is disabled by default. Use `--enable GREEDY` on the `gulp build` command or remove it from `disableFeatures` to restore the original behavior. If you disable any other feature, you must explicitly also disable GREEDY to get the default behavior.
 
 #### Greedy promises
 
