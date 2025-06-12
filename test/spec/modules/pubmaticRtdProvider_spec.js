@@ -940,7 +940,6 @@ describe('Pubmatic RTD Provider', () => {
                 
                 if (multiplierLogCall) {
                     // For debugging: log the actual arguments
-                    console.log("Log call arguments:", JSON.stringify(multiplierLogCall.args));
                     
                     // Find the argument that contains our multiplier info
                     const logArg = multiplierLogCall.args.find(arg => 
@@ -1228,6 +1227,151 @@ describe('Pubmatic RTD Provider', () => {
                 // Since finding floor values from bidder requests depends on implementation details
                 // we'll just verify the type rather than specific value
                 expect(result['Div2']['pm_ym_flrv']).to.be.a('string');
+            });
+
+            it('should handle no bid scenario correctly for multi-format ad unit with different floors', function () {
+                // Create profileConfigs with pmTargetingKeys enabled
+                const profileConfigsMock = {
+                    plugins: {
+                        dynamicFloors: {
+                            pmTargetingKeys: {
+                                enabled: true,
+                                multiplier: {
+                                    nobid: 1.2  // Explicit nobid multiplier
+                                }
+                            }
+                        }
+                    }
+                };
+                
+                // Store the original value to restore it later
+                const originalProfileConfigs = getProfileConfigs();
+                // Set profileConfigs to our mock
+                setProfileConfigs(profileConfigsMock);
+                
+                // Create ad unit codes to test
+                const adUnitCodes = ['multiFormatDiv'];
+                const config = {};
+                const userConsent = {};
+                
+                // Mock getFloor implementation that returns different floors for different media types
+                const mockGetFloor = (params) => {
+                    const floors = {
+                        'banner': 0.50,  // Higher floor for banner
+                        'video': 0.25    // Lower floor for video
+                    };
+                    
+                    return {
+                        floor: floors[params.mediaType] || 0.10,
+                        currency: 'USD'
+                    };
+                };
+                
+                // Create a mock auction with a multi-format ad unit (banner + video)
+                const auction = {
+                    "auctionId": "multi-format-test-auction",
+                    "auctionStatus": "completed",
+                    "adUnits": [
+                        {
+                            "code": "multiFormatDiv",
+                            "mediaTypes": {
+                                "banner": { 
+                                    "sizes": [[300, 250], [300, 600]] 
+                                },
+                                "video": {
+                                    "playerSize": [[640, 480]],
+                                    "context": "instream"
+                                }
+                            },
+                            "bids": [
+                                {
+                                    "bidder": "pubmatic",
+                                    "params": {
+                                        "publisherId": "test-publisher",
+                                        "adSlot": "/test/slot"
+                                    },
+                                    "floorData": {
+                                        "floorProvider": "PM"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "adUnitCodes": ["multiFormatDiv"],
+                    "bidderRequests": [
+                        {
+                            "bidderCode": "pubmatic",
+                            "auctionId": "multi-format-test-auction",
+                            "bids": [
+                                {
+                                    "bidder": "pubmatic",
+                                    "adUnitCode": "multiFormatDiv",
+                                    "mediaTypes": {
+                                        "banner": { 
+                                            "sizes": [[300, 250], [300, 600]] 
+                                        },
+                                        "video": {
+                                            "playerSize": [[640, 480]],
+                                            "context": "instream"
+                                        }
+                                    },
+                                    "floorData": {
+                                        "floorProvider": "PM"
+                                    },
+                                    "getFloor": mockGetFloor
+                                }
+                            ]
+                        }
+                    ],
+                    "noBids": [
+                        {
+                            "bidder": "pubmatic",
+                            "adUnitCode": "multiFormatDiv",
+                            "floorData": {
+                                "floorProvider": "PM"
+                            }
+                        }
+                    ],
+                    "bidsReceived": [],
+                    "bidsRejected": [],
+                    "winningBids": []
+                };
+                
+                // Create a spy to monitor the getFloor calls
+                const getFloorSpy = sinon.spy(auction.bidderRequests[0].bids[0], "getFloor");
+                
+                // Run the targeting function
+                const result = getTargetingData(adUnitCodes, config, userConsent, auction);
+                
+                // Restore the original value
+                setProfileConfigs(originalProfileConfigs);
+                
+                // Verify correct values for no bid scenario
+                expect(result['multiFormatDiv']['pm_ym_flrs']).to.equal(1);  // RTD floor was applied
+                expect(result['multiFormatDiv']['pm_ym_bid_s']).to.equal(0);  // NOBID status
+                
+                // Verify that getFloor was called with both media types
+                expect(getFloorSpy.called).to.be.true;
+                let bannerCallFound = false;
+                let videoCallFound = false;
+                
+                getFloorSpy.getCalls().forEach(call => {
+                    const args = call.args[0];
+                    if (args.mediaType === 'banner') bannerCallFound = true;
+                    if (args.mediaType === 'video') videoCallFound = true;
+                });
+                
+                expect(bannerCallFound).to.be.true; // Verify banner format was checked
+                expect(videoCallFound).to.be.true;  // Verify video format was checked
+                
+                // Since we created the mockGetFloor to return 0.25 for video (lower than 0.50 for banner),
+                // we expect the RTD provider to use the minimum floor value (0.25)
+                // We can't test the exact value due to multiplier application, but we can make sure
+                // it's derived from the lower value
+                expect(parseFloat(result['multiFormatDiv']['pm_ym_flrv'])).to.be.closeTo(0.25 * 1.2, 0.001); // 0.25 * nobid multiplier (1.2)
+                
+                // Clean up
+                getFloorSpy.restore();
             });
 
         });

@@ -182,9 +182,28 @@ function findWinningBid(adUnitCode) {
   }
 }
 
-// Find a bid with floor data
+// Find a bid with the minimum floor value
 function findBidWithFloor(bids) {
-  return bids.find(bid => bid.floorData?.floorValue);
+  let bidWithMinFloor = null;
+  let minFloorValue = Infinity;
+  
+  if (!bids || !bids.length) return null;
+  
+  for (const bid of bids) {
+    if (bid.floorData?.floorValue && 
+        !isNaN(parseFloat(bid.floorData.floorValue)) && 
+        parseFloat(bid.floorData.floorValue) < minFloorValue) {
+      minFloorValue = parseFloat(bid.floorData.floorValue);
+      bidWithMinFloor = bid;
+    }
+  }
+  
+  // Log the result for debugging
+  if (bidWithMinFloor) {
+    logInfo(CONSTANTS.LOG_PRE_FIX, `Found bid with minimum floor value: ${minFloorValue}`);
+  }
+  
+  return bidWithMinFloor;
 }
 
 // Find floor value from bidder requests
@@ -207,34 +226,76 @@ function findFloorValueFromBidderRequests(auction, code) {
     return 0;
   }
 
-  // Helper function to extract sizes from a source object
+  // Helper function to extract sizes with their media types from a source object
   const extractSizes = (source) => {
-    if (source?.mediaTypes?.banner?.sizes) return source.mediaTypes.banner.sizes;
-    if (source?.sizes) return source.sizes;
-    return null;
+    if (!source) return null;
+    
+    const result = [];
+    
+    // Extract banner sizes
+    if (source.mediaTypes?.banner?.sizes) {
+      source.mediaTypes.banner.sizes.forEach(size => {
+        result.push({
+          size,
+          mediaType: 'banner'
+        });
+      });
+    }
+    
+    // Extract video sizes
+    if (source.mediaTypes?.video?.playerSize) {
+      const playerSize = source.mediaTypes.video.playerSize;
+      // Handle both formats: [[w, h]] and [w, h]
+      const videoSizes = Array.isArray(playerSize[0]) ? playerSize : [playerSize];
+      
+      videoSizes.forEach(size => {
+        result.push({
+          size,
+          mediaType: 'video'
+        });
+      });
+    }
+    
+    // Use general sizes as fallback if no specific media types found
+    if (result.length === 0 && source.sizes) {
+      source.sizes.forEach(size => {
+        result.push({
+          size,
+          mediaType: 'banner' // Default to banner for general sizes
+        });
+      });
+    }
+    
+    return result.length > 0 ? result : null;
   };
 
   // Try to get sizes from different sources in order of preference
   const adUnit = auction.adUnits?.find(unit => unit.code === code);
-  const sizes = extractSizes(adUnit) || extractSizes(bidWithGetFloor) || [['*', '*']];
-
-  if (sizes.length === 1 && sizes[0][0] === '*') {
+  let sizes = extractSizes(adUnit) || extractSizes(bidWithGetFloor);
+  
+  // Handle fallback to wildcard size if no sizes found
+  if (!sizes) {
+    sizes = [{ size: ['*', '*'], mediaType: 'banner' }];
     logInfo(CONSTANTS.LOG_PRE_FIX, `No sizes found, using wildcard size for ad unit: ${code}`);
   }
 
   // Try to get floor values for each size
   let minFloor = -1;
   
-  for (const size of sizes) {
+  for (const sizeObj of sizes) {
+    // Extract size and mediaType from the object
+    const { size, mediaType } = sizeObj;
+    
+    // Call getFloor with the appropriate media type
     const floorInfo = bidWithGetFloor.getFloor({
       currency: 'USD', // Default currency
-      mediaType: 'banner', // Default media type
-      size
+      mediaType: mediaType, // Use the media type we extracted
+      size: size
     });
 
     if (floorInfo?.floor && !isNaN(parseFloat(floorInfo.floor))) {
       const floorValue = parseFloat(floorInfo.floor);
-      logInfo(CONSTANTS.LOG_PRE_FIX, `Floor value for size ${size}: ${floorValue}`);
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Floor value for ${mediaType} size ${size}: ${floorValue}`);
 
       // Update minimum floor value
       minFloor = minFloor === -1 ? floorValue : Math.min(minFloor, floorValue);
