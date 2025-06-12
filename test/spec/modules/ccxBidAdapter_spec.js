@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd';
+import {addFPDToBidderRequest} from '../../helpers/fpd';
 import { spec } from 'modules/ccxBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -46,12 +46,12 @@ describe('ccxAdapter', function () {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
       expect(spec.isBidRequestValid(bids[1])).to.be.true;
     });
-    it('Invalid bid reqeusts - no placementId', function () {
+    it('Invalid bid requests - no placementId', function () {
       let bidsClone = utils.deepClone(bids);
       bidsClone[0].params = undefined;
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
     });
-    it('Invalid bid reqeusts - invalid banner sizes', function () {
+    it('Invalid bid requests - invalid banner sizes', function () {
       let bidsClone = utils.deepClone(bids);
       bidsClone[0].mediaTypes.banner.sizes = [300, 250];
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
@@ -60,14 +60,14 @@ describe('ccxAdapter', function () {
       bidsClone[0].mediaTypes.banner.sizes = [];
       expect(spec.isBidRequestValid(bidsClone[0])).to.be.false;
     });
-    it('Invalid bid reqeusts - invalid video sizes', function () {
+    it('Invalid bid requests - invalid video sizes', function () {
       let bidsClone = utils.deepClone(bids);
       bidsClone[1].mediaTypes.video.playerSize = [];
       expect(spec.isBidRequestValid(bidsClone[1])).to.be.false;
       bidsClone[1].mediaTypes.video.sizes = [640, 480];
       expect(spec.isBidRequestValid(bidsClone[1])).to.be.false;
     });
-    it('Valid bid reqeust - old style sizes', function () {
+    it('Valid bid request - old style sizes', function () {
       let bidsClone = utils.deepClone(bids);
       delete (bidsClone[0].mediaTypes);
       delete (bidsClone[1].mediaTypes);
@@ -497,7 +497,7 @@ describe('ccxAdapter', function () {
   });
 
   describe('FLEDGE', function () {
-    it('should properly build a request when FLEDGE is enabled', function () {
+    it('should properly build a request when FLEDGE is enabled', async function () {
       let bidderRequest = {
         paapi: {
           enabled: true
@@ -528,12 +528,12 @@ describe('ccxAdapter', function () {
         }
       ];
 
-      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
+      let ortbRequest = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequest));
       let data = JSON.parse(ortbRequest.data);
       expect(data.imp[0].ext.ae).to.equal(1);
     });
 
-    it('should properly build a request when FLEDGE is disabled', function () {
+    it('should properly build a request when FLEDGE is disabled', async function () {
       let bidderRequest = {
         paapi: {
           enabled: false
@@ -564,7 +564,7 @@ describe('ccxAdapter', function () {
         }
       ];
 
-      let ortbRequest = spec.buildRequests(bids, syncAddFPDToBidderRequest(bidderRequest));
+      let ortbRequest = spec.buildRequests(bids, await addFPDToBidderRequest(bidderRequest));
       let data = JSON.parse(ortbRequest.data);
       expect(data.imp[0].ext.ae).to.be.undefined;
     });

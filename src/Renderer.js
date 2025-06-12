@@ -2,7 +2,6 @@ import { loadExternalScript } from './adloader.js';
 import {
   logError, logWarn, logMessage
 } from './utils.js';
-import {find} from './polyfill.js';
 import {getGlobal} from './prebidGlobal.js';
 import { MODULE_TYPE_PREBID } from './activities/modules.js';
 
@@ -24,6 +23,7 @@ export function Renderer(options) {
   this.handlers = {};
   this.id = id;
   this.renderNow = renderNow;
+  this.adUnitCode = adUnitCode;
 
   // a renderer may push to the command queue to delay rendering until the
   // render function is loaded by loadExternalScript, at which point the the command
@@ -101,7 +101,7 @@ Renderer.prototype.process = function() {
     try {
       this.cmd.shift().call();
     } catch (error) {
-      logError('Error processing Renderer command: ', error);
+      logError(`Error processing Renderer command on ad unit '${this.adUnitCode}':`, error);
     }
   }
 };
@@ -135,7 +135,7 @@ export function executeRenderer(renderer, bid, doc) {
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
   const adUnits = pbjsInstance.adUnits;
-  const adUnit = find(adUnits, adUnit => {
+  const adUnit = adUnits.find(adUnit => {
     return adUnit.code === adUnitCode;
   });
 

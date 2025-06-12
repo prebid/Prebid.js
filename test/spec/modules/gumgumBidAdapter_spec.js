@@ -110,7 +110,8 @@ describe('gumgumAdapter', function () {
                 segtax: 500,
                 cids: ['iris_c73g5jq96mwso4d8']
               }
-            }]
+            }],
+            url: 'http://pub.com/news',
           },
           page: 'http://pub.com/news',
           ref: 'http://google.com',
@@ -286,7 +287,11 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request], bidderRequest)[0];
       expect(bidRequest.data).to.have.property('irisid', 'iris_c73g5jq96mwso4d8');
     });
-
+    it('should set the curl param if present', function() {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request], bidderRequest)[0];
+      expect(bidRequest.data).to.have.property('curl', 'http://pub.com/news');
+    });
     it('should not set the iriscat param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
@@ -517,7 +522,12 @@ describe('gumgumAdapter', function () {
         startdelay: 1,
         placement: 123456,
         plcmt: 3,
-        protocols: [1, 2]
+        protocols: [1, 2],
+        skip: 1,
+        api: [1, 2],
+        mimes: ['video/mp4', 'video/webm'],
+        playbackmethod: [1, 2],
+        playbackend: 2
       };
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -539,6 +549,11 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pr).to.eq(videoVals.protocols.join(','));
       expect(bidRequest.data.viw).to.eq(videoVals.playerSize[0].toString());
       expect(bidRequest.data.vih).to.eq(videoVals.playerSize[1].toString());
+      expect(bidRequest.data.skip).to.eq(videoVals.skip);
+      expect(bidRequest.data.api).to.eq(videoVals.api.join(','));
+      expect(bidRequest.data.mimes).to.eq(videoVals.mimes.join(','));
+      expect(bidRequest.data.pbm).to.eq(videoVals.playbackmethod.join(','));
+      expect(bidRequest.data.pbe).to.eq(videoVals.playbackend);
     });
     it('should add parameters associated with invideo if invideo request param is found', function () {
       const inVideoVals = {
@@ -550,7 +565,12 @@ describe('gumgumAdapter', function () {
         startdelay: 1,
         placement: 123456,
         plcmt: 3,
-        protocols: [1, 2]
+        protocols: [1, 2],
+        skip: 1,
+        api: [1, 2],
+        mimes: ['video/mp4', 'video/webm'],
+        playbackmethod: [6],
+        playbackend: 1
       };
       const request = Object.assign({}, bidRequests[0]);
       delete request.params;
@@ -572,6 +592,11 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.pr).to.eq(inVideoVals.protocols.join(','));
       expect(bidRequest.data.viw).to.eq(inVideoVals.playerSize[0].toString());
       expect(bidRequest.data.vih).to.eq(inVideoVals.playerSize[1].toString());
+      expect(bidRequest.data.skip).to.eq(inVideoVals.skip);
+      expect(bidRequest.data.api).to.eq(inVideoVals.api.join(','));
+      expect(bidRequest.data.mimes).to.eq(inVideoVals.mimes.join(','));
+      expect(bidRequest.data.pbm).to.eq(inVideoVals.playbackmethod.join(','));
+      expect(bidRequest.data.pbe).to.eq(inVideoVals.playbackend);
     });
     it('should not add additional parameters depending on params field', function () {
       const request = spec.buildRequests(bidRequests)[0];
@@ -710,6 +735,20 @@ describe('gumgumAdapter', function () {
 
       expect(bidRequest.data).to.not.have.property('idl_env');
     });
+    it('should add a uid2 parameter if request contains uid2 id', function () {
+      const uid2 = { id: 'sample-uid2' };
+      const request = { ...bidRequests[0], userId: { uid2 } };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.have.property('uid2');
+      expect(bidRequest.data.uid2).to.equal(uid2.id);
+    });
+    it('should not add uid2 parameter if uid2 id is not found', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.not.have.property('uid2');
+    });
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
       const request = spec.buildRequests(bidRequests)[0];
@@ -787,6 +826,30 @@ describe('gumgumAdapter', function () {
     });
 
     it('should handle ORTB2 device data', function () {
+      const suaObject = {
+        source: 2,
+        platform: {
+          brand: 'macOS',
+          version: ['15', '5', '0']
+        },
+        browsers: [
+          {
+            brand: 'Google Chrome',
+            version: ['137', '0', '7151', '41']
+          },
+          {
+            brand: 'Chromium',
+            version: ['137', '0', '7151', '41']
+          },
+          {
+            brand: 'Not/A)Brand',
+            version: ['24', '0', '0', '0']
+          }
+        ],
+        mobile: 0,
+        model: '',
+        architecture: 'arm'
+      };
       const ortb2 = {
         device: {
           w: 980,
@@ -802,6 +865,8 @@ describe('gumgumAdapter', function () {
           ext: {fiftyonedegrees_deviceId: '17595-133085-133468-18092'},
           ip: '127.0.0.1',
           ipv6: '51dc:5e20:fd6a:c955:66be:03b4:dfa3:35b2',
+          sua: suaObject
+
         },
       };
 
@@ -818,7 +883,29 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.foddid).to.equal(ortb2.device.ext.fiftyonedegrees_deviceId);
       expect(bidRequest.data.ip).to.equal(ortb2.device.ip);
       expect(bidRequest.data.ipv6).to.equal(ortb2.device.ipv6);
+      expect(bidRequest.data).to.have.property('sua');
+      expect(() => JSON.parse(bidRequest.data.sua)).to.not.throw();
+      expect(JSON.parse(bidRequest.data.sua)).to.deep.equal(suaObject);
     });
+
+    it('should set tId from ortb2Imp.ext.tid if available', function () {
+      const ortb2Imp = { ext: { tid: 'test-tid-1' } };
+      const request = { ...bidRequests[0], ortb2Imp };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.tId).to.equal('test-tid-1');
+    });
+
+    it('should set tId from bidderRequest.ortb2.source.tid if ortb2Imp.ext.tid is not available', function () {
+      const ortb2 = { source: { tid: 'test-tid-2' } };
+      const fakeBidRequest = { ortb2 };
+      const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
+      expect(bidRequest.data.tId).to.equal('test-tid-2');
+    });
+
+    it('should set tId to an empty string if neither ortb2Imp.ext.tid nor bidderRequest.ortb2.source.tid are available', function () {
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.tId).to.equal('');
+    })
   })
 
   describe('interpretResponse', function () {

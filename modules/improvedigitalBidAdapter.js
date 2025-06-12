@@ -63,8 +63,8 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param bidderRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {{ortbRequest:Object}} bidderRequest
+   * @return {Array} An array of bids which were nested inside the server.
    */
   interpretResponse(serverResponse, { ortbRequest }) {
     return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
@@ -163,6 +163,8 @@ export const CONVERTER = ortbConverter({
       deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
     }
     deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
+
+    context.bidderRequest.bidLimit && deepSetValue(imp, 'ext.max_bids', context.bidderRequest.bidLimit);
 
     return imp;
   },
@@ -278,7 +280,10 @@ const ID_REQUEST = {
         url: adServerUrl(extendMode, publisherId),
         data: JSON.stringify(ortbRequest),
         ortbRequest,
-        bidderRequest
+        bidderRequest,
+        options: {
+          endpointCompression: true,
+        },
       }
     }
 

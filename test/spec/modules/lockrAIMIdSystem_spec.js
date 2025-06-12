@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable quotes */
 import * as lockrAIMSystem from "../../../modules/lockrAIMIdSystem.js";
 import { hook } from "../../../src/hook.js";
 import { expect } from "chai";

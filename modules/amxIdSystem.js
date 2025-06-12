@@ -101,7 +101,7 @@ export const amxIdSubmodule = {
       return undefined;
     }
 
-    const consent = consentData || { gdprApplies: false, consentString: '' };
+    const consent = consentData?.gdpr || { gdprApplies: false, consentString: '' };
     const client = ajaxBuilder(AJAX_TIMEOUT);
     const usp = uspDataHandler.getConsentData();
     const ref = getRefererInfo();
@@ -142,7 +142,6 @@ export const amxIdSubmodule = {
                 logError(`${NAME} invalid response`, responseText);
               }
             }
-
             done(null);
           },
         },

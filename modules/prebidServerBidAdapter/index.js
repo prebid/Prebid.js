@@ -19,7 +19,7 @@ import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
-import {includes} from '../../src/polyfill.js';
+
 import {S2S_VENDORS} from './config.js';
 import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
@@ -116,7 +116,7 @@ function updateConfigDefaults(s2sConfig) {
       // vendor keys will be set if either: the key was not specified by user
       // or if the user did not set their own distinct value (ie using the system default) to override the vendor
       Object.keys(S2S_VENDORS[vendor]).forEach((vendorKey) => {
-        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !includes(optionKeys, vendorKey)) {
+        if (s2sDefaultConfig[vendorKey] === s2sConfig[vendorKey] || !optionKeys.includes(vendorKey)) {
           s2sConfig[vendorKey] = S2S_VENDORS[vendor][vendorKey];
         }
       });
@@ -326,7 +326,7 @@ function doPreBidderSync(type, url, bidder, done, s2sConfig) {
  * @param {string} url the url to sync
  * @param {string} bidder name of bidder doing sync for
  * @param {function} done an exit callback; to signify this pixel has either: finished rendering or something went wrong
- * @param {number} timeout: maximum time to wait for rendering in milliseconds
+ * @param {number} timeout maximum time to wait for rendering in milliseconds
  */
 function doBidderSync(type, url, bidder, done, timeout) {
   if (!url) {
@@ -365,64 +365,6 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
       );
     }
   });
-}
-
-/**
- * map wurl to auction id and adId for use in the BID_WON event
- */
-let wurlMap = {};
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @param {string} wurl events.winurl passed from prebidServer as wurl
- */
-function addWurl(auctionId, adId, wurl) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = wurl;
-  }
-}
-
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- */
-function removeWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    wurlMap[`${auctionId}${adId}`] = undefined;
-  }
-}
-/**
- * @param {string} auctionId
- * @param {string} adId generated value set to bidObject.adId by bidderFactory Bid()
- * @return {(string|undefined)} events.winurl which was passed as wurl
- */
-function getWurl(auctionId, adId) {
-  if ([auctionId, adId].every(isStr)) {
-    return wurlMap[`${auctionId}${adId}`];
-  }
-}
-
-/**
- * remove all cached wurls
- */
-export function resetWurlMap() {
-  wurlMap = {};
-}
-
-/**
- * BID_WON event to request the wurl
- * @param {Bid} bid the winning bid object
- */
-function bidWonHandler(bid) {
-  const wurl = getWurl(bid.auctionId, bid.adId);
-  if (isStr(wurl)) {
-    logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
-    triggerPixel(wurl);
-
-    // remove from wurl cache, since the wurl url was called
-    removeWurl(bid.auctionId, bid.adId);
-  }
 }
 
 function getMatchingConsentUrl(urlProp, gdprConsent) {
@@ -519,9 +461,6 @@ export function PrebidServer() {
           } else {
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
               addBidResponse(adUnit, bid);
-              if (bid.pbsWurl) {
-                addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
-              }
             } else {
               addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
@@ -535,9 +474,6 @@ export function PrebidServer() {
       })
     }
   };
-
-  // Listen for bid won to call wurl
-  events.on(EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,
@@ -556,7 +492,7 @@ export function PrebidServer() {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
+export const processPBSRequest = hook('async', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
@@ -567,14 +503,17 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .filter(uniques);
 
   const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders));
-  const requestJson = request && JSON.stringify(request);
-  logInfo('BidRequest: ' + requestJson);
-  const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
-  const customHeaders = s2sBidRequest?.s2sConfig?.customHeaders ?? {};
-  if (request && requestJson && endpointUrl) {
+  const requestData = {
+    endpointUrl: getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent),
+    requestJson: request && JSON.stringify(request),
+    customHeaders: s2sBidRequest?.s2sConfig?.customHeaders ?? {},
+  };
+  events.emit(EVENTS.BEFORE_PBS_HTTP, requestData)
+  logInfo('BidRequest: ' + requestData);
+  if (request && requestData.requestJson && requestData.endpointUrl) {
     const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
-      endpointUrl,
+      requestData.endpointUrl,
       {
         success: function (response) {
           networkDone();
@@ -589,7 +528,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           } catch (error) {
             logError(error);
           }
-          if (!result || (result.status && includes(result.status, 'Error'))) {
+          if (!result || (result.status && result.status.includes('Error'))) {
             logError('error parsing response: ', result ? result.status : 'not valid JSON');
             onResponse(false, requestedBidders);
           } else {
@@ -601,12 +540,12 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           onError.apply(this, arguments);
         }
       },
-      requestJson,
+      requestData.requestJson,
       {
         contentType: 'text/plain',
         withCredentials: true,
         browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
-        customHeaders
+        customHeaders: requestData.customHeaders
       }
     );
   } else {

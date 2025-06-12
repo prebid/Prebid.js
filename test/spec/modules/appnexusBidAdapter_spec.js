@@ -431,6 +431,33 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
       });
 
+      it('should include ORTB video values when video params is empty - case 1', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            startdelay: 0,
+            skip: 0,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: false,
+          context: 1
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
       it('should convert and include ORTB2 device data when available', function () {
         const bidRequest = deepClone(bidRequests[0]);
         const bidderRequest = {
@@ -1605,30 +1632,6 @@ describe('AppNexusAdapter', function () {
 
     it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        userId: {
-          tdid: 'sample-userid',
-          uid2: { id: 'sample-uid2-value' },
-          criteoId: 'sample-criteo-userid',
-          netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid',
-          pubProvidedId: [{
-            source: 'puburl.com',
-            uids: [{
-              id: 'pubid1',
-              atype: 1,
-              ext: {
-                stype: 'ppuid'
-              }
-            }]
-          }, {
-            source: 'puburl2.com',
-            uids: [{
-              id: 'pubid2'
-            }, {
-              id: 'pubid2-123'
-            }]
-          }]
-        },
         userIdAsEids: [{
           source: 'adserver.org',
           uids: [{ id: 'sample-userid' }]

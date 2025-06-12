@@ -4,21 +4,28 @@ import {
   buildPlacementProcessingFunction,
   buildRequestsBase,
   interpretResponseBuilder,
-  isBidRequestValid
+  isBidRequestValid,
+  getUserSyncs as baseSync
 } from '../libraries/teqblazeUtils/bidderUtils.js';
+// import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'smarthub';
-const ALIASES = [
-  {code: 'attekmi'},
-  {code: 'markapp'},
-  {code: 'jdpmedia'},
-  {code: 'tredio'},
-  {code: 'felixads'},
-  {code: 'vimayx'},
-  {code: 'artechnology'},
-  {code: 'adinify'},
-  {code: 'addigi'},
-];
+const SYNC_URLS = {
+  '1': 'https://us.shb-sync.com',
+  '4': 'https://us4.shb-sync.com'
+};
+const ALIASES = {
+  'attekmi': {area: '1', pid: '300'},
+  'markapp': {area: '4', pid: '360'},
+  'jdpmedia': {area: '1', pid: '382'},
+  'tredio': {area: '4', pid: '337'},
+  'felixads': {area: '1', pid: '406'},
+  'vimayx': {area: '1', pid: '399'},
+  'artechnology': {area: '1', pid: '420'},
+  'adinify': {area: '1', pid: '424'},
+  'addigi': {area: '1', pid: '425'},
+  'jambojar': {area: '1', pid: '426'},
+};
 const BASE_URLS = {
   attekmi: 'https://prebid.attekmi.com/pbjs',
   smarthub: 'https://prebid.attekmi.com/pbjs',
@@ -30,10 +37,12 @@ const BASE_URLS = {
   artechnology: 'https://artechnology-prebid.attekmi.com/pbjs',
   adinify: 'https://adinify-prebid.attekmi.com/pbjs',
   addigi: 'https://addigi-prebid.attekmi.com/pbjs',
+  jambojar: 'https://jambojar-prebid.attekmi.com/pbjs',
 };
+const adapterState = {};
 
-const _getUrl = (partnerName) => {
-  const aliases = ALIASES.map(el => el.code);
+const _getPartnerUrl = (partnerName) => {
+  const aliases = Object.keys(ALIASES);
   if (aliases.includes(partnerName)) {
     return BASE_URLS[partnerName];
   }
@@ -41,14 +50,14 @@ const _getUrl = (partnerName) => {
   return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
 }
 
-const getPartnerName = (bid) => String(bid.params?.partnerName || bid.bidder).toLowerCase();
+const _getPartnerName = (bid) => String(bid.params?.partnerName || bid.bidder).toLowerCase();
 
 const getPlacementReqData = buildPlacementProcessingFunction({
   addPlacementType() {},
   addCustomFieldsToPlacement(bid, bidderRequest, placement) {
     const { seat, token, iabCat, minBidfloor, pos } = bid.params;
     Object.assign(placement, {
-      partnerName: getPartnerName(bid),
+      partnerName: _getPartnerName(bid),
       seat,
       token,
       iabCat,
@@ -60,13 +69,14 @@ const getPlacementReqData = buildPlacementProcessingFunction({
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const bidsByPartner = validBidRequests.reduce((bidsByPartner, bid) => {
-    const partner = getPartnerName(bid);
+    const partner = _getPartnerName(bid);
+    Object.assign(adapterState, ALIASES[partner]);
     (bidsByPartner[partner] = bidsByPartner[partner] || []).push(bid);
     return bidsByPartner;
   }, {});
   return Object.entries(bidsByPartner).map(([partner, validBidRequests]) => {
     return buildRequestsBase({
-      adUrl: _getUrl(partner),
+      adUrl: _getPartnerUrl(partner),
       bidderRequest,
       validBidRequests,
       placementProcessingFunction: getPlacementReqData
@@ -74,9 +84,20 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   })
 }
 
+const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+  const syncs = baseSync('')(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent);
+  const syncUrl = SYNC_URLS[adapterState.area];
+  const pid = adapterState.pid;
+
+  return syncs.map(sync => ({
+    ...sync,
+    url: `${syncUrl}${sync.url}&pid=${pid}`
+  }));
+};
+
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ALIASES,
+  aliases: Object.keys(ALIASES),
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   isBidRequestValid: isBidRequestValid(['seat', 'token'], 'every'),
   buildRequests,
@@ -84,7 +105,8 @@ export const spec = {
     addtlBidValidation(bid) {
       return bid.hasOwnProperty('netRevenue')
     }
-  })
+  }),
+  getUserSyncs
 };
 
 registerBidder(spec);

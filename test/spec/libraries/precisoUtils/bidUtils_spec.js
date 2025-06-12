@@ -1,4 +1,3 @@
-
 import { expect } from 'chai';
 import { buildRequests, interpretResponse } from '../../../../libraries/precisoUtils/bidUtils.js';
 

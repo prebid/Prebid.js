@@ -81,6 +81,11 @@ describe('SeedingAlliance adapter', function () {
       });
     });
 
+    after(function () {
+      localStorageIsEnabledStub.restore();
+      getDataFromLocalStorageStub.restore();
+    });
+
     it('should return an empty array if local storage is not enabled', function () {
       localStorageIsEnabledStub.returns(false);
       $$PREBID_GLOBAL$$.bidderSettings = {
