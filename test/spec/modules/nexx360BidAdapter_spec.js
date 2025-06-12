@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import {
   spec, STORAGE, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
-import { sandbox } from 'sinon';
+import sinon from 'sinon';
 import { getAmxId } from '../../../libraries/nexx360Utils';
+const sandbox = sinon.createSandbox();
 
 describe('Nexx360 bid adapter tests', () => {
   const DEFAULT_OPTIONS = {
@@ -31,7 +32,6 @@ describe('Nexx360 bid adapter tests', () => {
       }],
     },
   };
-
 
   describe('isBidRequestValid()', () => {
     let bannerBid;

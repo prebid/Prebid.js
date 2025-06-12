@@ -14,7 +14,7 @@ describe('FPD enrichment', () => {
     hook.ready();
   });
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();
