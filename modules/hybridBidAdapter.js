@@ -41,7 +41,6 @@ function buildBidRequests(validBidRequests) {
   })
 }
 
-
 function buildBid(bidData) {
   const bid = {
     requestId: bidData.bidId,
@@ -104,7 +103,6 @@ function buildBid(bidData) {
 
   return bid;
 }
-
 
 function wrapAd(bid, bidData) {
   return `<!DOCTYPE html>
