@@ -2529,15 +2529,17 @@ describe('The Criteo bidding adapter', function () {
           }
         ];
 
-        utilsMock.expects('logWarn')
-          .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
-          .exactly(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
         for (const nativeParams of nativeParamsWithSendTargetingKeys) {
           let transformedBidRequests = {...bidRequests};
           transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
           spec.buildRequests(transformedBidRequests, await addFPDToBidderRequest(bidderRequest));
         }
-        utilsMock.verify();
+
+        expect(
+          logWarnStub
+            .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
+            .callCount
+        ).to.eql(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
       });
     }
 
