@@ -429,6 +429,7 @@ function determineBidStatusAndValues(winningBid, rejectedFloorBid, bidsForAdUnit
 export const getOs = () => getOS().toString();
 export const getDeviceType = () => fetchDeviceType().toString();
 export const getCountry = () => _country;
+export const getBidder = (request) => request?.bidder;
 export const getUtm = () => {
   const url = new URL(window.location?.href);
   const urlParams = new URLSearchParams(url?.search);
@@ -478,6 +479,7 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
                 os: getOs,
                 utm: getUtm,
                 country: getCountry,
+                bidder: getBidder,
             },
         },
     };
@@ -525,7 +527,7 @@ export const fetchData = async (publisherId, profileId, type) => {
 
       return data;
     } catch (error) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}:`, error);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: ${error}`);
     }
 };
 
@@ -559,7 +561,7 @@ const init = (config, _userConsent) => {
     _fetchConfigPromise = fetchData(publisherId, profileId, "CONFIGS");
 
     _fetchConfigPromise.then(async (profileConfigs) => {
-      const auctionDelay = conf.getConfig('realTimeData').auctionDelay;
+      const auctionDelay = conf?.getConfig('realTimeData')?.auctionDelay || 300;
       const maxWaitTime = 0.8 * auctionDelay;
 
       const elapsedTime = Date.now() - initTime;
@@ -570,7 +572,7 @@ const init = (config, _userConsent) => {
       setProfileConfigs(profileConfigs);
 
       const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
-      floorsConfig && conf.setConfig(floorsConfig);
+      floorsConfig && conf?.setConfig(floorsConfig);
       configMerged();
     });
 
@@ -580,8 +582,6 @@ const init = (config, _userConsent) => {
 /**
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
- * @param {Object} config
- * @param {Object} userConsent
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
     configMergedPromise.then(() => {

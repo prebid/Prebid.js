@@ -73,7 +73,7 @@ describe('omsBidAdapter', function () {
       },
     }];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -331,7 +331,7 @@ describe('omsBidAdapter', function () {
 
     context('when element is partially in view', function () {
       it('returns percentage', function () {
-        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')     
+        const getWinDimensionsStub = sandbox.stub(utils, 'getWinDimensions')
         getWinDimensionsStub.returns({ innerHeight: win.innerHeight, innerWidth: win.innerWidth });
         Object.assign(element, {width: 800, height: 800});
         const request = spec.buildRequests(bidRequests);

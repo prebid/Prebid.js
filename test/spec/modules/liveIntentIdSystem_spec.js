@@ -52,16 +52,16 @@ describe('LiveIntentId', function() {
   });
 
   afterEach(function() {
-    imgStub.restore();
-    getCookieStub.restore();
-    getDataFromLocalStorageStub.restore();
-    logErrorStub.restore();
-    uspConsentDataStub.restore();
-    gdprConsentDataStub.restore();
-    gppConsentDataStub.restore();
-    coppaConsentDataStub.restore();
-    refererInfoStub.restore();
-    randomStub.restore();
+    imgStub?.restore();
+    getCookieStub?.restore();
+    getDataFromLocalStorageStub?.restore();
+    logErrorStub?.restore();
+    uspConsentDataStub?.restore();
+    gdprConsentDataStub?.restore();
+    gppConsentDataStub?.restore();
+    coppaConsentDataStub?.restore();
+    refererInfoStub?.restore();
+    randomStub?.restore();
     window.liModuleEnabled = undefined; // reset
     window.liTreatmentRate = undefined; // reset
     resetLiveIntentIdSubmodule();
@@ -1177,6 +1177,20 @@ describe('LiveIntentId', function() {
             provider: 'some.provider.com'
           }
         }]
+      });
+    });
+
+    it('tdid sets matcher for liveintent', function() {
+      const userId = {
+        tdid: 'some-tdid'
+      };
+
+      const newEids = createEidsArray(userId);
+
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.include({
+        source: 'adserver.org',
+        matcher: 'liveintent.com'
       });
     });
   })
