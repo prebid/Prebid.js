@@ -155,8 +155,8 @@ describe('vidoomyBidAdapter', function() {
     });
 
     it('should send multiBidsSupport parameters', function () {
-      expect(''+ request[0].data.multiBidsSupport).to.equal('1');
-      expect('' +request[1].data.multiBidsSupport).to.equal('1');
+      expect('' + request[0].data.multiBidsSupport).to.equal('1');
+      expect('' + request[1].data.multiBidsSupport).to.equal('1');
     });
 
     it('should send schain parameter in serialized form', function () {
