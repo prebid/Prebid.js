@@ -27,7 +27,7 @@ import {
 describe('adRendering', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'logWarn');
     sandbox.stub(utils, 'logError');
   })
@@ -61,6 +61,12 @@ describe('adRendering', () => {
     let bidResponse;
     beforeEach(() => {
       bidResponse = {};
+    });
+
+    it('should carry over instl', () => {
+      bidResponse.instl = true;
+      const result = getRenderingData(bidResponse);
+      expect(result.instl).to.be.true;
     });
 
     ['ad', 'adUrl'].forEach((prop) => {

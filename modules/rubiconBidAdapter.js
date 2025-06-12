@@ -156,7 +156,9 @@ var sizeMap = {
   684: '970x550',
   686: '300x210',
   688: '300x220',
-  690: '970x170'
+  690: '970x170',
+  710: '600x250',
+  712: '340x430'
 };
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -999,7 +1001,7 @@ function applyFPD(bidRequest, mediaType, data) {
                 return param;
               }
 
-              // finally we will add this one, if param has been added already, add our seperator
+              // finally we will add this one, if param has been added already, add our separator
               if (param) {
                 param += '~~'
               }
@@ -1029,7 +1031,7 @@ function applyFPD(bidRequest, mediaType, data) {
           const [ua, fullVer] = browsers.reduce((accum, browserData) => {
             accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
             // only set fullVer if long enough
-            if (browserData.version.length > 1) {
+            if (browserData?.version?.length > 1) {
               accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
             }
             return accum;

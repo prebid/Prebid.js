@@ -11,7 +11,7 @@ describe('teadsBidAdapter', () => {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -1046,6 +1046,30 @@ describe('teadsBidAdapter', () => {
           const payload = JSON.parse(request.data);
 
           expect(payload.firstPartyCookieTeadsId).to.equal('teadsId-fake-id');
+        });
+      });
+
+      describe('Outbrain Id', function () {
+        it('should pass null to outbrain id if it\'s not available from local storage', function () {
+          const bidRequest = baseBidRequest;
+
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
+
+          const payload = JSON.parse(request.data);
+
+          expect(payload.outbrainId).to.be.null;
+        });
+
+        it('should add outbrain id if it\'s available from local storage', function () {
+          sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('OB-USER-TOKEN').returns('outbrain-id');
+
+          const bidRequest = baseBidRequest;
+
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
+
+          const payload = JSON.parse(request.data);
+
+          expect(payload.outbrainId).to.equal('outbrain-id');
         });
       });
     });

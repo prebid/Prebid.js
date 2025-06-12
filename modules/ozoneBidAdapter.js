@@ -22,10 +22,9 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const ORIGIN_DEV = 'https://test.ozpr.net';
-const OZONEVERSION = '2.9.5';
+const OZONEVERSION = '3.0.0';
 export const spec = {
   gvlid: 524,
-  aliases: [{code: 'venatus', gvlid: 524}],
   version: OZONEVERSION,
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
@@ -551,11 +550,11 @@ export const spec = {
           if (videoContext === 'outstream') {
             logInfo('setting thisBid.mediaType = VIDEO & attach a renderer to OUTSTREAM video');
             thisBid.renderer = newRenderer(thisBid.bidId);
+            thisBid.vastUrl = `https://${deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_host', 'missing_host')}${deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_path', 'missing_path')}?uuid=${deepAccess(thisBid, 'ext.prebid.targeting.hb_uuid', 'missing_uuid')}`;
+            thisBid.vastXml = thisBid.adm;
           } else {
-            logInfo('not an outstream video, will set thisBid.mediaType = VIDEO and thisBid.vastUrl and not attach a renderer');
-            thisBid.vastUrl = `https://${deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_host', 'missing_host')}${deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_path', 'missing_path')}?id=${deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_id', 'missing_id')}`; // need to see if this works ok for ozone
-            adserverTargeting['hb_cache_host'] = deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_host', 'no-host');
-            adserverTargeting['hb_cache_path'] = deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_path', 'no-path');
+            logInfo('not an outstream video (presumably instream), will set thisBid.mediaType = VIDEO and thisBid.vastUrl and not attach a renderer');
+            thisBid.vastUrl = `https://${deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_host', 'missing_host')}${deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_path', 'missing_path')}?uuid=${deepAccess(thisBid, 'ext.prebid.targeting.hb_uuid', 'missing_uuid')}`; // need to see if this works ok for ozone
             if (!thisBid.hasOwnProperty('videoCacheKey')) {
               let videoCacheUuid = deepAccess(thisBid, 'ext.prebid.targeting.hb_uuid', 'no_hb_uuid');
               logInfo(`Adding videoCacheKey: ${videoCacheUuid}`);
@@ -567,6 +566,7 @@ export const spec = {
         } else {
           this.setBidMediaTypeIfNotExist(thisBid, BANNER);
         }
+        adserverTargeting = Object.assign(adserverTargeting, deepAccess(thisBid, 'ext.prebid.targeting', {}));
         if (enhancedAdserverTargeting) {
           let allBidsForThisBidid = ozoneGetAllBidsForBidId(thisBid.bidId, serverResponse.seatbid, defaultWidth, defaultHeight);
           logInfo('Going to iterate allBidsForThisBidId', deepClone(allBidsForThisBidid));

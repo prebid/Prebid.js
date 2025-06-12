@@ -1,7 +1,6 @@
 import {_each, deepSetValue, inIframe} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
@@ -97,8 +96,7 @@ export const spec = {
         referrer: bidderRequest.refererInfo.ref,
         adUnits: adUnits,
         // TODO: please do not send internal data structures over the network
-        refererInfo: bidderRequest.refererInfo.legacy,
-      },
+        refererInfo: bidderRequest.refererInfo.legacy},
       validBidRequests: validBidRequests
     };
   },
@@ -121,7 +119,7 @@ export const spec = {
         return;
       }
 
-      let matchedResponse = find(serverResponse.body, function (res) {
+      let matchedResponse = ((serverResponse.body) || []).find(function (res) {
         let valid = false;
 
         if (res && !res.consumed) {
@@ -141,7 +139,7 @@ export const spec = {
                 if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
                   valid = width === sizes[0] && height === sizes[1];
                 } else { // for format Array[Array[Number]] check
-                  valid = !!find(sizes, function (size) {
+                  valid = !!((sizes) || []).find(function (size) {
                     return (width === size[0] && height === size[1]);
                   });
                 }

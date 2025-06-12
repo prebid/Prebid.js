@@ -1,4 +1,3 @@
-/* eslint-disable no-trailing-spaces */
 import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
@@ -23,6 +22,7 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
+import 'modules/consentManagementGpp.js';
 import 'modules/schain.js';
 import 'modules/paapi.js';
 import * as redactor from 'src/activities/redactor.js';
@@ -33,7 +33,7 @@ import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
-import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
 import {MODULE_TYPE_PREBID} from '../../../src/activities/modules.js';
@@ -555,12 +555,15 @@ const RESPONSE_OPENRTB_NATIVE = {
   ]
 };
 
-function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
+async function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
   return {
     ...s2sReq,
     ortb2Fragments: {
       ...(s2sReq.ortb2Fragments || {}),
-      global: syncAddFPDToBidderRequest({...(bidderRequests?.[0] || {}), ortb2: s2sReq.ortb2Fragments?.global || {}}).ortb2
+      global: (await addFPDToBidderRequest({
+        ...(bidderRequests?.[0] || {}),
+        ortb2: s2sReq.ortb2Fragments?.global || {}
+      })).ortb2
     }
   }
 }
@@ -678,7 +681,7 @@ describe('S2S Adapter', function () {
       let sandbox, ortb2Fragments, redactorMocks, s2sReq;
 
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         redactorMocks = {};
         sandbox.stub(redactor, 'redactor').callsFake((params) => {
           if (!redactorMocks.hasOwnProperty(params.component)) {
@@ -855,7 +858,7 @@ describe('S2S Adapter', function () {
           it('should be set to 0.75 * requestTimeout, if lower than maxTimeout', () => {
             adapter.callBids({...REQUEST, requestBidsTimeout: maxTimeout / 2}, BID_REQUESTS, addBidResponse, done, ajax);
             const req = JSON.parse(server.requests[0].requestBody);
-            expect(req.tmax).to.eql(maxTimeout / 2 * 0.75);
+            expect(req.tmax).to.eql(Math.floor(maxTimeout / 2 * 0.75));
           })
         })
       })
@@ -977,31 +980,31 @@ describe('S2S Adapter', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
-      it('adds gdpr consent information to ortb2 request depending on presence of module', function () {
-        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: CONFIG };
+      it('adds gdpr consent information to ortb2 request depending on presence of module', async function () {
+        let consentConfig = {consentManagement: {cmpApi: 'iab'}, s2sConfig: CONFIG};
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
         gdprBidRequest[0].gdprConsent = mockTCF();
 
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
         expect(requestBid.user.ext.consent).is.equal('mockConsent');
 
         config.resetConfig();
-        config.setConfig({ s2sConfig: CONFIG });
+        config.setConfig({s2sConfig: CONFIG});
 
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
-        expect(requestBid.regs).to.not.exist;
-        expect(requestBid.user).to.not.exist;
+        expect(requestBid.regs?.ext?.gdpr).to.not.exist;
+        expect(requestBid.user?.ext?.consent).to.not.exist;
       });
 
-      it('adds additional consent information to ortb2 request depending on presence of module', function () {
-        let consentConfig = { consentManagement: { cmpApi: 'iab' }, s2sConfig: CONFIG };
+      it('adds additional consent information to ortb2 request depending on presence of module', async function () {
+        let consentConfig = {consentManagement: {cmpApi: 'iab'}, s2sConfig: CONFIG};
         config.setConfig(consentConfig);
 
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
@@ -1009,7 +1012,7 @@ describe('S2S Adapter', function () {
           addtlConsent: 'superduperconsent',
         });
 
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
@@ -1017,7 +1020,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.user.ext.ConsentedProvidersSettings.consented_providers).is.equal('superduperconsent');
 
         config.resetConfig();
-        config.setConfig({ s2sConfig: CONFIG });
+        config.setConfig({s2sConfig: CONFIG});
 
         adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
@@ -1032,24 +1035,24 @@ describe('S2S Adapter', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
-      it('is added to ortb2 request when in FPD', function () {
-        config.setConfig({ s2sConfig: CONFIG });
+      it('is added to ortb2 request when in FPD', async function () {
+        config.setConfig({s2sConfig: CONFIG});
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
         uspBidRequest[0].uspConsent = '1NYN';
 
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, uspBidRequest), uspBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, uspBidRequest), uspBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
 
         config.resetConfig();
-        config.setConfig({ s2sConfig: CONFIG });
+        config.setConfig({s2sConfig: CONFIG});
 
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
-        expect(requestBid.regs).to.not.exist;
+        expect(requestBid.regs?.ext?.us_privacy).to.not.exist;
       });
     });
 
@@ -1058,14 +1061,14 @@ describe('S2S Adapter', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
-      it('is added to ortb2 request when in bidRequest', function () {
-        config.setConfig({ s2sConfig: CONFIG });
+      it('is added to ortb2 request when in bidRequest', async function () {
+        config.setConfig({s2sConfig: CONFIG});
 
         let consentBidRequest = utils.deepClone(BID_REQUESTS);
         consentBidRequest[0].uspConsent = '1NYN';
         consentBidRequest[0].gdprConsent = mockTCF();
 
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, consentBidRequest), consentBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, consentBidRequest), consentBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
@@ -1073,7 +1076,7 @@ describe('S2S Adapter', function () {
         expect(requestBid.user.ext.consent).is.equal('mockConsent');
 
         config.resetConfig();
-        config.setConfig({ s2sConfig: CONFIG });
+        config.setConfig({s2sConfig: CONFIG});
 
         adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
@@ -1105,17 +1108,17 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('adds device and app objects to request', function () {
+    it('adds device and app objects to request', async function () {
       const _config = {
         s2sConfig: CONFIG,
       };
       config.setConfig(_config);
-      const s2sreq = addFpdEnrichmentsToS2SRequest({
+      const s2sreq = await addFpdEnrichmentsToS2SRequest({
         ...REQUEST,
         ortb2Fragments: {
           global: {
-            device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
-            app: { bundle: 'com.test.app' },
+            device: {ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC'},
+            app: {bundle: 'com.test.app'},
           }
         }
       }, BID_REQUESTS)
@@ -1128,11 +1131,11 @@ describe('S2S Adapter', function () {
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
-        publisher: { 'id': '1' }
+        publisher: {'id': '1'}
       });
     });
 
-    it('adds device and app objects to request for OpenRTB', function () {
+    it('adds device and app objects to request for OpenRTB', async function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         endpoint: {
           p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
@@ -1142,12 +1145,12 @@ describe('S2S Adapter', function () {
         s2sConfig: s2sConfig,
       };
       config.setConfig(_config);
-      const s2sReq = addFpdEnrichmentsToS2SRequest({
+      const s2sReq = await addFpdEnrichmentsToS2SRequest({
         ...REQUEST,
         ortb2Fragments: {
           global: {
-            device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
-            app: { bundle: 'com.test.app' },
+            device: {ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC'},
+            app: {bundle: 'com.test.app'},
           }
         }
       }, BID_REQUESTS)
@@ -1160,7 +1163,7 @@ describe('S2S Adapter', function () {
       })
       sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
-        publisher: { 'id': '1' }
+        publisher: {'id': '1'}
       });
     });
 
@@ -1539,12 +1542,12 @@ describe('S2S Adapter', function () {
           ]
         };
 
-        it('adds device.w and device.h even if the config lacks a device object', function () {
+        it('adds device.w and device.h even if the config lacks a device object', async function () {
           const _config = {
             s2sConfig: CONFIG,
           };
           config.setConfig(_config);
-          adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+          adapter.callBids(await addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
           sinon.assert.match(requestBid.device, {
             w: window.screen.width,
@@ -1630,13 +1633,13 @@ describe('S2S Adapter', function () {
       });
     }
 
-    it('adds site if app is not present', function () {
+    it('adds site if app is not present', async function () {
       const _config = {
         s2sConfig: CONFIG,
       };
 
       config.setConfig(_config);
-      const s2sReq = addFpdEnrichmentsToS2SRequest({
+      const s2sReq = await addFpdEnrichmentsToS2SRequest({
         ...REQUEST,
         ortb2Fragments: {
           global: {
@@ -1674,18 +1677,18 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('site should not be present when app is present', function () {
+    it('site should not be present when app is present', async function () {
       const _config = {
         s2sConfig: CONFIG,
       };
 
       config.setConfig(_config);
 
-      const s2sReq = addFpdEnrichmentsToS2SRequest({
+      const s2sReq = await addFpdEnrichmentsToS2SRequest({
         ...REQUEST,
         ortb2Fragments: {
           global: {
-            app: { bundle: 'com.test.app' },
+            app: {bundle: 'com.test.app'},
             site: {
               publisher: {
                 id: '1234',
@@ -2079,18 +2082,18 @@ describe('S2S Adapter', function () {
       const s2sBidRequest = utils.deepClone(REQUEST);
       s2sBidRequest.s2sConfig = s2sConfig;
 
-      it('and overrides publisher and page', function () {
+      it('and overrides publisher and page', async function () {
         config.setConfig({
           s2sConfig: s2sConfig,
         });
-        const s2sReq = addFpdEnrichmentsToS2SRequest({
+        const s2sReq = await addFpdEnrichmentsToS2SRequest({
           ...s2sBidRequest,
           ortb2Fragments: {
             global: {
               site: {
                 domain: 'nytimes.com',
                 page: 'http://www.nytimes.com',
-                publisher: { id: '2' }
+                publisher: {id: '2'}
               },
               device,
             }
@@ -2106,11 +2109,11 @@ describe('S2S Adapter', function () {
         expect(requestBid.site.publisher.id).to.equal('2');
       });
 
-      it('and merges domain and page with the config site value', function () {
+      it('and merges domain and page with the config site value', async function () {
         config.setConfig({
           s2sConfig: s2sConfig,
         });
-        const s2sReq = addFpdEnrichmentsToS2SRequest({
+        const s2sReq = await addFpdEnrichmentsToS2SRequest({
           ...s2sBidRequest,
           ortb2Fragments: {
             global: {
@@ -2647,7 +2650,7 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('passes first party data in request', () => {
+    it('passes first party data in request', async () => {
       const s2sBidRequest = utils.deepClone(REQUEST);
       const bidRequests = utils.deepClone(BID_REQUESTS);
 
@@ -2671,7 +2674,7 @@ describe('S2S Adapter', function () {
       };
       const user = {
         yob: '1984',
-        geo: { country: 'ca' },
+        geo: {country: 'ca'},
         ext: {
           data: {
             registered: true,
@@ -2688,7 +2691,7 @@ describe('S2S Adapter', function () {
         config: {
           ortb2: {
             site: {
-              content: { userrating: 4 },
+              content: {userrating: 4},
               ext: {
                 data: {
                   pageType: 'article',
@@ -2698,7 +2701,7 @@ describe('S2S Adapter', function () {
             },
             user: {
               yob: '1984',
-              geo: { country: 'ca' },
+              geo: {country: 'ca'},
               ext: {
                 data: {
                   registered: true,
@@ -2725,7 +2728,10 @@ describe('S2S Adapter', function () {
         bidder: Object.fromEntries(allowedBidders.map(bidder => [bidder, {site, user, bcat, badv}]))
       };
 
-      adapter.callBids(addFpdEnrichmentsToS2SRequest({...s2sBidRequest, ortb2Fragments}, bidRequests), bidRequests, addBidResponse, done, ajax);
+      adapter.callBids(await addFpdEnrichmentsToS2SRequest({
+        ...s2sBidRequest,
+        ortb2Fragments
+      }, bidRequests), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
@@ -2734,9 +2740,9 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.bcat).to.deep.equal(bcat);
     });
 
-    it('passes first party data in request for unknown when allowUnknownBidderCodes is true', () => {
-      const cfg = { ...CONFIG, allowUnknownBidderCodes: true };
-      config.setConfig({ s2sConfig: cfg });
+    it('passes first party data in request for unknown when allowUnknownBidderCodes is true', async () => {
+      const cfg = {...CONFIG, allowUnknownBidderCodes: true};
+      config.setConfig({s2sConfig: cfg});
 
       const clonedReq = {...REQUEST, s2sConfig: cfg}
       const s2sBidRequest = utils.deepClone(clonedReq);
@@ -2762,7 +2768,7 @@ describe('S2S Adapter', function () {
       };
       const user = {
         yob: '1984',
-        geo: { country: 'ca' },
+        geo: {country: 'ca'},
         ext: {
           data: {
             registered: true,
@@ -2779,7 +2785,7 @@ describe('S2S Adapter', function () {
         config: {
           ortb2: {
             site: {
-              content: { userrating: 4 },
+              content: {userrating: 4},
               ext: {
                 data: {
                   pageType: 'article',
@@ -2789,7 +2795,7 @@ describe('S2S Adapter', function () {
             },
             user: {
               yob: '1984',
-              geo: { country: 'ca' },
+              geo: {country: 'ca'},
               ext: {
                 data: {
                   registered: true,
@@ -2818,7 +2824,10 @@ describe('S2S Adapter', function () {
 
       // adapter.callBids({ ...REQUEST, s2sConfig: cfg }, BID_REQUESTS, addBidResponse, done, ajax);
 
-      adapter.callBids(addFpdEnrichmentsToS2SRequest({...s2sBidRequest, ortb2Fragments}, bidRequests, cfg), bidRequests, addBidResponse, done, ajax);
+      adapter.callBids(await addFpdEnrichmentsToS2SRequest({
+        ...s2sBidRequest,
+        ortb2Fragments
+      }, bidRequests, cfg), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       // eslint-disable-next-line no-console
       console.log(parsedRequestBody);
@@ -3260,8 +3269,8 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
-      sinon.assert.calledOnce(events.emit);
-      const event = events.emit.firstCall.args;
+      sinon.assert.calledTwice(events.emit);
+      const event = events.emit.secondCall.args;
       expect(event[0]).to.equal(EVENTS.BIDDER_DONE);
       expect(event[1].bids[0]).to.have.property('serverResponseTimeMs', 8);
 
@@ -3292,7 +3301,7 @@ describe('S2S Adapter', function () {
       const responding = deepClone(nonbidResponse);
       Object.assign(responding.ext.seatnonbid, [{auctionId: 2}])
       server.requests[0].respond(200, {}, JSON.stringify(responding));
-      const event = events.emit.secondCall.args;
+      const event = events.emit.thirdCall.args;
       expect(event[0]).to.equal(EVENTS.SEAT_NON_BID);
       expect(event[1].seatnonbid[0]).to.have.property('auctionId', 2);
       expect(event[1].requestedBidders).to.deep.equal(['appnexus']);
@@ -3309,7 +3318,7 @@ describe('S2S Adapter', function () {
       const responding = deepClone(nonbidResponse);
       Object.assign(responding.ext.seatnonbid, [{auctionId: 2}])
       server.requests[0].respond(200, {}, JSON.stringify(responding));
-      const event = events.emit.thirdCall.args;
+      const event = events.emit.getCall(3).args;
       expect(event[0]).to.equal(EVENTS.PBS_ANALYTICS);
       expect(event[1].seatnonbid[0]).to.have.property('auctionId', 2);
       expect(event[1].requestedBidders).to.deep.equal(['appnexus']);
@@ -3326,10 +3335,24 @@ describe('S2S Adapter', function () {
       const responding = deepClone(atagResponse);
       Object.assign(responding.ext.prebid.analytics.tags, ['stuff'])
       server.requests[0].respond(200, {}, JSON.stringify(responding));
-      const event = events.emit.secondCall.args;
+      const event = events.emit.thirdCall.args;
       expect(event[0]).to.equal(EVENTS.PBS_ANALYTICS);
       expect(event[1].atag[0]).to.deep.equal('stuff');
       expect(event[1].response).to.deep.equal(responding);
+    });
+
+    it('emits the BEFORE_PBS_HTTP event and captures responses', function () {
+      config.setConfig({ CONFIG });
+
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+
+      sinon.assert.calledTwice(events.emit);
+      const event = events.emit.firstCall.args;
+      expect(event[0]).to.equal(EVENTS.BEFORE_PBS_HTTP);
+      expect(event[1]).to.have.property('requestJson', server.requests[0].requestBody);
+      expect(event[1]).to.have.property('endpointUrl', CONFIG.endpoint.p1Consent);
+      expect(event[1].customHeaders).to.deep.equal({});
     });
 
     it('respects defaultTtl', function () {
@@ -3343,7 +3366,7 @@ describe('S2S Adapter', function () {
       adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
 
-      sinon.assert.calledOnce(events.emit);
+      sinon.assert.calledTwice(events.emit);
       const event = events.emit.firstCall.args;
       sinon.assert.calledOnce(addBidResponse);
       const response = addBidResponse.firstCall.args[1];

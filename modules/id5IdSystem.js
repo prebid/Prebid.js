@@ -20,7 +20,7 @@ import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {loadExternalScript} from '../src/adloader.js';
 
 /**
@@ -335,7 +335,6 @@ export class IdFetchFlow {
     return typeof this.submoduleConfig.params.externalModuleUrl === 'string';
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #externalModuleFlow(configCallPromise) {
     await loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
     const fetchFlowConfig = await configCallPromise;
@@ -343,12 +342,10 @@ export class IdFetchFlow {
     return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData, this.gppData);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   #getExternalIntegration() {
     return window.id5Prebid && window.id5Prebid.integration;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #regularFlow(configCallPromise) {
     const fetchFlowConfig = await configCallPromise;
     const extensionsData = await this.#callForExtensions(fetchFlowConfig.extensionsCall);
@@ -356,7 +353,6 @@ export class IdFetchFlow {
     return this.#processFetchCallResponse(fetchCallResponse);
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #callForConfig() {
     let url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
     const response = await fetch(url, {
@@ -375,7 +371,6 @@ export class IdFetchFlow {
     return dynamicConfig;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #callForExtensions(extensionsCallConfig) {
     if (extensionsCallConfig === undefined) {
       return undefined;
@@ -392,7 +387,6 @@ export class IdFetchFlow {
     return extensions;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   async #callId5Fetch(fetchCallConfig, extensionsData) {
     const fetchUrl = fetchCallConfig.url;
     const additionalData = fetchCallConfig.overrides || {};
@@ -410,7 +404,6 @@ export class IdFetchFlow {
     return fetchResponse;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   #createFetchRequestData() {
     const params = this.submoduleConfig.params;
     const hasGdpr = (this.gdprConsentData && typeof this.gdprConsentData.gdprApplies === 'boolean' && this.gdprConsentData.gdprApplies) ? 1 : 0;
@@ -466,7 +459,6 @@ export class IdFetchFlow {
     return data;
   }
 
-  // eslint-disable-next-line no-dupe-class-members
   #processFetchCallResponse(fetchCallResponse) {
     try {
       if (fetchCallResponse.privacy) {
@@ -482,7 +474,7 @@ export class IdFetchFlow {
 }
 
 async function loadExternalModule(url) {
-  return new GreedyPromise((resolve, reject) => {
+  return new PbPromise((resolve, reject) => {
     if (window.id5Prebid) {
       // Already loaded
       resolve();

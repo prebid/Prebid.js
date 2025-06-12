@@ -2,6 +2,7 @@
 import {
   SETUP_COMPLETE, SETUP_FAILED
 } from 'libraries/video/constants/events.js';
+import { getWinDimensions } from '../../../../../src/utils';
 
 const {VideojsProvider, utils} = require('modules/videojsVideoProvider');
 
@@ -70,17 +71,20 @@ describe('videojsProvider', function () {
       expect(mockVideojs.calledOnce).to.be.true
     });
 
-    it('should not reinstantiate the player', function () {
+    it('should not reinstantiate the player', function (done) {
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
-      const player = videojs(div, {})
-      config.playerConfig = {};
-      config.divId = 'test-div'
-      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
-      provider.init();
-      expect(videojs.getPlayer('test-div')).to.be.equal(player)
-      videojs.getPlayer('test-div').dispose()
+      const player = videojs(div, {});
+      player.ready(() => {
+        config.playerConfig = {};
+        config.divId = 'test-div';
+        const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+        provider.init();
+        expect(videojs.getPlayer('test-div')).to.be.equal(player);
+        videojs.getPlayer('test-div').dispose();
+        done();
+      });
     });
 
     it('should trigger setup complete when player is already insantiated', function () {
@@ -174,7 +178,7 @@ describe('videojsProvider', function () {
       expect(video.mimes).to.include(VPAID_MIME_TYPE);
     });
     //
-    // We can't determine what type of outstream play is occuring
+    // We can't determine what type of outstream play is occurring
     // if the src is absent so we should not set placement
     it('should not set placement when src is absent', function() {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`
@@ -293,31 +297,34 @@ describe('utils', function() {
 
   describe('getPositionCode', function() {
     it('should return the correct position when video is above the fold', function () {
+      const {innerWidth, innerHeight} = getWinDimensions();
       const code = utils.getPositionCode({
-        left: window.innerWidth / 10,
+        left: innerWidth / 10,
         top: 0,
-        width: window.innerWidth - window.innerWidth / 10,
-        height: window.innerHeight,
+        width: innerWidth - innerWidth / 10,
+        height: innerHeight,
       })
       expect(code).to.equal(AD_POSITION.ABOVE_THE_FOLD)
     });
 
     it('should return the correct position when video is below the fold', function () {
+      const {innerWidth, innerHeight} = getWinDimensions();
       const code = utils.getPositionCode({
-        left: window.innerWidth / 10,
-        top: window.innerHeight,
-        width: window.innerWidth - window.innerWidth / 10,
-        height: window.innerHeight / 2,
+        left: innerWidth / 10,
+        top: innerHeight,
+        width: innerWidth - innerWidth / 10,
+        height: innerHeight / 2,
       })
       expect(code).to.equal(AD_POSITION.BELOW_THE_FOLD)
     });
 
     it('should return the unkown position when the video is out of bounds', function () {
+      const {innerWidth, innerHeight} = getWinDimensions();
       const code = utils.getPositionCode({
-        left: window.innerWidth / 10,
-        top: window.innerHeight,
-        width: window.innerWidth,
-        height: window.innerHeight,
+        left: innerWidth / 10,
+        top: innerHeight,
+        width: innerWidth,
+        height: innerHeight,
       })
       expect(code).to.equal(AD_POSITION.UNKNOWN)
     });

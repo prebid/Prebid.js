@@ -27,7 +27,7 @@ describe('SharedId System', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
     });
@@ -60,7 +60,7 @@ describe('SharedId System', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
     });
@@ -117,6 +117,7 @@ describe('SharedId System', function () {
           }]
         }
       });
+      await getGlobal().getUserIdsAsync();
       const eids = getGlobal().getUserIdsAsEids();
       sinon.assert.match(eids[0], {
         source: 'pubcid.org',

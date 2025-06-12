@@ -96,7 +96,7 @@ describe(`UID2 module`, function () {
     uninstallTcfControl();
     attachIdSystem(uid2IdSubmodule);
 
-    suiteSandbox = sinon.sandbox.create();
+    suiteSandbox = sinon.createSandbox();
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
     // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
     if (typeof window.crypto.subtle === 'undefined') {
@@ -144,7 +144,7 @@ describe(`UID2 module`, function () {
     debugOutput(`----------------- START TEST ------------------`);
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
     debugOutput(fullTestTitle);
-    testSandbox = sinon.sandbox.create();
+    testSandbox = sinon.createSandbox();
     testSandbox.stub(utils, 'logWarn');
     init(config);
     setSubmoduleRegistry([uid2IdSubmodule]);
@@ -169,15 +169,17 @@ describe(`UID2 module`, function () {
   });
 
   describe('Configuration', function() {
-    it('When no baseUrl is provided in config, the module calls the production endpoint', function() {
+    it('When no baseUrl is provided in config, the module calls the production endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token}));
+      await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://prod.uidapi.com/v2/token/refresh');
     });
 
-    it('When a baseUrl is provided in config, the module calls the provided endpoint', function() {
+    it('When a baseUrl is provided in config, the module calls the provided endpoint', async function () {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token, uid2ApiBase: 'https://operator-integ.uidapi.com'}));
+      await runAuction();
       expect(server.requests[0]?.url).to.have.string('https://operator-integ.uidapi.com/v2/token/refresh');
     });
   });

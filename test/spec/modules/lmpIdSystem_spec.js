@@ -1,7 +1,6 @@
 import { expect } from 'chai';
-import { find } from 'src/polyfill.js';
 import { config } from 'src/config.js';
-import { init, startAuctionHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import {init, startAuctionHook, setSubmoduleRegistry, resetUserIds} from 'modules/userId/index.js';
 import { storage, lmpIdSubmodule } from 'modules/lmpIdSystem.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
 import 'src/prebid.js';
@@ -88,7 +87,7 @@ describe('LMPID System', () => {
     let sandbox;
 
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
       init(config);
@@ -107,13 +106,17 @@ describe('LMPID System', () => {
       init(config);
     })
 
+    after(() => {
+      resetUserIds();
+    })
+
     it('when a stored LMPID exists it is added to bids', (done) => {
       startAuctionHook(() => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.lmpid');
             expect(bid.userId.lmpid).to.equal('stored-lmpid');
-            const lmpidAsEid = find(bid.userIdAsEids, e => e.source == 'loblawmedia.ca');
+            const lmpidAsEid = bid.userIdAsEids.find(e => e.source == 'loblawmedia.ca');
             expect(lmpidAsEid).to.deep.equal({
               source: 'loblawmedia.ca',
               uids: [{
