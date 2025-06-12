@@ -201,14 +201,18 @@ module.exports = {
     return options;
   },
   getDisabledFeatures() {
-    const disabled = (argv.disable || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s);
+    function parseFlags(input) {
+      return input
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s);
+    }
+    const disabled = parseFlags(argv.disable || '');
+    const enabled = parseFlags(argv.enable || '');
     if (!argv.disable) {
       disabled.push('GREEDY');
     }
-    return disabled;
+    return disabled.filter(feature => !enabled.includes(feature));
   },
   execaTask(cmd) {
     return () => execaCmd.shell(cmd, {stdio: 'inherit'});
