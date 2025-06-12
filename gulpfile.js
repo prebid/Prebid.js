@@ -485,7 +485,9 @@ function startLocalServer(options = {}) {
     next();
   });
   app.use(express.static('./'));
-  http.createServer(app).listen(port, INTEG_SERVER_HOST);
+  const server = http.createServer(app);
+  server.listen(port, INTEG_SERVER_HOST);
+  return server;
 }
 
 // Watch Task with Live Reload
@@ -518,6 +520,7 @@ gulp.task(watch);
 gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
+
 
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
@@ -564,5 +567,16 @@ gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenatin
 // build task for reviewers, runs test-coverage, serves, without watching
 gulp.task(viewReview);
 gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
+
+gulp.task('extract-metadata', function (done) {
+  const server = startLocalServer();
+  import('./metadata/extractMetadata.mjs').then(({default: extract}) => {
+    extract().then(metadata => {
+      fs.writeFileSync('./metadata/modules.json', JSON.stringify(metadata, null, 2))
+    }).finally(() => {
+      server.close()
+    }).then(done, done);
+  });
+})
 
 module.exports = nodeBundle;
