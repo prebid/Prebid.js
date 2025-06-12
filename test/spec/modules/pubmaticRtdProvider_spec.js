@@ -5,13 +5,11 @@ import * as suaModule from '../../../src/fpd/sua.js';
 import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
 import * as prebidGlobal from '../../../src/prebidGlobal.js';
-// We need to explicitly import findWinningBid after stubbing getGlobal
-import * as pubmaticRtdProvider from '../../../modules/pubmaticRtdProvider.js';
 import {
     registerSubModule, pubmaticSubmodule, getFloorsConfig, fetchData,
-    getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, _country,
+    getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, getBidder, _country,
     _profileConfigs, _floorsData, defaultValueTemplate, withTimeout, configMerged,
-    getProfileConfigs, setProfileConfigs, getTargetingData, findWinningBid
+    getProfileConfigs, setProfileConfigs, getTargetingData
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
 
