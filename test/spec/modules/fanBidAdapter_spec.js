@@ -1,6 +1,6 @@
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
-import { spec } from 'modules/fanAdapter.js';
+import { spec } from 'modules/fanBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from 'src/mediaTypes.js';
 
