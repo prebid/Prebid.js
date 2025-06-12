@@ -14,7 +14,7 @@ import 'modules/schain.js';
 import {hook} from '../../../src/hook';
 
 describe('The Criteo bidding adapter', function () {
-  let utilsMock, sandbox, ajaxStub;
+  let sandbox, ajaxStub, logWarnStub;
 
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -24,18 +24,24 @@ describe('The Criteo bidding adapter', function () {
     };
     // Remove FastBid to avoid side effects
     localStorage.removeItem('criteo_fast_bid');
-    utilsMock = sinon.mock(utils);
-
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
+    logWarnStub = sandbox.stub(utils, 'logWarn');
     ajaxStub = sandbox.stub(ajax, 'ajax');
   });
 
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
     global.Criteo = undefined;
-    utilsMock.restore();
-    sandbox.restore();
-    ajaxStub.restore();
+    try {
+      sandbox?.restore();
+    } catch (e) {
+      // sinon sandbox restore may fail if a stubbed object went undefined
+      // catch and ignore to avoid breaking unrelated tests
+      // finding the bad stub is proving to be extremely difficult
+      /* eslint-disable no-console */
+      console.error('sandbox restore error:', e);
+      /* eslint-enable no-console */
+    }
   });
 
   describe('getUserSyncs in pixel mode', function () {
@@ -112,7 +118,8 @@ describe('The Criteo bidding adapter', function () {
       version: '$prebid.version$'.replace(/\./g, '_'),
     };
 
-    let randomStub,
+    let sandbox,
+      randomStub,
       getConfigStub,
       getRefererInfoStub,
       cookiesAreEnabledStub,
@@ -125,43 +132,34 @@ describe('The Criteo bidding adapter', function () {
       triggerPixelStub;
 
     beforeEach(function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
+      sandbox = sinon.createSandbox();
+      getConfigStub = sandbox.stub(config, 'getConfig');
       getConfigStub.withArgs('criteo.fastBidVersion').returns('none');
 
-      randomStub = sinon.stub(Math, 'random');
+      randomStub = sandbox.stub(Math, 'random');
       randomStub.returns(123456);
 
-      getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
+      getRefererInfoStub = sandbox.stub(refererDetection, 'getRefererInfo');
       getRefererInfoStub.returns({
         domain: 'www.abc.com'
       });
 
-      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+      cookiesAreEnabledStub = sandbox.stub(storage, 'cookiesAreEnabled');
       cookiesAreEnabledStub.returns(true);
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(true);
 
-      getCookieStub = sinon.stub(storage, 'getCookie');
-      setCookieStub = sinon.stub(storage, 'setCookie');
-      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
-      removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+      getCookieStub = sandbox.stub(storage, 'getCookie');
+      setCookieStub = sandbox.stub(storage, 'setCookie');
+      getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
+      setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage');
+      removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage');
 
-      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+      triggerPixelStub = sandbox.stub(utils, 'triggerPixel');
     });
 
     afterEach(function () {
-      randomStub.restore();
-      getConfigStub.restore();
-      getRefererInfoStub.restore();
-      cookiesAreEnabledStub.restore();
-      localStorageIsEnabledStub.restore();
-      getCookieStub.restore();
-      setCookieStub.restore();
-      getDataFromLocalStorageStub.restore();
-      setDataInLocalStorageStub.restore();
-      removeDataFromLocalStorageStub.restore();
-      triggerPixelStub.restore();
+      sandbox?.restore();
     });
 
     it('should not trigger sync if publisher did not enable iframe based syncs', function () {
@@ -668,42 +666,41 @@ describe('The Criteo bidding adapter', function () {
       },
     };
 
-    let localStorageIsEnabledStub;
+    let sandbox, localStorageIsEnabledStub;
 
     before(() => {
       hook.ready();
     });
 
     this.beforeEach(function () {
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      sandbox = sinon.createSandbox();
+      localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(true);
     });
 
     afterEach(function () {
-      localStorageIsEnabledStub.restore();
+      sandbox?.restore();
       config.resetConfig();
     });
 
     it('should properly build a request using random uuid as auction id', async function () {
-      const generateUUIDStub = sinon.stub(utils, 'generateUUID');
+    // Re‐use the sandbox from beforeEach instead of creating a new one
+      const generateUUIDStub = sandbox.stub(utils, 'generateUUID');
       generateUUIDStub.returns('def');
-      const bidderRequest = {};
-      const bidRequests = [
-        {
-          bidder: 'criteo',
-          adUnitCode: 'bid-123',
-          mediaTypes: {
-            banner: {
-              sizes: [[728, 90]]
-            }
-          },
-          params: {}
+
+      const minimalBidderRequest = {};
+      const bidRequests = [{
+        bidder: 'criteo',
+        adUnitCode: 'bid-123',
+        mediaTypes: {
+          banner: { sizes: [[728, 90]] }
         },
-      ];
-      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest));
+        params: {}
+      }];
+
+      const request = spec.buildRequests(bidRequests, await addFPDToBidderRequest(minimalBidderRequest));
       const ortbRequest = request.data;
       expect(ortbRequest.id).to.equal('def');
-      generateUUIDStub.restore();
     });
 
     it('should properly transmit source.tid if available', async function () {
@@ -2518,15 +2515,12 @@ describe('The Criteo bidding adapter', function () {
           }
         ];
 
-        utilsMock.expects('logWarn')
-          .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
-          .exactly(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
         for (const nativeParams of nativeParamsWithSendTargetingKeys) {
           let transformedBidRequests = {...bidRequests};
           transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
           spec.buildRequests(transformedBidRequests, await addFPDToBidderRequest(bidderRequest));
         }
-        utilsMock.verify();
+        expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').callCount).to.equal(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
       });
     }
 
@@ -2807,9 +2801,8 @@ describe('The Criteo bidding adapter', function () {
         }
       ];
 
-      utilsMock.expects('logWarn').withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').never();
       const request = spec.buildRequests(bidRequestsWithSendId, await addFPDToBidderRequest(bidderRequest));
-      utilsMock.verify();
+      expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').notCalled).to.be.true;
     });
 
     it('should warn only once if sendId is not provided on required fields for native bidRequest', async () => {
@@ -2907,15 +2900,12 @@ describe('The Criteo bidding adapter', function () {
         }
       ];
 
-      utilsMock.expects('logWarn')
-        .withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)')
-        .exactly(nativeParamsWithoutSendId.length * bidRequests.length);
       for (const nativeParams of nativeParamsWithoutSendId) {
         let transformedBidRequests = {...bidRequests};
         transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
         spec.buildRequests(transformedBidRequests, await addFPDToBidderRequest(bidderRequest));
       }
-      utilsMock.verify();
+      expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').callCount).to.equal(nativeParamsWithoutSendId.length * bidRequests.length);
     });
   });
 });

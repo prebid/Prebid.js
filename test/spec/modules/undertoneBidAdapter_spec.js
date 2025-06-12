@@ -314,7 +314,7 @@ describe('Undertone Adapter', () => {
         getBoundingClientRect() { return { left: 100, top: 100, width: 300, height: 250 }; }
       };
 
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(document, 'getElementById').withArgs('div-gpt-ad-1460505748561-0').returns(element);
     });
 
