@@ -187,11 +187,11 @@ Features that can be disabled this way are:
 - `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
 - `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).
 
-`GREEDY` is disabled and all other features are enabled when no features are explicitly chosen. Use `--enable GREEDY` on the `gulp build` command or remove it from `disableFeatures` to restore the original behavior. If you disable any feature, you must explicitly also disable GREEDY to get the default behavior on promises.
+`GREEDY` is disabled and all other features are enabled when no features are explicitly chosen. Use `--enable GREEDY` on the `gulp build` command or remove it from `disableFeatures` to restore the original behavior. If you disable any feature, you must explicitly also disable `GREEDY` to get the default behavior on promises.
 
 #### Greedy promises
 
-By default, Prebid attempts to hold control of the main thread when possible, using a [custom implementation of `Promise`](https://github.com/prebid/Prebid.js/blob/master/libraries/greedy/greedyPromise.js) that does not submit callbacks to the scheduler once the promise is resolved (running them immediately instead).
+When `GREEDY` is enabled, Prebid attempts to hold control of the main thread when possible, using a [custom implementation of `Promise`](https://github.com/prebid/Prebid.js/blob/master/libraries/greedy/greedyPromise.js) that does not submit callbacks to the scheduler once the promise is resolved (running them immediately instead).
 Disabling this behavior instructs Prebid to use the standard `window.Promise` instead; this has the effect of breaking up task execution, making them slower overall but giving the browser more chances to run other tasks in between, which can improve UX.         
 
 You may also override the `Promise` constructor used by Prebid through `pbjs.Promise`, for example:
