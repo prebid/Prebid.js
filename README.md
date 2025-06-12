@@ -201,10 +201,6 @@ var pbjs = pbjs || {};
 pbjs.Promise = myCustomPromiseConstructor;
 ```
 
-#### Yield helper
-
-The `pbYield()` utility yields to `scheduler.yield()` when available, allowing long-running tasks to be broken up. Call `await pbYield()` inside async functions to cooperate with the scheduler.
-
 ## Unminified code
 
 You can get a version of the code that's unminified for debugging with `build-bundle-dev`:
