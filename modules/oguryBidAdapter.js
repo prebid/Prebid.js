@@ -13,7 +13,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '2.0.3';
+const ADAPTER_VERSION = '2.0.4';
 
 export const ortbConverterProps = {
   context: {
@@ -35,9 +35,6 @@ export const ortbConverterProps = {
 
     const bidWithAssetKey = bidderRequest.bids.find(bid => Boolean(deepAccess(bid, 'params.assetKey', false)));
     if (bidWithAssetKey) deepSetValue(req, 'site.id', bidWithAssetKey.params.assetKey);
-
-    const bidWithUserIds = bidderRequest.bids.find(bid => Boolean(bid.userId));
-    if (bidWithUserIds) deepSetValue(req, 'user.ext.uids', bidWithUserIds.userId);
 
     return req;
   },
