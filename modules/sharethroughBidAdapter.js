@@ -328,18 +328,10 @@ export const sharethroughAdapterSpec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses) => {
-    let sync = [];
+    const shouldCookieSync =
+      syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    if (syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls')) {
-      serverResponses[0].body.cookieSyncUrls.map((url) =>
-        sync.push({
-          type: 'image',
-          url
-        })
-      );
-    }
-
-    return sync;
+    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
   },
 
   // Empty implementation for prebid core to be able to find it
