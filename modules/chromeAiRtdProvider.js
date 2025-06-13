@@ -207,8 +207,7 @@ const initLanguageDetector = async () => {
   }
 
   // Get page text content
-  // eslint-disable-next-line no-restricted-properties
-  const pageText = document.body.innerText;
+  const pageText = document.body.textContent;
   if (!pageText || pageText.length < CONSTANTS.MIN_TEXT_LENGTH) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content to detect language`);
     return false;
