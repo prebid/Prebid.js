@@ -197,10 +197,20 @@ describe('topLevelPaapi', () => {
             });
             it('should resolve to raa result', () => {
               return getBids({adUnitCode: 'au', auctionId}).then(result => {
-                sinon.assert.calledWith(raa, sinon.match({
-                  ...auctionConfig,
-                  componentAuctions: sinon.match(cmp => cmp.find(cfg => sinon.match(cfg, auctionConfig)))
-                }));
+                sinon.assert.calledOnce(raa);
+                sinon.assert.calledWith(
+                  raa,
+                  sinon.match({
+                    ...auctionConfig,
+                    componentAuctions: sinon.match([
+                      sinon.match({
+                        ...auctionConfig,
+                        auctionId: 'auct',
+                        adUnitCode: 'au'
+                      })
+                    ])
+                  })
+                );
                 expectBids(result, {au: 'raa-au-auct'});
               });
             });

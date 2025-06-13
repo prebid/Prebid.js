@@ -12,7 +12,7 @@ describe('eightPodAnalyticAdapter', function() {
   let sandbox;
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     adapterManager.enableAnalytics({
       provider: 'eightPod'
     });

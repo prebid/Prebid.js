@@ -75,7 +75,7 @@ describe('#bidViewability', function() {
     let winningBidsArray;
     let sandbox
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       // mocking winningBidsArray
       winningBidsArray = [];
       sandbox.stub(prebidGlobal, 'getGlobal').returns({
@@ -136,7 +136,7 @@ describe('#bidViewability', function() {
     let triggerPixelSpy;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
     });
 
@@ -262,7 +262,7 @@ describe('#bidViewability', function() {
     ];
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       triggerPixelSpy = sandbox.spy(utils, ['triggerPixel']);
       eventsEmitSpy = sandbox.spy(events, ['emit']);
       callBidViewableBidderSpy = sandbox.spy(adapterManager, ['callBidViewableBidder']);
