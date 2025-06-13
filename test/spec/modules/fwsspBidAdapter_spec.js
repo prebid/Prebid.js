@@ -143,41 +143,40 @@ describe('fwsspBidAdapter', () => {
       expect(request.method).to.equal('GET');
       expect(request.url).to.equal('https://example.com/ad/g/1');
 
-      const expectedDataString = request.data;
-      const expectedEncodedSchainString = encodeURIComponent('{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com","sid":"0","hp":1,"rid":"bidrequestid","domain":"example.com"}]}');
-
-      expect(expectedDataString).to.include('nw=42015');
-      expect(expectedDataString).to.include('resp=vast4');
-      expect(expectedDataString).to.include('prof=42015%3Ajs_allinone_profile');
-      expect(expectedDataString).to.include('csid=js_allinone_demo_site_section');
-      expect(expectedDataString).to.include('caid=0');
-      expect(expectedDataString).to.include('pvrn=');
-      expect(expectedDataString).to.include('vprn=');
-      expect(expectedDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
-      expect(expectedDataString).to.include('mode=on-demand');
-      expect(expectedDataString).to.include('vclr=js-7.10.0-prebid-undefined;');
-      expect(expectedDataString).to.include('_fw_player_width=1920');
-      expect(expectedDataString).to.include('_fw_player_height=1080');
-      expect(expectedDataString).to.include('_fw_gdpr_consent=consentString');
-      expect(expectedDataString).to.include('_fw_gdpr=true');
-      expect(expectedDataString).to.include('_fw_us_privacy=uspConsentString');
-      expect(expectedDataString).to.include('gpp=gppString');
-      expect(expectedDataString).to.include('gpp_sid=8');
-      expect(expectedDataString).to.include('tpos=0');
-      expect(expectedDataString).to.include('ptgt=a');
-      expect(expectedDataString).to.include('slid=Preroll_1');
-      expect(expectedDataString).to.include('slau=preroll');
-      expect(expectedDataString).to.not.include('mind');
-      expect(expectedDataString).to.not.include('maxd;');
+      const actualDataString = request.data;
+      expect(actualDataString).to.include('nw=42015');
+      expect(actualDataString).to.include('resp=vast4');
+      expect(actualDataString).to.include('prof=42015%3Ajs_allinone_profile');
+      expect(actualDataString).to.include('csid=js_allinone_demo_site_section');
+      expect(actualDataString).to.include('caid=0');
+      expect(actualDataString).to.include('pvrn=');
+      expect(actualDataString).to.include('vprn=');
+      expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
+      expect(actualDataString).to.include('mode=on-demand');
+      expect(actualDataString).to.include(`vclr=js-7.10.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include('_fw_player_width=1920');
+      expect(actualDataString).to.include('_fw_player_height=1080');
+      expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
+      expect(actualDataString).to.include('_fw_gdpr=true');
+      expect(actualDataString).to.include('_fw_us_privacy=uspConsentString');
+      expect(actualDataString).to.include('gpp=gppString');
+      expect(actualDataString).to.include('gpp_sid=8');
+      expect(actualDataString).to.include('tpos=0');
+      expect(actualDataString).to.include('ptgt=a');
+      expect(actualDataString).to.include('slid=Preroll_1');
+      expect(actualDataString).to.include('slau=preroll');
+      expect(actualDataString).to.not.include('mind');
+      expect(actualDataString).to.not.include('maxd;');
       // schain check
-      expect(expectedDataString).to.include(expectedEncodedSchainString);
+      const expectedEncodedSchainString = encodeURIComponent('{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com","sid":"0","hp":1,"rid":"bidrequestid","domain":"example.com"}]}');
+      expect(actualDataString).to.include(expectedEncodedSchainString);
     });
 
     it('should construct the full adrequest URL correctly', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.10.0-prebid-undefined;_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=on-demand&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D;tpos=0&ptgt=a&slid=Preroll_1&slau=preroll;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -363,36 +362,36 @@ describe('fwsspBidAdapter', () => {
       expect(request.method).to.equal('GET');
       expect(request.url).to.equal('https://example.com/ad/g/1');
 
-      const expectedDataString = request.data;
-      const expectedEncodedSchainString = encodeURIComponent('{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com","sid":"0","hp":1,"rid":"bidrequestid","domain":"example.com"}]}');
+      const actualDataString = request.data;
 
-      expect(expectedDataString).to.include('nw=42015');
-      expect(expectedDataString).to.include('resp=vast4');
-      expect(expectedDataString).to.include('prof=42015%3Ajs_allinone_profile');
-      expect(expectedDataString).to.include('csid=js_allinone_demo_site_section');
-      expect(expectedDataString).to.include('caid=0');
-      expect(expectedDataString).to.include('pvrn=');
-      expect(expectedDataString).to.include('vprn=');
-      expect(expectedDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
-      expect(expectedDataString).to.include('mode=live');
-      expect(expectedDataString).to.include('vclr=js-7.10.0-prebid-undefined;');
-      expect(expectedDataString).to.include('_fw_player_width=1920');
-      expect(expectedDataString).to.include('_fw_player_height=1080');
-      expect(expectedDataString).to.include('_fw_gdpr_consent=consentString');
-      expect(expectedDataString).to.include('_fw_gdpr=true');
-      expect(expectedDataString).to.include('_fw_us_privacy=uspConsentString');
-      expect(expectedDataString).to.include('gpp=gppString');
-      expect(expectedDataString).to.include('gpp_sid=8');
+      expect(actualDataString).to.include('nw=42015');
+      expect(actualDataString).to.include('resp=vast4');
+      expect(actualDataString).to.include('prof=42015%3Ajs_allinone_profile');
+      expect(actualDataString).to.include('csid=js_allinone_demo_site_section');
+      expect(actualDataString).to.include('caid=0');
+      expect(actualDataString).to.include('pvrn=');
+      expect(actualDataString).to.include('vprn=');
+      expect(actualDataString).to.include('flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs');
+      expect(actualDataString).to.include('mode=live');
+      expect(actualDataString).to.include(`vclr=js-7.10.0-prebid-${pbjs.version};`);
+      expect(actualDataString).to.include('_fw_player_width=1920');
+      expect(actualDataString).to.include('_fw_player_height=1080');
+      expect(actualDataString).to.include('_fw_gdpr_consent=consentString');
+      expect(actualDataString).to.include('_fw_gdpr=true');
+      expect(actualDataString).to.include('_fw_us_privacy=uspConsentString');
+      expect(actualDataString).to.include('gpp=gppString');
+      expect(actualDataString).to.include('gpp_sid=8');
 
-      expect(expectedDataString).to.include('loc=http%3A%2F%2Fwww.test.com');
-      expect(expectedDataString).to.include('tpos=300');
-      expect(expectedDataString).to.include('ptgt=a');
-      expect(expectedDataString).to.include('slid=Midroll');
-      expect(expectedDataString).to.include('slau=midroll');
-      expect(expectedDataString).to.include('mind=30');
-      expect(expectedDataString).to.include('maxd=60;');
+      expect(actualDataString).to.include('loc=http%3A%2F%2Fwww.test.com');
+      expect(actualDataString).to.include('tpos=300');
+      expect(actualDataString).to.include('ptgt=a');
+      expect(actualDataString).to.include('slid=Midroll');
+      expect(actualDataString).to.include('slau=midroll');
+      expect(actualDataString).to.include('mind=30');
+      expect(actualDataString).to.include('maxd=60;');
       // schain check
-      expect(expectedDataString).to.include(expectedEncodedSchainString);
+      const expectedEncodedSchainString = encodeURIComponent('{"ver":"1.0","complete":1,"nodes":[{"asi":"example.com","sid":"0","hp":1,"rid":"bidrequestid","domain":"example.com"}]}');
+      expect(actualDataString).to.include(expectedEncodedSchainString);
     });
 
     it('should construct the full adrequest URL correctly', () => {
@@ -400,7 +399,7 @@ describe('fwsspBidAdapter', () => {
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
 
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-undefined;_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consent=consentString&_fw_gdpr=true&_fw_gdpr_consented_providers=test_providers&_fw_us_privacy=uspConsentString&gpp=gppString&gpp_sid=8&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&loc=http%3A%2F%2Fwww.test.com&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
@@ -426,7 +425,7 @@ describe('fwsspBidAdapter', () => {
       const requests = spec.buildRequests(getBidRequests(), bidderRequest2);
       expect(requests).to.be.an('array').that.is.not.empty;
       const request = requests[0];
-      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-undefined;_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
+      const expectedUrl = `https://example.com/ad/g/1?nw=42015&resp=vast4&prof=42015%3Ajs_allinone_profile&csid=js_allinone_demo_site_section&caid=0&flag=%2Bplay%2Bfwssp%2Bemcr%2Bnucr%2Baeti%2Brema%2Bexvt%2Bfwpbjs&mode=live&vclr=js-7.10.0-prebid-${pbjs.version};_fw_player_width=1920&_fw_player_height=1080&_fw_bidfloor=2&_fw_bidfloorcur=USD&_fw_gdpr_consented_providers=test_providers&gpp=test_ortb2_gpp&gpp_sid=test_ortb2_gpp_sid&_fw_prebid_content=%7B%22id%22%3A%22test_content_id%22%2C%22title%22%3A%22test_content_title%22%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22example.com%22%2C%22sid%22%3A%220%22%2C%22hp%22%3A1%2C%22rid%22%3A%22bidrequestid%22%2C%22domain%22%3A%22example.com%22%7D%5D%7D&_fw_video_context=&_fw_placement_type=null&_fw_plcmt_type=null;tpos=300&ptgt=a&slid=Midroll&slau=midroll&mind=30&maxd=60;`;
       const actualUrl = `${request.url}?${request.data}`;
       // Remove pvrn and vprn from both URLs before comparing
       const cleanUrl = (url) => url.replace(/&pvrn=[^&]*/g, '').replace(/&vprn=[^&]*/g, '');
