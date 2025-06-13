@@ -32,7 +32,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests(bidRequests, bidderRequest) {
-
     /**
      * Builds a bid request object for FreeWheel Server-Side Prebid adapter
      * @param {Object} currentBidRequest - The bid request object containing bid parameters
@@ -52,7 +51,7 @@ export const spec = {
       const dataString = constructDataString(globalParams, keyValues, slotParams);
       return {
         method: 'GET',
-        url:  currentBidRequest.params.serverUrl,
+        url: currentBidRequest.params.serverUrl,
         data: dataString,
         bidRequest: currentBidRequest
       };
@@ -88,15 +87,14 @@ export const spec = {
     const constructKeyValues = (currentBidRequest, bidderRequest) => {
       const keyValues = currentBidRequest.params.adRequestKeyValues || {};
 
-      //Add bidfloor to keyValues
+      // Add bidfloor to keyValues
       const bidfloor = getBidFloor(currentBidRequest, config);
-      keyValues._fw_bidfloor =  (bidfloor > 0) ? bidfloor : 0;
+      keyValues._fw_bidfloor = (bidfloor > 0) ? bidfloor : 0;
       keyValues._fw_bidfloorcur = (bidfloor > 0) ? getFloorCurrency(config) : '';
 
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
         keyValues._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
-  
         if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
           keyValues._fw_gdpr = bidderRequest.gdprConsent.gdprApplies;
         }
@@ -375,7 +373,6 @@ export const spec = {
  * Generates structured HTML for FreeWheel MRM ad integration with Prebid.js
  * @param {Object} bidrequest - Prebid bid request
  * @param {number[]} size - Prebid ad dimensions [width, height]
- * @param {string} serverResponse - Vast XML string
  * @returns {string} Formatted HTML string for ad rendering
  */
 export function formatAdHTML(bidrequest, size) {

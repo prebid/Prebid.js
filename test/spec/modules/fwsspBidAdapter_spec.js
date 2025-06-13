@@ -307,7 +307,8 @@ describe('fwsspBidAdapter', () => {
           },
           'gdpr_consented_providers': 'test_providers'
         }
-      }]};
+      }]
+    };
 
     const bidderRequest = {
       gdprConsent: {
@@ -684,7 +685,7 @@ describe('fwsspBidAdapter', () => {
         params: {
           showMuteButton: true,
           isMuted: false,
-          playerParams: { 'test-param' : 'test-value' }
+          playerParams: { 'test-param': 'test-value' }
         },
         adUnitCode: 'test'
       }
@@ -842,7 +843,7 @@ describe('fwsspBidAdapter', () => {
         'bidder': 'fwssp',
         'params': {
           'serverUrl': 'https://fwmrm.com/ad/g/1',
-          'sdkVersion':''
+          'sdkVersion': ''
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -856,8 +857,8 @@ describe('fwsspBidAdapter', () => {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-      }
-    ]};
+      }]
+    };
 
     const response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'>' +
     '<Ad id=\'AdswizzAd28517153\'>' +
