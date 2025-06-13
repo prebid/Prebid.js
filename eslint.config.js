@@ -130,7 +130,6 @@ function commonConfig(overrides) {
       '@stylistic/comma-dangle': 'off',
       '@stylistic/object-curly-newline': 'off',
       '@stylistic/object-property-newline': 'off',
-      '@stylistic/no-multiple-empty-lines': 'off',
 
     }
   }, overrides);

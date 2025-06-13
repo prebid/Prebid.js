@@ -943,7 +943,6 @@ function getAdUnits () {
   ]
 }
 
-
 describe('permutiveIdentityManagerIdSystem', () => {
   const STORAGE_KEY = 'permutive-prebid-id'
 
