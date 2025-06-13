@@ -1835,6 +1835,16 @@ describe('IndexexchangeAdapter', function () {
       expect(r.ext.ixdiag.userIds.should.not.include('merkleId'));
       expect(r.ext.ixdiag.userIds.should.not.include('parrableId'));
     });
+
+    it('should include lipbid when LiveIntent id is present', function () {
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.userId = { lipb: { lipbid: 'lipbid_value' } };
+
+      const request = spec.buildRequests([bid], DEFAULT_OPTION)[0];
+      const r = extractPayload(request);
+
+      expect(r.ext.ixdiag.userIds).to.include('lipbid');
+    });
   });
 
   describe('First party data', function () {
