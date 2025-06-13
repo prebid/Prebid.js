@@ -2370,7 +2370,7 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.banner.format[0].ext.fl).to.equal('x');
       });
 
-      it('banner multi size impression should have bidFloor both in imp and format ext obejcts', function () {
+      it('banner multi size impression should have bidFloor both in imp and format ext objects', function () {
         const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
         bid.params.bidFloor = 50;
         bid.params.bidFloorCur = 'USD';
@@ -4411,7 +4411,7 @@ describe('IndexexchangeAdapter', function () {
 
   describe('Features', () => {
     let localStorageValues = {};
-    let sandbox = sinon.sandbox.create();
+    let sandbox = sinon.createSandbox();
     let setDataInLocalStorageStub;
     let getDataFromLocalStorageStub;
     let removeDataFromLocalStorageStub;
@@ -4429,7 +4429,7 @@ describe('IndexexchangeAdapter', function () {
 
     beforeEach(() => {
       localStorageValues = {};
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage').callsFake((key, value) => localStorageValues[key] = value);
       getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => localStorageValues[key]);
       removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage').callsFake((key) => delete localStorageValues[key]);
