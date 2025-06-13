@@ -20,7 +20,6 @@ const REPORT_ENDPOINT = 'https://reports.intentiq.com/report';
 const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
 const REPORT_SERVER_ADDRESS = 'https://test-reports.intentiq.com/report';
 
-
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
 const getUserConfig = () => [

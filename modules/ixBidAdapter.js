@@ -1275,7 +1275,12 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
 
-  return PROVIDERS.filter(provider => userIds[provider]);
+  return PROVIDERS.filter(provider => {
+    if (provider === 'lipbid') {
+      return deepAccess(userIds, 'lipb.lipbid');
+    }
+    return userIds[provider];
+  });
 }
 
 /**

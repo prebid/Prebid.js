@@ -19,6 +19,7 @@ var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 const execaCmd = require('execa');
 var gulpif = require('gulp-if');
+var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
@@ -229,8 +230,7 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  const sm = dev || argv.sourceMaps;
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist'), {sourcemaps: sm ? '.' : false}));
+  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
 function nodeBundle(modules, dev = false) {
@@ -321,8 +321,10 @@ function bundle(dev, moduleArr) {
   fancyLog('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  return wrap(gulp.src(entries, {sourcemaps: sm}))
-    .pipe(concat(outputFileName));
+  return wrap(gulp.src(entries))
+    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
+    .pipe(concat(outputFileName))
+    .pipe(gulpif(sm, sourcemaps.write('.')));
 }
 
 function setupDist() {
@@ -447,7 +449,7 @@ function testCoverage(done) {
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
-  return execaTask('cat build/coverage/lcov.info | node_modules/coveralls/bin/coveralls.js')();
+  return execaTask('cat build/coverage/lcov.info | node_modules/coveralls-next/bin/coveralls.js')();
 }
 
 // This task creates postbid.js. Postbid setup is different from prebid.js

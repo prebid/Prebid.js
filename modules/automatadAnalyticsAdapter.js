@@ -310,7 +310,6 @@ atmtdAdapter.enableAnalytics = function (configuration) {
 
   logMessage(`Automatad Analytics Adapter enabled with sdk config`, window.__atmtdSDKConfig)
 
-
   atmtdAdapter.originEnableAnalytics(configuration)
 };
 
