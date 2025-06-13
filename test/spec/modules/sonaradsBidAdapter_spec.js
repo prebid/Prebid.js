@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import {
   spec, BIDDER_CODE, SERVER_PATH_US1_SYNC, SERVER_PATH_US1_EVENTS
-} from '../../../modules/bridgeuppBidAdapter.js';
+} from '../../../modules/sonaradsBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
 import { hook } from '../../../src/hook';

@@ -13,6 +13,7 @@ const BIDDER_CODE = 'epom_dsp';
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['epomdsp'],
 
   isBidRequestValid(bid) {
     const globalSettings = config.getBidderConfig()[BIDDER_CODE]?.epomSettings || {};
