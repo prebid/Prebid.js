@@ -8,7 +8,7 @@ import { config } from '../src/config.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const BIDDER_CODE = 'freewheel-ssp';
+const BIDDER_CODE = 'freewheelssp';
 const GVL_ID = 285;
 
 const PROTOCOL = getProtocol();
@@ -322,7 +322,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
+  aliases: ['stickyadstv', 'freewheel-ssp'], //  aliases for freewheelssp
   /**
    * Determines whether or not the given bid request is valid.
    *
