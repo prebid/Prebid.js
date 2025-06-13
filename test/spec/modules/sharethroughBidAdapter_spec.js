@@ -1067,23 +1067,25 @@ describe('sharethrough adapter spec', function () {
       })
 
       it('should return correct native properties from ORTB converter', () => {
-        const request = spec.buildRequests(nativeBidRequests, bidderRequest)[0];
-        const assets = JSON.parse(request.data.imp[0].native.request).assets;
-        
-        const asset1 = assets[0];
-        expect(asset1.id).to.equal(0);
-        expect(asset1.required).to.equal(1);
-        expect(asset1.title).to.deep.equal({'len': 140});
+        if (FEATURES.NATIVE) {
+          const request = spec.buildRequests(nativeBidRequests, {})[0];
+          const assets = JSON.parse(request.data.imp[0].native.request).assets;
 
-        const asset2 = assets[1];
-        expect(asset2.id).to.equal(1);
-        expect(asset2.required).to.equal(1);
-        expect(asset2.img).to.deep.equal({'type': 3, 'w': 300, 'h': 600});
+          const asset1 = assets[0];
+          expect(asset1.id).to.equal(0);
+          expect(asset1.required).to.equal(1);
+          expect(asset1.title).to.deep.equal({ 'len': 140 });
 
-        const asset3 = assets[2];
-        expect(asset3.id).to.equal(2);
-        expect(asset3.required).to.equal(1);
-        expect(asset3.data).to.deep.equal({'type': 1})
+          const asset2 = assets[1];
+          expect(asset2.id).to.equal(1);
+          expect(asset2.required).to.equal(1);
+          expect(asset2.img).to.deep.equal({ 'type': 3, 'w': 300, 'h': 600 });
+
+          const asset3 = assets[2];
+          expect(asset3.id).to.equal(2);
+          expect(asset3.required).to.equal(1);
+          expect(asset3.data).to.deep.equal({ 'type': 1 })
+        }
       })
     });
 
@@ -1279,7 +1281,7 @@ describe('sharethrough adapter spec', function () {
 
           const resp = spec.interpretResponse(response, request);
           expect(resp.bids.length).to.equal(2);
-          expect(resp.paapi).to.deep.equal({'key': 'value'})
+          expect(resp.paapi).to.deep.equal({ 'key': 'value' })
         })
       });
 
