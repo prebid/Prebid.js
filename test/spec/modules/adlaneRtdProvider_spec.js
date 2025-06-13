@@ -1,16 +1,16 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-
 import {
-  getAgeConsent,
-  getAgeConsentByLocalStorage,
+  getAgeVerification,
+  getAgeVerificationByLocalStorage,
+  setAgeVerificationConfig,
   isAdlCmpAvailable,
-  setAgeConsentConfig,
   adlaneSubmodule
 } from '../../../modules/adlaneRtdProvider.js';
-
 import * as utils from 'src/utils.js';
 import * as storageManager from 'src/storageManager.js';
+import { config } from 'src/config.js';
+import {init} from 'modules/rtdModule'
 
 describe('adlaneRtd Module', () => {
   let sandbox;
@@ -27,35 +27,77 @@ describe('adlaneRtd Module', () => {
     expect(adlaneSubmodule.name).to.equal('adlaneRtd');
   });
 
+  describe('adlaneRtdProvider', () => {
+    it('should be correctly exported and registered', () => {
+      expect(adlaneSubmodule).to.be.an('object');
+      expect(adlaneSubmodule.name).to.equal('adlaneRtd');
+      expect(adlaneSubmodule.init).to.be.a('function');
+      expect(adlaneSubmodule.getBidRequestData).to.be.a('function');
+    });
+
+    it('should be registered in the RTD module', () => {
+      const getModuleStub = sinon.stub(config, 'getConfig').callsFake((key) => {
+        const conf = {
+          realTimeData: {
+            auctionDelay: 100,
+            dataProviders: [{
+              name: 'adlaneRtd',
+              waitForIt: true
+            }]
+          }
+        };
+
+        return conf[key];
+      });
+
+      init(config);
+
+      const rtdConfig = config.getConfig('realTimeData');
+
+      expect(rtdConfig).to.be.an('object');
+      expect(rtdConfig.dataProviders).to.be.an('array');
+
+      const adlaneProvider = rtdConfig.dataProviders.find(provider => provider.name === 'adlaneRtd');
+
+      expect(adlaneProvider).to.exist;
+      expect(adlaneProvider.waitForIt).to.be.true;
+
+      getModuleStub.restore();
+    });
+  });
+
   describe('isAdlCmpAvailable', () => {
-    it('should return true if AdlCmp and getAgeConsent function are available', () => {
-      const fakeWin = { AdlCmp: { getAgeConsent: () => ({}) } };
+    it('should return true if AdlCmp and getAgeVerification function are available', () => {
+      const fakeWin = { AdlCmp: { getAgeVerification: () => ({}) } };
+
       expect(isAdlCmpAvailable(fakeWin)).to.be.true;
     });
 
     it('should return false if AdlCmp is missing', () => {
       const fakeWin = {};
+
       expect(isAdlCmpAvailable(fakeWin)).to.be.false;
     });
 
-    it('should return false if getAgeConsent is not a function', () => {
-      const fakeWin = { AdlCmp: { getAgeConsent: 'notAFunction' } };
+    it('should return false if getAgeVerification is not a function', () => {
+      const fakeWin = { AdlCmp: { getAgeVerification: 'notAFunction' } };
+
       expect(isAdlCmpAvailable(fakeWin)).to.be.false;
     });
   });
 
-  describe('getAgeConsentByLocalStorage', () => {
-    it('should return parsed ageConsent from localStorage if valid', () => {
+  describe('getAgeVerificationByLocalStorage', () => {
+    it('should return parsed ageVerification from localStorage if valid', () => {
       const mockData = {
         status: 'accepted',
-        consentId: '123456789123456789',
+        id: '123456789123456789',
         decisionDate: '2011-10-05T14:48:00.000Z'
       };
       const storage = {
         getDataFromLocalStorage: () => JSON.stringify(mockData)
       };
+      const result = getAgeVerificationByLocalStorage(storage);
 
-      const result = getAgeConsentByLocalStorage(storage);
       expect(result).to.deep.equal({
         id: '123456789123456789',
         status: 'accepted',
@@ -68,8 +110,8 @@ describe('adlaneRtd Module', () => {
         getDataFromLocalStorage: () => '{invalid:'
       };
       const logErrorStub = sandbox.stub(utils, 'logError');
+      const result = getAgeVerificationByLocalStorage(storage);
 
-      const result = getAgeConsentByLocalStorage(storage);
       expect(result).to.be.null;
       expect(logErrorStub.calledOnce).to.be.true;
     });
@@ -78,36 +120,34 @@ describe('adlaneRtd Module', () => {
       const storage = {
         getDataFromLocalStorage: () => null
       };
-      expect(getAgeConsentByLocalStorage(storage)).to.be.null;
+
+      expect(getAgeVerificationByLocalStorage(storage)).to.be.null;
     });
   });
 
-  describe('getAgeConsent', () => {
-    it('should get consent from AdlCmp if available', () => {
-      const mockConsent = {
+  describe('getAgeVerification', () => {
+    it('should get verification  data from AdlCmp if available', () => {
+      const mockAgeVerification = {
         status: 'accepted',
-        consentId: '123456789123456789',
+        id: '123456789123456789',
         decisionDate: '2011-10-05T14:48:00.000Z'
       }
-
-      const resultMockConnsent = {
+      const resultAgeVerification = {
         id: '123456789123456789',
         status: 'accepted',
         decisionDate: '2011-10-05T14:48:00.000Z'
       }
-
       const win = {
         AdlCmp: {
-          getAgeConsent: () => mockConsent
+          getAgeVerification: () => mockAgeVerification
         }
       };
-
       const storage = {};
-      const cleanStub = sandbox.stub(utils, 'cleanObj').returns(resultMockConnsent);
+      const cleanStub = sandbox.stub(utils, 'cleanObj').returns(resultAgeVerification);
+      const result = getAgeVerification(win, storage);
 
-      const result = getAgeConsent(win, storage);
       expect(cleanStub.calledOnce).to.be.true;
-      expect(result).to.deep.equal(resultMockConnsent);
+      expect(result).to.deep.equal(resultAgeVerification);
     });
 
     it('should fallback to localStorage if AdlCmp is unavailable', () => {
@@ -116,31 +156,31 @@ describe('adlaneRtd Module', () => {
         getDataFromLocalStorage: () =>
           JSON.stringify({
             status: 'declined',
-            consentId: '123456789123456789',
+            id: '123456789123456789',
             decisionDate: '2011-10-05T14:48:00.000Z'
           })
       };
-
       const cleanStub = sandbox.stub(utils, 'cleanObj').callsFake((o) => o);
       const logInfoStub = sandbox.stub(utils, 'logInfo');
+      const result = getAgeVerification(win, storage);
 
-      const result = getAgeConsent(win, storage);
       expect(result.status).to.equal('declined');
       expect(logInfoStub.calledOnce).to.be.true;
     });
   });
 
-  describe('setAgeConsentConfig', () => {
-    it('should merge config with provided ageConsent', () => {
+  describe('setAgeVerificationConfig', () => {
+    it('should merge config with provided ageVerification', () => {
       const mergeStub = sandbox.stub(utils, 'mergeDeep');
-      const consent = { id: '123456789123456789', status: 'accepted', decisionDate: '2011-10-05T14:48:00.000Z' };
+      const ageVerification = { id: '123456789123456789', status: 'accepted', decisionDate: '2011-10-05T14:48:00.000Z' };
       const config = { ortb2Fragments: { global: {} } };
 
-      setAgeConsentConfig(config, consent);
+      setAgeVerificationConfig(config, ageVerification);
       expect(mergeStub.calledOnce).to.be.true;
       const expectedArg = {
-        user: { ext: { age_consent: consent } }
+        regs: { ext: { age_verification: ageVerification } }
       };
+
       expect(mergeStub.calledWith(config.ortb2Fragments.global, expectedArg)).to.be.true;
     });
 
@@ -149,7 +189,7 @@ describe('adlaneRtd Module', () => {
       const logStub = sandbox.stub(utils, 'logError');
       const config = { ortb2Fragments: { global: {} } };
 
-      setAgeConsentConfig(config, { status: 'accepted' });
+      setAgeVerificationConfig(config, { status: 'accepted' });
       expect(logStub.calledOnce).to.be.true;
     });
   });
@@ -157,8 +197,9 @@ describe('adlaneRtd Module', () => {
   describe('adlaneSubmodule', () => {
     it('should init with AdlCmp present', () => {
       const winStub = sandbox.stub(utils, 'getWindowTop').returns({
-        AdlCmp: { getAgeConsent: () => ({ status: 'accepted' }) }
+        AdlCmp: { getAgeVerification: () => ({ status: 'accepted' }) }
       });
+
       expect(adlaneSubmodule.init()).to.be.true;
     });
 
@@ -186,17 +227,17 @@ describe('adlaneRtd Module', () => {
       expect(logStub.calledOnce).to.be.true;
     });
 
-    it('should call setAgeConsentConfig in getBidRequestData if valid', (done) => {
-      const consent = { id: '123456789123456789', status: 'accepted', decisionDate: '2011-10-05T14:48:00.000Z' };
-      const cleanStub = sandbox.stub(utils, 'cleanObj').returns(consent);
+    it('should call setAgeVerificationConfig in getBidRequestData if valid', (done) => {
+      const ageVerification = { id: '123456789123456789', status: 'accepted', decisionDate: '2011-10-05T14:48:00.000Z' };
+      const cleanStub = sandbox.stub(utils, 'cleanObj').returns(ageVerification);
       sandbox.stub(utils, 'getWindowTop').returns({
         AdlCmp: {
-          getAgeConsent: () => consent
+          getAgeVerification: () => ageVerification
         }
       });
       const setStub = sandbox.stub(utils, 'mergeDeep');
-
       const reqBidsConfigObj = { ortb2Fragments: { global: {} } };
+
       adlaneSubmodule.getBidRequestData(reqBidsConfigObj, () => {
         expect(setStub.calledOnce).to.be.true;
         done();
@@ -206,14 +247,14 @@ describe('adlaneRtd Module', () => {
     it('should log error in getBidRequestData if something fails', (done) => {
       sandbox.stub(utils, 'getWindowTop').returns({
         AdlCmp: {
-          getAgeConsent: () => {
+          getAgeVerification: () => {
             throw new Error('Test error');
           }
         }
       });
       const logStub = sandbox.stub(utils, 'logError');
-
       const reqBidsConfigObj = { ortb2Fragments: { global: {} } };
+
       adlaneSubmodule.getBidRequestData(reqBidsConfigObj, () => {
         expect(logStub.calledOnce).to.be.true;
         done();
