@@ -12,7 +12,7 @@ const utils = {
   },
   switchFrame: async function(frameRef) {
     let iframe = await $(frameRef);
-    await browser.switchToFrame(iframe);
+    await browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 3000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
     await browser.url(url);
