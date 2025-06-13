@@ -102,18 +102,24 @@ describe('freewheelSSP BidAdapter Test', () => {
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
-        'schain': {
-          'ver': '1.0',
-          'complete': 1,
-          'nodes': [
-            {
-              'asi': 'example.com',
-              'sid': '0',
-              'hp': 1,
-              'rid': 'bidrequestid',
-              'domain': 'example.com'
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                'ver': '1.0',
+                'complete': 1,
+                'nodes': [
+                  {
+                    'asi': 'example.com',
+                    'sid': '0',
+                    'hp': 1,
+                    'rid': 'bidrequestid',
+                    'domain': 'example.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];

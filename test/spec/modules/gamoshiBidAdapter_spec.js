@@ -56,7 +56,13 @@ describe('GamoshiAdapter', () => {
         consentString: 'some string',
         gdprApplies: true
       },
-      schain: schainConfig,
+      ortb2: {
+        source: {
+          ext: {
+            schain: schainConfig
+          }
+        }
+      },
       uspConsent: 'gamoshiCCPA'
     };
 
@@ -339,7 +345,7 @@ describe('GamoshiAdapter', () => {
       expect(response.data.imp[0].bidfloor).to.equal(0);
       expect(response.data.imp[0].bidfloorcur).to.equal('USD');
       expect(response.data.regs.ext.us_privacy).to.equal('gamoshiCCPA');// USP/CCPAs
-      expect(response.data.source.ext.schain).to.deep.equal(bidRequest2.schain);
+      expect(response.data.source.ext.schain).to.deep.equal(bidRequest2.ortb2.source.ext.schain);
 
       const bidRequestWithInstlEquals1 = utils.deepClone(bidRequest);
       bidRequestWithInstlEquals1.params.instl = 1;

@@ -35,9 +35,9 @@ const getBidFloor = (bid) => {
   }
 };
 
-const createBasePlacement = (bid) => {
+const createBasePlacement = (bid, bidderRequest) => {
   const { bidId, mediaTypes, transactionId, userIdAsEids } = bid;
-  const schain = bid.schain || {};
+  const schain = bidderRequest?.ortb2?.source?.ext?.schain || {};
   const bidfloor = getBidFloor(bid);
 
   const placement = {
@@ -253,7 +253,7 @@ export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprCons
 export const buildPlacementProcessingFunction = (config) => (bid, bidderRequest) => {
   const addPlacementType = config?.addPlacementType ?? defaultPlacementType;
 
-  const placement = createBasePlacement(bid);
+  const placement = createBasePlacement(bid, bidderRequest);
 
   addPlacementType(bid, bidderRequest, placement);
 

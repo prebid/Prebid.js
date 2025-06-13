@@ -68,6 +68,10 @@ export function Renderer(options) {
   }.bind(this); // bind the function to this object to avoid 'this' errors
 }
 
+/**
+ * @param {{}} options
+ * @return {Renderer}
+ */
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {
   return new Renderer({ url, config, id, callback, loaded, adUnitCode, renderNow });
 };

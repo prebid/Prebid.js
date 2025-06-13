@@ -540,7 +540,13 @@ describe('TheMediaGrid Adapter', function () {
       };
       const bidRequestsWithSChain = bidRequests.map((bid) => {
         return Object.assign({
-          schain: schain
+          ortb2: {
+            source: {
+              ext: {
+                schain: schain
+              }
+            }
+          }
         }, bid);
       });
       const [request] = spec.buildRequests(bidRequestsWithSChain, bidderRequest);
@@ -786,7 +792,7 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
-    it('should prioritize pbadslot over adslot', function() {
+    it('should prioritize gpid over adslot', function() {
       const ortb2Imp = [{
         ext: {
           data: {
@@ -801,8 +807,8 @@ describe('TheMediaGrid Adapter', function () {
             adserver: {
               adslot: 'adslot'
             },
-            pbadslot: 'pbadslot'
-          }
+          },
+          gpid: 'pbadslot'
         }
       }];
       const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 2).map((bid, ind) => {
@@ -812,7 +818,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
       expect(payload.imp[0].ext.gpid).to.equal(ortb2Imp[0].ext.data.adserver.adslot);
-      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.data.pbadslot);
+      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.gpid);
     });
 
     it('should prioritize gpid over pbadslot and adslot', function() {

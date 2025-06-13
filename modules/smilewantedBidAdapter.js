@@ -84,7 +84,7 @@ export const spec = {
          */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$',
-        schain: serializeSupplyChain(bid.schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']),
+        schain: serializeSupplyChain(bid?.ortb2?.source?.ext?.schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']),
       };
 
       const floor = getBidFloor(bid);

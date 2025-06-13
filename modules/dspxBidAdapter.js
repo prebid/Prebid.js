@@ -140,8 +140,8 @@ export const spec = {
       }
 
       // schain
-      if (bidRequest.schain && bidRequest.schain.ver && bidRequest.schain.complete && bidRequest.schain.nodes) {
-        let schain = bidRequest.schain;
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain && schain.ver && schain.complete && schain.nodes) {
         let schainString = schain.ver + "," + schain.complete;
         for (let node of schain.nodes) {
             schainString += '!' + [

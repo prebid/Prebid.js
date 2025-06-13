@@ -11,7 +11,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import 'modules/paapi.js';
 
 import {deepClone} from 'src/utils.js';
@@ -932,13 +931,22 @@ describe('TrafficgateOpenxRtbAdapter', function () {
             bidId: 'test-bid-id-1',
             bidderRequestId: 'test-bid-request-1',
             auctionId: 'test-auction-1',
-            schain: schainConfig
+            ortb2: {source: {
+              ext: {schain: schainConfig}
+            }}
           }];
+
+          // Add schain to mockBidderRequest as well
+          mockBidderRequest.ortb2 = {
+            source: {
+              ext: {schain: schainConfig}
+            }
+          };
         });
 
         it('should send a supply chain object', function () {
           const request = spec.buildRequests(bidRequests, mockBidderRequest);
-          expect(request[0].data.source.ext.schain).to.equal(schainConfig);
+          expect(request[0].data.source.ext.schain).to.deep.equal(schainConfig);
         });
 
         it('should send the supply chain object with the right version', function () {

@@ -175,7 +175,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
-    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+    if (typeof bid.params === 'undefined') {
       return false;
     }
     if (typeof bid.params.unit === 'undefined') {
@@ -189,7 +189,7 @@ export const spec = {
 
     let bids = [];
     validBidRequests.forEach(function(one) {
-      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
+      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', '');
       let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,
@@ -209,7 +209,7 @@ export const spec = {
     let ids = fetchIds_(jxCfg);
     let eids = [];
     let miscDims = internal.getMiscDims();
-    let schain = deepAccess(validBidRequests[0], 'schain');
+    let schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain');
 
     let eids1 = validBidRequests[0].userIdAsEids;
     // all available user ids are sent to our backend in the standard array layout:

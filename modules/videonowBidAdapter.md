@@ -28,7 +28,7 @@ Use `videonow` as bidder:
       },
       bids: [{
         bidder: 'videonow',
-        params: { 
+        params: {
             pId: '1234',
             currency: 'RUB',
         }

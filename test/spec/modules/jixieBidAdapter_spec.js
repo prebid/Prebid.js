@@ -369,7 +369,15 @@ describe('jixie Adapter', function () {
           hp: 1
         }]
       };
-      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], { schain: schain });
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
+        ortb2: {
+          source: {
+            ext: {
+              schain: schain
+            }
+          }
+        }
+      });
       const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       const payload = JSON.parse(request.data);
       expect(payload.schain).to.deep.equal(schain);

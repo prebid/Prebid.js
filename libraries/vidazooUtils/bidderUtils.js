@@ -240,7 +240,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || '';
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);

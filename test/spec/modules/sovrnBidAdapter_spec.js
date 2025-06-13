@@ -529,17 +529,23 @@ describe('sovrnBidAdapter', function() {
     it('should add schain if present', function() {
       const schainRequest = {
         ...baseBidRequest,
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'directseller.com',
-              sid: '00001',
-              rid: 'BidRequest1',
-              hp: 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'directseller.com',
+                    sid: '00001',
+                    rid: 'BidRequest1',
+                    hp: 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
       const schainRequests = [schainRequest, baseBidRequest]

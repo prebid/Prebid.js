@@ -89,7 +89,7 @@ export const spec = {
         };
       }
       if (bidderRequest.uspConsent) { payload.uspConsent = bidderRequest.uspConsent; }
-      if (bidderRequest.schain) { payload.schain = bidderRequest.schain; }
+      if (bidderRequest?.ortb2?.source?.ext?.schain) { payload.schain = bidderRequest.ortb2.source.ext.schain; }
       if (bidderRequest.userIdAsEids) { payload.eids = bidderRequest.userIdAsEids };
       if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
       if (bidderRequest.ortb2) { payload.ortb2 = bidderRequest.ortb2 }

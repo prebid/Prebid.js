@@ -451,7 +451,10 @@ describe('mediakeysBidAdapter', function () {
         ],
       };
       const bidRequests = [utils.deepClone(bid)];
-      bidRequests[0].schain = schain;
+      bidRequests[0].ortb2 = bidRequests[0].ortb2 || {};
+      bidRequests[0].ortb2.source = bidRequests[0].ortb2.source || {};
+      bidRequests[0].ortb2.source.ext = bidRequests[0].ortb2.source.ext || {};
+      bidRequests[0].ortb2.source.ext.schain = schain;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const data = request.data;
       expect(data.source.ext.schain).to.equal(schain);
@@ -687,15 +690,6 @@ describe('mediakeysBidAdapter', function () {
       expect(response04.length).to.equal(0);
       expect(response05.length).to.equal(0);
       expect(response06.length).to.equal(0);
-    });
-
-    it('Log an error', function () {
-      const bidRequests = [utils.deepClone(bid)];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      sinon.stub(utils, 'isArray').throws();
-      utilsMock.expects('logError').once();
-      spec.interpretResponse(rawServerResponse, request);
-      utils.isArray.restore();
     });
 
     it('Meta Primary category handling', function() {

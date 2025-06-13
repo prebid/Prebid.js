@@ -663,7 +663,7 @@ describe('SSPBC adapter', function () {
           },
         ]
       }
-      const bidWithSupplyChain = Object.assign(bids[0], { schain: supplyChain });
+      const bidWithSupplyChain = Object.assign(bids[0], { ortb2: { source: { ext: { schain: supplyChain } } } });
       const requestWithSupplyChain = spec.buildRequests([bidWithSupplyChain], bidRequest);
       const payloadWithSupplyChain = requestWithSupplyChain ? JSON.parse(requestWithSupplyChain.data) : { site: false, imp: false };
 

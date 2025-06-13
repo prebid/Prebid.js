@@ -12,7 +12,6 @@ export function convertCamelToUnderscore(value) {
 
 export const appnexusAliases = [
   { code: 'appnexusAst', gvlid: 32 },
-  { code: 'emxdigital', gvlid: 183 },
   { code: 'emetriq', gvlid: 213 },
   { code: 'pagescience', gvlid: 32 },
   { code: 'gourmetads', gvlid: 32 },

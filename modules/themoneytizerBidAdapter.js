@@ -33,7 +33,7 @@ export const spec = {
         ortb2: bidderRequest.ortb2,
         eids: bidRequest.userIdAsEids,
         id: bidRequest.auctionId,
-        schain: bidRequest.schain,
+        schain: bidRequest?.ortb2?.source?.ext?.schain,
         version: '$prebid.version$',
         excl_sync: window.tmzrBidderExclSync
       };
