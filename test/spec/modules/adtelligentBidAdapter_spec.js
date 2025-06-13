@@ -349,7 +349,7 @@ describe('adtelligentBidAdapter', () => {
     });
 
     describe('publisher environment', () => {
-      const sandbox = sinon.sandbox.create();
+      const sandbox = sinon.createSandbox();
       sandbox.stub(config, 'getConfig').callsFake((key) => {
         const config = {
           'coppa': true

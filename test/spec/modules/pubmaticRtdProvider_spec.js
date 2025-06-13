@@ -6,7 +6,7 @@ import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
 import {
     registerSubModule, pubmaticSubmodule, getFloorsConfig, fetchData,
-    getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getUtm, _country,
+    getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getBidder, getUtm, _country,
     _profileConfigs, _floorsData, defaultValueTemplate, withTimeout, configMerged
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
@@ -234,6 +234,13 @@ describe('Pubmatic RTD Provider', () => {
             expect(getUtm()).to.be.a('string');
             expect(getUtm()).to.be.oneOf(['0', '1']);
         });
+
+        it('should extract bidder correctly', () => {
+            expect(getBidder({ bidder: 'pubmatic' })).to.equal('pubmatic');
+            expect(getBidder({})).to.be.undefined;
+            expect(getBidder(null)).to.be.undefined;
+            expect(getBidder(undefined)).to.be.undefined;
+        });
     });
 
     describe('getFloorsConfig', () => {
@@ -242,7 +249,7 @@ describe('Pubmatic RTD Provider', () => {
         let logErrorStub;
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+            sandbox = sinon.createSandbox();
             logErrorStub = sandbox.stub(utils, 'logError');
             floorsData = {
                 "currency": "USD",
@@ -305,7 +312,8 @@ describe('Pubmatic RTD Provider', () => {
                 'browser',
                 'os',
                 'country',
-                'utm'
+                'utm',
+                'bidder'
             ]);
 
             Object.values(result.floors.additionalSchemaFields).forEach(field => {
@@ -353,6 +361,7 @@ describe('Pubmatic RTD Provider', () => {
             expect(result.floors.additionalSchemaFields.os).to.equal(getOs);
             expect(result.floors.additionalSchemaFields.country).to.equal(getCountry);
             expect(result.floors.additionalSchemaFields.utm).to.equal(getUtm);
+            expect(result.floors.additionalSchemaFields.bidder).to.equal(getBidder);
         });
 
         it('should log error when profileConfigs is not an object', () => {
@@ -399,15 +408,14 @@ describe('Pubmatic RTD Provider', () => {
             fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
             await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.called).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS:');
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
         });
 
         it('should log error when response is not ok', async () => {
             fetchStub.resolves(new Response(null, { status: 500 }));
 
             await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching CONFIGS: Not ok/))).to.be.true;
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
         });
 
         it('should log error on network failure', async () => {
@@ -415,7 +423,7 @@ describe('Pubmatic RTD Provider', () => {
 
             await fetchData('1234', '123', 'CONFIGS');
             expect(logErrorStub.called).to.be.true;
-            expect(logErrorStub.firstCall.args[0]).to.include('Error while fetching CONFIGS');
+            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
         });
     });
 

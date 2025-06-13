@@ -1,4 +1,3 @@
-
 import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
@@ -16,7 +15,7 @@ import { EVENTS } from 'src/constants.js';
 import {server} from 'test/mocks/xhr.js';
 import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
-import 'src/prebid.js'; // $$PREBID_GLOBAL$$.aliasBidder test
+import {requestBids} from 'src/prebid.js';
 import 'modules/currency.js'; // adServerCurrency test
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
@@ -681,7 +680,7 @@ describe('S2S Adapter', function () {
       let sandbox, ortb2Fragments, redactorMocks, s2sReq;
 
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         redactorMocks = {};
         sandbox.stub(redactor, 'redactor').callsFake((params) => {
           if (!redactorMocks.hasOwnProperty(params.component)) {
@@ -977,7 +976,7 @@ describe('S2S Adapter', function () {
 
     describe('gdpr tests', function () {
       afterEach(function () {
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
       });
 
       it('adds gdpr consent information to ortb2 request depending on presence of module', async function () {
@@ -1032,7 +1031,7 @@ describe('S2S Adapter', function () {
 
     describe('us_privacy (ccpa) consent data', function () {
       afterEach(function () {
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
       });
 
       it('is added to ortb2 request when in FPD', async function () {
@@ -1058,7 +1057,7 @@ describe('S2S Adapter', function () {
 
     describe('gdpr and us_privacy (ccpa) consent data', function () {
       afterEach(function () {
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
       });
 
       it('is added to ortb2 request when in bidRequest', async function () {

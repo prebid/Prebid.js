@@ -15,7 +15,7 @@ import { taxonomies } from '../../../libraries/gptUtils/gptUtils.js';
 describe('GPT pre-auction module', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();

@@ -24,12 +24,12 @@ describe('LiveIntentExternalId', function() {
   });
 
   afterEach(function() {
-    uspConsentDataStub.restore();
-    gdprConsentDataStub.restore();
-    gppConsentDataStub.restore();
-    coppaConsentDataStub.restore();
-    refererInfoStub.restore();
-    randomStub.restore();
+    uspConsentDataStub?.restore();
+    gdprConsentDataStub?.restore();
+    gppConsentDataStub?.restore();
+    coppaConsentDataStub?.restore();
+    refererInfoStub?.restore();
+    randomStub?.restore();
     window.liQHub = []; // reset
     window.liModuleEnabled = undefined; // reset
     window.liTreatmentRate = undefined; // reset
