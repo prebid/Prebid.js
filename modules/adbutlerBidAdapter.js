@@ -13,7 +13,7 @@ function getTrackingPixelsMarkup(pixelURLs) {
 export const spec = {
   code: BIDDER_CODE,
   pageID: Math.floor(Math.random() * 10e6),
-  aliases: ['divreach', 'doceree'],
+  aliases: ['divreach'],
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid(bid) {

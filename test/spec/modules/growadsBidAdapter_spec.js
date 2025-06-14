@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/growadvertisingBidAdapter.js';
+import { spec } from 'modules/growadsBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 import {BANNER, NATIVE} from '../../../src/mediaTypes.js';
 

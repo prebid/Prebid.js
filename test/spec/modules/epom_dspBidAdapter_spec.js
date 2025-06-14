@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/epomDspBidAdapter.js';
+import { spec } from '../../../modules/epom_dspBidAdapter.js';
 
 const VALID_BID_REQUEST = {
   bidder: 'epom_dsp',

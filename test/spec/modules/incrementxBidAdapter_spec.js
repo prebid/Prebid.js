@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/incrxBidAdapter.js';
+import { spec } from 'modules/incrementxBidAdapter.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 
