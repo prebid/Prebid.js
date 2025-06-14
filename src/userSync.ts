@@ -54,6 +54,11 @@ export interface UserSyncConfig {
      * Enable/disable registered syncs for aliased adapters. Default: false.
      */
     aliasSyncEnabled?: boolean;
+
+    /**
+     * If true, user ID modules will only be allowed to save data in the location specified in the configuration.
+     */
+    enforceStorageType?: boolean;
 }
 
 export const USERSYNC_DEFAULT_CONFIG: UserSyncConfig = {
