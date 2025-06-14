@@ -1,5 +1,5 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
-import { replaceAuctionPrice, deepAccess } from '../../src/utils.js';
+import { replaceAuctionPrice } from '../../src/utils.js';
 import { ajax } from '../../src/ajax.js';
 // import { NATIVE } from '../../src/mediaTypes.js';
 import { consentCheck, getBidFloor } from './bidUtilsCommon.js';
@@ -89,7 +89,7 @@ function mapImpression(slot, bidderRequest) {
     bidFloor: getBidFloor(slot),
   };
 
-  if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
+  if (slot.mediaType === 'native' || slot?.mediaTypes?.native) {
     imp.native = mapNative(slot)
   } else {
     imp.banner = mapBanner(slot)
@@ -98,7 +98,7 @@ function mapImpression(slot, bidderRequest) {
 }
 
 function mapNative(slot) {
-  if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
+  if (slot.mediaType === 'native' || slot?.mediaTypes?.native) {
     let request = {
       assets: slot.nativeOrtbRequest.assets || slot.nativeParams.ortb.assets,
       ver: '1.2'
