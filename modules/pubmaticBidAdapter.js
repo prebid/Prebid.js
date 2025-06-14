@@ -327,6 +327,7 @@ const updateBannerImp = (bannerObj, adSlot) => {
   bannerObj.format = bannerObj.format.filter(
     (item) => !(item.w === bannerObj.w && item.h === bannerObj.h)
   );
+  if(!bannerObj.format?.length) delete bannerObj.format;
   bannerObj.pos ??= 0;
 }
 
