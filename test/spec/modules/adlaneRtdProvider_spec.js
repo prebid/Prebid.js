@@ -12,7 +12,7 @@ import * as storageManager from 'src/storageManager.js';
 import { config } from 'src/config.js';
 import {init} from 'modules/rtdModule'
 
-describe('adlaneRtd Module', () => {
+describe('adlane Module', () => {
   let sandbox;
 
   beforeEach(() => {
@@ -24,13 +24,13 @@ describe('adlaneRtd Module', () => {
   });
 
   it('should have correct module name', () => {
-    expect(adlaneSubmodule.name).to.equal('adlaneRtd');
+    expect(adlaneSubmodule.name).to.equal('adlane');
   });
 
   describe('adlaneRtdProvider', () => {
     it('should be correctly exported and registered', () => {
       expect(adlaneSubmodule).to.be.an('object');
-      expect(adlaneSubmodule.name).to.equal('adlaneRtd');
+      expect(adlaneSubmodule.name).to.equal('adlane');
       expect(adlaneSubmodule.init).to.be.a('function');
       expect(adlaneSubmodule.getBidRequestData).to.be.a('function');
     });
@@ -41,7 +41,7 @@ describe('adlaneRtd Module', () => {
           realTimeData: {
             auctionDelay: 100,
             dataProviders: [{
-              name: 'adlaneRtd',
+              name: 'adlane',
               waitForIt: true
             }]
           }
@@ -57,7 +57,7 @@ describe('adlaneRtd Module', () => {
       expect(rtdConfig).to.be.an('object');
       expect(rtdConfig.dataProviders).to.be.an('array');
 
-      const adlaneProvider = rtdConfig.dataProviders.find(provider => provider.name === 'adlaneRtd');
+      const adlaneProvider = rtdConfig.dataProviders.find(provider => provider.name === 'adlane');
 
       expect(adlaneProvider).to.exist;
       expect(adlaneProvider.waitForIt).to.be.true;

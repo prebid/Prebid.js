@@ -3,7 +3,7 @@ import { cleanObj, getWindowTop, isFn, logError, logInfo, logWarn, mergeDeep } f
 import { getStorageManager } from "../src/storageManager.js";
 import { MODULE_TYPE_RTD } from "../src/activities/modules.js";
 
-const MODULE_NAME = 'adlaneRtd';
+const MODULE_NAME = 'adlane';
 const LOCAL_STORAGE_KEY = 'ageVerification';
 
 /**
@@ -14,7 +14,7 @@ const LOCAL_STORAGE_KEY = 'ageVerification';
  */
 
 /**
- * Creates a storage manager for the adlaneRtd module.
+ * Creates a storage manager for the adlane module.
  * @returns {Object} The storage manager object.
  */
 function createStorage() {
@@ -103,7 +103,7 @@ export function setAgeVerificationConfig(config, ageVerification) {
 }
 
 /**
- * Initializes the adlaneRtd module.
+ * Initializes the adlane module.
  * @returns {boolean} True if initialization was successful, false otherwise.
  */
 function init() {
@@ -149,7 +149,7 @@ function alterBidRequests(reqBidsConfigObj, callback) {
 }
 
 /**
- * The adlaneRtd submodule object.
+ * The adlane submodule object.
  * @type {Object}
  */
 export const adlaneSubmodule = {

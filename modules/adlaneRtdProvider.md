@@ -22,7 +22,7 @@ pbjs.setConfig({
     auctionDelay: 1000,
     dataProviders: [
       {
-        name: "adlaneRtd",
+        name: "adlane",
         waitForIt: true,
       }
     ]
@@ -34,7 +34,7 @@ pbjs.setConfig({
 
 | Name      | Type    | Description                                   | Default |
 |-----------|---------|-----------------------------------------------|---------|
-| name      | String  | Must be "adlaneRtd"                           | n/a     |
+| name      | String  | Must be "adlane"                           | n/a     |
 | waitForIt | Boolean | Whether to wait for the module before auction | true    |
 
 ## Age Verification Data
