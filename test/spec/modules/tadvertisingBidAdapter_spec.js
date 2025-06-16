@@ -202,4 +202,68 @@ describe('tadvertisingBidAdapter', () => {
       expect(bid.mediaType).to.deep.equal("video");
     })
   });
+
+  describe('getUserSyncs', function() {
+    function getGdprConsent() {
+      return {
+        "vendorData": {
+          "gdprApplies": true,
+          "purpose": {
+            "consents": {
+              "1": true,
+              "2": true,
+              "3": true,
+              "4": true,
+              "5": true,
+              "6": true,
+              "7": true,
+              "8": true,
+              "9": true,
+              "10": true,
+              "11": true
+            },
+          },
+          "vendor": {
+            "consents": {
+              "21": true,
+              "213": true,
+            },
+          },
+        },
+        "gdprApplies": true,
+        "apiVersion": 2
+      }
+    }
+
+    it('should return an empty array when sync is enabled but there are no bidResponses', function () {
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [], getGdprConsent())
+
+      expect(result).to.have.length(0);
+    });
+
+
+    it('should return an empty array with when sync is not enabled', function () {
+      let serverResponse = {body: {ext: { uss: 0}}};
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent())
+
+      expect(result).to.have.length(0);
+    });
+
+    it('should return an empty array with when purpose one is not consented', function () {
+      let serverResponse = {body: {ext: { uss: 1}}};
+      let consent = getGdprConsent()
+      consent.vendorData.purpose.consents[1] = false;
+
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], consent)
+
+      expect(result).to.have.length(0);
+    });
+
+    it('should return an array with sync if purpose and venders are consented', function () {
+      let serverResponse = {body: {ext: { uss: 1}}};
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent())
+
+      expect(result).to.have.length(1);
+    });
+  });
 })

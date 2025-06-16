@@ -2,11 +2,13 @@ import {deepAccess, isEmpty, deepSetValue, isStr, logWarn} from '../src/utils.js
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from "../src/mediaTypes.js";
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'tadvertising';
 const GVL_ID = 213;
 const ENDPOINT_URL = 'https://prebid.tads.xplosion.de/bid';
 const BID_TTL = 360;
+const USER_SYNC_URL = 'https://match.adsrvr.org/track/cmf/generic?ttd_pid=pxpinp0&ttd_tpi=1';
 
 const MEDIA_TYPES = {
   [BANNER]: 1,
@@ -83,7 +85,29 @@ export const spec = {
     })
 
     return bids;
-  }
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const syncs = []
+
+    if (serverResponses[0]?.body?.ext?.uss === 1 && hasPurpose1Consent(gdprConsent)) {
+      var gdprParams;
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        gdprParams = `&gdpr_consent=${gdprConsent.consentString}`;
+      }
+
+      if (syncOptions.pixelEnabled) {
+        syncs.push({
+          type: 'image',
+          url: USER_SYNC_URL + gdprParams
+        });
+      }
+    }
+
+    return syncs;
+  },
 }
 
 registerBidder(spec);
