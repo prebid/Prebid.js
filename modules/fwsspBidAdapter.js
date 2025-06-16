@@ -435,7 +435,7 @@ export function formatAdHTML(bidrequest, size) {
       console.warn('MRM AdManager load failed:', err.message);
     };
 
-    cleanup = () => {
+    const cleanup = () => {
       clearTimeout(timeoutId);
       script.remove();
       var displayBase = document.getElementById('${displayBaseId}');
@@ -541,13 +541,11 @@ function getFloorCurrency(config) {
 }
 
 function isValidUrl(str) {
-  if (!str) {
-    return false;
-  }
-
-  // regExp for url validation
-  const pattern = /^(https?|ftp|file):\/\/([a-zA-Z0-9.-]+(:[a-zA-Z0-9.&%$-]+)*@)*((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(:[0-9]+)*(\/($|[a-zA-Z0-9.,?'\\+&%$#=~_-]+))*$/;
-  return pattern.test(str);
+  let url = null;
+  try {
+    url = new URL(str);
+  } catch (_) {}
+  return url != null;
 }
 
 function getBiggerSize(array) {
@@ -583,9 +581,7 @@ function getPricing(xmlNode) {
   let princingData = {};
 
   const extensions = xmlNode.querySelectorAll('Extension');
-  // Nodelist.forEach is not supported in IE and Edge
-  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-  Array.prototype.forEach.call(extensions, function(node) {
+  extensions.forEach(node => {
     if (node.getAttribute('type') === 'StickyPricing') {
       pricingExtNode = node;
     }
@@ -618,9 +614,7 @@ function getAdvertiserDomain(xmlNode) {
   const domain = [];
   let brandExtNode;
   const extensions = xmlNode.querySelectorAll('Extension');
-  // Nodelist.forEach is not supported in IE and Edge
-  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-  Array.prototype.forEach.call(extensions, function(node) {
+  extensions.forEach(node => {
     if (node.getAttribute('type') === 'StickyBrand') {
       brandExtNode = node;
     }
@@ -640,9 +634,7 @@ function getAdvertiserDomain(xmlNode) {
 function getCreativeId(xmlNode) {
   let creaId = '';
   const adNodes = xmlNode.querySelectorAll('Creative');
-  // Nodelist.forEach is not supported in IE and Edge
-  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
-  Array.prototype.forEach.call(adNodes, function(el) {
+  adNodes.forEach(el => {
     creaId += '[' + el.getAttribute('id') + ']';
   });
 
@@ -651,11 +643,11 @@ function getCreativeId(xmlNode) {
 
 function getValueFromKeyInImpressionNode(xmlNode, key) {
   let value = '';
-  const impNodes = xmlNode.querySelectorAll('Impression'); // Nodelist.forEach is not supported in IE and Edge
+  const impNodes = xmlNode.querySelectorAll('Impression');
   let isRootViewKeyPresent = false;
   let isAdsDisplayStartedPresent = false;
 
-  Array.prototype.forEach.call(impNodes, function (el) {
+  impNodes.forEach(el => {
     if (isRootViewKeyPresent && isAdsDisplayStartedPresent) {
       return value;
     }
@@ -664,7 +656,7 @@ function getValueFromKeyInImpressionNode(xmlNode, key) {
     const text = el.textContent;
     const queries = text.substring(el.textContent.indexOf('?') + 1).split('&');
     let tempValue = '';
-    Array.prototype.forEach.call(queries, function (item) {
+    queries.forEach(item => {
       const split = item.split('=');
       if (split[0] == key) {
         tempValue = split[1];

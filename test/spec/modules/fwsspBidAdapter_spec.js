@@ -598,7 +598,7 @@ describe('fwsspBidAdapter', () => {
       console.warn('MRM AdManager load failed:', err.message);
     };
 
-    cleanup = () => {
+    const cleanup = () => {
       clearTimeout(timeoutId);
       script.remove();
       var displayBase = document.getElementById('fwssp_display_base');
@@ -667,7 +667,7 @@ describe('fwsspBidAdapter', () => {
       console.warn('MRM AdManager load failed:', err.message);
     };
 
-    cleanup = () => {
+    const cleanup = () => {
       clearTimeout(timeoutId);
       script.remove();
       var displayBase = document.getElementById('fwssp_display_base');
@@ -740,7 +740,7 @@ describe('fwsspBidAdapter', () => {
       console.warn('MRM AdManager load failed:', err.message);
     };
 
-    cleanup = () => {
+    const cleanup = () => {
       clearTimeout(timeoutId);
       script.remove();
       var displayBase = document.getElementById('fwssp_display_base');
@@ -811,7 +811,7 @@ describe('fwsspBidAdapter', () => {
       console.warn('MRM AdManager load failed:', err.message);
     };
 
-    cleanup = () => {
+    const cleanup = () => {
       clearTimeout(timeoutId);
       script.remove();
       var displayBase = document.getElementById('fwssp_display_base');
