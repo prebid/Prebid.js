@@ -139,9 +139,11 @@ export const spec = {
       }
     };
     const rInfo = bidderRequest.refererInfo;
-    // TODO: do the fallbacks make sense here?
-    payload.site.page = rInfo.page || rInfo.topmostLocation;
-    payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
+    if (rInfo) {
+      // TODO: do the fallbacks make sense here?
+      payload.site.page = rInfo.page || rInfo.topmostLocation;
+      payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
+    }
 
     payload.device.ua = navigator.userAgent;
     payload.device.language = navigator.language;
