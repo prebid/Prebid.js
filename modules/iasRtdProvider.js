@@ -245,7 +245,7 @@ function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) {
   // Ensure site object exists
   if (!ortb2Fragments.global.site) ortb2Fragments.global.site = {};
 
-  // Update site.keywords for appnexus/xandr 
+  // Update site.keywords for appnexus/xandr
   ortb2Fragments.global.site.keywords = existingKeywords
     ? `${existingKeywords},${keywordsString}`
     : keywordsString;
@@ -263,6 +263,7 @@ function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) {
 /**
  * Inject slot-specific data into adUnits
  * @param {Object} impressionData - The slots data
+ * @param {boolean} fraudData - The fraud data - boolean string value
  * @param {Array} adUnits - The ad units array
  */
 function injectImpressionData(impressionData, fraudData, adUnits) {
