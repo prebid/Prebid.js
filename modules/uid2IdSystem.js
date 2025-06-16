@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * This module adds uid2 ID support to the User ID module
  * The {@link module:modules/userId} module is required.
@@ -11,9 +10,7 @@ import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-// RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
-// eslint-disable-next-line prebid/validate-imports
-import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from '../libraries/uid2IdSystemShared/uid2IdSystem_shared.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
 /**
@@ -69,12 +66,12 @@ export const uid2IdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleConfig} [configparams]
+   * @param {SubmoduleConfig} config
    * @param {ConsentData|undefined} consentData
    * @returns {uid2Id}
    */
   getId(config, consentData) {
-    if (consentData?.gdprApplies === true) {
+    if (consentData?.gdpr?.gdprApplies === true) {
       _logWarn('UID2 is not intended for use where GDPR applies. The UID2 module will not run.');
       return;
     }
@@ -108,6 +105,10 @@ function decodeImpl(value) {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
     const result = { uid2: { id: value } };
     return result;
+  }
+  if (value.latestToken === 'optout') {
+    _logInfo('Found optout token.  Refresh is unavailable for this token.');
+    return { uid2: { optout: true } };
   }
   if (Date.now() < value.latestToken.identity_expires) {
     return { uid2: { id: value.latestToken.advertising_token } };

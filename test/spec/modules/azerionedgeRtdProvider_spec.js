@@ -1,6 +1,6 @@
 import { config } from 'src/config.js';
 import * as azerionedgeRTD from 'modules/azerionedgeRtdProvider.js';
-import { loadExternalScript } from '../../../src/adloader.js';
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
 describe('Azerion Edge RTD submodule', function () {
   const STORAGE_KEY = 'ht-pa-v1-a';
@@ -8,11 +8,17 @@ describe('Azerion Edge RTD submodule', function () {
     { id: '1', visits: 123 },
     { id: '2', visits: 456 },
   ];
-
+  const IMPROVEDIGITAL_GVLID = '253';
   const key = 'publisher123';
   const bidders = ['appnexus', 'improvedigital'];
   const process = { key: 'value' };
   const dataProvider = { name: 'azerionedge', waitForIt: true };
+  const userConsent = {gdpr: {gdprApplies: 'gdpr-applies', consentString: 'consent-string'}, usp: 'usp'};
+
+  const resetAll = () => {
+    window.azerionPublisherAudiences.resetHistory();
+    loadExternalScriptStub.resetHistory();
+  }
 
   let reqBidsConfigObj;
   let storageStub;
@@ -33,7 +39,11 @@ describe('Azerion Edge RTD submodule', function () {
     let returned;
 
     beforeEach(function () {
-      returned = azerionedgeRTD.azerionedgeSubmodule.init(dataProvider);
+      returned = azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, userConsent);
+    });
+
+    it('should have the correct gvlid', () => {
+      expect(azerionedgeRTD.azerionedgeSubmodule.gvlid).to.equal(IMPROVEDIGITAL_GVLID);
     });
 
     it('should return true', function () {
@@ -41,26 +51,29 @@ describe('Azerion Edge RTD submodule', function () {
     });
 
     it('should load external script', function () {
-      expect(loadExternalScript.called).to.be.true;
+      expect(loadExternalScriptStub.called).to.be.true;
     });
 
     it('should load external script with default versioned url', function () {
       const expected = 'https://edge.hyth.io/js/v1/azerion-edge.min.js';
-      expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
+      expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
     });
 
-    it('should call azerionPublisherAudiencesStub with empty configuration', function () {
-      expect(window.azerionPublisherAudiences.args[0][0]).to.deep.equal({});
+    [
+      ['gdprApplies', userConsent.gdpr.gdprApplies],
+      ['gdprConsent', userConsent.gdpr.consentString],
+      ['uspConsent', userConsent.usp],
+    ].forEach(([key, value]) => {
+      it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
+        expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
+      });
     });
 
     describe('with key', function () {
       beforeEach(function () {
-        window.azerionPublisherAudiences.resetHistory();
-        loadExternalScript.resetHistory();
-        returned = azerionedgeRTD.azerionedgeSubmodule.init({
-          ...dataProvider,
-          params: { key },
-        });
+        resetAll();
+        const config = { ...dataProvider, params: { key } };
+        returned = azerionedgeRTD.azerionedgeSubmodule.init(config, userConsent);
       });
 
       it('should return true', function () {
@@ -69,28 +82,30 @@ describe('Azerion Edge RTD submodule', function () {
 
       it('should load external script with publisher id url', function () {
         const expected = `https://edge.hyth.io/js/v1/${key}/azerion-edge.min.js`;
-        expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
+        expect(loadExternalScriptStub.args[0][0]).to.deep.equal(expected);
       });
     });
 
     describe('with process configuration', function () {
       beforeEach(function () {
-        window.azerionPublisherAudiences.resetHistory();
-        loadExternalScript.resetHistory();
-        returned = azerionedgeRTD.azerionedgeSubmodule.init({
-          ...dataProvider,
-          params: { process },
-        });
+        resetAll();
+        const config = { ...dataProvider, params: { process } };
+        returned = azerionedgeRTD.azerionedgeSubmodule.init(config, userConsent);
       });
 
       it('should return true', function () {
         expect(returned).to.equal(true);
       });
 
-      it('should call azerionPublisherAudiencesStub with process configuration', function () {
-        expect(window.azerionPublisherAudiences.args[0][0]).to.deep.equal(
-          process
-        );
+      [
+        ['gdprApplies', userConsent.gdpr.gdprApplies],
+        ['gdprConsent', userConsent.gdpr.consentString],
+        ['uspConsent', userConsent.usp],
+        ...Object.entries(process),
+      ].forEach(([key, value]) => {
+        it(`should call azerionPublisherAudiencesStub with ${key}:${value}`, function () {
+          expect(window.azerionPublisherAudiences.args[0][0]).to.include({[key]: value});
+        });
       });
     });
   });
@@ -111,7 +126,7 @@ describe('Azerion Edge RTD submodule', function () {
         );
       });
 
-      it('does not run apply audiences to bidders', function () {
+      it('does not apply audiences to bidders', function () {
         expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.equal({});
       });
 

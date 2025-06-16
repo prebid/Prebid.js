@@ -2,23 +2,22 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {find} from 'src/polyfill.js';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
-  let fakeServer;
   let bidderRequest;
   let clock;
 
   beforeEach(() => {
     bidderRequest = buildBidderRequest();
-    sandbox = sinon.sandbox.create();
-    fakeServer = sandbox.useFakeServer();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
   });
 
   afterEach(() => {
+    clock.restore();
     sandbox.restore();
   });
 
@@ -53,22 +52,33 @@ describe('stroeerCore bid adapter', function () {
   }
 
   // Vendor user ids and associated data
-  const userIds = Object.freeze({
-    criteoId: 'criteo-user-id',
-    digitrustid: {
-      data: {
-        id: 'encrypted-user-id==',
-        keyv: 4,
-        privacy: {optout: false},
-        producer: 'ABC',
-        version: 2
-      }
+  const eids = Object.freeze([
+    {
+      source: 'pubcid.org',
+      uids: [
+        {
+          atype: 1,
+          id: '0dc6b760-0000-4716-9999-f92afdf2afb9',
+        },
+        {
+          atype: 3,
+          id: '8263836331',
+        }
+      ],
     },
-    lipb: {
-      lipbid: 'T7JiRRvsRAmh88',
-      segments: ['999']
+    {
+      source: 'criteo.com',
+      uids: [
+        {
+          atype: 2,
+          id: 'WpgEVV9zekZDVmglMkJQQ09vN05JbWg',
+          ext: {
+            other: 'stuff'
+          }
+        }
+      ],
     }
-  });
+  ]);
 
   const buildBidderRequest = () => ({
     bidderRequestId: 'bidder-request-id-123',
@@ -91,7 +101,7 @@ describe('stroeerCore bid adapter', function () {
       params: {
         sid: 'NDA='
       },
-      userId: userIds
+      userIdAsEids: eids
     }, {
       bidId: 'bid2',
       bidder: 'stroeerCore',
@@ -104,7 +114,7 @@ describe('stroeerCore bid adapter', function () {
       params: {
         sid: 'ODA='
       },
-      userId: userIds
+      userIdAsEids: eids
     }],
   });
 
@@ -140,7 +150,7 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         },
-        getElementById: id => find(placementElements, el => el.id === id)
+        getElementById: id => placementElements.find(el => el.id === id)
       }
     };
 
@@ -169,16 +179,17 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupSingleWindow(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    const win = createWindow('http://www.xyz.com/', {
-      parent: win, top: win, frameElement: createElement(undefined, 304), placementElements: placementElements
+    let singleWin = null
+    singleWin = createWindow('http://www.xyz.com/', {
+      parent: singleWin, top: singleWin, frameElement: createElement(undefined, 304), placementElements: placementElements
     });
 
-    win.innerHeight = 200;
+    singleWin.innerHeight = 200;
 
-    sandBox.stub(utils, 'getWindowSelf').returns(win);
-    sandBox.stub(utils, 'getWindowTop').returns(win);
+    sandBox.stub(utils, 'getWindowSelf').returns(singleWin);
+    sandBox.stub(utils, 'getWindowTop').returns(singleWin);
 
-    return win;
+    return singleWin;
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
@@ -407,7 +418,6 @@ describe('stroeerCore bid adapter', function () {
           'timeout': expectedTimeout,
           'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
-          'ssl': false,
           'url': 'https://www.example.com/monkey/index.html',
           'bids': [{
             'sid': 'NDA=',
@@ -425,7 +435,10 @@ describe('stroeerCore bid adapter', function () {
             }
           }],
           'user': {
-            'euids': userIds
+            'eids': eids
+          },
+          'ver': {
+            'pb': getGlobal().version,
           }
         };
 
@@ -452,7 +465,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'NDA='
             },
-            userId: userIds
+            userIdAsEids: eids
           }];
 
           const expectedBids = [{
@@ -489,7 +502,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ODA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           const bannerBid1 = {
@@ -504,7 +517,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'NDA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           const bannerBid2 = {
@@ -519,7 +532,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ABC=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           bidderRequest.bids = [bannerBid1, videoBid, bannerBid2];
@@ -533,6 +546,7 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [[300, 600], [160, 60]],
                 'fp': undefined
               },
+              'sfp': undefined,
             },
             {
               'sid': 'ABC=',
@@ -541,7 +555,8 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [[100, 200], [300, 500]],
                 'fp': undefined
               },
-              'viz': undefined
+              'viz': undefined,
+              'sfp': undefined,
             }
           ];
 
@@ -555,7 +570,8 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [640, 480],
                 'mim': ['video/mp4', 'video/quicktime'],
                 'fp': undefined
-              }
+              },
+              'sfp': undefined,
             }
           ];
 
@@ -582,7 +598,7 @@ describe('stroeerCore bid adapter', function () {
             params: {
               sid: 'ODA=',
             },
-            userId: userIds
+            userIdAsEids: eids
           }
 
           bidderRequest.bids = [multiFormatBid];
@@ -597,7 +613,8 @@ describe('stroeerCore bid adapter', function () {
               'ban': {
                 'siz': [[100, 200], [300, 500]],
                 'fp': undefined
-              }
+              },
+              'sfp': undefined,
             }
           ];
 
@@ -611,7 +628,8 @@ describe('stroeerCore bid adapter', function () {
                 'siz': [640, 480],
                 'mim': ['video/mp4', 'video/quicktime'],
                 'fp': undefined
-              }
+              },
+              'sfp': undefined,
             }
           ];
 
@@ -676,10 +694,10 @@ describe('stroeerCore bid adapter', function () {
 
         it('should be able to build without third party user id data', () => {
           const bidReq = buildBidderRequest();
-          bidReq.bids.forEach(bid => delete bid.userId);
+          bidReq.bids.forEach(bid => delete bid.userIdAsEids);
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
-          assert.notProperty(serverRequestInfo, 'uids');
+          assert.notProperty(serverRequestInfo.data, 'user');
         });
 
         it('should add schain if available', () => {
@@ -877,6 +895,82 @@ describe('stroeerCore bid adapter', function () {
 
           assert.deepEqual(sentOrtb2, ortb2);
         });
+
+        it('should add the Cookie Deprecation Label', () => {
+          const bidReq = buildBidderRequest();
+
+          const cDepObj = {
+            cdep: 'example_label_1'
+          };
+
+          const ortb2 = {
+            device: {
+              ext: cDepObj
+            }
+          };
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+
+          assert.deepEqual(sentOrtb2, ortb2);
+        });
+
+        it('should add the special format parameters', () => {
+          const bidReq = buildBidderRequest();
+
+          const sfp0 = {
+            'field1': {
+              'abc': '123',
+            }
+          };
+
+          const sfp1 = {
+            'field3': 'xyz'
+          };
+
+          bidReq.bids[0].params.sfp = utils.deepClone(sfp0);
+          bidReq.bids[1].params.sfp = utils.deepClone(sfp1);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          assert.deepEqual(serverRequestInfo.data.bids[0].sfp, sfp0);
+          assert.deepEqual(serverRequestInfo.data.bids[1].sfp, sfp1);
+        });
+
+        it('should add the special format parameters even when it is an empty object', () => {
+          const bidReq = buildBidderRequest();
+
+          bidReq.bids[0].params.sfp = {};
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          assert.deepEqual(serverRequestInfo.data.bids[0].sfp, {});
+          assert.isUndefined(serverRequestInfo.data.bids[1].sfp);
+        });
+
+        it('should add the ortb2 site extension', () => {
+          const bidReq = buildBidderRequest();
+
+          const ortb2 = {
+            site: {
+              domain: 'example.com',
+              ext: {
+                data: {
+                  abc: '123'
+                }
+              }
+            }
+          };
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+          assert.deepEqual(sentOrtb2, {site: {ext: ortb2.site.ext}})
+        });
       });
     });
   });
@@ -915,15 +1009,7 @@ describe('stroeerCore bid adapter', function () {
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
 
-    it('should add advertiser domains to meta object', () => {
-      const response = buildBidderResponse();
-      response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
-      const result = spec.interpretResponse({body: response});
-      assert.deepPropertyVal(result[0].meta, 'advertiserDomains', ['website.org', 'domain.com']);
-      assert.propertyVal(result[1].meta, 'advertiserDomains', undefined);
-    });
-
-    it('should add dsa info to meta object', () => {
+    it('should set meta object', () => {
       const dsaResponse = {
         behalf: 'AdvertiserA',
         paid: 'AdvertiserB',
@@ -931,16 +1017,28 @@ describe('stroeerCore bid adapter', function () {
           domain: 'dspexample.com',
           dsaparams: [1, 2],
         }],
-        adrender: 1
+        adrender: 1,
       };
 
       const response = buildBidderResponse();
-      response.bids[0] = Object.assign(response.bids[0], {dsa: utils.deepClone(dsaResponse)});
+      response.bids[0] = Object.assign(response.bids[0], {
+        meta: {
+          advertiserDomains: ['website.org', 'domain.com'],
+          dsa: utils.deepClone(dsaResponse),
+          campaignType: 'RTB',
+          another: 'thing',
+        },
+      });
 
       const result = spec.interpretResponse({body: response});
 
-      assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
-      assert.propertyVal(result[1].meta, 'dsa', undefined);
+      const firstBidMeta = result[0].meta;
+      assert.deepPropertyVal(firstBidMeta, 'advertiserDomains', ['website.org', 'domain.com']);
+      assert.deepPropertyVal(firstBidMeta, 'dsa', dsaResponse);
+      assert.propertyVal(firstBidMeta, 'campaignType', 'RTB');
+      assert.propertyVal(firstBidMeta, 'another', 'thing');
+
+      assert.isEmpty(result[1].meta)
     });
   });
 

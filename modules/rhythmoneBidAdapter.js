@@ -1,4 +1,3 @@
-
 'use strict';
 
 import { deepAccess, getDNT, parseSizesInput, isArray } from '../src/utils.js';
@@ -161,7 +160,7 @@ function RhythmOneBidAdapter() {
         }
       },
       at: 1,
-      tmax: 1000,
+      tmax: Math.min(1000, bidderRequest.timeout),
       regs: {
         ext: {
           gdpr: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') ? Boolean(bidderRequest.gdprConsent.gdprApplies & 1) : false

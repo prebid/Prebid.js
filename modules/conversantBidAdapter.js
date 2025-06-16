@@ -1,21 +1,17 @@
 import {
   buildUrl,
   deepAccess,
-  deepSetValue,
   getBidIdParameter,
   isArray,
   isFn,
   isPlainObject,
   isStr,
-  logError,
   logWarn,
   mergeDeep,
   parseUrl,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
@@ -31,7 +27,6 @@ import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 const GVLID = 24;
 
 const BIDDER_CODE = 'conversant';
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 
 function setSiteId(bidRequest, request) {
@@ -45,14 +40,6 @@ function setSiteId(bidRequest, request) {
   }
 }
 
-function setPubcid(bidRequest, request) {
-  // Add common id if available
-  const pubcid = getPubcid(bidRequest);
-  if (pubcid) {
-    deepSetValue(request, 'user.ext.fpc', pubcid);
-  }
-}
-
 const converter = ortbConverter({
   context: {
     netRevenue: true,
@@ -61,10 +48,10 @@ const converter = ortbConverter({
   request: function (buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
     request.at = 1;
+    request.cur = ['USD'];
     if (context.bidRequests) {
       const bidRequest = context.bidRequests[0];
       setSiteId(bidRequest, request);
-      setPubcid(bidRequest, request);
     }
 
     return request;
@@ -96,7 +83,7 @@ const converter = ortbConverter({
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-    return response.bids;
+    return response;
   },
   overrides: {
     imp: {
@@ -127,7 +114,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   aliases: ['cnvr', 'epsilon'], // short code
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -177,21 +164,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    return converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
-  },
-
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
-      'site_id': 'string',
-      'secure': 'number',
-      'mobile': 'number'
-    }, params);
+    const ortbBids = converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
+    return ortbBids;
   },
 
   /**
@@ -237,20 +211,6 @@ export const spec = {
   }
 };
 
-function getPubcid(bidRequest) {
-  let pubcid = null;
-  if (bidRequest.userId && bidRequest.userId.pubcid) {
-    pubcid = bidRequest.userId.pubcid;
-  } else if (bidRequest.crumbs && bidRequest.crumbs.pubcid) {
-    pubcid = bidRequest.crumbs.pubcid;
-  }
-  if (!pubcid) {
-    const pubcidName = getBidIdParameter('pubcid_name', bidRequest.params) || '_pubcid';
-    pubcid = readStoredValue(pubcidName);
-  }
-  return pubcid;
-}
-
 /**
  * Check if it's a video bid request
  *
@@ -272,37 +232,6 @@ function copyOptProperty(src, dst, dstName) {
   if (src) {
     dst[dstName] = src;
   }
-}
-
-/**
- * Look for a stored value from both cookie and local storage and return the first value found.
- * @param key Key for the search
- * @return {string} Stored value
- */
-function readStoredValue(key) {
-  let storedValue;
-  try {
-    // check cookies first
-    storedValue = storage.getCookie(key);
-
-    if (!storedValue) {
-      // check expiration time before reading local storage
-      const storedValueExp = storage.getDataFromLocalStorage(`${key}_exp`);
-      if (storedValueExp === '' || (storedValueExp && (new Date(storedValueExp)).getTime() - Date.now() > 0)) {
-        storedValue = storage.getDataFromLocalStorage(key);
-        storedValue = storedValue ? decodeURIComponent(storedValue) : storedValue;
-      }
-    }
-
-    // deserialize JSON if needed
-    if (isStr(storedValue) && storedValue.charAt(0) === '{') {
-      storedValue = JSON.parse(storedValue);
-    }
-  } catch (e) {
-    logError(e);
-  }
-
-  return storedValue;
 }
 
 /**

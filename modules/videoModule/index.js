@@ -1,9 +1,8 @@
 import { config } from '../../src/config.js';
-import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
 import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {
   videoEvents,
   AUCTION_AD_LOAD_ATTEMPT,
@@ -71,7 +70,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     requestBids.before(beforeBidsRequested, 40);
 
-    pbEvents.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
+    pbEvents.on(EVENTS.BID_ADJUSTMENT, function (bid) {
       videoImpressionVerifier.trackBid(bid);
     });
 
@@ -88,7 +87,8 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const adUrl = bid.vastUrl;
     options.adXml = bid.vastXml;
     options.winner = bid.bidder;
-    loadAdTag(adUrl, divId, options);
+
+    loadAd(adUrl, divId, options);
   }
 
   function getOrtbVideo(divId) {
@@ -107,7 +107,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const bidsBackHandler = bidderRequest.bidsBackHandler;
     if (!bidsBackHandler || typeof bidsBackHandler !== 'function') {
-      pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
+      pbEvents.on(EVENTS.AUCTION_END, auctionEnd);
     }
 
     return nextFn.call(this, bidderRequest);
@@ -192,7 +192,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         renderWinningBid(adUnit);
       }
     });
-    pbEvents.off(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
+    pbEvents.off(EVENTS.AUCTION_END, auctionEnd);
   }
 
   function getAdServerConfig(adUnitVideoConfig) {
@@ -204,39 +204,49 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     return mergeDeep({}, globalVideoConfig.adServer, globalProviderConfig.adServer, adUnitVideoConfig.adServer);
   }
 
-  function renderWinningBid(adUnit) {
+  async function renderWinningBid(adUnit) {
     const adUnitCode = adUnit.code;
-    const options = { adUnitCode };
 
     const videoConfig = adUnit.video;
     const divId = videoConfig.divId;
+
     const adServerConfig = getAdServerConfig(videoConfig);
-    let adUrl;
+    const winningBid = getWinningBid(adUnitCode);
+
+    const options = { adUnitCode };
+
+    async function prefetchVast() {
+      const gamVastWrapper = await gamSubmodule.getVastXml(
+        adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params, winningBid
+      );
+      options.prefetchedVastXml = gamVastWrapper;
+    }
+
     if (adServerConfig) {
-      adUrl = gamSubmodule.getAdTagUrl(adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params);
+      if (config.getConfig('cache.useLocal')) {
+        await prefetchVast();
+      } else {
+        const adTagUrl = gamSubmodule.getAdTagUrl(
+          adUnit, adServerConfig.baseAdTagUrl, adServerConfig.params
+        );
+        loadAd(adTagUrl, divId, options);
+        return;
+      }
     }
 
-    if (adUrl) {
-      loadAdTag(adUrl, divId, options);
-      return;
-    }
-
-    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
-    if (!highestCpmBids.length) {
-      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, options));
-      return;
-    }
-
-    const highestBid = highestCpmBids.shift();
-    if (!highestBid) {
-      return;
-    }
-
-    renderBid(divId, highestBid, options);
+    renderBid(divId, winningBid, options);
   }
 
-  // options: adXml, winner, adUnitCode,
-  function loadAdTag(adTagUrl, divId, options) {
+  function getWinningBid(adUnitCode) {
+    const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
+    if (!highestCpmBids.length) {
+      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, {adUnitCode}));
+      return;
+    }
+    return highestCpmBids.shift();
+  }
+
+  function loadAd(adTagUrl, divId, options) {
     adQueueCoordinator.queueAd(adTagUrl, divId, options);
   }
 
@@ -260,7 +270,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const { adUnitCode, requestId, auctionId } = bidIdentifiers;
     const bidAdId = bidIdentifiers.adId;
     const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
-    return find(bids, bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
+    return ((bids) || []).find(bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }
 }
 

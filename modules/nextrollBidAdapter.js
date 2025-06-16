@@ -6,13 +6,11 @@ import {
   isPlainObject,
   isStr,
   parseUrl,
-  replaceAuctionPrice,
-} from '../src/utils.js';
+  replaceAuctionPrice} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-
-import {find} from '../src/polyfill.js';
+import { getOsVersion } from '../libraries/advangUtils/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -31,7 +29,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} bid The bid params to validate.
+   * @param {Object} bidRequest The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bidRequest) {
@@ -41,8 +39,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
@@ -312,7 +311,7 @@ function _getDevice(_bidRequest) {
     ua: navigator.userAgent,
     language: navigator['language'],
     os: _getOs(navigator.userAgent.toLowerCase()),
-    osv: _getOsVersion(navigator.userAgent)
+    osv: getOsVersion()
   };
 }
 
@@ -336,32 +335,11 @@ function _getOs(userAgent) {
     'windows': /windows/i
   };
 
-  return find(Object.keys(osTable), os => {
+  return ((Object.keys(osTable)) || []).find(os => {
     if (userAgent.match(osTable[os])) {
       return os;
     }
   }) || 'etc';
-}
-
-function _getOsVersion(userAgent) {
-  const clientStrings = [
-    { s: 'Android', r: /Android/ },
-    { s: 'iOS', r: /(iPhone|iPad|iPod)/ },
-    { s: 'Mac OS X', r: /Mac OS X/ },
-    { s: 'Mac OS', r: /(MacPPC|MacIntel|Mac_PowerPC|Macintosh)/ },
-    { s: 'Linux', r: /(Linux|X11)/ },
-    { s: 'Windows 10', r: /(Windows 10.0|Windows NT 10.0)/ },
-    { s: 'Windows 8.1', r: /(Windows 8.1|Windows NT 6.3)/ },
-    { s: 'Windows 8', r: /(Windows 8|Windows NT 6.2)/ },
-    { s: 'Windows 7', r: /(Windows 7|Windows NT 6.1)/ },
-    { s: 'Windows Vista', r: /Windows NT 6.0/ },
-    { s: 'Windows Server 2003', r: /Windows NT 5.2/ },
-    { s: 'Windows XP', r: /(Windows NT 5.1|Windows XP)/ },
-    { s: 'UNIX', r: /UNIX/ },
-    { s: 'Search Bot', r: /(nuhk|Googlebot|Yammybot|Openbot|Slurp|MSNBot|Ask Jeeves\/Teoma|ia_archiver)/ }
-  ];
-  let cs = find(clientStrings, cs => cs.r.test(userAgent));
-  return cs ? cs.s : 'unknown';
 }
 
 registerBidder(spec);

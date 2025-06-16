@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -15,7 +14,6 @@ import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
-const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
@@ -50,6 +48,7 @@ const VIDEO_CUSTOM_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 469,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -129,8 +128,8 @@ export const spec = {
       id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
-      site: params.site ? params.site : {},
-      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
+      site: {...bidderRequest?.ortb2?.site, ...params?.site},
+      device: {...bidderRequest?.ortb2?.device, ...params?.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -141,7 +140,7 @@ export const spec = {
     const rInfo = bidderRequest.refererInfo;
     if (rInfo) {
       // TODO: do the fallbacks make sense here?
-      payload.site.page = rInfo.page || rInfo.topmostLocation;
+      payload.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
       payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
     }
 
@@ -149,6 +148,18 @@ export const spec = {
     payload.device.language = navigator.language;
     payload.device.w = screen.width;
     payload.device.h = screen.height;
+
+    if (bidderRequest.ortb2?.user?.geo && bidderRequest.ortb2?.device?.geo) {
+      payload.device.geo = { ...payload.device.geo, ...bidderRequest.ortb2?.device.geo };
+      payload.user.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+    } else {
+      if (bidderRequest.ortb2?.user?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+      }
+      if (bidderRequest.ortb2?.device?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.device.geo };
+      }
+    }
 
     if (bidderRequest?.ortb2?.device?.sua) {
       payload.device.sua = bidderRequest.ortb2.device.sua;
@@ -189,6 +200,14 @@ export const spec = {
 
     if (bidderRequest?.timeout) {
       payload.tmax = bidderRequest.timeout;
+    }
+
+    if (bidderRequest?.ortb2?.bcat) {
+      payload.bcat = bidderRequest.ortb2.bcat;
+    }
+
+    if (bidderRequest?.ortb2?.badv) {
+      payload.badv = bidderRequest.ortb2.badv;
     }
 
     provideEids(validBidRequests[0], payload);
@@ -283,18 +302,6 @@ export const spec = {
         type: 'image',
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
-    }
-  },
-
-  onTimeout: function(timeoutData) {
-    if (timeoutData) {
-      ajax(TIMEOUT_URL, null, JSON.stringify(timeoutData), {
-        method: 'POST',
-        options: {
-          withCredentials: false,
-          contentType: 'application/json'
-        }
-      });
     }
   }
 }
@@ -400,6 +407,30 @@ function provideMediaType(zetaBid, bid, bidRequest) {
   } else {
     bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
+}
+
+function cropPage(page) {
+  if (page) {
+    if (page.length > 100) {
+      page = page.substring(0, 100);
+    }
+    if (page.startsWith('https://')) {
+      page = page.substring(8);
+    } else if (page.startsWith('http://')) {
+      page = page.substring(7);
+    }
+    if (page.startsWith('www.')) {
+      page = page.substring(4);
+    }
+    for (let i = 3; i < page.length; i++) {
+      const c = page[i];
+      if (c === '#' || c === '?') {
+        return page.substring(0, i);
+      }
+    }
+    return page;
+  }
+  return '';
 }
 
 function clearEmpties(o) {

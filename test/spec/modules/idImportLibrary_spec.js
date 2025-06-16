@@ -4,6 +4,11 @@ import * as idImportlibrary from 'modules/idImportLibrary.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {config} from 'src/config.js';
 import {hook} from '../../../src/hook.js';
+import * as activities from '../../../src/activities/rules.js';
+import { ACTIVITY_ENRICH_UFPD } from '../../../src/activities/activities.js';
+import { CONF_DEFAULT_FULL_BODY_SCAN, CONF_DEFAULT_INPUT_SCAN } from '../../../modules/idImportLibrary.js';
+import {server} from 'test/mocks/xhr.js';
+
 var expect = require('chai').expect;
 
 const mockMutationObserver = {
@@ -13,7 +18,6 @@ const mockMutationObserver = {
 }
 
 describe('IdImportLibrary Tests', function () {
-  let fakeServer;
   let sandbox;
   let clock;
   let fn = sinon.spy();
@@ -24,7 +28,8 @@ describe('IdImportLibrary Tests', function () {
   });
 
   beforeEach(function () {
-    fakeServer = sinon.fakeServer.create();
+    utils.logInfo.restore?.();
+    utils.logError.restore?.();
     sinon.stub(utils, 'logInfo');
     sinon.stub(utils, 'logError');
   });
@@ -32,13 +37,12 @@ describe('IdImportLibrary Tests', function () {
   afterEach(function () {
     utils.logInfo.restore();
     utils.logError.restore();
-    fakeServer.restore();
     idImportlibrary.setConfig({});
   });
 
   describe('setConfig', function () {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
     });
 
@@ -86,6 +90,16 @@ describe('IdImportLibrary Tests', function () {
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
     });
+    it('results when activity is not allowed', function () {
+      sandbox.stub(activities, 'isActivityAllowed').callsFake((activity) => {
+        return !(activity === ACTIVITY_ENRICH_UFPD);
+      });
+      let config = { 'url': 'URL', 'debounce': 0 };
+      idImportlibrary.setConfig(config);
+      sinon.assert.called(utils.logError);
+      expect(config.inputscan).to.be.not.equal(CONF_DEFAULT_INPUT_SCAN);
+      expect(config.fullscan).to.be.not.equal(CONF_DEFAULT_FULL_BODY_SCAN);
+    });
   });
   describe('Test with email is found', function () {
     let mutationObserverStub;
@@ -97,7 +111,7 @@ describe('IdImportLibrary Tests', function () {
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver').returns(mockMutationObserver);
       userId = sandbox.stub(getGlobal(), 'getUserIds').returns({id: {'MOCKID': '1111'}});
-      fakeServer.respondWith('POST', 'URL', [200,
+      server.respondWith('POST', 'URL', [200,
         {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
@@ -224,7 +238,7 @@ describe('IdImportLibrary Tests', function () {
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       mutationObserverStub = sinon.stub(window, 'MutationObserver');
       jsonSpy = sinon.spy(JSON, 'stringify');
-      fakeServer.respondWith('POST', 'URL', [200,
+      server.respondWith('POST', 'URL', [200,
         {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'

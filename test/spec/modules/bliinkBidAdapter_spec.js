@@ -7,9 +7,9 @@ import {
   BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME,
   getEffectiveConnectionType,
   getUserIds,
-  getDomLoadingDuration,
   GVL_ID,
 } from 'modules/bliinkBidAdapter.js';
+import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 
 /**
@@ -32,8 +32,9 @@ import { config } from 'src/config.js';
  * ortb2Imp: {ext: {data: {pbadslot: string}}}}}
  */
 
+const w = (utils.canAccessWindowTop()) ? utils.getWindowTop() : utils.getWindowSelf();
 const connectionType = getEffectiveConnectionType();
-const domLoadingDuration = getDomLoadingDuration().toString();
+let domLoadingDuration = utils.getDomLoadingDuration(w).toString();
 const getConfigBid = (placement) => {
   return {
     adUnitCode: '/19968336/test',
@@ -1090,15 +1091,32 @@ describe('BLIINK Adapter getUserSyncs', function () {
 });
 
 describe('BLIINK Adapter keywords & coppa true', function () {
-  it('Should build request with keyword and coppa true if exist', () => {
+  let querySelectorStub;
+  let configStub;
+  let originalTitle;
+
+  beforeEach(() => {
+    window.bliinkBid = {};
     const metaElement = document.createElement('meta');
     metaElement.name = 'keywords';
     metaElement.content = 'Bliink, Saber, Prebid';
-    sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
+    sinon.stub(utils, 'getDomLoadingDuration').returns(0);
+    domLoadingDuration = '0';
+    configStub = sinon.stub(config, 'getConfig');
+    configStub.withArgs('coppa').returns(true);
+    querySelectorStub = sinon.stub(document, 'querySelector').returns(metaElement);
+    originalTitle = document.title;
+    document.title = '';
+  });
 
-    const querySelectorStub = sinon
-      .stub(document, 'querySelector')
-      .returns(metaElement);
+  afterEach(() => {
+    querySelectorStub.restore();
+    configStub.restore();
+    utils.getDomLoadingDuration.restore();
+    document.title = originalTitle;
+  });
+
+  it('Should build request with keyword and coppa true if exist', () => {
     expect(
       spec.buildRequests(
         [],
@@ -1141,8 +1159,6 @@ describe('BLIINK Adapter keywords & coppa true', function () {
         ],
       },
     });
-    querySelectorStub.restore();
-    config.getConfig.restore();
   });
 });
 

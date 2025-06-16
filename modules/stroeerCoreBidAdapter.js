@@ -1,7 +1,8 @@
-import { buildUrl, deepAccess, deepSetValue, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import {buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
+import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -52,18 +53,20 @@ export const spec = {
     const basePayload = {
       id: generateUUID(),
       ref: refererInfo.ref,
-      ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
-      schain: anyBid.schain
+      schain: anyBid.schain,
+      ver: {
+        pb: getGlobal().version,
+      },
     };
 
-    const userIds = anyBid.userId;
+    const eids = anyBid.userIdAsEids;
 
-    if (!isEmpty(userIds)) {
+    if (!isEmpty(eids)) {
       basePayload.user = {
-        euids: userIds
+        eids: eids
       };
     }
 
@@ -76,11 +79,13 @@ export const spec = {
       };
     }
 
-    const DSA_KEY = 'ortb2.regs.ext.dsa';
-    const dsa = deepAccess(bidderRequest, DSA_KEY);
-    if (dsa) {
-      deepSetValue(basePayload, DSA_KEY, dsa);
-    }
+    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep', 'site.ext'];
+    ORTB2_KEYS.forEach(key => {
+      const value = deepAccess(bidderRequest.ortb2, key);
+      if (value !== undefined) {
+        deepSetValue(basePayload, `ortb2.${key}`, value);
+      }
+    });
 
     const bannerBids = validBidRequests
       .filter(hasBanner)
@@ -113,10 +118,7 @@ export const spec = {
           currency: 'EUR',
           netRevenue: true,
           creativeId: '',
-          meta: {
-            advertiserDomains: bidResponse.adomain,
-            dsa: bidResponse.dsa
-          },
+          meta: {...bidResponse.meta},
           mediaType,
         };
 
@@ -145,8 +147,6 @@ export const spec = {
   }
 };
 
-const isSecureWindow = () => getWindowSelf().location.protocol === 'https:';
-
 const isMainPageAccessible = () => {
   try {
     return !!getWindowTop().location.href;
@@ -163,8 +163,8 @@ const elementInView = (elementId) => {
   };
 
   const visibleInWindow = (el, win) => {
-    const rect = el.getBoundingClientRect();
-    const inView = (rect.top + rect.height >= 0) && (rect.top <= win.innerHeight);
+    const rect = getBoundingClientRect(el);
+    const inView = (rect.top + rect.height >= 0) && (rect.top <= getWinDimensions().innerHeight);
 
     if (win !== win.parent) {
       return inView && visibleInWindow(win.frameElement, win.parent);
@@ -217,6 +217,7 @@ const mapToPayloadBaseBid = (bidRequest) => ({
   bid: bidRequest.bidId,
   sid: bidRequest.params.sid,
   viz: elementInView(bidRequest.adUnitCode),
+  sfp: bidRequest.params.sfp,
 });
 
 const mapToPayloadBannerBid = (bidRequest) => {
@@ -252,18 +253,18 @@ const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
     currency: 'EUR',
     mediaType: mediaType,
     size: '*'
-  });
+  }) || {};
 
   const sizeFloors = sizes.map(size => {
     const floor = bidRequest.getFloor({
       currency: 'EUR',
       mediaType: mediaType,
       size: [size[0], size[1]]
-    });
+    }) || {};
     return {...floor, size};
   });
 
-  const floorWithCurrency = find([defaultFloor].concat(sizeFloors), floor => floor.currency);
+  const floorWithCurrency = (([defaultFloor].concat(sizeFloors)) || []).find(floor => floor.currency);
 
   if (!floorWithCurrency) {
     return undefined;

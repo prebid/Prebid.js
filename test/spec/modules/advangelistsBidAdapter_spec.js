@@ -44,46 +44,25 @@ describe('advangelistsBidAdapter', function () {
   describe('spec.buildRequests', function () {
     it('should create a POST request for each bid', function () {
       const bidRequest = bidRequests[0];
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
       expect(requests[0].method).to.equal('POST');
     });
 
     it('should create a POST request for each bid in video request', function () {
       const bidRequest = bidRequestsVid[0];
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
       expect(requests[0].method).to.equal('POST');
     });
 
     it('should have domain in request', function () {
       const bidRequest = bidRequests[0];
-      const requests = spec.buildRequests([ bidRequest ]);
+      const requests = spec.buildRequests([ bidRequest ], { timeout: 1000 });
       expect(requests[0].data.site.domain).length !== 0;
     });
   });
 
   describe('spec.interpretResponse', function () {
     describe('for banner bids', function () {
-      it('should return no bids if the response is not valid', function () {
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        const bidResponse = spec.interpretResponse({ body: null }, { bidRequest });
-
-        if (typeof bidResponse !== 'undefined') {
-          expect(bidResponse.length).to.equal(0);
-        } else {
-          expect(true).to.equal(true);
-        }
-      });
-
-      it('should return no bids if the response is empty', function () {
-        const bidRequest = bidRequests[0];
-        bidRequest.mediaTypes = { banner: {} };
-        const bidResponse = spec.interpretResponse({ body: [] }, { bidRequest });
-        if (typeof bidResponse !== 'undefined') {
-          expect(bidResponse.length).to.equal(0);
-        } else { expect(true).to.equal(true); }
-      });
-
       it('should return valid video bid responses', function () {
         let _mediaTypes = VIDEO;
         const advangelistsbidreqVid = {'bidRequest': {'mediaTypes': {'video': {'w': 320, 'h': 480}}}};

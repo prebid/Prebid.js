@@ -3,7 +3,7 @@ import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import { expect } from 'chai';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 
 describe('#bidViewabilityIO', function() {
   const makeElement = (id) => {
@@ -79,7 +79,7 @@ describe('#bidViewabilityIO', function() {
     };
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     })
 
     afterEach(function() {
@@ -97,7 +97,7 @@ describe('#bidViewabilityIO', function() {
       expect(mockObserver.unobserve.calledOnce).to.be.true;
       expect(emitSpy.calledOnce).to.be.true;
       // expect(emitSpy.firstCall.args).to.be.false;
-      expect(emitSpy.firstCall.args[0]).to.eq(CONSTANTS.EVENTS.BID_VIEWABLE);
+      expect(emitSpy.firstCall.args[0]).to.eq(EVENTS.BID_VIEWABLE);
     });
   })
 
@@ -105,7 +105,7 @@ describe('#bidViewabilityIO', function() {
     let sandbox;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     })
 
     afterEach(function() {

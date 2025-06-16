@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/stnBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native';
 
 const ENDPOINT = 'https://hb.stngo.com/hb-multi';
 const TEST_ENDPOINT = 'https://hb.stngo.com/hb-multi-test';
@@ -63,7 +64,6 @@ describe('stnAdapter', function () {
             'plcmt': 1
           }
         },
-        'vastXml': '"<VAST version=\\\"2.0\\\">...</VAST>"'
       },
       {
         'bidder': spec.code,
@@ -79,6 +79,59 @@ describe('stnAdapter', function () {
         'mediaTypes': {
           'banner': {
           }
+        },
+      },
+      {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'params': {
+          'org': 'jdye8weeyirk00000001'
+        },
+        'bidId': '299ffc8cca0b87',
+        'loop': 1,
+        'bidderRequestId': '1144f487e563f9',
+        'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
+        'mediaTypes': {
+          'banner': {
+            'sizes': [
+              [ 300, 250 ]
+            ]
+          },
+          'video': {
+            'playerSize': [[640, 480]],
+            'context': 'instream',
+            'plcmt': 1
+          },
+          'native': {
+            'ortb': {
+              'assets': [
+                {
+                  'id': 1,
+                  'required': 1,
+                  'img': {
+                    'type': 3,
+                    'w': 300,
+                    'h': 200,
+                  }
+                },
+                {
+                  'id': 2,
+                  'required': 1,
+                  'title': {
+                    'len': 80
+                  }
+                },
+                {
+                  'id': 3,
+                  'required': 1,
+                  'data': {
+                    'type': 1
+                  }
+                }
+              ]
+            }
+          },
         },
         'ad': '"<img src=\"https://...\"/>"'
       }
@@ -151,10 +204,10 @@ describe('stnAdapter', function () {
     });
 
     it('should send the correct mimes array', function () {
-      bidRequests[1].mediaTypes.banner.mimes = mimes;
+      bidRequests[0].mediaTypes.video.mimes = mimes;
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[1].mimes).to.be.an('array');
-      expect(request.data.bids[1].mimes).to.eql(['application/javascript', 'video/mp4', 'video/quicktime']);
+      expect(request.data.bids[0].mimes).to.be.an('array');
+      expect(request.data.bids[0].mimes).to.eql(['application/javascript', 'video/mp4', 'video/quicktime']);
     });
 
     it('should send the correct protocols array', function () {
@@ -170,22 +223,21 @@ describe('stnAdapter', function () {
       expect(request.data.bids[0].sizes).to.equal(bidRequests[0].sizes)
       expect(request.data.bids[1].sizes).to.be.an('array');
       expect(request.data.bids[1].sizes).to.equal(bidRequests[1].sizes)
+      expect(request.data.bids[2].sizes).to.be.an('array');
+      expect(request.data.bids[2].sizes).to.eql(bidRequests[2].sizes)
+    });
+
+    it('should send nativeOrtbRequest in native bid request', function () {
+      decorateAdUnitsWithNativeParams(bidRequests)
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      assert.deepEqual(request.data.bids[2].nativeOrtbRequest, bidRequests[2].mediaTypes.native.ortb)
     });
 
     it('should send the correct media type', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].mediaType).to.equal(VIDEO)
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
-    });
-
-    it('should send the correct currency in bid request', function () {
-      const bid = utils.deepClone(bidRequests[0]);
-      bid.params = {
-        'currency': 'EUR'
-      };
-      const expectedCurrency = bid.params.currency;
-      const request = spec.buildRequests([bid], bidderRequest);
-      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
+      expect(request.data.bids[2].mediaType.split(',')).to.include.members([VIDEO, NATIVE, BANNER])
     });
 
     it('should respect syncEnabled option', function() {
@@ -450,8 +502,10 @@ describe('stnAdapter', function () {
         width: 640,
         height: 480,
         requestId: '21e12606d47ba7',
+        creativeId: 'creative-id-1',
         adomain: ['abc.com'],
-        mediaType: VIDEO
+        mediaType: VIDEO,
+        nurl: 'http://example.com/win/1234',
       },
       {
         cpm: 12.5,
@@ -459,8 +513,32 @@ describe('stnAdapter', function () {
         width: 300,
         height: 250,
         requestId: '21e12606d47ba7',
+        creativeId: 'creative-id-2',
         adomain: ['abc.com'],
-        mediaType: BANNER
+        mediaType: BANNER,
+        nurl: 'http://example.com/win/1234',
+      },
+      {
+        cpm: 12.5,
+        width: 300,
+        height: 200,
+        requestId: '21e12606d47ba7',
+        adomain: ['abc.com'],
+        creativeId: 'creative-id-3',
+        nurl: 'http://example.com/win/1234',
+        mediaType: NATIVE,
+        native: {
+          body: 'Advertise with Rise',
+          clickUrl: 'https://risecodes.com',
+          cta: 'Start now',
+          image: {
+            width: 300,
+            height: 200,
+            url: 'https://sdk.streamrail.com/media/rise-image.jpg'
+          },
+          sponsoredBy: 'Rise',
+          title: 'Rise Ad Tech Solutions'
+        }
       }]
     };
 
@@ -471,7 +549,7 @@ describe('stnAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id-1',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: VIDEO,
@@ -486,10 +564,10 @@ describe('stnAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 640,
-      height: 480,
+      width: 300,
+      height: 250,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id-2',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
@@ -500,10 +578,42 @@ describe('stnAdapter', function () {
       ad: '"<img src=\"https://...\"/>"'
     };
 
+    const expectedNativeResponse = {
+      requestId: '21e12606d47ba7',
+      cpm: 12.5,
+      currency: 'USD',
+      width: 300,
+      height: 200,
+      ttl: TTL,
+      creativeId: 'creative-id-3',
+      netRevenue: true,
+      nurl: 'http://example.com/win/1234',
+      mediaType: NATIVE,
+      meta: {
+        mediaType: NATIVE,
+        advertiserDomains: ['abc.com']
+      },
+      native: {
+        ortb: {
+          body: 'Advertise with Rise',
+          clickUrl: 'https://risecodes.com',
+          cta: 'Start now',
+          image: {
+            width: 300,
+            height: 200,
+            url: 'https://sdk.streamrail.com/media/rise-image.jpg',
+          },
+          sponsoredBy: 'Rise',
+          title: 'Rise Ad Tech Solutions'
+        }
+      },
+    };
+
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
-      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
+      expect(result[0]).to.deep.equal(expectedVideoResponse);
+      expect(result[1]).to.deep.equal(expectedBannerResponse);
+      expect(result[2]).to.deep.equal(expectedNativeResponse);
     });
 
     it('video type should have vastXml key', function () {
@@ -514,6 +624,11 @@ describe('stnAdapter', function () {
     it('banner type should have ad key', function () {
       const result = spec.interpretResponse({ body: response });
       expect(result[1].ad).to.equal(expectedBannerResponse.ad)
+    });
+
+    it('native type should have native key', function () {
+      const result = spec.interpretResponse({ body: response });
+      expect(result[2].native).to.eql(expectedNativeResponse.native)
     });
   })
 

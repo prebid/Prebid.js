@@ -152,7 +152,7 @@ function getBidFloor(bidRequest, currency) {
       currency: currency || DEFAULT_CURRENCY,
       mediaType: bidRequest.mediaType,
       size: bidRequest.sizes || '*'
-    });
+    }) || {};
   }
 
   return {

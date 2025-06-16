@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 
 import spec, {self as exports} from 'modules/automatadAnalyticsAdapter.js';
 
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
 
 const obj = {
@@ -28,7 +28,7 @@ const {
   BID_TIMEOUT,
   BID_WON,
   NO_BID
-} = CONSTANTS.EVENTS
+} = EVENTS
 
 const CONFIG_WITH_DEBUG = {
   provider: 'atmtdAnalyticsAdapter',
@@ -146,7 +146,7 @@ describe('Automatad Analytics Adapter', () => {
     });
     after(() => {
       const handlers = global.window.atmtdAnalytics
-      Object.keys(handlers).forEach((handler) => global.window.atmtdAnalytics[handler].reset())
+      Object.keys(handlers).forEach((handler) => global.window.atmtdAnalytics[handler].resetHistory())
       global.window.atmtdAnalytics = undefined;
       spec.disableAnalytics();
       exports.qBeingUsed = false
@@ -355,7 +355,7 @@ describe('Automatad Analytics Adapter', () => {
       events.emit(AUCTION_INIT, {type: AUCTION_INIT})
       global.window.atmtdAnalytics = {...obj}
       const handlers = global.window.atmtdAnalytics
-      Object.keys(handlers).forEach((handler) => global.window.atmtdAnalytics[handler].reset())
+      Object.keys(handlers).forEach((handler) => global.window.atmtdAnalytics[handler].resetHistory())
       expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
       expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)

@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {
   deepAccess,
+  getWinDimensions,
   getWindowSelf,
   getWindowTop,
   isArray,
@@ -14,8 +15,9 @@ import {
 } from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { percentInView } from '../libraries/percentInView/percentInView.js';
 
-// **************************** UTILS *************************** //
+// **************************** UTILS ************************** //
 const BIDDER_CODE = '33across';
 const BIDDER_ALIASES = ['33across_mgni'];
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
@@ -36,6 +38,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -72,9 +75,7 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
-
-  if (invalidBidderName || !bid.params) {
+  if (!bid.params) {
     return false;
   }
 
@@ -140,10 +141,10 @@ function _validateVideo(bid) {
   }
 
   // If placement if defined, it must be a number
-  if (
-    typeof videoParams.placement !== 'undefined' &&
-    typeof videoParams.placement !== 'number'
-  ) {
+  if ([ videoParams.placement, videoParams.plcmt ].some(value => (
+    typeof value !== 'undefined' &&
+    typeof value !== 'number'
+  ))) {
     return false;
   }
 
@@ -463,7 +464,7 @@ function _buildBannerORTB(bidRequest) {
 }
 
 // BUILD REQUESTS: VIDEO
-// eslint-disable-next-line no-unused-vars
+
 function _buildVideoORTB(bidRequest) {
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
@@ -490,12 +491,24 @@ function _buildVideoORTB(bidRequest) {
 
   // Placement Inference Rules:
   // - If no placement is defined then default to 2 (In Banner)
-  // - If product is instream (for instream context) then override placement to 1
-  video.placement = video.placement || 2;
+  // - If the old deprecated field is defined, use its value for the recent placement field
+
+  const calculatePlacementValue = () => {
+    const IN_BANNER_PLACEMENT_VALUE = 2;
+
+    if (video.placement) {
+      logWarn('[33Across Adapter] The ORTB field `placement` is deprecated, please use `plcmt` instead');
+
+      return video.placement;
+    }
+
+    return IN_BANNER_PLACEMENT_VALUE;
+  }
+
+  video.plcmt ??= calculatePlacementValue();
 
   if (product === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
-    video.placement = 1;
   }
 
   // bidfloors
@@ -524,7 +537,7 @@ function _getBidFloors(bidRequest, size, mediaType) {
     size: [ size.w, size.h ]
   });
 
-  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+  if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
     return bidFloors.floor;
   }
 }
@@ -536,7 +549,7 @@ function _isViewabilityMeasurable(element) {
 
 function _getViewability(element, topWin, { w, h } = {}) {
   return topWin.document.visibilityState === 'visible'
-    ? _getPercentInView(element, topWin, { w, h })
+    ? percentInView(element, { w, h })
     : 0;
 }
 
@@ -569,76 +582,6 @@ function _getAdSlotHTMLElement(adUnitCode) {
 
 function _getMinSize(sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
-}
-
-function _getBoundingBox(element, { w, h } = {}) {
-  let { width, height, left, top, right, bottom } = element.getBoundingClientRect();
-
-  if ((width === 0 || height === 0) && w && h) {
-    width = w;
-    height = h;
-    right = left + w;
-    bottom = top + h;
-  }
-
-  return { width, height, left, top, right, bottom };
-}
-
-function _getIntersectionOfRects(rects) {
-  const bbox = {
-    left: rects[0].left,
-    right: rects[0].right,
-    top: rects[0].top,
-    bottom: rects[0].bottom
-  };
-
-  for (let i = 1; i < rects.length; ++i) {
-    bbox.left = Math.max(bbox.left, rects[i].left);
-    bbox.right = Math.min(bbox.right, rects[i].right);
-
-    if (bbox.left >= bbox.right) {
-      return null;
-    }
-
-    bbox.top = Math.max(bbox.top, rects[i].top);
-    bbox.bottom = Math.min(bbox.bottom, rects[i].bottom);
-
-    if (bbox.top >= bbox.bottom) {
-      return null;
-    }
-  }
-
-  bbox.width = bbox.right - bbox.left;
-  bbox.height = bbox.bottom - bbox.top;
-
-  return bbox;
-}
-
-function _getPercentInView(element, topWin, { w, h } = {}) {
-  const elementBoundingBox = _getBoundingBox(element, { w, h });
-
-  // Obtain the intersection of the element and the viewport
-  const elementInViewBoundingBox = _getIntersectionOfRects([ {
-    left: 0,
-    top: 0,
-    right: topWin.innerWidth,
-    bottom: topWin.innerHeight
-  }, elementBoundingBox ]);
-
-  let elementInViewArea,
-    elementTotalArea;
-
-  if (elementInViewBoundingBox !== null) {
-    // Some or all of the element is in view
-    elementInViewArea = elementInViewBoundingBox.width * elementInViewBoundingBox.height;
-    elementTotalArea = elementBoundingBox.width * elementBoundingBox.height;
-
-    return ((elementInViewArea / elementTotalArea) * 100);
-  }
-
-  // No overlap between element and the viewport; therefore, the element
-  // lies completely out of view
-  return 0;
 }
 
 /**
@@ -807,11 +750,7 @@ function getViewportDimensions() {
 }
 
 function getScreenDimensions() {
-  const {
-    innerWidth: windowWidth,
-    innerHeight: windowHeight,
-    screen
-  } = getWindowSelf();
+  const { innerWidth: windowWidth, innerHeight: windowHeight, screen } = getWinDimensions();
 
   const [biggerDimension, smallerDimension] = [
     Math.max(screen.width, screen.height),

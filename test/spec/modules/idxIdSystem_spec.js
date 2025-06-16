@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
-import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import { init, startAuctionHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, idxIdSubmodule } from 'modules/idxIdSystem.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
+import 'src/prebid.js';
 
 const IDX_COOKIE_NAME = '_idx';
 const IDX_DUMMY_VALUE = 'idx value for testing';
@@ -89,7 +89,7 @@ describe('IDx ID System', () => {
     let sandbox;
 
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
       init(config);
@@ -100,15 +100,20 @@ describe('IDx ID System', () => {
 
     afterEach(() => {
       sandbox.restore();
+      config.resetConfig();
+    })
+
+    after(() => {
+      init(config);
     })
 
     it('when a stored IDx exists it is added to bids', (done) => {
-      requestBidsHook(() => {
+      startAuctionHook(() => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
             expect(bid).to.have.deep.nested.property('userId.idx');
             expect(bid.userId.idx).to.equal(IDX_DUMMY_VALUE);
-            const idxIdAsEid = find(bid.userIdAsEids, e => e.source == 'idx.lat');
+            const idxIdAsEid = bid.userIdAsEids.find(e => e.source == 'idx.lat');
             expect(idxIdAsEid).to.deep.equal({
               source: 'idx.lat',
               uids: [{

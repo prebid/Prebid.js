@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/bedigitechBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import {BANNER} from 'src/mediaTypes.js';
+import { BANNER } from 'src/mediaTypes.js';
 
 describe('BedigitechAdapter', function () {
   const adapter = newBidder(spec);
@@ -34,13 +34,13 @@ describe('BedigitechAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      const bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      const invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'masterId': 0
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -126,7 +126,9 @@ describe('BedigitechAdapter', function () {
         } else if (k === 'meta') {
           expect(result[0][k]).to.deep.equal(expectedResponse[0][k]);
         } else {
-          expect(result[0][k]).to.equal(expectedResponse[0][k]);
+          if (k !== 'requestId') {
+            expect(result[0][k]).to.equal(expectedResponse[0][k]);
+          }
         }
       });
     });

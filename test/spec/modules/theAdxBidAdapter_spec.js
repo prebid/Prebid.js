@@ -81,7 +81,21 @@ describe('TheAdxAdapter', function () {
             [300, 600]
           ]
         }
-      }
+      },
+      userId: {
+        uid2: { id: 'sample-uid2' },
+        id5id: {
+          'uid': 'sample-id5id',
+          'ext': {
+            'linkType': 'abc'
+          }
+        },
+        netId: 'sample-netid',
+        sharedid: {
+          'id': 'sample-sharedid',
+        },
+
+      },
     };
 
     const sampleBidderRequest = {
@@ -357,6 +371,30 @@ describe('TheAdxAdapter', function () {
       expect(mediaTypes.video).to.not.be.null;
       expect(mediaTypes.video).to.not.be.undefined;
     });
+
+    it('add eids to request', function () {
+      let localBidRequest = JSON.parse(JSON.stringify(sampleBidRequest));
+
+      let results = spec.buildRequests([localBidRequest], sampleBidderRequest);
+      let result = results.pop();
+      let payload = JSON.parse(result.data);
+      expect(payload).to.not.be.null;
+      expect(payload.ext).to.not.be.null;
+
+      expect(payload.ext.uid2).to.not.be.null;
+      expect(payload.ext.uid2.length).to.greaterThan(0);
+
+      expect(payload.ext.id5id).to.not.be.null;
+      expect(payload.ext.id5id.length).to.greaterThan(0);
+      expect(payload.ext.id5_linktype).to.not.be.null;
+      expect(payload.ext.id5_linktype.length).to.greaterThan(0);
+
+      expect(payload.ext.netid).to.not.be.null;
+      expect(payload.ext.netid.length).to.greaterThan(0);
+
+      expect(payload.ext.sharedid).to.not.be.null;
+      expect(payload.ext.sharedid.length).to.greaterThan(0);
+    });
   });
 
   describe('response interpreter', function () {
@@ -495,7 +533,7 @@ describe('TheAdxAdapter', function () {
           banner: {}
         },
         requestId: incomingRequestId,
-        deals: [{id: dealId}]
+        deals: [{ id: dealId }]
       };
       let serverResponse = {
         body: sampleResponse

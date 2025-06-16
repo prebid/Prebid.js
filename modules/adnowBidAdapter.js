@@ -1,11 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {deepAccess, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
+
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adnow';
-const ENDPOINT = 'https://n.ads3-adnow.com/a';
+const ENDPOINT = 'https://n.nnowa.com/a';
 
 /**
  * @typedef {object} CommonBidData
@@ -44,7 +44,7 @@ export const spec = {
 
     const mediaType = bid.params.mediaType || NATIVE;
 
-    return includes(this.supportedMediaTypes, mediaType);
+    return this.supportedMediaTypes.includes(mediaType);
   },
 
   /**
@@ -113,7 +113,7 @@ export const spec = {
     }
 
     const mediaType = bid.meta.mediaType || NATIVE;
-    if (!includes(this.supportedMediaTypes, mediaType)) {
+    if (!this.supportedMediaTypes.includes(mediaType)) {
       return [];
     }
 

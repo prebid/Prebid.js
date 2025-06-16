@@ -1,9 +1,9 @@
-import { logInfo, deepAccess, logWarn, isArray, getParameterByName } from '../src/utils.js';
+import { logInfo, deepAccess, logWarn, isArray, getParameterByName, getWinDimensions } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -17,7 +17,7 @@ import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-window.nobidVersion = '1.3.3';
+window.nobidVersion = '1.3.4';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -123,8 +123,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     };
     var clientDim = function() {
       try {
-        var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-        var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        const winDimensions = getWinDimensions();
+        var width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
+        var height = Math.max(winDimensions.document.documentElement.clientHeight, winDimensions.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
         logWarn('Could not parse screen dimensions, error details:', e);
@@ -161,6 +162,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
     state['pjbdr'] = (bidderRequest && bidderRequest.bidderCode) ? bidderRequest.bidderCode : 'nobid';
+    state['pbver'] = '$prebid.version$';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
     const cop = coppa();
@@ -230,7 +232,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     return adunits;
   }
   function getFloor (bid) {
-    if (bid && typeof bid.getFloor === 'function' && bid.getFloor().floor) {
+    if (bid && typeof bid.getFloor === 'function' && bid.getFloor()?.floor) {
       return bid.getFloor().floor;
     }
     return null;
@@ -383,13 +385,15 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     log('isBidRequestValid', bid);
-    return !!bid.params.siteId;
+    if (bid?.params?.siteId) return true;
+    return false;
   },
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     function resolveEndpoint() {
@@ -493,7 +497,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function(data) {
     window.nobid.timeoutTotal++;

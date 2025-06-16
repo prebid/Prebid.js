@@ -1,18 +1,19 @@
-import { deepClone, logInfo, logError } from '../src/utils.js';
+import { deepClone, logInfo, logError, getWinDimensions } from '../src/utils.js';
 import Base64 from 'crypto-js/enc-base64';
 import hmacSHA512 from 'crypto-js/hmac-sha512';
 import enc from 'crypto-js/enc-utf8';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getViewportSize } from '../libraries/viewport/viewport.js';
 
 const versionCode = '4.4.1'
 const secretKey = 'bydata@123456'
-const { EVENTS: { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } } = CONSTANTS
+const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS
 const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
 const analyticsType = 'endpoint'
 const isBydata = isKeyInUrl('bydata_debug')
@@ -261,7 +262,9 @@ ascAdapter.getVisitorData = function (data = {}) {
     return signedToken;
   }
   function detectWidth() {
-    return window.screen.width || (window.innerWidth && document.documentElement.clientWidth) ? Math.min(window.innerWidth, document.documentElement.clientWidth) : window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth;
+    const {width: viewportWidth} = getViewportSize();
+    const windowDimensions = getWinDimensions();
+    return windowDimensions.screen.width || (windowDimensions.innerWidth && windowDimensions.document.documentElement.clientWidth) ? Math.min(windowDimensions.innerWidth, windowDimensions.document.documentElement.clientWidth) : viewportWidth;
   }
   function giveDeviceTypeOnScreenSize() {
     var _dWidth = detectWidth();
@@ -342,7 +345,7 @@ ascAdapter.dataProcess = function (t) {
     })
   });
 
-  var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET);
+  var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
   prebidWinningBids && prebidWinningBids.length > 0 && prebidWinningBids.forEach(pbbid => {
     payload['auctionData'] && payload['auctionData'].forEach(rwData => {
       if (rwData['bid'] === pbbid.requestId && rwData['brs'] === pbbid.size) {

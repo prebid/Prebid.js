@@ -1,16 +1,16 @@
 # Overview
 
 ```
-Module Name: SmartHub Bidder Adapter
-Module Type: SmartHub Bidder Adapter
-Maintainer: support@smart-hub.io
+Module Name: Attekmi Bidder Adapter
+Module Type: Attekmi Bidder Adapter
+Maintainer: prebid@attekmi.com
 ```
 
 # Description
 
-Connects to SmartHub exchange for bids.
+Connects to Attekmi exchange for bids.
 
-SmartHub bid adapter supports Banner, Video (instream and outstream) and Native.
+Attekmi bid adapter supports Banner, Video (instream and outstream) and Native.
 
 # Test Parameters
 ```

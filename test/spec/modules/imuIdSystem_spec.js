@@ -13,6 +13,9 @@ import {
 } from 'modules/imuIdSystem.js';
 
 import * as utils from 'src/utils.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 describe('imuId module', function () {
   // let setLocalStorageStub;
@@ -79,12 +82,12 @@ describe('imuId module', function () {
   describe('getApiUrl()', function () {
     it('should return default url when cid only', function () {
       const url = getApiUrl(5126);
-      expect(url).to.be.equal(`https://sync6.im-apps.net/5126/pid`);
+      expect(url).to.be.match(/^https:\/\/sync6.im-apps.net\/5126\/pid\?page=.+&ref=$/);
     });
 
     it('should return param url when set url', function () {
       const url = getApiUrl(5126, 'testurl');
-      expect(url).to.be.equal('testurl?cid=5126');
+      expect(url).to.be.match(/^testurl\?cid=5126&page=.+&ref=$/);
     });
   });
 
@@ -181,4 +184,38 @@ describe('imuId module', function () {
       expect(res.success('error response')).to.equal(undefined);
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(imuIdSubmodule);
+    });
+    it('should return the correct EID schema with imuid', function() {
+      const userId = {
+        imuid: 'testimuid'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'intimatemerger.com',
+        uids: [{
+          id: 'testimuid',
+          atype: 1
+        }]
+      });
+    });
+
+    it('should return the correct EID schema with imppid', function() {
+      const userId = {
+        imppid: 'imppid-value-imppid-value-imppid-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'ppid.intimatemerger.com',
+        uids: [{
+          id: 'imppid-value-imppid-value-imppid-value',
+          atype: 1
+        }]
+      });
+    });
+  })
 });

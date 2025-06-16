@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="../../../build/dev/prebid.js"></script>
+
+    <script>
+      const adUnit = {
+        code: 'test-ad-unit',
+        mediaTypes: {
+          video: {
+            pos: 0,
+            w: 640,
+            h: 480,
+            mimes :  ['application/vnd.apple.mpegurl', 'video/mp4'],
+            minduration : 0,
+            maxduration: 60,
+            protocols : [2,3,7,5,6,8],
+            startdelay: 0,
+            placement: 1,
+            plcmt: 1,
+            skip: 1,
+            skipafter: 10,
+            playbackmethod: [3],
+            api: [2],
+            linearity: 1
+          }
+        },
+        bids: [{
+          bidder: 'jwplayer',
+          params: {
+            publisherId: 'test-publisher-id',
+            siteId: 'test-site-id',
+            placementId: 'test-placement-id'
+          }
+        }]
+      };
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.que.push(function() {
+          pbjs.setConfig({
+            debug: true,
+            realTimeData: {
+              dataProviders: [{
+                name: "jwplayer",
+                waitForIt: true,
+                params: {
+                  mediaIDs: ['test-media-id'],
+                  overrideContentUrl: 'always',
+                  overrideContentId: 'always',
+                  overrideContentTitle: 'always',
+                  overrideContentDescription: 'always'
+                }
+              }]
+            },
+            ortb2: {
+              site: {
+                content: {
+                  url: 'test.mp4'
+                }
+              }
+            }
+          });
+        pbjs.addAdUnits([adUnit]);
+        pbjs.requestBids({
+          timeout: 4000
+        });
+      });
+    </script>
+</head>
+<body>
+
+</body>
+</html>

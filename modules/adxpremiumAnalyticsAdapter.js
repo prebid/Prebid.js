@@ -2,8 +2,7 @@ import {deepClone, logError, logInfo} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-import {includes} from '../src/polyfill.js';
+import { EVENTS } from '../src/constants.js';
 
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://adxpremium.services/graphql';
@@ -12,15 +11,13 @@ let reqCountry = window.reqCountry || null;
 
 // Events needed
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    BID_REQUESTED,
-    BID_TIMEOUT,
-    BID_RESPONSE,
-    BID_WON,
-    AUCTION_END
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  BID_REQUESTED,
+  BID_TIMEOUT,
+  BID_RESPONSE,
+  BID_WON,
+  AUCTION_END
+} = EVENTS;
 
 let timeoutBased = false;
 let requestSent = false;
@@ -213,7 +210,7 @@ function deviceType() {
 }
 
 function clearSlot(elementId) {
-  if (includes(elementIds, elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
+  if (elementIds.includes(elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
   if (elementIds.length == 0 && !requestSent && !timeoutBased) {
     requestSent = true;
     sendEvent(completeObject);
