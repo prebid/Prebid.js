@@ -13,7 +13,6 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
-import { getGlobal } from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -24,7 +23,6 @@ const PRODUCT = {
   standard: 1,
   sticky: 2
 }
-const pbjsInstance = getGlobal()
 
 let USER_SYNCED = false;
 
@@ -71,20 +69,20 @@ export const spec = {
     var sizes = [];
     var siteId = 0;
 
-    let userIds = []
-    let thirtyThreeAcrossId = undefined
-    let unifiedId = undefined
-    let pubcid = undefined
-    if (pbjsInstance.getUserIdsAsEids) {
-      userIds = pbjsInstance.getUserIdsAsEids()
+    let userIds = [];
+    let thirtyThreeAcrossId;
+    let unifiedId;
+    let pubcid;
+    if (validBidRequests[0].userIdAsEids?.length > 0) {
+      userIds = validBidRequests[0].userIdAsEids;
     }
     userIds.forEach(idObj => {
       if (idObj.source === '33across.com') {
-        thirtyThreeAcrossId = idObj.uids[0].id
+        thirtyThreeAcrossId = idObj.uids[0].id;
       } else if (idObj.source === 'adserver.org') {
-        unifiedId = idObj.uids[0].id
+        unifiedId = idObj.uids[0].id;
       } else if (idObj.source === 'pubcid.org') {
-        pubcid = idObj.uids[0].id
+        pubcid = idObj.uids[0].id;
       }
     })
 
