@@ -84,7 +84,7 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const args = ['eslint'];
+  const args = ['eslint', "'**/*.{js,ts,tsx}'", '--cache', '--cache-strategy', 'content'];
   if (!argv.nolintfix) {
     args.push('--fix');
   }
