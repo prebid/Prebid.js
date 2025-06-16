@@ -80,6 +80,12 @@ export const mobkoiIdSubmodule = {
       }
     };
   },
+  eids: {
+    'mobkoiId': {
+      source: 'mobkoi.com',
+      atype: 1
+    },
+  }
 };
 
 submodule('userId', mobkoiIdSubmodule);
