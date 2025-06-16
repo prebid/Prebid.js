@@ -55,6 +55,9 @@ export function toFetchRequest(url, data, options = {}) {
         rqOpts[opt] = true;
       }
     })
+    if (options.suppressTopicsEnrollmentWarning != null) {
+      rqOpts.suppressTopicsEnrollmentWarning = options.suppressTopicsEnrollmentWarning;
+    }
   }
   if (options.keepalive) {
     rqOpts.keepalive = true;
