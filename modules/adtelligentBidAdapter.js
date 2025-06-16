@@ -69,6 +69,7 @@ export const spec = {
     const chunkSize = deepAccess(adapterSettings, 'chunkSize', 10);
     const { tag, bids } = bidToTag(bidRequests, adapterRequest);
     const bidChunks = chunk(bids, chunkSize);
+
     return _map(bidChunks, (bids) => {
       return {
         data: Object.assign({}, tag, { BidRequests: bids }),
@@ -129,10 +130,10 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = createTag(bidRequests, adapterRequest);
+
   if (window.adtDmp && window.adtDmp.ready) {
     tag.DMPId = window.adtDmp.getUID();
   }
-
   if (adapterRequest.gppConsent) {
     tag.GPP = adapterRequest.gppConsent.gppString;
     tag.GPPSid = adapterRequest.gppConsent.applicableSections?.toString();
@@ -140,12 +141,18 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.GPP = adapterRequest.ortb2.regs.gpp;
     tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
   }
+  const ageVerification = deepAccess(adapterRequest, 'ortb2.regs.ext.age_verification');
+
+  if (ageVerification) {
+    tag.AgeVerification = ageVerification;
+  }
 
   // end publisher env
   const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);
+
     bids.push(bid);
   }
 
@@ -176,10 +183,12 @@ function prepareBidRequests(bidReq) {
   }
   if (mediaType === VIDEO) {
     const context = deepAccess(bidReq, 'mediaTypes.video.context');
+
     if (context === ADPOD) {
       bidReqParams.Adpod = deepAccess(bidReq, 'mediaTypes.video');
     }
   }
+
   return bidReqParams;
 }
 
