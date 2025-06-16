@@ -300,8 +300,32 @@ function onTimeout(timeoutData) {
 
 function getExtensions(ortb2, refererInfo) {
   const ext = {};
-  if (ortb2) ext.ortb2 = ortb2;
-  if (refererInfo) ext.refererInfo = refererInfo;
+  if (ortb2) {
+    ext.ortb2 = JSON.parse(JSON.stringify(ortb2));
+    if (ext.ortb2.user && ext.ortb2.user.ext) {
+      delete ext.ortb2.user.ext.eids;
+      delete ext.ortb2.user.ext.consent;
+    }
+    if (ext.ortb2.device) {
+      delete ext.ortb2.device.sua;
+      delete ext.ortb2.device.w;
+      delete ext.ortb2.device.h;
+    }
+    if (ext.ortb2.regs && ext.ortb2.regs.ext) {
+      delete ext.ortb2.regs.ext.gdpr;
+    }
+    if (ext.ortb2.site) {
+      delete ext.ortb2.site.cat;
+      delete ext.ortb2.site.page;
+    }
+    if (ext.refererInfo) {
+      delete ext.refererInfo.location;
+      delete ext.refererInfo.page;
+    }
+  }
+  if (refererInfo) {
+    ext.refererInfo = refererInfo;
+  }
   return ext;
 }
 
@@ -528,6 +552,16 @@ function getImpression(bid) {
       }
       imp.floor = isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
+  }
+
+  // Remove tid and gpid from imp.ext.ortb2Imp.ext if they exist
+  if (
+    imp.ext &&
+    imp.ext.ortb2Imp &&
+    imp.ext.ortb2Imp.ext
+  ) {
+    delete imp.ext.ortb2Imp.ext.tid;
+    delete imp.ext.ortb2Imp.ext.gpid;
   }
 
   return imp

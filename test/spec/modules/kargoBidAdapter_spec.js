@@ -17,8 +17,6 @@ describe('kargo adapter tests', function() {
     getFloor: () => {},
     ortb2: {
       device: {
-        w: 1720,
-        h: 1000,
         dnt: 0,
         language: 'en',
         ua: 'Mozilla/5.0'
@@ -26,7 +24,6 @@ describe('kargo adapter tests', function() {
       site: {
         domain: domain,
         mobile: 0,
-        page: topUrl,
         publisher: {
           domain: domain
         },
