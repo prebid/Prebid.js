@@ -89,8 +89,12 @@
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
             googletag.cmd.push(function () {
-                pbjs.setTargetingForGPTAsync();
-                googletag.pubads().refresh();
+                if (pbjs.libLoaded) {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                } else {
+                    googletag.pubads().refresh();
+                }
             });
         }
 

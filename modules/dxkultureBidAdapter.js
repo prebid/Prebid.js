@@ -287,8 +287,8 @@ function _validateBanner(bidRequest) {
 
 /**
  * Validates video bid request. If it is not video media type returns true.
- * @param {BidRequest} bidRequest, bid to validate
- * @return boolean, true if valid, otherwise false
+ * @param {Object} bidRequest bid to validate
+ * @return {boolean} true if valid, otherwise false
  */
 function _validateVideo(bidRequest) {
   // If there's no video no need to validate
