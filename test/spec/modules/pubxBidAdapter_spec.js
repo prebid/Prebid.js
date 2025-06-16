@@ -70,7 +70,7 @@ describe('pubxAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const sandbox = sinon.sandbox.create();
+    const sandbox = sinon.createSandbox();
 
     const keywordsText = 'meta1,meta2,meta3,meta4,meta5';
     const descriptionText = 'description1description2description3description4description5description';

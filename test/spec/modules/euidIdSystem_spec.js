@@ -51,7 +51,7 @@ describe('EUID module', function() {
   before(function() {
     uninstallTcfControl();
     hook.ready();
-    suiteSandbox = sinon.sandbox.create();
+    suiteSandbox = sinon.createSandbox();
     if (typeof window.crypto.subtle === 'undefined') {
       restoreSubtleToUndefined = true;
       window.crypto.subtle = { importKey: () => {}, digest: () => {}, decrypt: () => {}, deriveKey: () => {}, encrypt: () => {}, generateKey: () => {}, exportKey: () => {} };

@@ -22,7 +22,6 @@ import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
@@ -156,14 +155,14 @@ export const spec = {
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
 
     const tags = bidRequests.map(bidToTag);
-    const userObjBid = find(bidRequests, hasUserInfo);
+    const userObjBid = ((bidRequests) || []).find(hasUserInfo);
     let userObj = {};
     if (config.getConfig('coppa') === true) {
       userObj = { 'coppa': true };
     }
     if (userObjBid) {
       Object.keys(userObjBid.params.user)
-        .filter(param => includes(USER_PARAMS, param))
+        .filter(param => USER_PARAMS.includes(param))
         .forEach((param) => {
           let uparam = convertCamelToUnderscore(param);
           if (param === 'segments' && isArray(userObjBid.params.user[param])) {
@@ -182,16 +181,16 @@ export const spec = {
         });
     }
 
-    const appDeviceObjBid = find(bidRequests, hasAppDeviceInfo);
+    const appDeviceObjBid = ((bidRequests) || []).find(hasAppDeviceInfo);
     let appDeviceObj;
     if (appDeviceObjBid && appDeviceObjBid.params && appDeviceObjBid.params.app) {
       appDeviceObj = {};
       Object.keys(appDeviceObjBid.params.app)
-        .filter(param => includes(APP_DEVICE_PARAMS, param))
+        .filter(param => APP_DEVICE_PARAMS.includes(param))
         .forEach(param => appDeviceObj[param] = appDeviceObjBid.params.app[param]);
     }
 
-    const appIdObjBid = find(bidRequests, hasAppId);
+    const appIdObjBid = ((bidRequests) || []).find(hasAppId);
     let appIdObj;
     if (appIdObjBid && appIdObjBid.params && appDeviceObjBid.params.app && appDeviceObjBid.params.app.id) {
       appIdObj = {
@@ -223,7 +222,7 @@ export const spec = {
         'debug_timeout': 'number'
       }, debugObj);
 
-      const debugBidRequest = find(bidRequests, hasDebug);
+      const debugBidRequest = ((bidRequests) || []).find(hasDebug);
       if (debugBidRequest && debugBidRequest.debug) {
         debugObj = debugBidRequest.debug;
       }
@@ -231,16 +230,16 @@ export const spec = {
 
     if (debugObj && debugObj.enabled) {
       Object.keys(debugObj)
-        .filter(param => includes(DEBUG_PARAMS, param))
+        .filter(param => DEBUG_PARAMS.includes(param))
         .forEach(param => {
           debugObjParams[param] = debugObj[param];
         });
     }
 
-    const memberIdBid = find(bidRequests, hasMemberId);
+    const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
     const schain = bidRequests[0].schain;
-    const omidSupport = find(bidRequests, hasOmidSupport);
+    const omidSupport = ((bidRequests) || []).find(hasOmidSupport);
 
     const payload = {
       tags: [...tags],
@@ -341,7 +340,7 @@ export const spec = {
     }
 
     if (FEATURES.VIDEO) {
-      const hasAdPodBid = find(bidRequests, hasAdPod);
+      const hasAdPodBid = ((bidRequests) || []).find(hasAdPod);
       if (hasAdPodBid) {
         bidRequests.filter(hasAdPod).forEach(adPodBid => {
           const adPodTags = createAdPodRequest(tags, adPodBid);
@@ -352,25 +351,21 @@ export const spec = {
       }
     }
 
-    if (bidRequests[0].userId) {
+    if (bidRequests[0].userIdAsEids?.length > 0) {
       let eids = [];
-      const processEids = (uids) => {
-        uids.forEach(eid => {
-          if (!eid || !eid.uids || eid.uids.length < 1) { return; }
-          eid.uids.forEach(uid => {
-            let tmp = {'source': eid.source, 'id': uid.id};
-            if (eid.source == 'adserver.org') {
-              tmp.rti_partner = 'TDID';
-            } else if (eid.source == 'uidapi.com') {
-              tmp.rti_partner = 'UID2';
-            }
-            eids.push(tmp);
-          });
+      bidRequests[0].userIdAsEids.forEach(eid => {
+        if (!eid || !eid.uids || eid.uids.length < 1) { return; }
+        eid.uids.forEach(uid => {
+          let tmp = {'source': eid.source, 'id': uid.id};
+          if (eid.source == 'adserver.org') {
+            tmp.rti_partner = 'TDID';
+          } else if (eid.source == 'uidapi.com') {
+            tmp.rti_partner = 'UID2';
+          }
+          eids.push(tmp);
         });
-      }
-      if (bidRequests[0].userIdAsEids) {
-        processEids(bidRequests[0].userIdAsEids);
-      }
+      });
+
       if (eids.length) {
         payload.eids = eids;
       }
@@ -429,7 +424,7 @@ export const spec = {
         const rtbBid = getRtbBid(serverBid);
         if (rtbBid) {
           const cpmCheck = (bidderSettings.get(bidderRequest.bidderCode, 'allowZeroCpmBids') === true) ? rtbBid.cpm >= 0 : rtbBid.cpm > 0;
-          if (cpmCheck && includes(this.supportedMediaTypes, rtbBid.ad_type)) {
+          if (cpmCheck && this.supportedMediaTypes.includes(rtbBid.ad_type)) {
             const bid = newBid(serverBid, rtbBid, bidderRequest);
             bid.mediaType = parseMediaType(rtbBid);
             bids.push(bid);
@@ -605,8 +600,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       complete: 0,
       nodes: [{
         bsid: rtbBid.buyer_member_id.toString()
-      }],
-    };
+      }]};
 
     return dchain;
   }
@@ -647,7 +641,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
         bid.vastXml = rtbBid.rtb.video.content;
 
         if (rtbBid.renderer_url) {
-          const videoBid = find(bidderRequest.bids, bid => bid.bidId === serverBid.uuid);
+          const videoBid = ((bidderRequest.bids) || []).find(bid => bid.bidId === serverBid.uuid);
           let rendererOptions = deepAccess(videoBid, 'mediaTypes.video.renderer.options'); // mediaType definition has preference (shouldn't options be .config?)
           if (!rendererOptions) {
             rendererOptions = deepAccess(videoBid, 'renderer.options'); // second the adUnit definition has preference (shouldn't options be .config?)
@@ -954,7 +948,7 @@ function bidToTag(bid) {
       tag.video = {};
       // place any valid video params on the tag
       Object.keys(bid.params.video)
-        .filter(param => includes(VIDEO_TARGETING, param))
+        .filter(param => VIDEO_TARGETING.includes(param))
         .forEach(param => {
           switch (param) {
             case 'context':
@@ -980,7 +974,7 @@ function bidToTag(bid) {
     if (videoMediaType) {
       tag.video = tag.video || {};
       Object.keys(videoMediaType)
-        .filter(param => includes(VIDEO_RTB_TARGETING, param))
+        .filter(param => VIDEO_RTB_TARGETING.includes(param))
         .forEach(param => {
           switch (param) {
             case 'minduration':
@@ -1168,10 +1162,10 @@ function hasOmidSupport(bid) {
   const bidderParams = bid.params;
   const videoParams = bid.params.video;
   if (bidderParams.frameworks && isArray(bidderParams.frameworks)) {
-    hasOmid = includes(bid.params.frameworks, 6);
+    hasOmid = bid.params.frameworks.includes(6);
   }
   if (!hasOmid && videoParams && videoParams.frameworks && isArray(videoParams.frameworks)) {
-    hasOmid = includes(bid.params.video.frameworks, 6);
+    hasOmid = bid.params.video.frameworks.includes(6);
   }
   return hasOmid;
 }
@@ -1225,7 +1219,7 @@ function setVideoProperty(tag, key, value) {
 }
 
 function getRtbBid(tag) {
-  return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
+  return tag && tag.ads && tag.ads.length && ((tag.ads) || []).find(ad => ad.rtb);
 }
 
 function buildNativeRequest(params) {
