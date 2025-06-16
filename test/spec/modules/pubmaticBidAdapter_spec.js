@@ -298,6 +298,16 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('format').to.be.an('array');
       });
 
+      it('should delete format property if it becomes empty after filtering', () => {
+        const singleSizeBidRequest = utils.deepClone(validBidRequests);
+        singleSizeBidRequest[0].mediaTypes.banner.sizes = [[300, 250]];
+        const request = spec.buildRequests(singleSizeBidRequest, bidderRequest);
+        const { imp } = request?.data;
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('banner');
+        expect(imp[0].banner).to.not.have.property('format');
+      });
+
       it('should add pmZoneId in ext if pmzoneid is present in parameters', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
