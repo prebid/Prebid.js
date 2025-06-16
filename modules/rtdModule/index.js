@@ -385,7 +385,6 @@ export function getAdUnitTargeting(auction) {
   return auction.adUnits;
 }
 
-
 export function onDataDeletionRequest(next, ...args) {
   subModules.forEach((sm) => {
     if (typeof sm.onDataDeletionRequest === 'function') {

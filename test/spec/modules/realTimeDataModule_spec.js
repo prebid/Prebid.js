@@ -10,7 +10,6 @@ import {MODULE_TYPE_RTD} from '../../../src/activities/modules.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
-
 describe('Real time module', function () {
   let eventHandlers;
   let sandbox;
