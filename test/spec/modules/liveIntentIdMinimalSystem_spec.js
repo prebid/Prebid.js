@@ -29,13 +29,13 @@ describe('LiveIntentMinimalId', function() {
   });
 
   afterEach(function() {
-    imgStub.restore();
-    getCookieStub.restore();
-    getDataFromLocalStorageStub.restore();
-    logErrorStub.restore();
-    uspConsentDataStub.restore();
-    gdprConsentDataStub.restore();
-    refererInfoStub.restore();
+    imgStub?.restore();
+    getCookieStub?.restore();
+    getDataFromLocalStorageStub?.restore();
+    logErrorStub?.restore();
+    uspConsentDataStub?.restore();
+    gdprConsentDataStub?.restore();
+    refererInfoStub?.restore();
     liveIntentIdSubmodule.setModuleMode('minimal');
     resetLiveIntentIdSubmodule();
   });

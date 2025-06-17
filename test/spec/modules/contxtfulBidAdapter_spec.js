@@ -12,7 +12,7 @@ describe('contxtful bid adapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -154,7 +154,7 @@ describe('contxtful bid adapter', function () {
         },
         enumerable: true
       });
-      
+
       const result = safeStringify(problematicObj);
       // Should not throw and should return a string
       expect(result).to.be.a('string');
@@ -165,7 +165,7 @@ describe('contxtful bid adapter', function () {
         name: 'test',
         windowRef: window
       };
-      
+
       const result = safeStringify(objWithWindow);
       expect(result).to.include('[Browser Object]');
       expect(result).to.include('"name":"test"');
@@ -177,20 +177,20 @@ describe('contxtful bid adapter', function () {
         safeData: 'value',
         normalProperty: 'normal'
       };
-      
+
       // Instead of testing property access errors (which can break entire stringify),
       // let's test that the function handles objects that contain browser objects
       // which should be converted to [Inaccessible Object] or [Browser Object]
       if (typeof window !== 'undefined') {
         problematicObj.browserRef = window;
       }
-      
+
       const result = safeStringify(problematicObj);
       expect(result).to.be.a('string');
       expect(result).to.include('"name":"test"');
       expect(result).to.include('"safeData":"value"');
       expect(result).to.include('"normalProperty":"normal"');
-      
+
       if (typeof window !== 'undefined') {
         expect(result).to.include('[Browser Object]');
       }
@@ -203,7 +203,7 @@ describe('contxtful bid adapter', function () {
         circular: null
       };
       mixedObj.circular = mixedObj; // Create circular reference
-      
+
       const result = safeStringify(mixedObj);
       expect(result).to.include('[Browser Object]');
       expect(result).to.include('[Circular]');
@@ -281,7 +281,7 @@ describe('contxtful bid adapter', function () {
       const result = safeStringify(objWithBrowserObjects);
       expect(result).to.be.a('string');
       expect(result).to.include('"name":"test"');
-      
+
       // Current implementation only detects Window, Document, HTMLElement, Node
       // It doesn't detect navigator, location, etc. as browser objects
       if (typeof window !== 'undefined' || typeof document !== 'undefined') {
@@ -359,7 +359,7 @@ describe('contxtful bid adapter', function () {
 
       // Add objects that should be caught by duck typing (constructor name patterns)
       const mockObjects = [];
-      
+
       // Mock HTMLCanvasElement (constructor name contains 'HTML' and 'Canvas')
       function HTMLCanvasElement() {}
       const mockCanvas = Object.create(HTMLCanvasElement.prototype);
@@ -377,7 +377,7 @@ describe('contxtful bid adapter', function () {
       expect(result).to.include('"normalData":"safe-value"');
       expect(result).to.include('"number":42');
       expect(result).to.include('[Browser Object]');
-      
+
       // Should not contain the actual browser object data
       expect(result).to.not.include('HTMLCanvasElement');
       expect(result).to.not.include('CSSStyleDeclaration');
@@ -401,7 +401,7 @@ describe('contxtful bid adapter', function () {
       const result = safeStringify(testObj);
       expect(result).to.be.a('string');
       expect(result).to.include('"safeData":"value"');
-      
+
       // Only expect [Browser Object] if we actually added detectable browser objects
       if (typeof document !== 'undefined' || typeof window !== 'undefined') {
         expect(result).to.include('[Browser Object]');

@@ -31,7 +31,7 @@ export const mobkoiIdSubmodule = {
     return value ? { [MODULE_NAME]: value } : undefined;
   },
 
-  getId(userSyncOptions, gdprConsent) {
+  getId(userSyncOptions, consentObject) {
     logInfo('Getting Equativ SAS ID.');
 
     if (!storage.cookiesAreEnabled()) {
@@ -62,7 +62,7 @@ export const mobkoiIdSubmodule = {
         return new Promise((resolve, _reject) => {
           utils.requestEquativSasId(
             userSyncOptions,
-            gdprConsent,
+            consentObject,
             (sasId) => {
               if (!sasId) {
                 logError('Equativ SAS ID is empty');
@@ -80,18 +80,24 @@ export const mobkoiIdSubmodule = {
       }
     };
   },
+  eids: {
+    'mobkoiId': {
+      source: 'mobkoi.com',
+      atype: 1
+    },
+  }
 };
 
 submodule('userId', mobkoiIdSubmodule);
 
 export const utils = {
-  requestEquativSasId(syncUserOptions, gdprConsent, onCompleteCallback) {
+  requestEquativSasId(syncUserOptions, consentObject, onCompleteCallback) {
     logInfo('Start requesting Equativ SAS ID');
     const adServerBaseUrl = deepAccess(
       syncUserOptions,
       `params.${PARAM_NAME_AD_SERVER_BASE_URL}`) || PROD_AD_SERVER_BASE_URL;
 
-    const equativPixelUrl = utils.buildEquativPixelUrl(syncUserOptions, gdprConsent);
+    const equativPixelUrl = utils.buildEquativPixelUrl(syncUserOptions, consentObject);
     logInfo('Equativ SAS ID request URL:', equativPixelUrl);
 
     const url = adServerBaseUrl + '/pixeliframe?' +
@@ -126,14 +132,14 @@ export const utils = {
   /**
    * Build a pixel URL that will be placed in an iframe to fetch the Equativ SAS ID
    */
-  buildEquativPixelUrl(syncUserOptions, gdprConsent) {
+  buildEquativPixelUrl(syncUserOptions, consentObject) {
     logInfo('Generating Equativ SAS ID request URL');
     const adServerBaseUrl =
       deepAccess(
         syncUserOptions,
         `params.${PARAM_NAME_AD_SERVER_BASE_URL}`) || PROD_AD_SERVER_BASE_URL;
 
-    const gdprConsentString = gdprConsent && gdprConsent.gdprApplies ? gdprConsent.consentString : '';
+    const gdprConsentString = consentObject && consentObject.gdpr && consentObject.gdpr.consentString ? consentObject.gdpr.consentString : '';
     const smartServerUrl = EQUATIV_BASE_URL + '/getuid?' +
       `url=` + encodeURIComponent(`${adServerBaseUrl}/getPixel?value=`) + '[sas_uid]' +
       `&gdpr_consent=${gdprConsentString}` +

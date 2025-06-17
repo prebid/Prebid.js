@@ -412,7 +412,7 @@ describe('Media.net Analytics Adapter', function () {
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sinon.useFakeTimers();
   });
 

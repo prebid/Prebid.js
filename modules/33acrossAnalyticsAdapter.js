@@ -160,7 +160,6 @@ class TransactionManager {
     return clearTimeout(this.#sendTimeoutId);
   }
 
-
   #restartSendTimeout() {
     this.#clearSendTimeout();
 

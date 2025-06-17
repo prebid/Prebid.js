@@ -71,17 +71,20 @@ describe('videojsProvider', function () {
       expect(mockVideojs.calledOnce).to.be.true
     });
 
-    it('should not reinstantiate the player', function () {
+    it('should not reinstantiate the player', function (done) {
       const div = document.createElement('div');
       div.setAttribute('id', 'test-div');
       document.body.appendChild(div);
-      const player = videojs(div, {})
-      config.playerConfig = {};
-      config.divId = 'test-div'
-      const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
-      provider.init();
-      expect(videojs.getPlayer('test-div')).to.be.equal(player)
-      videojs.getPlayer('test-div').dispose()
+      const player = videojs(div, {});
+      player.ready(() => {
+        config.playerConfig = {};
+        config.divId = 'test-div';
+        const provider = VideojsProvider(config, videojs, adState, timeState, callbackStorage, utils);
+        provider.init();
+        expect(videojs.getPlayer('test-div')).to.be.equal(player);
+        videojs.getPlayer('test-div').dispose();
+        done();
+      });
     });
 
     it('should trigger setup complete when player is already insantiated', function () {
@@ -175,7 +178,7 @@ describe('videojsProvider', function () {
       expect(video.mimes).to.include(VPAID_MIME_TYPE);
     });
     //
-    // We can't determine what type of outstream play is occuring
+    // We can't determine what type of outstream play is occurring
     // if the src is absent so we should not set placement
     it('should not set placement when src is absent', function() {
       document.body.innerHTML = `<video preload id='test' width="${200}" height="${100}"></video>`

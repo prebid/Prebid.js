@@ -154,6 +154,11 @@ describe('vidoomyBidAdapter', function() {
       expect('' + request[1].data.pid).to.equal('456456');
     });
 
+    it('should send multiBidsSupport parameters', function () {
+      expect('' + request[0].data.multiBidsSupport).to.equal('1');
+      expect('' + request[1].data.multiBidsSupport).to.equal('1');
+    });
+
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com!exchange2.com,abcd,1,,,!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
       expect(request[0].data).to.include.any.keys('schain');
@@ -270,7 +275,7 @@ describe('vidoomyBidAdapter', function() {
 
   describe('interpretResponse', function () {
     const serverResponseVideo = {
-      body: {
+      body: [{
         'vastUrl': 'https:\/\/vpaid.vidoomy.com\/demo-ad\/tag.xml',
         'mediaType': 'video',
         'requestId': '123123',
@@ -298,11 +303,40 @@ describe('vidoomyBidAdapter', function() {
           'primaryCatId': 'IAB3-1',
           'secondaryCatIds': null
         }
-      }
+      },
+      {
+        'vastUrl': 'https:\/\/vpaid.vidoomy.com\/demo-ad-two\/tag.xml',
+        'mediaType': 'video',
+        'requestId': '102030',
+        'cpm': 5.265,
+        'currency': 'USD',
+        'width': 10,
+        'height': 400,
+        'creativeId': '112233',
+        'dealId': '23cb20aa264b72c',
+        'netRevenue': true,
+        'ttl': 80,
+        'meta': {
+          'mediaType': 'video',
+          'rendererUrl': 'https:\/\/vpaid.vidoomy.com\/outstreamplayer\/bundle.js',
+          'advertiserDomains': ['vidoomy.com'],
+          'advertiserId': 123,
+          'advertiserName': 'Vidoomy',
+          'agencyId': null,
+          'agencyName': null,
+          'brandId': null,
+          'brandName': null,
+          'dchain': null,
+          'networkId': null,
+          'networkName': null,
+          'primaryCatId': 'IAB3-1',
+          'secondaryCatIds': null
+        }
+      }]
     }
 
     const serverResponseBanner = {
-      body: {
+      body: [{
         'ad': '<iframe src=\'https:\/\/vidoomy.com\/render\/ad.html\' width=\'300\' height=\'250\' frameborder=\'0\' scrolling=\'no\' marginheight=\'0\' marginwidth=\'0\' topmargin=\'0\' leftmargin=\'0\'><\/iframe>',
         'mediaType': 'banner',
         'requestId': '123123',
@@ -330,10 +364,39 @@ describe('vidoomyBidAdapter', function() {
           'secondaryCatIds': null
         },
         'pixels': PIXELS
-      }
+      },
+      {
+        'ad': '<iframe src=\'https:\/\/vidoomy.com\/render\/ad.html\' width=\'400\' height=\'500\' frameborder=\'0\' scrolling=\'no\' marginheight=\'0\' marginwidth=\'0\' topmargin=\'0\' leftmargin=\'0\'><\/iframe>',
+        'mediaType': 'banner',
+        'requestId': '102030',
+        'cpm': 5.94,
+        'currency': 'USD',
+        'width': 350,
+        'height': 400,
+        'creativeId': '11223344',
+        'dealId': '230aa095cea76b',
+        'netRevenue': true,
+        'ttl': 60,
+        'meta': {
+          'mediaType': 'banner',
+          'advertiserDomains': ['vidoomy.com'],
+          'advertiserId': 123,
+          'advertiserName': 'Vidoomy',
+          'agencyId': null,
+          'agencyName': null,
+          'brandId': null,
+          'brandName': null,
+          'dchain': null,
+          'networkId': null,
+          'networkName': null,
+          'primaryCatId': 'IAB3-1',
+          'secondaryCatIds': null
+        },
+        'pixels': PIXELS
+      }]
     }
 
-    it('should get the correct bid response for outstream video, with renderer, an url in ad, and same requestId', function () {
+    it('should get the correct bids responses for outstream video, with renderer, an url in ad, and same requestId', function () {
       const bidRequest = {
         data: {
           videoContext: 'outstream'
@@ -343,15 +406,24 @@ describe('vidoomyBidAdapter', function() {
       let result = spec.interpretResponse(serverResponseVideo, bidRequest);
 
       expect(result[0].renderer).to.not.be.undefined;
-      expect(result[0].ad).to.equal(serverResponseVideo.body.vastUrl);
-      expect(result[0].requestId).to.equal(serverResponseVideo.body.requestId);
+      expect(result[0].ad).to.equal(serverResponseVideo.body[0].vastUrl);
+      expect(result[1].requestId).to.equal(serverResponseVideo.body[1].requestId);
     });
 
-    it('should get the correct bid response for banner with same requestId', function () {
+    it('should get the correct bids responses for banner with same requestId ', function () {
       const bidRequest = {};
       let result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
-      expect(result[0].requestId).to.equal(serverResponseBanner.body.requestId);
+      expect(result[0].requestId).to.equal(serverResponseBanner.body[0].requestId);
+      expect(result[1].requestId).to.equal(serverResponseBanner.body[1].requestId);
+    });
+
+    it('should get the correct bids responses for banner with same creativeId ', function () {
+      const bidRequest = {};
+      let result = spec.interpretResponse(serverResponseBanner, bidRequest);
+
+      expect(result[0].creativeId).to.equal(serverResponseBanner.body[0].creativeId);
+      expect(result[1].creativeId).to.equal(serverResponseBanner.body[1].creativeId);
     });
 
     it('should sync user cookies', function () {

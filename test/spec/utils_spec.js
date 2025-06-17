@@ -25,7 +25,7 @@ describe('Utils', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
 
     afterEach(function () {
@@ -1333,16 +1333,16 @@ describe('Utils', function () {
     it('should compress data correctly when CompressionStream is available', async () => {
       const data = JSON.stringify({ test: 'data' });
       const compressedData = await utils.compressDataWithGZip(data);
-  
+
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
       expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));
     });
-  
+
     it('should handle non-string input by stringifying it', async () => {
       const nonStringData = { test: 'data' };
       const compressedData = await utils.compressDataWithGZip(nonStringData);
-  
+
       expect(compressedData).to.be.instanceOf(Uint8Array);
       expect(compressedData.length).to.be.greaterThan(0);
       expect(compressedData).to.deep.equal(new Uint8Array([1, 2, 3, 4]));

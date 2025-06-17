@@ -932,7 +932,7 @@ describe('Adyoulike Adapter', function () {
         let sandbox;
 
         this.beforeEach(function() {
-          sandbox = sinon.sandbox.create();
+          sandbox = sinon.createSandbox();
         });
 
         this.afterEach(function() {

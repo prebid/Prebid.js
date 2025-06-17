@@ -526,7 +526,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
   let requests;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
     config.setConfig({ pageUrl: 'https://www.config.domain.com/index.html' })

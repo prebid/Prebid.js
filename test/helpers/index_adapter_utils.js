@@ -79,11 +79,11 @@ exports.createBidSlots = function(numSlot, numSize) {
   if (typeof numSlot === 'undefined') numSlot = 1;
   if (typeof numSize === 'undefined') numSize = 1;
 
-  var bids = new Array(numSlot);
+  var bids = Array(numSlot);
 
   var mkPlacementCode = function(i, j) { return DefaultPlacementCodePrefix + i + '_' + j; };
   for (var i = 0; i < bids.length; i++) {
-    var requestSizes = new Array(numSize);
+    var requestSizes = Array(numSize);
     for (var j = 0; j < requestSizes.length; j++) requestSizes[j] = AllowedAdUnits[(i + j) % AllowedAdUnits.length];
 
     bids[i] = _createBidSlot(mkPlacementCode(i, j), 'slot-' + i, requestSizes, {

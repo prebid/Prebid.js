@@ -302,6 +302,4 @@ function bidToTag(bid) {
   return tag;
 }
 
-
-
 registerBidder(spec);

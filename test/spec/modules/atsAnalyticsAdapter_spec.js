@@ -19,7 +19,7 @@ describe('ats analytics adapter', function () {
   beforeEach(function () {
     sinon.stub(events, 'getEvents').returns([]);
     storage.setCookie('_lr_env_src_ats', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers(now.getTime());
   });
 

@@ -4,7 +4,7 @@ import {lookupConsentData, consentManagementHook} from '../../../libraries/conse
 describe('consent management utils', () => {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     ['logError', 'logInfo', 'logWarn'].forEach(n => sandbox.stub(utils, n));
   });
   afterEach(() => {

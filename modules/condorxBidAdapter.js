@@ -2,14 +2,57 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { createTrackPixelHtml, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'condorx';
 const API_URL = 'https://api.condorx.io/cxb/get.json';
+const ORTB_API_BASE = 'https://api.condorx.io/cxb';
 const REQUEST_METHOD = 'GET';
-const MAX_SIZE_DEVIATION = 0.05;
-const SUPPORTED_AD_SIZES = [
-  [100, 100], [200, 200], [300, 250], [336, 280], [400, 200], [300, 200], [600, 600], [236, 202], [1080, 1920], [300, 374]
-];
+const ORTB_REQUEST_METHOD = 'POST';
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 360
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    // Add CondorX specific extensions
+    imp.ext = {
+      widget: bidRequest.params.widget,
+      website: bidRequest.params.website,
+      ...imp.ext
+    };
+
+    return imp;
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+
+    // Add CondorX specific extensions
+    request.ext = {
+      website: bidderRequest.bids[0].params.website,
+      widget: bidderRequest.bids[0].params.widget,
+      ...request.ext
+    };
+
+    return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+
+    // Handle CondorX specific response format
+    if (bid.ext && bid.ext.condorx) {
+      bidResponse.meta = {
+        ...bidResponse.meta,
+        advertiserDomains: bid.ext.condorx.domain ? [bid.ext.condorx.domain] : []
+      };
+    }
+
+    return bidResponse;
+  }
+});
 
 function getBidRequestUrl(bidRequest, bidderRequest) {
   if (bidRequest.params.url && bidRequest.params.url !== 'current url') {
@@ -57,6 +100,9 @@ function parseNativeAdResponse(tile, response) {
 }
 
 function parseBannerAdResponse(tile, response) {
+  if (tile.adm) {
+    return tile.adm;
+  }
   if (tile.tag) {
     return tile.tag;
   }
@@ -91,17 +137,38 @@ function getBidderAdSizes(bidRequest) {
 }
 
 function isValidAdSize([width, height]) {
-  if (!width || !height) {
-    return false;
+  return width > 0 && height > 0;
+}
+
+function getAdSize(bidRequest) {
+  const validSize = getValidAdSize(bidRequest);
+  return validSize || [300, 250]; // Default fallback size
+}
+
+function getBidFloor(bidRequest) {
+  if (bidRequest.params && bidRequest.params.bidfloor && !isNaN(bidRequest.params.bidfloor)) {
+    return parseFloat(bidRequest.params.bidfloor);
   }
-  return SUPPORTED_AD_SIZES.some(([supportedWidth, supportedHeight]) => {
-    if (supportedWidth === width && supportedHeight === height) {
-      return true;
+  if (typeof bidRequest.getFloor === 'function') {
+    try {
+      const floorInfo = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: bidRequest.nativeParams ? 'native' : 'banner',
+        size: getAdSize(bidRequest) || [300, 250]
+      });
+      return floorInfo.floor || -1;
+    } catch (e) {
+      return -1;
     }
-    const supportedRatio = supportedWidth / supportedHeight;
-    const ratioDeviation = supportedRatio / width * height;
-    return Math.abs(ratioDeviation - 1) <= MAX_SIZE_DEVIATION && (supportedWidth > width || (width - supportedWidth) / width <= MAX_SIZE_DEVIATION);
-  });
+  }
+
+  return -1;
+}
+
+function getOpenRTBEndpoint(bidRequest) {
+  const websiteWidget = `${bidRequest.params.website}_${bidRequest.params.widget}`;
+  const base64WebsiteWidget = btoa(websiteWidget);
+  return `${ORTB_API_BASE}/${base64WebsiteWidget}/openrtb.json`;
 }
 
 export const bidderSpec = {
@@ -119,11 +186,32 @@ export const bidderSpec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    const useOpenRTB = validBidRequests[0].params.useOpenRTB === true;
+
+    if (useOpenRTB) {
+      // Use Prebid's ORTB converter
+      const ortbRequest = converter.toORTB({
+        bidderRequest,
+        bidRequests: validBidRequests
+      });
+
+      return [{
+        url: getOpenRTBEndpoint(validBidRequests[0]),
+        method: ORTB_REQUEST_METHOD,
+        data: ortbRequest,
+        bids: validBidRequests,
+        options: {},
+        ortbRequest // Store for response processing
+      }];
+    }
+
+    // Legacy format
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    if (!validBidRequests) {
+    if (!validBidRequests || !validBidRequests.length) {
       return [];
     }
+
     return validBidRequests.map(bidRequest => {
       if (bidRequest.params) {
         const mediaType = bidRequest.hasOwnProperty('nativeParams') ? 1 : 2;
@@ -131,6 +219,8 @@ export const bidderSpec = {
         const widgetId = bidRequest.params.widget;
         const websiteId = bidRequest.params.website;
         const pageUrl = getBidRequestUrl(bidRequest, bidderRequest);
+        const bidFloor = getBidFloor(bidRequest);
+
         let subid;
         try {
           let url
@@ -144,7 +234,8 @@ export const bidderSpec = {
           subid = widgetId;
         }
         const bidId = bidRequest.bidId;
-        let apiUrl = `${API_URL}?w=${websiteId}&wg=${widgetId}&u=${pageUrl}&s=${subid}&p=0&ireqid=${bidId}&prebid=${mediaType}&imgw=${imageWidth}&imgh=${imageHeight}`;
+        let apiUrl = `${API_URL}?w=${websiteId}&wg=${widgetId}&u=${pageUrl}&s=${subid}&p=0&ireqid=${bidId}&prebid=${mediaType}&imgw=${imageWidth}&imgh=${imageHeight}&bf=${bidFloor}`;
+
         if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprApplies && bidderRequest.consentString) {
           apiUrl += `&g=1&gc=${bidderRequest.consentString}`;
         }
@@ -158,6 +249,15 @@ export const bidderSpec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
+    if (bidRequest.ortbRequest) {
+      const response = converter.fromORTB({
+        request: bidRequest.ortbRequest,
+        response: serverResponse.body
+      });
+      return response.bids;
+    }
+
+    // Legacy format response
     if (!serverResponse.body || !serverResponse.body.tiles || !serverResponse.body.tiles.length) {
       return [];
     }

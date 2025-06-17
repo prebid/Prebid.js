@@ -196,10 +196,10 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
   const transformedKeywordGroups = Object.entries(keywordGroups)
     .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`))
 
-  const keywords = [
-    currentKeywords,
-    ...transformedKeywordGroups,
-  ]
+  const keywords = Array.from(new Set([
+    ...(currentKeywords || '').split(',').map(kv => kv.trim()),
+    ...transformedKeywordGroups
+  ]))
     .filter(Boolean)
     .join(',')
 

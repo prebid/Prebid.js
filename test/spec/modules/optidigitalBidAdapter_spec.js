@@ -543,7 +543,7 @@ describe('optidigitalAdapterTests', function () {
     const syncurlIframe = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
     let test;
     beforeEach(function () {
-      test = sinon.sandbox.create();
+      test = sinon.createSandbox();
       resetSync();
     });
     afterEach(function() {

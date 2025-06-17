@@ -1001,7 +1001,7 @@ function applyFPD(bidRequest, mediaType, data) {
                 return param;
               }
 
-              // finally we will add this one, if param has been added already, add our seperator
+              // finally we will add this one, if param has been added already, add our separator
               if (param) {
                 param += '~~'
               }

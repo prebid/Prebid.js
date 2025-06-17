@@ -901,7 +901,7 @@ describe('VisxAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    it('should send requst for banner bid', function () {
+    it('should send request for banner bid', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
       const payload = parseRequest(request.url);
       expect(payload).to.be.an('object');
@@ -1056,7 +1056,7 @@ describe('VisxAdapter', function () {
     let documentStub;
 
     before(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs('visx-adunit-code-1').returns({
         id: 'visx-adunit-code-1'

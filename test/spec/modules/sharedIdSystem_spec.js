@@ -27,7 +27,7 @@ describe('SharedId System', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
     });
@@ -60,7 +60,7 @@ describe('SharedId System', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'hasDeviceAccess').returns(true);
       callbackSpy.resetHistory();
     });

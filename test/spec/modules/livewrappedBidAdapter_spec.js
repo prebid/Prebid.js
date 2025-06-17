@@ -12,7 +12,7 @@ describe('Livewrapped adapter tests', function () {
     bidderRequest;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     window.livewrapped = undefined;
 

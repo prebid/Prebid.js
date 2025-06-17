@@ -292,7 +292,7 @@ describe('Adnuntius analytics adapter', function () {
   let clock;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     let element = {
       getAttribute: function() {

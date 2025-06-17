@@ -149,7 +149,7 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     if (!deepAccess(bid, 'params.placementId')) {
-      logWarn('placementId param is reqeuired.')
+      logWarn('placementId param is required.')
       return false
     }
     if (deepAccess(bid, 'mediaTypes.banner.sizes')) {

@@ -27,7 +27,7 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function isBidRequestValid(bid) {
   if (!deepAccess(bid, 'params.placementId')) {
-    logWarn('placementId param is reqeuired.');
+    logWarn('placementId param is required.');
     return false;
   }
   if (hasVideoMediaType(bid) && isVideoValid(bid)) {

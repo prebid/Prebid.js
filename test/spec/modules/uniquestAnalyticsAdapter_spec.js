@@ -383,7 +383,7 @@ describe('Uniquest Analytics Adapter', function () {
   let requests;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
   });

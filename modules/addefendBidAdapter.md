@@ -15,7 +15,7 @@ Module that connects to AdDefend as a demand source.
 | ------------- | ------------- | ----- | ----- |
 | pageId | id assigned to the website in the AdDefend system. (ask AdDefend support) | no | - |
 | placementId | id of the placement in the AdDefend system.  (ask AdDefend support) | no | - |
-| trafficTypes | comma seperated list of the following traffic types:<br/>ADBLOCK - user has a activated adblocker<br/>PM - user has firefox private mode activated<br/>NC - user has not given consent<br/>NONE - user traffic is none of the above, this usually means this is a "normal" user.<br/>| yes | ADBLOCK |
+| trafficTypes | comma separated list of the following traffic types:<br/>ADBLOCK - user has an activated adblocker<br/>PM - user has firefox private mode activated<br/>NC - user has not given consent<br/>NONE - user traffic is none of the above, this usually means this is a "normal" user.<br/>| yes | ADBLOCK |
 
 
 # Test Parameters

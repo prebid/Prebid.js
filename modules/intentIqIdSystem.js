@@ -303,7 +303,6 @@ function storeCounters(storage, partnerData) {
   storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), storage, firstPartyData);
 }
 
-
 /** @type {Submodule} */
 export const intentIqIdSubmodule = {
   /**

@@ -327,7 +327,8 @@ function getEids(userId) {
     'uid',
     'eid',
     'lipbid',
-    'envelope'
+    'envelope',
+    'id'
   ];
 
   return Object.keys(userId).reduce(function (eids, provider) {

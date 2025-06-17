@@ -452,123 +452,6 @@ describe('RTBHouseAdapter', () => {
       });
     });
 
-    context('FLEDGE', function() {
-      afterEach(function () {
-        config.resetConfig();
-      });
-
-      it('sends bid request to FLEDGE ENDPOINT via POST', function () {
-        let bidRequest = Object.assign([], bidRequests);
-        delete bidRequest[0].params.test;
-        config.setConfig({ fledgeConfig: true });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: { enabled: true } });
-        expect(request.url).to.equal('https://prebid-eu.creativecdn.com/bidder/prebidfledge/bids');
-        expect(request.method).to.equal('POST');
-      });
-
-      it('sets default fledgeConfig object values when none available from config', function () {
-        let bidRequest = Object.assign([], bidRequests);
-        delete bidRequest[0].params.test;
-
-        config.setConfig({ fledgeConfig: false });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
-        const data = JSON.parse(request.data);
-        expect(data.ext).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl', 'sellerTimeout');
-        expect(data.ext.fledge_config.seller).to.equal('https://fledge-ssp.creativecdn.com');
-        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://fledge-ssp.creativecdn.com/component-seller-prebid.js');
-        expect(data.ext.fledge_config.sellerTimeout).to.equal(500);
-      });
-
-      it('sets request.ext.fledge_config object values when available from fledgeConfig', function () {
-        let bidRequest = Object.assign([], bidRequests);
-        delete bidRequest[0].params.test;
-
-        config.setConfig({
-          fledgeConfig: {
-            seller: 'https://sellers.domain',
-            decisionLogicUrl: 'https://sellers.domain/decision.url'
-          }
-        });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
-        const data = JSON.parse(request.data);
-        expect(data.ext).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl');
-        expect(data.ext.fledge_config.seller).to.equal('https://sellers.domain');
-        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://sellers.domain/decision.url');
-        expect(data.ext.fledge_config.sellerTimeout).to.not.exist;
-      });
-
-      it('sets request.ext.fledge_config object values when available from paapiConfig', function () {
-        let bidRequest = Object.assign([], bidRequests);
-        delete bidRequest[0].params.test;
-
-        config.setConfig({
-          paapiConfig: {
-            seller: 'https://sellers.domain',
-            decisionLogicUrl: 'https://sellers.domain/decision.url'
-          }
-        });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
-        const data = JSON.parse(request.data);
-        expect(data.ext).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl');
-        expect(data.ext.fledge_config.seller).to.equal('https://sellers.domain');
-        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://sellers.domain/decision.url');
-        expect(data.ext.fledge_config.sellerTimeout).to.not.exist;
-      });
-
-      it('sets request.ext.fledge_config object values when available from paapiConfig rather than from fledgeConfig if both exist', function () {
-        let bidRequest = Object.assign([], bidRequests);
-        delete bidRequest[0].params.test;
-
-        config.setConfig({
-          paapiConfig: {
-            seller: 'https://paapiconfig.sellers.domain',
-            decisionLogicUrl: 'https://paapiconfig.sellers.domain/decision.url'
-          },
-          fledgeConfig: {
-            seller: 'https://fledgeconfig.sellers.domain',
-            decisionLogicUrl: 'https://fledgeconfig.sellers.domain/decision.url'
-          }
-        });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
-        const data = JSON.parse(request.data);
-        expect(data.ext).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
-        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl');
-        expect(data.ext.fledge_config.seller).to.equal('https://paapiconfig.sellers.domain');
-        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://paapiconfig.sellers.domain/decision.url');
-      });
-
-      it('when FLEDGE is disabled, should not send imp.ext.ae', function () {
-        let bidRequest = Object.assign([], bidRequests);
-        delete bidRequest[0].params.test;
-        bidRequest[0].ortb2Imp = {
-          ext: { ae: 2 }
-        };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: false} });
-        let data = JSON.parse(request.data);
-        if (data.imp[0].ext) {
-          expect(data.imp[0].ext).to.not.have.property('ae');
-        }
-      });
-
-      it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
-        let bidRequest = Object.assign([], bidRequests);
-        delete bidRequest[0].params.test;
-        bidRequest[0].ortb2Imp = {
-          ext: { ae: 2 }
-        };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
-        let data = JSON.parse(request.data);
-        expect(data.imp[0].ext.ae).to.equal(2);
-      });
-    });
-
     describe('native imp', () => {
       function basicRequest(extension) {
         return Object.assign({
@@ -769,29 +652,6 @@ describe('RTBHouseAdapter', () => {
       }];
     });
 
-    let fledgeResponse = {
-      'id': 'bid-identifier',
-      'ext': {
-        'igbid': [{
-          'impid': 'test-bid-id',
-          'igbuyer': [{
-            'igdomain': 'https://buyer-domain.com',
-            'buyersignal': {}
-          }]
-        }],
-        'sellerTimeout': 500,
-        'seller': 'https://seller-domain.com',
-        'decisionLogicUrl': 'https://seller-domain.com/decision-logic.js'
-      },
-      'bidid': 'bid-identifier',
-      'seatbid': [{
-        'bid': [{
-          'id': 'bid-response-id',
-          'impid': 'test-bid-id'
-        }]
-      }]
-    };
-
     it('should get correct bid response', function () {
       let expectedResponse = [
         {
@@ -818,48 +678,6 @@ describe('RTBHouseAdapter', () => {
       let bidderRequest;
       let result = spec.interpretResponse({body: response}, {bidderRequest});
       expect(result.length).to.equal(0);
-    });
-
-    context('when the response contains FLEDGE interest groups config', function () {
-      let bidderRequest;
-      let response = spec.interpretResponse({body: fledgeResponse}, {bidderRequest});
-
-      it('should return FLEDGE auction_configs alongside bids', function () {
-        expect(response).to.have.property('bids');
-        expect(response).to.have.property('paapi');
-        expect(response.paapi.length).to.equal(1);
-        expect(response.paapi[0].bidId).to.equal('test-bid-id');
-      });
-    });
-
-    context('when the response contains FLEDGE auction config and bid request has additional signals in paapiConfig', function () {
-      let bidderRequest;
-      config.setConfig({
-        paapiConfig: {
-          interestGroupBuyers: ['https://buyer1.com'],
-          perBuyerSignals: {
-            'https://buyer1.com': { signal: 1 }
-          },
-          customSignal: 1
-        }
-      });
-      let response = spec.interpretResponse({body: fledgeResponse}, {bidderRequest});
-
-      it('should have 2 buyers in interestGroupBuyers', function () {
-        expect(response.paapi[0].config.interestGroupBuyers.length).to.equal(2);
-        expect(response.paapi[0].config.interestGroupBuyers).to.have.members(['https://buyer1.com', 'https://buyer-domain.com']);
-      });
-
-      it('should have 2 perBuyerSignals with proper values', function () {
-        expect(response.paapi[0].config.perBuyerSignals).to.contain.keys('https://buyer1.com', 'https://buyer-domain.com');
-        expect(response.paapi[0].config.perBuyerSignals['https://buyer1.com']).to.deep.equal({ signal: 1 });
-        expect(response.paapi[0].config.perBuyerSignals['https://buyer-domain.com']).to.deep.equal({});
-      });
-
-      it('should contain any custom signal passed via paapiConfig', function () {
-        expect(response.paapi[0].config).to.contain.keys('customSignal');
-        expect(response.paapi[0].config.customSignal).to.equal(1);
-      });
     });
 
     context('when the response contains DSA object', function () {

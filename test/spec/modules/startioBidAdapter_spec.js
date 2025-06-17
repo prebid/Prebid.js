@@ -166,7 +166,6 @@ const SERVER_RESPONSE_NATIVE = {
   'cur': 'USD'
 }
 
-
 describe('Prebid Adapter: Startio', function () {
   describe('code', function () {
     it('should return a bidder code of startio', function () {

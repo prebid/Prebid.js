@@ -485,5 +485,4 @@ function hasMemberId(bid) {
   return !!parseInt(bid.params.member, 10);
 }
 
-
 registerBidder(spec);

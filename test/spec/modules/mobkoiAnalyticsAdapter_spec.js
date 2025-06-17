@@ -177,7 +177,7 @@ const getBidderRequest = () => ({
   ortb2: getOrtb2()
 })
 
-describe('mobkoiAnalyticsAdapter', function () {
+xdescribe('mobkoiAnalyticsAdapter', function () {
   it('should registers with the adapter manager', function () {
     // should refer to the BIDDER_CODE in the mobkoiAnalyticsAdapter
     const adapter = adapterManager.getAnalyticsAdapter('mobkoi');

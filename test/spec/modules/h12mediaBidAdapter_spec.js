@@ -153,7 +153,7 @@ describe('H12 Media Adapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(frameElement, 'getBoundingClientRect').returns({
       left: 10,
       top: 10,

@@ -52,16 +52,16 @@ describe('LiveIntentId', function() {
   });
 
   afterEach(function() {
-    imgStub.restore();
-    getCookieStub.restore();
-    getDataFromLocalStorageStub.restore();
-    logErrorStub.restore();
-    uspConsentDataStub.restore();
-    gdprConsentDataStub.restore();
-    gppConsentDataStub.restore();
-    coppaConsentDataStub.restore();
-    refererInfoStub.restore();
-    randomStub.restore();
+    imgStub?.restore();
+    getCookieStub?.restore();
+    getDataFromLocalStorageStub?.restore();
+    logErrorStub?.restore();
+    uspConsentDataStub?.restore();
+    gdprConsentDataStub?.restore();
+    gppConsentDataStub?.restore();
+    coppaConsentDataStub?.restore();
+    refererInfoStub?.restore();
+    randomStub?.restore();
     window.liModuleEnabled = undefined; // reset
     window.liTreatmentRate = undefined; // reset
     resetLiveIntentIdSubmodule();

@@ -1,4 +1,3 @@
-
 import { _each, isBoolean, isEmptyStr, isNumber, isStr, deepClone, isArray, deepSetValue, inIframe, mergeDeep, deepAccess, logMessage, logInfo, logWarn, logError, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -865,18 +864,15 @@ function _logMessage(textValue, objectValue) {
   logMessage(LOG_PREFIX + textValue, objectValue);
 }
 
-
 function _logInfo(textValue, objectValue) {
   objectValue = objectValue || '';
   logInfo(LOG_PREFIX + textValue, objectValue);
 }
 
-
 function _logWarn(textValue, objectValue) {
   objectValue = objectValue || '';
   logWarn(LOG_PREFIX + textValue, objectValue);
 }
-
 
 function _logError(textValue, objectValue) {
   objectValue = objectValue || '';

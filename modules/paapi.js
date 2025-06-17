@@ -274,7 +274,6 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig(config.getCurrentBidder()).enabled) {
     const {adUnitCode, auctionId, bidder} = request;
 
-
     function storePendingData(store, data) {
       const target = store(auctionId);
       if (target != null) {
