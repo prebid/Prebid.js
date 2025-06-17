@@ -231,7 +231,7 @@ export const spec = {
           ...bid,
           params: {
             ...bid.params,
-            autoplayEnabled: autoplayEnabled,
+            autoplay: autoplayEnabled,
           },
         };
       })

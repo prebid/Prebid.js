@@ -388,24 +388,24 @@ describe("C-WIRE bid adapter", () => {
       sandbox.restore();
     });
 
-    it("should include autoplayEnabled: true when autoplay is enabled", function () {
+    it("should include autoplay: true when autoplay is enabled", function () {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(true);
 
       let bidRequest = deepClone(bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.slots[0].params.autoplayEnabled).to.equal(true);
+      expect(payload.slots[0].params.autoplay).to.equal(true);
     });
 
-    it("should include autoplayEnabled: false when autoplay is disabled", function () {
+    it("should include autoplay: false when autoplay is disabled", function () {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(false);
 
       let bidRequest = deepClone(bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.slots[0].params.autoplayEnabled).to.equal(false);
+      expect(payload.slots[0].params.autoplay).to.equal(false);
     });
   });
 
