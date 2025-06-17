@@ -195,7 +195,7 @@ export const spec = {
           ...bid,
           params: {
             ...bid.params,
-            autoplayEnabled: autoplayEnabled
+            autoplay: autoplayEnabled
           }}
       })
       // Flattens the pageId, domainId and placement Id for backwards compatibility.
