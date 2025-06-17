@@ -1,5 +1,5 @@
 import { ajax } from '../../src/ajax.js'
-import { cyrb53Hash } from '../../src/utils.js';
+import { cyrb53Hash, logError } from '../../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
 
@@ -746,7 +746,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
           promise.then((result) => {
             logInfo('Token generation responded, passing the new token on.', result);
             cb(result);
-          });
+          }).catch((e) => { logError('error generating token: ', e); });
         } };
       }
     }
@@ -766,13 +766,14 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
       promise.then((result) => {
         logInfo('Refresh reponded, passing the updated token on.', result);
         cb(result);
-      });
+      }).catch((e) => { logError('error refreshing token: ', e); });
     } };
   }
   // If should refresh (but don't need to), refresh in the background.
   if (Date.now() > newestAvailableToken.refresh_from) {
     logInfo(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn);
+    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, logInfo, _logWarn)
+      .catch((e) => { logError('error refreshing token in background: ', e); });
   }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,

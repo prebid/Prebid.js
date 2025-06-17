@@ -3,7 +3,6 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
-import {includes} from '../src/polyfill.js';
 
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://adxpremium.services/graphql';
@@ -211,7 +210,7 @@ function deviceType() {
 }
 
 function clearSlot(elementId) {
-  if (includes(elementIds, elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
+  if (elementIds.includes(elementId)) { elementIds.splice(elementIds.indexOf(elementId), 1); logInfo('AdxPremium Analytics - Done with: ' + elementId); }
   if (elementIds.length == 0 && !requestSent && !timeoutBased) {
     requestSent = true;
     sendEvent(completeObject);
