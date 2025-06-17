@@ -202,8 +202,8 @@ describe('ssp_genieeBidAdapter', function () {
           },
         ]);
         expect(request[0].data.ib).to.deep.equal(0);
-        expect(request[1].data.ib).to.deep.equal(0);
-        expect(request[2].data.ib).to.deep.equal(0);
+        expect(request[1].data.ib).to.deep.equal(1);
+        expect(request[2].data.ib).to.deep.equal(1);
       });
 
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
