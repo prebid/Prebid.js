@@ -229,7 +229,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
     });
   })
   describe('injectImpressionData', function () {
-    it('should inject impression data into adUnits', function () {
+    it('should inject impression data into adUnits ortb2Imp object', function () {
       const adUnits = [
         { code: 'leaderboard-flex-hp', ortb2Imp: { ext: { data: {} } } }
       ];
