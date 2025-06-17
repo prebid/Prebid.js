@@ -224,7 +224,7 @@ function mapIasData(data) {
  * @param {Object} brandSafetyData - The brand safety data
  * @param {Object} ortb2Fragments - The ortb2 fragments object
  */
-function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) {
+export function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) {
   if (!brandSafetyData || !ortb2Fragments?.global) return;
 
   // Map the brand safety data
@@ -266,7 +266,7 @@ function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) {
  * @param {boolean} fraudData - The fraud data - boolean string value
  * @param {Array} adUnits - The ad units array
  */
-function injectImpressionData(impressionData, fraudData, adUnits) {
+export function injectImpressionData(impressionData, fraudData, adUnits) {
   if (!impressionData || !adUnits?.length) return;
 
   adUnits.forEach(adUnit => {
