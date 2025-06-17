@@ -301,8 +301,6 @@ describe('User ID', function () {
 
         innerAdUnits1.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal(pubcid);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: pubcid, atype: 1}]
@@ -338,8 +336,6 @@ describe('User ID', function () {
 
         innerAdUnits1.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal(pubcid1);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: pubcid1, atype: 1}]
@@ -358,8 +354,6 @@ describe('User ID', function () {
 
           innerAdUnits2.forEach((unit) => {
             unit.bids.forEach((bid) => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal(pubcid2);
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: pubcid2, atype: 1}]
@@ -385,8 +379,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('altpubcid200000');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: 'altpubcid200000', atype: 1}]
@@ -411,8 +403,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('altpubcid200000');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: 'altpubcid200000', atype: 1}]
@@ -437,7 +427,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.not.have.deep.nested.property('userId.pubcid');
             expect(bid).to.not.have.deep.nested.property('userIdAsEids');
           });
         });
@@ -1743,8 +1732,6 @@ describe('User ID', function () {
           // check ids were copied to bids
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.mid');
-              expect(bid.userId.mid).to.equal('1234');
               expect(bid.userIdAsEids).to.not.exist;// "mid" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
@@ -1889,8 +1876,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1914,8 +1899,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1941,8 +1924,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1969,8 +1950,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1995,8 +1974,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -2018,8 +1995,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcidvalue');
-              expect(bid.userId.pubcidvalue).to.equal('testpubcidvalue');
               expect(bid.userIdAsEids).to.not.exist; // "pubcidvalue" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
@@ -2073,33 +2048,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubProvidedId');
-              expect(bid.userId.pubProvidedId).to.deep.equal([{
-                source: 'example.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'ppuid'
-                  }
-                }]
-              }, {
-                source: 'id-partner.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'dmp'
-                  }
-                }]
-              }, {
-                source: 'provider.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'sha256email'
-                  }
-                }]
-              }]);
-
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'example.com',
                 uids: [{
@@ -2158,11 +2106,8 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              // check PubCommonId id data was copied to bid
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              // check MockId data was copied to bid
-              expect(bid).to.have.deep.nested.property('userId.mid');
-              expect(bid.userId.mid).to.equal('1234');
+              // check id data was copied to bid
+              expect(bid).to.have.property('userIdAsEids');
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2195,7 +2140,7 @@ describe('User ID', function () {
           isAllowed.restore();
         });
 
-        it('should check for enrichEids activity permissions', (done) => {
+        it('should check for enrichEids activity permissions', () => {
           isAllowed.callsFake((activity, params) => {
             return !(activity === ACTIVITY_ENRICH_EIDS &&
               params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID &&
@@ -2210,10 +2155,10 @@ describe('User ID', function () {
               }))
             }
           });
-          startAuctionHook((req) => {
-            const activeIds = req.adUnits.flatMap(au => au.bids).flatMap(bid => Object.keys(bid.userId));
-            expect(Array.from(new Set(activeIds))).to.have.members([MOCK_IDS[1]]);
-            done();
+          return expectImmediateBidHook((req) => {
+            const activeSources = req.adUnits.flatMap(au => au.bids)
+              .flatMap(bid => bid.userIdAsEids ? bid.userIdAsEids.map(eid => eid.source) : []);
+            expect(Array.from(new Set(activeSources))).to.have.members([MOCK_IDS[1]]);
           }, {adUnits})
         });
       })
@@ -3204,8 +3149,8 @@ describe('User ID', function () {
         };
         addIdData({ adUnits, ortb2Fragments });
 
-        adUnits[0].bids.forEach(({userId}) => {
-          const userIdModules = Object.keys(userId);
+        adUnits[0].bids.forEach(({userIdAsEids}) => {
+          const userIdModules = (userIdAsEids || []).map(eid => eid.source.replace('.com', ''));
           expect(userIdModules).to.include(ALLOWED_MODULE);
           expect(userIdModules).to.not.include(UNALLOWED_MODULE);
         });
