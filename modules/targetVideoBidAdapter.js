@@ -1,4 +1,4 @@
-import {_each, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
+import {_each, deepAccess, getDefinedParams, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {formatRequest, getRtbBid, getSiteObj, getSyncResponse, videoBid, bannerBid, createVideoTag} from '../libraries/targetVideoUtils/bidderUtils.js';
@@ -52,6 +52,8 @@ export const spec = {
               sdk,
               id: bidderRequest.bidderRequestId,
               site,
+              device: deepAccess(bidderRequest, 'ortb2.device'),
+              user: { ext: {} },
               imp: []
             }
 
@@ -88,15 +90,23 @@ export const spec = {
               if (gdprConsent) {
                 if (typeof gdprConsent.gdprApplies !== 'undefined') {
                   payload.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-                };
+                }
 
                 if (typeof gdprConsent.consentString !== 'undefined') {
-                  payload.user = {
-                    ext: { consent: gdprConsent.consentString }
-                  };
-                };
-              };
-            };
+                  payload.user.ext.consent = gdprConsent.consentString;
+                }
+              }
+            }
+
+            const eids = deepAccess(bidRequests[0], 'userIdAsEids');
+            if (eids) {
+              payload.user.ext.eids = eids;
+            }
+
+            const ortbUserExtData = deepAccess(bidderRequest, 'ortb2.user.data');
+            if (ortbUserExtData) {
+              payload.user.ext.data = ortbUserExtData;
+            }
 
             if (bidRequests[0].schain) {
               payload.source = {

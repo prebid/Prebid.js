@@ -142,7 +142,6 @@ export function configParser(
     }
   }
 
-
   return function getConsentConfig(config) {
     config = config?.[namespace];
     if (!config || typeof config !== 'object') {

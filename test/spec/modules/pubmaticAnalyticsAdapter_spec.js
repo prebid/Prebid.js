@@ -290,7 +290,7 @@ describe('pubmatic analytics adapter', function () {
 
   beforeEach(function () {
     setUADefault();
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     requests = server.requests;
 
@@ -558,7 +558,7 @@ describe('pubmatic analytics adapter', function () {
           userId: mockUserIds
         }]
       }]);
-      
+
       sandbox.stub($$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
         if (key === 'userSync') return mockUserSync;
         return null;

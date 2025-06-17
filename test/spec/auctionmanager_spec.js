@@ -1844,7 +1844,7 @@ describe('auctionmanager.js', function () {
   describe('addWinningBid', () => {
     let auction, bid, adUnits, sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(adapterManager, 'callBidWonBidder');
       sandbox.stub(adapterManager, 'triggerBilling')
       adUnits = [{code: 'au1'}, {code: 'au2'}]
