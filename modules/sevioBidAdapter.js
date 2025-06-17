@@ -45,6 +45,74 @@ const detectWalletsPresence = function () {
   return _wallets.some((prop) => typeof window[prop] !== "undefined") ? 1 : 0;
 };
 
+const parseNativeAd = function (bid) {
+  try {
+    const nativeAd = JSON.parse(bid.ad);
+    const native = {};
+
+    nativeAd.assets?.forEach(asset => {
+      if (asset.title?.text) {
+        native.title = asset.title.text;
+      }
+      if (asset.data) {
+        const value = asset.data.value;
+        switch (asset.data.type) {
+          case 1: if (value) native.sponsoredBy = value; break;
+          case 2: if (value) native.body = value; break;
+          case 3: if (value) native.rating = value; break;
+          case 4: if (value) native.likes = value; break;
+          case 5: if (value) native.downloads = value; break;
+          case 6: if (value) native.price = value; break;
+          case 7: if (value) native.salePrice = value; break;
+          case 8: if (value) native.phone = value; break;
+          case 9: if (value) native.address = value; break;
+          case 10: if (value) native.body2 = value; break;
+          case 11: if (value) native.displayUrl = value; break;
+          case 12: if (value) native.cta = value; break;
+          default: break;
+        }
+      }
+      if (asset.img) {
+        const { url, w = 0, h = 0, type } = asset.img;
+
+        if (type === 1 && url) {
+          native.icon = url;
+          native.icon_width = w;
+          native.icon_height = h;
+        } else if (type === 3 && url) {
+          native.image = url;
+          native.image_width = w;
+          native.image_height = h;
+        }
+      }
+    });
+
+    if (nativeAd.link?.url) {
+      native.clickUrl = nativeAd.link.url;
+    }
+
+    const impressionTrackers = nativeAd.eventtrackers
+      ?.filter(tracker => tracker.event === 1)
+      .map(tracker => tracker.url)
+      .filter(Boolean);
+
+    if (impressionTrackers?.length) {
+      native.impressionTrackers = impressionTrackers;
+    }
+
+    if (Array.isArray(nativeAd.link?.clicktrackers) && nativeAd.link.clicktrackers.length > 0) {
+      native.clickTrackers = nativeAd.link.clicktrackers;
+    }
+
+    if (nativeAd.privacy?.url) native.privacyLink = nativeAd.privacy.url;
+    if (nativeAd.privacy?.icon) native.privacyIcon = nativeAd.privacy.icon;
+
+    return native;
+  } catch (e) {
+    utils.logWarn('Invalid native JSON', e);
+    return null;
+  }
+}
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -82,7 +150,8 @@ export const spec = {
     const hasWallet = detectWalletsPresence();
 
     return bidRequests.map((bidRequest) => {
-      const size = bidRequest.mediaTypes.banner.sizes[0];
+      const isNative = detectAdType(bidRequest)?.toLowerCase() === 'native';
+      const size = bidRequest.mediaTypes?.banner?.sizes[0] || bidRequest.mediaTypes?.native?.sizes[0] || [];
       const width = size[0];
       const height = size[1];
       const payload = {
@@ -109,6 +178,7 @@ export const spec = {
             referenceId: bidRequest.params.referenceId,
             tagId: bidRequest.params.zone,
             type: detectAdType(bidRequest),
+            ...(isNative && { nativeRequest: { ver: "1.2", assets: bidRequest.mediaTypes?.native?.ortb?.assets || {}} })
           },
         ],
         keywords: { tokens: bidRequest.params?.keywords || [] },
@@ -148,6 +218,12 @@ export const spec = {
     bids.forEach((bid) => {
       if (bid && typeof bid === "object") {
         bid.bidder = BIDDER_CODE;
+        if ((bid.mediaType || '').toLowerCase() === 'native') {
+          const native = parseNativeAd(bid);
+          if (native) {
+            bid.native = native;
+          }
+        }
       }
     });
 
