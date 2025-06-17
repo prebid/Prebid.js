@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/BTBidAdapter.js';
+import { spec } from 'modules/blockthroughBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 // load modules that register ORTB processors
 import 'src/prebid.js';

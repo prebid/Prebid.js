@@ -1,4 +1,4 @@
-import {spec, converter} from 'modules/viantOrtbBidAdapter.js';
+import {spec, converter} from 'modules/viantBidAdapter.js';
 import {assert, expect} from 'chai';
 import {deepClone} from '../../../src/utils';
 import {buildWindowTree} from '../../helpers/refererDetectionHelper';

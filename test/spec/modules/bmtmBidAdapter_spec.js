@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/brightMountainMediaBidAdapter.js';
+import { spec } from '../../../modules/bmtmBidAdapter.js';
 
 const BIDDER_CODE = 'bmtm';
 const PLACEMENT_ID = 329;

@@ -9,6 +9,7 @@ const BIDDER_CODE = 'growads';
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['growadvertising'],
   supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bid) {
