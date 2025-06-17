@@ -1,6 +1,6 @@
 ## Taboola User ID Submodule
 
-For assistance setting up your module please contact us at [ps-team@taboola.com](ps-team@taboola.com).
+For assistance setting up your module please contact us at [ps-team@taboola.com].
 
 ### Prebid Params
 
