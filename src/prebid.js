@@ -49,7 +49,7 @@ import {
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
-import { ORTB_BANNER_PARAMS } from './banner.js';
+import { ORTB_BANNER_PARAMS, validateOrtbBannerFields } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import { newBidder } from './adapters/bidderFactory.js';
@@ -138,14 +138,11 @@ export function syncOrtb2(adUnit, mediaType) {
       // omitting the params if it's not defined on either of sides
       return;
     }
-    if (typeof validator !== 'function') {
-      return;
-    }
-    if (mediaTypesFieldValue == undefined && validator(ortbFieldValue)) {
+    if (mediaTypesFieldValue == undefined) {
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
-    } else if (ortbFieldValue == undefined && validator(mediaTypesFieldValue)) {
+    } else if (ortbFieldValue == undefined) {
       deepSetValue(adUnit, `ortb2Imp.${mediaType}.${key}`, mediaTypesFieldValue);
-    } else if (validator(ortbFieldValue)) {
+    } else {
       logWarn(`adUnit ${adUnit.code}: specifies conflicting ortb2Imp.${mediaType}.${key} and mediaTypes.${mediaType}.${key}, the latter will be ignored`, adUnit);
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     }
@@ -192,6 +189,7 @@ function validateBannerMediaType(adUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
+  validateOrtbBannerFields(validatedAdUnit);
   syncOrtb2(validatedAdUnit, 'banner')
   return validatedAdUnit;
 }

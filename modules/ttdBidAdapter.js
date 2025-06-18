@@ -319,8 +319,8 @@ export const spec = {
       utils.logWarn(BIDDER_CODE + ': Missing required parameter params.publisherId');
       return false;
     }
-    if (bid.params.publisherId.length > 32) {
-      utils.logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
+    if (bid.params.publisherId.length > 64) {
+      utils.logWarn(BIDDER_CODE + ': params.publisherId must be 64 characters or less');
       return false;
     }
 
