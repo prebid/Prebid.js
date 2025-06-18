@@ -37,20 +37,14 @@ let detectedKeywords = null; // To store generated summary/keywords
 // Helper to initialize Chrome AI API instances (LanguageDetector, Summarizer)
 const _createAiApiInstance = async (ApiConstructor, options) => {
   const apiName = ApiConstructor.name; // e.g., "LanguageDetector" or "Summarizer"
-  // eslint-disable-next-line no-console
-  console.log("apiName: ",apiName,!(apiName in self),  typeof self[apiName] !== 'function');
   
   try {
     if (!(apiName in self) || typeof self[apiName] !== 'function') { // Also check if it's a function (constructor)
       logError(`${CONSTANTS.LOG_PRE_FIX} ${apiName} API not available or not a constructor in self.`);
       return null;
     }
-     // eslint-disable-next-line no-console
-     console.log("OutSide if ");
 
     const availability = await ApiConstructor.availability();
-    // eslint-disable-next-line no-console
-    console.log("availability: ",availability);
     if (availability === 'unavailable') {
       logError(`${CONSTANTS.LOG_PRE_FIX} ${apiName} is unavailable.`);
       return null;
@@ -165,7 +159,7 @@ export const getPrioritizedLanguageData = (reqBidsConfigObj) => {
   }
 
   // 2. Check localStorage (relevant for both init and getBidRequestData)
-  const storedLangData = isLanguageInLocalStorage();
+  const storedLangData = isLanguageInLocalStorage(getCurrentUrl());
   if (storedLangData) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Language '${storedLangData.language}' found in localStorage.`);
     return { ...storedLangData, source: 'localStorage' };
@@ -208,8 +202,6 @@ export const storeDetectedLanguage = (language, confidence, url) => {
 
 export const detectLanguage = async (text) => {
   const detector = await _createAiApiInstance(LanguageDetector);
-  // eslint-disable-next-line no-console
-  console.log("detector: ",detector);
   if (!detector) {
     return null; // Error already logged by _createAiApiInstance
   }
@@ -259,24 +251,16 @@ export const detectSummary = async (text, config) => {
 };
 
 const initLanguageDetector = async () => {
-  // eslint-disable-next-line no-console
-  console.log("inside initLanguageDetector");
   const existingLanguage = getPrioritizedLanguageData(null); // Pass null or undefined for reqBidsConfigObj
-  // eslint-disable-next-line no-console
-  console.log("inside existingLanguage", existingLanguage);
   if (existingLanguage && existingLanguage.source === 'localStorage') {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection skipped, language '${existingLanguage.language}' found in localStorage.`);
     return true;
   }
 
-  // eslint-disable-next-line no-console
-  console.log("existingLanguage: ",existingLanguage);
   const pageText = getPageText();
   if (!pageText) return false;
 
   const detectionResult = await detectLanguage(pageText);
-  // eslint-disable-next-line no-console
-  console.log("detectionResult: ",detectionResult);
   if (!detectionResult) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to detect language from page content.`);
     return false;
@@ -330,8 +314,6 @@ const initSummarizer = async () => {
 };
 
 const init = async (config) => {
-  // eslint-disable-next-line no-console
-  console.log("config in init",config);
   moduleConfig = mergeModuleConfig(config);
   logMessage(`${CONSTANTS.LOG_PRE_FIX} Initializing with config:`, moduleConfig);
 
@@ -360,8 +342,6 @@ const init = async (config) => {
   // Wait for all enabled features to attempt initialization
   try {
     const results = await Promise.all(activeInitializations);
-    // eslint-disable-next-line no-console
-    console.log(results);
     // Consider init successful if at least one feature init succeeded, or if no features were meant to run.
     const overallSuccess = results.length > 0 ? results.some(result => result === true) : true;
     if (overallSuccess) {
