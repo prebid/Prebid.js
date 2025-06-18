@@ -37,7 +37,7 @@ let detectedKeywords = null; // To store generated summary/keywords
 // Helper to initialize Chrome AI API instances (LanguageDetector, Summarizer)
 const _createAiApiInstance = async (ApiConstructor, options) => {
   const apiName = ApiConstructor.name; // e.g., "LanguageDetector" or "Summarizer"
-  
+
   try {
     if (!(apiName in self) || typeof self[apiName] !== 'function') { // Also check if it's a function (constructor)
       logError(`${CONSTANTS.LOG_PRE_FIX} ${apiName} API not available or not a constructor in self.`);

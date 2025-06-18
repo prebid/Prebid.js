@@ -13,46 +13,38 @@ describe('Chrome AI RTD Provider', function() {
     getDataFromLocalStorage: sinon.stub(),
     setDataInLocalStorage: sinon.stub()
   };
-  
+
   // Mock page URL for testing
   const mockPageUrl = 'https://example.com/test-page';
-  
+
   // Mock Chrome AI API instances
   let mockLanguageDetectorInstance;
   let mockSummarizerInstance;
-  
+
   // Mock API availability status
   let mockLanguageDetectorAvailability;
   let mockSummarizerAvailability;
-  
+
   // Original globals
   let originalLanguageDetector;
   let originalSummarizer;
-  
+
   // Stubs
   let logMessageStub, logErrorStub; // Removed deepAccessStub, deepSetValueStub
-  let getCurrentUrlStub;
   let mockTopDocument;
   let querySelectorStub;
-  
+
   beforeEach(function() {
     // Reset sandbox for each test
     sandbox.reset();
-    
+
     // Save original globals
     originalLanguageDetector = self.LanguageDetector;
     originalSummarizer = self.Summarizer;
-    
+
     // Create stubs
     logMessageStub = sandbox.stub(utils, 'logMessage');
     logErrorStub = sandbox.stub(utils, 'logError');
-    // deepAccessStub and deepSetValueStub are removed as they cannot be stubbed directly.
-    // Tests will verify behavior by checking object state or using spies if possible.
-    // Stub chromeAiRtdProvider.getCurrentUrl to return a consistent URL for tests
-    // chromeAiRtdProvider.getCurrentUrlStub = sandbox.stub(chromeAiRtdProvider, 'chromeAiRtdProvider.getCurrentUrl').returns(mockPageUrl); // This won't work as chromeAiRtdProvider.getCurrentUrl is exported directly
-    // Instead, if chromeAiRtdProvider.getCurrentUrl is used internally by other functions we test, we might need to stub window.location.href or ensure tests provide URL
-    // window.location.href cannot be stubbed directly due to its descriptor.
-    // Tests will use the actual URL from the test environment or pass URLs explicitly to helper functions.
 
     // Stub storage manager
     sandbox.stub(storageManager, 'getCoreStorageManager').returns(mockStorage);
@@ -60,7 +52,7 @@ describe('Chrome AI RTD Provider', function() {
     mockStorage.localStorageIsEnabled.returns(true);
     mockStorage.getDataFromLocalStorage.returns(null); // Default to no data
     mockStorage.setDataInLocalStorage.returns(true);
-    
+
     // Stub document properties
     querySelectorStub = sandbox.stub();
     mockTopDocument = {
@@ -74,24 +66,24 @@ describe('Chrome AI RTD Provider', function() {
       location: { href: mockPageUrl },
       document: mockTopDocument
     });
-    
+
     // Create mock instances
     mockLanguageDetectorInstance = {
       detect: sandbox.stub().resolves([{ detectedLanguage: 'en', confidence: 0.9 }]),
       ready: Promise.resolve(),
       addEventListener: sandbox.stub()
     };
-    
+
     mockSummarizerInstance = {
       summarize: sandbox.stub().resolves('Test summary'),
       ready: Promise.resolve(),
       addEventListener: sandbox.stub()
     };
-    
+
     // Reset mock availability to default values
     mockLanguageDetectorAvailability = 'available';
     mockSummarizerAvailability = 'available';
-    
+
     // Mock global Chrome AI API constructors and their methods
     // LanguageDetector
     const MockLanguageDetectorFn = function() { /* This constructor body isn't called by the module */ };
@@ -107,7 +99,7 @@ describe('Chrome AI RTD Provider', function() {
     MockSummarizerFn.create = sandbox.stub().resolves(mockSummarizerInstance);
     self.Summarizer = MockSummarizerFn;
   });
-  
+
   afterEach(function() {
     // Restore original globals
     if (originalLanguageDetector) {
@@ -115,17 +107,17 @@ describe('Chrome AI RTD Provider', function() {
     } else {
       delete self.LanguageDetector;
     }
-    
+
     if (originalSummarizer) {
       self.Summarizer = originalSummarizer;
     } else {
       delete self.Summarizer;
     }
-    
+
     // Restore sandbox
     sandbox.restore();
   });
-    
+
   // Test basic module structure
   describe('Module Structure', function() {
     it('should have required methods', function() {
@@ -133,11 +125,11 @@ describe('Chrome AI RTD Provider', function() {
       expect(typeof chromeAiRtdProvider.chromeAiSubmodule.init).to.equal('function');
       expect(typeof chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData).to.equal('function');
     });
-    
+
     it('should have the correct module name', function() {
       expect(chromeAiRtdProvider.chromeAiSubmodule.name).to.equal('chromeAi');
     });
-    
+
     it('should have the correct constants', function() {
       expect(chromeAiRtdProvider.CONSTANTS).to.be.an('object');
       expect(chromeAiRtdProvider.CONSTANTS.SUBMODULE_NAME).to.equal('chromeAi');
@@ -145,14 +137,14 @@ describe('Chrome AI RTD Provider', function() {
       expect(chromeAiRtdProvider.CONSTANTS.MIN_TEXT_LENGTH).to.be.a('number');
     });
   });
-  
+
   // Test initialization
   describe('Initialization (init function)', function() {
     beforeEach(function() {
       // Simulate empty localStorage for init tests
       mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(null);
       // Reset call history for setDataInLocalStorage if needed, or ensure it's clean
-      mockStorage.setDataInLocalStorage.resetHistory(); 
+      mockStorage.setDataInLocalStorage.resetHistory();
     });
 
     afterEach(function() {
@@ -180,12 +172,9 @@ describe('Chrome AI RTD Provider', function() {
       // Ensure getPageText returns valid text for detection
       mockTopDocument.querySelector.withArgs('article').returns(null);
       mockTopDocument.body.textContent = 'Sufficiently long text for detection.';
-      
-      // Ensure LanguageDetector API is available (it is by default in beforeEach, but good to be clear)
-      // self.LanguageDetector.availability.resolves('available'); 
 
       await chromeAiRtdProvider.chromeAiSubmodule.init({}); // Initialize with default config
-      
+
       expect(logMessageStub.calledWith(sinon.match('Initializing with config'))).to.be.true;
       // Check that the actual language detection was attempted
       expect(mockLanguageDetectorInstance.detect.called).to.be.true;
@@ -230,13 +219,13 @@ describe('Chrome AI RTD Provider', function() {
           }
         }
       };
-      
+
       return chromeAiRtdProvider.chromeAiSubmodule.init(customConfig).then(function(result) {
         expect(typeof result).to.equal('boolean');
         expect(logMessageStub.calledWith(sinon.match('Initializing with config'))).to.be.true;
       });
     });
-    
+
     it('should handle disabled features in config', function() {
       const disabledConfig = {
         params: {
@@ -244,7 +233,7 @@ describe('Chrome AI RTD Provider', function() {
           summarizer: { enabled: false }
         }
       };
-      
+
       return chromeAiRtdProvider.chromeAiSubmodule.init(disabledConfig).then(function(result) {
         expect(result).to.be.true;
         expect(logMessageStub.calledWith(sinon.match('Language detection disabled by config'))).to.be.true;
@@ -252,7 +241,7 @@ describe('Chrome AI RTD Provider', function() {
       });
     });
   });
-  
+
   // Test storage functions
   describe('Storage Functions', function() {
     beforeEach(function() {
@@ -260,18 +249,18 @@ describe('Chrome AI RTD Provider', function() {
       mockStorage.setDataInLocalStorage.resetHistory();
       mockStorage.setDataInLocalStorage.returns(true); // Default success
     });
-    
+
     describe('chromeAiRtdProvider._getChromeAiDataFromLocalStorage', function() {
       it('should return null if localStorage is not available', function() {
         mockStorage.hasLocalStorage.returns(false);
         expect(chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl)).to.be.null;
       });
-      
+
       it('should return null if localStorage is not enabled', function() {
         mockStorage.localStorageIsEnabled.returns(false);
         expect(chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl)).to.be.null;
       });
-      
+
       it('should return null if no data in localStorage for the URL', function() {
         mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify({ 'other/url': {} }));
         expect(chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl)).to.be.null;
@@ -285,7 +274,7 @@ describe('Chrome AI RTD Provider', function() {
       });
     });
   });
-  
+
   // Test language detection main function
   describe('chromeAiRtdProvider.detectLanguage (main function)', function() {
     it('should detect language using Chrome AI API', async function() {
@@ -293,13 +282,13 @@ describe('Chrome AI RTD Provider', function() {
       expect(result).to.deep.equal({ language: 'en', confidence: 0.9 });
       expect(mockLanguageDetectorInstance.detect.calledOnceWith('This is a test text')).to.be.true;
     });
-    
+
     it('should return null if API is not available', async function() {
       self.LanguageDetector.create.resolves(null); // Simulate API creation failure
       const result = await chromeAiRtdProvider.detectLanguage('This is a test text');
       expect(result).to.be.null;
     });
-        
+
     it('should return null if confidence is below threshold', async function() {
       mockLanguageDetectorInstance.detect.resolves([{ detectedLanguage: 'en', confidence: 0.5 }]);
       // Need to re-init to pick up the new default config confidence if it changed, or set it explicitly
@@ -312,7 +301,7 @@ describe('Chrome AI RTD Provider', function() {
   describe('getBidRequestData', function() {
     let reqBidsConfigObj;
     let onDoneSpy;
-    
+
     beforeEach(async function() {
       // Initialize the module with a config that enables both features for these tests
       await chromeAiRtdProvider.chromeAiSubmodule.init({
@@ -330,16 +319,14 @@ describe('Chrome AI RTD Provider', function() {
       };
       onDoneSpy = sinon.spy();
       // Reset stubs that might be called by getBidRequestData indirectly via init or helper functions
-      //deepAccessStub.resetHistory();
-      //deepSetValueStub.resetHistory();
       logMessageStub.resetHistory();
     });
-    
+
     it('should call the callback function', function() {
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
       expect(onDoneSpy.calledOnce).to.be.true;
     });
-    
+
     it('should ensure ortb2Fragments.global exists', function() {
       delete reqBidsConfigObj.ortb2Fragments.global;
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
@@ -349,9 +336,9 @@ describe('Chrome AI RTD Provider', function() {
     it('should not enrich language if already present in auction ORTB2', function() {
       // Set language directly in ortb2Fragments for this test case
       utils.deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.content.language', 'es');
-      
+
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
-      
+
       // Verify that the language was not changed
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.language')).to.equal('es');
       expect(logMessageStub.calledWith(sinon.match('Lang already in auction ORTB2 at path'))).to.be.true;
@@ -373,9 +360,9 @@ describe('Chrome AI RTD Provider', function() {
     it('should not enrich keywords if already present in auction ORTB2', function() {
       // Set keywords directly in ortb2Fragments for this test case
       utils.deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.content.ext.keywords', ['existing', 'keywords']);
-      
+
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
-      
+
       // Verify that keywords were not changed
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.ext.keywords')).to.deep.equal(['existing', 'keywords']);
       expect(logMessageStub.calledWith(sinon.match('Keywords already present in auction_ortb2 at path'))).to.be.true;
