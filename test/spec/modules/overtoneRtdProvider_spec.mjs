@@ -26,7 +26,7 @@ describe('Overtone RTD Submodule with Test URLs', function () {
       }
       throw new Error('Unexpected URL in test');
     });
-    
+
     getBidRequestDataStub = sinon.stub(overtoneRtdProvider, 'getBidRequestData').callsFake((config, callback) => {
       if (config.shouldFail) {
         return;

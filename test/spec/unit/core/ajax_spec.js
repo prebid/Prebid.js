@@ -330,7 +330,7 @@ describe('attachCallbacks', () => {
     describe(`for ${t}`, () => {
       let sandbox, response, body;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.spy(utils, 'logError');
         ({response, body} = makeResponse());
       });
