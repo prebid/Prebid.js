@@ -1,315 +1,311 @@
-import * as ajax from 'src/ajax.js';
-import { expect } from 'chai';
 import { spec } from 'modules/fanAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from 'src/mediaTypes.js';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
+import { expect } from 'chai';
+import sinon from 'sinon';
 
-describe('Freedom Ad Network Bid Adapter', function () {
-  describe('Test isBidRequestValid', function () {
-    it('undefined bid should return false', function () {
-      expect(spec.isBidRequestValid()).to.be.false;
-    });
+describe('freedomadnetworkAdapter', function() {
+  const BIDDER_CODE = 'freedomadnetwork';
+  const DEFAULT_CURRENCY = 'USD';
+  const DEFAULT_TTL = 300;
 
-    it('null bid should return false', function () {
-      expect(spec.isBidRequestValid(null)).to.be.false;
-    });
+  let validBidRequestBanner;
+  let validBidRequestVideo;
+  let bidderRequest;
 
-    it('bid.params should be set', function () {
-      expect(spec.isBidRequestValid({})).to.be.false;
-    });
-
-    it('bid.params.placementId should be set', function () {
-      expect(spec.isBidRequestValid({
-        params: { foo: 'bar' }
-      })).to.be.false;
-    });
-
-    it('valid bid should return true', function () {
-      expect(spec.isBidRequestValid({
-        mediaTypes: {
-          [BANNER]: {
-            sizes: [[300, 250]]
-          }
-        },
-        params: {
-          placementId: 'e6203f1e-bd6d-4f42-9895-d1a19cdb83c8'
+  beforeEach(function() {
+    // A minimal valid banner bid request
+    validBidRequestBanner = {
+      bidder: BIDDER_CODE,
+      params: {
+        placementId: 'placement123',
+        network: 'test'
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
         }
-      })).to.be.true;
-    });
-  });
-
-  describe('Test buildRequests', function () {
-    const bidderRequest = {
-      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-      auctionStart: Date.now(),
-      bidderCode: 'myBidderCode',
-      bidderRequestId: '15246a574e859f',
-      refererInfo: {
-        page: 'http://example.com',
-        stack: ['http://example.com']
       },
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'IwuyYwpjmnsauyYasIUWwe'
-      },
-      uspConsent: 'Oush3@jmUw82has',
-      timeout: 3000
+      adUnitCode: 'adunit-code-banner',
+      auctionId: 'auction-1',
+      bidId: 'bid-1',
+      bidderRequestId: 'br-1',
+      auctionStart: Date.now()
     };
 
-    it('build request object', function () {
-      const bidRequests = [
-        {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '8064026a1776',
-          bidder: 'freedomadnetwork',
-          bidderRequestId: '15246a574e859f',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          },
-          params: {
-            placementId: 'e6203f1e-bd6d-4f42-9895-d1a19cdb83c8'
-          }
-        },
-        {
-          adUnitCode: 'test-native',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '8064026a1777',
-          bidder: 'freedomadnetwork',
-          bidderRequestId: '15246a574e859f',
-          mediaTypes: {
-            native: {
-              title: {
-                required: true,
-                len: 20,
-              },
-              image: {
-                required: true,
-                sizes: [300, 250],
-                aspect_ratios: [{
-                  ratio_width: 1,
-                  ratio_height: 1
-                }]
-              },
-              icon: {
-                required: true,
-                sizes: [60, 60],
-                aspect_ratios: [{
-                  ratio_width: 1,
-                  ratio_height: 1
-                }]
-              },
-              sponsoredBy: {
-                required: true,
-                len: 20
-              },
-              body: {
-                required: true,
-                len: 140
-              },
-              cta: {
-                required: true,
-                len: 20,
-              }
-            }
-          },
-          params: {
-            placementId: '3f50a79e-5582-4e5c-b1f4-9dcc1c82cece'
-          }
-        },
-        {
-          adUnitCode: 'test-native2',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '8064026a1778',
-          bidder: 'freedomadnetwork',
-          bidderRequestId: '15246a574e859f',
-          mediaTypes: {
-            native: {
-              title: {},
-              image: {},
-              icon: {},
-              sponsoredBy: {},
-              body: {},
-              cta: {}
-            }
-          },
-          params: {
-            placementId: '2015defc-19db-4cf6-926d-d2d0d32122fa',
-          }
-        },
-        {
-          adUnitCode: 'test-native3',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '8064026a1779',
-          bidder: 'freedomadnetwork',
-          bidderRequestId: '15246a574e859f',
-          mediaTypes: {
-            native: {},
-          },
-          params: {
-            placementId: '8064026a-9932-45ae-b804-03491302ad88'
-          }
+    // A minimal valid video bid request
+    validBidRequestVideo = {
+      bidder: BIDDER_CODE,
+      params: {
+        placementId: 'placementVideo',
+        network: 'fan',
+        bidFloor: 1.5,
+        bidFloorCur: 'USD'
+      },
+      mediaTypes: {
+        video: {
+          mimes: ['video/mp4'],
+          playerSize: [[640, 480]]
         }
-      ];
+      },
+      adUnitCode: 'adunit-code-video',
+      auctionId: 'auction-2',
+      bidId: 'bid-2',
+      bidderRequestId: 'br-2',
+      auctionStart: Date.now()
+    };
 
-      let reqs;
+    // Stub bidderRequest used by buildRequests
+    bidderRequest = {
+      refererInfo: { referer: 'http://example.com' },
+      auctionId: 'auction-1',
+      timeout: 3000,
+      gdprConsent: null,
+      uspConsent: null,
+      gppConsent: null
+    };
 
-      expect(function () {
-        reqs = spec.buildRequests(bidRequests, bidderRequest);
-      }).to.not.throw();
-
-      expect(reqs).to.be.an('array').that.have.lengthOf(bidRequests.length);
-
-      for (let i = 0, len = reqs.length; i < len; i++) {
-        const req = reqs[i];
-        const bidRequest = bidRequests[i];
-
-        expect(req.method).to.equal('POST');
-        expect(req.url).to.equal('https://srv.freedomadnetwork.com/pb/req');
-
-        expect(req.options).to.be.an('object');
-        expect(req.options.contentType).to.contain('application/json');
-        expect(req.options.customHeaders).to.be.an('object');
-
-        expect(req.originalBidRequest).to.equal(bidRequest);
-
-        var data = JSON.parse(req.data);
-        expect(data.id).to.equal(bidRequest.bidId);
-        expect(data.placements[0]).to.equal(bidRequest.params.placementId);
-      }
-    });
+    // Reset any config overrides
+    config.setConfig({});
   });
 
-  describe('Test adapter request', function () {
-    const adapter = newBidder(spec);
-
-    it('adapter.callBids exists and is a function', function () {
-      expect(adapter.callBids).to.be.a('function');
+  describe('isBidRequestValid', function() {
+    it('should return true when required params for banner are present', function() {
+      expect(spec.isBidRequestValid(validBidRequestBanner)).to.be.true;
     });
-  });
 
-  describe('Test response interpretResponse', function () {
-    it('Test main interpretResponse', function () {
-      const serverResponse = {
-        body: [{
-          id: '8064026a1776',
-          bidid: '78e10bd4-aa67-40a6-b282-0f2697251eb3',
-          impid: '88faf7e7-bef8-43a5-9ef3-73db10c2af6b',
-          userId: '944c9c880be09af1e90da1f883538607',
-          cpm: 17.76,
-          currency: 'USD',
-          width: 300,
-          height: 250,
-          ttl: 60,
-          netRevenue: false,
-          crid: '03f3ed6f-1a9e-4276-8ad7-0dc5efae289e',
-          payload: '<img />',
-          trackers: [],
-          mediaType: 'native',
-          domains: ['foo.com'],
-        }]
-      };
+    it('should return true when required params for video are present', function() {
+      expect(spec.isBidRequestValid(validBidRequestVideo)).to.be.true;
+    });
 
-      const bidResponses = spec.interpretResponse(serverResponse, {
-        originalBidRequest: {
-          adUnitCode: 'test-div',
-          auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-          bidId: '8064026a1776',
-          bidder: 'freedomadnetwork',
-          bidderRequestId: '15246a574e859f',
-          mediaTypes: {
-            banner: { sizes: [[300, 250]] }
-          },
-          params: {
-            placementId: 'e6203f1e-bd6d-4f42-9895-d1a19cdb83c8'
-          }
+    it('should return false when params object is missing', function() {
+      const bid = Object.assign({}, validBidRequestBanner, { params: null });
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when placementId is missing', function() {
+      const bid = Object.assign({}, validBidRequestBanner, { params: {} });
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when network param is invalid', function() {
+      const bid = Object.assign({}, validBidRequestBanner, {
+        params: {
+          placementId: 'placement123',
+          network: 'invalidNetwork'
         }
       });
-
-      expect(bidResponses).to.be.an('array').that.is.not.empty;
-
-      const bid = serverResponse.body[0];
-      const bidResponse = bidResponses[0];
-
-      expect(bidResponse.requestId).to.equal(bid.id);
-      expect(bidResponse.bidid).to.equal(bid.bidid);
-      expect(bidResponse.impid).to.equal(bid.impid);
-      expect(bidResponse.userId).to.equal(bid.userId);
-      expect(bidResponse.cpm).to.equal(bid.cpm);
-      expect(bidResponse.currency).to.equal(bid.currency);
-      expect(bidResponse.width).to.equal(bid.width);
-      expect(bidResponse.height).to.equal(bid.height);
-      expect(bidResponse.ad).to.equal(bid.payload);
-      expect(bidResponse.ttl).to.equal(bid.ttl);
-      expect(bidResponse.creativeId).to.equal(bid.crid);
-      expect(bidResponse.netRevenue).to.equal(bid.netRevenue);
-      expect(bidResponse.trackers).to.equal(bid.trackers);
-      expect(bidResponse.meta.mediaType).to.equal(bid.mediaType);
-      expect(bidResponse.meta.advertiserDomains).to.equal(bid.domains);
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('Test empty server response', function () {
-      const bidResponses = spec.interpretResponse({}, {});
-
-      expect(bidResponses).to.be.an('array').that.is.empty;
+    it('should return false when mediaTypes is unsupported', function() {
+      const bid = Object.assign({}, validBidRequestBanner, {
+        mediaTypes: { native: {} }
+      });
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('Test empty bid response', function () {
-      const bidResponses = spec.interpretResponse({ body: [] }, {});
+    it('should return false when video params missing required fields', function() {
+      const badVideoBid1 = JSON.parse(JSON.stringify(validBidRequestVideo));
+      delete badVideoBid1.mediaTypes.video.mimes;
+      expect(spec.isBidRequestValid(badVideoBid1)).to.be.false;
 
-      expect(bidResponses).to.be.an('array').that.is.empty;
+      const badVideoBid2 = JSON.parse(JSON.stringify(validBidRequestVideo));
+      delete badVideoBid2.mediaTypes.video.playerSize;
+      expect(spec.isBidRequestValid(badVideoBid2)).to.be.false;
     });
   });
 
-  describe('Test getUserSyncs', function () {
-    it('getUserSyncs should return empty', function () {
-      const serverResponse = {};
-      const syncOptions = {}
-      const userSyncPixels = spec.getUserSyncs(syncOptions, [serverResponse])
-      expect(userSyncPixels).to.have.lengthOf(0);
+  describe('buildRequests', function() {
+    it('should group bids by network and produce valid HTTP requests', function() {
+      // Create two bids, one to 'test' network, one to FAN
+      const bidTest = JSON.parse(JSON.stringify(validBidRequestBanner));
+      const bidFan = JSON.parse(JSON.stringify(validBidRequestBanner));
+      bidFan.params.network = 'fan';
+      bidFan.params.placementId = 'placement456';
+      bidFan.bidId = 'bid-3';
+
+      const requests = spec.buildRequests([bidTest, bidFan], bidderRequest);
+
+      // Expect two separate requests (one per network)
+      expect(requests).to.have.lengthOf(2);
+
+      // Find the request for 'test'
+      const reqTest = requests.find(r => r.url === 'http://localhost:8001/ortb');
+      expect(reqTest).to.exist;
+      expect(reqTest.method).to.equal('POST');
+      expect(reqTest.options.contentType).to.equal('application/json');
+      expect(reqTest.options.withCredentials).to.be.false;
+
+      // The data payload should have 'imp' array with one impression
+      expect(reqTest.data.imp).to.be.an('array').with.lengthOf(1);
+      const impTest = reqTest.data.imp[0];
+      expect(impTest.tagid).to.equal('placement123');
+
+      // Source.tid must equal auctionId
+      expect(reqTest.data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(reqTest.data.at).to.equal(1);
+      expect(reqTest.data.cur).to.deep.equal([DEFAULT_CURRENCY]);
+      expect(reqTest.data.ext.prebid.channel).to.equal(BIDDER_CODE);
+      expect(reqTest.data.ext.prebid.version).to.exist;
+
+      // Find the request for FAN
+      const reqFan = requests.find(r => r.url === 'https://srv.freedomadnetwork.com/ortb');
+      expect(reqFan).to.exist;
+      expect(reqFan.method).to.equal('POST');
+      expect(reqFan.data.imp[0].tagid).to.equal('placement456');
+
+      // Validate bidfloor and bidfloorcur were set for video
+      const videoBid = validBidRequestVideo;
+      const reqVideo = spec.buildRequests([videoBid], bidderRequest)[0];
+      const impVideo = reqVideo.data.imp[0];
+      expect(impVideo.bidfloor).to.equal(parseFloat(videoBid.params.bidFloor));
+      expect(impVideo.bidfloorcur).to.equal(videoBid.params.bidFloorCur);
     });
   });
 
-  describe('Test onTimeout', function () {
-    it('onTimeout should not throw', function () {
-      expect(spec.onTimeout()).to.not.throw;
+  describe('interpretResponse', function() {
+    it('should return an empty array when response body is missing', function() {
+      const builtRequests = spec.buildRequests([validBidRequestBanner], bidderRequest);
+      const fakeRequest = builtRequests[0];
+
+      const result = spec.interpretResponse({ body: null }, fakeRequest);
+      expect(result).to.be.an('array').and.have.lengthOf(0);
+    });
+
+    it('should return proper bid objects for a valid ORTB response', function() {
+      const builtRequests = spec.buildRequests([validBidRequestBanner], bidderRequest);
+      const fakeRequest = builtRequests[0];
+
+      const ortbResponse = {
+        id: fakeRequest.data.id,
+        cur: 'USD',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '123',
+                impid: fakeRequest.data.imp[0].id,
+                price: 2.5,
+                adm: '<div>Ad</div>',
+                w: 300,
+                h: 250,
+                crid: 'cr123',
+                mtype: 1,
+              }
+            ]
+          }
+        ],
+      };
+
+      const serverResponse = { body: ortbResponse };
+      const bidResponses = spec.interpretResponse(serverResponse, fakeRequest);
+
+      expect(bidResponses).to.be.an('array').with.lengthOf(1);
+
+      const bid = bidResponses[0];
+      expect(bid.requestId).to.equal('bid-1');
+      expect(bid.cpm).to.equal(2.5);
+      expect(bid.ad).to.equal('<div>Ad</div>');
+      expect(bid.width).to.equal(300);
+      expect(bid.height).to.equal(250);
+      expect(bid.creativeId).to.equal('cr123');
+      expect(bid.currency).to.equal('USD');
+      expect(bid.ttl).to.equal(300);
     });
   });
 
-  describe('Test onBidWon', function () {
-    let sandbox, ajaxStub;
+  describe('getUserSyncs', function() {
+    const gdprConsent = { gdprApplies: true, consentString: 'CONSENT123' };
+    const uspConsent = '1YNN';
+    const gppConsent = { gppString: 'GPPSTRING', applicableSections: [6, 7] };
 
-    beforeEach(function () {
-      sandbox = sinon.sandbox.create();
-      ajaxStub = sandbox.stub(ajax, 'ajax');
+    it('should return empty array when syncOptions disabled', function() {
+      const syncs = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [], gdprConsent, uspConsent, gppConsent);
+      expect(syncs).to.deep.equal([]);
     });
 
-    afterEach(function () {
-      sandbox.restore();
-      ajaxStub.restore();
-    });
+    it('should return iframe and image sync URLs without duplicates', function() {
+      const serverResponses = [{
+        body: {
+          ext: {
+            sync: {
+              iframe: [{ url: 'https://sync.iframe/endpoint' }],
+              image: [{ url: 'https://sync.image/endpoint' }]
+            }
+          }
+        }
+      }, {
+        body: {
+          ext: {
+            sync: {
+              iframe: [{ url: 'https://sync.iframe/endpoint' }], // duplicate
+              image: [{ url: 'https://sync.image/endpoint2' }]
+            }
+          }
+        }
+      }];
 
-    const bid = {
-      bidid: '78e10bd4-aa67-40a6-b282-0f2697251eb3',
-      impid: '88faf7e7-bef8-43a5-9ef3-73db10c2af6b',
-      cpm: 17.76,
-      trackers: ['foo.com'],
-    }
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent);
 
-    it('onBidWon empty bid should not throw', function () {
-      expect(spec.onBidWon({})).to.not.throw;
-      expect(ajaxStub.calledOnce).to.equal(true);
-    });
+      // Should have exactly three sync entries (unique URLs)
+      expect(syncs).to.have.lengthOf(3);
 
-    it('onBidWon valid bid should not throw', function () {
-      expect(spec.onBidWon(bid)).to.not.throw;
-      expect(ajaxStub.calledOnce).to.equal(true);
+      // Validate type and URL parameters for GDPR and US Privacy
+      const iframeSync = syncs.find(s => s.type === 'iframe' && s.url.startsWith('https://sync.iframe/endpoint'));
+      expect(iframeSync).to.exist;
+      expect(iframeSync.url).to.match(/gdpr=1/);
+      expect(iframeSync.url).to.match(/gdpr_consent=CONSENT123/);
+      expect(iframeSync.url).to.match(/us_privacy=1YNN/);
+      expect(iframeSync.url).to.match(/gpp=GPPSTRING/);
+      // The comma in '6,7' will be percent-encoded as '%2C'
+      expect(iframeSync.url).to.match(/gpp_sid=6%2C7/);
+
+      const imageSync1 = syncs.find(s => s.type === 'image' && s.url.startsWith('https://sync.image/endpoint'));
+      expect(imageSync1).to.exist;
+      const imageSync2 = syncs.find(s => s.type === 'image' && s.url.startsWith('https://sync.image/endpoint2'));
+      expect(imageSync2).to.exist;
     });
   });
 
-  describe('Test onSetTargeting', function () {
-    it('onSetTargeting should not throw', function () {
-      expect(spec.onSetTargeting()).to.not.throw;
+  describe('Win Events', function() {
+    let triggerPixelStub;
+
+    beforeEach(function() {
+      triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function() {
+      triggerPixelStub.restore();
+    });
+
+    it('onBidWon should fire nurl and win tracking pixel', function() {
+      const fakeBid = {
+        requestId: 'req123',
+        auctionId: 'auc123',
+        cpm: 5.0,
+        currency: 'USD',
+        creativeId: 'creative123',
+        nurl: 'https://win.nurl/track?bid=req123',
+        meta: {
+          libertas: {
+            pxl: [
+              {url: 'https://pxl.nurl/track?bid=req456', type: 0}
+            ],
+          },
+        },
+      };
+
+      spec.onBidWon(fakeBid);
+
+      // First call: nurl
+      expect(triggerPixelStub.calledWith('https://win.nurl/track?bid=req123')).to.be.true;
+
+      // Second call: win tracking URL must start with base
+      const winCallArgs = triggerPixelStub.getCall(1).args[0];
+      expect(winCallArgs).to.match(/^https:\/\/pxl\.nurl\/track\?bid=req456/);
     });
   });
 });
