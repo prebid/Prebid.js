@@ -17,14 +17,16 @@ const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function generateQueryStringParams(config, consentData) {
+  // eslint-disable-next-line no-console
+  console.log('generateQueryStringParams', config, consentData);
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
 
   const params = {
     publisherId: config.params.publisherId,
-    gdpr: (consentData && consentData?.gdprApplies) ? 1 : 0,
-    gdpr_consent: consentData && consentData?.consentString ? encodeURIComponent(consentData.consentString) : '',
+    gdpr: (consentData?.gdpr && consentData?.gdpr?.gdprApplies) ? 1 : 0,
+    gdpr_consent: consentData?.gdpr && consentData?.gdpr?.consentString ? encodeURIComponent(consentData.gdpr.consentString) : '',
     src: 'pbjs_uid',
     ver: VERSION,
     coppa: Number(coppaValue),
