@@ -3,8 +3,6 @@ import * as utils from '../../../src/utils.js';
 
 describe('Equativ bid adapter tests', () => {
   let sandBox;
-  window.pbjs = window.pbjs || {};
-  pbjs.version = "123";
 
   beforeEach(() => {
     sandBox = sinon.createSandbox();
