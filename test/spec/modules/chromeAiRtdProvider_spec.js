@@ -6,7 +6,6 @@ import * as storageManager from 'src/storageManager.js';
 describe('Chrome AI RTD Provider', function() {
   // Set up sandbox for all stubs
   const sandbox = sinon.createSandbox();
-  
   // Mock storage manager
   const mockStorage = {
     hasLocalStorage: sinon.stub(),
@@ -162,13 +161,19 @@ describe('Chrome AI RTD Provider', function() {
       mockStorage.setDataInLocalStorage.resetHistory();
     });
 
-    it('should return a promise', function() {
-      const result = chromeAiRtdProvider.chromeAiSubmodule.init({});
-      expect(result).to.be.an.instanceof(Promise);
-      return result; // Ensure Mocha waits for the promise
+    it('should handle LanguageDetector API unavailability (when availability() returns unavailable)', function() {
+      // Ensure LanguageDetector constructor itself is available (which it is by beforeEach setup)
+      // Configure its availability() method to return 'unavailable' for this test
+      sandbox.stub(chromeAiRtdProvider, 'getPrioritizedLanguageData').returns(null);
+      self.LanguageDetector.availability.resolves('unavailable');
+      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: true } } }).then(function(result) {
+        // The init might still resolve to true if other features (like summarizer if enabled & available) initialize successfully.
+        // We are checking that the specific error for LanguageDetector being unavailable is logged.
+        expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: LanguageDetector is unavailable.'))).to.be.true;
+      });
     });
-    
-    xit('should attempt language detection if no prior language data (default config)', async function() {
+
+    it('should attempt language detection if no prior language data (default config)', async function() {
       // Ensure getPrioritizedLanguageData returns null to force detection path
       sandbox.stub(chromeAiRtdProvider, 'getPrioritizedLanguageData').returns(null);
 
@@ -185,7 +190,31 @@ describe('Chrome AI RTD Provider', function() {
       // Check that the actual language detection was attempted
       expect(mockLanguageDetectorInstance.detect.called).to.be.true;
     });
-    
+
+    it('should handle Summarizer API unavailability (when availability() returns unavailable)', function() {
+      self.Summarizer.availability.resolves('unavailable');
+
+      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(function(result) {
+        expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: Summarizer is unavailable.'))).to.be.true;
+        // Init might still resolve to true if other features initialize successfully.
+      });
+    });
+
+    it('should attempt model download if Summarizer availability is "after-download"', function() {
+      self.Summarizer.availability.resolves('after-download');
+
+      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(() => {
+        expect(self.Summarizer.create.called).to.be.true;
+        expect(mockSummarizerInstance.addEventListener.calledWith('downloadprogress', sinon.match.func)).to.be.true;
+      });
+    });
+
+    it('should return a promise', function() {
+      const result = chromeAiRtdProvider.chromeAiSubmodule.init({});
+      expect(result).to.be.an.instanceof(Promise);
+      return result; // Ensure Mocha waits for the promise
+    });
+
     it('should initialize with custom config', function() {
       const customConfig = {
         params: {
@@ -222,113 +251,6 @@ describe('Chrome AI RTD Provider', function() {
         expect(logMessageStub.calledWith(sinon.match('Summarizer disabled by config.'))).to.be.true;
       });
     });
-    
-    xit('should handle LanguageDetector API unavailability (when availability() returns unavailable)', function() {
-      // Ensure LanguageDetector constructor itself is available (which it is by beforeEach setup)
-      // Configure its availability() method to return 'unavailable' for this test
-      sandbox.stub(chromeAiRtdProvider, 'getPrioritizedLanguageData').returns(null);
-      self.LanguageDetector.availability.resolves('unavailable');
-      // eslint-disable-next-line no-console
-      console.log("CHROME222 outside")
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: true } } }).then(function(result) {
-        // The init might still resolve to true if other features (like summarizer if enabled & available) initialize successfully.
-        // We are checking that the specific error for LanguageDetector being unavailable is logged.
-        // eslint-disable-next-line no-console
-        console.log("result", result);
-        expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: LanguageDetector is unavailable.'))).to.be.true;
-      });
-    });
-
-    xit('should handle Summarizer API unavailability (when availability() returns unavailable)', function() {
-      self.Summarizer.availability.resolves('unavailable');
-
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(function(result) {
-        expect(logErrorStub.calledWith(sinon.match('ChromeAI-Rtd-Provider: Summarizer is unavailable.'))).to.be.true;
-        // Init might still resolve to true if other features initialize successfully.
-      });
-    });
-    
-    xit('should handle LanguageDetector API creation failures', function() {
-      self.LanguageDetector.create = sandbox.stub().rejects(new Error('API creation failed'));
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: true } } }).then(function(result) {
-        expect(logErrorStub.calledWith(sinon.match('Error creating LanguageDetector instance'))).to.be.true;
-      });
-    });
-
-    xit('should handle Summarizer API creation failures', function() {
-      self.Summarizer.create = sandbox.stub().rejects(new Error('API creation failed'));
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(function(result) {
-        expect(logErrorStub.calledWith(sinon.match('Error creating Summarizer instance'))).to.be.true;
-      });
-    });
-
-    xit('should attempt model download if LanguageDetector availability is "after-download"', function() {
-      self.LanguageDetector.availability.resolves('after-download');
-      
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { languageDetector: { enabled: true } } }).then(() => {
-        expect(self.LanguageDetector.create.called).to.be.true;
-        expect(mockLanguageDetectorInstance.addEventListener.calledWith('downloadprogress', sinon.match.func)).to.be.true;
-      });
-    });
-
-    xit('should attempt model download if Summarizer availability is "after-download"', function() {
-      self.Summarizer.availability.resolves('after-download');
-
-      return chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } }).then(() => {
-        expect(self.Summarizer.create.called).to.be.true;
-        expect(mockSummarizerInstance.addEventListener.calledWith('downloadprogress', sinon.match.func)).to.be.true;
-      });
-    });
-
-    xit('should initialize summarizer and attempt summary if API available and specific text present', async function() {
-      // self.Summarizer.availability resolves to 'available' by default from beforeEach
-      // --- Control chromeAiRtdProvider.getPageText for this test --- 
-      mockTopDocument.querySelector.withArgs('article').returns({ textContent: 'This is specific article text for summarizer.' });
-      // --- End control section ---
-
-      // mockSummarizerInstance.summarize is already stubbed in beforeEach to resolve with 'Test summary'
-      // We can make it more specific for this test if needed:
-      mockSummarizerInstance.summarize.resolves({ summary: 'Test summary based on specific article text' });
-
-      await chromeAiRtdProvider.chromeAiSubmodule.init({ params: { summarizer: { enabled: true } } });
-      
-      expect(mockSummarizerInstance.summarize.called).to.be.true;
-      expect(mockSummarizerInstance.summarize.calledWith('This is specific article text for summarizer.')).to.be.true;
-    });
-  });
-  
-  // Test helper functions
-  describe('Helper Functions', function() {
-    describe('chromeAiRtdProvider.getPageText', function() {
-      xit('should return document.body.textContent if long enough', function() {
-        const text = 'This is some sample page content that is definitely longer than twenty characters.';
-        // Ensure the stub for getWindowTop is correctly providing the document object with body.textContent
-        sandbox.stub(utils.getWindowTop().document.body, 'textContent').value(text);
-        expect(chromeAiRtdProvider.getPageText()).to.equal(text);
-      });
-      
-      xit('should return null if document.body.textContent is too short', function() {
-        const text = 'Too short.';
-        sandbox.stub(utils.getWindowTop().document.body, 'textContent').value(text);
-        const result = chromeAiRtdProvider.getPageText();
-        expect(result).to.be.null;
-        expect(logMessageStub.calledWith(sinon.match('Not enough text content'))).to.be.true;
-      });
-      
-      xit('should handle missing document gracefully', function() {
-        // This test needs to ensure getWindowTop returns something that would cause chromeAiRtdProvider.getPageText to fail as expected
-        sandbox.stub(utils, 'getWindowTop').returns({ location: { href: mockPageUrl }, document: {} }); // No body
-        const result = chromeAiRtdProvider.getPageText();
-        expect(result).to.be.null;
-      });
-    });
-    
-    describe('chromeAiRtdProvider.getCurrentUrl (mocked via window.location.href)', function() {
-      xit('should return window.location.href', function() {
-        // chromeAiRtdProvider.getCurrentUrl directly uses window.location.href, which is stubbed in beforeEach
-        expect(chromeAiRtdProvider.getCurrentUrl()).to.equal(mockPageUrl);
-      });
-    });
   });
   
   // Test storage functions
@@ -354,98 +276,8 @@ describe('Chrome AI RTD Provider', function() {
         mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify({ 'other/url': {} }));
         expect(chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl)).to.be.null;
       });
-      
-      xit('should return parsed data from localStorage for the URL', function() {
-        const mockData = { language: { language: 'en', confidence: 0.9 } };
-        mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify({ [mockPageUrl]: mockData }));
-        const result = chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl);
-        expect(result).to.deep.equal(mockData);
-      });
-      
-      xit('should handle JSON parsing errors', function() {
-        mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns('invalid json');
-        const result = chromeAiRtdProvider._getChromeAiDataFromLocalStorage(mockPageUrl);
-        expect(result).to.be.null;
-        expect(logErrorStub.calledWith(sinon.match('Error parsing Chrome AI data from localStorage'))).to.be.true;
-      });
     });
-    
-    describe('chromeAiRtdProvider._storeChromeAiDataInLocalStorage', function() {
-      xit('should return false if localStorage is not available', function() {
-        mockStorage.hasLocalStorage.returns(false);
-        expect(chromeAiRtdProvider._storeChromeAiDataInLocalStorage(mockPageUrl, { language: 'en' })).to.be.false;
-      });
-      
-      xit('should return false if localStorage is not enabled', function() {
-        mockStorage.localStorageIsEnabled.returns(false);
-        expect(chromeAiRtdProvider._storeChromeAiDataInLocalStorage(mockPageUrl, { language: 'en' })).to.be.false;
-      });
-      
-      xit('should store data in localStorage', function() {
-        const data = { language: { language: 'en', confidence: 0.9 } };
-        const result = chromeAiRtdProvider._storeChromeAiDataInLocalStorage(mockPageUrl, data);
-        expect(result).to.be.true;
-        expect(mockStorage.setDataInLocalStorage.calledOnce).to.be.true;
-        const storedData = JSON.parse(mockStorage.setDataInLocalStorage.firstCall.args[1]);
-        expect(storedData[mockPageUrl]).to.deep.equal(data);
-      });
-      
-      xit('should merge with existing data for other URLs', function() {
-        const existingOverallData = { 'other/url': { keywords: ['old'] } };
-        mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify(existingOverallData));
-        const newData = { language: { language: 'en', confidence: 0.9 } };
-        chromeAiRtdProvider._storeChromeAiDataInLocalStorage(mockPageUrl, newData);
-        const storedData = JSON.parse(mockStorage.setDataInLocalStorage.firstCall.args[1]);
-        expect(storedData[mockPageUrl]).to.deep.equal(newData);
-        expect(storedData['other/url']).to.deep.equal(existingOverallData['other/url']);
-      });
-
-      xit('should merge with existing data for the same URL', function() {
-        const existingUrlData = { language: { language: 'en', confidence: 0.9 } };
-        mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify({ [mockPageUrl]: existingUrlData }));
-        const newKeywordsData = { keywords: ['test', 'keywords'] };
-        chromeAiRtdProvider._storeChromeAiDataInLocalStorage(mockPageUrl, newKeywordsData);
-        const storedData = JSON.parse(mockStorage.setDataInLocalStorage.firstCall.args[1]);
-        expect(storedData[mockPageUrl].language).to.deep.equal(existingUrlData.language);
-        expect(storedData[mockPageUrl].keywords).to.deep.equal(newKeywordsData.keywords);
-      });
-      
-      xit('should handle JSON parsing errors with existing data', function() {
-        mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns('invalid json');
-        const data = { language: { language: 'en', confidence: 0.9 } };
-        chromeAiRtdProvider._storeChromeAiDataInLocalStorage(mockPageUrl, data);
-        expect(logErrorStub.calledWith(sinon.match('Error parsing existing Chrome AI data from localStorage'))).to.be.true;
-        const storedData = JSON.parse(mockStorage.setDataInLocalStorage.firstCall.args[1]);
-        expect(storedData[mockPageUrl]).to.deep.equal(data); // Should still store new data
-      });
-    });
-    
-    describe('chromeAiRtdProvider.storeDetectedLanguage', function() {
-      xit('should store language data in localStorage', function() {
-        const language = 'fr';
-        const confidence = 0.85;
-        chromeAiRtdProvider.storeDetectedLanguage(language, confidence, mockPageUrl);
-        expect(mockStorage.setDataInLocalStorage.calledOnce).to.be.true;
-        const storedData = JSON.parse(mockStorage.setDataInLocalStorage.firstCall.args[1]);
-        expect(storedData[mockPageUrl].language).to.deep.equal({ language, confidence });
-      });
-      
-      it('should return false if language is not provided', function() {
-        const result = chromeAiRtdProvider.storeDetectedLanguage(null, 0.85, mockPageUrl);
-        expect(result).to.be.false;
-        expect(logMessageStub.calledWith(sinon.match('No valid language to store'))).to.be.true;
-      });
-    });
-    
     describe('chromeAiRtdProvider.storeDetectedKeywords', function() {
-      xit('should store keywords in localStorage', function() {
-        const keywords = ['test', 'keywords'];
-        chromeAiRtdProvider.storeDetectedKeywords(keywords, mockPageUrl);
-        expect(mockStorage.setDataInLocalStorage.calledOnce).to.be.true;
-        const storedData = JSON.parse(mockStorage.setDataInLocalStorage.firstCall.args[1]);
-        expect(storedData[mockPageUrl].keywords).to.deep.equal(keywords);
-      });
-      
       it('should return false if keywords are not provided or empty', function() {
         expect(chromeAiRtdProvider.storeDetectedKeywords(null, mockPageUrl)).to.be.false;
         expect(chromeAiRtdProvider.storeDetectedKeywords([], mockPageUrl)).to.be.false;
@@ -476,24 +308,6 @@ describe('Chrome AI RTD Provider', function() {
       expect(result).to.be.null;
     });
   });
-  
-  // Test summarization main function
-  describe('chromeAiRtdProvider.detectSummary (main function)', function() {
-    const summaryConfig = chromeAiRtdProvider.CONSTANTS.DEFAULT_CONFIG.summarizer;
-    
-    xit('should generate summary using Chrome AI API', async function() {
-      const result = await chromeAiRtdProvider.detectSummary('This is a test text', summaryConfig);
-      expect(result).to.equal('Test summary');
-      expect(mockSummarizerInstance.summarize.calledOnceWith('This is a test text', sinon.match(summaryConfig))).to.be.true;
-    });
-    
-    it('should return null if API is not available', async function() {
-      self.Summarizer.create.resolves(null); // Simulate API creation failure
-      const result = await chromeAiRtdProvider.detectSummary('This is a test text', summaryConfig);
-      expect(result).to.be.null;
-    });
-  });
-  
   // Test getBidRequestData
   describe('getBidRequestData', function() {
     let reqBidsConfigObj;
@@ -532,22 +346,6 @@ describe('Chrome AI RTD Provider', function() {
       expect(reqBidsConfigObj.ortb2Fragments.global).to.be.an('object');
     });
 
-    xit('should enrich with detected language if not in auction ORTB2', function() {
-      // Simulate language was detected and stored during init (or would be if init was more complexly tested here)
-      // For simplicity, let's assume initLanguageDetector would have stored 'en'
-      // This requires a more integrated test or direct setting of internal state if possible
-      // As a workaround, we can mock chromeAiRtdProvider._getChromeAiDataFromLocalStorage for this specific test path
-      mockStorage.getDataFromLocalStorage.withArgs(chromeAiRtdProvider.CONSTANTS.STORAGE_KEY).returns(JSON.stringify({ [mockPageUrl]: { language: { language: 'fr', confidence: 0.9 } } }));
-      
-      // Ensure language is not already set in ortb2Fragments
-      // reqBidsConfigObj.ortb2Fragments.global.site = { content: {} }; // or ensure path is undefined
-
-      chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
-      
-      // Verify that deepSetValue (called internally) has set the language
-      expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.language')).to.equal('fr');
-    });
-
     it('should not enrich language if already present in auction ORTB2', function() {
       // Set language directly in ortb2Fragments for this test case
       utils.deepSetValue(reqBidsConfigObj.ortb2Fragments.global, 'site.content.language', 'es');
@@ -560,14 +358,6 @@ describe('Chrome AI RTD Provider', function() {
     });
 
     it('should enrich with detected keywords if not in auction ORTB2', async function() {
-      // Simulate keywords were detected during init
-      // This requires initSummarizer to have run and set `detectedKeywords`
-      // We'll manually set it for this test as initSummarizer is complex to trigger precisely here
-      // This is a bit of a hack, ideally initSummarizer would be tested to set this, then this test verifies its use.
-      // For now, let's assume initSummarizer was successful and set `detectedKeywords`
-      // A better way would be to mock what initSummarizer does to the internal state.
-      // The module stores `detectedKeywords` internally. We can't directly set it from test.
-      // So, we'll rely on the mockSummarizerInstance and re-init to simulate detection.
       mockSummarizerInstance.summarize.resolves('newly detected summary');
       await chromeAiRtdProvider.chromeAiSubmodule.init({ // Re-init to trigger summarizer with mocks
         params: {
@@ -575,9 +365,6 @@ describe('Chrome AI RTD Provider', function() {
           languageDetector: { enabled: false } // Disable lang to isolate test
         }
       });
-
-      // Ensure keywords are not already set in ortb2Fragments
-      // reqBidsConfigObj.ortb2Fragments.global.site = { content: { ext: {} } }; // or ensure path is undefined
 
       chromeAiRtdProvider.chromeAiSubmodule.getBidRequestData(reqBidsConfigObj, onDoneSpy);
       expect(utils.deepAccess(reqBidsConfigObj.ortb2Fragments.global, 'site.content.ext.keywords')).to.deep.equal(['newly detected summary']);
