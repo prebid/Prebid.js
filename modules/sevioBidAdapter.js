@@ -91,13 +91,24 @@ const parseNativeAd = function (bid) {
       native.clickUrl = nativeAd.link.url;
     }
 
-    const impressionTrackers = nativeAd.eventtrackers
-      ?.filter(tracker => tracker.event === 1)
+    const eventTrackers = nativeAd.eventtrackers || [];
+
+    const impressionTrackers = eventTrackers
+      .filter(tracker => tracker.event === 1)
       .map(tracker => tracker.url)
       .filter(Boolean);
 
-    if (impressionTrackers?.length) {
+    const viewableTrackers = eventTrackers
+      .filter(tracker => tracker.event === 2)
+      .map(tracker => tracker.url)
+      .filter(Boolean);
+
+    if (impressionTrackers.length) {
       native.impressionTrackers = impressionTrackers;
+    }
+
+    if (viewableTrackers.length) {
+      native.viewableTrackers = viewableTrackers; // custom field
     }
 
     if (Array.isArray(nativeAd.link?.clicktrackers) && nativeAd.link.clicktrackers.length > 0) {
