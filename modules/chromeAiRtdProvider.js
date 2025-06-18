@@ -7,7 +7,7 @@ import { getCoreStorageManager } from '../src/storageManager.js';
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const CONSTANTS = Object.freeze({
+export const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'chromeAi',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'ChromeAI-Rtd-Provider:',
@@ -37,13 +37,20 @@ let detectedKeywords = null; // To store generated summary/keywords
 // Helper to initialize Chrome AI API instances (LanguageDetector, Summarizer)
 const _createAiApiInstance = async (ApiConstructor, options) => {
   const apiName = ApiConstructor.name; // e.g., "LanguageDetector" or "Summarizer"
+  // eslint-disable-next-line no-console
+  console.log("apiName: ",apiName,!(apiName in self),  typeof self[apiName] !== 'function');
+  
   try {
     if (!(apiName in self) || typeof self[apiName] !== 'function') { // Also check if it's a function (constructor)
       logError(`${CONSTANTS.LOG_PRE_FIX} ${apiName} API not available or not a constructor in self.`);
       return null;
     }
+     // eslint-disable-next-line no-console
+     console.log("OutSide if ");
 
     const availability = await ApiConstructor.availability();
+    // eslint-disable-next-line no-console
+    console.log("availability: ",availability);
     if (availability === 'unavailable') {
       logError(`${CONSTANTS.LOG_PRE_FIX} ${apiName} is unavailable.`);
       return null;
@@ -55,7 +62,7 @@ const _createAiApiInstance = async (ApiConstructor, options) => {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} ${apiName} instance created (was available).`);
     } else { // Assuming 'after-download' or similar state if not 'available'
       logMessage(`${CONSTANTS.LOG_PRE_FIX} ${apiName} model needs download.`);
-      
+
       instance = await ApiConstructor.create(options);
       instance.addEventListener('downloadprogress', (e) => {
         const progress = e.total > 0 ? Math.round(e.loaded / e.total * 100) : (e.loaded > 0 ? 'In progress' : 'Starting');
@@ -84,7 +91,7 @@ const mergeModuleConfig = (config) => {
 
 export const getCurrentUrl = () => window.location.href;
 
-const getPageText = () => {
+export const getPageText = () => {
   const text = document.body.textContent;
   if (!text || text.length < CONSTANTS.MIN_TEXT_LENGTH) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content (length: ${text?.length || 0}) for processing.`);
@@ -94,7 +101,7 @@ const getPageText = () => {
 };
 
 // --- Chrome AI LocalStorage Helper Functions ---
-const _getChromeAiDataFromLocalStorage = (url) => {
+export const _getChromeAiDataFromLocalStorage = (url) => {
   if (!storage.hasLocalStorage() || !storage.localStorageIsEnabled()) {
     return null;
   }
@@ -145,7 +152,7 @@ const isLanguageInLocalStorage = (url) => {
   return chromeAiData?.language || null;
 };
 
-const getPrioritizedLanguageData = (reqBidsConfigObj) => {
+export const getPrioritizedLanguageData = (reqBidsConfigObj) => {
   // 1. Check auction-specific ORTB2 (passed in reqBidsConfigObj for getBidRequestData)
   // Uses configurable path for language
   if (reqBidsConfigObj && moduleConfig.languageDetector) {
@@ -201,6 +208,8 @@ export const storeDetectedLanguage = (language, confidence, url) => {
 
 export const detectLanguage = async (text) => {
   const detector = await _createAiApiInstance(LanguageDetector);
+  // eslint-disable-next-line no-console
+  console.log("detector: ",detector);
   if (!detector) {
     return null; // Error already logged by _createAiApiInstance
   }
@@ -236,7 +245,6 @@ export const detectSummary = async (text, config) => {
   }
 
   try {
-    
     const summaryResult = await summarizer.summarize(text, summaryOptions);
     if (!summaryResult) {
       logMessage(`${CONSTANTS.LOG_PRE_FIX} No summary result from API.`);
@@ -251,27 +259,29 @@ export const detectSummary = async (text, config) => {
 };
 
 const initLanguageDetector = async () => {
+  // eslint-disable-next-line no-console
+  console.log("inside initLanguageDetector");
   const existingLanguage = getPrioritizedLanguageData(null); // Pass null or undefined for reqBidsConfigObj
+  // eslint-disable-next-line no-console
+  console.log("inside existingLanguage", existingLanguage);
   if (existingLanguage && existingLanguage.source === 'localStorage') {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection skipped, language '${existingLanguage.language}' found in localStorage.`);
     return true;
   }
 
+  // eslint-disable-next-line no-console
+  console.log("existingLanguage: ",existingLanguage);
   const pageText = getPageText();
   if (!pageText) return false;
 
   const detectionResult = await detectLanguage(pageText);
+  // eslint-disable-next-line no-console
+  console.log("detectionResult: ",detectionResult);
   if (!detectionResult) {
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to detect language from page content.`);
     return false;
   }
   return storeDetectedLanguage(detectionResult.language, detectionResult.confidence, getCurrentUrl());
-};
-
-// --- Keyword Storage Helpers (using generic helpers) ---
-const isKeywordsInLocalStorage = (url) => {
-  const chromeAiData = _getChromeAiDataFromLocalStorage(url);
-  return chromeAiData?.keywords || null;
 };
 
 export const storeDetectedKeywords = (keywords, url) => {
@@ -307,9 +317,9 @@ const initSummarizer = async () => {
   if (summaryText) {
     // The API returns a single summary string. We treat this string as a single keyword.
     // If multiple keywords were desired from the summary, further processing would be needed here.
-    detectedKeywords = [summaryText]; 
+    detectedKeywords = [summaryText];
     logMessage(`${CONSTANTS.LOG_PRE_FIX} Summary processed and new keywords generated:`, detectedKeywords);
-    
+
     if (moduleConfig.summarizer.cacheInLocalStorage === true) {
       storeDetectedKeywords(detectedKeywords, getCurrentUrl());
     }
@@ -320,6 +330,8 @@ const initSummarizer = async () => {
 };
 
 const init = async (config) => {
+  // eslint-disable-next-line no-console
+  console.log("config in init",config);
   moduleConfig = mergeModuleConfig(config);
   logMessage(`${CONSTANTS.LOG_PRE_FIX} Initializing with config:`, moduleConfig);
 
@@ -348,6 +360,8 @@ const init = async (config) => {
   // Wait for all enabled features to attempt initialization
   try {
     const results = await Promise.all(activeInitializations);
+    // eslint-disable-next-line no-console
+    console.log(results);
     // Consider init successful if at least one feature init succeeded, or if no features were meant to run.
     const overallSuccess = results.length > 0 ? results.some(result => result === true) : true;
     if (overallSuccess) {
@@ -425,4 +439,3 @@ export const registerSubModule = () => {
 };
 
 registerSubModule();
-
