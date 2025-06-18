@@ -158,7 +158,6 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     ua: navigator.userAgent,
     tpaf: 1,
     cks: 1,
-    ib: (bid.params.hasOwnProperty('invalidImpBeacon') && bid.params.invalidImpBeacon) ? 0 : 1,
     ...(gpid ? { gpid } : {}),
   };
 

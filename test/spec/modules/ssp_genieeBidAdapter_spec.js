@@ -186,26 +186,6 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[1].data.cur).to.deep.equal('USD');
       });
 
-      it('should makes invalidImpBeacon the value of params.invalidImpBeacon when params.invalidImpBeacon exists (in current version, this parameter is not necessary and ib is always `0`)', function () {
-        const request = spec.buildRequests([
-          {
-            ...BANNER_BID,
-            params: { ...BANNER_BID.params, invalidImpBeacon: true },
-          },
-          {
-            ...BANNER_BID,
-            params: { ...BANNER_BID.params, invalidImpBeacon: false },
-          },
-          {
-            ...BANNER_BID,
-            params: { ...BANNER_BID.params },
-          },
-        ]);
-        expect(request[0].data.ib).to.deep.equal(0);
-        expect(request[1].data.ib).to.deep.equal(1);
-        expect(request[2].data.ib).to.deep.equal(1);
-      });
-
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('adtk');
