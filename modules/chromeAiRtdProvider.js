@@ -1,255 +1,359 @@
 import { submodule } from '../src/hook.js';
-import { logError, mergeDeep, logMessage } from '../src/utils.js';
+import { logError, mergeDeep, logMessage, deepSetValue, deepAccess } from '../src/utils.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
-import { config as conf } from '../src/config.js';
 
-/* global LanguageDetector */
+/* global LanguageDetector, Summarizer */
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
-const CONSTANTS = Object.freeze({
+export const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'chromeAi',
   REAL_TIME_MODULE: 'realTimeData',
-  LOG_PRE_FIX: 'ChromeAI-Rtd-Provider: ',
-  STORAGE_KEY: 'chromeAi_detected_language',
+  LOG_PRE_FIX: 'ChromeAI-Rtd-Provider:',
+  STORAGE_KEY: 'chromeAi_detected_data', // Single key for both language and keywords
   MIN_TEXT_LENGTH: 20,
   DEFAULT_CONFIG: {
     languageDetector: {
       enabled: true,
-      confidence: 0.8
+      confidence: 0.8,
+      ortb2Path: 'site.content.language' // Default path for language
+    },
+    summarizer: {
+      enabled: false,
+      type: 'headline', // 'headline' or 'paragraph'
+      format: 'markdown', // 'markdown' or 'plaintext'
+      length: 'short', // 'short', 'medium', or 'long'
+      ortb2Path: 'site.content.keywords', // Default path for keywords
+      cacheInLocalStorage: true // Whether to cache detected keywords in localStorage
     }
   }
 });
 
-// Get storage manager for this module
 const storage = getCoreStorageManager(CONSTANTS.SUBMODULE_NAME);
-
-// Module-level configuration
 let moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+let detectedKeywords = null; // To store generated summary/keywords
 
-/**
- * Set module config
- * @param {Object} config - Configuration from Prebid.js
- */
-const mergeModuleConfig = (config) => {
-  // Create a deep copy of the default config
-  moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+// Helper to initialize Chrome AI API instances (LanguageDetector, Summarizer)
+const _createAiApiInstance = async (ApiConstructor, options) => {
+  const apiName = ApiConstructor.name; // e.g., "LanguageDetector" or "Summarizer"
+  
+  try {
+    if (!(apiName in self) || typeof self[apiName] !== 'function') { // Also check if it's a function (constructor)
+      logError(`${CONSTANTS.LOG_PRE_FIX} ${apiName} API not available or not a constructor in self.`);
+      return null;
+    }
 
-  // If params are provided, merge them with the default config
-  if (config?.params) {
-    mergeDeep(moduleConfig, config.params);
+    const availability = await ApiConstructor.availability();
+    if (availability === 'unavailable') {
+      logError(`${CONSTANTS.LOG_PRE_FIX} ${apiName} is unavailable.`);
+      return null;
+    }
+
+    let instance;
+    if (availability === 'available') {
+      instance = await ApiConstructor.create(options);
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} ${apiName} instance created (was available).`);
+    } else { // Assuming 'after-download' or similar state if not 'available'
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} ${apiName} model needs download.`);
+
+      instance = await ApiConstructor.create(options);
+      instance.addEventListener('downloadprogress', (e) => {
+        const progress = e.total > 0 ? Math.round(e.loaded / e.total * 100) : (e.loaded > 0 ? 'In progress' : 'Starting');
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} ${apiName} model DL: ${progress}${e.total > 0 ? '%' : ''}`);
+      });
+      await instance.ready;
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} ${apiName} model ready after download.`);
+    }
+    return instance;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error creating ${apiName} instance:`, error);
+    return null;
   }
+};
 
+const mergeModuleConfig = (config) => {
+  // Start with a deep copy of default_config to ensure all keys are present
+  let newConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+  if (config?.params) {
+    mergeDeep(newConfig, config.params);
+  }
+  moduleConfig = newConfig; // Assign to module-level variable
   logMessage(`${CONSTANTS.LOG_PRE_FIX} Module config set:`, moduleConfig);
   return moduleConfig;
 };
 
-/**
- * Get the current URL
- * @returns {string} The current URL
- */
 export const getCurrentUrl = () => window.location.href;
 
-/**
- * Check if detected language exists in localStorage for the current URL
- * @param {string} [url] - URL to check for (defaults to current URL)
- * @returns {Object|null} The detected language if found, null otherwise
- */
-const isLanguageInLocalStorage = (url) => {
-  if (!storage.hasLocalStorage() || !storage.localStorageIsEnabled()) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} localStorage is not available`);
+export const getPageText = () => {
+  const text = document.body.textContent;
+  if (!text || text.length < CONSTANTS.MIN_TEXT_LENGTH) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content (length: ${text?.length || 0}) for processing.`);
     return null;
   }
+  return text;
+};
 
+// --- Chrome AI LocalStorage Helper Functions ---
+export const _getChromeAiDataFromLocalStorage = (url) => {
+  if (!storage.hasLocalStorage() || !storage.localStorageIsEnabled()) {
+    return null;
+  }
   const currentUrl = url || getCurrentUrl();
-  const storedLanguageJson = storage.getDataFromLocalStorage(CONSTANTS.STORAGE_KEY);
-  if (storedLanguageJson) {
+  const storedJson = storage.getDataFromLocalStorage(CONSTANTS.STORAGE_KEY);
+  if (storedJson) {
     try {
-      const languageObject = JSON.parse(storedLanguageJson);
-      if (languageObject?.[currentUrl]) {
-        return languageObject[currentUrl];
-      }
+      const storedObject = JSON.parse(storedJson);
+      return storedObject?.[currentUrl] || null;
     } catch (e) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing localStorage:`, e);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing Chrome AI data from localStorage:`, e);
     }
+  }
+  return null;
+};
+
+const _storeChromeAiDataInLocalStorage = (url, data) => {
+  try {
+    if (!storage.hasLocalStorage() || !storage.localStorageIsEnabled()) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} localStorage is not available, cannot store Chrome AI data.`);
+      return false;
+    }
+    let overallStorageObject = {};
+    const existingStoredJson = storage.getDataFromLocalStorage(CONSTANTS.STORAGE_KEY);
+    if (existingStoredJson) {
+      try {
+        overallStorageObject = JSON.parse(existingStoredJson);
+      } catch (e) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error parsing existing Chrome AI data from localStorage:`, e);
+      }
+    }
+    const currentUrl = url || getCurrentUrl();
+    overallStorageObject[currentUrl] = {
+      ...overallStorageObject[currentUrl], // Preserve any existing data
+      ...data // Overwrite or add new data
+    };
+    storage.setDataInLocalStorage(CONSTANTS.STORAGE_KEY, JSON.stringify(overallStorageObject));
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Chrome AI data stored in localStorage for ${currentUrl}:`, data);
+    return true;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error storing Chrome AI data to localStorage:`, error);
+    return false;
+  }
+};
+
+const isLanguageInLocalStorage = (url) => {
+  const chromeAiData = _getChromeAiDataFromLocalStorage(url);
+  return chromeAiData?.language || null;
+};
+
+export const getPrioritizedLanguageData = (reqBidsConfigObj) => {
+  // 1. Check auction-specific ORTB2 (passed in reqBidsConfigObj for getBidRequestData)
+  // Uses configurable path for language
+  if (reqBidsConfigObj && moduleConfig.languageDetector) {
+    const langPath = moduleConfig.languageDetector.ortb2Path;
+    const lang = deepAccess(reqBidsConfigObj.ortb2Fragments?.global, langPath);
+    if (lang) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Language '${lang}' found in auction-specific ortb2Fragments at path '${langPath}'.`);
+      return { language: lang, source: 'auction_ortb2' };
+    }
+  }
+
+  // 2. Check localStorage (relevant for both init and getBidRequestData)
+  const storedLangData = isLanguageInLocalStorage(getCurrentUrl());
+  if (storedLangData) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language '${storedLangData.language}' found in localStorage.`);
+    return { ...storedLangData, source: 'localStorage' };
   }
 
   return null;
 };
 
-/**
- * Store detected language in localStorage
- * @param {string} language - The detected language code
- * @param {number} confidence - The confidence score for the detection
- * @param {string} url - The URL to associate with this language
- * @returns {boolean} - Whether the operation was successful
- */
-export const storeDetectedLanguage = (language, confidence, url) => {
-  try {
-    if (!language) {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid language to store`);
-      return false;
+const getPrioritizedKeywordsData = (reqBidsConfigObj) => {
+  // 1. Check auction-specific ORTB2 (passed in reqBidsConfigObj for getBidRequestData)
+  if (reqBidsConfigObj && moduleConfig.summarizer) {
+    const keywordsPath = moduleConfig.summarizer.ortb2Path;
+    const keywords = deepAccess(reqBidsConfigObj.ortb2Fragments?.global, keywordsPath);
+    if (keywords && Array.isArray(keywords) && keywords.length > 0) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords found in auction-specific ortb2Fragments at path '${keywordsPath}'.`, keywords);
+      return { keywords: keywords, source: 'auction_ortb2' };
     }
-
-    if (!storage.hasLocalStorage() || !storage.localStorageIsEnabled()) {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} localStorage is not available`);
-      return false;
-    }
-
-    // Get existing language object or create a new one
-    let languageObject = {};
-    const storedLanguageJson = storage.getDataFromLocalStorage(CONSTANTS.STORAGE_KEY);
-    if (storedLanguageJson) {
-      languageObject = JSON.parse(storedLanguageJson);
-    }
-
-    // Store the result in the language object
-    languageObject[url] = {
-      language: language,
-      confidence: confidence
-    };
-
-    // Save the updated object back to localStorage
-    storage.setDataInLocalStorage(CONSTANTS.STORAGE_KEY, JSON.stringify(languageObject));
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language stored in localStorage:`, language, confidence);
-
-    return true;
-  } catch (error) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} Error storing language:`, error);
-    return false;
   }
+
+  // 2. Check localStorage (if enabled)
+  if (moduleConfig.summarizer?.cacheInLocalStorage === true) {
+    const chromeAiData = _getChromeAiDataFromLocalStorage();
+    const storedKeywords = chromeAiData?.keywords;
+    if (storedKeywords && Array.isArray(storedKeywords) && storedKeywords.length > 0) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords found in localStorage.`, storedKeywords);
+      return { keywords: storedKeywords, source: 'localStorage' };
+    }
+  }
+  return null;
 };
 
-/**
- * Detect the language of a text using Chrome AI language detection API
- * @param {string} text - The text to detect language for
- * @returns {Promise<Object|null>} - Object with detected language and confidence or null if detection fails
- */
+export const storeDetectedLanguage = (language, confidence, url) => {
+  if (!language) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid language to store`);
+    return false;
+  }
+  const dataPayload = { language: language, confidence: confidence };
+  return _storeChromeAiDataInLocalStorage(url, { language: dataPayload });
+};
+
 export const detectLanguage = async (text) => {
+  const detector = await _createAiApiInstance(LanguageDetector);
+  if (!detector) {
+    return null; // Error already logged by _createAiApiInstance
+  }
+
   try {
-    // Check if language detection API is available
-    if (!('LanguageDetector' in self)) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Language detection API is not available`);
-      return null;
-    }
-
-    // Check availability
-    const availability = await LanguageDetector.availability();
-
-    if (availability === 'unavailable') {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Language detector is not available`);
-      return null;
-    }
-
-    let detector;
-    if (availability === 'available') {
-      // The language detector can immediately be used
-      detector = await LanguageDetector.create();
-    } else {
-      // The language detector can be used after model download
-      detector = await LanguageDetector.create({
-        monitor(m) {
-          m.addEventListener('downloadprogress', (e) => {
-            logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detector download progress: ${e.loaded * 100}%`);
-          });
-        },
-      });
-      await detector.ready;
-    }
-
-    // Detect language
     const results = await detector.detect(text);
-
     if (!results || results.length === 0) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} No language detection results`);
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} No language results from API.`);
       return null;
     }
-
     const topResult = results[0];
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Detected language: ${topResult.detectedLanguage} (confidence: ${topResult.confidence})`);
-
-    // Check if confidence is below the threshold
-    const confidenceThreshold = moduleConfig.languageDetector.confidence;
-    if (topResult.confidence < confidenceThreshold) {
-      logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection confidence (${topResult.confidence}) is below threshold (${confidenceThreshold}), skipping`);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Detected lang: ${topResult.detectedLanguage} (conf: ${topResult.confidence.toFixed(2)})`);
+    if (topResult.confidence < moduleConfig.languageDetector.confidence) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Lang confidence (${topResult.confidence.toFixed(2)}) < threshold (${moduleConfig.languageDetector.confidence}).`);
       return null;
     }
-
-    return {
-      language: topResult.detectedLanguage,
-      confidence: topResult.confidence
-    };
+    return { language: topResult.detectedLanguage, confidence: topResult.confidence };
   } catch (error) {
-    logError(`${CONSTANTS.LOG_PRE_FIX} Error detecting language:`, error);
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error during LanguageDetector.detect():`, error);
     return null;
   }
 };
 
-/**
- * Performs language detection and stores the result
- * @returns {Promise<boolean>} - Whether language detection was successful
- */
-const initLanguageDetector = async () => {
-  // Check if language is already set in ortb2
-  const ortb2 = conf.getAnyConfig('ortb2');
-  if (ortb2?.site?.content?.language) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language already set in ortb2.site.content.language: ${ortb2.site.content.language}. Skipping detection.`);
-    return true;
+export const detectSummary = async (text, config) => {
+    const summaryOptions = {
+        type: config.type,
+        format: config.format,
+        length: config.length,
+      };
+  const summarizer = await _createAiApiInstance(Summarizer, summaryOptions);
+  if (!summarizer) {
+    return null; // Error already logged by _createAiApiInstance
   }
 
-  // Check if language already exists in localStorage
-  const storedLanguage = isLanguageInLocalStorage();
-
-  if (storedLanguage) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language already in localStorage, skipping detection`, storedLanguage);
-    return true;
+  try {
+    const summaryResult = await summarizer.summarize(text, summaryOptions);
+    if (!summaryResult) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} No summary result from API.`);
+      return null;
+    }
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summary generated (type: ${summaryOptions.type}, len: ${summaryOptions.length}):`, summaryResult.substring(0, 100) + '...');
+    return summaryResult; // This is a string
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error during Summarizer.summarize():`, error);
+    return null;
   }
-
-  // Get page text content
-  const pageText = document.body.textContent;
-  if (!pageText || pageText.length < CONSTANTS.MIN_TEXT_LENGTH) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Not enough text content to detect language`);
-    return false;
-  }
-
-  // Detect language using Chrome AI
-  const detectionResult = await detectLanguage(pageText);
-  if (!detectionResult) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to detect language, aborting`);
-    return false;
-  }
-
-  // Store language in localStorage
-  const stored = storeDetectedLanguage(
-    detectionResult.language,
-    detectionResult.confidence,
-    getCurrentUrl()
-  );
-
-  // Return the result of the storage operation
-  return stored;
 };
 
-/**
- * Initialize the ChromeAI RTD Module.
- * @param {Object} config - Module configuration
- * @param {Object} userConsent - User consent data
- * @returns {boolean} - Whether initialization was successful
- */
-const init = async (config, userConsent) => {
-  logMessage(`${CONSTANTS.LOG_PRE_FIX} config:`, config);
-
-  // Set module configuration
-  moduleConfig = mergeModuleConfig(config);
-
-  // Only run language detection if enabled (default is true)
-  if (!moduleConfig.languageDetector || moduleConfig.languageDetector.enabled !== false) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection is enabled`);
-    return await initLanguageDetector();
+const initLanguageDetector = async () => {
+  const existingLanguage = getPrioritizedLanguageData(null); // Pass null or undefined for reqBidsConfigObj
+  if (existingLanguage && existingLanguage.source === 'localStorage') {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection skipped, language '${existingLanguage.language}' found in localStorage.`);
+    return true;
   }
 
-  return true;
+  const pageText = getPageText();
+  if (!pageText) return false;
+
+  const detectionResult = await detectLanguage(pageText);
+  if (!detectionResult) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to detect language from page content.`);
+    return false;
+  }
+  return storeDetectedLanguage(detectionResult.language, detectionResult.confidence, getCurrentUrl());
+};
+
+export const storeDetectedKeywords = (keywords, url) => {
+  if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} No valid keywords array to store`);
+    return false;
+  }
+  return _storeChromeAiDataInLocalStorage(url, { keywords: keywords });
+};
+
+const initSummarizer = async () => {
+  // Check for prioritized/cached keywords first (reqBidsConfigObj is null during init)
+  const prioritizedData = getPrioritizedKeywordsData(null);
+  if (prioritizedData && prioritizedData.source === 'localStorage') {
+    detectedKeywords = prioritizedData.keywords;
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer skipped, keywords from localStorage.`, detectedKeywords);
+    return true;
+  }
+  // If auction_ortb2 had data, it would be handled by getBidRequestData directly, init focuses on detection/localStorage
+
+  const pageText = getPageText();
+  if (!pageText) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer: No/short text, cannot generate keywords.`);
+    return false;
+  }
+
+  if (!moduleConfig.summarizer) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Summarizer config missing during init.`);
+    return false;
+  }
+
+  const summaryText = await detectSummary(pageText, moduleConfig.summarizer);
+  if (summaryText) {
+    // The API returns a single summary string. We treat this string as a single keyword.
+    // If multiple keywords were desired from the summary, further processing would be needed here.
+    detectedKeywords = [summaryText];
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summary processed and new keywords generated:`, detectedKeywords);
+
+    if (moduleConfig.summarizer.cacheInLocalStorage === true) {
+      storeDetectedKeywords(detectedKeywords, getCurrentUrl());
+    }
+    return true;
+  }
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} Failed to generate summary, no new keywords.`);
+  return false;
+};
+
+const init = async (config) => {
+  moduleConfig = mergeModuleConfig(config);
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} Initializing with config:`, moduleConfig);
+
+  const activeInitializations = [];
+
+  if (moduleConfig.languageDetector?.enabled !== false) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection enabled. Initializing...`);
+    activeInitializations.push(initLanguageDetector());
+  } else {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection disabled by config.`);
+  }
+
+  // Summarizer Initialization
+  if (moduleConfig.summarizer?.enabled === true) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer enabled. Initializing...`);
+    activeInitializations.push(initSummarizer());
+  } else {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer disabled by config.`);
+  }
+
+  if (activeInitializations.length === 0) {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} No features enabled for initialization.`);
+    return true; // Module is considered initialized if no features are active/enabled.
+  }
+
+  // Wait for all enabled features to attempt initialization
+  try {
+    const results = await Promise.all(activeInitializations);
+    // Consider init successful if at least one feature init succeeded, or if no features were meant to run.
+    const overallSuccess = results.length > 0 ? results.some(result => result === true) : true;
+    if (overallSuccess) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Relevant features initialized.`);
+    } else {
+      logError(`${CONSTANTS.LOG_PRE_FIX} All enabled features failed to initialize.`);
+    }
+    return overallSuccess;
+  } catch (error) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} Error during feature initializations:`, error);
+    return false;
+  }
 };
 
 /**
@@ -260,39 +364,46 @@ const init = async (config, userConsent) => {
 const getBidRequestData = (reqBidsConfigObj, callback) => {
   logMessage(`${CONSTANTS.LOG_PRE_FIX} reqBidsConfigObj:`, reqBidsConfigObj);
 
-  // Check if language detection is explicitly disabled
-  if (moduleConfig.languageDetector && moduleConfig.languageDetector.enabled === false) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection is disabled in config`);
-    callback();
-    return;
-  }
+  // Ensure ortb2Fragments and global path exist for potential deepSetValue operations
+  reqBidsConfigObj.ortb2Fragments = reqBidsConfigObj.ortb2Fragments || {};
+  reqBidsConfigObj.ortb2Fragments.global = reqBidsConfigObj.ortb2Fragments.global || {};
 
-  // Check if language is already set in ortb2
-  // First check reqBidsConfigObj (which has priority for the current auction)
-  if (reqBidsConfigObj?.ortb2Fragments?.global?.site?.content?.language) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language already set in reqBidsConfigObj.ortb2Fragments.global.site.content.language: ${reqBidsConfigObj.ortb2Fragments.global.site.content.language}. Using existing value.`);
-    callback();
-    return;
-  }
-
-  // Check if language exists in localStorage
-  const storedLanguage = isLanguageInLocalStorage();
-  if (storedLanguage) {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} Setting detected language from localStorage:`, storedLanguage);
-
-    // Add language information to bid request
-    mergeDeep(reqBidsConfigObj.ortb2Fragments.global, {
-      site: {
-        content: {
-          language: storedLanguage.language
-        }
-      }
-    });
+  // Language Data Enrichment
+  if (moduleConfig.languageDetector?.enabled !== false) {
+    const languageData = getPrioritizedLanguageData(reqBidsConfigObj);
+    if (languageData && languageData.source !== 'auction_ortb2') {
+      const langPath = moduleConfig.languageDetector.ortb2Path;
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Enriching ORTB2 path '${langPath}' with lang '${languageData.language}' from ${languageData.source}.`);
+      deepSetValue(reqBidsConfigObj.ortb2Fragments.global, langPath, languageData.language);
+    } else if (languageData?.source === 'auction_ortb2') {
+      const langPath = moduleConfig.languageDetector.ortb2Path;
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Lang already in auction ORTB2 at path '${langPath}', no enrichment needed.`);
+    }
   } else {
-    logMessage(`${CONSTANTS.LOG_PRE_FIX} No language found in localStorage for current URL`);
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Language detection disabled, no lang enrichment.`);
   }
 
-  logMessage(`${CONSTANTS.LOG_PRE_FIX} after changing:`, reqBidsConfigObj);
+  // Summarizer Data (Keywords) Enrichment
+  if (moduleConfig.summarizer?.enabled === true) {
+    const keywordsPath = moduleConfig.summarizer.ortb2Path;
+    const auctionKeywords = deepAccess(reqBidsConfigObj.ortb2Fragments.global, keywordsPath);
+
+    if (auctionKeywords && Array.isArray(auctionKeywords) && auctionKeywords.length > 0) {
+      logMessage(`${CONSTANTS.LOG_PRE_FIX} Keywords already present in auction_ortb2 at path '${keywordsPath}', no enrichment from module.`, auctionKeywords);
+    } else {
+      // auction_ortb2 path is empty, try to use keywords from initSummarizer (localStorage or fresh detection)
+      if (detectedKeywords && detectedKeywords.length > 0) {
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Enriching ORTB2 path '${keywordsPath}' with keywords from module (localStorage/detection):`, detectedKeywords);
+        deepSetValue(reqBidsConfigObj.ortb2Fragments.global, keywordsPath, detectedKeywords);
+      } else {
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer enabled, but no keywords from auction_ortb2, localStorage, or fresh detection for path '${keywordsPath}'.`);
+      }
+    }
+  } else {
+    logMessage(`${CONSTANTS.LOG_PRE_FIX} Summarizer disabled, no keyword enrichment.`);
+  }
+
+  logMessage(`${CONSTANTS.LOG_PRE_FIX} Final reqBidsConfigObj for auction:`, reqBidsConfigObj);
   callback();
 };
 
