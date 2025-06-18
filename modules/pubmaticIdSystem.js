@@ -17,8 +17,6 @@ const API_URL = 'https://image6.pubmatic.com/AdServer/UCookieSetPug?oid=5&p=';
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 function generateQueryStringParams(config, consentData) {
-  // eslint-disable-next-line no-console
-  console.log('generateQueryStringParams', config, consentData);
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
