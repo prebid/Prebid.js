@@ -1,4 +1,4 @@
-import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
+import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
@@ -185,31 +185,32 @@ export const spec = {
 
 /**
  *
- * @param validBidRequests an array of bids
+ * @param {BidRequest[]} validBidRequests an array of bids
  * @returns {{sharedViewerIdKey : 'sharedViewerIdValue'}} object with all sharedviewerids
  */
 function getSharedViewerIdParameters(validBidRequests) {
   const sharedViewerIdMapping = {
-    unifiedId2: 'uid2.id', // uid2IdSystem
-    liveRampId: 'idl_env', // identityLinkIdSystem
-    lotamePanoramaId: 'lotamePanoramaId', // lotamePanoramaIdSystem
-    id5Id: 'id5id.uid', // id5IdSystem
-    criteoId: 'criteoId', // criteoIdSystem
-    yahooConnectId: 'connectId', // connectIdSystem
-    quantcastId: 'quantcastId', // quantcastIdSystem
-    epsilonPublisherLinkId: 'publinkId', // publinkIdSystem
-    publisherFirstPartyViewerId: 'pubcid', // sharedIdSystem
-    merkleId: 'merkleId.id', // merkleIdSystem
-    kinessoId: 'kpuid' // kinessoIdSystem
+    unifiedId2: 'uidapi.com', // uid2IdSystem //TODO: to verify with maintainers
+    liveRampId: 'liveramp.com', // identityLinkIdSystem
+    lotamePanoramaId: 'crwdcntrl.net', // lotamePanoramaIdSystem
+    id5Id: 'id5-sync.com', // id5IdSystem
+    criteoId: 'criteo.com', // criteoIdSystem
+    yahooConnectId: 'yahoo.com', // connectIdSystem
+    quantcastId: 'quantcast.com', // quantcastIdSystem
+    epsilonPublisherLinkId: 'epsilon.com', // publinkIdSystem
+    publisherFirstPartyViewerId: 'pubcid.org', // sharedIdSystem
+    merkleId: 'merkleinc.com', // merkleIdSystem
+    kinessoId: 'kpuid.com' // kinessoIdSystem
   }
 
   let sharedViewerIdObject = {};
   for (const sharedViewerId in sharedViewerIdMapping) {
-    const key = sharedViewerIdMapping[sharedViewerId];
-    const value = deepAccess(validBidRequests, `0.userId.${key}`);
-    if (value) {
-      sharedViewerIdObject[sharedViewerId] = value;
-    }
+    const userIdKey = sharedViewerIdMapping[sharedViewerId];
+    validBidRequests[0].userIdAsEids?.forEach((eid) => {
+      if (eid.source === userIdKey && eid.uids?.[0].id) {
+        sharedViewerIdObject[sharedViewerId] = eid.uids[0].id;
+      }
+    })
   }
   return sharedViewerIdObject;
 }
@@ -332,7 +333,7 @@ function _validateId(id) {
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
 function getFirstPartyTeadsIdParameter(validBidRequests) {
-  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userId?.teadsId;
+  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userIdAsEids?.find(eid => eid.source === 'teads.com')?.uids?.[0].id;
 
   if (firstPartyTeadsIdFromUserIdModule) {
     return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};
