@@ -23,8 +23,8 @@ function generateQueryStringParams(config, consentData) {
 
   const params = {
     publisherId: config.params.publisherId,
-    gdpr: (consentData && consentData?.gdprApplies) ? 1 : 0,
-    gdpr_consent: consentData && consentData?.consentString ? encodeURIComponent(consentData.consentString) : '',
+    gdpr: (consentData?.gdpr && consentData?.gdpr?.gdprApplies) ? 1 : 0,
+    gdpr_consent: consentData?.gdpr && consentData?.gdpr?.consentString ? encodeURIComponent(consentData.gdpr.consentString) : '',
     src: 'pbjs_uid',
     ver: VERSION,
     coppa: Number(coppaValue),
