@@ -264,7 +264,7 @@ export const parseBidResponse = (bid, previousBidResponse) => {
   return pick(bid, [
     'bidPriceUSD', () => responsePrice,
     'dealId', dealId => dealId || undefined,
-    'mediaType', () => bid?.meta?.mediaType ?? bid.mediaType,
+    'mediaType', () => bid?.meta?.mediaType || bid.mediaType,
     'ogMediaType', () => bid?.meta?.mediaType && bid.mediaType !== bid?.meta?.mediaType ? bid.mediaType : undefined,
     'dimensions', () => {
       const width = bid.width || bid.playerWidth;
