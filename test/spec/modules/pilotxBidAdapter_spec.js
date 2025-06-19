@@ -353,7 +353,6 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[1].mediaType).to.equal(serverResponse4.bids[1].mediaType)
       expect(bidResponses[1].meta.mediaType).to.equal(serverResponse4.bids[1].mediaType)
       expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse4.bids[1].advertiserDomains)
-
     });
   });
   describe('setPlacementID', function () {
