@@ -21,7 +21,7 @@ The Chrome AI RTD Provider is a Prebid.js Real-Time Data (RTD) module that enhan
 To include the Chrome AI RTD Provider in your Prebid.js build, use the following command:
 
 ```bash
-gulp build --modules=chromeAiRtdProvider
+gulp build --modules=rtdModule,chromeAiRtdProvider
 ```
 
 ### Basic Integration
@@ -57,8 +57,8 @@ pbjs.setConfig({
         },
         summarizer: {
           enabled: false,      // Set to true to enable summarization/keyword generation
-          type: 'headline',    // 'headline' or 'passage'
-          format: 'markdown', // 'plaintext' or 'markdown'
+          type: 'headline',    // 'headline','key-points', 'tldr' or 'teaser'
+          format: 'markdown', // 'plain-text' or 'markdown'
           length: 'short',     // 'short', 'medium', or 'long'
           ortb2Path: 'site.content.keywords', // Path for summary/keywords
           cacheInLocalStorage: true // Whether to cache generated summary/keywords
@@ -78,8 +78,8 @@ pbjs.setConfig({
 | `languageDetector.confidence` | Optional | Number | Minimum confidence threshold for detected language (0.0 - 1.0) | `0.8` |
 | `languageDetector.ortb2Path` | Optional | String | Path in ORTB2 to store the detected language | `'site.content.language'` |
 | `summarizer.enabled` | Optional | Boolean | Enable or disable summarization/keyword generation | `false` |
-| `summarizer.type` | Optional | String | Type of summary: `'headline'` or `'passage'` | `'headline'` |
-| `summarizer.format` | Optional | String | Format of the summary: `'plaintext'` or `'markdown'` | `'plaintext'` |
+| `summarizer.type` | Optional | String | Type of summary: `'headline'`, `'key-points'`, `'tldr'`, or `'teaser'` | `'headline'` |
+| `summarizer.format` | Optional | String | Format of the summary: `'plain-text'` or `'markdown'` | `'mark-down'` |
 | `summarizer.length` | Optional | String | Length of the summary: `'short'`, `'medium'`, or `'long'` | `'short'` |
 | `summarizer.ortb2Path` | Optional | String | Path in ORTB2 to store the generated summary/keywords | `'site.content.keywords'` |
 | `summarizer.cacheInLocalStorage` | Optional | Boolean | Whether to cache the generated summary/keywords in localStorage | `true` |
@@ -194,11 +194,10 @@ pbjs.setConfig({
         },
         summarizer: {
           enabled: true,
-          type: 'passage',    // Get a longer passage summary
+          type: 'teaser',
           format: 'markdown', // In markdown format
           length: 'medium',
           ortb2Path: 'site.ext.data.summary', // Custom ORTB2 path
-          cacheInLocalStorage: false // Do not cache this summary
         }
       }
     }]
