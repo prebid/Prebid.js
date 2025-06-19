@@ -136,9 +136,7 @@ export function syncOrtb2(adUnit, mediaType) {
 
     if (mediaTypesFieldValue == undefined && ortbFieldValue == undefined) {
       // omitting the params if it's not defined on either of sides
-      return;
-    }
-    if (mediaTypesFieldValue == undefined) {
+    } else if (mediaTypesFieldValue == undefined) {
       deepSetValue(adUnit, `mediaTypes.${mediaType}.${key}`, ortbFieldValue);
     } else if (ortbFieldValue == undefined) {
       deepSetValue(adUnit, `ortb2Imp.${mediaType}.${key}`, mediaTypesFieldValue);
