@@ -66,8 +66,10 @@ describe('pubmaticIdSystem', () => {
       it('should call endpoint with gdpr=1 when GDPR applies and consent string is provided', () => {
         const completeCallback = sinon.spy();
         const { callback } = pubmaticIdSubmodule.getId(utils.mergeDeep({}, validCookieConfig), {
-          gdprApplies: true,
-          consentString: 'foo'
+          gdpr: {
+            gdprApplies: true,
+            consentString: 'foo'
+          }
         });
 
         callback(completeCallback);
