@@ -165,6 +165,22 @@ export const spec = {
       const size = bidRequest.mediaTypes?.banner?.sizes[0] || bidRequest.mediaTypes?.native?.sizes[0] || [];
       const width = size[0];
       const height = size[1];
+      const originalAssets = bidRequest.mediaTypes?.native?.ortb?.assets || [];
+      // convert icon to img type 1
+      const processedAssets = originalAssets.map(asset => {
+        if (asset.icon) {
+          return {
+            id: asset.id,
+            required: asset.required || 0,
+            img: {
+              type: 1,
+              w: asset.icon.w,
+              h: asset.icon.h,
+            }
+          };
+        }
+        return asset;
+      });
       const payload = {
         bidId: bidRequest.bidId,
         referrer: window.document.referrer,
@@ -189,7 +205,7 @@ export const spec = {
             referenceId: bidRequest.params.referenceId,
             tagId: bidRequest.params.zone,
             type: detectAdType(bidRequest),
-            ...(isNative && { nativeRequest: { ver: "1.2", assets: bidRequest.mediaTypes?.native?.ortb?.assets || {}} })
+            ...(isNative && { nativeRequest: { ver: "1.2", assets: processedAssets || {}} })
           },
         ],
         keywords: { tokens: bidRequest.params?.keywords || [] },
