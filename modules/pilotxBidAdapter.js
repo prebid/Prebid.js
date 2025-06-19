@@ -104,11 +104,11 @@ export const spec = {
 
     const bids = Array.isArray(serverBody?.bids)
       ? serverBody.bids
-      : [serverBody]; 
+      : [serverBody];
 
     bids.forEach(bid => {
       if (!bid || !bid.mediaType || !bid.requestId) {
-        return; 
+        return;
       }
 
       const baseResponse = {

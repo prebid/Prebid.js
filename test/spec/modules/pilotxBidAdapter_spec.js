@@ -180,7 +180,8 @@ describe('pilotxAdapter', function () {
       requestId: '273b39c74069cb',
       ttl: 3000,
       vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-      width: 640
+      width: 640,
+      advertiserDomains: ["test.com"]
     }
     const serverResponseVideo = {
       body: serverResponse
@@ -195,7 +196,8 @@ describe('pilotxAdapter', function () {
       requestId: '273b39c74069cb',
       ttl: 3000,
       ad: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-      width: 640
+      width: 640,
+      advertiserDomains: ["test.com"]
     }
     const serverResponseBanner = {
       body: serverResponse2
@@ -212,7 +214,8 @@ describe('pilotxAdapter', function () {
           requestId: '273b39c74069cb',
           ttl: 3000,
           ad: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640
+          width: 640,
+          advertiserDomains: ["testaddomainbanner"]
         },
         {
           cpm: 2.5,
@@ -224,7 +227,8 @@ describe('pilotxAdapter', function () {
           requestId: '273b39c74069cb',
           ttl: 3000,
           vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640
+          width: 640,
+          advertiserDomains: ["testaddomainvideo"]
         }
       ]
     }
@@ -243,7 +247,8 @@ describe('pilotxAdapter', function () {
           requestId: '273b39c74069cb',
           ttl: 3000,
           vastUrl: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640
+          width: 640,
+          advertiserDomains: ["testaddomainvideo"]
         },
         {
           cpm: 2.5,
@@ -255,7 +260,8 @@ describe('pilotxAdapter', function () {
           requestId: '273b39c74069cb',
           ttl: 3000,
           ad: 'http://testadserver.com/ads?&k=60cd901ad8ab70c9cedf373cb17b93b8&pid=379&tid=91342717',
-          width: 640
+          width: 640,
+          advertiserDomains: ["testaddomainbanner"]
         }
       ]
     }
@@ -275,6 +281,7 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].vastUrl).to.equal(serverResponse.vastUrl)
       expect(bidResponses[0].mediaType).to.equal(serverResponse.mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse.mediaType)
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse.advertiserDomains)
     });
     it('should be valid from bidRequest for banner', function () {
       const bidResponses = spec.interpretResponse(serverResponseBanner, bidRequest)
@@ -289,6 +296,7 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].ad).to.equal(serverResponse2.ad)
       expect(bidResponses[0].mediaType).to.equal(serverResponse2.mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse2.mediaType)
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse2.advertiserDomains)
     });
     it('should be valid from bidRequest for banner and video', function () {
       const bidResponses = spec.interpretResponse(serverResponseVideoAndBanner, bidRequest)
@@ -303,6 +311,7 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].ad).to.equal(serverResponse3.bids[0].ad)
       expect(bidResponses[0].mediaType).to.equal(serverResponse3.bids[0].mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse3.bids[0].mediaType)
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse3.bids[0].advertiserDomains)
 
       expect(bidResponses[1].requestId).to.equal(serverResponse3.bids[1].requestId)
       expect(bidResponses[1].cpm).to.equal(serverResponse3.bids[1].cpm)
@@ -315,6 +324,7 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[1].vastUrl).to.equal(serverResponse3.bids[1].vastUrl)
       expect(bidResponses[1].mediaType).to.equal(serverResponse3.bids[1].mediaType)
       expect(bidResponses[1].meta.mediaType).to.equal(serverResponse3.bids[1].mediaType)
+      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse3.bids[1].advertiserDomains)
     })
     it('should correctly handle response with video first and banner second', function () {
       const bidResponses = spec.interpretResponse(serverResponseVideoAndBannerReversed, bidRequest)
@@ -329,6 +339,7 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[0].vastUrl).to.equal(serverResponse4.bids[0].vastUrl)
       expect(bidResponses[0].mediaType).to.equal(serverResponse4.bids[0].mediaType)
       expect(bidResponses[0].meta.mediaType).to.equal(serverResponse4.bids[0].mediaType)
+      expect(bidResponses[0].meta.advertiserDomains).to.equal(serverResponse4.bids[0].advertiserDomains)
 
       expect(bidResponses[1].requestId).to.equal(serverResponse4.bids[1].requestId)
       expect(bidResponses[1].cpm).to.equal(serverResponse4.bids[1].cpm)
@@ -341,6 +352,8 @@ describe('pilotxAdapter', function () {
       expect(bidResponses[1].ad).to.equal(serverResponse4.bids[1].ad)
       expect(bidResponses[1].mediaType).to.equal(serverResponse4.bids[1].mediaType)
       expect(bidResponses[1].meta.mediaType).to.equal(serverResponse4.bids[1].mediaType)
+      expect(bidResponses[1].meta.advertiserDomains).to.equal(serverResponse4.bids[1].advertiserDomains)
+
     });
   });
   describe('setPlacementID', function () {
