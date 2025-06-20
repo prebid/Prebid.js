@@ -186,26 +186,6 @@ describe('ssp_genieeBidAdapter', function () {
         expect(request[1].data.cur).to.deep.equal('USD');
       });
 
-      it('should makes invalidImpBeacon the value of params.invalidImpBeacon when params.invalidImpBeacon exists (in current version, this parameter is not necessary and ib is always `0`)', function () {
-        const request = spec.buildRequests([
-          {
-            ...BANNER_BID,
-            params: { ...BANNER_BID.params, invalidImpBeacon: true },
-          },
-          {
-            ...BANNER_BID,
-            params: { ...BANNER_BID.params, invalidImpBeacon: false },
-          },
-          {
-            ...BANNER_BID,
-            params: { ...BANNER_BID.params },
-          },
-        ]);
-        expect(request[0].data.ib).to.deep.equal(0);
-        expect(request[1].data.ib).to.deep.equal(0);
-        expect(request[2].data.ib).to.deep.equal(0);
-      });
-
       it('should not sets the value of the adtk query when geparams.lat does not exist', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('adtk');
@@ -446,59 +426,6 @@ describe('ssp_genieeBidAdapter', function () {
         const request = spec.buildRequests([BANNER_BID]);
         expect(request[0].data).to.not.have.property('gpid');
       });
-
-      it('should include gpid when ortb2Imp.ext.gpid exists', function () {
-        const gpid = '/123/abc';
-        const bidWithGpid = {
-          ...BANNER_BID,
-          ortb2Imp: {
-            ext: {
-              gpid: gpid
-            }
-          }
-        };
-        const request = spec.buildRequests([bidWithGpid]);
-        expect(String(request[0].data.gpid)).to.have.string(gpid);
-      });
-
-      it('should include gpid when ortb2Imp.ext.data.pbadslot exists', function () {
-        const pbadslot = '/123/abc';
-        const bidWithPbadslot = {
-          ...BANNER_BID,
-          ortb2Imp: {
-            ext: {
-              data: {
-                pbadslot: pbadslot
-              }
-            }
-          }
-        };
-        const request = spec.buildRequests([bidWithPbadslot]);
-        expect(String(request[0].data.gpid)).to.have.string(pbadslot);
-      });
-
-      it('should prioritize ortb2Imp.ext.gpid over ortb2Imp.ext.data.pbadslot', function () {
-        const gpid = '/123/abc';
-        const pbadslot = '/456/def';
-        const bidWithBoth = {
-          ...BANNER_BID,
-          ortb2Imp: {
-            ext: {
-              gpid: gpid,
-              data: {
-                pbadslot: pbadslot
-              }
-            }
-          }
-        };
-        const request = spec.buildRequests([bidWithBoth]);
-        expect(String(request[0].data.gpid)).to.have.string(gpid);
-      });
-
-      it('should not include gpid when neither ortb2Imp.ext.gpid nor ortb2Imp.ext.data.pbadslot exists', function () {
-        const request = spec.buildRequests([BANNER_BID]);
-        expect(request[0].data).to.not.have.property('gpid');
-      });
     });
   });
 
@@ -538,6 +465,217 @@ describe('ssp_genieeBidAdapter', function () {
       const request = spec.buildRequests([BANNER_BID])[0];
       const result = spec.interpretResponse({ body: response }, request);
       expect(result[0]).to.deep.equal(expectedBanner);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const syncOptions = {
+      pixelEnabled: true,
+      iframeEnabled: true,
+    };
+    const responseBase = {
+      creativeId: '<!-- CREATIVE ID -->',
+      cur: 'JPY',
+      price: 0.092,
+      width: 300,
+      height: 250,
+      requestid: '2e42361a6172bf',
+      adm: '<!-- ADS TAG -->',
+    };
+
+    it('should return an array of length 1 when adm contains one mcs endpoint', function () {
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d'
+          }
+        }
+      }]
+      const result = spec.getUserSyncs(syncOptions, response);
+      expect(result).to.have.deep.equal([{
+        type: 'image',
+        url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=lamp&format=gif&vid=1',
+      }]);
+    });
+
+    it('should return an array of length 2 when adm contains two mcs endpoints', function () {
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a%20none%3b%20visibility%3a%20hidden%3b%5c%22%20%5c%2f%3e%3cimg%20src%3d%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3drtbhouse%26format%3dgif%26vid%3d1%5c%22%20style%3d%5c%22display%3a'
+          }
+        }
+      }]
+      const result = spec.getUserSyncs(syncOptions, response);
+      expect(result).to.have.deep.equal([{
+        type: 'image',
+        url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=lamp&format=gif&vid=1',
+      }, {
+        type: 'image',
+        url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=rtbhouse&format=gif&vid=1',
+      }]);
+    });
+
+    it('should return an empty array When adm does not include the mcs endpoint', function () {
+      const response = [{
+        body: {
+          [ZONE_ID]: responseBase
+        }
+      }]
+      const result = spec.getUserSyncs(syncOptions, response);
+      expect(result).to.have.deep.equal([]);
+    });
+
+    it('should return an iframe sync when cs_url exists and iframeEnabled is true', function () {
+      const csUrlParam = '/cshtml?ver=1&dspid=lamp&format=html';
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            cs_url: csUrlParam
+          }
+        }
+      }];
+      const result = spec.getUserSyncs(syncOptions, response);
+      expect(result).to.have.deep.equal([{
+        type: 'iframe',
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+      }]);
+    });
+
+    it('should prioritize iframe sync over image sync when cs_url exists', function () {
+      const csUrlParam = '/cshtml?ver=1&dspid=lamp&format=html';
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            cs_url: csUrlParam,
+            adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d' // admも含む
+          }
+        }
+      }];
+      const result = spec.getUserSyncs(syncOptions, response);
+      expect(result).to.have.deep.equal([{
+        type: 'iframe',
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+      }]);
+    });
+
+    it('should return an image sync when cs_url does not exist but adm contains mcs endpoint and pixelEnabled is true, even if iframeEnabled is false', function () {
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d'
+          }
+        }
+      }];
+      const result = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, response);
+      expect(result).to.have.deep.equal([{
+        type: 'image',
+        url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=lamp&format=gif&vid=1',
+      }]);
+    });
+
+    it('should return an empty array when cs_url exists but iframeEnabled is false and adm does not contain mcs endpoint', function () {
+      const csUrlParam = '/cshtml?ver=1&dspid=lamp&format=html';
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            cs_url: csUrlParam,
+            adm: '<!-- NO MCS -->'
+          }
+        }
+      }];
+      const result = spec.getUserSyncs({ pixelEnabled: true, iframeEnabled: false }, response);
+      expect(result).to.have.deep.equal([]);
+    });
+
+    it('should return correct sync objects when responses contain cs_url, adm or empty body with syncOptions (both true)', function () {
+      const csUrlParam = '/cshtml?ver=1&dspid=lamp&format=html';
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            cs_url: csUrlParam
+          }
+        }
+      }, {
+        body: {
+          1345678: {
+            ...responseBase,
+            adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dappier%26format%3dgif%26vid%3d1%5c%22%20style%3d'
+          }
+        }
+      }, {
+        body: ''
+      }];
+      const result = spec.getUserSyncs(syncOptions, response);
+      expect(result).to.have.deep.equal([{
+        type: 'iframe',
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+      }, {
+        type: 'image',
+        url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=appier&format=gif&vid=1',
+      }]);
+    });
+
+    it('should return an iframe sync when iframeEnabled is true and cs_url exists', function () {
+      const csUrlParam = '/cshtml?ver=1&dspid=lamp&format=html';
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            cs_url: csUrlParam
+          }
+        }
+      }];
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, response);
+      expect(result).to.have.deep.equal([{
+        type: 'iframe',
+        url: `https://cs.gssprt.jp/yie/ld${csUrlParam}`,
+      }]);
+    });
+
+    it('should not return an iframe sync when iframeEnabled is true but cs_url does not exist', function () {
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+          }
+        }
+      }];
+      const result = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: false }, response);
+      expect(result).to.have.deep.equal([]);
+    });
+
+    it('should create an object for each response and return an array when there are multiple responses', function () {
+      const response = [{
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3dlamp%26format%3dgif%26vid%3d1%5c%22%20style%3d'
+          }
+        }
+      }, {
+        body: {
+          [ZONE_ID]: {
+            ...responseBase,
+            adm: '%5c%22https%3a%5c%2f%5c%2fcs.gssprt.jp%5c%2fyie%5c%2fld%5c%2fmcs%3fver%3d1%26dspid%3drtbhouse%26format%3dgif%26vid%3d1%5c%22%20style%3d'
+          }
+        }
+      }];
+      const result = spec.getUserSyncs(syncOptions, response);
+      expect(result).to.have.deep.equal([{
+        type: 'image',
+        url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=lamp&format=gif&vid=1',
+      }, {
+        type: 'image',
+        url: 'https://cs.gssprt.jp/yie/ld/mcs?ver=1&dspid=rtbhouse&format=gif&vid=1',
+      }]);
     });
   });
 });
