@@ -126,7 +126,8 @@
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider",
-      "wurflRtdProvider"
+      "wurflRtdProvider",
+      "chromeAiRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
