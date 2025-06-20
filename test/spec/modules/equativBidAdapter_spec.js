@@ -1093,13 +1093,15 @@ describe('Equativ bid adapter tests', () => {
       });
 
       it('should initialize and set renderer', () => {
-        sandBox.stub(Renderer, 'install');
-
         const fakeRenderer = {
+          push: (cb) => cb(),
           setRender: sinon.stub()
         };
 
-        Renderer.install.returns(fakeRenderer);
+        const installStub = sandBox.stub(Renderer, 'install').returns(fakeRenderer);
+        const renderAdStub = sandBox.stub();
+
+        window.EquativVideoOutstream = { renderAd: renderAdStub };
 
         const request = spec.buildRequests(
           bidRequests,
@@ -1109,8 +1111,8 @@ describe('Equativ bid adapter tests', () => {
           }
         )[0];
 
-        expect(Renderer.install.called).to.be.false;
-        expect(fakeRenderer.setRender.called).to.be.false;
+        expect(installStub.notCalled).to.be.true;
+        expect(fakeRenderer.setRender.notCalled).to.be.true;
 
         const response = {
           body: {
@@ -1127,10 +1129,19 @@ describe('Equativ bid adapter tests', () => {
 
         const impIdMap = getImpIdMap();
         response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+
         const bid = spec.interpretResponse(response, request).bids[0];
 
-        expect(Renderer.install.calledOnce).to.be.true;
+        expect(installStub.calledOnce).to.be.true;
         expect(fakeRenderer.setRender.calledOnce).to.be.true;
+
+        const renderFn = fakeRenderer.setRender.firstCall.args[0];
+
+        renderFn(bid);
+
+        expect(renderAdStub.calledOnce).to.be.true;
+        expect(renderAdStub.firstCall.args[0]).to.have.property('slotId');
+        expect(renderAdStub.firstCall.args[0]).to.have.property('vast');
       });
     });
   });
