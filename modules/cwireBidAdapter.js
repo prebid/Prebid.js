@@ -5,6 +5,7 @@ import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import { sendBeacon } from '../src/ajax.js';
+import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -188,6 +189,15 @@ export const spec = {
     // process bid requests
     let processed = validBidRequests
       .map(bid => slotDimensions(bid))
+      .map(bid => {
+        const autoplayEnabled = isAutoplayEnabled();
+        return {
+          ...bid,
+          params: {
+            ...bid.params,
+            autoplay: autoplayEnabled
+          }}
+      })
       // Flattens the pageId, domainId and placement Id for backwards compatibility.
       .map((bid) => ({...bid, pageId: bid.params?.pageId, domainId: bid.params?.domainId, placementId: bid.params?.placementId}));
 

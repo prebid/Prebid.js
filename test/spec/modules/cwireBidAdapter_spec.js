@@ -5,6 +5,7 @@ import {deepClone, logInfo} from '../../../src/utils';
 import * as utils from 'src/utils.js';
 import sinon, {stub} from 'sinon';
 import {config} from '../../../src/config';
+import * as autoplayLib from '../../../libraries/autoplayDetection/autoplay.js';
 
 describe('C-WIRE bid adapter', () => {
   config.setConfig({debug: true});
@@ -363,5 +364,31 @@ describe('C-WIRE bid adapter', () => {
       expect(userSyncs[0].type).to.equal('iframe');
       expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123');
     })
-  })
+  });
+
+  describe("buildRequests includes autoplay", function () {
+    afterEach(function () {
+      sandbox.restore();
+    });
+
+    it("should include autoplay: true when autoplay is enabled", function () {
+      sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(true);
+
+      let bidRequest = deepClone(bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.slots[0].params.autoplay).to.equal(true);
+    });
+
+    it("should include autoplay: false when autoplay is disabled", function () {
+      sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(false);
+
+      let bidRequest = deepClone(bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.slots[0].params.autoplay).to.equal(false);
+    });
+  });
 });
