@@ -364,4 +364,77 @@ describe('C-WIRE bid adapter', () => {
       expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123');
     })
   })
+
+  describe('buildRequests with floor', function () {
+    it('should include floor in params when getFloor is defined', function () {
+      const bid = {
+        bidId: '123',
+        adUnitCode: 'test-div',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          pageId: 4057,
+          placementId: 'abc123',
+        },
+        getFloor: function ({ currency, mediaType, size }) {
+          expect(currency).to.equal('USD');
+          expect(mediaType).to.equal('*');
+          expect(size).to.equal('*');
+          return {
+            currency: 'USD',
+            floor: 1.23
+          };
+        }
+      };
+
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://example.com'
+        }
+      };
+
+      const request = spec.buildRequests([bid], bidderRequest);
+
+      const payload = JSON.parse(request.data);
+      const slot = payload.slots[0];
+
+      expect(slot.params).to.have.property('floor');
+      expect(slot.params.floor).to.deep.equal({
+        currency: 'USD',
+        floor: 1.23
+      });
+    });
+
+    it('should not include floor in params if getFloor is not defined', function () {
+      const bid = {
+        bidId: '456',
+        adUnitCode: 'test-div',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          pageId: 4057,
+          placementId: 'abc123',
+        }
+        // no getFloor
+      };
+
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://example.com'
+        }
+      };
+
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      const slot = payload.slots[0];
+
+      expect(slot.params.floor).to.deep.equal({});
+    });
+  });
 });
