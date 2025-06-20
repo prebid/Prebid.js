@@ -49,7 +49,7 @@ import {
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {ORTB_VIDEO_PARAMS, fillVideoDefaults, validateOrtbVideoFields} from './video.js';
-import { ORTB_BANNER_PARAMS } from './banner.js';
+import { ORTB_BANNER_PARAMS, validateOrtbBannerFields } from './banner.js';
 import { BANNER, VIDEO } from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import { newBidder } from './adapters/bidderFactory.js';
@@ -187,6 +187,7 @@ function validateBannerMediaType(adUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
+  validateOrtbBannerFields(validatedAdUnit);
   syncOrtb2(validatedAdUnit, 'banner')
   return validatedAdUnit;
 }
