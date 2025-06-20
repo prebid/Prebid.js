@@ -157,12 +157,6 @@ export const spec = {
         data,
         method: 'POST',
         url: 'https://ssb-global.smartadserver.com/api/bid?callerId=169'
-        // url: 'https://ssb.eqtv.dev/api/bid?callerId=169',
-        // options: {
-        //   customHeaders: {
-        //     'X-Eqtv-Debug': 'fc432999-9c43-4cf9-8233-a12c0644e576'
-        //   }
-        // }
       })
     });
 
