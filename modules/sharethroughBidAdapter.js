@@ -94,10 +94,10 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
-    if (bidRequests[0].params.publisherId) {
+    if (bidRequests[0].params.equativNetworkId) {
       isEqtvTest = true;
       req.site.publisher = {
-        id: bidRequests[0].params.publisherId,
+        id: bidRequests[0].params.equativNetworkId,
         ...req.site.publisher
       };
     }

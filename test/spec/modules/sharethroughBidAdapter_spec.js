@@ -69,10 +69,10 @@ describe('sharethrough adapter spec', function () {
             ],
           },
         },
-        bidder: 'equativ',
+        bidder: 'sharethrough',
         params: {
-          networkId: 111,
-          publisherId: 73
+          pkey: 111,
+          equativNetworkId: 73
         },
         requestId: 'efgh5678',
         ortb2Imp: {
@@ -109,10 +109,10 @@ describe('sharethrough adapter spec', function () {
             placement: 1,
           },
         },
-        bidder: 'equativ',
+        bidder: 'sharethrough',
         params: {
-          networkId: 111,
-          publisherId: 73
+          pkey: 111,
+          equativNetworkIdId: 73
         },
         requestId: 'abcd1234',
         ortb2Imp: {
@@ -169,8 +169,8 @@ describe('sharethrough adapter spec', function () {
       },
       nativeOrtbRequest,
       params: {
-        networkId: 777,
-        publisherId: 73
+        pkey: 777,
+        equativNetworkId: 73
       },
       requestId: 'sharethrough_native_reqid_42',
       ortb2Imp: {
@@ -380,10 +380,10 @@ describe('sharethrough adapter spec', function () {
           },
           sizes: [],
           nativeOrtbRequest,
-          bidder: 'equativ',
+          bidder: 'sharethrough',
           params: {
-            networkId: 111,
-            publisherId: 73
+            pkey: 111,
+            equativNetworkId: 73
           },
           requestId: 'efgh5678',
           ortb2Imp: {
@@ -989,17 +989,17 @@ describe('sharethrough adapter spec', function () {
       });
 
       describe('isEqtvTest', () => {
-        it('should set publisher id if publisherId param is present', () => {
+        it('should set publisher id if equativNetworkId param is present', () => {
           const builtRequest = spec.buildRequests(multiImpBidRequests, bidderRequest)[0]
           expect(builtRequest.data.site.publisher.id).to.equal(73)
         })
 
-        it('should not set publisher id if publisherIdParam is not present', () => {
+        it('should not set publisher id if equativNetworkId param is not present', () => {
           const bidRequest = {
             ...bidRequests[0],
             params: {
               ...bidRequests[0].params,
-              publisherId: undefined
+              equativNetworkId: undefined
             }
           }
 
