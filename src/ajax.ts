@@ -111,7 +111,7 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
  * `request` is invoked at the beginning of each request, and `done` at the end; both are passed its origin.
  *
  */
-export function fetcherFactory(timeout = 3000, {request, done}: any = {}, moduleType, moduleName): typeof window['fetch'] {
+export function fetcherFactory(timeout = 3000, {request, done}: any = {}, moduleType?: string, moduleName?: string): typeof window['fetch'] {
   let fetcher = (resource, options) => {
     let to;
     if (timeout != null && options?.signal == null && !config.getConfig('disableAjaxTimeout')) {
@@ -202,7 +202,7 @@ export type AjaxSuccessCallback = (responseText: string, xhr: XHR) => void;
 export type AjaxErrorCallback = (statusText: string, xhr: XHR) => void;
 export type AjaxCallback = AjaxSuccessCallback | { success?: AjaxErrorCallback; error?: AjaxSuccessCallback };
 
-export function ajaxBuilder(timeout = 3000, {request, done} = {} as any, moduleType, moduleName) {
+export function ajaxBuilder(timeout = 3000, {request, done} = {} as any, moduleType?: string, moduleName?: string) {
   const fetcher = fetcherFactory(timeout, {request, done}, moduleType, moduleName);
   return function (url: string, callback?: AjaxCallback, data?: unknown, options: AjaxOptions = {}) {
     attachCallbacks(fetcher(toFetchRequest(url, data, options)), callback);

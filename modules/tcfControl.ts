@@ -423,7 +423,7 @@ export function setEnforcementConfig(config) {
   }
 }
 
-export function checkIfCredentialsAllowed(next, options = {}, moduleType, moduleName) {
+export function checkIfCredentialsAllowed(next, options: { withCredentials?: boolean } = {}, moduleType?: string, moduleName?: string) {
   if (!options.withCredentials || (moduleType && moduleName)) {
     next(options);
     return;
@@ -442,7 +442,7 @@ export function checkIfCredentialsAllowed(next, options = {}, moduleType, module
 
 export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
-  processRequestOptions.getHooks({hooks: checkIfCredentialsAllowed}).remove();
+  processRequestOptions.getHooks({hook: checkIfCredentialsAllowed}).remove();
   hooksAdded = false;
 }
 
