@@ -78,7 +78,7 @@ describe('bidderFactory', () => {
       let aliasRegistryStub, aliasRegistry;
 
       beforeEach(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
         ajaxStub = sandbox.stub(ajax, 'ajax');
         addBidResponseStub.resetHistory();

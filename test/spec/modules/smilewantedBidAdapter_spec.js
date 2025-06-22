@@ -238,6 +238,7 @@ const NATIVE_REQUEST = [{
   ],
   mediaTypes: {
     native: {
+      sendTargetingKeys: false,
       title: {
         required: true,
         len: 140

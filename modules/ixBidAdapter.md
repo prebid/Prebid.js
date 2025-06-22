@@ -96,6 +96,7 @@ object are detailed here.
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
+| sendTargetingKeys | Optional | Boolean | Defines whether or not to send the hb_native_ASSET targeting keys to the ad server. Defaults to true.
 | adTemplate | Optional | String | Used in the ‘AdUnit-Defined Creative Scenario’, this value controls the Native template right in the page.
 | rendererUrl | Optional | String | Used in the ‘Custom Renderer Scenario’, this points to javascript code that will produce the Native template.
 | title | Optional | Title asset | The title of the ad, usually a call to action or a brand name.

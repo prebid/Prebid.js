@@ -2,7 +2,7 @@ import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/u
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
-import 'src/prebid.js';
+import {requestBids} from '../../../src/prebid.js';
 import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
@@ -96,7 +96,7 @@ describe(`UID2 module`, function () {
     uninstallTcfControl();
     attachIdSystem(uid2IdSubmodule);
 
-    suiteSandbox = sinon.sandbox.create();
+    suiteSandbox = sinon.createSandbox();
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
     // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
     if (typeof window.crypto.subtle === 'undefined') {
@@ -144,14 +144,14 @@ describe(`UID2 module`, function () {
     debugOutput(`----------------- START TEST ------------------`);
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
     debugOutput(fullTestTitle);
-    testSandbox = sinon.sandbox.create();
+    testSandbox = sinon.createSandbox();
     testSandbox.stub(utils, 'logWarn');
     init(config);
     setSubmoduleRegistry([uid2IdSubmodule]);
   });
 
   afterEach(async function() {
-    $$PREBID_GLOBAL$$.requestBids.removeAll();
+    requestBids.removeAll();
     config.resetConfig();
     testSandbox.restore();
     if (timerSpy.timers.length > 0) {

@@ -18,7 +18,6 @@ import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {deepAccess, getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
@@ -27,8 +26,7 @@ import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from '../../..
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import 'src/prebid.js';
-import {startAuction} from 'src/prebid';
+import {requestBids, startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
@@ -168,7 +166,7 @@ describe('User ID', function () {
 
   beforeEach(function () {
     resetConsentData();
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     consentData = null;
     mockGdprConsent(sandbox, () => consentData);
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
@@ -271,7 +269,7 @@ describe('User ID', function () {
 
     afterEach(function () {
       mockGpt.enable();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       config.resetConfig();
       coreStorage.setCookie.restore();
       utils.logWarn.restore();
@@ -1480,7 +1478,7 @@ describe('User ID', function () {
     afterEach(function () {
       // removed cookie
       coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       utils.logInfo.restore();
     });
 
@@ -1509,7 +1507,7 @@ describe('User ID', function () {
     });
 
     afterEach(function () {
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       utils.logInfo.restore();
     });
 
@@ -1678,7 +1676,7 @@ describe('User ID', function () {
       });
 
       afterEach(function () {
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
         config.resetConfig();
         sandbox.restore();
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);

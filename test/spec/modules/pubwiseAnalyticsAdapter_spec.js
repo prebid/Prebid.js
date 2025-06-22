@@ -34,7 +34,7 @@ describe('PubWise Prebid Analytics', function () {
   };
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
     sandbox.stub(events, 'getEvents').returns([]);
 
@@ -132,7 +132,6 @@ describe('PubWise Prebid Analytics', function () {
       expect(data.eventList, 'eventList property').to.exist;
       expect(data.eventList[0], 'eventList property').to.exist;
       expect(data.eventList[0].args, 'eventList property').to.exist;
-
 
       // console.log(data.eventList[0].args);
 

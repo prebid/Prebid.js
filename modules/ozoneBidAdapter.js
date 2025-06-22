@@ -25,7 +25,6 @@ const ORIGIN_DEV = 'https://test.ozpr.net';
 const OZONEVERSION = '3.0.0';
 export const spec = {
   gvlid: 524,
-  aliases: [{code: 'venatus', gvlid: 524}],
   version: OZONEVERSION,
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
