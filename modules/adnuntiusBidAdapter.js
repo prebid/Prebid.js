@@ -394,6 +394,11 @@ export const spec = {
             adUnit.nativeRequest = {ortb: mediaTypeData.ortb};
           }
         }
+        const dealId = deepAccess(bid, 'params.dealId') || deepAccess(bid, 'params.inventory.pmp.deals');
+        if (dealId) {
+          // dealId at adserver accepts single string dealID and array
+          adUnit.dealId = dealId;
+        }
         const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
         if (maxDeals > 0) {
           adUnit.maxDeals = maxDeals;
