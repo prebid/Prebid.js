@@ -126,7 +126,13 @@ module.exports = {
       return memo;
     }, internalModules));
   }),
-
+  getMetadataModule(moduleName) {
+    if (['bidadapter', 'analyticsadapter', 'idsystem', 'rtdprovider'].some(suffix => moduleName.toLowerCase().endsWith(suffix))) {
+      return `${moduleName}.metadata`;
+    } else {
+      return null;
+    }
+  },
   getBuiltPath(dev, assetPath) {
     return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
   },

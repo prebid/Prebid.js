@@ -75,8 +75,13 @@ module.exports = {
           import: fn,
           dependOn: 'prebid-core'
         };
-
         entry[mod] = moduleEntry;
+        const metadataModule = helpers.getMetadataModule(mod);
+        if (metadataModule != null) {
+          entry[metadataModule] = {
+            import: `./modules/${metadataModule}.js`,
+          }
+        }
       }
     });
     return entry;
@@ -110,6 +115,8 @@ module.exports = {
               const def = {
                 name: lib,
                 test: (module) => {
+                  if (module.resource && module.resource.startsWith(dir)) {
+                  }
                   return module.resource && module.resource.startsWith(dir)
                 }
               }

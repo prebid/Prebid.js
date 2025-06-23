@@ -277,6 +277,8 @@ function wrapWithHeaderAndFooter(dev, modules) {
   }
 }
 
+const MODULES_REQUIRING_METADATA = ['storageControl'];
+
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
@@ -290,8 +292,15 @@ function bundle(dev, moduleArr) {
       throw new PluginError('bundle', 'invalid modules: ' + diff.join(', ') + '. Check your modules list.');
     }
   }
+
+  const metadataModules = modules.find(module => MODULES_REQUIRING_METADATA.includes(module))
+    ? modules.map(helpers.getMetadataModule).filter(name => name != null)
+    : [];
+
   const coreFile = helpers.getBuiltPrebidCoreFile(dev);
-  const moduleFiles = helpers.getBuiltModules(dev, modules);
+  const moduleFiles = helpers.getBuiltModules(dev, modules)
+    .concat(metadataModules.map(mod => helpers.getBuiltPath(dev, `${mod}.js`)));
+  console.log('files', JSON.stringify(moduleFiles, null, 2));
   const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
   const dependencies = new Set();
   [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {

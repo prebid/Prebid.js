@@ -43,7 +43,7 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
  * These are wrappers around the JSON that register themselves with the `metadata` library
  */
 function generateMetadataModules() {
-  const tpl = _.template(`import {metadata} from '../src/libraries/metadata/metadata.js;\nmetadata.register(<%= data %>)`);
+  const tpl = _.template(`import {metadata} from '../libraries/metadata/metadata.js';\nmetadata.register(<%= data %>)`);
   return  gulp.src('./metadata/modules/*.json')
     .pipe(tap(file => {
       const {dir, name} = path.parse(file.path);
