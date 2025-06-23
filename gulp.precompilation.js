@@ -44,10 +44,21 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
  */
 function generateMetadataModules() {
   const tpl = _.template(`import {metadata} from '../libraries/metadata/metadata.js';\nmetadata.register(<%= data %>)`);
+  function cleanMetadata(file) {
+    const data = JSON.parse(file.contents.toString())
+    delete data.NOTICE;
+    data.components.forEach(component => {
+      delete component.gvlid;
+      if (component.aliasOf == null) {
+        delete component.aliasOf;
+      }
+    })
+    return JSON.stringify(data);
+  }
   return  gulp.src('./metadata/modules/*.json')
     .pipe(tap(file => {
       const {dir, name} = path.parse(file.path);
-      file.contents = Buffer.from(tpl({data: file.contents.toString()}));
+      file.contents = Buffer.from(tpl({data: cleanMetadata(file)}));
       file.path = path.join(dir, `${name}.metadata.js`);
     }))
     .pipe(gulp.dest(helpers.getPrecompiledPath('modules')));
