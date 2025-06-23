@@ -12,7 +12,7 @@ const setUAMock = () => { window.navigator.__defineGetter__('userAgent', functio
 describe('Codefuel Adapter', function () {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
   afterEach(() => {
     sandbox.restore();

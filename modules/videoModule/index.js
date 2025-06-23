@@ -1,5 +1,4 @@
 import { config } from '../../src/config.js';
-import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
 import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
@@ -188,12 +187,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function auctionEnd(auctionResult) {
-    auctionResult.adUnits.forEach(adUnit => {
-      if (adUnit.video) {
-        renderWinningBid(adUnit);
-      }
-    });
     pbEvents.off(EVENTS.AUCTION_END, auctionEnd);
+    return Promise.all(
+      auctionResult.adUnits
+        .filter(au => au.video)
+        .map(renderWinningBid)
+    )
   }
 
   function getAdServerConfig(adUnitVideoConfig) {
@@ -213,6 +212,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const adServerConfig = getAdServerConfig(videoConfig);
     const winningBid = getWinningBid(adUnitCode);
+    if (!winningBid) return;
 
     const options = { adUnitCode };
 
@@ -271,7 +271,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     const { adUnitCode, requestId, auctionId } = bidIdentifiers;
     const bidAdId = bidIdentifiers.adId;
     const { bids } = pbGlobal.getBidResponsesForAdUnitCode(adUnitCode);
-    return find(bids, bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
+    return ((bids) || []).find(bid => bid.adId === bidAdId && bid.requestId === requestId && bid.auctionId === auctionId);
   }
 }
 
