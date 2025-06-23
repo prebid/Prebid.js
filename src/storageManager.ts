@@ -1,6 +1,6 @@
-import {checkCookieSupport, hasDeviceAccess, logError, logWarn} from './utils.js';
+import {checkCookieSupport, hasDeviceAccess, logError} from './utils.js';
 import {bidderSettings} from './bidderSettings.js';
-import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, MODULE_TYPE_UID, type ModuleType} from './activities/modules.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, type ModuleType} from './activities/modules.js';
 import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
 import {
   ACTIVITY_PARAM_ADAPTER_CODE,
@@ -69,24 +69,6 @@ export function newStorageManager({moduleName, moduleType}: {
         [ACTIVITY_PARAM_STORAGE_TYPE]: storageType
       }))
     };
-
-    // Additional check to prevent user ID modules from storing data in a storage type
-    // not allowed by the publisher's configuration
-    if (result.valid && moduleType === MODULE_TYPE_UID) {
-      const {userIds = [], enforceStorageType} = config.getConfig('userSync') || {};
-      const submoduleConfig = userIds.find(({name}) => moduleName === name);
-      if (!submoduleConfig || !submoduleConfig.storage) {
-        return cb(result);
-      }
-
-      if (submoduleConfig.storage.type !== storageType) {
-        const logFn = enforceStorageType ? logError : logWarn;
-        if (enforceStorageType) {
-          result.valid = false;
-        }
-        logFn(`${moduleName} attempts to store data in ${storageType} while configuration allows ${submoduleConfig.storage.type}.`);
-      }
-    }
 
     return cb(result);
   }

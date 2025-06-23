@@ -12,7 +12,7 @@ import adapterManager from 'src/adapterManager.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../../src/hook.js';
-import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, MODULE_TYPE_UID} from '../../../../src/activities/modules.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities/modules.js';
 import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
@@ -20,7 +20,6 @@ import {
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
 import {activityParams} from '../../../../src/activities/activityParams.js';
-import { getStorageManager } from '../../../../src/storageManager.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -278,55 +277,4 @@ describe('storage manager', function() {
       });
     });
   });
-
-  describe('user id modules - enforceStorageType', () => {
-    let errorLogSpy, warnLogSpy;
-    const UID_MODULE_NAME = 'userIdModule';
-    const userSync = {
-      userIds: [
-        {
-          name: UID_MODULE_NAME,
-          storage: {
-            type: STORAGE_TYPE_LOCALSTORAGE
-          }
-        }
-      ]
-    };
-
-    beforeEach(() => {
-      errorLogSpy = sinon.spy(utils, 'logError');
-      warnLogSpy = sinon.spy(utils, 'logWarn');
-    });
-
-    afterEach(() => {
-      errorLogSpy.restore();
-      warnLogSpy.restore();
-      document.cookie = ''
-    });
-
-    it('should not allow userId module to store data for enforceStorageType set to true', () => {
-      const initialCookie = document.cookie;
-      config.setConfig({
-        userSync: {
-          enforceStorageType: true,
-          ...userSync,
-        }
-      })
-      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
-      storage.setCookie('data', 'value', 20000);
-      sinon.assert.calledWith(errorLogSpy, `${UID_MODULE_NAME} attempts to store data in ${STORAGE_TYPE_COOKIES} while configuration allows ${STORAGE_TYPE_LOCALSTORAGE}.`);
-      expect(initialCookie).to.deep.eql(document.cookie);
-    });
-
-    it('should warn and allow userId module to store data for enforceStorageType unset', () => {
-      const initialCookie = document.cookie;
-      config.setConfig({userSync});
-      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
-      storage.setCookie('cookieName', 'value', 20000);
-      sinon.assert.notCalled(errorLogSpy);
-      sinon.assert.calledWith(warnLogSpy, `${UID_MODULE_NAME} attempts to store data in ${STORAGE_TYPE_COOKIES} while configuration allows ${STORAGE_TYPE_LOCALSTORAGE}.`);
-      expect(initialCookie).to.not.deep.eql(document.cookie);
-      expect(document.cookie).to.deep.include('cookieName');
-    });
-  })
 });
