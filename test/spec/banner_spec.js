@@ -14,7 +14,7 @@ describe('banner', () => {
       sandbox.restore();
     });
 
-    it('remove incorrect ortb properties, and keep non ortb ones', () => {
+    it('removes incorrect or invalid ortb properties, and keep non ortb ones', () => {
       const mt = {
         mimes: ['video/mp4'],
         w: 600,
