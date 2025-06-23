@@ -30,7 +30,7 @@ function parseDisclosure(payload) {
             delete disclosure.domain;
             delete disclosure.domains;
             return true;
-        };
+        }
     })
 }
 
@@ -48,7 +48,8 @@ function retryOn5xx(url, intervals = [500, 2000], retry = -1) {
             if (response instanceof TemporaryFailure) {
                 retry += 1;
                 if (intervals.length === retry) {
-                    return Promise.reject(`Could not fetch "${url}"`, response.response);
+                    console.error(`Could not fetch "${url}"`, response.response)
+                    return Promise.reject(response.response);
                 } else {
                     return new Promise((resolve) => setTimeout(resolve, intervals[retry]))
                         .then(() => retryOn5xx(url, intervals, retry))

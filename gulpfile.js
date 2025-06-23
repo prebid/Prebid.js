@@ -300,7 +300,6 @@ function bundle(dev, moduleArr) {
   const coreFile = helpers.getBuiltPrebidCoreFile(dev);
   const moduleFiles = helpers.getBuiltModules(dev, modules)
     .concat(metadataModules.map(mod => helpers.getBuiltPath(dev, `${mod}.js`)));
-  console.log('files', JSON.stringify(moduleFiles, null, 2));
   const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
   const dependencies = new Set();
   [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {

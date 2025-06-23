@@ -23,7 +23,8 @@ const SOURCE_FOLDERS = [
   'public'
 ]
 const IGNORE_SOURCES = [
-  'libraries/creative-renderer-*/**/*'
+  'libraries/creative-renderer-*/**/*',
+  'modules/*.metadata.js'
 ]
 
 // get only subdirectories that contain package.json with 'main' property
