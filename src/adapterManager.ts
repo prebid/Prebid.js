@@ -59,7 +59,7 @@ import type {
     ContextIdentifiers,
     Identifier,
     ORTBFragments,
-    Size
+    Size, StorageDisclosure
 } from "./types/common.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {ORTBRequest} from "./types/ortb/request.d.ts";
@@ -237,7 +237,7 @@ export type AliasBidderOptions = {
     skipPbsAliasing?: boolean
 }
 
-export type AnalyticsAdapter<P extends AnalyticsProvider> = {
+export type AnalyticsAdapter<P extends AnalyticsProvider> = StorageDisclosure & {
     code?: P;
     enableAnalytics(config: AnalyticsConfig<P>): void;
     gvlid?: number | ((config: AnalyticsConfig<P>) => number);

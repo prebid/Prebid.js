@@ -43,3 +43,11 @@ export type ORTBFragments = {
 }
 
 export type ByAdUnit<T> = { [adUnit: AdUnitCode]: T };
+
+export type StorageDisclosure = {
+    /**
+     * URL to a device storage disclosure document in TCF format
+     * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/Vendor%20Device%20Storage%20%26%20Operational%20Disclosures.md
+     */
+    disclosureURL?: string;
+}
