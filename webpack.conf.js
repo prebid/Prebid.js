@@ -80,6 +80,7 @@ module.exports = {
         if (metadataModule != null) {
           entry[metadataModule] = {
             import: `./modules/${metadataModule}.js`,
+            dependOn: 'prebid-core'
           }
         }
       }
