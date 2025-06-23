@@ -3,7 +3,6 @@
     "https://fast.nexx360.io/deviceStorage.json": [],
     "https://static.first-id.fr/tcf/cookie.json": [],
     "https://i.plug.it/banners/js/deviceStorage.json": [],
-    "https://cdn.codesour.com/codesour/movingup/sellers.json": null,
     "https://player.glomex.com/.well-known/deviceStorage.json": [
       {
         "identifier": "glomexUser",

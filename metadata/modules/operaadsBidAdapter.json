@@ -1,7 +1,5 @@
 {
-  "disclosures": {
-    "https://res.adx.opera.com/sellers.json": null
-  },
+  "disclosures": {},
   "components": [
     {
       "componentType": "bidder",

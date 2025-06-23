@@ -1,7 +1,5 @@
 {
-  "disclosures": {
-    "https://info.startappservice.com/tcf/start.io_domains.json": null
-  },
+  "disclosures": {},
   "components": [
     {
       "componentType": "bidder",

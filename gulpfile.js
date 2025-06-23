@@ -572,4 +572,5 @@ gulp.task('compile-metadata', function (done) {
     compile().then(() => done(), done);
   })
 })
+gulp.task('update-metadata', gulp.series('build', 'extract-metadata', 'compile-metadata'));
 module.exports = nodeBundle;

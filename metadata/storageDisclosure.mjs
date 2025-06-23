@@ -34,13 +34,51 @@ function parseDisclosure(payload) {
     })
 }
 
+class TemporaryFailure {
+    constructor(reponse) {
+        this.response = reponse;
+    }
+}
+
+function retryOn5xx(url, intervals = [500, 2000], retry = -1) {
+    return fetch(url)
+        .then(resp => resp.status >= 500 ? new TemporaryFailure(resp) : resp)
+        .catch(err => new TemporaryFailure(err))
+        .then(response  => {
+            if (response instanceof TemporaryFailure) {
+                retry += 1;
+                if (intervals.length === retry) {
+                    return Promise.reject(`Could not fetch "${url}"`, response.response);
+                } else {
+                    return new Promise((resolve) => setTimeout(resolve, intervals[retry]))
+                        .then(() => retryOn5xx(url, intervals, retry))
+                }
+            } else {
+                return response;
+            }
+        })
+}
+
 export const fetchDisclosure = (() => {
     const disclosures = {};
     return function (metadata) {
         const url = metadata.disclosureURL;
         if (url != null && !disclosures.hasOwnProperty(url)) {
             console.info(`Fetching disclosure for "${metadata.componentName}" (gvl ID: ${metadata.gvlid}) from "${url}"...`)
-            disclosures[url] = fetch(url).then(resp => resp.json().then(parseDisclosure))
+            disclosures[url] = retryOn5xx(url)
+                .then(resp => {
+                    if (!resp.ok) {
+                        return Promise.reject(resp);
+                    }
+                    return resp.json().then(disclosure => {
+                        try {
+                            return parseDisclosure(disclosure);
+                        } catch (e) {
+                            console.error(`Could not parse disclosure for ${metadata.componentName}`, disclosure);
+                        }
+
+                    })
+                })
                 .catch((err) => {
                     console.error(`Could not fetch disclosure for "${metadata.componentName}"`, err);
                     return null;

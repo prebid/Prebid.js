@@ -12,7 +12,7 @@
         ]
       }
     ],
-    "https://data.converge-digital.com/deviceStorage.json": null,
+    "https://data.converge-digital.com/deviceStorage.json": [],
     "https://spinx.biz/tcf-spinx.json": [],
     "https://gdpr.memob.com/deviceStorage.json": []
   },

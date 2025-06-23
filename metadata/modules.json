@@ -2122,27 +2122,6 @@
   },
   {
     "componentType": "bidder",
-    "componentName": "freewheel-ssp",
-    "aliasOf": null,
-    "gvlid": 285,
-    "disclosureURL": null
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "stickyadstv",
-    "aliasOf": "freewheel-ssp",
-    "gvlid": null,
-    "disclosureURL": null
-  },
-  {
-    "componentType": "bidder",
-    "componentName": "freewheelssp",
-    "aliasOf": "freewheel-ssp",
-    "gvlid": null,
-    "disclosureURL": null
-  },
-  {
-    "componentType": "bidder",
     "componentName": "gamma",
     "aliasOf": "gamma",
     "gvlid": null,

@@ -1,7 +1,5 @@
 {
-  "disclosures": {
-    "https://vendor-list.consensu.org/v3/vendor-list.json": null
-  },
+  "disclosures": {},
   "components": [
     {
       "componentType": "bidder",

@@ -1,7 +1,78 @@
 {
   "disclosures": {
     "https://adtelligent.com/.well-known/deviceStorage.json": [],
-    "https://sm1.selectmedia.asia/cdn/gdpr/devicestorage.json": null,
+    "https://www.selectmedia.asia/gdpr/devicestorage.json": [
+      {
+        "identifier": "waterFallCacheAnsKey_*",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "waterFallCacheAnsAllKey",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "adSourceKey",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "SESSION_USER",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "DAILY_USER",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "NEW_USER",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
+        "identifier": "test",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2
+        ]
+      }
+    ],
     "https://orangeclickmedia.com/device_storage_disclosure.json": []
   },
   "components": [
@@ -31,7 +102,7 @@
       "componentName": "selectmedia",
       "aliasOf": "adtelligent",
       "gvlid": 775,
-      "disclosureURL": "https://sm1.selectmedia.asia/cdn/gdpr/devicestorage.json"
+      "disclosureURL": "https://www.selectmedia.asia/gdpr/devicestorage.json"
     },
     {
       "componentType": "bidder",

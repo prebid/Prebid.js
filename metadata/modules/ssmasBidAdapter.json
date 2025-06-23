@@ -1,7 +1,5 @@
 {
-  "disclosures": {
-    "https://semseoymas.com/iab.json": null
-  },
+  "disclosures": {},
   "components": [
     {
       "componentType": "bidder",

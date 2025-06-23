@@ -1,7 +1,12 @@
 import puppeteer  from 'puppeteer';
 
 export default async () => {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+      args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox'
+      ]
+  });
   const page = await browser.newPage();
   await page.goto('http://localhost:9999/metadata/extractMetadata.html');
   const metadata = await page.evaluate(() => {
