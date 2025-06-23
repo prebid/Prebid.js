@@ -478,7 +478,7 @@ describe('Equativ bid adapter tests', () => {
         DEFAULT_BANNER_BID_REQUESTS,
         DEFAULT_BANNER_BIDDER_REQUEST
       )[0];
-      expect(request.data.ext.equativprebidjsversion).and.to.equal('$prebid.version$');
+      expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$');
     });
 
     it('should build a video request properly under normal circumstances', () => {
