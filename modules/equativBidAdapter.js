@@ -339,6 +339,7 @@ export const converter = ortbConverter({
     if (pid) {
       deepSetValue(req, 'user.buyeruid', pid);
     }
+    deepSetValue(req, 'ext.equativprebidjsversion', '$prebid.version$');
 
     req = updateFeedbackData(req);
 
