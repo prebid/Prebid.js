@@ -28,7 +28,7 @@ function parseDisclosure (payload) {
     if (domain === '*' || domains?.includes('*')) {
       delete disclosure.domain
       delete disclosure.domains
-      return true
+      return ['web', 'cookie'].includes(disclosure.type) && disclosure.identifier && /[^*]/.test(disclosure.identifier)
     }
   })
 }
