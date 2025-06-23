@@ -15,6 +15,10 @@ function parseParams(params, bidderRequest) {
   const customParams = {};
   const keyValues = {};
 
+  if (params.adbeta) {
+    customParams.adbeta = params.adbeta;
+  }
+
   if (params.site) {
     customParams.site = params.site;
   }
@@ -167,6 +171,10 @@ function buildOpenRTBRequest(bidRequests, bidderRequest) {
     at: 1,
     tmax: bidderRequest.timeout
   };
+
+  if (customParams.adbeta) {
+    request.ext.adbeta = customParams.adbeta;
+  }
 
   if (bidderRequest.device) {
     request.device = bidderRequest.device;
