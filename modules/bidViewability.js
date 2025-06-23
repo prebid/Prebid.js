@@ -81,6 +81,9 @@ export let impressionViewableHandler = (globalModuleConfig, event) => {
 
 const handleSetConfig = (config) => {
   const globalModuleConfig = config || {};
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+
   // do nothing if module-config.enabled is not set to true
   // this way we are adding a way for bidders to know (using pbjs.getConfig('bidViewability').enabled === true) whether this module is added in build and is enabled
   const impressionViewableHandlerWrapper = (event) => {
@@ -89,11 +92,12 @@ const handleSetConfig = (config) => {
   };
 
   if (globalModuleConfig[CONFIG_ENABLED] !== true) {
+    window.googletag.cmd.push(() => {
+      window.googletag.pubads().removeEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
+    });
     return;
   }
   // add the GPT event listener
-  window.googletag = window.googletag || {};
-  window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
     window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, impressionViewableHandlerWrapper);
   });
