@@ -1,5 +1,5 @@
 import {assert} from 'chai';
-import {spec} from 'modules/mediaforceBidAdapter.js';
+import {spec, resolveFloor} from 'modules/mediaforceBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 
@@ -7,7 +7,7 @@ describe('mediaforce bid adapter', function () {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -131,66 +131,68 @@ describe('mediaforce bid adapter', function () {
     const timeout = 1500;
     const auctionId = '210a474e-88f0-4646-837f-4253b7cf14fb';
 
-    const expectedData = {
-      // id property removed as it is specific for each request generated
-      tmax: timeout,
-      ext: {
-        mediaforce: {
-          hb_key: auctionId
-        }
-      },
-      site: {
-        id: defaultBid.params.publisher_id,
-        publisher: {id: defaultBid.params.publisher_id},
-        ref: encodeURIComponent(refererInfo.ref),
-        page: pageUrl,
-      },
-      device: {
-        ua: navigator.userAgent,
-        dnt: dnt,
-        js: 1,
-        language: language,
-      },
-      imp: [{
-        tagid: defaultBid.params.placement_id,
-        secure: secure,
-        bidfloor: 0,
+    function createExpectedData() {
+      return {
+        // id property removed as it is specific for each request generated
+        tmax: timeout,
         ext: {
           mediaforce: {
-            transactionId: defaultBid.ortb2Imp.ext.tid,
+            hb_key: auctionId
           }
         },
-        banner: {w: 300, h: 250},
-        native: {
-          ver: '1.2',
-          request: {
-            assets: [
-              {id: 1, title: {len: 800}, required: 1},
-              {id: 3, img: {w: 300, h: 250, type: 3}, required: 1},
-              {id: 5, data: {type: 1}, required: 0}
-            ],
-            context: 1,
-            plcmttype: 1,
-            ver: '1.2'
-          }
+        site: {
+          id: defaultBid.params.publisher_id,
+          publisher: {id: defaultBid.params.publisher_id},
+          ref: encodeURIComponent(refererInfo.ref),
+          page: pageUrl,
         },
-        video: {
-          mimes: ['video/mp4'],
-          minduration: 5,
-          maxduration: 30,
-          protocols: [2, 3],
-          w: 640,
-          h: 480,
-          startdelay: 0,
-          linearity: 1,
-          skip: 1,
-          skipmin: 5,
-          skipafter: 10,
-          playbackmethod: [1],
-          api: [1, 2]
-        }
-      }],
-    };
+        device: {
+          ua: navigator.userAgent,
+          dnt: dnt,
+          js: 1,
+          language: language,
+        },
+        imp: [{
+          tagid: defaultBid.params.placement_id,
+          secure: secure,
+          bidfloor: 0,
+          ext: {
+            mediaforce: {
+              transactionId: defaultBid.ortb2Imp.ext.tid,
+            }
+          },
+          banner: {w: 300, h: 250},
+          native: {
+            ver: '1.2',
+            request: {
+              assets: [
+                {id: 1, title: {len: 800}, required: 1},
+                {id: 3, img: {w: 300, h: 250, type: 3}, required: 1},
+                {id: 5, data: {type: 1}, required: 0}
+              ],
+              context: 1,
+              plcmttype: 1,
+              ver: '1.2'
+            }
+          },
+          video: {
+            mimes: ['video/mp4'],
+            minduration: 5,
+            maxduration: 30,
+            protocols: [2, 3],
+            w: 640,
+            h: 480,
+            startdelay: 0,
+            linearity: 1,
+            skip: 1,
+            skipmin: 5,
+            skipafter: 10,
+            playbackmethod: [1],
+            api: [1, 2]
+          }
+        }],
+      };
+    }
 
     const multiBid = [
       {
@@ -248,7 +250,7 @@ describe('mediaforce bid adapter', function () {
       let [request] = spec.buildRequests(bidRequests, bidderRequest);
       let data = JSON.parse(request.data);
 
-      let expectedDataCopy = utils.deepClone(expectedData);
+      let expectedDataCopy = utils.deepClone(createExpectedData());
       assert.exists(data.id);
 
       expectedDataCopy.id = data.id
@@ -309,7 +311,7 @@ describe('mediaforce bid adapter', function () {
 
       let data = JSON.parse(request.data);
 
-      let expectedDataCopy = utils.deepClone(expectedData);
+      let expectedDataCopy = utils.deepClone(createExpectedData());
       assert.exists(data.id);
 
       expectedDataCopy.id = data.id
@@ -338,7 +340,6 @@ describe('mediaforce bid adapter', function () {
       const data = JSON.parse(request.data);
       assert.notExists(data.imp[0].banner, 'Banner object should be omitted');
     });
-
 
     it('should return proper requests for multiple imps', function () {
       let bidderRequest = {
@@ -745,6 +746,65 @@ describe('mediaforce bid adapter', function () {
       }
       spec.onBidWon(bid);
       assert.equal(bid.burl, 'burl&s=0.20');
+    });
+  });
+
+  describe('resolveFloor()', function () {
+    it('should return 0 if no bidfloor and no resolveFloor API', function () {
+      const bid = {};
+      assert.equal(resolveFloor(bid), 0);
+    });
+
+    it('should return static bidfloor if no resolveFloor API', function () {
+      const bid = { params: { bidfloor: 2.5 } };
+      assert.equal(resolveFloor(bid), 2.5);
+    });
+
+    it('should return the highest floor among all sources', function () {
+      const makeBid = (mediaType, floor) => ({
+        getFloor: ({ mediaType: mt }) => ({ floor: mt === mediaType ? floor : 0.5 }),
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+          video: { playerSize: [640, 480] },
+          native: {}
+        },
+        params: { bidfloor: mediaType === 'static' ? floor : 0.5 }
+      });
+
+      assert.equal(resolveFloor(makeBid(BANNER, 3.5)), 3.5, 'banner floor should be selected');
+      assert.equal(resolveFloor(makeBid(VIDEO, 4.0)), 4.0, 'video floor should be selected');
+      assert.equal(resolveFloor(makeBid(NATIVE, 5.0)), 5.0, 'native floor should be selected');
+      assert.equal(resolveFloor(makeBid('static', 6.0)), 6.0, 'params.bidfloor should be selected');
+    });
+
+    it('should handle invalid floor values from resolveFloor API gracefully', function () {
+      const bid = {
+        getFloor: () => ({}),
+        mediaTypes: { banner: { sizes: [[300, 250]] } }
+      };
+      assert.equal(resolveFloor(bid), 0);
+    });
+
+    it('should extract sizes and apply correct floor per media type', function () {
+      const makeBid = (mediaType, expectedSize) => ({
+        getFloor: ({ mediaType: mt, size }) => {
+          if (mt === mediaType && (Array.isArray(size) ? size[0] : size) === expectedSize) {
+            return { floor: 1 };
+          }
+          return { floor: 0 };
+        },
+        mediaTypes: {
+          banner: { sizes: [[300, 250], [728, 90]] },
+          video: { playerSize: [640, 480] },
+          native: {}
+        },
+        params: {}
+      });
+
+      assert.equal(resolveFloor(makeBid(BANNER, 300)), 1, 'banner size [300, 250]');
+      assert.equal(resolveFloor(makeBid(BANNER, 728)), 1, 'banner size [728, 90]');
+      assert.equal(resolveFloor(makeBid(VIDEO, 640)), 1, 'video playerSize [640, 480]');
+      assert.equal(resolveFloor(makeBid(NATIVE, '*')), 1, 'native default size "*"');
     });
   });
 });

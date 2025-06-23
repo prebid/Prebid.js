@@ -13,22 +13,23 @@ const responseHeader = {'Content-Type': 'application/json'}
 
 describe('Fabrick ID System', function() {
   let logErrorStub;
+  let sandbox;
 
   beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    logErrorStub = sandbox.stub(utils, 'logError');
   });
 
   afterEach(function () {
+    sandbox.restore();
   });
 
   it('should log an error if no configParams were passed into getId', function () {
-    logErrorStub = sinon.stub(utils, 'logError');
     fabrickIdSubmodule.getId();
     expect(logErrorStub.calledOnce).to.be.true;
-    logErrorStub.restore();
   });
 
   it('should error on json parsing', function() {
-    logErrorStub = sinon.stub(utils, 'logError');
     let submoduleCallback = fabrickIdSubmodule.getId({
       name: 'fabrickId',
       params: defaultConfigParams
@@ -43,7 +44,6 @@ describe('Fabrick ID System', function() {
     );
     expect(callBackSpy.calledOnce).to.be.true;
     expect(logErrorStub.calledOnce).to.be.true;
-    logErrorStub.restore();
   });
 
   it('should truncate the params', function() {
