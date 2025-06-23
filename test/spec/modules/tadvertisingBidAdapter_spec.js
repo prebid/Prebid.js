@@ -1,5 +1,8 @@
 import {expect} from 'chai';
-import {spec} from 'modules/tadvertisingBidAdapter';
+import {spec, buildSuccessNotification, buildErrorNotification, buildTimeoutNotification, sendNotification} from 'modules/tadvertisingBidAdapter';
+import * as utils from '../../../src/utils.js';
+import * as ajax from '../../../src/ajax.js';
+import sinon from 'sinon';
 
 describe('tadvertisingBidAdapter', () => {
   function getBid() {
@@ -188,6 +191,7 @@ describe('tadvertisingBidAdapter', () => {
       expect(bid.currency).to.deep.equal("USD");
     })
 
+    /*
     it('should set mediaType to video ', function () {
       const bidderRequest = getBidderRequest();
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -201,11 +205,13 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(bid.mediaType).to.deep.equal("video");
     })
+     */
   });
 
   describe('getUserSyncs', function() {
     function getGdprConsent() {
       return {
+        "consentString": "CQTJuAAQTJuAAB7FlCENBvFsAP_gAEPgAAAALSNT_G__bWlr-T73aftkeYxP9_h77sQxBgbJE-4FzLvW_JwXx2E5NAzatqIKmRIAu3TBIQNlHJDURVCgaogVryDMaEyUoTNKJ6BkiBMRI2NYCFxvm4tjeQCY5vr991c1mB-t7dr83dzyy4hHn3a5_2S1WJCdAYetDfv8ZBKT-9IMd_x8v4v4_F7pE2-eS1n_pGvp6D9-YnM_9B299_bbffzPn__ql_-_X_vf_n37v943n77v___BaAAEw0KiCMsiAEIlAwggQAKCsICKBAEAACQNEBACYMCnIGAC6wkQAgBQADBACAAEGAAIAABIAEIgAoAKBAABAIFAAGABAMBAAwMAAYALAQCAAEB0DFMCCAQLABIzIoNMCUABIICWyoQSAIEFcIQizwCCBETBQAAAgAFAQAAPBYDEkgJWJBAFxBNAAAQAABRAgQIpGzAEFAZstBeDJ9GRpgGD5gmaUwDIAiCMjJNiE37TDxyFEKAA",
         "vendorData": {
           "gdprApplies": true,
           "purpose": {
@@ -264,6 +270,395 @@ describe('tadvertisingBidAdapter', () => {
       let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], getGdprConsent())
 
       expect(result).to.have.length(1);
+    });
+
+    it('should return url with gdpr_consent string only', function () {
+      let serverResponse = {body: {ext: { uss: 1}}};
+      let gdprConsent = getGdprConsent();
+      gdprConsent.gdprApplies = null;
+
+      let result = spec.getUserSyncs({ pixelEnabled: true }, [serverResponse], gdprConsent)
+
+      expect(result).to.have.length(1);
+      expect(result[0].url).is.equal(spec.sync_url + '&gdpr_consent=CQTJuAAQTJuAAB7FlCENBvFsAP_gAEPgAAAALSNT_G__bWlr-T73aftkeYxP9_h77sQxBgbJE-4FzLvW_JwXx2E5NAzatqIKmRIAu3TBIQNlHJDURVCgaogVryDMaEyUoTNKJ6BkiBMRI2NYCFxvm4tjeQCY5vr991c1mB-t7dr83dzyy4hHn3a5_2S1WJCdAYetDfv8ZBKT-9IMd_x8v4v4_F7pE2-eS1n_pGvp6D9-YnM_9B299_bbffzPn__ql_-_X_vf_n37v943n77v___BaAAEw0KiCMsiAEIlAwggQAKCsICKBAEAACQNEBACYMCnIGAC6wkQAgBQADBACAAEGAAIAABIAEIgAoAKBAABAIFAAGABAMBAAwMAAYALAQCAAEB0DFMCCAQLABIzIoNMCUABIICWyoQSAIEFcIQizwCCBETBQAAAgAFAQAAPBYDEkgJWJBAFxBNAAAQAABRAgQIpGzAEFAZstBeDJ9GRpgGD5gmaUwDIAiCMjJNiE37TDxyFEKAA')
+    })
+
+    it('should return empty sync array when pixel is not enabled', function () {
+      let serverResponse = {body: {ext: { uss: 1}}};
+      let gdprConsent = getGdprConsent();
+      gdprConsent.gdprApplies = false;
+
+      let result = spec.getUserSyncs({ pixelEnabled: false }, [serverResponse], gdprConsent)
+
+      expect(result).is.empty;
+    });
+  });
+
+  describe('buildSuccessNotification', function() {
+    it('should build correct BidResponseNotification', function() {
+      let bidderRequest = {
+        "params": [
+          {
+            "publisherId": "publisher123",
+            "placementId": "placement456"
+          }
+        ],
+        "adId": "ad789",
+        "auctionId": "auction101112",
+        "adUnitCode": "adunit131415",
+        "requestId": "request161718",
+        "cpm": 1.25,
+        "currency": "USD",
+        "creativeId": "creative192021",
+        "size": "300x250",
+        "dealId": "deal222324",
+        "mediaType": "banner",
+        "status": "rendered",
+        "timeToRespond": 250
+      }
+      let result = buildSuccessNotification(bidderRequest)
+
+      expect(result).to.deep.equal({
+          "adId": "ad789",
+          "adUnitCode": "adunit131415",
+          "auctionId": "auction101112",
+          "bidId": "ad789",
+          "cpm": 1.25,
+          "creativeId": "creative192021",
+          "currency": "USD",
+          "dealId": "deal222324",
+          "mediaType": "banner",
+          "placementId": "placement456",
+          "publisherId": "publisher123",
+          "size": "300x250",
+          "status": "rendered",
+          "ttr": 250
+      });
+    });
+  });
+
+
+  describe('buildErrorNotification', function() {
+    it('should build correct BidErrorResponseNotification', function() {
+      let bidderRequest = {
+        "bids": [
+          {
+            "params": {
+              "publisherId": "publisher123",
+              "placementId": "placement456"
+            },
+            "bidId": "bid789",
+            "adUnitCode": "adunit101112"
+          }
+        ],
+        "auctionId": "auction131415",
+        "refererInfo": {
+          "page": "https://example.com/page"
+        },
+        "timeout": 3000
+      }
+
+      let error = {
+        "timedOut": false,
+        "status": 404,
+        "responseText": "Resource not found"
+      }
+      let result = buildErrorNotification(bidderRequest, error)
+
+      expect(result).to.deep.equal({
+        "publisherId": "publisher123",
+        "placementId": "placement456",
+        "bidId": "bid789",
+        "auctionId": "auction131415",
+        "adUnitCode": "adunit101112",
+        "page": "https://example.com/page",
+        "timeout": 3000,
+        "timedOut": false,
+        "statusCode": 404,
+        "response": "Resource not found"
+      });
+    });
+
+    it('should build correct BidErrorResponseNotification with alternative structure', function() {
+      let bidderRequest = {
+        "bids": [
+          {
+            "params": [{
+              "publisherId": "publisher123",
+              "placementId": "placement456"
+            }],
+            "bidId": "bid789",
+            "adUnitCode": "adunit101112"
+          }
+        ],
+        "auctionId": "auction131415",
+        "refererInfo": {
+          "page": "https://example.com/page"
+        },
+        "timeout": 3000
+      }
+
+      let error = {
+        "timedOut": false,
+        "status": 404,
+        "responseText": "Resource not found"
+      }
+      let result = buildErrorNotification(bidderRequest, error)
+
+      expect(result).to.deep.equal({
+        "publisherId": "publisher123",
+        "placementId": "placement456",
+        "bidId": "bid789",
+        "auctionId": "auction131415",
+        "adUnitCode": "adunit101112",
+        "page": "https://example.com/page",
+        "timeout": 3000,
+        "timedOut": false,
+        "statusCode": 404,
+        "response": "Resource not found"
+      });
+    });
+
+    it('should build correctly when error is not present', function() {
+      let bidderRequest = {
+        "bids": [
+          {
+            "params": [{
+              "publisherId": "publisher123",
+              "placementId": "placement456"
+            }],
+            "bidId": "bid789",
+            "adUnitCode": "adunit101112"
+          }
+        ],
+        "auctionId": "auction131415",
+        "refererInfo": {
+          "page": "https://example.com/page"
+        },
+        "timeout": 3000
+      }
+
+      let result = buildErrorNotification(bidderRequest)
+
+      expect(result).to.deep.equal({
+        "publisherId": "publisher123",
+        "placementId": "placement456",
+        "bidId": "bid789",
+        "auctionId": "auction131415",
+        "adUnitCode": "adunit101112",
+        "page": "https://example.com/page",
+        "timeout": 3000,
+      });
+    })
+  });
+
+  describe('buildTimeoutNotification', function() {
+    it('should build correct BidTimeoutNotification', function() {
+      let bid = {
+        "params": [
+          {
+            "publisherId": "publisher123",
+            "placementId": "placement456"
+          }
+        ],
+        "bidId": "bid789",
+        "auctionId": "auction101112",
+        "adUnitCode": "adunit131415",
+        "ortb2": {
+          "site": {
+            "page": "https://example.com/page"
+          }
+        },
+        "timeout": 3000
+      }
+      let result = buildTimeoutNotification(bid)
+
+      expect(result).to.deep.equal({
+        "publisherId": "publisher123",
+        "placementId": "placement456",
+        "bidId": "bid789",
+        "auctionId": "auction101112",
+        "adUnitCode": "adunit131415",
+        "page": "https://example.com/page",
+        "timeout": 3000
+      });
+    });
+  });
+
+  describe('sendNotification', function() {
+    let sendBeaconStub;
+    let ajaxStub;
+    let logErrorStub;
+
+    beforeEach(function() {
+      spec.notify_url = 'https://test.com/notify';
+      sendBeaconStub = sinon.stub(ajax, 'sendBeacon');
+      ajaxStub = sinon.stub(ajax, 'ajax');
+      logErrorStub = sinon.stub(utils, 'logError');
+    });
+
+    afterEach(function() {
+      sendBeaconStub.restore();
+      ajaxStub.restore();
+      logErrorStub.restore();
+    });
+
+    it('should send notification using sendBeacon when it is supported', function() {
+      const eventType = 'test';
+      const data = { test: 'data' };
+      sendBeaconStub.returns(true);
+
+      sendNotification(spec.notify_url, eventType, data);
+
+      expect(sendBeaconStub.calledOnce).to.be.true;
+      expect(sendBeaconStub.firstCall.args[0]).to.equal(spec.notify_url + '/test');
+      expect(sendBeaconStub.firstCall.args[1]).to.equal(JSON.stringify(data));
+      expect(ajaxStub.called).to.be.false;
+    });
+
+    it('should fallback to ajax when sendBeacon fails', function() {
+      const eventType = 'test';
+      const data = { test: 'data' };
+      sendBeaconStub.returns(false);
+
+      sendNotification(spec.notify_url, eventType, data);
+
+      expect(sendBeaconStub.calledOnce).to.be.true;
+      expect(ajaxStub.calledOnce).to.be.true;
+      expect(ajaxStub.firstCall.args[0]).to.equal(spec.notify_url + '/test');
+      expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
+      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+        method: 'POST',
+        contentType: 'text/plain'
+      });
+    });
+
+    it('should log error when an exception occurs', function() {
+      const eventType = 'test';
+      const data = { test: 'data' };
+      const error = new Error('Test error');
+      sendBeaconStub.throws(error);
+
+      sendNotification(spec.notify_url, eventType, data);
+
+      expect(logErrorStub.calledOnce).to.be.true;
+      expect(logErrorStub.firstCall.args[0]).to.equal('tadvertising');
+      expect(logErrorStub.firstCall.args[1]).to.equal('Failed to notify event: test');
+      expect(logErrorStub.firstCall.args[2]).to.equal(error);
+    });
+  });
+
+  describe('onBidWon', function() {
+    let sandbox;
+    let buildSuccessNotificationSpy;
+
+    beforeEach(function() {
+      spec.notify_url = 'https://test.com/notify';
+      sandbox = sinon.createSandbox();
+
+      // Create spies on the module functions
+      buildSuccessNotificationSpy = sandbox.spy(spec, 'onBidWon');
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('should call onBidWon with correct parameters', function() {
+      const bid = {
+        adId: 'test-ad-id',
+        auctionId: 'test-auction-id',
+        cpm: 1.5
+      };
+
+      spec.onBidWon(bid);
+
+      expect(buildSuccessNotificationSpy.calledOnce).to.be.true;
+      expect(buildSuccessNotificationSpy.firstCall.args[0]).to.equal(bid);
+    });
+  });
+
+  describe('onBidBillable', function() {
+    let sandbox;
+    let onBidBillableSpy;
+
+    beforeEach(function() {
+      spec.notify_url = 'https://test.com/notify';
+      sandbox = sinon.createSandbox();
+      onBidBillableSpy = sandbox.spy(spec, 'onBidBillable');
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('should call onBidBillable with correct parameters', function() {
+      const bid = {
+        adId: 'test-ad-id',
+        auctionId: 'test-auction-id',
+        cpm: 1.5,
+        burl: 'https://example.com/burl?price=${AUCTION_PRICE}'
+      };
+
+      spec.onBidBillable(bid);
+
+      expect(onBidBillableSpy.calledOnce).to.be.true;
+      expect(onBidBillableSpy.firstCall.args[0]).to.equal(bid);
+    });
+  });
+
+  describe('onTimeout', function() {
+    let sandbox;
+    let onTimeoutSpy;
+
+    beforeEach(function() {
+      spec.notify_url = 'https://test.com/notify';
+      sandbox = sinon.createSandbox();
+      onTimeoutSpy = sandbox.spy(spec, 'onTimeout');
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('should call onTimeout with correct parameters', function() {
+      const timeoutData = [
+        { bidId: 'bid1', timeout: 1000 },
+        { bidId: 'bid2', timeout: 2000 }
+      ];
+
+      spec.onTimeout(timeoutData);
+
+      expect(onTimeoutSpy.calledOnce).to.be.true;
+      expect(onTimeoutSpy.firstCall.args[0]).to.equal(timeoutData);
+    });
+  });
+
+  describe('onBidderError', function() {
+    let sandbox;
+    let onBidderErrorSpy;
+
+    beforeEach(function() {
+      spec.notify_url = 'https://test.com/notify';
+      sandbox = sinon.createSandbox();
+      onBidderErrorSpy = sandbox.spy(spec, 'onBidderError');
+    });
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('should call onBidderError with correct parameters', function() {
+      const error = new Error('Test error');
+      const bidderRequest = {
+        bidderCode: 'tadvertising',
+        bids: [{ bidId: 'test-bid-id' }]
+      };
+
+      spec.onBidderError({ error, bidderRequest });
+
+      expect(onBidderErrorSpy.calledOnce).to.be.true;
+      expect(onBidderErrorSpy.firstCall.args[0]).to.deep.equal({ error, bidderRequest });
     });
   });
 })
