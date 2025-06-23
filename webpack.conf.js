@@ -101,7 +101,7 @@ module.exports = {
       minChunks: 1,
       minSize: 0,
       cacheGroups: (() => {
-        const libRoot = helpers.getPrecompiledPath('libraries')
+        const libRoot = path.resolve(__dirname, 'libraries');
         const libraries = Object.fromEntries(
           fs.readdirSync(libRoot)
             .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
