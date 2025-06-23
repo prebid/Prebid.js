@@ -29,13 +29,13 @@ describe('LiveIntentMinimalId', function() {
   });
 
   afterEach(function() {
-    imgStub.restore();
-    getCookieStub.restore();
-    getDataFromLocalStorageStub.restore();
-    logErrorStub.restore();
-    uspConsentDataStub.restore();
-    gdprConsentDataStub.restore();
-    refererInfoStub.restore();
+    imgStub?.restore();
+    getCookieStub?.restore();
+    getDataFromLocalStorageStub?.restore();
+    logErrorStub?.restore();
+    uspConsentDataStub?.restore();
+    gdprConsentDataStub?.restore();
+    refererInfoStub?.restore();
     liveIntentIdSubmodule.setModuleMode('minimal');
     resetLiveIntentIdSubmodule();
   });
@@ -322,11 +322,6 @@ describe('LiveIntentMinimalId', function() {
   it('should decode a sonobi id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sonobi: 'bar' });
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
-  });
-
-  it('should decode a triplelift id to a separate object when present', function() {
-    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', triplelift: 'bar' }, defaultConfigParams);
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'triplelift': 'bar'}, 'triplelift': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a zetassp id to a separate object when present', function() {

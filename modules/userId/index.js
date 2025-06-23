@@ -36,7 +36,7 @@
  * @param {SubmoduleConfig} config
  * @param {ConsentData|undefined} consentData
  * @param {Object} storedId - existing id, if any
- * @returns {IdResponse|function(callback:function)} A response object that contains id and/or callback.
+ * @returns {IdResponse|function} A response object that contains id and/or callback.
  */
 
 /**
@@ -82,7 +82,7 @@
  * @property {(string|undefined)} pid - placement id url param value
  * @property {(string|undefined)} publisherId - the unique identifier of the publisher in question
  * @property {(string|undefined)} ajaxTimeout - the number of milliseconds a resolution request can take before automatically being terminated
- * @property {(array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
+ * @property {(Array|undefined)} identifiersToResolve - the identifiers from either ls|cookie to be attached to the getId query
  * @property {(LiveIntentCollectConfig|undefined)} liCollectConfig - the config for LiveIntent's collect requests
  * @property {(string|undefined)} pd - publisher provided data for reconciling ID5 IDs
  * @property {(string|undefined)} emailHash - if provided, the hashed email address of a user
@@ -117,7 +117,6 @@
  * @typedef {{[idKey: string]: () => SubmoduleContainer[]}} SubmodulePriorityMap
  */
 
-import {find} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
@@ -488,6 +487,9 @@ function mkPriorityMaps() {
     function activeModuleGetter(key, useGlobals, modules) {
       return function () {
         for (const {allowed, bidders, module} of modules) {
+          if (!dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, module?.config?.name, {init: false}))) {
+            continue;
+          }
           const value = module.idObj?.[key];
           if (value != null) {
             if (allowed) {
@@ -566,7 +568,7 @@ export function enrichEids(ortb2Fragments) {
   return ortb2Fragments;
 }
 
-function addIdData({adUnits, ortb2Fragments}) {
+export function addIdData({adUnits, ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
@@ -853,8 +855,8 @@ function retryOnCancel(initParams) {
  * return a promise that resolves to the same value as `getUserIds()` when the refresh is complete.
  * If a refresh is already in progress, it will be canceled (rejecting promises returned by previous calls to `refreshUserIds`).
  *
- * @param submoduleNames? submodules to refresh. If omitted, refresh all submodules.
- * @param callback? called when the refresh is complete
+ * @param {string[]} [submoduleNames] submodules to refresh. If omitted, refresh all submodules.
+ * @param {Function} [callback] called when the refresh is complete
  */
 function refreshUserIds({submoduleNames} = {}, callback) {
   return retryOnCancel({refresh: true, submoduleNames})
@@ -1136,12 +1138,12 @@ function updateSubmodules() {
   // do this to avoid reprocessing submodules
   // TODO: the logic does not match the comment - addedSubmodules is always a copy of submoduleRegistry
   // (if it did it would not be correct - it's not enough to find new modules, as others may have been removed or changed)
-  const addedSubmodules = submoduleRegistry.filter(i => !find(submodules, j => j.name === i.name));
+  const addedSubmodules = submoduleRegistry.filter(i => !(submodules || []).find(j => j.name === i.name));
 
   submodules.splice(0, submodules.length);
   // find submodule and the matching configuration, if found create and append a SubmoduleContainer
   addedSubmodules.map(i => {
-    const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
+    const submoduleConfig = (configs || []).find(j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
       (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
     return submoduleConfig ? {
@@ -1207,7 +1209,7 @@ export function requestDataDeletion(next, ...args) {
  */
 export function attachIdSystem(submodule) {
   submodule.findRootDomain = findRootDomain;
-  if (!find(submoduleRegistry, i => i.name === submodule.name)) {
+  if (!(submoduleRegistry || []).find(i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid)
     updateSubmodules();

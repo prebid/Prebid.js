@@ -1,4 +1,3 @@
- 
 import {spec, storage, VIDEO_RENDERER_URL} from 'modules/tpmnBidAdapter.js';
 import {generateUUID} from '../../../src/utils.js';
 import {expect} from 'chai';
@@ -122,7 +121,7 @@ const VIDEO_BID_RESPONSE = {
 };
 
 describe('tpmnAdapterTests', function () {
-  let sandbox = sinon.sandbox.create();
+  let sandbox = sinon.createSandbox();
   let getCookieStub;
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -130,7 +129,7 @@ describe('tpmnAdapterTests', function () {
         storageAllowed: true
       }
     };
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     getCookieStub = sinon.stub(storage, 'getCookie');
   });
 
