@@ -558,6 +558,10 @@ gulp.task(viewReview);
 gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 gulp.task('extract-metadata', function (done) {
+  /**
+   * Run the complete bundle in a headless browser to extract metadata (such as aliases & GVL IDs) from all modules,
+   * with help from `modules/_moduleMetadata.js`
+   */
   const server = startLocalServer();
   import('./metadata/extractMetadata.mjs').then(({default: extract}) => {
     extract().then(metadata => {
