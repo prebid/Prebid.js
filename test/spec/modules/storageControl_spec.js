@@ -53,6 +53,10 @@ describe('storageControl', () => {
               {
                 identifier: 'wildcard*',
                 type: 'cookie'
+              },
+              {
+                identifier: 'wrongType',
+                type: 'wrong'
               }
             ]
           },
@@ -85,6 +89,10 @@ describe('storageControl', () => {
           matches: []
         });
       });
+
+      it('should return an empty array if the type is neither web nor cookie', () => {
+        expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'wrongType', 'mockBidder'), metadata).matches).to.eql([]);
+      })
 
       Object.entries({
         'its own module': 'mockBidder',

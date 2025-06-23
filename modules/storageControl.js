@@ -23,6 +23,7 @@ function escapeRegExp(string) {
 
 function matches(params, disclosure) {
   if (
+    !['cookie', 'web'].includes(disclosure.type) ||
     (disclosure.type === 'cookie' && params[ACTIVITY_PARAM_STORAGE_TYPE] !== STORAGE_TYPE_COOKIES) ||
     (disclosure.type === 'web' && params[ACTIVITY_PARAM_STORAGE_TYPE] !== STORAGE_TYPE_LOCALSTORAGE)
   ) return false;
