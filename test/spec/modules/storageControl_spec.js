@@ -195,7 +195,7 @@ describe('storageControl', () => {
       expect(rule()).to.not.exist;
     });
 
-    it('should deny when enforcement is strict and disclosure is done by the aliased module',() => {
+    it('should deny when enforcement is strict and disclosure is done by the aliased module', () => {
       enforcement = ENFORCE_STRICT;
       checkResult = {disclosed: false, parent: true, reason: 'denied'};
       expect(rule()).to.eql({allow: false, reason: 'denied'});
@@ -206,6 +206,5 @@ describe('storageControl', () => {
       checkResult = {disclosed: false, parent: true, reason: 'allowed'};
       expect(rule()).to.not.exist;
     });
-
   })
 })

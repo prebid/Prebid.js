@@ -99,6 +99,15 @@ describe('storage manager', function() {
       }));
     });
 
+    it('should NOT pass storage key if advertiseKeys = false', () => {
+      newStorageManager({
+        moduleType: MODULE_TYPE_PREBID,
+        moduleName: 'mockMod',
+        advertiseKeys: false
+      }, {isAllowed}).getCookie('foo');
+      expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.not.exist;
+    })
+
     it('should not pass storage key when not relevant', () => {
       mkManager(MODULE_TYPE_PREBID, 'mockMod').cookiesAreEnabled();
       expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.be.undefined;

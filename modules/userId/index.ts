@@ -12,7 +12,7 @@ import {module, ready as hooksReady} from '../../src/hook.js';
 import {EID_CONFIG, getEids} from './eids.js';
 import {
     getCoreStorageManager,
-    getStorageManager,
+    newStorageManager,
     STORAGE_TYPE_COOKIES,
     STORAGE_TYPE_LOCALSTORAGE,
     type StorageManager,
@@ -44,7 +44,7 @@ import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.js';
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
-import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
+import type {IdProviderSpec, ProviderParams, ProviderResponse, UserId, UserIdConfig, UserIdProvider} from "./spec.ts";
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -1043,7 +1043,13 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
         },
         callback: undefined,
         idObj: undefined,
-        storageMgr: getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: submoduleConfig.name})
+        storageMgr: newStorageManager({
+            moduleType: MODULE_TYPE_UID,
+            moduleName: submoduleConfig.name,
+            // since this manager is only using keys provided directly by the publisher,
+            // turn off storageControl checks
+            advertiseKeys: false,
+        })
       };
 
       if (autoRefresh) {

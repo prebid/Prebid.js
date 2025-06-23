@@ -59,6 +59,7 @@ module.exports = [
       'integrationExamples/**/*',
       // do not lint build-related stuff
       '*.js',
+      'metadata/**/*',
       ...jsPattern('plugins'),
       ...jsPattern('.github'),
     ],

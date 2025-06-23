@@ -54,9 +54,13 @@ export type StorageManager = {
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
-export function newStorageManager({moduleName, moduleType}: {
+export function newStorageManager({moduleName, moduleType, advertiseKeys = true}: {
     moduleName: string;
     moduleType: ModuleType;
+    /**
+     * If false, do not pass the 'storageKey' to activity checks - turning off storageControl for this manager.
+     */
+    advertiseKeys?: boolean;
 } = {} as any, {isAllowed = isActivityAllowed} = {}) {
   function isValid(cb, storageType, storageKey) {
     let mod = moduleName;
@@ -67,7 +71,7 @@ export function newStorageManager({moduleName, moduleType}: {
     const params = {
         [ACTIVITY_PARAM_STORAGE_TYPE]: storageType,
     };
-    if (storageKey != null) {
+    if (advertiseKeys && storageKey != null) {
         params[ACTIVITY_PARAM_STORAGE_KEY] = storageKey;
     }
     const result = {
