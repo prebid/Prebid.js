@@ -1,4 +1,3 @@
-
 import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';

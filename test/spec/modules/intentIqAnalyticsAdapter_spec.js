@@ -8,7 +8,7 @@ import * as events from 'src/events.js';
 import { getStorageManager } from 'src/storageManager.js';
 import sinon from 'sinon';
 import { REPORTER_ID, preparePayload } from '../../../modules/intentIqAnalyticsAdapter';
-import {FIRST_PARTY_KEY, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
+import {FIRST_PARTY_KEY, PREBID, VERSION} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 import * as detectBrowserUtils from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import {getReferrer, appendVrrefAndFui} from '../../../libraries/intentIqUtils/getRefferer.js';
 import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
@@ -18,6 +18,7 @@ const defaultData = '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344", "group": "A
 const version = VERSION;
 const REPORT_ENDPOINT = 'https://reports.intentiq.com/report';
 const REPORT_ENDPOINT_GDPR = 'https://reports-gdpr.intentiq.com/report';
+const REPORT_SERVER_ADDRESS = 'https://test-reports.intentiq.com/report';
 
 const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
 
@@ -27,7 +28,25 @@ const getUserConfig = () => [
     'params': {
       'partner': partner,
       'unpack': null,
-      'manualWinReportEnabled': false
+      'manualWinReportEnabled': false,
+    },
+    'storage': {
+      'type': 'html5',
+      'name': 'intentIqId',
+      'expires': 60,
+      'refreshInSeconds': 14400
+    }
+  }
+];
+
+const getUserConfigWithReportingServerAddress = () => [
+  {
+    'name': 'intentIqId',
+    'params': {
+      'partner': partner,
+      'unpack': null,
+      'manualWinReportEnabled': false,
+      'reportingServerAddress': REPORT_SERVER_ADDRESS
     },
     'storage': {
       'type': 'html5',
@@ -118,18 +137,62 @@ describe('IntentIQ tests all', function () {
     server.reset();
   });
 
+  it('should send POST request with payload in request body if reportMethod is POST', function () {
+    const [userConfig] = getUserConfig();
+    userConfig.params.reportMethod = 'POST';
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    const request = server.requests[0];
+
+    const expectedData = preparePayload(wonRequest);
+    const expectedPayload = `["${btoa(JSON.stringify(expectedData))}"]`;
+
+    expect(request.method).to.equal('POST');
+    expect(request.requestBody).to.equal(expectedPayload);
+  });
+
+  it('should send GET request with payload in query string if reportMethod is NOT provided', function () {
+    const [userConfig] = getUserConfig();
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns([userConfig]);
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    const request = server.requests[0];
+
+    expect(request.method).to.equal('GET');
+
+    const url = new URL(request.url);
+    const payloadEncoded = url.searchParams.get('payload');
+    const decoded = JSON.parse(atob(JSON.parse(payloadEncoded)[0]));
+
+    const expected = preparePayload(wonRequest);
+
+    expect(decoded.partnerId).to.equal(expected.partnerId);
+    expect(decoded.adType).to.equal(expected.adType);
+    expect(decoded.prebidAuctionId).to.equal(expected.prebidAuctionId);
+  });
+
   it('IIQ Analytical Adapter bid win report', function () {
     localStorage.setItem(FIRST_PARTY_KEY, defaultData);
-    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876/'});
-    const expectedVrref = encodeURIComponent(getWindowLocationStub().href);
-
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({href: 'http://localhost:9876'});
+    const expectedVrref = getWindowLocationStub().href;
     events.emit(EVENTS.BID_WON, wonRequest);
 
     expect(server.requests.length).to.be.above(0);
     const request = server.requests[0];
+    const parsedUrl = new URL(request.url);
+    const vrref = parsedUrl.searchParams.get('vrref');
     expect(request.url).to.contain(REPORT_ENDPOINT + '?pid=' + partner + '&mct=1');
     expect(request.url).to.contain(`&jsver=${version}`);
-    expect(request.url).to.contain(`&vrref=${expectedVrref}`);
+    expect(`&vrref=${decodeURIComponent(vrref)}`).to.contain(`&vrref=${expectedVrref}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
   });
@@ -217,11 +280,13 @@ describe('IntentIQ tests all', function () {
     const request = server.requests[0];
     const dataToSend = preparePayload(wonRequest);
     const base64String = btoa(JSON.stringify(dataToSend));
-    const payload = `[%22${base64String}%22]`;
+    const payload = encodeURIComponent(JSON.stringify([base64String]));
     const expectedUrl = appendVrrefAndFui(REPORT_ENDPOINT +
-      `?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&payload=${payload}&uh=&gdpr=0`, iiqAnalyticsAnalyticsAdapter.initOptions.domainName
+      `?pid=${partner}&mct=1&iiqid=${defaultDataObj.pcid}&agid=${REPORTER_ID}&jsver=${version}&source=pbjs&uh=&gdpr=0`, iiqAnalyticsAnalyticsAdapter.initOptions.domainName
     );
-    expect(request.url).to.equal(expectedUrl);
+    const urlWithPayload = expectedUrl + `&payload=${payload}`;
+
+    expect(request.url).to.equal(urlWithPayload);
     expect(dataToSend.pcid).to.equal(defaultDataObj.pcid)
   });
 
@@ -345,6 +410,114 @@ describe('IntentIQ tests all', function () {
     expect(request.url).to.contain(`&vrref=${encodeURIComponent('http://localhost:9876/')}`);
     expect(request.url).to.contain('&payload=');
     expect(request.url).to.contain('iiqid=f961ffb1-a0e1-4696-a9d2-a21d815bd344');
+  });
+
+  it('should send request in reportingServerAddress no gdpr', function () {
+    const USERID_CONFIG_BROWSER = [...getUserConfigWithReportingServerAddress()];
+    USERID_CONFIG_BROWSER[0].params.browserBlackList = 'chrome,firefox';
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG_BROWSER);
+    detectBrowserStub = sinon.stub(detectBrowserUtils, 'detectBrowser').returns('safari');
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain(REPORT_SERVER_ADDRESS);
+  });
+
+  it('should include source parameter in report URL', function () {
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(defaultData));
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+    const request = server.requests[0];
+
+    expect(server.requests.length).to.be.above(0);
+    expect(request.url).to.include(`&source=${PREBID}`);
+  });
+
+  it('should use correct key if siloEnabled is true', function () {
+    const siloEnabled = true;
+    const USERID_CONFIG = [...getUserConfig()];
+    USERID_CONFIG[0].params.siloEnabled = siloEnabled;
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
+
+    localStorage.setItem(FIRST_PARTY_KEY, `${FIRST_PARTY_KEY}${siloEnabled ? '_p_' + partner : ''}`);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain(REPORT_ENDPOINT + '?pid=' + partner + '&mct=1');
+  });
+
+  it('should send additionalParams in report if valid and small enough', function () {
+    const userConfig = getUserConfig();
+    userConfig[0].params.additionalParams = [{
+      parameterName: 'general',
+      parameterValue: 'Lee',
+      destination: [0, 0, 1]
+    }];
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(userConfig);
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    const request = server.requests[0];
+    expect(request.url).to.include('general=Lee');
+  });
+
+  it('should not send additionalParams in report if value is too large', function () {
+    const longVal = 'x'.repeat(5000000);
+    const userConfig = getUserConfig();
+    userConfig[0].params.additionalParams = [{
+      parameterName: 'general',
+      parameterValue: longVal,
+      destination: [0, 0, 1]
+    }];
+
+    config.getConfig.restore();
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(userConfig);
+
+    localStorage.setItem(FIRST_PARTY_KEY, defaultData);
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    const request = server.requests[0];
+    expect(request.url).not.to.include('general');
+  });
+  it('should include spd parameter from LS in report URL', function () {
+    const spdObject = { foo: 'bar', value: 42 };
+    const expectedSpdEncoded = encodeURIComponent(JSON.stringify(spdObject));
+
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    const request = server.requests[0];
+
+    expect(server.requests.length).to.be.above(0);
+    expect(request.url).to.include(`&spd=${expectedSpdEncoded}`);
+  });
+
+  it('should include spd parameter string from LS in report URL', function () {
+    const spdObject = 'server provided data';
+    const expectedSpdEncoded = encodeURIComponent(spdObject);
+
+    localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify({...defaultData, spd: spdObject}));
+    getWindowLocationStub = sinon.stub(utils, 'getWindowLocation').returns({ href: 'http://localhost:9876/' });
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    const request = server.requests[0];
+
+    expect(server.requests.length).to.be.above(0);
+    expect(request.url).to.include(`&spd=${expectedSpdEncoded}`);
   });
 
   const testCasesVrref = [

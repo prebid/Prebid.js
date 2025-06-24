@@ -26,7 +26,7 @@ function createIFrameMarker() {
 describe('consentManagement', function () {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(adapterManager, 'callDataDeletionRequest');
   });
 
@@ -450,6 +450,7 @@ describe('consentManagement', function () {
       afterEach(function () {
         config.resetConfig();
         $$PREBID_GLOBAL$$.requestBids.removeAll();
+        sandbox.restore();
         document.body.removeChild(ifr);
         delete window.__uspapi;
         resetConsentData();

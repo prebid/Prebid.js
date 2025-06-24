@@ -48,8 +48,8 @@ export const identityLinkSubmodule = {
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
-   * @param {ConsentData} [consentData]
    * @param {SubmoduleConfig} [config]
+   * @param {ConsentData} [consentData]
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
@@ -150,7 +150,19 @@ function setEnvelopeSource(src) {
 
 export function getEnvelopeFromStorage() {
   let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
-  return rawEnvelope ? window.atob(rawEnvelope) : undefined;
+  if (!rawEnvelope) {
+    return undefined;
+  }
+  try {
+    return window.atob(rawEnvelope);
+  } catch (e) {
+    try {
+      return window.atob(rawEnvelope.replace(/-/g, '+').replace(/_/g, '/'));
+    } catch (e2) {
+      utils.logError('identityLink: invalid envelope format');
+      return undefined;
+    }
+  }
 }
 
 submodule('userId', identityLinkSubmodule);

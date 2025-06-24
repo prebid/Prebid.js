@@ -1,5 +1,4 @@
 import fntzAnalyticsAdapter from 'modules/fintezaAnalyticsAdapter.js';
-import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
