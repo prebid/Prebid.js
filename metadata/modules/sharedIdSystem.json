@@ -32,7 +32,7 @@
     {
       "componentType": "userId",
       "componentName": "pubCommonId",
-      "gvlid": null,
+      "gvlid": "1stParty",
       "disclosureURL": "https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
     }

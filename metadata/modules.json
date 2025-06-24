@@ -5308,7 +5308,7 @@
     {
       "componentType": "userId",
       "componentName": "pubCommonId",
-      "gvlid": null,
+      "gvlid": "1stParty",
       "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
     },
