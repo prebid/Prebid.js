@@ -235,7 +235,6 @@ export function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) 
   mergeDeep(ortb2Fragments.global, { site: { ext: { data: mappedData } } });
   // for nonstandard modules to use
   mergeDeep(ortb2Fragments.global, { site: { ext: { data: { 'ias-brand-safety': mappedData } } } });
-
 }
 
 /**
