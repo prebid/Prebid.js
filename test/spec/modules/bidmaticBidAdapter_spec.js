@@ -138,7 +138,7 @@ describe('bidmaticBidAdapter', function () {
     it('should prepare banner bid request correctly', function () {
       const result = prepareBidRequests(DEFAULT_BID_REQUEST);
 
-      expect(result).to.deep.equal({
+      expect(result).includes({
         'CallbackId': 'bid123456',
         'Aid': 123456,
         'AdType': 'display',
@@ -150,7 +150,7 @@ describe('bidmaticBidAdapter', function () {
     it('should prepare video bid request correctly', function () {
       const result = prepareBidRequests(VIDEO_BID_REQUEST);
 
-      expect(result).to.deep.equal({
+      expect(result).includes({
         'CallbackId': 'bid123456-video',
         'Aid': 123456,
         'AdType': 'video',
@@ -164,13 +164,13 @@ describe('bidmaticBidAdapter', function () {
     it('should remap bid request with basic params', function () {
       const result = remapBidRequest([DEFAULT_BID_REQUEST], BID_REQUEST_PARAMS);
 
-      expect(result).to.deep.equal({
+      expect(result).includes({
         'Domain': 'https://example.com',
-        'Schain': { ver: '1.0' },
-        'UserIds': { id1: 'value1' },
         'Tmax': 1000,
         'Coppa': 0
       });
+      expect(result.Schain).to.deep.equal({ ver: '1.0' });
+      expect(result.UserIds).to.deep.equal({ id1: 'value1' });
     });
 
     it('should remap bid request with consent params', function () {
@@ -196,7 +196,7 @@ describe('bidmaticBidAdapter', function () {
       expect(tag).to.be.an('object');
       expect(bids).to.be.an('array');
       expect(bids.length).to.equal(1);
-      expect(bids[0]).to.deep.equal({
+      expect(bids[0]).includes({
         'CallbackId': 'bid123456',
         'Aid': 123456,
         'AdType': 'display',

@@ -253,6 +253,7 @@ function getPlacementInfo(bidReq) {
  * @param element
  */
 function getViewableDistance(element) {
+  if (!element) return 0;
   const elementRect = getBoundingClientRect(element);
 
   if (!elementRect) {
