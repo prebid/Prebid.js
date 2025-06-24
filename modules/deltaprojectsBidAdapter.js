@@ -14,6 +14,7 @@ import {
 } from '../src/utils.js';
 
 export const BIDDER_CODE = 'deltaprojects';
+const GVLID = 209;
 export const BIDDER_ENDPOINT_URL = 'https://d5p.de17a.com/dogfight/prebid';
 export const USERSYNC_URL = 'https://userservice.de17a.com/getuid/prebid';
 
@@ -236,6 +237,7 @@ export function getBidFloor(bid, mediaType, size, currency) {
 /** -- Register -- */
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,

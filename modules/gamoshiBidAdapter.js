@@ -19,6 +19,7 @@ const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io',
   'cleanmedianet': 'https://bidder.cleanmediaads.com'
 };
+const GVLID = 644;
 
 const DEFAULT_TTL = 360;
 
@@ -66,6 +67,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
+  gvlid: GVLID,
   aliases: ['gambid', 'cleanmedianet'],
   supportedMediaTypes: ['banner', 'video'],
 

@@ -401,6 +401,7 @@ function getBidAdUnits() {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adnAnalyticsAdapter,
+  gvlid: 855,
   code: 'adnuntius'
 });
 
