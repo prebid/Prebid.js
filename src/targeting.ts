@@ -7,13 +7,11 @@ import {
     DEFAULT_TARGETING_KEYS,
     EVENTS,
     JSON_MAPPING,
-    NATIVE_KEYS,
     TARGETING_KEYS
 } from './constants.js';
 import * as events from './events.js';
 import {hook} from './hook.js';
 import {ADPOD} from './mediaTypes.js';
-import {NATIVE_TARGETING_KEYS} from './native.js';
 import {
     deepAccess,
     deepClone,
@@ -243,7 +241,7 @@ export function newTargeting(auctionManager) {
           const bidsSorted = getHighestCpmBidsFromBidPool(filteredBids, winReducer, adUnitBidLimit, undefined, winSorter);
           let targeting = getTargetingLevels(bidsSorted, customKeysByUnit, adUnitCodes);
 
-          const defaultKeys = Object.keys(Object.assign({}, DEFAULT_TARGETING_KEYS, NATIVE_KEYS));
+          const defaultKeys = Object.keys(Object.assign({}, DEFAULT_TARGETING_KEYS));
           let allowedKeys = config.getConfig(CFG_ALLOW_TARGETING_KEYS);
           const addedKeys = config.getConfig(CFG_ADD_TARGETING_KEYS);
 
@@ -378,7 +376,7 @@ export function newTargeting(auctionManager) {
   }
 
   function addBidToTargeting(bids, enableSendAllBids = false, deals = false): TargetingArray {
-    const standardKeys = FEATURES.NATIVE ? TARGETING_KEYS_ARR.concat(NATIVE_TARGETING_KEYS) : TARGETING_KEYS_ARR.slice();
+    const standardKeys = TARGETING_KEYS_ARR.slice();
     const allowSendAllBidsTargetingKeys = config.getConfig('targetingControls.allowSendAllBidsTargetingKeys');
 
     const allowedSendAllBidTargeting = allowSendAllBidsTargetingKeys
@@ -412,8 +410,8 @@ export function newTargeting(auctionManager) {
    * @return filtered targeting
    */
   function getAllowedTargetingKeyValues(targeting: TargetingArray, allowedKeys: string[]): TargetingArray {
-    const defaultKeyring = Object.assign({}, TARGETING_KEYS, NATIVE_KEYS);
-    const defaultKeys = Object.keys(defaultKeyring);
+    const defaultKeyring = Object.assign({}, TARGETING_KEYS);
+    const defaultKeys = Object.keys(TARGETING_KEYS);
     const keyDispositions = {};
     logInfo(`allowTargetingKeys - allowed keys [ ${allowedKeys.map(k => defaultKeyring[k]).join(', ')} ]`);
     targeting.map(adUnit => {
@@ -680,9 +678,6 @@ export function newTargeting(auctionManager) {
 
   function getCustomKeys() {
     let standardKeys = getStandardKeys();
-    if (FEATURES.NATIVE) {
-      standardKeys = standardKeys.concat(NATIVE_TARGETING_KEYS);
-    }
     return function(key) {
       return standardKeys.indexOf(key) === -1;
     }

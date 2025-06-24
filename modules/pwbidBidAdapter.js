@@ -133,6 +133,7 @@ _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = a
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['pubwise'],
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
