@@ -3,10 +3,15 @@
     {
       "identifier": "prebid:topics",
       "type": "web",
-      "domains": ["*"],
+      "domains": [
+        "*"
+      ],
       "purposes": [
         1,
-        2
+        2,
+        3,
+        4,
+        7
       ]
     }
   ],
