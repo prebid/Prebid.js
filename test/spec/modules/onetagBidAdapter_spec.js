@@ -7,6 +7,28 @@ import { hasTypeNative } from '../../../modules/onetagBidAdapter';
 
 const NATIVE_SUFFIX = 'Ad';
 
+const getFloor = function(params) {
+    let floorPrice = 0.0001;
+    switch (params.mediaType) {
+      case BANNER:
+        floorPrice = 1.0;
+        break;
+      case VIDEO:
+        floorPrice = 2.0;
+        break;
+      case INSTREAM:
+        floorPrice = 3.0;
+        break;
+      case OUTSTREAM:
+        floorPrice = 4.0;
+        break;
+      case NATIVE:
+        floorPrice = 5.0;
+        break;
+    }
+    return {currency: params.currency, floor: floorPrice};
+};
+
 describe('onetag', function () {
   function createBid() {
     return {
@@ -84,6 +106,17 @@ describe('onetag', function () {
     bid.mediaTypes.native = {};
     bid.mediaTypes.native.adTemplate = bid.nativeParams.adTemplate;
     bid.mediaTypes.native.ortb = ortbConversion;
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'native|*': 1.10
+      }
+    }
+    bid.getFloor = getFloor;
     return bid;
   }
 
@@ -106,7 +139,7 @@ describe('onetag', function () {
         assets: [{
           id: 1,
           required: 1,
-      title: {
+          title: {
             len: 140
           }
         },
@@ -142,6 +175,19 @@ describe('onetag', function () {
         }]
       }
     };
+
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'native|*': 1.10
+      }
+    }
+    bid.getFloor = getFloor;
+
     return bid;
   }
 
@@ -151,6 +197,18 @@ describe('onetag', function () {
     bid.mediaTypes.banner = {
       sizes: [[300, 250]]
     };
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'banner|300x250': 0.10
+      }
+    }
+    bid.getFloor = getFloor;
+
     return bid;
   }
 
@@ -162,6 +220,17 @@ describe('onetag', function () {
       mimes: ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
       playerSize: [640, 480]
     };
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'video|640x480': 0.10
+      }
+    }
+    bid.getFloor = getFloor;
     return bid;
   }
 
@@ -173,6 +242,17 @@ describe('onetag', function () {
       mimes: ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
       playerSize: [640, 480]
     };
+    bid.floors = {
+      currency: 'EUR',
+      schema: {
+          delimiter: '|',
+          fields: [ 'mediaType', 'size' ]
+      },
+      values: {
+          'video|640x480': 0.10
+      }
+    }
+    bid.getFloor = getFloor;
     return bid;
   }
 
@@ -483,6 +563,33 @@ describe('onetag', function () {
         }
         expect(bid.bidId).to.be.a('string');
         expect(bid.pubId).to.be.a('string');
+        expect(bid.priceFloors).to.be.an('array');
+        expect(bid.priceFloors).to.satisfy(function (priceFloors) {
+          if (priceFloors.length === 0) {
+            return true;
+          }
+          return priceFloors.every(function (priceFloor) {
+            expect(priceFloor).to.have.all.keys('currency', 'floor', 'size');
+            expect(priceFloor.currency).to.be.a('string');
+            expect(priceFloor.floor).to.be.a('number');
+            expect(priceFloor.size).to.satisfy(function (size) {
+              if (typeof size !== 'object' && size !== null && typeof size !== 'undefined') {
+                return false;
+              }
+              if (size !== null) {
+                const keys = Object.keys(size);
+                if (keys.length == 0) {
+                  return true;
+                }
+                expect(size).to.have.keys('width', 'height');
+                expect(size.width).to.be.a('number');
+                expect(size.height).to.be.a('number');
+              }
+              return true;
+            });
+            return true;
+          });
+        });
       }
     });
     it('Returns empty data if no valid requests are passed', function () {

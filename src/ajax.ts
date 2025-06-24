@@ -57,6 +57,10 @@ export interface AjaxOptions {
      * Whether chrome's PAAPI headers should be sent.
      */
     adAuctionHeaders?: boolean;
+    /**
+     * If true, suppress warnings
+     */
+    suppressTopicsEnrollmentWarning?: boolean;
 }
 
 export const processRequestOptions = hook('async', function(options = {}, moduleType, moduleName) {
@@ -97,6 +101,9 @@ export function toFetchRequest(url, data, options: AjaxOptions = {}) {
         rqOpts[opt] = true;
       }
     })
+    if (options.suppressTopicsEnrollmentWarning != null) {
+      rqOpts.suppressTopicsEnrollmentWarning = options.suppressTopicsEnrollmentWarning;
+    }
   }
   if (options.keepalive) {
     rqOpts.keepalive = true;

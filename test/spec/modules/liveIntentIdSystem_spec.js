@@ -497,46 +497,6 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should decode a idCookie as fpid if it exists and coppa is false', function() {
-    coppaConsentDataStub.returns(false)
-    const result = liveIntentIdSubmodule.decode({nonId: 'foo', idCookie: 'bar'}, defaultConfigParams)
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'fpid': 'bar'}, 'fpid': {'id': 'bar'}})
-  });
-
-  it('should not decode a idCookie as fpid if it exists and coppa is true', function() {
-    coppaConsentDataStub.returns(true)
-    const result = liveIntentIdSubmodule.decode({nonId: 'foo', idCookie: 'bar'}, defaultConfigParams)
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo'}})
-  });
-
-  it('should resolve fpid from cookie', async function() {
-    const expectedValue = 'someValue'
-    const cookieName = 'testcookie'
-    getCookieStub.withArgs(cookieName).returns(expectedValue)
-    const config = { params: {
-      ...defaultConfigParams.params,
-      fpid: { 'strategy': 'cookie', 'name': cookieName },
-      requestedAttributesOverrides: { 'fpid': true } }
-    }
-    const submoduleCallback = liveIntentIdSubmodule.getId(config).callback;
-    const decodedResult = new Promise(resolve => {
-      submoduleCallback((x) => resolve(liveIntentIdSubmodule.decode(x, config)));
-    });
-    const request = idxRequests()[0];
-    expect(request.url).to.match(/https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*cd=.localhost.*&ic=someValue.*&resolve=nonId.*/);
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
-    );
-
-    const result = await decodedResult
-    expect(result).to.be.eql({
-      lipb: { 'fpid': expectedValue },
-      fpid: { id: expectedValue }
-    });
-  });
-
   it('should decode a sharethrough id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sharethrough: 'bar' }, defaultConfigParams);
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sharethrough': 'bar'}, 'sharethrough': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
