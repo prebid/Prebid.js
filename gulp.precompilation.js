@@ -43,7 +43,7 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
  * These are wrappers around the JSON that register themselves with the `metadata` library
  */
 function generateMetadataModules() {
-  const tpl = _.template(`import {metadata} from '../libraries/metadata/metadata.js';\nmetadata.register(<%= data %>)`);
+  const tpl = _.template(`import {metadata} from '../../libraries/metadata/metadata.js';\nmetadata.register(<%= data %>)`);
   function cleanMetadata(file) {
     const data = JSON.parse(file.contents.toString())
     delete data.NOTICE;
@@ -59,9 +59,9 @@ function generateMetadataModules() {
     .pipe(tap(file => {
       const {dir, name} = path.parse(file.path);
       file.contents = Buffer.from(tpl({data: cleanMetadata(file)}));
-      file.path = path.join(dir, `${name}.metadata.js`);
+      file.path = path.join(dir, `${name}.js`);
     }))
-    .pipe(gulp.dest(helpers.getPrecompiledPath('modules')));
+    .pipe(gulp.dest(helpers.getPrecompiledPath('metadata/modules')));
 }
 
 /**

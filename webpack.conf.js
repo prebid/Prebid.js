@@ -67,7 +67,7 @@ module.exports = {
         import: './src/prebid.js'
       },
       'prebid-core.metadata': {
-        import: './modules/prebid-core.metadata.js',
+        import: './metadata/modules/prebid-core.js',
         dependOn: 'prebid-core'
       }
     };
@@ -80,10 +80,10 @@ module.exports = {
           dependOn: 'prebid-core'
         };
         entry[mod] = moduleEntry;
-        const metadataModule = helpers.getMetadataModule(mod);
+        const metadataModule = helpers.getMetadataEntry(mod);
         if (metadataModule != null) {
           entry[metadataModule] = {
-            import: `./modules/${metadataModule}.js`,
+            import: `./metadata/modules/${mod}.js`,
             dependOn: 'prebid-core'
           }
         }

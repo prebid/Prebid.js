@@ -127,7 +127,7 @@ module.exports = {
       return memo;
     }, internalModules));
   }),
-  getMetadataModule(moduleName) {
+  getMetadataEntry(moduleName) {
     if (fs.pathExistsSync(`./metadata/modules/${moduleName}.json`)) {
       return `${moduleName}.metadata`;
     } else {
