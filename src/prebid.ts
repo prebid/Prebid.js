@@ -234,7 +234,7 @@ function validateNativeMediaType(adUnit: AdUnit) {
         return validatedAdUnit;
     }
     function checkDeprecated(onDeprecated) {
-        for (const key of ['sendTargetingKeys', 'types']) {
+        for (const key of ['types']) {
             if (native.hasOwnProperty(key)) {
                 const res = onDeprecated(key);
                 if (res) return res;
