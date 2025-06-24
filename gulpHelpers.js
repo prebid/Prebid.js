@@ -128,7 +128,7 @@ module.exports = {
     }, internalModules));
   }),
   getMetadataModule(moduleName) {
-    if (['bidadapter', 'analyticsadapter', 'idsystem', 'rtdprovider'].some(suffix => moduleName.toLowerCase().endsWith(suffix))) {
+    if (fs.pathExistsSync(`./metadata/modules/${moduleName}.json`)) {
       return `${moduleName}.metadata`;
     } else {
       return null;

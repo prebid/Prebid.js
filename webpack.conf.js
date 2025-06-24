@@ -66,6 +66,10 @@ module.exports = {
       'prebid-core': {
         import: './src/prebid.js'
       },
+      'prebid-core.metadata': {
+        import: './modules/prebid-core.metadata.js',
+        dependOn: 'prebid-core'
+      }
     };
     const selectedModules = new Set(helpers.getArgModules());
 

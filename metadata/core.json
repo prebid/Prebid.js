@@ -1,0 +1,16 @@
+{
+  "components": [
+    {
+      "componentType": "prebid",
+      "componentName": "fpdEnrichment",
+      "moduleName": "prebid-core",
+      "disclosureURL": "local://prebid/prebid-core.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "topicsFpd",
+      "moduleName": "topicsFpdModule",
+      "disclosureURL": "local://prebid/topicsFpdModule.json"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "disclosures": [
+    {
+      "identifier": "prebid:topics",
+      "type": "web",
+      "domains": ["*"],
+      "purposes": [
+        1,
+        2
+      ]
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Browsing topics are cached in localStorage"
+    }
+  ]
+}
