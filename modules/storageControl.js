@@ -1,6 +1,7 @@
 import {config} from '../src/config.js';
 import {metadata} from '../libraries/metadata/metadata.js';
 import {
+  ACTIVITY_PARAM_COMPONENT,
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE,
   ACTIVITY_PARAM_STORAGE_KEY,
@@ -35,26 +36,25 @@ export function getDisclosures(params, meta = metadata) {
   const matchingDisclosures = [];
   const disclosureURLs = {};
   const data = meta.getMetadata(params[ACTIVITY_PARAM_COMPONENT_TYPE], params[ACTIVITY_PARAM_COMPONENT_NAME]);
-  if (data) {
-    disclosureURLs[params[ACTIVITY_PARAM_COMPONENT_NAME]] = data.disclosureURL;
-    if (data.aliasOf) {
-      const parent = meta.getMetadata(params[ACTIVITY_PARAM_COMPONENT_TYPE], data.aliasOf);
-      if (parent) {
-        disclosureURLs[data.aliasOf] = parent.disclosureURL;
-      }
+  if (!data) return null;
+  disclosureURLs[params[ACTIVITY_PARAM_COMPONENT_NAME]] = data.disclosureURL;
+  if (data.aliasOf) {
+    const parent = meta.getMetadata(params[ACTIVITY_PARAM_COMPONENT_TYPE], data.aliasOf);
+    if (parent) {
+      disclosureURLs[data.aliasOf] = parent.disclosureURL;
     }
-    Object.entries(disclosureURLs).forEach(([componentName, disclosureURL]) => {
-      meta.getStorageDisclosure(disclosureURL)
-        ?.filter(disclosure => matches(params, disclosure))
-        ?.forEach(disclosure => {
-          matchingDisclosures.push({
-            [ACTIVITY_PARAM_COMPONENT_NAME]: componentName,
-            disclosureURL,
-            disclosure
-          })
-        })
-    })
   }
+  Object.entries(disclosureURLs).forEach(([componentName, disclosureURL]) => {
+    meta.getStorageDisclosure(disclosureURL)
+      ?.filter(disclosure => matches(params, disclosure))
+      ?.forEach(disclosure => {
+        matchingDisclosures.push({
+          [ACTIVITY_PARAM_COMPONENT_NAME]: componentName,
+          disclosureURL,
+          disclosure
+        })
+      })
+  })
   return {
     matches: matchingDisclosures,
     disclosureURLs
@@ -66,24 +66,30 @@ export function checkDisclosure(params, getMatchingDisclosures = getDisclosures)
   let parent = false;
   let reason = null;
   const key = params[ACTIVITY_PARAM_STORAGE_KEY]
+  const component = params[ACTIVITY_PARAM_COMPONENT];
   if (key) {
-    const {disclosureURLs, matches} = getMatchingDisclosures(params);
-    const moduleName = params[ACTIVITY_PARAM_COMPONENT_NAME]
-    for (const {componentName} of matches) {
-      if (componentName === moduleName) {
-        disclosed = true;
-      } else {
-        parent = true;
-        reason = `Storage key "${key}" is disclosed by module "${componentName}", but not by "${moduleName}" itself (the latter is an alias of the former)`
+    const disclosures = getMatchingDisclosures(params);
+    if (disclosures == null) {
+      reason = `Cannot determine if storage key "${key}" is disclosed by "${component}" because the necessary metadata is missing - was it included in the build?`
+    } else {
+      const {disclosureURLs, matches} = disclosures;
+      const moduleName = params[ACTIVITY_PARAM_COMPONENT_NAME]
+      for (const {componentName} of matches) {
+        if (componentName === moduleName) {
+          disclosed = true;
+        } else {
+          parent = true;
+          reason = `Storage key "${key}" is disclosed by module "${componentName}", but not by "${moduleName}" itself (the latter is an alias of the former)`
+        }
+        if (disclosed || parent) break;
       }
-      if (disclosed || parent) break;
-    }
-    if (!disclosed && !parent) {
-      reason = `Storage key "${key}" (for ${params[ACTIVITY_PARAM_STORAGE_TYPE]} storage) is not disclosed by "${moduleName}"`
-      if (disclosureURLs[moduleName]) {
-        reason += ` @ ${disclosureURLs[moduleName]}`
-      } else {
-        reason += ` - no disclosure URL was provided, or it could not be retrieved`
+      if (!disclosed && !parent) {
+        reason = `Storage key "${key}" (for ${params[ACTIVITY_PARAM_STORAGE_TYPE]} storage) is not disclosed by "${component}"`
+        if (disclosureURLs[moduleName]) {
+          reason += ` @ ${disclosureURLs[moduleName]}`
+        } else {
+          reason += ` - no disclosure URL was provided, or it could not be retrieved`
+        }
       }
     }
   } else {

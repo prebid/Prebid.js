@@ -30,11 +30,8 @@ describe('storageControl', () => {
       }
     }
 
-    it('should return an empty array when no metadata is available', () => {
-      expect(getDisclosures(mkParams(), metadata)).to.eql({
-        disclosureURLs: {},
-        matches: []
-      });
+    it('should return null when no metadata is available', () => {
+      expect(getDisclosures(mkParams(), metadata)).to.be.null;
     });
 
     describe('when metadata is available', () => {
