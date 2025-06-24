@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { _map, cleanObj, deepAccess, flatten, isArray, isNumber, parseSizesInput } from '../src/utils.js';
+import { _map, cleanObj, deepAccess, flatten, isArray, isNumber, logWarn, parseSizesInput } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
@@ -20,6 +20,10 @@ export const spec = {
   gvlid: 1134,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
+    if (!bid.params) return false;
+    if (bid.params.bidfloor && !isNumber(bid.params.bidfloor)) {
+      logWarn('incorrect floor value, should be a number');
+    }
     return isNumber(deepAccess(bid, 'params.source'))
   },
   getUserSyncs: getUserSyncsFn,
@@ -163,6 +167,20 @@ export function bidToTag(bidRequests, adapterRequest) {
   return { tag, bids };
 }
 
+const getBidFloor = (bid) => {
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+
+    return bidFloor?.floor;
+  } catch (err) {
+    return isNumber(bid.params.bidfloor) ? bid.params.bidfloor : undefined;
+  }
+};
+
 /**
  * @param bidReq {object}
  * @returns {object}
@@ -170,13 +188,15 @@ export function bidToTag(bidRequests, adapterRequest) {
 export function prepareBidRequests(bidReq) {
   const mediaType = deepAccess(bidReq, 'mediaTypes.video') ? VIDEO : 'display'
   const sizes = mediaType === VIDEO ? deepAccess(bidReq, 'mediaTypes.video.playerSize') : deepAccess(bidReq, 'mediaTypes.banner.sizes');
-  return {
+  return cleanObj({
     'CallbackId': bidReq.bidId,
     'Aid': bidReq.params.source,
     'AdType': mediaType,
     'PlacementId': bidReq.adUnitCode,
     'Sizes': parseSizesInput(sizes).join(','),
-  };
+    'BidFloor': getBidFloor(bidReq),
+
+  });
 }
 
 /**
