@@ -22,6 +22,7 @@ const NET_REV = true;
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['zeta'],
   supportedMediaTypes: [BANNER],
 
   /**

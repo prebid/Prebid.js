@@ -22,6 +22,7 @@ const ALIASES = [
   { code: 'emx_digital', gvlid: 183 },
   { code: 'cadent', gvlid: 183 },
   { code: 'emxdigital', gvlid: 183 },
+  { code: 'cadentaperturemx', gvlid: 183 },
 ];
 
 const EIDS_SUPPORTED = [
