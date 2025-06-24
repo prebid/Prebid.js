@@ -30,7 +30,7 @@ Object.entries({
 })
 
 function formatGvlid(gvlid) {
-  return gvlid === VENDORLESS_GVLID ? '1stParty' : gvlid;
+  return gvlid === VENDORLESS_GVLID ? null : gvlid;
 }
 
 function bidderMetadata() {

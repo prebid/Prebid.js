@@ -5,7 +5,8 @@
     {
       "componentType": "userId",
       "componentName": "openPairId",
-      "gvlid": "1stParty",
+      "gvlid": null,
+      "disclosureURL": null,
       "aliasOf": null
     }
   ]

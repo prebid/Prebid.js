@@ -5,7 +5,8 @@
     {
       "componentType": "rtd",
       "componentName": "geolocation",
-      "gvlid": "1stParty"
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

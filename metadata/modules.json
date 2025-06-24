@@ -4749,7 +4749,7 @@
     {
       "componentType": "rtd",
       "componentName": "geolocation",
-      "gvlid": "1stParty",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -5238,7 +5238,7 @@
     {
       "componentType": "userId",
       "componentName": "openPairId",
-      "gvlid": "1stParty",
+      "gvlid": null,
       "disclosureURL": null,
       "aliasOf": null
     },
@@ -5266,7 +5266,7 @@
     {
       "componentType": "userId",
       "componentName": "pubProvidedId",
-      "gvlid": "1stParty",
+      "gvlid": null,
       "disclosureURL": null,
       "aliasOf": null
     },
@@ -5301,14 +5301,14 @@
     {
       "componentType": "userId",
       "componentName": "sharedId",
-      "gvlid": "1stParty",
+      "gvlid": null,
       "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": null
     },
     {
       "componentType": "userId",
       "componentName": "pubCommonId",
-      "gvlid": "1stParty",
+      "gvlid": null,
       "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
     },

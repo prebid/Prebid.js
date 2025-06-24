@@ -25,14 +25,14 @@
     {
       "componentType": "userId",
       "componentName": "sharedId",
-      "gvlid": "1stParty",
+      "gvlid": null,
       "disclosureURL": "https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/prebid/sharedId-optout.json",
       "aliasOf": null
     },
     {
       "componentType": "userId",
       "componentName": "pubCommonId",
-      "gvlid": "1stParty",
+      "gvlid": null,
       "disclosureURL": "https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
     }
