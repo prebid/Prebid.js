@@ -641,7 +641,7 @@ export const getTargetingData = (adUnitCodes, config, userConsent, auction) => {
 
   // Only log when RTD floor is applied
   if (hasRtdFloorAppliedBid) {
-    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData');
+    logInfo(CONSTANTS.LOG_PRE_FIX, 'Setting targeting via getTargetingData:');
   }
 
   // Process each ad unit code
