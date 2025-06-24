@@ -10,13 +10,11 @@ import { buildRequests, interpretResponse } from '../libraries/braveUtils/buildA
  */
 
 const BIDDER_CODE = 'brave';
-const GVLID = 869;
 const DEFAULT_CUR = 'USD';
 const ENDPOINT_URL = `https://point.braveglobal.tv/?t=2&partner=hash`;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => !!(bid.params.placementId && bid.params.placementId.toString().length === 32),
