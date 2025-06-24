@@ -1,5 +1,5 @@
 /**
- * This module is not intented for general use, but used by the build system to extract module metadata.
+ * This module is not intended for general use, but used by the build system to extract module metadata.
  * Cfr. `gulp extract-metadata`
  */
 

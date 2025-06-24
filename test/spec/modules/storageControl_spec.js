@@ -81,7 +81,7 @@ describe('storageControl', () => {
         });
       });
 
-      it('should return an emtpy array when bidder has no disclosure', () => {
+      it('should return an empty array when bidder has no disclosure', () => {
         expect(getDisclosures(mkParams(STORAGE_TYPE_COOKIES, 'mockCookie', 'noDisclosureBidder'), metadata)).to.eql({
           disclosureURLs: {
             noDisclosureBidder: null
