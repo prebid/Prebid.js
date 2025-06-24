@@ -18,12 +18,23 @@ describe('dvgroupBidAdapterTests', function () {
         },
         bidder: 'dvgroup',
         params: {
-          source: 'ssp1',
+          sspId: 'prebidssp',
         },
         requestId: 'request-123',
       }
     ]
   };
+
+  it('validate_pub_params', function () {
+    expect(
+      spec.isBidRequestValid({
+        bidder: 'dvgroup',
+        params: {
+          sspId: 'prebidssp',
+        }
+      })
+    ).to.equal(true);
+  });
 
   it('validate_generated_url', function () {
     const request = spec.buildRequests(deepClone(bidRequestData.bids), { timeout: 1234 });

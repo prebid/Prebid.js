@@ -593,7 +593,7 @@ describe('bid overrides', function () {
   const logger = prefixLog('TEST');
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {

@@ -8,7 +8,6 @@
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {formatQS, logError} from '../src/utils.js';
-import {includes} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -63,7 +62,7 @@ export const verizonMediaIdSubmodule = {
     }
 
     const data = {
-      '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
+      '1p': [1, '1', true].includes(params['1p']) ? '1' : '0',
       he: params.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
       gdpr_consent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
