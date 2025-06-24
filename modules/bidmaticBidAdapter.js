@@ -120,7 +120,7 @@ export function parseResponseBody(serverResponse, adapterRequest) {
     });
 
     if (bidRequestMatch) {
-      responseBids.push(createBid(serverBid, adapterRequest));
+      responseBids.push(createBid(serverBid));
     }
   });
 
@@ -182,10 +182,9 @@ export function prepareBidRequests(bidReq) {
 /**
  * Configure new bid by response
  * @param bidResponse {object}
- * @param originalRequest {object}
  * @returns {object}
  */
-export function createBid(bidResponse, originalRequest) {
+export function createBid(bidResponse) {
   return {
     requestId: bidResponse.requestId,
     creativeId: bidResponse.cmpId,
