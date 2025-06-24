@@ -168,7 +168,7 @@ describe('bidmaticBidAdapter', function () {
         'Domain': 'https://example.com',
         'Schain': { ver: '1.0' },
         'UserIds': { id1: 'value1' },
-        'TMax': 1000,
+        'Tmax': 1000,
         'Coppa': 0
       });
     });

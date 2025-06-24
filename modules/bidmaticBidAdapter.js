@@ -1,8 +1,19 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { _map, cleanObj, deepAccess, flatten, isArray, isNumber, logWarn, parseSizesInput } from '../src/utils.js';
+import {
+  _map,
+  cleanObj,
+  deepAccess,
+  flatten,
+  getWinDimensions,
+  isArray,
+  isNumber,
+  logWarn,
+  parseSizesInput
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { chunk } from '../libraries/chunk/chunk.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -134,6 +145,7 @@ export function parseResponseBody(serverResponse, adapterRequest) {
 export function remapBidRequest(bidRequests, adapterRequest) {
   const bidRequestBody = {
     Domain: deepAccess(adapterRequest, 'refererInfo.page'),
+    ...getPlacementEnv()
   };
 
   bidRequestBody.USP = deepAccess(adapterRequest, 'uspConsent');
@@ -144,7 +156,7 @@ export function remapBidRequest(bidRequests, adapterRequest) {
   bidRequestBody.Schain = deepAccess(bidRequests[0], 'schain');
   bidRequestBody.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
   bidRequestBody.UserIds = deepAccess(bidRequests[0], 'userId');
-  bidRequestBody.TMax = adapterRequest.timeout;
+  bidRequestBody.Tmax = adapterRequest.timeout;
   if (deepAccess(adapterRequest, 'gdprConsent.gdprApplies')) {
     bidRequestBody.GDPRConsent = deepAccess(adapterRequest, 'gdprConsent.consentString');
     bidRequestBody.GDPR = 1;
@@ -195,7 +207,7 @@ export function prepareBidRequests(bidReq) {
     'PlacementId': bidReq.adUnitCode,
     'Sizes': parseSizesInput(sizes).join(','),
     'BidFloor': getBidFloor(bidReq),
-
+    ...getPlacementInfo(bidReq)
   });
 }
 
@@ -222,6 +234,51 @@ export function createBid(bidResponse) {
       advertiserDomains: bidResponse.adomain || []
     }
   };
+}
+
+function getPlacementInfo(bidReq) {
+  const placementElementNode = document.getElementById(bidReq.adUnitCode);
+  try {
+    return cleanObj({
+      AuctionsCount: bidReq.auctionsCount,
+      DistanceToView: getViewableDistance(placementElementNode)
+    });
+  } catch (e) {
+    logWarn('Error while getting placement info', e);
+    return {};
+  }
+}
+
+/**
+ * @param element
+ */
+function getViewableDistance(element) {
+  const elementRect = getBoundingClientRect(element);
+
+  if (!elementRect) {
+    return 0;
+  }
+
+  const elementMiddle = elementRect.top + (elementRect.height / 2);
+  const viewportHeight = getWinDimensions().innerHeight
+  if (elementMiddle > window.scrollY + viewportHeight) {
+    // element is below the viewport
+    return Math.round(elementMiddle - (window.scrollY + viewportHeight));
+  }
+  // element is above the viewport -> negative value
+  return Math.round(elementMiddle);
+}
+
+function getPageHeight() {
+  return document.documentElement.scrollHeight || document.body.scrollHeight;
+}
+
+function getPlacementEnv() {
+  return cleanObj({
+    TimeFromNavigation: Math.floor(performance.now()),
+    TabActive: document.visibilityState === 'visible',
+    PageHeight: getPageHeight()
+  })
 }
 
 registerBidder(spec);
