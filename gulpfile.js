@@ -29,6 +29,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+const {disclosureSummary} = require('./metadata/summary.js');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -314,6 +315,10 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
+  const disclosureFile = helpers.getBuiltPath(dev, 'storageDisclosures.json');
+  fs.writeFileSync(disclosureFile, Buffer.from(JSON.stringify(disclosureSummary(['prebid-core'].concat(modules)), null, 2)));
+
+  fancyLog('Storage disclosure summary written to:', disclosureFile);
   fancyLog('Concatenating files:\n', entries);
   fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
   fancyLog('Generating bundle:', outputFileName);

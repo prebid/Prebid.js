@@ -103,7 +103,6 @@ async function compileModuleMetadata() {
   }
 }
 
-
 export default async function compileMetadata() {
   await compileCoreMetadata();
   await compileModuleMetadata();
