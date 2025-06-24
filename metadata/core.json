@@ -11,6 +11,12 @@
       "componentName": "topicsFpd",
       "moduleName": "topicsFpdModule",
       "disclosureURL": "local://prebid/topicsFpdModule.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "FPDValidation",
+      "moduleName": "validationFpdModule",
+      "disclosureURL": "local://prebid/sharedId-optout.json"
     }
   ]
 }

@@ -118,6 +118,7 @@ export const sharedIdSystemSubmodule: IdProviderSpec<'sharedId'> = {
   name: 'sharedId',
   aliasName: 'pubCommonId',
   gvlid: VENDORLESS_GVLID as any,
+  disclosureURL: 'local://prebid/sharedId-optout.json',
 
   /**
    * decode the stored id value for passing to bid requests

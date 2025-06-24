@@ -23,18 +23,9 @@
   },
   "components": [
     {
-      "componentType": "userId",
-      "componentName": "sharedId",
-      "gvlid": "1stParty",
-      "disclosureURL": "https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/prebid/sharedId-optout.json",
-      "aliasOf": null
-    },
-    {
-      "componentType": "userId",
-      "componentName": "pubCommonId",
-      "gvlid": null,
-      "disclosureURL": "https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/prebid/sharedId-optout.json",
-      "aliasOf": "sharedId"
+      "componentType": "prebid",
+      "componentName": "FPDValidation",
+      "disclosureURL": "https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/prebid/sharedId-optout.json"
     }
   ]
 }

@@ -5302,14 +5302,14 @@
       "componentType": "userId",
       "componentName": "sharedId",
       "gvlid": "1stParty",
-      "disclosureURL": null,
+      "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": null
     },
     {
       "componentType": "userId",
       "componentName": "pubCommonId",
       "gvlid": null,
-      "disclosureURL": null,
+      "disclosureURL": "local://prebid/sharedId-optout.json",
       "aliasOf": "sharedId"
     },
     {

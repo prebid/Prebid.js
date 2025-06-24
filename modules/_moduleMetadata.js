@@ -73,7 +73,7 @@ function uidMetadata() {
           .map(name => [
             name,
             {
-              gvlid: formatGvlid(GDPR_GVLIDS.get(name).modules?.[MODULE_TYPE_UID] ?? null),
+              gvlid: formatGvlid(GDPR_GVLIDS.get(provider).modules?.[MODULE_TYPE_UID] ?? null),
               disclosureURL: module.disclosureURL ?? null,
               aliasOf: name !== provider ? provider : null
             }]

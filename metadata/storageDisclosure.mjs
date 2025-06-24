@@ -96,13 +96,16 @@ export const fetchDisclosure = (() => {
   const disclosures = {};
   return function (metadata) {
     const url = metadata.disclosureURL;
+    const isLocal = LOCAL_DISCLOSURE_PATTERN.test(url);
+    if (isLocal) {
+      metadata.disclosureURL = url.replace(LOCAL_DISCLOSURE_PATTERN, LOCAL_DISCLOSURES_URL);
+    }
     if (!disclosures.hasOwnProperty(url)) {
-      console.info(`Fetching disclosure for "${metadata.componentName}" (gvl ID: ${metadata.gvlid}) from "${url}"...`);
+      console.info(`Fetching disclosure for "${metadata.componentType}.${metadata.componentName}" (gvl ID: ${metadata.gvlid}) from "${url}"...`);
       let disclosure;
-      if (url.startsWith('local://')) {
+      if (isLocal) {
         const fileName = url.replace(LOCAL_DISCLOSURE_PATTERN, LOCAL_DISCLOSURE_PATH)
         disclosure = readFile(fileName);
-        metadata.disclosureURL = url.replace(LOCAL_DISCLOSURE_PATTERN, LOCAL_DISCLOSURES_URL)
       } else {
         disclosure = fetchUrl(url);
       }

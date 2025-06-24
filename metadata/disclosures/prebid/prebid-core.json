@@ -3,7 +3,7 @@
     {
       "identifier": "_rdc*",
       "type": "cookie",
-      "maxAgeSeconds": 10000,
+      "maxAgeSeconds": 10,
       "cookieRefresh": false,
       "domains": ["*"],
       "purposes": [
