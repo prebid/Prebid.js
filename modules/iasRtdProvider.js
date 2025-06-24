@@ -233,31 +233,9 @@ export function injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits) 
 
   // Add to site.ext.data
   mergeDeep(ortb2Fragments.global, { site: { ext: { data: mappedData } } });
+  // for nonstandard modules to use
+  mergeDeep(ortb2Fragments.global, { site: { ext: { data: { 'ias-brand-safety': mappedData } } } });
 
-  const keywordsString = Object.entries(mappedData)
-    .map(([key, value]) => `${key}=${value}`).join(',');
-
-  const dctrString = Object.entries(mappedData)
-    .map(([key, value]) => `${key}=${value}`).join('|');
-
-  const existingKeywords = ortb2Fragments.global?.site?.keywords;
-
-  // Ensure site object exists
-  if (!ortb2Fragments.global.site) ortb2Fragments.global.site = {};
-
-  // Update site.keywords for appnexus/xandr
-  ortb2Fragments.global.site.keywords = existingKeywords
-    ? `${existingKeywords},${keywordsString}`
-    : keywordsString;
-
-  // Update dctr for pubmatic
-  adUnits.forEach(adUnit => {
-    adUnit.bids.forEach(bid => {
-      if (bid.bidder === 'pubmatic') {
-        bid.params.dctr = bid.params.dctr ? `${bid.params.dctr}|${dctrString}` : dctrString;
-      }
-    });
-  });
 }
 
 /**
