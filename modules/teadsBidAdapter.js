@@ -190,7 +190,7 @@ export const spec = {
  */
 function getSharedViewerIdParameters(validBidRequests) {
   const sharedViewerIdMapping = {
-    unifiedId2: 'uidapi.com', // uid2IdSystem //TODO: to verify with maintainers
+    unifiedId2: 'uidapi.com', // uid2IdSystem
     liveRampId: 'liveramp.com', // identityLinkIdSystem
     lotamePanoramaId: 'crwdcntrl.net', // lotamePanoramaIdSystem
     id5Id: 'id5-sync.com', // id5IdSystem
