@@ -19,7 +19,7 @@ module.exports = function (options = {}) {
       [
         useLocal('@babel/preset-env'),
         {
-          'useBuiltIns': 'entry',
+          'useBuiltIns': isES5Mode ? 'usage' : 'entry',
           'corejs': '3.42.0',
           // Use ES5 mode if requested, otherwise use original logic
           'modules': isES5Mode ? 'commonjs' : (options.test ? 'commonjs' : 'auto'),
