@@ -399,7 +399,6 @@ export const spec = {
       payload.publisher_id = tags[0].publisher_id;
     }
 
-
     const request = formatRequest(payload, bidderRequest);
     return request;
   },
