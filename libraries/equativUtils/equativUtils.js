@@ -86,7 +86,6 @@ function makeId() {
   return str;
 }
 
-
 /**
  * Prepares impressions for the request
  *
