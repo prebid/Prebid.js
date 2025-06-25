@@ -53,8 +53,8 @@ export function validateOrtbBannerFields(adUnit, onInvalidParam?) {
           if (typeof onInvalidParam === 'function') {
             onInvalidParam(key, value, adUnit);
           } else {
+            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.banner.${key} ORTB property. The property has been removed.`, adUnit);
             delete bannerParams[key];
-            logWarn(`Invalid prop in adUnit "${adUnit.code}": Invalid value for mediaTypes.banner.${key} ORTB property. The property has been removed.`);
           }
         }
       });
