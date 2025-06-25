@@ -279,7 +279,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
   });
 
   describe('injectBrandSafetyData', function () {
-    it('should inject brandSafety data and update keywords and dctr', function () {
+    it('should inject brandSafety data', function () {
       const ortb2Fragments = { global: { site: {} } };
       const adUnits = [
         { bids: [{ bidder: 'pubmatic', params: {} }] }
@@ -289,31 +289,24 @@ describe('iasRtdProvider is a RTD provider that', function () {
         alc: 'veryLow',
         dlm: 'veryLow',
         drg: 'veryLow',
-        hat: 'veryLow',
+        hat: 'high',
         off: 'veryLow',
         vio: 'veryLow'
       };
       injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits);
-      expect(ortb2Fragments.global.site.keywords).to.match(/^adt=veryLow,alc=veryLow,dlm=veryLow,drg=veryLow,hat=veryLow,off=veryLow,vio=veryLow$/);
-      expect(adUnits[0].bids[0].params.dctr).to.match(/^adt=veryLow\|alc=veryLow\|dlm=veryLow\|drg=veryLow\|hat=veryLow\|off=veryLow\|vio=veryLow$/);
-    });
-    it('should append to pre-existing dctr and keywords', function () {
-      const ortb2Fragments = { global: { site: { keywords: 'foo=bar' } } };
-      const adUnits = [
-        { bids: [{ bidder: 'pubmatic', params: { dctr: 'existing=foo' } }] }
-      ];
-      const brandSafetyData = {
+      expect(ortb2Fragments.global.site.ext.data['ias-brand-safety']).to.deep.equal({
         adt: 'veryLow',
         alc: 'veryLow',
         dlm: 'veryLow',
         drg: 'veryLow',
-        hat: 'veryLow',
+        hat: 'high',
         off: 'veryLow',
         vio: 'veryLow'
-      };
-      injectBrandSafetyData(brandSafetyData, ortb2Fragments, adUnits);
-      expect(adUnits[0].bids[0].params.dctr).to.match(/^existing=foo\|adt=veryLow\|alc=veryLow\|dlm=veryLow\|drg=veryLow\|hat=veryLow\|off=veryLow\|vio=veryLow$/);
-      expect(ortb2Fragments.global.site.keywords).to.match(/^foo=bar,adt=veryLow,alc=veryLow,dlm=veryLow,drg=veryLow,hat=veryLow,off=veryLow,vio=veryLow$/);
+      });
+      // Also assert that each key/value is present at the top level of ext.data
+      Object.entries(brandSafetyData).forEach(([key, value]) => {
+        expect(ortb2Fragments.global.site.ext.data[key]).to.equal(value);
+      });
     });
   });
 });
