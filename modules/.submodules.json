@@ -83,6 +83,7 @@
       "blueconicRtdProvider",
       "brandmetricsRtdProvider",
       "browsiRtdProvider",
+      "chromeAiRtdProvider",
       "cleanioRtdProvider",
       "confiantRtdProvider",
       "contxtfulRtdProvider",
@@ -126,8 +127,7 @@
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider",
-      "wurflRtdProvider",
-      "chromeAiRtdProvider"
+      "wurflRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
