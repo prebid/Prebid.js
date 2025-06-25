@@ -15,7 +15,6 @@ import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import { percentInView } from '../libraries/percentInView/percentInView.js';
 
 const BIDDER_CODE = 'underdogmedia';
-const GVLID = 159;
 const UDM_ADAPTER_VERSION = '7.30V';
 const UDM_VENDOR_ID = '159';
 const prebidVersion = '$prebid.version$';
@@ -37,7 +36,7 @@ export function resetUserSync() {
 export const spec = {
   NON_MEASURABLE,
   code: BIDDER_CODE,
-  gvlid: GVLID,
+  gvlid: UDM_VENDOR_ID,
   bidParams: [],
 
   isBidRequestValid: function (bid) {
