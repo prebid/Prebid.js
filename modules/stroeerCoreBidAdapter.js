@@ -1,7 +1,8 @@
-import { buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import {buildUrl, deepAccess, deepSetValue, generateUUID, getWinDimensions, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
+import {getBoundingClientRect} from '../libraries/boundingClientRect/boundingClientRect.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -55,14 +56,17 @@ export const spec = {
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
-      schain: anyBid.schain
+      schain: anyBid.schain,
+      ver: {
+        pb: getGlobal().version,
+      },
     };
 
-    const userIds = anyBid.userId;
+    const eids = anyBid.userIdAsEids;
 
-    if (!isEmpty(userIds)) {
+    if (!isEmpty(eids)) {
       basePayload.user = {
-        euids: userIds
+        eids: eids
       };
     }
 
@@ -114,10 +118,7 @@ export const spec = {
           currency: 'EUR',
           netRevenue: true,
           creativeId: '',
-          meta: {
-            advertiserDomains: bidResponse.adomain,
-            dsa: bidResponse.dsa,
-            campaignType: bidResponse.campaignType},
+          meta: {...bidResponse.meta},
           mediaType,
         };
 

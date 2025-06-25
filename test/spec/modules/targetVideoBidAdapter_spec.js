@@ -93,6 +93,52 @@ describe('TargetVideo Bid Adapter', function() {
     expect(payload.source.ext.schain).to.deep.equal(globalSchain);
   });
 
+  it('Test the VIDEO request eids and user data sending', function() {
+    const userData = [
+      {
+        ext: { segtax: 600, segclass: '1' },
+        name: 'example.com',
+        segment: [{ id: '243' }],
+      },
+      {
+        ext: { segtax: 600, segclass: '1' },
+        name: 'ads.example.org',
+        segment: [{ id: '243' }],
+      },
+    ];
+    const userIdAsEids = [
+      {
+        source: 'test1.org',
+        uids: [{id: '123'}]
+      }
+    ];
+    const bidderRequestWithUserData = {
+      ...defaultBidderRequest,
+      ortb2: {
+        user: {
+          data: userData
+        }
+      }
+    };
+    const expected = {
+      ext: {
+        eids: userIdAsEids,
+        data: bidderRequestWithUserData.ortb2.user.data,
+      }
+    };
+
+    let videoRequestCloned = deepClone(videoRequest);
+    videoRequestCloned[0].userIdAsEids = userIdAsEids;
+
+    const request = spec.buildRequests(videoRequestCloned, bidderRequestWithUserData);
+    expect(request).to.not.be.empty;
+
+    const payload = JSON.parse(request[0].data);
+    expect(payload).to.not.be.empty;
+    expect(payload.user).to.exist;
+    expect(payload.user).to.deep.equal(expected);
+  });
+
   it('Handle BANNER nobid responses', function() {
     const responseBody = {
       'version': '0.0.1',

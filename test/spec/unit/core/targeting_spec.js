@@ -252,7 +252,7 @@ describe('targeting tests', function () {
   });
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     useBidCache = true;
 
@@ -661,7 +661,7 @@ describe('targeting tests', function () {
           .filter((bid) => bid.adserverTargeting[key] != null)
           .map((bid) => bid.bidderCode)
           .forEach((code) => keys.add(`${key}_${code}`.substr(0, 20)));
-        return new Array(...keys);
+        return [...keys];
       }
 
       const targetingResult = function () {
