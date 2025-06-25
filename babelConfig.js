@@ -1,5 +1,6 @@
 
 let path = require('path');
+var argv = require('yargs').argv;
 
 function useLocal(module) {
   return require.resolve(module, {
@@ -10,6 +11,9 @@ function useLocal(module) {
 }
 
 module.exports = function (options = {}) {
+
+  const isES5Mode = argv.ES5 || options.ES5;
+
   return {
     'presets': [
       [
@@ -17,8 +21,13 @@ module.exports = function (options = {}) {
         {
           'useBuiltIns': 'entry',
           'corejs': '3.42.0',
-          // a lot of tests use sinon.stub & others that stopped working on ES6 modules with webpack 5
-          'modules': options.test ? 'commonjs' : 'auto',
+          // Use ES5 mode if requested, otherwise use original logic
+          'modules': isES5Mode ? 'commonjs' : (options.test ? 'commonjs' : 'auto'),
+          ...(isES5Mode && {
+            'targets': {
+              'browsers': ['ie >= 11', 'chrome >= 50', 'firefox >= 50', 'safari >= 10']
+            }
+          })
         }
       ]
     ],
