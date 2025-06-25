@@ -4,6 +4,7 @@ import { tryAppendQueryString } from '../libraries/urlUtils/urlUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess, deepSetValue, logError, logWarn, mergeDeep } from '../src/utils.js';
 
@@ -17,6 +18,7 @@ const COOKIE_SYNC_ORIGIN = 'https://apps.smartadserver.com';
 const COOKIE_SYNC_URL = `${COOKIE_SYNC_ORIGIN}/diff/templates/asset/csync.html`;
 const DEFAULT_TTL = 300;
 const LOG_PREFIX = 'Equativ:';
+const OUTSTREAM_RENDERER_URL = 'https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js';
 const PID_STORAGE_NAME = 'eqt_pid';
 
 let feedbackArray = [];
@@ -186,6 +188,32 @@ export const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: DEFAULT_TTL
+  },
+
+  bidResponse(buildBidResponse, bid, context) {
+    const { bidRequest } = context;
+    const bidResponse = buildBidResponse(bid, context);
+
+    if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
+      const renderer = Renderer.install({
+        adUnitCode: bidRequest.adUnitCode,
+        id: bidRequest.bidId,
+        url: OUTSTREAM_RENDERER_URL,
+      });
+
+      renderer.setRender((bid) => {
+        bid.renderer.push(() => {
+          window.EquativVideoOutstream.renderAd({
+            slotId: bid.adUnitCode,
+            vast: bid.vastUrl || bid.vastXml
+          });
+        });
+      });
+
+      bidResponse.renderer = renderer;
+    }
+
+    return bidResponse;
   },
 
   imp(buildImp, bidRequest, context) {
