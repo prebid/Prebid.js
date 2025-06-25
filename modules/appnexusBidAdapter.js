@@ -399,24 +399,7 @@ export const spec = {
       payload.publisher_id = tags[0].publisher_id;
     }
 
-    // --- IAS Brand Safety Integration for AppNexus ---
-    const ortb2Site = ortb2?.site || {};
-    const ortb2ExtData = ortb2Site?.ext?.data || {};
-    const iasBrandSafety = ortb2ExtData['ias-brand-safety'];
 
-    if (iasBrandSafety && typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length > 0) {
-      const iasKeywords = Object.entries(iasBrandSafety)
-        .map(([key, value]) => `${key}=${value}`)
-        .join(',');
-      if (payload.keywords) {
-        payload.keywords = payload.keywords.endsWith(',')
-          ? `${payload.keywords}${iasKeywords}`
-          : `${payload.keywords},${iasKeywords}`;
-      } else {
-        payload.keywords = iasKeywords;
-      }
-    }
-    // --- END IAS Brand Safety Integration ---
     const request = formatRequest(payload, bidderRequest);
     return request;
   },
