@@ -86,6 +86,20 @@ function getRefGroups() {
   return []
 }
 
+function getBidFloor(bid) {
+ if (typeof bid.getFloor !== 'function') {
+  return {};
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  return floor;
+}
+
 /**
  * Returns the downlink speed of the connection in Mbps or an empty string if not available.
  */
@@ -188,6 +202,16 @@ export const spec = {
     // process bid requests
     let processed = validBidRequests
       .map(bid => slotDimensions(bid))
+      .map(bid => {
+        const bidFloor = getBidFloor(bid);
+        return {
+          ...bid,
+          params: {
+            ...bid.params,
+            floor: bidFloor,
+          }
+        }
+      })
       // Flattens the pageId, domainId and placement Id for backwards compatibility.
       .map((bid) => ({...bid, pageId: bid.params?.pageId, domainId: bid.params?.domainId, placementId: bid.params?.placementId}));
 
