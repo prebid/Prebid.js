@@ -1,11 +1,11 @@
 import {config} from '../src/config.js';
 import {metadata} from '../libraries/metadata/metadata.js';
 import {
-  ACTIVITY_PARAM_COMPONENT,
-  ACTIVITY_PARAM_COMPONENT_NAME,
-  ACTIVITY_PARAM_COMPONENT_TYPE,
-  ACTIVITY_PARAM_STORAGE_KEY,
-  ACTIVITY_PARAM_STORAGE_TYPE
+    ACTIVITY_PARAM_COMPONENT,
+    ACTIVITY_PARAM_COMPONENT_NAME,
+    ACTIVITY_PARAM_COMPONENT_TYPE,
+    ACTIVITY_PARAM_STORAGE_KEY,
+    ACTIVITY_PARAM_STORAGE_TYPE
 } from '../src/activities/params.js';
 import {
     discloseStorageUse,
@@ -13,12 +13,12 @@ import {
     STORAGE_TYPE_LOCALSTORAGE,
     type StorageDisclosure as Disclosure
 } from '../src/storageManager.js';
-import {deepClone, logWarn, uniques} from '../src/utils.js';
+import {logWarn, uniques} from '../src/utils.js';
 import {registerActivityControl} from '../src/activities/rules.js';
 import {ACTIVITY_ACCESS_DEVICE} from '../src/activities/activities.js';
 import {addApiMethod} from "../src/prebid.ts";
-// the ts compiler is confused by build-time renaming of summary.mjs to summary.js, reassure it
-// @ts-expect-error
+// @ts-expect-error the ts compiler is confused by build-time renaming of summary.mjs to summary.js, reassure it
+// eslint-disable-next-line prebid/validate-imports
 import {getStorageDisclosureSummary} from "../libraries/storageDisclosure/summary.js";
 import {getGlobal} from "../src/prebidGlobal.ts";
 
