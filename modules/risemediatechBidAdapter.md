@@ -53,7 +53,8 @@ RisemediaTech supports Display & Video(Instream) currently.
                         startdelay: 30,
                         maxseq: 2,
                         poddur: 30,
-                        protocols: [1,3,4]
+                        protocols: [1,3,4],
+                        testMode: 0
                     }
                     
                 }
