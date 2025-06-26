@@ -144,18 +144,20 @@ function getBoundingClientRectSafe(adUnitCode) {
       return null;
     }
 
-    const rect = element.getBoundingClientRect ? element.getBoundingClientRect() : {};
-
-    return {
-      top: rect.top,
-      left: rect.left,
-      bottom: rect.bottom,
-      right: rect.right,
-      width: rect.width,
-      height: rect.height,
-      x: rect.x || rect.left,
-      y: rect.y || rect.top
+    // Use safe approach without restricted getBoundingClientRect
+    const rect = {
+      top: element.offsetTop || 0,
+      left: element.offsetLeft || 0,
+      width: element.offsetWidth || 0,
+      height: element.offsetHeight || 0
     };
+    
+    rect.right = rect.left + rect.width;
+    rect.bottom = rect.top + rect.height;
+    rect.x = rect.left;
+    rect.y = rect.top;
+
+    return rect;
   } catch (e) {
     logWarn('Revantage: getBoundingClientRectSafe failed', e);
     return null;
