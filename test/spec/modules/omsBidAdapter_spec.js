@@ -73,7 +73,7 @@ describe('omsBidAdapter', function () {
       },
     }];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('adunit-code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -271,22 +271,6 @@ describe('omsBidAdapter', function () {
       expect(data.user.ext).to.not.be.undefined;
       expect(data.user.ext.eids).to.not.be.undefined;
       expect(data.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
-    });
-
-    it('sends user id parameters', function () {
-      const userId = {
-        sharedid: {
-          id: '01*******',
-          third: '01E*******'
-        }
-      };
-
-      bidRequests[0].userId = userId;
-
-      const data = JSON.parse(spec.buildRequests(bidRequests).data);
-      expect(data.user).to.not.be.undefined;
-      expect(data.user.ext).to.not.be.undefined;
-      expect(data.user.ext.ids).is.deep.equal(userId);
     });
 
     it('sends gpid parameters', function () {

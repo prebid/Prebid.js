@@ -15,7 +15,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
-
 const ENDPOINTS = {
   'cleanmedianet': 'https://bidder.cleanmediaads.com'
 };
