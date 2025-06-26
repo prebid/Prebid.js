@@ -18,6 +18,7 @@ const DEFAULT_NET_REVENUE = true;
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['viantortb'],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (bid) {

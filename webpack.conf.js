@@ -106,7 +106,7 @@ module.exports = {
           fs.readdirSync(libRoot)
             .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
             .map(lib => {
-              const dir = helpers.getPrecompiledPath(lib)
+              const dir = helpers.getPrecompiledPath(path.join('libraries', lib))
               const def = {
                 name: lib,
                 test: (module) => {

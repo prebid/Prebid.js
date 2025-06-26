@@ -684,9 +684,6 @@ describe('targeting tests', function () {
           }
         });
         const defaultKeys = new Set(Object.values(DEFAULT_TARGETING_KEYS));
-        if (FEATURES.NATIVE) {
-          Object.values(NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
-        }
 
         const expectedKeys = new Set();
         bidsReceived
@@ -1028,12 +1025,7 @@ describe('targeting tests', function () {
         });
 
         let targeting = targetingInstance.getAllTargeting([nativeAdUnitCode]);
-        expect(targeting[nativeAdUnitCode].hb_native_image).to.equal(nativeBid1.native.image.url);
-        expect(targeting[nativeAdUnitCode].hb_native_linkurl).to.equal(nativeBid1.native.clickUrl);
-        expect(targeting[nativeAdUnitCode].hb_native_title).to.equal(nativeBid1.native.title);
-        expect(targeting[nativeAdUnitCode].hb_native_image_dgad).to.exist.and.to.equal(nativeBid2.native.image.url);
         expect(targeting[nativeAdUnitCode].hb_pb_dgads).to.exist.and.to.equal(nativeBid2.pbMg);
-        expect(targeting[nativeAdUnitCode].hb_native_body_appne).to.exist.and.to.equal(nativeBid1.native.body);
       });
     }
 

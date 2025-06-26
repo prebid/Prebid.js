@@ -65,7 +65,6 @@ describe('PulsePoint Adapter Tests', function () {
     bidId: 'bid12345',
     mediaTypes: {
       native: {
-        sendTargetingKeys: false,
         ortb: nativeOrtbRequest
       }
     },

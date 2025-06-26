@@ -1138,7 +1138,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
         domLoadingDuration,
-        ect: connectionType,
+        ect: getEffectiveConnectionType(),
         gdpr: true,
         coppa: 1,
         gdprConsent: 'XXXX',

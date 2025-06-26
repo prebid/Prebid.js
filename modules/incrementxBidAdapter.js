@@ -16,6 +16,7 @@ const CREATIVE_TTL = 300;
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ['incrx'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

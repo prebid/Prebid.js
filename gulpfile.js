@@ -6,8 +6,7 @@ var argv = require('yargs').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
 var fancyLog = require('fancy-log');
-var express = require('express');
-var http = require('http');
+var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
@@ -101,9 +100,12 @@ function viewCoverage(done) {
   var coveragePort = 1999;
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
 
-  const app = express();
-  app.use(express.static('build/coverage/lcov-report'));
-  http.createServer(app).listen(coveragePort);
+  connect.server({
+    port: coveragePort,
+    root: 'build/coverage/lcov-report',
+    livereload: false,
+    debug: true
+  });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
@@ -162,7 +164,8 @@ function makeDevpackPkg(config = webpackConfig) {
     })
 
     return prebidSource(cloned)
-      .pipe(gulp.dest('build/dev'));
+      .pipe(gulp.dest('build/dev'))
+      .pipe(connect.reload());
   }
 }
 
@@ -467,17 +470,28 @@ function startIntegServer(dev = false) {
 }
 
 function startLocalServer(options = {}) {
-  const app = express();
-  app.use(function (req, res, next) {
-    res.setHeader('Ad-Auction-Allowed', 'True');
-    next();
+  connect.server({
+    https: argv.https,
+    port: port,
+    host: INTEG_SERVER_HOST,
+    root: './',
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
   });
-  app.use(express.static('./'));
-  http.createServer(app).listen(port, INTEG_SERVER_HOST);
 }
 
 // Watch Task with Live Reload
 function watchTaskMaker(options = {}) {
+  if (options.livereload == null) {
+    options.livereload = true;
+  }
   options.alsoWatch = options.alsoWatch || [];
 
   return function watch(done) {
@@ -490,7 +504,7 @@ function watchTaskMaker(options = {}) {
       `!${helpers.getPrecompiledPath('test/**/*')}`,
     ], options.task());
 
-    startLocalServer();
+    startLocalServer(options);
 
     done();
   }
@@ -510,8 +524,9 @@ gulp.task(escapePostbidConfig);
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
 
-gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev-no-precomp', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-dev', gulp.series(precompile({dev: true}), 'build-bundle-dev-no-precomp'));
+gulp.task('build-bundle-prod', gulp.series(precompile(), 'build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series(precompile(), 'build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, false)));
@@ -529,21 +544,21 @@ gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
 // npm will by default use .gitignore, so create an .npmignore that is a copy of it except it includes "dist"
 gulp.task('setup-npmignore', execaTask("sed 's/^\\/\\?dist\\/\\?$//g;w .npmignore' .gitignore", {quiet: true}));
-gulp.task('build', gulp.series(clean, 'update-browserslist', precompile(), 'build-bundle-prod', updateCreativeExample, setupDist));
+gulp.task('build', gulp.series(clean, 'update-browserslist', 'build-bundle-prod', updateCreativeExample, setupDist));
 gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-fast', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev', watchFast)));
-gulp.task('serve-prod', gulp.series(clean, precompile(), gulp.parallel('build-bundle-prod', startLocalServer)));
-gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
-gulp.task('serve-e2e', gulp.series(clean, precompile(), 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
-gulp.task('serve-e2e-dev', gulp.series(clean, precompile(), 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
+gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
+gulp.task('serve-fast', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast)));
+gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
+gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast, testTaskMaker({watch: true}))));
+gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
+gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
 
 gulp.task('default', gulp.series('build'));
 
 gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
-gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, precompile(), 'build-bundle-prod', e2eTestTaskMaker()));
+gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
 
 // other tasks
 gulp.task(bundleToStdout);

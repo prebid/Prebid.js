@@ -8,7 +8,7 @@ import {
   ACTIVITY_PARAM_STORAGE_TYPE
 } from './activities/params.js';
 
-import {ACTIVITY_ACCESS_DEVICE} from './activities/activities.js';
+import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ACCESS_REQUEST_CREDENTIALS} from './activities/activities.js';
 import {config} from './config.js';
 import adapterManager from './adapterManager.js';
 import {activityParams} from './activities/activityParams.js';
@@ -285,6 +285,11 @@ export function deviceAccessRule() {
   }
 }
 registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'deviceAccess config', deviceAccessRule);
+
+/**
+ * Block all access to request credentials when deviceAccess = false
+ */
+registerActivityControl(ACTIVITY_ACCESS_REQUEST_CREDENTIALS, 'deviceAccess config', deviceAccessRule);
 
 /**
  * By default, deny bidders accessDevice unless they enable it through bidderSettings

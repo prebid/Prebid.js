@@ -11,7 +11,7 @@ import {
     timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
+import {isNativeResponse, setNativeResponseProperties} from './native.js';
 import {batchAndStore, storeLocally} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -1030,11 +1030,6 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj: Bid, {index = 
   if (bidderCode && bidderSettings.getOwn(bidderCode, JSON_MAPPING.ADSERVER_TARGETING)) {
     setKeys(keyValues, bidderSettings.ownSettingsFor(bidderCode), custBidObj, bidRequest);
     custBidObj.sendStandardTargeting = bidderSettings.get(bidderCode, 'sendStandardTargeting');
-  }
-
-  // set native key value targeting
-  if (FEATURES.NATIVE && custBidObj['native']) {
-    keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 
   return keyValues;

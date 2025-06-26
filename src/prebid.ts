@@ -54,7 +54,7 @@ import {
 } from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults, ORTB_VIDEO_PARAMS, validateOrtbVideoFields} from './video.js';
-import {ORTB_BANNER_PARAMS} from './banner.js';
+import {ORTB_BANNER_PARAMS, validateOrtbBannerFields} from './banner.js';
 import {BANNER, VIDEO} from './mediaTypes.js';
 import {delayIfPrerendering} from './utils/prerendering.js';
 import {type BidAdapter, type BidderSpec, newBidder} from './adapters/bidderFactory.js';
@@ -200,6 +200,7 @@ function validateBannerMediaType(adUnit: AdUnit) {
     logError('Detected a mediaTypes.banner object without a proper sizes field.  Please ensure the sizes are listed like: [[300, 250], ...].  Removing invalid mediaTypes.banner object from request.');
     delete validatedAdUnit.mediaTypes.banner
   }
+  validateOrtbBannerFields(validatedAdUnit);
   syncOrtb2(validatedAdUnit, 'banner')
   return validatedAdUnit;
 }
@@ -235,7 +236,7 @@ function validateNativeMediaType(adUnit: AdUnit) {
         return validatedAdUnit;
     }
     function checkDeprecated(onDeprecated) {
-        for (const key of ['sendTargetingKeys', 'types']) {
+        for (const key of ['types']) {
             if (native.hasOwnProperty(key)) {
                 const res = onDeprecated(key);
                 if (res) return res;
