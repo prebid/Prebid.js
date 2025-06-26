@@ -54,7 +54,7 @@ describe('Base Impression Verifier', function() {
       const baseVerifier = baseImpressionVerifier(trackerMock);
       const bid = { adId: 'a3', adUnitCode: 'u3', requestId: 'r3', auctionId: 'auc3' };
       const uuid = baseVerifier.trackBid(bid);
-      const wrapperIds = { [uuid]: true };
+      const wrapperIds = [uuid];
       const result = baseVerifier.getBidIdentifiers(null, null, wrapperIds);
       expect(result).to.deep.equal(bid);
     });
