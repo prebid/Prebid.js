@@ -2196,6 +2196,15 @@ describe('User ID', function () {
           await getGlobal().refreshUserIds();
           expectDisclosure(STORAGE_TYPE_COOKIES, 'both', 1 * 24 * 60 * 60);
           expectDisclosure(STORAGE_TYPE_LOCALSTORAGE, 'both');
+        });
+
+        it('should handle cookies with no expires', async () => {
+          setStorage({
+            name: 'cookie',
+            type: STORAGE_TYPE_COOKIES
+          });
+          await getGlobal().refreshUserIds();
+          expectDisclosure(STORAGE_TYPE_COOKIES, 'cookie', 0);
         })
       })
 

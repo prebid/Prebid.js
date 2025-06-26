@@ -1001,7 +1001,7 @@ function populateEnabledStorageTypes(submodule: SubmoduleContainer<UserIdProvide
                 type: 'cookie',
                 identifier: submodule.config.storage.name + suffix,
                 purposes: STORAGE_PURPOSES,
-                maxAgeSeconds: submodule.config.storage.expires * 24 * 60 * 60,
+                maxAgeSeconds: (submodule.config.storage.expires ?? 0) * 24 * 60 * 60,
                 cookieRefresh: true
             })
         })
