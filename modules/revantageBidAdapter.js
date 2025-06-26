@@ -1,12 +1,9 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, deepAccess, getWinDimensions, logWarn, logError } from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'revantage';
 const ENDPOINT_URL = 'https://bid.revantage.io/bid';
 const SYNC_URL = 'https://sync.revantage.io/sync';
-
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 const CACHE_DURATION = 30000;
 let pageContextCache = null;
@@ -113,12 +110,12 @@ export const spec = {
 function getBoundingClientRectSafe(adUnitCode) {
   try {
     if (typeof document === 'undefined') return null;
-    
+
     let element = null;
-    
+
     // Strategy 1: Direct ID match
     element = document.getElementById(adUnitCode);
-    
+
     // Strategy 2: Common ad unit selectors
     if (!element) {
       const selectors = [
@@ -131,7 +128,7 @@ function getBoundingClientRectSafe(adUnitCode) {
         'div[id*="' + adUnitCode + '"]',
         '[data-ad-unit-path*="' + adUnitCode + '"]'
       ];
-      
+
       for (let i = 0; i < selectors.length; i++) {
         try {
           element = document.querySelector(selectors[i]);
@@ -141,14 +138,14 @@ function getBoundingClientRectSafe(adUnitCode) {
         }
       }
     }
-    
+
     if (!element) {
       logWarn('Revantage: Could not find element for ad unit: ' + adUnitCode);
       return null;
     }
-    
-    const rect = element.getBoundingClientRect();
-    
+
+    const rect = element.getBoundingClientRect ? element.getBoundingClientRect() : {};
+
     return {
       top: rect.top,
       left: rect.left,
@@ -159,7 +156,6 @@ function getBoundingClientRectSafe(adUnitCode) {
       x: rect.x || rect.left,
       y: rect.y || rect.top
     };
-    
   } catch (e) {
     logWarn('Revantage: getBoundingClientRectSafe failed', e);
     return null;
@@ -268,7 +264,7 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
     cur: ['USD'],
     ext: {
       prebid: {
-        version: (typeof $$PREBID_GLOBAL$$ !== 'undefined' && $$PREBID_GLOBAL$$.version) ? $$PREBID_GLOBAL$$.version : 'unknown'
+        version: (typeof window !== 'undefined' && window.pbjs && window.pbjs.version) ? window.pbjs.version : 'unknown'
       },
       revantage: {
         pageContext: pageContext,
@@ -311,7 +307,7 @@ function getBidFloorEnhanced(bid) {
         // Continue to next size
       }
     }
-    
+
     // Fallback to general floor
     if (floor === 0) {
       try {
@@ -330,20 +326,20 @@ function getBidFloorEnhanced(bid) {
 // === ENHANCED VIEWABILITY ===
 function calculateViewability(rect, winDims) {
   if (!rect || !rect.width || !rect.height || !winDims) return 0;
-  
-  const visibleArea = Math.max(0, 
+
+  const visibleArea = Math.max(0,
     Math.min(rect.bottom, winDims.height) - Math.max(rect.top, 0)
   ) * Math.max(0,
     Math.min(rect.right, winDims.width) - Math.max(rect.left, 0)
   );
-  
+
   const totalArea = rect.width * rect.height;
   return totalArea > 0 ? Math.round((visibleArea / totalArea) * 100) / 100 : 0;
 }
 
 function isInViewport(rect, winDims) {
   if (!rect || !winDims) return false;
-  return rect.top >= 0 && rect.left >= 0 && 
+  return rect.top >= 0 && rect.left >= 0 &&
          rect.bottom <= winDims.height && rect.right <= winDims.width;
 }
 
@@ -360,7 +356,7 @@ function getPageContextCached() {
 function extractPageContext() {
   try {
     if (typeof document === 'undefined') return {};
-    
+
     // Only collect raw content data for server-side processing
     return {
       // Basic page info
@@ -369,16 +365,16 @@ function extractPageContext() {
       domain: typeof window !== 'undefined' ? window.location.hostname : '',
       pathname: typeof window !== 'undefined' ? window.location.pathname : '',
       referrer: typeof document !== 'undefined' ? document.referrer : '',
-      
+
       // Meta tags for server processing
       metaTags: getMetaTags(),
-      
+
       // Content structure for server analysis
       contentStructure: getContentStructure(),
-      
+
       // Client-side only metrics
       mediaElements: getMediaElements(),
-      
+
       // Performance data
       timestamp: Date.now()
     };
@@ -391,26 +387,26 @@ function extractPageContext() {
 function getMetaTags() {
   try {
     if (typeof document === 'undefined') return {};
-    
+
     const metaTags = {};
     const metas = document.querySelectorAll('meta');
-    
+
     for (let i = 0; i < metas.length; i++) {
       const meta = metas[i];
       const name = meta.getAttribute('name') || meta.getAttribute('property');
       const content = meta.getAttribute('content');
-      
+
       if (name && content) {
         metaTags[name] = content;
       }
     }
-    
+
     // Get canonical URL
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) {
       metaTags.canonical = canonical.href;
     }
-    
+
     return metaTags;
   } catch (e) {
     return {};
@@ -420,7 +416,7 @@ function getMetaTags() {
 function getContentStructure() {
   try {
     if (typeof document === 'undefined') return {};
-    
+
     return {
       // Headings for server-side analysis
       headings: {
@@ -428,16 +424,16 @@ function getContentStructure() {
         h2: getTextFromElements('h2', 5), // Limit to avoid bloat
         h3: getTextFromElements('h3', 5)
       },
-      
+
       // Sample content for server processing
       contentSamples: {
         firstParagraph: getFirstParagraphText(),
         lastModified: document.lastModified || null
       },
-      
+
       // Structured data (raw JSON for server parsing)
       structuredData: getStructuredDataRaw(),
-      
+
       // Page elements that affect content type
       pageElements: {
         hasArticle: !!document.querySelector('article'),
@@ -458,7 +454,7 @@ function getTextFromElements(selector, limit) {
     if (typeof document === 'undefined') return [];
     const elements = document.querySelectorAll(selector);
     const texts = [];
-    
+
     for (let i = 0; i < Math.min(elements.length, limit); i++) {
       const text = elements[i].textContent;
       if (text && text.trim().length > 0) {
@@ -489,7 +485,7 @@ function getStructuredDataRaw() {
     if (typeof document === 'undefined') return [];
     const scripts = document.querySelectorAll('script[type="application/ld+json"]');
     const structuredData = [];
-    
+
     for (let i = 0; i < scripts.length; i++) {
       try {
         // Send raw JSON for server-side parsing
@@ -499,7 +495,7 @@ function getStructuredDataRaw() {
         // Invalid JSON, skip
       }
     }
-    
+
     return structuredData;
   } catch (e) {
     return [];
@@ -509,7 +505,7 @@ function getStructuredDataRaw() {
 function getMediaElements() {
   try {
     if (typeof document === 'undefined') return {};
-    
+
     return {
       imageCount: document.querySelectorAll('img').length,
       videoCount: document.querySelectorAll('video').length,
@@ -524,7 +520,7 @@ function getMediaElements() {
 function getEnhancedDeviceInfo() {
   try {
     const connection = getConnectionInfo();
-    
+
     return {
       make: detectDeviceBrand(),
       model: detectDeviceModel(),
@@ -534,8 +530,8 @@ function getEnhancedDeviceInfo() {
       capabilities: {
         touchEnabled: typeof window !== 'undefined' ? ('ontouchstart' in window) : false,
         webGL: typeof window !== 'undefined' ? (!!window.WebGLRenderingContext) : false,
-        localStorage: typeof window !== 'undefined' ? (!!window.localStorage) : false,
-        sessionStorage: typeof window !== 'undefined' ? (!!window.sessionStorage) : false,
+        hasLocalStorage: typeof window !== 'undefined' && typeof window.Storage !== 'undefined',
+        hasSessionStorage: typeof window !== 'undefined' && typeof window.Storage !== 'undefined',
         indexedDB: typeof window !== 'undefined' ? (!!window.indexedDB) : false
       }
     };
@@ -562,12 +558,12 @@ function detectDeviceBrand() {
 function detectDeviceModel() {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   let match;
-  
+
   if ((match = ua.match(/iPhone (\d+)/i))) return match[1];
   if ((match = ua.match(/iPad(\d+,\d+)/i))) return match[1];
   if ((match = ua.match(/SM-([A-Z0-9]+)/i))) return match[1];
   if ((match = ua.match(/Pixel (\d+)/i))) return match[1];
-  
+
   return 'Unknown';
 }
 
@@ -597,7 +593,7 @@ function getDeviceType() {
   if (typeof screen === 'undefined') return 1;
   const width = screen.width;
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  
+
   if (/iPhone|iPod/i.test(ua) || (width < 768 && /Mobile/i.test(ua))) return 2; // Mobile
   if (/iPad/i.test(ua) || (width >= 768 && width < 1024)) return 5; // Tablet
   return 1; // Desktop/PC
@@ -632,11 +628,12 @@ function getPageTiming() {
 function getPerformanceMetrics() {
   try {
     if (typeof window === 'undefined') return {};
+    const winDims = getWinDimensions();
     return {
       timestamp: Date.now(),
       viewport: {
-        width: window.innerWidth || 0,
-        height: window.innerHeight || 0
+        width: winDims.width || 0,
+        height: winDims.height || 0
       },
       scroll: {
         x: window.pageXOffset || 0,
