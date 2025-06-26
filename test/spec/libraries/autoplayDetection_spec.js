@@ -22,7 +22,8 @@ describe('autoplay detection', () => {
       muted: false,
       src: ''
     };
-    createElementStub = sinon.stub(document, 'createElement').withArgs('video').returns(video);
+    createElementStub = sinon.stub(document, 'createElement');
+    createElementStub.withArgs('video').returns(video);
 
     let mod;
     expect(() => { mod = loadAutoplay(); }).to.not.throw();
