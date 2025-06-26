@@ -12,7 +12,7 @@ const utils = {
   },
   switchFrame: async function(frameRef) {
     let iframe = await $(frameRef);
-    await browser.switchFrame(iframe);
+    browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 3000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
     await browser.url(url);
@@ -41,12 +41,7 @@ const utils = {
             '> div[class="card"]' // native
           ].map((child) => `body > div[class="GoogleActiveViewElement"] ${child}`)
             .join(', ');
-          let i = 0;
-          while (i < 3) {
-            i++;
-            const existing = await $(creative).isExisting();
-            if (!existing) await new Promise(resolve => setTimeout(resolve, 1000))
-          }
+          const existing = await $(creative).isExisting();
           expect(existing).to.be.true;
         });
       }
