@@ -133,7 +133,7 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
     let requests = [];
-    let schain = bidRequests[0].schain;
+    let schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     _each(impGroups, impGroup => {
       let {host, zoneId, imps} = impGroup;
       const request = buildRtbRequest(imps, bidderRequest, schain);

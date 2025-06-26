@@ -11,7 +11,6 @@ import {
 } from 'modules/rubiconBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import 'modules/schain.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
@@ -130,6 +129,9 @@ describe('the rubicon adapter', function () {
               tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             }
           },
+          ortb2: {
+            source: {}
+          }
         }
       ],
       start: 1472239426002,
@@ -4655,7 +4657,8 @@ describe('the rubicon adapter', function () {
     beforeEach(() => {
       bidRequests = getBidderRequest();
       schainConfig = getSupplyChainConfig();
-      bidRequests.bids[0].schain = schainConfig;
+      bidRequests.bids[0].ortb2.source.ext = bidRequests.bids[0].ortb2.source.ext || {};
+      bidRequests.bids[0].ortb2.source.ext.schain = schainConfig;
     });
 
     it('should properly serialize schain object with correct delimiters', () => {
@@ -4674,14 +4677,14 @@ describe('the rubicon adapter', function () {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
       const schain = new URLSearchParams(results[0].data).get('rp_schain').split('!');
       const version = schain.shift().split(',')[0];
-      expect(version).to.equal(bidRequests.bids[0].schain.ver);
+      expect(version).to.equal(bidRequests.bids[0].ortb2.source.ext.schain.ver);
     });
 
     it('should send the correct value for complete in schain', () => {
       const results = spec.buildRequests(bidRequests.bids, bidRequests);
       const schain = new URLSearchParams(results[0].data).get('rp_schain').split('!');
       const complete = schain.shift().split(',')[1];
-      expect(complete).to.equal(String(bidRequests.bids[0].schain.complete));
+      expect(complete).to.equal(String(bidRequests.bids[0].ortb2.source.ext.schain.complete));
     });
 
     it('should send available params in the right order', () => {
@@ -4702,7 +4705,7 @@ describe('the rubicon adapter', function () {
     it('should copy the schain JSON to to bid.source.ext.schain', () => {
       const bidderRequest = createVideoBidderRequest();
       const schain = getSupplyChainConfig();
-      bidderRequest.bids[0].schain = schain;
+      bidderRequest.bids[0].ortb2.source.ext = { schain: schain };
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
       expect(request[0].data.source.ext.schain).to.deep.equal(schain);
     });

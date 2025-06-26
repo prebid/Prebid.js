@@ -10,6 +10,7 @@ function MarsmediaAdapter() {
   this.aliases = ['mars'];
   this.supportedMediaTypes = [VIDEO, BANNER];
 
+  this.gvlid = 776;
   let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
   let SUPPORTED_VIDEO_MIMES = ['video/mp4'];
   let SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];
@@ -206,8 +207,9 @@ function MarsmediaAdapter() {
         }
       }
     };
-    if (BRs[0].schain) {
-      deepSetValue(bid, 'source.ext.schain', BRs[0].schain);
+    const schain = BRs[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(bid, 'source.ext.schain', schain);
     }
     if (bidderRequest.uspConsent) {
       deepSetValue(bid, 'regs.ext.us_privacy', bidderRequest.uspConsent)

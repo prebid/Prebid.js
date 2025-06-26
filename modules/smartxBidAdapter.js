@@ -216,11 +216,12 @@ export const spec = {
         userExt.fpc = pubcid;
       }
 
-      // Add schain object if available
-      if (bid && bid.schain) {
+      // Add schain object if available from the new location
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (bid && schain) {
         requestPayload['source'] = {
           ext: {
-            schain: bid.schain
+            schain: schain
           }
         };
       }

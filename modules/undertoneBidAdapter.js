@@ -68,8 +68,9 @@ export const spec = {
       'uids': validBidRequests[0].userId,
       'pageSize': pageSizeArray
     };
-    if (validBidRequests[0].schain) {
-      commons.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      commons.schain = schain;
     }
     const payload = {
       'x-ut-hb-params': [],
@@ -114,7 +115,7 @@ export const spec = {
         domain: domain,
         placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
         publisherId: bidReq.params.publisherId,
-        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot', '')),
+        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', ''),
         sizes: bidReq.sizes,
         params: bidReq.params
       };

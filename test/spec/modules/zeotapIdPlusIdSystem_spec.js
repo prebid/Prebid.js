@@ -178,8 +178,6 @@ describe('Zeotap ID System', function() {
       startAuctionHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.IDP');
-            expect(bid.userId.IDP).to.equal(ZEOTAP_COOKIE);
             const zeotapIdAsEid = bid.userIdAsEids.find(e => e.source == 'zeotap.com');
             expect(zeotapIdAsEid).to.deep.equal({
               source: 'zeotap.com',

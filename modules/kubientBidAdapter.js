@@ -49,8 +49,9 @@ export const spec = {
         adSlot.video = bid.mediaTypes.video;
       }
 
-      if (bid.schain) {
-        adSlot.schain = bid.schain;
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        adSlot.schain = schain;
       }
 
       let data = {

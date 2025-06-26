@@ -218,7 +218,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     ect: getEffectiveConnectionType(),
   };
 
-  const schain = deepAccess(validBidRequests[0], 'schain')
+  const schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain')
   const eids = getUserIds(validBidRequests)
   const device = bidderRequest.ortb2?.device
   if (schain) {

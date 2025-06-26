@@ -108,9 +108,10 @@ export const spec = {
               payload.user.ext.data = ortbUserExtData;
             }
 
-            if (bidRequests[0].schain) {
+            const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
+            if (schain) {
               payload.source = {
-                ext: { schain: bidRequests[0].schain }
+                ext: { schain: schain }
               };
             }
 
@@ -120,7 +121,7 @@ export const spec = {
 
           case BANNER: {
             const tags = bidRequests.map(createVideoTag);
-            const schain = bidRequests[0].schain;
+            const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
 
             const payload = {
               tags,

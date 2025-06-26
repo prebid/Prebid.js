@@ -59,14 +59,13 @@ Object.assign(BidInterceptor.prototype, {
    * @typedef {Function} MatchPredicate
    * @param {*} candidate a bid to match, or a portion of it if used inside an ObjectMather.
    * e.g. matcher((bid, bidRequest) => ....) or matcher({property: (property, bidRequest) => ...})
-   * @param {Object} bidRequest the request `candidate` belongs to
+   * @param {*} bidRequest the request `candidate` belongs to
    * @returns {boolean}
    *
-   * @typedef {Object.<string, Scalar|RegExp|MatchPredicate|ObjectMatcher>} ObjectMatcher
    */
 
   /**
-   * @param {MatchPredicate|ObjectMatcher} matchDef matcher definition
+   * @param {*} matchDef matcher definition
    * @param {Number} ruleNo
    * @returns {MatchPredicate} a predicate function that matches a bid against the given `matchDef`
    */
@@ -98,15 +97,14 @@ Object.assign(BidInterceptor.prototype, {
   /**
    * @typedef {Function} ReplacerFn
    * @param {*} bid a bid that was intercepted
-   * @param {Object} bidRequest the request `bid` belongs to
+   * @param {*} bidRequest the request `bid` belongs to
    * @returns {*} the response to mock for `bid`, or a portion of it if used inside an ObjectReplacer.
    * e.g. replacer((bid, bidRequest) => mockResponse) or replacer({property: (bid, bidRequest) => mockProperty})
    *
-   * @typedef {Object.<string, ReplacerFn|ObjectReplacer|*>} ObjectReplacer
    */
 
   /**
-   * @param {ReplacerFn|ObjectReplacer} replDef replacer definition
+   * @param {*} replDef replacer definition
    * @param ruleNo
    * @return {ReplacerFn}
    */
@@ -222,13 +220,13 @@ Object.assign(BidInterceptor.prototype, {
    * Run a set of bids against all registered rules, filter out those that match,
    * and generate mock responses for them.
    *
-   * @param {Object} params
-   * @param {Object[]} [params.bids]
-   * @param {Object} params.bidRequest
-   * @param {function(Object):void} params.addBid called once for each mock response
-   * @param {function(Object):void} [params.addPaapiConfig] called once for each mock PAAPI config
-   * @param {function():void} params.done called once after all mock responses have been run through `addBid`
-   * @returns {{bids: Object[], bidRequest: Object}} remaining bids that did not match any rule (this applies also to bidRequest.bids)
+   * {{}[]} bids?
+   * {*} bidRequest
+   * {function(*)} addBid called once for each mock response
+   * addPaapiConfig called once for each mock PAAPI config
+   * {function()} done called once after all mock responses have been run through `addBid`
+   * returns {{bids: {}[], bidRequest: {}} remaining bids that did not match any rule (this applies also to
+   * bidRequest.bids)
    */
   intercept({bids, bidRequest, addBid, addPaapiConfig, done}) {
     if (bids == null) {

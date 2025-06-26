@@ -39,19 +39,25 @@ const validBannerBidReq = {
     }
   },
   userId: userId,
-  'schain': {
-    'ver': '1.0',
-    'complete': 1,
-    'nodes': [
-      {
-        'asi': 'exchange1.com',
-        'sid': '1234',
-        'hp': 1,
-        'rid': 'bid-request-1',
-        'name': 'publisher',
-        'domain': 'publisher.com'
+  ortb2: {
+    source: {
+      ext: {
+        schain: {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'exchange1.com',
+              'sid': '1234',
+              'hp': 1,
+              'rid': 'bid-request-1',
+              'name': 'publisher',
+              'domain': 'publisher.com'
+            }
+          ]
+        }
       }
-    ]
+    }
   }
 };
 

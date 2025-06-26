@@ -18,7 +18,6 @@ import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {deepAccess, getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
@@ -27,8 +26,7 @@ import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from '../../..
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import 'src/prebid.js';
-import {startAuction} from 'src/prebid';
+import {requestBids, startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
@@ -38,6 +36,7 @@ import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import {generateSubmoduleContainers} from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
 import { addIdData } from '../../../modules/userId/index.js';
 
@@ -270,7 +269,7 @@ describe('User ID', function () {
 
     afterEach(function () {
       mockGpt.enable();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       config.resetConfig();
       coreStorage.setCookie.restore();
       utils.logWarn.restore();
@@ -302,8 +301,6 @@ describe('User ID', function () {
 
         innerAdUnits1.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal(pubcid);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: pubcid, atype: 1}]
@@ -339,8 +336,6 @@ describe('User ID', function () {
 
         innerAdUnits1.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal(pubcid1);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: pubcid1, atype: 1}]
@@ -359,8 +354,6 @@ describe('User ID', function () {
 
           innerAdUnits2.forEach((unit) => {
             unit.bids.forEach((bid) => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal(pubcid2);
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: pubcid2, atype: 1}]
@@ -386,8 +379,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('altpubcid200000');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: 'altpubcid200000', atype: 1}]
@@ -412,8 +403,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('altpubcid200000');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: 'altpubcid200000', atype: 1}]
@@ -438,7 +427,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.not.have.deep.nested.property('userId.pubcid');
             expect(bid).to.not.have.deep.nested.property('userIdAsEids');
           });
         });
@@ -1479,7 +1467,7 @@ describe('User ID', function () {
     afterEach(function () {
       // removed cookie
       coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       utils.logInfo.restore();
     });
 
@@ -1508,7 +1496,7 @@ describe('User ID', function () {
     });
 
     afterEach(function () {
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       utils.logInfo.restore();
     });
 
@@ -1677,7 +1665,7 @@ describe('User ID', function () {
       });
 
       afterEach(function () {
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
         config.resetConfig();
         sandbox.restore();
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
@@ -1744,8 +1732,6 @@ describe('User ID', function () {
           // check ids were copied to bids
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.mid');
-              expect(bid.userId.mid).to.equal('1234');
               expect(bid.userIdAsEids).to.not.exist;// "mid" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
@@ -1890,8 +1876,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1915,8 +1899,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1942,8 +1924,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1970,8 +1950,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1996,8 +1974,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -2019,8 +1995,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcidvalue');
-              expect(bid.userId.pubcidvalue).to.equal('testpubcidvalue');
               expect(bid.userIdAsEids).to.not.exist; // "pubcidvalue" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
@@ -2074,33 +2048,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubProvidedId');
-              expect(bid.userId.pubProvidedId).to.deep.equal([{
-                source: 'example.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'ppuid'
-                  }
-                }]
-              }, {
-                source: 'id-partner.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'dmp'
-                  }
-                }]
-              }, {
-                source: 'provider.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'sha256email'
-                  }
-                }]
-              }]);
-
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'example.com',
                 uids: [{
@@ -2159,11 +2106,8 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              // check PubCommonId id data was copied to bid
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              // check MockId data was copied to bid
-              expect(bid).to.have.deep.nested.property('userId.mid');
-              expect(bid.userId.mid).to.equal('1234');
+              // check id data was copied to bid
+              expect(bid).to.have.property('userIdAsEids');
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2196,7 +2140,7 @@ describe('User ID', function () {
           isAllowed.restore();
         });
 
-        it('should check for enrichEids activity permissions', (done) => {
+        it('should check for enrichEids activity permissions', () => {
           isAllowed.callsFake((activity, params) => {
             return !(activity === ACTIVITY_ENRICH_EIDS &&
               params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID &&
@@ -2211,10 +2155,10 @@ describe('User ID', function () {
               }))
             }
           });
-          startAuctionHook((req) => {
-            const activeIds = req.adUnits.flatMap(au => au.bids).flatMap(bid => Object.keys(bid.userId));
-            expect(Array.from(new Set(activeIds))).to.have.members([MOCK_IDS[1]]);
-            done();
+          return expectImmediateBidHook((req) => {
+            const activeSources = req.adUnits.flatMap(au => au.bids)
+              .flatMap(bid => bid.userIdAsEids ? bid.userIdAsEids.map(eid => eid.source) : []);
+            expect(Array.from(new Set(activeSources))).to.have.members([MOCK_IDS[1]]);
           }, {adUnits})
         });
       })
@@ -3205,8 +3149,8 @@ describe('User ID', function () {
         };
         addIdData({ adUnits, ortb2Fragments });
 
-        adUnits[0].bids.forEach(({userId}) => {
-          const userIdModules = Object.keys(userId);
+        adUnits[0].bids.forEach(({userIdAsEids}) => {
+          const userIdModules = (userIdAsEids || []).map(eid => eid.source.replace('.com', ''));
           expect(userIdModules).to.include(ALLOWED_MODULE);
           expect(userIdModules).to.not.include(UNALLOWED_MODULE);
         });
@@ -3220,5 +3164,73 @@ describe('User ID', function () {
         unregisterRule();
       });
     })
+  });
+
+  describe('generateSubmoduleContainers', () => {
+    it('should properly map registry to submodule containers for empty previous submodule containers', () => {
+      const previousSubmoduleContainers = [];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('mockId1Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].submodule.name).to.eql('sharedId');
+    });
+
+    it('should properly map registry to submodule containers for non-empty previous submodule containers', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'notSharedId'}, config: {name: 'notSharedId'}},
+        {submodule: {name: 'notSharedId2'}, config: {name: 'notSharedId2'}},
+      ];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('mockId1Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].submodule.name).to.eql('sharedId');
+    });
+
+    it('should properly map registry to submodule containers for retainConfig flag', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'shouldBeKept'}, config: {name: 'shouldBeKept'}},
+      ];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('shouldBeKept', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({retainConfig: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[1].submodule.name).to.eql('shouldBeKept');
+    });
+
+    it('should properly map registry to submodule containers for autoRefresh flag', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'modified'}, config: {name: 'modified', auctionDelay: 300}},
+        {submodule: {name: 'unchanged'}, config: {name: 'unchanged', auctionDelay: 300}},
+      ];
+      const submoduleRegistry = [
+        createMockIdSubmodule('modified', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('new', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('unchanged', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [
+        {name: 'modified', auctionDelay: 200},
+        {name: 'new'},
+        {name: 'unchanged', auctionDelay: 300},
+      ];
+      const result = generateSubmoduleContainers({autoRefresh: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(3);
+      const itemsWithRefreshIds = result.filter(item => item.refreshIds);
+      const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
+      expect(submoduleNames).to.deep.eql(['modified', 'new']);
+    });
   });
 });

@@ -10,7 +10,7 @@ import 'modules/userId/index.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
-import 'modules/schain.js';
+
 import {hook} from '../../../src/hook';
 
 describe('The Criteo bidding adapter', function () {
@@ -1216,14 +1216,18 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.regs.ext.dsa).to.deep.equal(dsa);
     });
 
-    it('should properly build a request with schain object', async function () {
+    it('should properly build a request with schain object', function () {
       const expectedSchain = {
         someProperty: 'someValue'
       };
       const bidRequests = [
         {
           bidder: 'criteo',
-          schain: expectedSchain,
+          ortb2: {
+            source: {
+              ext: {schain: expectedSchain}
+            }
+          },
           adUnitCode: 'bid-123',
           mediaTypes: {
             banner: {
@@ -1236,8 +1240,18 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
 
-      const ortbRequest = spec.buildRequests(bidRequests, await addFPDToBidderRequest(bidderRequest)).data;
-      expect(ortbRequest.source.ext.schain).to.equal(expectedSchain);
+      // Create a modified bidderRequest with schain
+      const modifiedBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          source: {
+            ext: {schain: expectedSchain}
+          }
+        }
+      };
+
+      const ortbRequest = spec.buildRequests(bidRequests, modifiedBidderRequest).data;
+      expect(ortbRequest.source.ext.schain).to.deep.equal(expectedSchain);
     });
 
     it('should properly build a request with bcat field', async function () {
@@ -2414,113 +2428,6 @@ describe('The Criteo bidding adapter', function () {
         expect(bids[0].meta.advertiserDomains[0]).to.equal('criteo.com');
         expect(bids[0].meta.networkName).to.equal('Criteo');
         expect(bids[0].meta.dsa.adrender).to.equal(1);
-      });
-    }
-
-    if (FEATURES.NATIVE) {
-      it('should warn only once if sendTargetingKeys set to true on required fields for native bidRequest', async () => {
-        const bidRequests = [
-          {
-            bidder: 'criteo',
-            adUnitCode: 'bid-123',
-            mediaTypes: {
-              native: {}
-            },
-            nativeOrtbRequest: {
-              assets: [{
-                required: 1,
-                id: 1,
-                img: {
-                  type: 3,
-                  wmin: 100,
-                  hmin: 100,
-                }
-              }]
-            },
-            transactionId: 'transaction-123',
-            sizes: [[728, 90]],
-            params: {
-              zoneId: 123,
-              publisherSubId: '123'
-            },
-          },
-          {
-            bidder: 'criteo',
-            adUnitCode: 'bid-456',
-            mediaTypes: {
-              native: {}
-            },
-            nativeOrtbRequest: {
-              assets: [{
-                required: 1,
-                id: 1,
-                img: {
-                  type: 3,
-                  wmin: 100,
-                  hmin: 100,
-                }
-              }]
-            },
-            transactionId: 'transaction-456',
-            sizes: [[728, 90]],
-            params: {
-              zoneId: 456,
-              publisherSubId: '456'
-            },
-          },
-        ];
-
-        const nativeParamsWithSendTargetingKeys = [
-          {
-            nativeParams: {
-              image: {
-                sendTargetingKeys: true
-              },
-            }
-          },
-          {
-            nativeParams: {
-              icon: {
-                sendTargetingKeys: true
-              },
-            }
-          },
-          {
-            nativeParams: {
-              clickUrl: {
-                sendTargetingKeys: true
-              },
-            }
-          },
-          {
-            nativeParams: {
-              displayUrl: {
-                sendTargetingKeys: true
-              },
-            }
-          },
-          {
-            nativeParams: {
-              privacyLink: {
-                sendTargetingKeys: true
-              },
-            }
-          },
-          {
-            nativeParams: {
-              privacyIcon: {
-                sendTargetingKeys: true
-              },
-            }
-          }
-        ];
-
-        for (const nativeParams of nativeParamsWithSendTargetingKeys) {
-          let transformedBidRequests = {...bidRequests};
-          transformedBidRequests = [Object.assign(transformedBidRequests[0], nativeParams), Object.assign(transformedBidRequests[1], nativeParams)];
-          spec.buildRequests(transformedBidRequests, await addFPDToBidderRequest(bidderRequest));
-        }
-        expect(logWarnStub.withArgs('Criteo: all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)').callCount).to.equal(nativeParamsWithSendTargetingKeys.length * bidRequests.length);
       });
     }
 

@@ -140,7 +140,7 @@ export const buildExtuidQuery = ({id5, imuId}) => {
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
-  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid') || utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
 
   const data = {
     zoneid: bid.params.zoneId,

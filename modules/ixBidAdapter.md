@@ -96,7 +96,6 @@ object are detailed here.
 
 | Key | Scope | Type | Description
 | --- | --- | --- | ---
-| sendTargetingKeys | Optional | Boolean | Defines whether or not to send the hb_native_ASSET targeting keys to the ad server. Defaults to true.
 | adTemplate | Optional | String | Used in the ‘AdUnit-Defined Creative Scenario’, this value controls the Native template right in the page.
 | rendererUrl | Optional | String | Used in the ‘Custom Renderer Scenario’, this points to javascript code that will produce the Native template.
 | title | Optional | Title asset | The title of the ad, usually a call to action or a brand name.
@@ -393,10 +392,10 @@ var adUnits = [{
 
 ### 2. Include `ixBidAdapter` in your build process
 
-When running the build command, include `ixBidAdapter` as a module, as well as `dfpAdServerVideo` if you require video support.
+When running the build command, include `ixBidAdapter` as a module, as well as `gamAdServerVideo` if you require video support.
 
 ```
-gulp build --modules=ixBidAdapter,dfpAdServerVideo,fooBidAdapter,bazBidAdapter
+gulp build --modules=ixBidAdapter,gamAdServerVideo,fooBidAdapter,bazBidAdapter
 ```
 
 If a JSON file is being used to specify the bidder modules, add `"ixBidAdapter"`
@@ -405,7 +404,7 @@ to the top-level array in that file.
 ```json
 [
     "ixBidAdapter",
-    "dfpAdServerVideo",
+    "gamAdServerVideo",
     "fooBidAdapter",
     "bazBidAdapter"
 ]

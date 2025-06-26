@@ -1420,7 +1420,7 @@ describe('33acrossBidAdapter:', function () {
         ];
 
         schainValues.forEach((schain) => {
-          bidRequests[0].schain = schain;
+          bidRequests[0].ortb2.source = {ext: {schain: schain}};
 
           const ttxRequest = new TtxRequestBuilder()
             .withBanner()

@@ -8,6 +8,7 @@ import { config } from '../src/config.js';
  */
 
 export const ADAPTER_VERSION = '1.0.0';
+const GVLID = 728;
 const SUPPORTED_AD_TYPES = [BANNER];
 
 // we have different servers for different regions / farms
@@ -21,6 +22,7 @@ const BIDDER_API_ENDPOINT = '/v1/prebid/bid';
 
 export const spec = {
   code: 'appier',
+  gvlid: GVLID,
   aliases: ['appierBR', 'appierExt', 'appierGM'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 

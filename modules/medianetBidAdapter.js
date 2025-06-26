@@ -162,7 +162,7 @@ function extParams(bidRequest, bidderRequests) {
   const gdpr = deepAccess(bidderRequests, 'gdprConsent');
   const uspConsent = deepAccess(bidderRequests, 'uspConsent');
   const userId = deepAccess(bidRequest, 'userId');
-  const sChain = deepAccess(bidRequest, 'schain') || {};
+  const sChain = deepAccess(bidRequest, 'ortb2.source.ext.schain') || {};
   const windowSize = spec.getWindowSize();
   const gdprApplies = !!(gdpr && gdpr.gdprApplies);
   const uspApplies = !!(uspConsent);

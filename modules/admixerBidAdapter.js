@@ -5,6 +5,7 @@ import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
+const GVLID = 511;
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ALIASES = [
   {code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx'},
@@ -16,6 +17,7 @@ const ALIASES = [
 ];
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ALIASES.map(val => isStr(val) ? val : val.code),
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**

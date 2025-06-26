@@ -4,7 +4,7 @@ import adapterManager, {
   coppaDataHandler,
   _partitionBidders,
   PARTITIONS,
-  getS2SBidderSet, _filterBidsForAdUnit, dep
+  getS2SBidderSet, filterBidsForAdUnit, dep
 } from 'src/adapterManager.js';
 import {
   getAdUnits,
@@ -2084,20 +2084,6 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
-    it('should move user.eids into user.ext.eids', () => {
-      const global = {
-        user: {
-          eids: [{source: 'idA'}],
-          ext: {eids: [{source: 'idB'}]}
-        }
-      };
-      const reqs = adapterManager.makeBidRequests(adUnits, 123, 'auction-id', 123, [], {global});
-      reqs.forEach(req => {
-        expect(req.ortb2.user.ext.eids).to.deep.equal([{source: 'idB'}, {source: 'idA'}]);
-        expect(req.ortb2.user.eids).to.not.exist;
-      });
-    });
-
     describe('source.tid', () => {
       beforeEach(() => {
         sinon.stub(dep, 'redact').returns({
@@ -2936,8 +2922,11 @@ describe('adapterManager tests', function () {
     });
 
     describe('filterBidsForAdUnit', () => {
+      before(() => {
+        filterBidsForAdUnit.removeAll();
+      })
       function filterBids(bids, s2sConfig) {
-        return _filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders});
+        return filterBidsForAdUnit(bids, s2sConfig, {getS2SBidders});
       }
       it('should not filter any bids when s2sConfig == null', () => {
         const bids = ['untouched', 'data'];

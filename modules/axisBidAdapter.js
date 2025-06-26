@@ -10,6 +10,7 @@ import {
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'axis';
+const GVLID = 1197;
 const AD_URL = 'https://prebid.axis-marketplace.com/pbjs';
 const SYNC_URL = 'https://cs.axis-marketplace.com';
 
@@ -41,6 +42,7 @@ const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(['integration', 'token'], 'every'),

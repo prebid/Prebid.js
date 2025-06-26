@@ -9,7 +9,6 @@ import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.js'
 import {BANNER} from '../../../src/mediaTypes';
 
@@ -450,9 +449,21 @@ describe('Conversant adapter tests', function() {
   it('Verify supply chain data', () => {
     const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
+
+    // Add schain to bidderRequest
+    bidderRequest.ortb2 = {
+      source: {
+        ext: {schain: schain}
+      }
+    };
+
     const bidsWithSchain = bidRequests.map((bid) => {
       return Object.assign({
-        schain: schain
+        ortb2: {
+          source: {
+            ext: {schain: schain}
+          }
+        }
       }, bid);
     });
     const request = spec.buildRequests(bidsWithSchain, bidderRequest);

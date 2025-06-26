@@ -804,16 +804,22 @@ const testsBuildRequests = [
       fn: spec.buildRequests(
         [
           {
-            schain: {
-              ver: '1.0',
-              complete: 1,
-              nodes: [
-                {
-                  asi: 'ssp.test',
-                  sid: '00001',
-                  hp: 1,
-                },
-              ],
+            ortb2: {
+              source: {
+                ext: {
+                  schain: {
+                    ver: '1.0',
+                    complete: 1,
+                    nodes: [
+                      {
+                        asi: 'ssp.test',
+                        sid: '00001',
+                        hp: 1,
+                      },
+                    ],
+                  }
+                }
+              }
             },
           },
         ],
@@ -1132,7 +1138,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
         domLoadingDuration,
-        ect: connectionType,
+        ect: getEffectiveConnectionType(),
         gdpr: true,
         coppa: 1,
         gdprConsent: 'XXXX',

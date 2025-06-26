@@ -108,7 +108,7 @@ let hasUserSynced = false;
  */
 export const spec = {
   code: BIDDER_CODE,
-  GVLID: QUANTCAST_VENDOR_ID,
+  gvlid: QUANTCAST_VENDOR_ID,
   supportedMediaTypes: ['banner', 'video'],
 
   /**
