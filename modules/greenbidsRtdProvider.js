@@ -63,12 +63,6 @@ function createPromise(reqBidsConfigObj, greenbidsId) {
         },
       },
       createPayload(reqBidsConfigObj, greenbidsId),
-      {
-        contentType: 'application/json',
-        customHeaders: {
-          'Greenbids-Pbuid': rtdOptions.pbuid
-        }
-      }
     );
   });
 }
