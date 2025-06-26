@@ -173,7 +173,9 @@ export function dynamicDisclosureCollector() {
                 };
             }
             Object.assign(disclosures[key], mergeDisclosures(disclosures[key], disclosure));
-            disclosures[key].disclosedBy.push(moduleName);
+            if (!disclosures[key].disclosedBy.includes(moduleName)) {
+                disclosures[key].disclosedBy.push(moduleName);
+            }
             next(moduleName, disclosure);
         },
         getDisclosures() {

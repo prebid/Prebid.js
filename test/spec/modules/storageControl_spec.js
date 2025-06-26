@@ -242,6 +242,17 @@ describe('storageControl', () => {
         purposes: [1, 2]
       }])
     });
+    it('should not repeat the same module', () => {
+      const disclosure = {
+        identifier: 'mock', type: 'web', purposes: [1]
+      }
+      hook(next, 'module', disclosure);
+      hook(next, 'module', disclosure);
+      expect(getDisclosures()).to.eql([{
+        disclosedBy: ['module'],
+        ...disclosure
+      }])
+    })
     it('should treat web and cookie disclosures as separate', () => {
       hook(next, 'module1', {identifier: 'mock', type: 'cookie', purposes: [1]});
       hook(next, 'module2', {identifier: 'mock', type: 'web', purposes: [2]});
