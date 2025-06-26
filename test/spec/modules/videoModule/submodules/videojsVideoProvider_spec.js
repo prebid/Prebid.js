@@ -9,6 +9,7 @@ const {VideojsProvider, utils, adStateFactory, timeStateFactory} = require('modu
 const {
   PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION
 } = require('libraries/video/constants/ortb.js');
+const { PLAYBACK_MODE } = require('libraries/video/constants/constants.js');
 
 const videojs = require('video.js').default;
 require('videojs-playlist').default;
@@ -25,6 +26,9 @@ describe('videojsProvider', function () {
     beforeEach(() => {
       config = {};
       document.body.innerHTML = '';
+      adState = adStateFactory();
+      timeState = timeStateFactory();
+      callbackStorage = {};
     });
 
     it('should trigger failure when videojs is missing', function () {
@@ -115,6 +119,9 @@ describe('videojsProvider', function () {
       <video preload id='test' width="${200}" height="${100}">
       <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
       </video>`;
+      adState = adStateFactory();
+      timeState = timeStateFactory();
+      callbackStorage = {};
     });
 
     afterEach(() => {
