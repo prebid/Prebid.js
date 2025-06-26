@@ -2,9 +2,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { logInfo, logWarn } from '../src/utils.js';
+import { log } from 'gulp-util';
 
 const BIDDER_CODE = 'risemediatech';
-const ENDPOINT_URL = 'http://localhost:8082/ads/rtb/prebid/js';
+const ENDPOINT_URL = 'https://dev-ads.risemediatech.com/ads/rtb/prebid/js';
 const SYNC_URL_IFRAME = 'https://sync.risemediatech.com/iframe';
 const SYNC_URL_IMAGE = 'https://sync.risemediatech.com/image';
 const DEFAULT_CURRENCY = 'USD';
@@ -20,9 +21,15 @@ const converter = ortbConverter({
     logInfo('Building impression object for bidRequest:', bidRequest);
     const imp = buildImp(bidRequest, context);
     const { mediaTypes } = bidRequest;
-    if (bidRequest.params && bidRequest.params.bidfloor) {
-      logInfo('Setting bid floor for impression:', bidRequest.params.bidfloor);
-      imp.bidfloor = bidRequest.params.bidfloor;
+    if (bidRequest.params) {
+      if (bidRequest.params.bidfloor) {
+        logInfo('Setting bid floor for impression:', bidRequest.params.bidfloor);
+        imp.bidfloor = bidRequest.params.bidfloor;
+      }
+      if (bidRequest.params.testMode) {
+        logInfo('Invoking test impression:', bidRequest.params.testMode);
+        imp.ext.test = 0;
+      }
     }
     if (mediaTypes[BANNER]) {
       logInfo('Adding banner media type to impression:', mediaTypes[BANNER]);
@@ -118,6 +125,9 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     method: 'POST',
     url: ENDPOINT_URL,
     data: request,
+    options: {
+        endpointCompression: true
+      },
   };
 };
 
@@ -197,24 +207,6 @@ const interpretResponse = (serverResponse, request) => {
  * @returns {Array} Array of user sync objects.
  */
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  logInfo('Handling user syncs with options:', syncOptions);
-  const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
-  let url = type === 'iframe' ? SYNC_URL_IFRAME : SYNC_URL_IMAGE;
-
-  if (gdprConsent?.consentString) {
-    logInfo('Adding GDPR consent information to user sync URL:', gdprConsent);
-    url += `?gdpr=${Number(gdprConsent.gdprApplies || 0)}&gdpr_consent=${gdprConsent.consentString}`;
-  }
-
-  if (uspConsent) {
-    logInfo('Adding USP consent information to user sync URL:', uspConsent);
-    url += `&us_privacy=${uspConsent}`;
-  }
-
-  if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-    logInfo('Adding GPP consent information to user sync URL:', gppConsent);
-    url += `&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections.join(',')}`;
-  }
 
   // return [{ type, url }];
   logInfo('User syncs are not implemented in this adapter.');

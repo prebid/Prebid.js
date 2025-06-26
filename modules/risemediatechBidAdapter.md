@@ -16,7 +16,7 @@ RisemediaTech supports Display & Video(Instream) currently.
             mediatypes: {
                 banner: {
                     sizes:[
-                        [300,250]
+                        [320,50]
                     ]
                 }
             },
@@ -24,12 +24,8 @@ RisemediaTech supports Display & Video(Instream) currently.
                 {
                     bidder: 'risemediatech',
                     params: {
-                        placementId: 1452398,
-                        publisherId: p-1489231,   
                         bidfloor: 0.5,        
-                        currency: 'USD',
-                        domain: 'exampleDomain.com',
-                        pageUrl: 'https://exampleDomain.com/ad'
+                        testMode: 0
                     }
                 }
             ]
@@ -50,13 +46,16 @@ RisemediaTech supports Display & Video(Instream) currently.
             },
             bids:[
                 {
-                    mimes: ['video/mp4','video/webm'],
-                    minduration: 5,
-                    maxduration: 30,
-                    startdelay: 30,
-                    maxseq: 2,
-                    poddur: 30,
-                    protocols: [1,3,4]
+                    params: {
+                        mimes: ['video/mp4','video/webm'],
+                        minduration: 5,
+                        maxduration: 30,
+                        startdelay: 30,
+                        maxseq: 2,
+                        poddur: 30,
+                        protocols: [1,3,4]
+                    }
+                    
                 }
             ]
         }
