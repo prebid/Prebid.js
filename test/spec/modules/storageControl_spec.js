@@ -1,6 +1,6 @@
 import {metadataRepository} from '../../../libraries/metadata/metadata.js';
 import {
-  checkDisclosure, ENFORCE_ALIAS,
+  checkDisclosure, dynamicDisclosureCollector, ENFORCE_ALIAS,
   ENFORCE_OFF,
   ENFORCE_STRICT,
   getDisclosures,
@@ -211,5 +211,54 @@ describe('storageControl', () => {
       checkResult = {disclosed: false, parent: true, reason: 'allowed'};
       expect(rule()).to.not.exist;
     });
-  })
+  });
+
+  describe('dynamic disclosures', () => {
+    let next, hook, getDisclosures;
+    beforeEach(() => {
+      next = sinon.stub();
+      ({hook, getDisclosures} = dynamicDisclosureCollector());
+    });
+    it('should collect and return disclosures', () => {
+      const disclosure = {identifier: 'mock', type: 'web', purposes: [1]};
+      hook(next, 'module', disclosure);
+      sinon.assert.calledWith(next, 'module', disclosure);
+      expect(getDisclosures()).to.eql([
+        {
+          disclosedBy: ['module'],
+          ...disclosure
+        }
+      ]);
+    });
+    it('should update disclosures for the same identifier', () => {
+      hook(next, 'module1', {identifier: 'mock', type: 'cookie', maxAgeSeconds: 10, cookieRefresh: true, purposes: [1]});
+      hook(next, 'module2', {identifier: 'mock', type: 'cookie', maxAgeSeconds: 1, cookieRefresh: true, purposes: [2]});
+      expect(getDisclosures()).to.eql([{
+        disclosedBy: ['module1', 'module2'],
+        identifier: 'mock',
+        type: 'cookie',
+        maxAgeSeconds: 10,
+        cookieRefresh: true,
+        purposes: [1, 2]
+      }])
+    });
+    it('should treat web and cookie disclosures as separate', () => {
+      hook(next, 'module1', {identifier: 'mock', type: 'cookie', purposes: [1]});
+      hook(next, 'module2', {identifier: 'mock', type: 'web', purposes: [2]});
+      expect(getDisclosures()).to.have.deep.members([
+        {
+          disclosedBy: ['module1'],
+          identifier: 'mock',
+          type: 'cookie',
+          purposes: [1],
+        },
+        {
+          disclosedBy: ['module2'],
+          identifier: 'mock',
+          type: 'web',
+          purposes: [2]
+        }
+      ])
+    })
+  });
 })

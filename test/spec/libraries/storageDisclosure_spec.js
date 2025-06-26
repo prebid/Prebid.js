@@ -1,4 +1,5 @@
 import {getStorageDisclosureSummary} from '../../../libraries/storageDisclosure/summary.js';
+import {dynamicDisclosureCollector} from '../../../modules/storageControl.js';
 
 describe('storageDisclosure', () => {
   let moduleMeta;
@@ -81,6 +82,5 @@ describe('storageDisclosure', () => {
         identifier: 'foo'
       }
     ])
-  })
-})
-
+  });
+});

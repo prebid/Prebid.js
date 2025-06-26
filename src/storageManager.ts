@@ -327,17 +327,36 @@ export function resetData() {
 
 type CookieStorageDisclosure = {
     type: 'cookie',
+    /**
+     * The number, in seconds, of the duration for storage on a device, as set when using cookie storage.
+     */
     maxAgeSeconds: number;
+    /**
+     * Indicates the vendor is refreshing a cookie.
+     */
     cookieRefresh: boolean;
 }
 type HTML5StorageDisclosure = {
     type: 'web'
-    maxAgeSeconds?: never;
-    cookieRefresh?: never;
+    maxAgeSeconds?: null;
+    cookieRefresh?: null;
 }
 
-type StorageDisclosure = (CookieStorageDisclosure | HTML5StorageDisclosure) & {
+/**
+ * First party storage use disclosure. Follows the same format as
+ * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/Vendor%20Device%20Storage%20%26%20Operational%20Disclosures.md
+ * except that `domain` is omitted.
+ */
+export type StorageDisclosure = (CookieStorageDisclosure | HTML5StorageDisclosure) & {
+    /**
+     * Key or object name, depending on type, for the storage item.
+     * Wildcards '*' are permitted. For example, "id*" or "*id" describes multiple prefixed or suffixed identifiers,
+     * all having the same purpose(s).
+     */
     identifier: string;
+    /**
+     * The purpose ID or purpose IDs from the Global Vendor List (GVL) for which the storage is used.
+     */
     purposes: number[];
 }
 
