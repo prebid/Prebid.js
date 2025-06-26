@@ -1,5 +1,4 @@
 import fs from 'fs';
-import {getMetadataEntry} from '../gulpHelpers.js';
 
 const GVL_URL = 'https://vendor-list.consensu.org/v3/vendor-list.json';
 const LOCAL_DISCLOSURE_PATTERN = /^local:\/\//;

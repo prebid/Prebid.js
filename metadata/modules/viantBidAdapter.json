@@ -4,8 +4,15 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "growads",
+      "componentName": "viant",
       "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "viantortb",
+      "aliasOf": "viant",
       "gvlid": null,
       "disclosureURL": null
     }

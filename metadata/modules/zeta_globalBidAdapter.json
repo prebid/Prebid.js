@@ -4,8 +4,15 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "viant",
+      "componentName": "zeta_global",
       "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "zeta",
+      "aliasOf": "zeta_global",
       "gvlid": null,
       "disclosureURL": null
     }

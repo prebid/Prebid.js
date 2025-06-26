@@ -3,6 +3,16 @@
   "disclosures": {
     "https://cdn.indexexchange.com/device_storage_disclosure.json": [
       {
+        "identifier": "ix_features",
+        "type": "cookie",
+        "maxAgeSeconds": 3600,
+        "cookieRefresh": true,
+        "purposes": [
+          1,
+          2
+        ]
+      },
+      {
         "identifier": "IXWRAPPERLiveRampIp",
         "type": "web",
         "purposes": [

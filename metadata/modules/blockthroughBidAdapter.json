@@ -13,6 +13,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -27,6 +28,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -41,6 +43,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -55,6 +58,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -69,6 +73,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -83,6 +88,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -97,11 +103,12 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
       {
-        "identifier": "btUserPPID",
+        "identifier": "BT_traceID",
         "type": "web",
         "maxAgeSeconds": null,
         "cookieRefresh": false,
@@ -111,20 +118,7 @@
           3,
           4,
           7,
-          10
-        ]
-      },
-      {
-        "identifier": "pid",
-        "type": "web",
-        "maxAgeSeconds": null,
-        "cookieRefresh": false,
-        "purposes": [
-          1,
-          2,
-          3,
-          4,
-          7,
+          9,
           10
         ]
       },
@@ -139,6 +133,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -153,6 +148,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -167,11 +163,12 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
       {
-        "identifier": "BT_MedianBidCPM",
+        "identifier": "BT_BLOCKLISTED_CREATIVES",
         "type": "web",
         "maxAgeSeconds": null,
         "cookieRefresh": false,
@@ -181,11 +178,12 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
       {
-        "identifier": "SOFTWALL_RENDERED",
+        "identifier": "BT_AM_SOFTWALL_RENDERED",
         "type": "web",
         "maxAgeSeconds": null,
         "cookieRefresh": false,
@@ -195,6 +193,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -209,6 +208,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -223,6 +223,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -237,6 +238,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -251,6 +253,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -265,6 +268,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -279,6 +283,7 @@
           3,
           4,
           7,
+          9,
           10
         ]
       },
@@ -293,6 +298,22 @@
           3,
           4,
           7,
+          9,
+          10
+        ]
+      },
+      {
+        "identifier": "BT_AM_SCA_SUCCEED",
+        "type": "web",
+        "maxAgeSeconds": null,
+        "cookieRefresh": false,
+        "purposes": [
+          1,
+          2,
+          3,
+          4,
+          7,
+          9,
           10
         ]
       }
@@ -305,6 +326,13 @@
       "aliasOf": null,
       "gvlid": 815,
       "disclosureURL": "https://blockthrough.com/tcf_disclosures.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bt",
+      "aliasOf": "blockthrough",
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

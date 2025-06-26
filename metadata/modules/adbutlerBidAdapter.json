@@ -15,13 +15,6 @@
       "aliasOf": "adbutler",
       "gvlid": null,
       "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "doceree",
-      "aliasOf": "adbutler",
-      "gvlid": null,
-      "disclosureURL": null
     }
   ]
 }

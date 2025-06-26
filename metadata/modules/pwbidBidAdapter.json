@@ -10,6 +10,13 @@
       "aliasOf": null,
       "gvlid": 842,
       "disclosureURL": "https://admin.pubwise.io/publisher/device-disclosure.json"
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubwise",
+      "aliasOf": "pwbid",
+      "gvlid": null,
+      "disclosureURL": null
     }
   ]
 }

@@ -4,8 +4,15 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "zeta_global",
+      "componentName": "incrementx",
       "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "incrx",
+      "aliasOf": "incrementx",
       "gvlid": null,
       "disclosureURL": null
     }

@@ -24,13 +24,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "blockthrough",
-      "aliasOf": null,
-      "gvlid": 815,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "a1media",
       "aliasOf": null,
       "gvlid": null,
@@ -102,13 +95,6 @@
     {
       "componentType": "bidder",
       "componentName": "divreach",
-      "aliasOf": "adbutler",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "doceree",
       "aliasOf": "adbutler",
       "gvlid": null,
       "disclosureURL": null
@@ -489,13 +475,6 @@
       "componentName": "urekamedia",
       "aliasOf": "adkernel",
       "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "adman",
-      "aliasOf": null,
-      "gvlid": 149,
       "disclosureURL": null
     },
     {
@@ -1466,6 +1445,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "blockthrough",
+      "aliasOf": null,
+      "gvlid": 815,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bt",
+      "aliasOf": "blockthrough",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "blue",
       "aliasOf": null,
       "gvlid": 620,
@@ -1476,6 +1469,20 @@
       "componentName": "bms",
       "aliasOf": null,
       "gvlid": 1105,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bmtm",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "brightmountainmedia",
+      "aliasOf": "bmtm",
+      "gvlid": null,
       "disclosureURL": null
     },
     {
@@ -1508,36 +1515,8 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "sonarads",
-      "aliasOf": null,
-      "gvlid": 1300,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "bridgeupp",
-      "aliasOf": "sonarads",
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "bridgewell",
       "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "bmtm",
-      "aliasOf": null,
-      "gvlid": null,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
-      "componentName": "brightmountainmedia",
-      "aliasOf": "bmtm",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -1928,6 +1907,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "doceree",
+      "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "dochase",
       "aliasOf": null,
       "gvlid": null,
@@ -2033,6 +2019,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "epomdsp",
+      "aliasOf": "epom_dsp",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "equativ",
       "aliasOf": null,
       "gvlid": 45,
@@ -2119,6 +2112,20 @@
       "componentType": "bidder",
       "componentName": "freepass",
       "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "fwssp",
+      "aliasOf": null,
+      "gvlid": 285,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "freewheel-mrm",
+      "aliasOf": "fwssp",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -2250,6 +2257,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "growadvertising",
+      "aliasOf": "growads",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "gumgum",
       "aliasOf": null,
       "gvlid": 61,
@@ -2350,6 +2364,13 @@
       "componentType": "bidder",
       "componentName": "incrementx",
       "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "incrx",
+      "aliasOf": "incrementx",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -3468,13 +3489,6 @@
     },
     {
       "componentType": "bidder",
-      "componentName": "pwbid",
-      "aliasOf": null,
-      "gvlid": 842,
-      "disclosureURL": null
-    },
-    {
-      "componentType": "bidder",
       "componentName": "pubx",
       "aliasOf": null,
       "gvlid": null,
@@ -3498,6 +3512,20 @@
       "componentType": "bidder",
       "componentName": "pulsepointLite",
       "aliasOf": "pulsepoint",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pwbid",
+      "aliasOf": null,
+      "gvlid": 842,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "pubwise",
+      "aliasOf": "pwbid",
       "gvlid": null,
       "disclosureURL": null
     },
@@ -4000,6 +4028,20 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "sonarads",
+      "aliasOf": null,
+      "gvlid": 1300,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "bridgeupp",
+      "aliasOf": "sonarads",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "sonobi",
       "aliasOf": null,
       "gvlid": 104,
@@ -4308,6 +4350,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "viantortb",
+      "aliasOf": "viant",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "vibrantmedia",
       "aliasOf": null,
       "gvlid": null,
@@ -4602,6 +4651,13 @@
     },
     {
       "componentType": "bidder",
+      "componentName": "zeta",
+      "aliasOf": "zeta_global",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
       "componentName": "zeta_global_ssp",
       "aliasOf": null,
       "gvlid": 469,
@@ -4642,6 +4698,12 @@
       "componentType": "rtd",
       "componentName": "adagio",
       "gvlid": 617,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
+      "componentName": "adlane",
+      "gvlid": null,
       "disclosureURL": null
     },
     {

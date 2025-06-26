@@ -3,9 +3,8 @@
   "disclosures": {},
   "components": [
     {
-      "componentType": "bidder",
-      "componentName": "doceree",
-      "aliasOf": null,
+      "componentType": "rtd",
+      "componentName": "adlane",
       "gvlid": null,
       "disclosureURL": null
     }

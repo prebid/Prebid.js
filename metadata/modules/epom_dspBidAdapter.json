@@ -4,8 +4,15 @@
   "components": [
     {
       "componentType": "bidder",
-      "componentName": "incrementx",
+      "componentName": "epom_dsp",
       "aliasOf": null,
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "bidder",
+      "componentName": "epomdsp",
+      "aliasOf": "epom_dsp",
       "gvlid": null,
       "disclosureURL": null
     }

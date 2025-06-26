@@ -53,6 +53,7 @@ async function compileCoreMetadata() {
   for (let [moduleName, metadata] of Object.entries(modules)) {
     await updateModuleMetadata(moduleName, metadata);
   }
+  return Object.keys(modules);
 }
 
 async function updateModuleMetadata(moduleName, metadata) {
@@ -63,6 +64,7 @@ async function updateModuleMetadata(moduleName, metadata) {
 }
 
 async function compileModuleMetadata() {
+  const processed = [];
   const found = new WeakSet();
   let err = false;
   for (const moduleName of helpers.getModuleNames()) {
@@ -88,6 +90,7 @@ async function compileModuleMetadata() {
         err = true;
       } else {
         await updateModuleMetadata(moduleName, meta);
+        processed.push(moduleName);
       }
     }
   }
@@ -101,9 +104,24 @@ async function compileModuleMetadata() {
   if (err) {
     throw new Error('Could not compile module metadata');
   }
+  return processed;
 }
 
+
 export default async function compileMetadata() {
-  await compileCoreMetadata();
-  await compileModuleMetadata();
+  const allModules = new Set((await compileCoreMetadata())
+    .concat(await compileModuleMetadata()));
+  fs.readdirSync('./metadata/modules')
+    .map(name => path.parse(name))
+    .filter(({name}) => !allModules.has(name))
+    .forEach(({name}) => {
+      const fn = `./metadata/modules/${name}.json`;
+      console.info(`Removing "${fn}"`);
+      fs.rmSync(fn);
+    })
+
+  const extraOverrides = Object.keys(overrides).filter(module => !allModules.has(module));
+  if (extraOverrides.length) {
+    console.warn('The following modules are mentioned in `metadata/overrides.mjs`, but could not be found:', JSON.stringify(extraOverrides, null, 2));
+  }
 }
