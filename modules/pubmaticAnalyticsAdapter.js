@@ -300,7 +300,7 @@ function isS2SBidder(bidder) {
 
 function isOWPubmaticBid(adapterName) {
   let s2sConf = config.getConfig('s2sConfig');
-  let s2sConfArray = isArray(s2sConf) ? s2sConf : [s2sConf];
+  let s2sConfArray = s2sConf ? (isArray(s2sConf) ? s2sConf : [s2sConf]) : [];
   return s2sConfArray.some(conf => {
     if (adapterName === ADAPTER_CODE && conf.defaultVendor === VENDOR_OPENWRAP &&
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
@@ -632,11 +632,25 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function auctionInitHandler(args) {
-  s2sBidders = (function() {
-    let s2sConf = config.getConfig('s2sConfig');
+  s2sBidders = (function () {
     let s2sBidders = [];
-    (s2sConf || []) &&
-      isArray(s2sConf) ? s2sConf.map(conf => s2sBidders.push(...conf.bidders)) : s2sBidders.push(...s2sConf.bidders);
+    try {
+      let s2sConf = config.getConfig('s2sConfig');
+
+      if (s2sConf) {
+        if (isArray(s2sConf)) {
+          s2sConf.forEach(conf => {
+            if (conf && conf.bidders) {
+              s2sBidders.push(...conf.bidders);
+            }
+          });
+        } else if (s2sConf?.bidders) {
+          s2sBidders.push(...s2sConf.bidders);
+        }
+      }
+    } catch (e) {
+      logError('Error processing s2s bidders:', e);
+    }
     return s2sBidders || [];
   }());
   let cacheEntry = pick(args, [
