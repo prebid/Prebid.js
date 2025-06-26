@@ -34,5 +34,6 @@
   "dfpAdServerVideo",
   "criteoIdSystem",
   "connectadBidAdapter",
-  "anPspParamsConverter"
+  "anPspParamsConverter",
+  "gptPreAuction"
 ]
