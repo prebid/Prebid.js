@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import { sendBeacon } from '../src/ajax.js';
 
@@ -37,8 +38,7 @@ function slotDimensions(bid) {
 
   if (slotEl) {
     logInfo(`Slot element found: ${adUnitCode}`)
-    const slotW = slotEl.offsetWidth
-    const slotH = slotEl.offsetHeight
+    const { width: slotW, height: slotH } = getBoundingClientRect(slotEl);
     const cssMaxW = slotEl.style?.maxWidth;
     const cssMaxH = slotEl.style?.maxHeight;
     logInfo(`Slot dimensions (w/h): ${slotW} / ${slotH}`)
@@ -84,6 +84,27 @@ function getRefGroups() {
     return groups.split(',')
   }
   return []
+}
+
+function getBidFloor(bid) {
+ if (typeof bid.getFloor !== 'function') {
+  return {};
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+
+  return floor;
+}
+
+/**
+ * Returns the downlink speed of the connection in Mbps or an empty string if not available.
+ */
+function getConnectionDownLink(nav) {
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
 /**
@@ -181,6 +202,16 @@ export const spec = {
     // process bid requests
     let processed = validBidRequests
       .map(bid => slotDimensions(bid))
+      .map(bid => {
+        const bidFloor = getBidFloor(bid);
+        return {
+          ...bid,
+          params: {
+            ...bid.params,
+            floor: bidFloor,
+          }
+        }
+      })
       // Flattens the pageId, domainId and placement Id for backwards compatibility.
       .map((bid) => ({...bid, pageId: bid.params?.pageId, domainId: bid.params?.domainId, placementId: bid.params?.placementId}));
 
@@ -190,6 +221,7 @@ export const spec = {
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
       pageViewId: pageViewId,
+      networkBandwidth: getConnectionDownLink(window.navigator),
       sdk: {
         version: '$prebid.version$'
       },
@@ -248,13 +280,13 @@ export const spec = {
     logInfo('Collecting user-syncs: ', JSON.stringify({syncOptions, gdprConsent, uspConsent, serverResponses}));
 
     const syncs = []
-    if (hasPurpose1Consent(gdprConsent)) {
+    if (hasPurpose1Consent(gdprConsent) && gdprConsent.consentString) {
       logInfo('GDPR purpose 1 consent was given, adding user-syncs')
       let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
       if (type) {
         syncs.push({
           type: type,
-          url: 'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID'
+          url: `https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=${gdprConsent.gdprApplies ? 1 : 0}&gdpr_consent=${gdprConsent.consentString}`,
         })
       }
     }

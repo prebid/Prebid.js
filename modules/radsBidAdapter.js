@@ -254,8 +254,8 @@ function getBannerSizes(bid) {
 
 /**
  * Parse size
- * @param sizes
- * @returns {width: number, h: height}
+ * @param {string} size
+ * @returns {{width: number, height: number}}
  */
 function parseSize(size) {
   let sizeObj = {}

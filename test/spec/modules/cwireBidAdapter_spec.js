@@ -3,11 +3,12 @@ import {newBidder} from '../../../src/adapters/bidderFactory';
 import {BID_ENDPOINT, spec, storage} from '../../../modules/cwireBidAdapter';
 import {deepClone, logInfo} from '../../../src/utils';
 import * as utils from 'src/utils.js';
-import {sandbox, stub} from 'sinon';
+import sinon, {stub} from 'sinon';
 import {config} from '../../../src/config';
 
 describe('C-WIRE bid adapter', () => {
   config.setConfig({debug: true});
+  let sandbox;
   const adapter = newBidder(spec);
   let bidRequests = [
     {
@@ -42,6 +43,14 @@ describe('C-WIRE bid adapter', () => {
       }]
     }
   }
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -60,13 +69,13 @@ describe('C-WIRE bid adapter', () => {
   describe('buildRequests with given creative', function () {
     let utilsStub;
 
-    before(function () {
+    beforeEach(function () {
       utilsStub = stub(utils, 'getParameterByName').callsFake(function () {
         return 'str-str'
       });
     });
 
-    after(function () {
+    afterEach(function () {
       utilsStub.restore();
     });
 
@@ -82,11 +91,12 @@ describe('C-WIRE bid adapter', () => {
   })
 
   describe('buildRequests reads adUnit offsetWidth and offsetHeight', function () {
-    before(function () {
+    beforeEach(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         offsetWidth: 200,
-        offsetHeight: 250
+        offsetHeight: 250,
+        getBoundingClientRect() { return { width: 200, height: 250 }; }
       });
     });
     it('width and height should be set', function () {
@@ -104,18 +114,19 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.slots[0].cwExt.style.maxHeight).to.not.exist;
       expect(payload.slots[0].cwExt.style.maxWidth).to.not.exist;
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   });
   describe('buildRequests reads style attributes', function () {
-    before(function () {
+    beforeEach(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         style: {
           maxWidth: '400px',
           maxHeight: '350px',
-        }
+        },
+        getBoundingClientRect() { return { width: 0, height: 0 }; }
       });
     });
     it('css maxWidth should be set', function () {
@@ -131,13 +142,13 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.slots[0].cwExt.style.maxWidth).to.eq('400px');
       !expect(payload.slots[0].cwExt.style.maxHeight).to.eq('350px');
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   });
 
   describe('buildRequests reads feature flags', function () {
-    before(function () {
+    beforeEach(function () {
       sandbox.stub(utils, 'getParameterByName').callsFake(function () {
         return 'feature1,feature2'
       });
@@ -154,13 +165,13 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.featureFlags).to.exist;
       expect(payload.featureFlags).to.include.members(['feature1', 'feature2']);
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   });
 
   describe('buildRequests reads cwgroups flag', function () {
-    before(function () {
+    beforeEach(function () {
       sandbox.stub(utils, 'getParameterByName').callsFake(function () {
         return 'group1,group2'
       });
@@ -177,13 +188,13 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.refgroups).to.exist;
       expect(payload.refgroups).to.include.members(['group1', 'group2']);
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
 
   describe('buildRequests reads debug flag', function () {
-    before(function () {
+    beforeEach(function () {
       sandbox.stub(utils, 'getParameterByName').callsFake(function () {
         return 'true'
       });
@@ -200,7 +211,7 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.debug).to.exist;
       expect(payload.debug).to.equal(true);
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
@@ -223,15 +234,17 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.cwid).to.exist;
       expect(payload.cwid).to.equal('taerfagerg');
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
 
   describe('buildRequests maps flattens params for legacy compat', function () {
-    before(function () {
+    beforeEach(function () {
       const documentStub = sandbox.stub(document, 'getElementById');
-      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({});
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+        getBoundingClientRect() { return { width: 0, height: 0 }; }
+      });
     });
     it('pageId flattened', function () {
       let bidRequest = deepClone(bidRequests[0]);
@@ -243,7 +256,7 @@ describe('C-WIRE bid adapter', () => {
 
       expect(payload.slots[0].pageId).to.exist;
     });
-    after(function () {
+    afterEach(function () {
       sandbox.restore()
     });
   })
@@ -306,7 +319,10 @@ describe('C-WIRE bid adapter', () => {
           purpose: {
             consents: 1
           }
-        }};
+        },
+        gdprApplies: false,
+        consentString: 'testConsentString'
+      };
       const userSyncs = spec.getUserSyncs({}, {}, gdprConsent, {});
 
       expect(userSyncs).to.be.empty
@@ -318,26 +334,107 @@ describe('C-WIRE bid adapter', () => {
           purpose: {
             consents: 1
           }
-        }};
+        },
+        gdprApplies: false,
+        consentString: 'testConsentString'
+      };
       let synOptions = {pixelEnabled: true, iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('image');
-      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID');
+      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=0&gdpr_consent=testConsentString');
     })
 
     it('user-syncs with enabled iframe option', function () {
       let gdprConsent = {
         vendorData: {
           purpose: {
-            consents: 1
+            consents: {
+              1: true
+            }
           }
-        }};
+        },
+        gdprApplies: true,
+        consentString: 'abc123'
+      };
       let synOptions = {iframeEnabled: true};
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal('iframe');
-      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID');
+      expect(userSyncs[0].url).to.equal('https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID&gdpr=1&gdpr_consent=abc123');
     })
   })
+
+  describe('buildRequests with floor', function () {
+    it('should include floor in params when getFloor is defined', function () {
+      const bid = {
+        bidId: '123',
+        adUnitCode: 'test-div',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          pageId: 4057,
+          placementId: 'abc123',
+        },
+        getFloor: function ({ currency, mediaType, size }) {
+          expect(currency).to.equal('USD');
+          expect(mediaType).to.equal('*');
+          expect(size).to.equal('*');
+          return {
+            currency: 'USD',
+            floor: 1.23
+          };
+        }
+      };
+
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://example.com'
+        }
+      };
+
+      const request = spec.buildRequests([bid], bidderRequest);
+
+      const payload = JSON.parse(request.data);
+      const slot = payload.slots[0];
+
+      expect(slot.params).to.have.property('floor');
+      expect(slot.params.floor).to.deep.equal({
+        currency: 'USD',
+        floor: 1.23
+      });
+    });
+
+    it('should not include floor in params if getFloor is not defined', function () {
+      const bid = {
+        bidId: '456',
+        adUnitCode: 'test-div',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        params: {
+          pageId: 4057,
+          placementId: 'abc123',
+        }
+        // no getFloor
+      };
+
+      const bidderRequest = {
+        refererInfo: {
+          page: 'https://example.com'
+        }
+      };
+
+      const request = spec.buildRequests([bid], bidderRequest);
+      const payload = JSON.parse(request.data);
+      const slot = payload.slots[0];
+
+      expect(slot.params.floor).to.deep.equal({});
+    });
+  });
 });
