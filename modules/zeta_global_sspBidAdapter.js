@@ -139,7 +139,6 @@ export const spec = {
     };
     const rInfo = bidderRequest.refererInfo;
     if (rInfo) {
-      // TODO: do the fallbacks make sense here?
       payload.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
       payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
     }
