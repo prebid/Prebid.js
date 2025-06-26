@@ -11,6 +11,7 @@ import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {EID_CONFIG, getEids} from './eids.js';
 import {
+    discloseStorageUse,
     getCoreStorageManager,
     newStorageManager,
     STORAGE_TYPE_COOKIES,
@@ -184,11 +185,13 @@ export function setStoredValue(submodule, value) {
   }
 }
 
+export const COOKIE_SUFFIXES = ['', '_last', '_cst'];
+
 function deleteValueFromCookie(submodule) {
   const setCookie = cookieSetter(submodule, coreStorage);
   const expiry = (new Date(Date.now() - 1000 * 60 * 60 * 24)).toUTCString();
 
-  ['', '_last', '_cst'].forEach(suffix => {
+  COOKIE_SUFFIXES.forEach(suffix => {
     try {
       setCookie(suffix, '', expiry);
     } catch (e) {
@@ -197,8 +200,10 @@ function deleteValueFromCookie(submodule) {
   })
 }
 
+export const HTML5_SUFFIXES = ['', '_last', '_exp', '_cst'];
+
 function deleteValueFromLocalStorage(submodule) {
-  ['', '_last', '_exp', '_cst'].forEach(suffix => {
+  HTML5_SUFFIXES.forEach(suffix => {
     try {
       coreStorage.removeDataFromLocalStorage(submodule.config.storage.name + suffix);
     } catch (e) {
@@ -856,7 +861,6 @@ function updatePPID(priorityMaps) {
 function initSubmodules(priorityMaps, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
-
     submodules.forEach(submod => populateEnabledStorageTypes(submod));
 
     /**
@@ -971,6 +975,8 @@ function canUseCookies(submodule) {
   return true
 }
 
+const STORAGE_PURPOSES = [1, 2, 3, 4, 7];
+
 function populateEnabledStorageTypes(submodule: SubmoduleContainer<UserIdProvider>) {
   if (submodule.enabledStorageTypes) {
     return;
@@ -981,8 +987,24 @@ function populateEnabledStorageTypes(submodule: SubmoduleContainer<UserIdProvide
   submodule.enabledStorageTypes = storageTypes.filter(type => {
     switch (type) {
       case LOCAL_STORAGE:
+        HTML5_SUFFIXES.forEach(suffix => {
+            discloseStorageUse('userId', {
+                type: 'web',
+                identifier: submodule.config.storage.name + suffix,
+                purposes: STORAGE_PURPOSES
+            })
+        })
         return canUseLocalStorage(submodule);
       case COOKIE:
+        COOKIE_SUFFIXES.forEach(suffix => {
+            discloseStorageUse('userId', {
+                type: 'cookie',
+                identifier: submodule.config.storage.name + suffix,
+                purposes: STORAGE_PURPOSES,
+                maxAgeSeconds: submodule.config.storage.expires * 24 * 60 * 60,
+                cookieRefresh: true
+            })
+        })
         return canUseCookies(submodule);
     }
 
@@ -1003,16 +1025,6 @@ function updateEIDConfig(submodules) {
       (mod) => mod
     )
   ).forEach(([key, submodules]) => EID_CONFIG.set(key, submodules[0].eids[key]))
-}
-
-type SubmoduleContainer<P extends UserIdProvider> = {
-    submodule: IdProviderSpec<P>;
-    enabledStorageTypes?: StorageType[];
-    config: UserIdConfig<P>;
-    callback?: ProviderResponse['callback'];
-    idObj;
-    storageMgr: StorageManager;
-    refreshIds?: boolean;
 }
 
 export function generateSubmoduleContainers(options, configs, prevSubmodules = submodules, registry = submoduleRegistry) {
@@ -1053,6 +1065,16 @@ export function generateSubmoduleContainers(options, configs, prevSubmodules = s
 
       return [...acc, newSubmoduleContainer];
     }, []);
+}
+
+type SubmoduleContainer<P extends UserIdProvider> = {
+    submodule: IdProviderSpec<P>;
+    enabledStorageTypes?: StorageType[];
+    config: UserIdConfig<P>;
+    callback?: ProviderResponse['callback'];
+    idObj;
+    storageMgr: StorageManager;
+    refreshIds?: boolean;
 }
 
 /**

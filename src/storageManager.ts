@@ -10,6 +10,7 @@ import {
 
 import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ACCESS_REQUEST_CREDENTIALS} from './activities/activities.js';
 import {config} from './config.js';
+import {hook} from "./hook.ts";
 import adapterManager from './adapterManager.js';
 import {activityParams} from './activities/activityParams.js';
 import type {AnyFunction} from "./types/functions.d.ts";
@@ -323,3 +324,24 @@ registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'bidderSettings.*.storageAllowed
 export function resetData() {
   storageCallbacks = [];
 }
+
+type CookieStorageDisclosure = {
+    type: 'cookie',
+    maxAgeSeconds: number;
+    cookieRefresh: boolean;
+}
+type HTML5StorageDisclosure = {
+    type: 'web'
+    maxAgeSeconds?: never;
+    cookieRefresh?: never;
+}
+
+type StorageDisclosure = (CookieStorageDisclosure | HTML5StorageDisclosure) & {
+    identifier: string;
+    purposes: number[];
+}
+
+/**
+ * Disclose first party storage use.
+ */
+export const discloseStorageUse = hook('sync', (moduleName: string, disclosure: StorageDisclosure) => {});
