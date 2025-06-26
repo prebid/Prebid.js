@@ -40,7 +40,6 @@ const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
 // todo: input profileId and profileVersionId ; defaults to zero or one
-const DEFAULT_PUBLISHER_ID = 0;
 const DEFAULT_PROFILE_ID = 0;
 const DEFAULT_PROFILE_VERSION_ID = 0;
 const enc = window.encodeURIComponent;
@@ -67,7 +66,7 @@ const BROWSER_MAP = [
 ];
 
 /// /////////// VARIABLES //////////////
-let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
+let publisherId = null; // string: mandatory
 let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
@@ -772,7 +771,8 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
     if (typeof conf.options === 'object') {
       if (conf.options.publisherId) {
-        publisherId = Number(conf.options.publisherId);
+        // Ensure publisherId is a string (trim if it's a string, convert to string if it's a number)
+        publisherId = isStr(conf.options.publisherId) ? conf.options.publisherId.trim() : String(conf.options.publisherId);
       }
       profileId = Number(conf.options.profileId) || DEFAULT_PROFILE_ID;
       profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
@@ -782,7 +782,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     }
 
     if (!publisherId) {
-      logError(LOG_PRE_FIX + 'Missing publisherId(Number).');
+      logError(LOG_PRE_FIX + 'Missing publisherId.');
       error = true;
     }
 
@@ -794,7 +794,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
   },
 
   disableAnalytics() {
-    publisherId = DEFAULT_PUBLISHER_ID;
+    publisherId = null;
     profileId = DEFAULT_PROFILE_ID;
     profileVersionId = DEFAULT_PROFILE_VERSION_ID;
     s2sBidders = [];
