@@ -636,8 +636,7 @@ function auctionInitHandler(args) {
     let s2sBidders = [];
     try {
       let s2sConf = config.getConfig('s2sConfig');
-
-      if (s2sConf && isArray(s2sConf)) {
+      if (isArray(s2sConf)) {
         s2sConf.forEach(conf => {
           if (conf?.bidders) {
             s2sBidders.push(...conf.bidders);
