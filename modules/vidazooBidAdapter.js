@@ -36,7 +36,7 @@ function createUniqueRequestData(hashUrl) {
   };
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, true);
+const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, storage, BIDDER_CODE, BIDDER_VERSION, true, true);
 const interpretResponse = createInterpretResponseFn(BIDDER_CODE, true);
 const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.cootlogix.com/api/sync/iframe', imageSyncUrl: 'https://sync.cootlogix.com/api/sync/image'
