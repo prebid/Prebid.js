@@ -45,7 +45,7 @@ import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.j
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
 import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
-import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_STORAGE_TYPE } from '../../src/activities/params.js';
+import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_TYPE } from '../../src/activities/params.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -1157,6 +1157,8 @@ declare module '../../src/prebidGlobal' {
 
 const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
   return (params) => {
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID) return;
+
     const matchesName = (query) => params[ACTIVITY_PARAM_COMPONENT_NAME]?.toLowerCase() === query?.toLowerCase();
     const submoduleConfig = userIdsConfig.find((configItem) => matchesName(configItem.name));
 
@@ -1198,12 +1200,12 @@ export function init(config, {mkDelay = delay} = {}) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
         const {autoRefresh = false, retainConfig = true, enforceStorageType} = userSync;
-        unregisterEnforceStorageTypeRule?.();
-        unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(userSync.userIds, enforceStorageType));
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
         updateSubmodules({retainConfig, autoRefresh});
+        unregisterEnforceStorageTypeRule?.();
+        unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({config}) => config), enforceStorageType));
         updateIdPriority(userSync.idPriority, submoduleRegistry);
         initIdSystem({ready: true});
         const submodulesToRefresh = submodules.filter(item => item.refreshIds);

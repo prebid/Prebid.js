@@ -3304,6 +3304,12 @@ describe('User ID', function () {
       ]
     };
 
+    before(() => {
+      setSubmoduleRegistry([
+        createMockIdSubmodule(UID_MODULE_NAME, {id: {uid2: {id: 'uid2_value'}}}, null, []),
+      ]);
+    })
+
     beforeEach(() => {
       warnLogSpy = sinon.spy(utils, 'logWarn');
     });
@@ -3311,6 +3317,16 @@ describe('User ID', function () {
     afterEach(() => {
       warnLogSpy.restore();
       document.cookie = ''
+    });
+
+    it('should warn and allow userId module to store data for enforceStorageType unset', () => {
+      const initialCookie = document.cookie;
+      config.setConfig({userSync});
+      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
+      storage.setCookie('cookieName', 'value', 20000);
+      sinon.assert.calledWith(warnLogSpy, `${UID_MODULE_NAME} attempts to store data in ${STORAGE_TYPE_COOKIES} while configuration allows ${STORAGE_TYPE_LOCALSTORAGE}.`);
+      expect(initialCookie).to.not.deep.eql(document.cookie);
+      expect(document.cookie).to.deep.include('cookieName');
     });
 
     it('should not allow userId module to store data for enforceStorageType set to true', () => {
@@ -3325,15 +3341,5 @@ describe('User ID', function () {
       storage.setCookie('data', 'value', 20000);
       expect(initialCookie).to.deep.eql(document.cookie);
     });
-
-    it('should warn and allow userId module to store data for enforceStorageType unset', () => {
-      const initialCookie = document.cookie;
-      config.setConfig({userSync});
-      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
-      storage.setCookie('cookieName', 'value', 20000);
-      sinon.assert.calledWith(warnLogSpy, `${UID_MODULE_NAME} attempts to store data in ${STORAGE_TYPE_COOKIES} while configuration allows ${STORAGE_TYPE_LOCALSTORAGE}.`);
-      expect(initialCookie).to.not.deep.eql(document.cookie);
-      expect(document.cookie).to.deep.include('cookieName');
-    });
-  })
+  });
 });
