@@ -28,7 +28,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
-const {disclosureSummary} = require('./metadata/summary.js');
+const merge = require('merge-stream');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -240,17 +240,18 @@ function nodeBundle(modules, dev = false) {
   });
 }
 
+function memoryVinyl(name, contents) {
+  return new Vinyl({
+    cwd: '',
+    base: 'generated',
+    path: name,
+    contents: Buffer.from(contents, 'utf-8')
+  });
+}
+
 function wrapWithHeaderAndFooter(dev, modules) {
   // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
   // gulp-concat does; for that reason we are prepending and appending the source stream with "fake" header & footer files.
-  function memoryVinyl(name, contents) {
-    return new Vinyl({
-      cwd: '',
-      base: 'generated',
-      path: name,
-      contents: Buffer.from(contents, 'utf-8')
-    });
-  }
   return function wrap(stream) {
     const wrapped = through.obj();
     const placeholder = '$$PREBID_SOURCE$$';
@@ -279,6 +280,23 @@ function wrapWithHeaderAndFooter(dev, modules) {
       });
     return wrapped;
   }
+}
+
+function disclosureSummary(modules, summaryFileName) {
+  const stream = through.obj();
+  import('./libraries/storageDisclosure/summary.mjs').then(({getStorageDisclosureSummary}) => {
+    const summary = getStorageDisclosureSummary(modules, (moduleName) => {
+      const metadataPath = `./metadata/modules/${moduleName}.json`;
+      if (fs.existsSync(metadataPath)) {
+        return JSON.parse(fs.readFileSync(metadataPath).toString());
+      } else {
+        return null;
+      }
+    })
+    stream.push(memoryVinyl(summaryFileName, JSON.stringify(summary, null, 2)));
+    stream.push(null);
+  })
+  return stream;
 }
 
 const MODULES_REQUIRING_METADATA = ['storageControl'];
@@ -319,7 +337,6 @@ function bundle(dev, moduleArr) {
   }
 
   const disclosureFile = helpers.getBuiltPath(dev, 'storageDisclosures.json');
-  fs.writeFileSync(disclosureFile, Buffer.from(JSON.stringify(disclosureSummary(['prebid-core'].concat(modules)), null, 2)));
 
   fancyLog('Storage disclosure summary written to:', disclosureFile);
   fancyLog('Concatenating files:\n', entries);
@@ -327,10 +344,12 @@ function bundle(dev, moduleArr) {
   fancyLog('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  return wrap(gulp.src(entries))
+  const source = wrap(gulp.src(entries))
     .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(sm, sourcemaps.write('.')));
+  const disclosure = disclosureSummary(['prebid-core'].concat(modules), path.relative('./build', disclosureFile));
+  return merge(source, disclosure);
 }
 
 function setupDist() {

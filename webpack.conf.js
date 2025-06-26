@@ -120,8 +120,6 @@ module.exports = {
               const def = {
                 name: lib,
                 test: (module) => {
-                  if (module.resource && module.resource.startsWith(dir)) {
-                  }
                   return module.resource && module.resource.startsWith(dir)
                 }
               }

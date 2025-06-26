@@ -13,6 +13,21 @@ describe('storageDisclosure', () => {
   it('should not choke when metadata is not available for a module', () => {
     expect(getStorageDisclosureSummary(['missing'], () => null)).to.eql([]);
   });
+  Object.entries({
+    'null': null,
+    'emtpy': []
+  }).forEach(([t, identifiers]) => {
+    it(`should not choke when disclosure is ${t}`, () => {
+      moduleMeta = {
+        module: {
+          disclosures: {
+            url: identifiers
+          }
+        }
+      }
+      expect(getSummary()).to.eql([]);
+    })
+  })
 
   it('should list disclosures', () => {
     moduleMeta = {
