@@ -448,7 +448,6 @@ export function enrichEids(ortb2Fragments) {
 
 declare module '../../src/adapterManager' {
     interface BaseBidRequest {
-        userId: UserId;
         userIdAsEids: ORTBRequest['user']['eids'];
     }
 }
@@ -459,16 +458,11 @@ export function addIdData({adUnits, ortb2Fragments}) {
   if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
     return;
   }
-  const globalIds = getIds(initializedSubmodules.global);
   const globalEids = ortb2Fragments.global.user?.ext?.eids || [];
   adUnits.forEach(adUnit => {
     if (adUnit.bids && isArray(adUnit.bids)) {
       adUnit.bids.forEach(bid => {
-        const bidderIds = Object.assign({}, globalIds, getIds(initializedSubmodules.bidder[bid.bidder] ?? {}));
         const bidderEids = globalEids.concat(ortb2Fragments.bidder?.[bid.bidder]?.user?.ext?.eids || []);
-        if (Object.keys(bidderIds).length > 0) {
-          bid.userId = bidderIds;
-        }
         if (bidderEids.length > 0) {
           bid.userIdAsEids = bidderEids;
         }

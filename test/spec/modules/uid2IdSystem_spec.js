@@ -47,13 +47,26 @@ const getFromAppropriateStorage = () => {
   else return coreStorage.getCookie(moduleCookieName);
 }
 
-const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeUid2IdentityContainer(token));
-const expectLegacyToken = (bid) => expect(bid.userId).to.deep.include(makeUid2IdentityContainer(legacyToken));
-const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
-const expectOptout = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeUid2OptoutContainer(token));
+const UID2_SOURCE = 'uidapi.com';
+function findUid2(bid) {
+  return (bid?.userIdAsEids ?? []).find(e => e.source === UID2_SOURCE);
+}
+const expectToken = (bid, token) => {
+  const eid = findUid2(bid);
+  expect(eid && eid.uids[0].id).to.equal(token);
+};
+const expectLegacyToken = (bid) => {
+  const eid = findUid2(bid);
+  expect(eid && eid.uids[0].id).to.equal(legacyToken);
+};
+const expectNoIdentity = (bid) => expect(findUid2(bid)).to.be.undefined;
+const expectOptout = (bid) => expect(findUid2(bid)).to.be.undefined;
 const expectGlobalToHaveToken = (token) => expect(getGlobal().getUserIds()).to.deep.include(makeUid2IdentityContainer(token));
 const expectGlobalToHaveNoUid2 = () => expect(getGlobal().getUserIds()).to.not.haveOwnProperty('uid2');
-const expectNoLegacyToken = (bid) => expect(bid.userId).to.not.deep.include(makeUid2IdentityContainer(legacyToken));
+const expectNoLegacyToken = (bid) => {
+  const eid = findUid2(bid);
+  if (eid) expect(eid.uids[0].id).to.not.equal(legacyToken);
+};
 const expectModuleStorageEmptyOrMissing = () => expect(getFromAppropriateStorage()).to.be.null;
 const expectModuleStorageToContain = (originalAdvertisingToken, latestAdvertisingToken, originalIdentity) => {
   const cookie = JSON.parse(getFromAppropriateStorage());
@@ -240,7 +253,9 @@ describe(`UID2 module`, function () {
       config.setConfig(makePrebidConfig(legacyConfigParams));
       const bid2 = await runAuction();
 
-      expect(bid.userId.uid2.id).to.equal(bid2.userId.uid2.id);
+        const first = findUid2(bid);
+        const second = findUid2(bid2);
+        expect(first && second && first.uids[0].id).to.equal(second.uids[0].id);
     });
   });
 
