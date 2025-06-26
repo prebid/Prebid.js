@@ -103,7 +103,7 @@
       "componentType": "bidder",
       "componentName": "addefend",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 539,
       "disclosureURL": null
     },
     {
@@ -544,7 +544,7 @@
       "componentType": "bidder",
       "componentName": "admixer",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 511,
       "disclosureURL": null
     },
     {
@@ -593,7 +593,7 @@
       "componentType": "bidder",
       "componentName": "adnow",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1210,
       "disclosureURL": null
     },
     {
@@ -663,7 +663,7 @@
       "componentType": "bidder",
       "componentName": "adpone",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 799,
       "disclosureURL": null
     },
     {
@@ -1083,7 +1083,7 @@
       "componentType": "bidder",
       "componentName": "appier",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 728,
       "disclosureURL": null
     },
     {
@@ -1209,7 +1209,7 @@
       "componentType": "bidder",
       "componentName": "appush",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 879,
       "disclosureURL": null
     },
     {
@@ -1307,7 +1307,7 @@
       "componentType": "bidder",
       "componentName": "axis",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1197,
       "disclosureURL": null
     },
     {
@@ -1321,7 +1321,7 @@
       "componentType": "bidder",
       "componentName": "beachfront",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 335,
       "disclosureURL": null
     },
     {
@@ -1349,7 +1349,7 @@
       "componentType": "bidder",
       "componentName": "between",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 724,
       "disclosureURL": null
     },
     {
@@ -1489,7 +1489,7 @@
       "componentType": "bidder",
       "componentName": "boldwin",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1151,
       "disclosureURL": null
     },
     {
@@ -1818,7 +1818,7 @@
       "componentType": "bidder",
       "componentName": "deltaprojects",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 209,
       "disclosureURL": null
     },
     {
@@ -1909,7 +1909,7 @@
       "componentType": "bidder",
       "componentName": "doceree",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1063,
       "disclosureURL": null
     },
     {
@@ -1972,7 +1972,7 @@
       "componentType": "bidder",
       "componentName": "edge226",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1202,
       "disclosureURL": null
     },
     {
@@ -2140,7 +2140,7 @@
       "componentType": "bidder",
       "componentName": "gamoshi",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 644,
       "disclosureURL": null
     },
     {
@@ -2301,7 +2301,7 @@
       "componentType": "bidder",
       "componentName": "hybrid",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 206,
       "disclosureURL": null
     },
     {
@@ -2385,7 +2385,7 @@
       "componentType": "bidder",
       "componentName": "innity",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 535,
       "disclosureURL": null
     },
     {
@@ -2728,7 +2728,7 @@
       "componentType": "bidder",
       "componentName": "luponmedia",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1132,
       "disclosureURL": null
     },
     {
@@ -2749,7 +2749,7 @@
       "componentType": "bidder",
       "componentName": "madvertise",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 153,
       "disclosureURL": null
     },
     {
@@ -2770,7 +2770,7 @@
       "componentType": "bidder",
       "componentName": "marsmedia",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 776,
       "disclosureURL": null
     },
     {
@@ -2812,7 +2812,7 @@
       "componentType": "bidder",
       "componentName": "mediaforce",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 671,
       "disclosureURL": null
     },
     {
@@ -3008,7 +3008,7 @@
       "componentType": "bidder",
       "componentName": "nextroll",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 130,
       "disclosureURL": null
     },
     {
@@ -3253,7 +3253,7 @@
       "componentType": "bidder",
       "componentName": "optout",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 227,
       "disclosureURL": null
     },
     {
@@ -3554,7 +3554,7 @@
       "componentType": "bidder",
       "componentName": "quantcast",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": "11",
       "disclosureURL": null
     },
     {
@@ -3582,7 +3582,7 @@
       "componentType": "bidder",
       "componentName": "readpeak",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 290,
       "disclosureURL": null
     },
     {
@@ -3610,7 +3610,7 @@
       "componentType": "bidder",
       "componentName": "relay",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 631,
       "disclosureURL": null
     },
     {
@@ -3631,7 +3631,7 @@
       "componentType": "bidder",
       "componentName": "resetdigital",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1162,
       "disclosureURL": null
     },
     {
@@ -3659,7 +3659,7 @@
       "componentType": "bidder",
       "componentName": "revcontent",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 203,
       "disclosureURL": null
     },
     {
@@ -4282,7 +4282,7 @@
       "componentType": "bidder",
       "componentName": "underdogmedia",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": "159",
       "disclosureURL": null
     },
     {
@@ -4457,7 +4457,7 @@
       "componentType": "bidder",
       "componentName": "vlyby",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 1009,
       "disclosureURL": null
     },
     {
@@ -4604,7 +4604,7 @@
       "componentType": "bidder",
       "componentName": "yieldlift",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 866,
       "disclosureURL": null
     },
     {
@@ -4646,7 +4646,7 @@
       "componentType": "bidder",
       "componentName": "zeta_global",
       "aliasOf": null,
-      "gvlid": null,
+      "gvlid": 469,
       "disclosureURL": null
     },
     {
@@ -4715,7 +4715,7 @@
     {
       "componentType": "rtd",
       "componentName": "adnuntius",
-      "gvlid": null,
+      "gvlid": 855,
       "disclosureURL": null
     },
     {
