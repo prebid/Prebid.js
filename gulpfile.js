@@ -6,8 +6,7 @@ var argv = require('yargs').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
 var fancyLog = require('fancy-log');
-var express = require('express');
-var http = require('http');
+var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
@@ -102,9 +101,12 @@ function viewCoverage(done) {
   var coveragePort = 1999;
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
 
-  const app = express();
-  app.use(express.static('build/coverage/lcov-report'));
-  http.createServer(app).listen(coveragePort);
+  connect.server({
+    port: coveragePort,
+    root: 'build/coverage/lcov-report',
+    livereload: false,
+    debug: true
+  });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
@@ -163,7 +165,8 @@ function makeDevpackPkg(config = webpackConfig) {
     })
 
     return prebidSource(cloned)
-      .pipe(gulp.dest('build/dev'));
+      .pipe(gulp.dest('build/dev'))
+      .pipe(connect.reload());
   }
 }
 
@@ -480,19 +483,28 @@ function startIntegServer(dev = false) {
 }
 
 function startLocalServer(options = {}) {
-  const app = express();
-  app.use(function (req, res, next) {
-    res.setHeader('Ad-Auction-Allowed', 'True');
-    next();
+  return connect.server({
+    https: argv.https,
+    port: port,
+    host: INTEG_SERVER_HOST,
+    root: './',
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
   });
-  app.use(express.static('./'));
-  const server = http.createServer(app);
-  server.listen(port, INTEG_SERVER_HOST);
-  return server;
 }
 
 // Watch Task with Live Reload
 function watchTaskMaker(options = {}) {
+  if (options.livereload == null) {
+    options.livereload = true;
+  }
   options.alsoWatch = options.alsoWatch || [];
 
   return function watch(done) {
@@ -505,7 +517,7 @@ function watchTaskMaker(options = {}) {
       `!${helpers.getPrecompiledPath('test/**/*')}`,
     ], options.task());
 
-    startLocalServer();
+    startLocalServer(options);
 
     done();
   }
@@ -550,8 +562,8 @@ gulp.task('build', gulp.series(clean, 'update-browserslist', 'build-bundle-prod'
 gulp.task('build-release', gulp.series('build', 'setup-npmignore'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
+gulp.task('serve', gulp.series(clean, lint, precompile(), gulp.parallel('build-bundle-dev-no-precomp', watch, test)));
+gulp.task('serve-fast', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, precompile({dev: true}), gulp.parallel('build-bundle-dev-no-precomp', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));

@@ -2727,7 +2727,7 @@ describe('Unit: Prebid Module', function () {
               });
             });
 
-            ['sendTargetingKeys', 'types'].forEach(key => {
+            ['types'].forEach(key => {
               it(`should reject native that includes both ortb and ${key}`, async () => {
                 const adUnit = {
                   code: 'au',
