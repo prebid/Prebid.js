@@ -36,7 +36,7 @@ describe('storageControl', () => {
 
     describe('when metadata is available', () => {
       beforeEach(() => {
-        metadata.register({
+        metadata.register('mockModule', {
           disclosures: {
             'mock.url': [
               {
