@@ -32,7 +32,7 @@ let tokens = {};
  */
 export function getImpIdMap() {
   return impIdMap;
-};
+}
 
 /**
  * Evaluates impressions for validity.  The entry evaluated is considered valid if NEITHER of these conditions are met:

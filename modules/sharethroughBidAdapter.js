@@ -22,7 +22,7 @@ let isEqtvTest = null;
  */
 export function getImpIdMap() {
   return impIdMap;
-};
+}
 
 /**
  * Sets value of the local variable isEqtvTest
