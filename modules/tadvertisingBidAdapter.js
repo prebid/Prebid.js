@@ -7,6 +7,8 @@ import {
   replaceAuctionPrice,
   triggerPixel,
   logError,
+  isFn,
+  isPlainObject
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from "../src/mediaTypes.js";
@@ -93,6 +95,27 @@ export function buildTimeoutNotification(bidEvent) {
   );
 }
 
+export function getBidFloor (bid) {
+  // value from params takes precedance over value set by Floor Module
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+
+  if (!isFn(bid.getFloor)) {
+    return null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
+
 export const sendNotification = (notifyUrl, eventType, data) => {
   try {
     const notificationUrl = `${notifyUrl}/${eventType}`;
@@ -109,7 +132,6 @@ export const sendNotification = (notifyUrl, eventType, data) => {
     logError(BIDDER_CODE, `Failed to notify event: ${eventType}`, error);
   }
 }
-
 
 export const spec = {
   code: BIDDER_CODE,
@@ -131,20 +153,23 @@ export const spec = {
       logWarn(BIDDER_CODE + ': Missing required parameter params.placementId');
       return false;
     }
-    if (!bid.params.bidFloor) {
-      bid.params.bidFloor = 0;
-      logWarn(BIDDER_CODE + ': params.bidFloor is not set. Defaulting to 0');
-    }
     return true;
   },
-
 
   buildRequests: function (validBidRequests, bidderRequest) {
     let data = converter.toORTB({validBidRequests, bidderRequest})
     deepSetValue(data, 'site.publisher.id', bidderRequest.bids[0].params.publisherId)
     deepSetValue(data, 'imp.0.ext.gpid', bidderRequest.bids[0].params.placementId)
-    deepSetValue(data, 'imp.0.bidfloor', parseFloat(bidderRequest.bids[0].params.bidFloor))
-    deepSetValue(data, 'imp.0.bidfloorcur', 'USD')
+
+    const bidFloor = getBidFloor(bidderRequest.bids[0])
+    if (bidFloor) {
+      deepSetValue(data, 'imp.0.bidfloor', bidFloor)
+      deepSetValue(data, 'imp.0.bidfloorcur', 'USD')
+    } else {
+      logWarn(BIDDER_CODE + ': params.bidFloor is not set. Defaulting to 0');
+      deepSetValue(data, 'imp.0.bidfloor', 0)
+      deepSetValue(data, 'imp.0.bidfloorcur', 'USD')
+    }
 
     if (isStr(deepAccess(bidderRequest, 'bids.0.userId.tdid'))) {
       data.user = data.user || {};
@@ -159,7 +184,6 @@ export const spec = {
       data: data,
     };
   },
-
 
   interpretResponse: function (response, serverRequest) {
     if (isEmpty(response.body)) {

@@ -1,5 +1,11 @@
 import {expect} from 'chai';
-import {spec, buildSuccessNotification, buildErrorNotification, buildTimeoutNotification, sendNotification} from 'modules/tadvertisingBidAdapter';
+import {spec,
+  buildSuccessNotification,
+  buildErrorNotification,
+  buildTimeoutNotification,
+  sendNotification,
+  getBidFloor
+} from 'modules/tadvertisingBidAdapter';
 import * as utils from '../../../src/utils.js';
 import * as ajax from '../../../src/ajax.js';
 import sinon from 'sinon';
@@ -119,8 +125,45 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(data.user.buyeruid).to.equal(bidderRequest.bids[0].userId.tdid);
     })
-  });
 
+    it('should set imp.0.bidfloor and imp.0.bidfloorcur when bidFloor is present', function () {
+      let bidderRequest = getBidderRequest();
+      bidderRequest.bids[0].params.bidfloor = 1.5;
+      const request = spec.buildRequests(getBid(), bidderRequest);
+      const data = request.data;
+
+      expect(data.imp[0].bidfloor).to.equal(1.5);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    })
+
+    it('should set imp.0.bidfloor and imp.0.bidfloorcur when getFloor returns valid floor', function () {
+      let bidderRequest = getBidderRequest();
+      bidderRequest.bids[0].getFloor = function() {
+        return {
+          floor: 2.5,
+          currency: 'USD'
+        };
+      };
+      const request = spec.buildRequests(getBid(), bidderRequest);
+      const data = request.data;
+
+      expect(data.imp[0].bidfloor).to.equal(2.5);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    })
+
+    it('should set imp.0.bidfloor to 0 and imp.0.bidfloorcur to USD when bidFloor is not present', function () {
+      let bidderRequest = getBidderRequest();
+      // Ensure no bidfloor in params and no getFloor function
+      delete bidderRequest.bids[0].params.bidfloor;
+      delete bidderRequest.bids[0].getFloor;
+
+      const request = spec.buildRequests(getBid(), bidderRequest);
+      const data = request.data;
+
+      expect(data.imp[0].bidfloor).to.equal(0);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    })
+  });
 
   describe('interpretResponse', function () {
     function getBidderResponse() {
@@ -191,7 +234,6 @@ describe('tadvertisingBidAdapter', () => {
       expect(bid.currency).to.deep.equal("USD");
     })
 
-    /*
     it('should set mediaType to video ', function () {
       const bidderRequest = getBidderRequest();
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -205,7 +247,6 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(bid.mediaType).to.deep.equal("video");
     })
-     */
   });
 
   describe('getUserSyncs', function() {
@@ -246,7 +287,6 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(result).to.have.length(0);
     });
-
 
     it('should return an empty array with when sync is not enabled', function () {
       let serverResponse = {body: {ext: { uss: 0}}};
@@ -336,7 +376,6 @@ describe('tadvertisingBidAdapter', () => {
       });
     });
   });
-
 
   describe('buildErrorNotification', function() {
     it('should build correct BidErrorResponseNotification', function() {
@@ -659,6 +698,91 @@ describe('tadvertisingBidAdapter', () => {
 
       expect(onBidderErrorSpy.calledOnce).to.be.true;
       expect(onBidderErrorSpy.firstCall.args[0]).to.deep.equal({ error, bidderRequest });
+    });
+  });
+
+  describe('getBidFloor', function() {
+    it('should return bid.params.bidfloor when it exists', function() {
+      const bid = {
+        params: {
+          bidfloor: 0.5
+        }
+      };
+
+      const result = getBidFloor(bid);
+
+      expect(result).to.equal(0.5);
+    });
+
+    it('should return null when bid.getFloor is not a function', function() {
+      const bid = {
+        params: {}
+      };
+
+      const result = getBidFloor(bid);
+
+      expect(result).to.be.null;
+    });
+
+    it('should return floor.floor when bid.getFloor returns valid floor object', function() {
+      const bid = {
+        params: {},
+        getFloor: function() {
+          return {
+            floor: 1.0,
+            currency: 'USD'
+          };
+        }
+      };
+
+      const result = getBidFloor(bid);
+
+      expect(result).to.equal(1.0);
+    });
+
+    it('should return null when bid.getFloor returns object with non-USD currency', function() {
+      const bid = {
+        params: {},
+        getFloor: function() {
+          return {
+            floor: 1.0,
+            currency: 'EUR'
+          };
+        }
+      };
+
+      const result = getBidFloor(bid);
+
+      expect(result).to.be.null;
+    });
+
+    it('should return null when bid.getFloor returns object with NaN floor', function() {
+      const bid = {
+        params: {},
+        getFloor: function() {
+          return {
+            floor: NaN,
+            currency: 'USD'
+          };
+        }
+      };
+
+      const result = getBidFloor(bid);
+
+      expect(result).to.be.null;
+    });
+
+    it('should return null when bid.getFloor returns non-object', function() {
+      const bid = {
+        params: {},
+        getFloor: function() {
+          return "not an object";
+        }
+      };
+
+      const result = getBidFloor(bid);
+
+      expect(result).to.be.null;
     });
   });
 })
