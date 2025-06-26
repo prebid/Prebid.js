@@ -208,6 +208,18 @@ describe('IdentityLinkId tests', function () {
     expect(callBackSpy.calledOnce).to.be.true;
   })
 
+  it('should replace invalid characters if initial atob fails', function () {
+    setTestEnvelopeCookie();
+    const realAtob = window.atob;
+    const stubAtob = sinon.stub(window, 'atob');
+    stubAtob.onFirstCall().throws(new Error('bad'));
+    stubAtob.onSecondCall().callsFake(realAtob);
+    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    stubAtob.restore();
+    expect(stubAtob.calledTwice).to.be.true;
+    expect(envelopeValueFromStorage).to.equal(testEnvelopeValue);
+  })
+
   it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {
     let envelopeValueFromStorage = getEnvelopeFromStorage();
     let callBackSpy = sinon.spy();
