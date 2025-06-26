@@ -13,6 +13,7 @@ import {BANNER} from '../src/mediaTypes.js';
  */
 
 const BIDDER_CODE = 'zeta_global';
+const GVLID = 469;
 const PREBID_DEFINER_ID = '44253'
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
 const USER_SYNC_URL = 'https://p.rfihub.com/cm?in=1&pub=';
@@ -22,6 +23,7 @@ const NET_REV = true;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['zeta'],
   supportedMediaTypes: [BANNER],
 

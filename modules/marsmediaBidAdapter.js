@@ -10,6 +10,7 @@ function MarsmediaAdapter() {
   this.aliases = ['mars'];
   this.supportedMediaTypes = [VIDEO, BANNER];
 
+  this.gvlid = 776;
   let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
   let SUPPORTED_VIDEO_MIMES = ['video/mp4'];
   let SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4];

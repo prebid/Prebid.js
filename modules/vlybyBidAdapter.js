@@ -4,9 +4,11 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js'
 
 const ENDPOINT = '//prebid.vlyby.com/';
 const BIDDER_CODE = 'vlyby';
+const GVLID = 1009;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO, BANNER],
 
   isBidRequestValid: function (bid) {

@@ -13,6 +13,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
 
 const ADAPTER_VERSION = '1.21';
+const GVLID = 335;
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -37,6 +38,7 @@ let appId = '';
 
 export const spec = {
   code: 'beachfront',
+  gvlid: GVLID,
   supportedMediaTypes: [ VIDEO, BANNER ],
 
   isBidRequestValid(bid) {
