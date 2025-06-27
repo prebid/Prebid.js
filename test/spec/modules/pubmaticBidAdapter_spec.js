@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp, handleImageProperties } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
@@ -70,7 +70,10 @@ describe('PubMatic adapter', () => {
         }
       }
     },
-    rtd: {jwplayer:{}}
+    rtd: {jwplayer:{}},
+    getCpmInNewCurrency: function(currency) {
+      return currency === 'EUR' ? 2.8 : this.cpm;
+    }
   }
   videoBid = {
     'seat': 'seat-id',
@@ -973,6 +976,36 @@ describe('PubMatic adapter', () => {
             ]
           });
         });
+
+        it('should replace existing adjustment entry if mediaType and metaMediaType match', () => {
+          const bid1 = {
+            cpm: 2.5,
+            originalCpm: 3,
+            originalCurrency: 'USD',
+            currency: 'USD',
+            mediaType: 'banner',
+            meta: { mediaType: 'banner' }
+          };
+          const bid2 = {
+            cpm: 1.5,
+            originalCpm: 2,
+            originalCurrency: 'USD',
+            currency: 'USD',
+            mediaType: 'banner',
+            meta: { mediaType: 'banner' }
+          };
+
+          spec.onBidWon(bid1);
+          // Should add the first entry
+          expect(cpmAdjustment.adjustment.length).to.equal(1);
+          expect(cpmAdjustment.adjustment[0].cpm).to.equal(2.5);
+
+          spec.onBidWon(bid2);
+          // Should replace the entry, not add a new one
+          expect(cpmAdjustment.adjustment.length).to.equal(1);
+          expect(cpmAdjustment.adjustment[0].cpm).to.equal(1.5);
+          expect(cpmAdjustment.adjustment[0].originalCpm).to.equal(2);
+        });
       });
 
       // describe('USER ID/ EIDS', () => {
@@ -1071,6 +1104,41 @@ describe('PubMatic adapter', () => {
       const bidResponses = spec.interpretResponse(nativeResponse, request);
       expect(bidResponses).to.be.an('array');
       expect(bidResponses.length).to.equal(0); // No bid should be returned if adm is invalid
+    });
+
+    it('should set DEFAULT_WIDTH and DEFAULT_HEIGHT when bid.w and bid.h are missing for native', () => {
+      // Prepare a valid native bidRequest
+      const bidRequest = utils.deepClone(validBidRequests[0]);
+      bidRequest.mediaTypes = {
+        native: {
+          title: { required: true, len: 140 }
+        }
+      };
+      delete bidRequest.mediaTypes.banner;
+      delete bidRequest.mediaTypes.video;
+      bidRequest.sizes = undefined;
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      
+      // Prepare a native bid response with missing w and h
+      const nativeAdm = JSON.stringify({ native: { assets: [{ id: 1, title: { text: 'Test' } }] } });
+      const nativeBid = {
+        id: 'bid-id',
+        impid: request.data.imp[0].id, // match the imp id
+        price: 1.2,
+        adm: nativeAdm,
+        // w and h are intentionally missing
+        adomain: ['example.com'],
+        mtype: 4 // NATIVE
+      };
+      const seatbid = [{ bid: [nativeBid] }];
+      const nativeResponse = { body: { seatbid } };
+      const bidResponses = spec.interpretResponse(nativeResponse, request);
+      
+      expect(bidResponses).to.be.an('array');
+      expect(bidResponses[0]).to.exist;
+      expect(bidResponses[0].native).to.exist;
+      expect(bidResponses[0].width).to.equal(0);
+      expect(bidResponses[0].height).to.equal(0);
     });
 
     it('should return response in prebid format', () => {
