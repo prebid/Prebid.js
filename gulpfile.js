@@ -234,7 +234,6 @@ function nodeBundle(modules, dev = false) {
         reject(err);
       })
       .pipe(through.obj(function (file, enc, done) {
-        console.log('Hello', file);
         if (file.path.endsWith('.js')) {
           resolve(file.contents.toString(enc));
         }

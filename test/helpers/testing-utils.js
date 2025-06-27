@@ -39,7 +39,7 @@ const utils = {
           const creative = [
             '> a > img', // banner
             '> div[class="card"]' // native
-          ].map((child) => `body > div[class="GoogleActiveViewElement"] ${child}`)
+          ].map((child) => `body ${child}`)
             .join(', ');
           const existing = await $(creative).isExisting();
           expect(existing).to.be.true;
