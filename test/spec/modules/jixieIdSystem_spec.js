@@ -259,8 +259,6 @@ describe('JixieId  Submodule', () => {
             expect(parsed.search.gdpr_consent).to.equal(MOCK_CONSENT_STRING);
             expect(request.method).to.equal('GET');
             expect(request.withCredentials).to.be.true;
-
-
             expect(setCookieStub.calledWith(PBJS_JXID_KEY, CLIENTID2, sinon.match.string)).to.be.true;
             expect(setCookieStub.calledWith(PBJS_IDLOGSTR_KEY, IDLOG1, sinon.match.string)).to.be.true;
             expect(completeCallback.calledOnceWithExactly(CLIENTID2)).to.be.true;
