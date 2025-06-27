@@ -473,12 +473,17 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
 
     const networkDone = requestMetrics.startTiming('net');
 
+    const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
+
     function getOptions(defaults) {
       const ro = request.options;
       return Object.assign(defaults, ro, {
         browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
           ? false
-          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
+          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code)),
+        suppressTopicsEnrollmentWarning: ro?.hasOwnProperty('suppressTopicsEnrollmentWarning')
+          ? ro.suppressTopicsEnrollmentWarning
+          : !debugMode
       })
     }
 
@@ -499,7 +504,6 @@ export const processBidderRequests = hook('async', function (spec, bids, bidderR
         break;
       case 'POST':
         const enableGZipCompression = request.options?.endpointCompression;
-        const debugMode = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE' || debugTurnedOn();
         const callAjax = ({ url, payload }) => {
           ajax(
             url,

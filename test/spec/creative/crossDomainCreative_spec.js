@@ -9,9 +9,10 @@ import {
 
 describe('cross-domain creative', () => {
   const ORIGIN = 'https://example.com';
-  let win, top, renderAd, messages, mkIframe;
+  let win, top, renderAd, messages, mkIframe, consoleErrorStub;
 
   beforeEach(() => {
+    consoleErrorStub = sinon.stub(console, 'error');
     messages = [];
     mkIframe = sinon.stub();
     top = {
@@ -44,6 +45,10 @@ describe('cross-domain creative', () => {
       }
     };
     renderAd = (...args) => renderer(win)(...args);
+  })
+
+  afterEach(() => {
+    consoleErrorStub.restore();
   })
 
   function waitFor(predicate, timeout = 1000) {

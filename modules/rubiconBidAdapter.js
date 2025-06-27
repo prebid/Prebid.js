@@ -608,7 +608,7 @@ export const spec = {
       data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
     }
 
-    data['rp_maxbids'] = bidderRequest.bidLimit || 1;
+    data['rp_maxbids'] = bidderRequest.bidLimit;
 
     applyFPD(bidRequest, BANNER, data);
 
@@ -1001,7 +1001,7 @@ function applyFPD(bidRequest, mediaType, data) {
                 return param;
               }
 
-              // finally we will add this one, if param has been added already, add our seperator
+              // finally we will add this one, if param has been added already, add our separator
               if (param) {
                 param += '~~'
               }
@@ -1031,7 +1031,7 @@ function applyFPD(bidRequest, mediaType, data) {
           const [ua, fullVer] = browsers.reduce((accum, browserData) => {
             accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
             // only set fullVer if long enough
-            if (browserData.version.length > 1) {
+            if (browserData?.version?.length > 1) {
               accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
             }
             return accum;

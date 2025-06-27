@@ -4,7 +4,6 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 
-
 const analyticsType = 'endpoint';
 const defaultUrl = 'https://adxpremium.services/graphql';
 
