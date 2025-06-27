@@ -28,7 +28,7 @@ pbjs.enableAnalytics({
 });
 ```
 
-New customers or customers that are removing the GAM integration for HIRO reporting and the LiveIntent HIRO snippet, the Prebid configuration should set `activatePartialTreatment` to `true`. By default, that will treat only 97% of all page visits and leave 3% untreated (not enriched with LiveIntent-provided IDs). If the desireable treatment rate is different, it can be adjusted by setting `window.liTreatmentRate` to the desired value (between 0.0 and 1.0).
+New customers or customers that are removing the GAM integration for HIRO reporting and the LiveIntent HIRO snippet, the Prebid configuration should set `activatePartialTreatment` to `true`. By default, that will treat only 97% of all page visits and leave 3% untreated (not enriched with LiveIntent-provided IDs). If the desirable treatment rate is different, it can be adjusted by setting `window.liTreatmentRate` to the desired value (between 0.0 and 1.0).
 
 ```
 pbjs.setConfig({
