@@ -431,10 +431,13 @@ describe('PubMatic adapter', () => {
               linearity: 1,
               placement: 2,
               plcmt: 1,
+              context: 'outstream',
               minbitrate: 10,
               maxbitrate: 10,
               playerSize: [640, 480]
             }
+            videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
+            videoBidderRequest.bids[0].adUnitCode = 'Div1';
           });
 
           afterEach(() => {
@@ -1163,6 +1166,7 @@ describe('PubMatic adapter', () => {
             playerSize: [640, 480]
           }
           videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
+          videoBidderRequest.bids[0].adUnitCode = 'Div1';
         });
 
         it('should generate video response', () => {
@@ -1190,6 +1194,33 @@ describe('PubMatic adapter', () => {
           expect(bidResponse[0]).to.have.property('mediaType').to.equal('video');
           expect(bidResponse[0]).to.have.property('playerHeight').to.equal(480);
           expect(bidResponse[0]).to.have.property('playerWidth').to.equal(640);
+        });
+
+        it('should set renderer and rendererCode for outstream video with outstreamAU', () => {
+          const request = spec.buildRequests(validBidRequests, videoBidderRequest);
+          const bidResponse = spec.interpretResponse(videoResponse, request);
+          expect(bidResponse).to.be.an('array');
+          expect(bidResponse[0]).to.be.an('object');
+          expect(bidResponse[0]).to.have.property('renderer');
+          expect(bidResponse[0].renderer).to.be.an('object');
+          expect(bidResponse[0]).to.have.property('rendererCode').to.equal('outstreamAU');
+        });
+
+        it('should set width and height from playerWidth/playerHeight if not present in bid', () => {
+          // Clone and modify the video response to remove w and h
+          const modifiedVideoResponse = utils.deepClone(videoResponse);
+          delete modifiedVideoResponse.body.seatbid[0].bid[0].w;
+          delete modifiedVideoResponse.body.seatbid[0].bid[0].h;
+
+          // Set up the request as usual
+          const request = spec.buildRequests(validBidRequests, videoBidderRequest);
+
+          // Interpret the response
+          const bidResponses = spec.interpretResponse(modifiedVideoResponse, request);
+
+          // playerWidth = 640, playerHeight = 480 from playerSize in the test setup
+          expect(bidResponses[0].width).to.equal(640);
+          expect(bidResponses[0].height).to.equal(480);
         });
       });
     }
