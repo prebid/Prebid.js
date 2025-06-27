@@ -804,7 +804,7 @@ describe('sovrnBidAdapter', function() {
         mediaType: 'banner',
         ttl: 60000,
         meta: { advertiserDomains: [] },
-        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
+        ad: decodeURIComponent(`<!-- Creative -->`)
       }
 
       response = {
@@ -814,6 +814,38 @@ describe('sovrnBidAdapter', function() {
             bid: [{
               ...bannerBid,
               nurl: ''
+            }]
+          }]
+        }
+      }
+
+      const result = spec.interpretResponse(response)
+
+      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
+    })
+
+    it('Should return the bid response of correct type when nurl is present', function () {
+      const expectedResponse = {
+        requestId: '263c448586f5a1',
+        cpm: 0.45882675,
+        width: 728,
+        height: 90,
+        creativeId: 'creativelycreatedcreativecreative',
+        dealId: null,
+        currency: 'USD',
+        netRevenue: true,
+        mediaType: 'banner',
+        ttl: 60000,
+        meta: { advertiserDomains: [] },
+        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
+      }
+
+      response = {
+        body: {
+          id: '37386aade21a71',
+          seatbid: [{
+            bid: [{
+              ...bannerBid
             }]
           }]
         }

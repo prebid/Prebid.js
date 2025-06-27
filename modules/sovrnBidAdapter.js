@@ -242,7 +242,7 @@ export const spec = {
           if (sovrnBid.mtype == 2) {
             bid.vastXml = decodeURIComponent(sovrnBid.adm)
           } else {
-            bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
+            bid.ad = sovrnBid.nurl ? decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`) : decodeURIComponent(sovrnBid.adm)
           }
 
           return bid
