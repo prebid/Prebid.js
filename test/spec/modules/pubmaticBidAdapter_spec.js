@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
@@ -295,7 +295,27 @@ describe('PubMatic adapter', () => {
         const { imp } = request?.data;
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('banner').to.have.property('format');
-        expect(imp[0]).to.have.property('banner').to.have.property('format').with.lengthOf(2);
+        expect(imp[0]).to.have.property('banner').to.have.property('format').to.be.an('array');
+      });
+
+      it('should not have format object in banner when there is only a single size', () => {
+        // Create a complete bid with only one size
+        const singleSizeBid = utils.deepClone(validBidRequests[0]);
+        singleSizeBid.mediaTypes.banner.sizes = [[300, 250]];
+        singleSizeBid.params.adSlot = '/15671365/DMDemo@300x250:0';
+
+        // Create a complete bidder request
+        const singleSizeBidderRequest = utils.deepClone(bidderRequest);
+        singleSizeBidderRequest.bids = [singleSizeBid];
+
+        const request = spec.buildRequests([singleSizeBid], singleSizeBidderRequest);
+        const { imp } = request?.data;
+
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('banner');
+        expect(imp[0].banner).to.not.have.property('format');
+        expect(imp[0].banner).to.have.property('w').equal(300);
+        expect(imp[0].banner).to.have.property('h').equal(250);
       });
 
       it('should add pmZoneId in ext if pmzoneid is present in parameters', () => {
@@ -1153,3 +1173,63 @@ describe('PubMatic adapter', () => {
     });
   })
 })
+
+describe('addViewabilityToImp', () => {
+  let imp;
+  let element;
+  let originalGetElementById;
+  let originalVisibilityState;
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    imp = { ext: {} };
+    element = document.createElement('div');
+    element.id = 'Div1';
+    document.body.appendChild(element);
+    originalGetElementById = document.getElementById;
+    sandbox.stub(document, 'getElementById').callsFake(id => id === 'Div1' ? element : null);
+    originalVisibilityState = document.visibilityState;
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true
+    });
+    sandbox.stub(utils, 'getWindowTop').returns(window);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    document.body.removeChild(element);
+    Object.defineProperty(document, 'visibilityState', {
+      value: originalVisibilityState,
+      configurable: true
+    });
+    document.getElementById = originalGetElementById;
+  });
+
+  it('should add viewability to imp.ext when measurable', () => {
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.have.property('viewability');
+  });
+
+  it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
+    const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.have.property('viewability');
+    expect(imp.ext.viewability.amount).to.equal('na');
+  });
+
+  it('should not add viewability if element is not found', () => {
+    document.getElementById.restore();
+    sandbox.stub(document, 'getElementById').returns(null);
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.not.have.property('viewability');
+  });
+
+  it('should create imp.ext if not present', () => {
+    imp = {};
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.exist;
+    expect(imp.ext).to.have.property('viewability');
+  });
+});
