@@ -425,7 +425,7 @@ describe('utils', function() {
       const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
       stubVjs.VERSION = '7.20.0';
       stubVjs.players = {};
-      const provider = VideojsProvider({divId: 'test-ad'}, stubVjs, adState, timeState, callbackStorage, utils);
+      const provider = VideojsProvider({divId: 'test-ad'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
       provider.init();
       provider.setAdTagUrl('tag');
       expect(stubPlayer.ima.changeAdTag.calledWith('tag')).to.be.true;
@@ -453,7 +453,7 @@ describe('utils', function() {
       const stubVjs = sinon.stub().callsFake((id, cfg, ready) => { ready(); return stubPlayer; });
       stubVjs.VERSION = '7.20.0';
       stubVjs.players = {};
-      const provider = VideojsProvider({divId: 'test-xml'}, stubVjs, adState, timeState, callbackStorage, utils);
+      const provider = VideojsProvider({divId: 'test-xml'}, stubVjs, adStateFactory(), timeStateFactory(), {}, utils);
       provider.init();
       provider.setAdXml('<VAST/>');
       expect(stubPlayer.ima.controller.settings.adsResponse).to.equal('<VAST/>');
@@ -465,11 +465,11 @@ describe('utils', function() {
     it('should set playback mode based on duration', function () {
       const ts = timeStateFactory();
       ts.updateForTimeEvent({currentTime: 1, duration: 10});
-      expect(ts.getState().playbackMode).to.equal(1);
+      expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.VOD);
       ts.updateForTimeEvent({currentTime: 1, duration: 0});
-      expect(ts.getState().playbackMode).to.equal(0);
+      expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.LIVE);
       ts.updateForTimeEvent({currentTime: 1, duration: -1});
-      expect(ts.getState().playbackMode).to.equal(2);
+      expect(ts.getState().playbackMode).to.equal(PLAYBACK_MODE.DVR);
     });
 
     it('should populate ad state from event', function () {
@@ -497,7 +497,7 @@ describe('utils', function() {
       expect(state.skipafter).to.equal(5);
       expect(state.adPodCount).to.equal(2);
       expect(state.adPodIndex).to.equal(0);
-      expect(state.offset).to.equal('pre');
+      expect(state.offset).to.be.undefined;
     });
   });
 })
