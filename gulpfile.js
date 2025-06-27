@@ -293,9 +293,14 @@ function disclosureSummary(modules, summaryFileName) {
         return null;
       }
     })
-    stream.push(memoryVinyl(summaryFileName, JSON.stringify(summary, null, 2)));
-    stream.push(null);
-  })
+    fs.writeFile(summaryFileName, Buffer.from(JSON.stringify(summary, null, 2)), (err) => {
+      if (err) {
+        stream.destroy(err)
+      } else {
+        stream.push(null);
+      }
+    })
+  }).catch((err) => stream.destroy(err));
   return stream;
 }
 
@@ -329,26 +334,26 @@ function bundle(dev, moduleArr) {
   });
   const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
 
-  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+  let outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  const disclosureFile = helpers.getBuiltPath(dev, 'storageDisclosures.json');
+  const disclosureFile = outputFileName.replace(/\.js$/, '_disclosures.json')
 
-  fancyLog('Storage disclosure summary written to:', disclosureFile);
   fancyLog('Concatenating files:\n', entries);
   fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
   fancyLog('Generating bundle:', outputFileName);
+  fancyLog('Storage disclosure summary written to:', disclosureFile);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
   const source = wrap(gulp.src(entries))
     .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(sm, sourcemaps.write('.')));
-  const disclosure = disclosureSummary(['prebid-core'].concat(modules), path.relative('./build', disclosureFile));
+  const disclosure = disclosureSummary(['prebid-core'].concat(modules), helpers.getBuiltPath(dev, disclosureFile));
   return merge(source, disclosure);
 }
 
