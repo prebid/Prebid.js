@@ -1,4 +1,3 @@
-
 import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
@@ -44,7 +43,7 @@ describe('currency', function () {
 
   describe('setConfig', function () {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
     });
 
@@ -544,7 +543,7 @@ describe('currency', function () {
     let logWarnSpy;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });

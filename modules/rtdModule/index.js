@@ -161,7 +161,7 @@
 
 import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
-import {logError, logInfo, logWarn} from '../../src/utils.js';
+import {logError, logInfo, logWarn, mergeDeep} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import { EVENTS, JSON_MAPPING } from '../../src/constants.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
@@ -302,7 +302,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
   });
 
-  const shouldDelayAuction = prioritySubModules.length && _moduleConfig.auctionDelay && _moduleConfig.auctionDelay > 0;
+  const shouldDelayAuction = prioritySubModules.length && _moduleConfig?.auctionDelay > 0;
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
@@ -373,7 +373,7 @@ export function getAdUnitTargeting(auction) {
     }
   }
   // place data on auction adUnits
-  const mergedTargeting = deepMerge(targeting);
+  const mergedTargeting = mergeDeep({}, ...targeting);
   auction.adUnits.forEach(adUnit => {
     const kv = adUnit.code && mergedTargeting[adUnit.code];
     if (!kv) {
@@ -383,32 +383,6 @@ export function getAdUnitTargeting(auction) {
     adUnit[JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
   });
   return auction.adUnits;
-}
-
-/**
- * deep merge array of objects
- * @param {Array} arr - objects array
- * @return {Object} merged object
- */
-export function deepMerge(arr) {
-  if (!Array.isArray(arr) || !arr.length) {
-    return {};
-  }
-  return arr.reduce((merged, obj) => {
-    for (let key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        if (!merged.hasOwnProperty(key)) merged[key] = obj[key];
-        else {
-          // duplicate key - merge values
-          const dp = obj[key];
-          for (let dk in dp) {
-            if (dp.hasOwnProperty(dk)) merged[key][dk] = dp[dk];
-          }
-        }
-      }
-    }
-    return merged;
-  }, {});
 }
 
 export function onDataDeletionRequest(next, ...args) {

@@ -275,7 +275,7 @@ describe('GoldbachBidAdapter', function () {
   let ajaxStub;
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     ajaxStub = sandbox.stub(ajaxLib, 'ajax');
     sandbox.stub(Math, 'random').returns(0);
   });

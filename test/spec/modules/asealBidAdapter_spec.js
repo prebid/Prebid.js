@@ -41,7 +41,7 @@ describe('asealBidAdapter', () => {
       },
     };
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(utils, 'getWindowTop').returns(w);
     sandbox.stub(utils, 'getWindowSelf').returns(w);
     done();

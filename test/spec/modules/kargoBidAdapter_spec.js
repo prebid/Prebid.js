@@ -203,7 +203,7 @@ describe('kargo adapter tests', function() {
 
     testBids = [{ ...minimumBidParams }];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sinon.useFakeTimers(frozenNow.getTime());
   });
 
