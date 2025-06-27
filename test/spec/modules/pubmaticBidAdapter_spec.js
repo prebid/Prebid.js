@@ -70,6 +70,7 @@ describe('PubMatic adapter', () => {
         }
       }
     },
+    rtd: {jwplayer:{}}
   }
   videoBid = {
     'seat': 'seat-id',
@@ -90,7 +91,8 @@ describe('PubMatic adapter', () => {
         'dspid': 123
       },
       'dealid': 'PUBDEAL1',
-      'mtype': 2
+      'mtype': 2,
+      'params': {'outstreamAU': 'outstreamAU'}
     }]
   };
   firstResponse = {
@@ -152,7 +154,8 @@ describe('PubMatic adapter', () => {
       site: {domain: 'ebay.com', page: 'https://ebay.com'},
       source: {}
     },
-    timeout: 2000
+    timeout: 2000,
+
   };
   let videoBidRequest, videoBidderRequest, utilsLogWarnMock, nativeBidderRequest;
 
@@ -181,6 +184,7 @@ describe('PubMatic adapter', () => {
         beforeEach(() => {
           videoBidRequest = utils.deepClone(validBidRequests[0]);
           delete videoBidRequest.mediaTypes.banner;
+          delete videoBidRequest.mediaTypes.native;
           videoBidRequest.mediaTypes.video = {
             playerSize: [
               [640, 480]
@@ -191,6 +195,8 @@ describe('PubMatic adapter', () => {
             skip: 1,
             linearity: 2
           }
+        videoBidRequest.params.outstreamAU = 'outstreamAU';
+
         });
         it('should return false if mimes are missing in a video impression request', () => {
 			  	const isValid = spec.isBidRequestValid(videoBidRequest);
@@ -206,14 +212,26 @@ describe('PubMatic adapter', () => {
         it('should return true if banner/native present, but outstreamAU or renderer is missing', () => {
           videoBidRequest.mediaTypes.video.mimes = ['video/flv'];
           videoBidRequest.mediaTypes.video.context = 'outstream';
+
           videoBidRequest.mediaTypes.banner = {
             sizes: [[728, 90], [160, 600]]
-          }
+          };
+
+          // Remove width and height from the video object to test coverage for missing values
+          delete videoBidRequest.mediaTypes.video.width;
+          delete videoBidRequest.mediaTypes.video.height;
+
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(true);
         });
 
         it('should return false if outstreamAU or renderer is missing', () => {
+          const isValid = spec.isBidRequestValid(videoBidRequest);
+          expect(isValid).to.equal(false);
+        });
+
+        it('should return TRUE if outstreamAU or renderer is present', () => {
+          
           const isValid = spec.isBidRequestValid(videoBidRequest);
           expect(isValid).to.equal(false);
         });
@@ -223,6 +241,7 @@ describe('PubMatic adapter', () => {
 
   describe('Request formation', () => {
     describe('IMP', () => {
+
       it('should include previousAuctionInfo in request when available', () => {
         const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
         const bidderRequestWithPrevAuction = utils.deepClone(bidderRequest);
@@ -985,6 +1004,72 @@ describe('PubMatic adapter', () => {
   });
 
   describe('Response', () => {
+    it('should parse native adm and set bidResponse.native, width, and height', () => {
+      // Prepare a valid native bidRequest
+      const bidRequest = utils.deepClone(validBidRequests[0]);
+      bidRequest.mediaTypes = {
+        native: {
+          title: { required: true, len: 140 }
+        }
+      };
+      delete bidRequest.mediaTypes.banner;
+      delete bidRequest.mediaTypes.video;
+      bidRequest.sizes = undefined;
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      // Prepare a valid native bid response with matching impid
+      const nativeAdm = JSON.stringify({ native: { assets: [{ id: 1, title: { text: 'Test' } }] } });
+      const nativeBid = {
+        id: 'bid-id',
+        impid: request.data.imp[0].id, // match the imp id
+        price: 1.2,
+        adm: nativeAdm,
+        w: 123,
+        h: 456,
+        adomain: ['example.com'],
+        mtype: 4 // NATIVE
+      };
+      const seatbid = [{ bid: [nativeBid] }];
+      const nativeResponse = { body: { seatbid } };
+      const bidResponses = spec.interpretResponse(nativeResponse, request);
+      expect(bidResponses).to.be.an('array');
+      expect(bidResponses[0]).to.exist;
+      expect(bidResponses[0].native).to.exist;
+      expect(bidResponses[0].width).to.equal(123);
+      expect(bidResponses[0].height).to.equal(456);
+    });
+
+    it('should handle invalid JSON in native adm gracefully', () => {
+      // Prepare a valid native bidRequest
+      const bidRequest = utils.deepClone(validBidRequests[0]);
+      bidRequest.mediaTypes = {
+        native: {
+          title: { required: true, len: 140 }
+        }
+      };
+      delete bidRequest.mediaTypes.banner;
+      delete bidRequest.mediaTypes.video;
+      bidRequest.sizes = undefined;
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      console.log('***request', request);
+      // Prepare a native bid response with invalid JSON and matching impid
+      const invalidAdm = '{ native: { assets: [ { id: 1, title: { text: "Test" } } ] }'; // missing closing }
+      const nativeBid = {
+        id: 'bid-id',
+        impid: request.data.imp[0].id, // match the imp id
+        price: 1.2,
+        adm: invalidAdm,
+        w: 123,
+        h: 456,
+        adomain: ['example.com'],
+        mtype: 4 // NATIVE
+      };
+      const seatbid = [{ bid: [nativeBid] }];
+      const nativeResponse = { body: { seatbid } };
+      const bidResponses = spec.interpretResponse(nativeResponse, request);
+      expect(bidResponses).to.be.an('array');
+      expect(bidResponses.length).to.equal(0); // No bid should be returned if adm is invalid
+    });
+
     it('should return response in prebid format', () => {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const bidResponse = spec.interpretResponse(response, request);
@@ -1058,6 +1143,7 @@ describe('PubMatic adapter', () => {
         beforeEach(() => {
           let videoBidderRequest = utils.deepClone(bidderRequest);
           delete videoBidderRequest.bids[0].mediaTypes.banner;
+          
           videoBidderRequest.bids[0].mediaTypes.video = {
             skip: 1,
             mimes: ['video/mp4', 'video/x-flv'],
@@ -1076,6 +1162,7 @@ describe('PubMatic adapter', () => {
             maxbitrate: 10,
             playerSize: [640, 480]
           }
+          videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
         });
 
         it('should generate video response', () => {
