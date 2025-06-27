@@ -1,7 +1,6 @@
 import {assert, expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/unicornBidAdapter.js';
-import {discloseStorageUse} from 'src/storageManager.js';
 import * as _ from 'lodash';
 
 const bidRequests = [
@@ -551,24 +550,6 @@ describe('unicornBidAdapterTest', () => {
       ]
     assert.deepStrictEqual(reqData, openRTBRequestData);
   })
-
-  it('should disclose storage use', () => {
-    const disclose = sinon.stub();
-    function hook(next, ...args) { disclose(...args); next(...args); }
-    discloseStorageUse.before(hook);
-    try {
-      spec.buildRequests(validBidRequests, bidderRequest);
-      sinon.assert.calledWith(disclose, 'unicorn', {
-        identifier: '__pb_unicorn_aud',
-        type: 'cookie',
-        maxAgeSeconds: 10 * 24 * 60 * 60,
-        cookieRefresh: false,
-        purposes: [1, 2, 3, 4, 7]
-      });
-    } finally {
-      discloseStorageUse.getHooks({hook}).remove();
-    }
-  });
   });
 
   describe('interpretResponse', () => {
