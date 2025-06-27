@@ -78,6 +78,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
     const result = {
       valid: isAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(moduleType, mod, params))
     };
+
     return cb(result);
   }
 

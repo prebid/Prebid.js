@@ -39,13 +39,14 @@ import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetr
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
 import {allConsent, GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
-import {isActivityAllowed} from '../../src/activities/rules.js';
-import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
+import {isActivityAllowed, registerActivityControl} from '../../src/activities/rules.js';
+import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.js';
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
-import type {IdProviderSpec, ProviderParams, ProviderResponse, UserId, UserIdConfig, UserIdProvider} from "./spec.ts";
+import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
+import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_TYPE } from '../../src/activities/params.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -96,6 +97,11 @@ declare module '../../src/userSync' {
          * If true, updating userSync.userIds will automatically refresh IDs that have not yet been fetched.
          */
         autoRefresh?: boolean;
+
+        /**
+         * If true, user ID modules will only be allowed to save data in the location specified in the configuration.
+         */
+        enforceStorageType?: boolean;
     }
 }
 
@@ -1171,6 +1177,26 @@ declare module '../../src/prebidGlobal' {
     }
 }
 
+const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
+  return (params) => {
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID) return;
+
+    const matchesName = (query) => params[ACTIVITY_PARAM_COMPONENT_NAME]?.toLowerCase() === query?.toLowerCase();
+    const submoduleConfig = userIdsConfig.find((configItem) => matchesName(configItem.name));
+
+    if (!submoduleConfig || !submoduleConfig.storage) return;
+
+    if (params[ACTIVITY_PARAM_STORAGE_TYPE] !== submoduleConfig.storage.type) {
+      const reason = `${submoduleConfig.name} attempts to store data in ${params[ACTIVITY_PARAM_STORAGE_TYPE]} while configuration allows ${submoduleConfig.storage.type}.`;
+      if (enforceStorageType) {
+        return {allow: false, reason};
+      } else {
+        logWarn(reason);
+      }
+    }
+  }
+}
+
 /**
  * test browser support for storage config types (local storage or cookie), initializes submodules but consentManagement is required,
  * so a callback is added to fire after the consentManagement module.
@@ -1186,6 +1212,7 @@ export function init(config, {mkDelay = delay} = {}) {
     configListener();
   }
   submoduleRegistry = [];
+  let unregisterEnforceStorageTypeRule: () => void
 
   // listen for config userSyncs to be set
   configListener = config.getConfig('userSync', conf => {
@@ -1194,11 +1221,13 @@ export function init(config, {mkDelay = delay} = {}) {
     if (userSync) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
-        const {autoRefresh = false, retainConfig = true} = userSync;
+        const {autoRefresh = false, retainConfig = true, enforceStorageType} = userSync;
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
         updateSubmodules({retainConfig, autoRefresh});
+        unregisterEnforceStorageTypeRule?.();
+        unregisterEnforceStorageTypeRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'enforceStorageTypeRule', enforceStorageTypeRule(submodules.map(({config}) => config), enforceStorageType));
         updateIdPriority(userSync.idPriority, submoduleRegistry);
         initIdSystem({ready: true});
         const submodulesToRefresh = submodules.filter(item => item.refreshIds);
