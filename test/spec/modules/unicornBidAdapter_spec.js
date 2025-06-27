@@ -563,7 +563,7 @@ describe('unicornBidAdapterTest', () => {
         type: 'cookie',
         maxAgeSeconds: 10 * 24 * 60 * 60,
         cookieRefresh: false,
-        purposes: []
+        purposes: [1, 2, 3, 4, 7]
       });
     } finally {
       discloseStorageUse.getHooks({hook}).remove();
