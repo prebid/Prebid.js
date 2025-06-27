@@ -234,7 +234,10 @@ function nodeBundle(modules, dev = false) {
         reject(err);
       })
       .pipe(through.obj(function (file, enc, done) {
-        resolve(file.contents.toString(enc));
+        console.log('Hello', file);
+        if (file.path.endsWith('.js')) {
+          resolve(file.contents.toString(enc));
+        }
         done();
       }));
   });
@@ -335,20 +338,19 @@ function bundle(dev, moduleArr) {
   if (argv.tag && argv.tag.length) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
+  const disclosureFile = path.parse(outputFileName).name + '_disclosures.json';
 
-  const disclosureFile = helpers.getBuiltPath(dev, 'storageDisclosures.json');
-
-  fancyLog('Storage disclosure summary written to:', disclosureFile);
   fancyLog('Concatenating files:\n', entries);
   fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
   fancyLog('Generating bundle:', outputFileName);
+  fancyLog('Generating storage use disclosure summary:', disclosureFile);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
   const source = wrap(gulp.src(entries))
     .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(sm, sourcemaps.write('.')));
-  const disclosure = disclosureSummary(['prebid-core'].concat(modules), path.relative('./build', disclosureFile));
+  const disclosure = disclosureSummary(['prebid-core'].concat(modules), disclosureFile);
   return merge(source, disclosure);
 }
 
