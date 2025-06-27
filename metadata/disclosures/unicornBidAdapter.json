@@ -6,7 +6,7 @@
       "maxAgeSeconds": 864000,
       "cookieRefresh": false,
       "domains": ["*"],
-      "purposes": []
+      "purposes": [1,2,3,4,7]
     }
   ],
   "domains": [
