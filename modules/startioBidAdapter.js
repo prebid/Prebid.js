@@ -1,6 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
 import { logError, isFn, isPlainObject } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { ortb25Translator } from '../libraries/ortb2.5Translator/translator.js';
@@ -41,15 +40,15 @@ const converter = ortbConverter({
     request.ext = request.ext || {};
     request.ext.prebid = request.ext.prebid || {};
 
+    const ortb = bidderRequest.ortb2;
     request.regs ??= {};
-    request.regs.coppa = config.getConfig('coppa') === true ? 1 : 0;
+    request.regs.coppa = ortb?.regs?.coppa;
 
     if (bidderRequest.uspConsent) {
       request.regs.ext ??= {};
       request.regs.ext.us_privacy = bidderRequest.uspConsent;
     }
 
-    const ortb = bidderRequest.ortb2;
     request.bcat = ortb?.bcat || bidParams?.bcat;
     request.badv = ortb?.badv || bidParams?.badv;
     request.bapp = ortb?.bapp || bidParams?.bapp;
