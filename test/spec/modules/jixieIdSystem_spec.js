@@ -25,7 +25,7 @@ describe('JixieId  Submodule', () => {
   const EID_TYPE2_LSNAME = 'somesha2ls';
   const EID_TYPE1_SAMPLEVALUE = 'pppppppppp';
   const EID_TYPE2_SAMPLEVALUE = 'eeeeeeeeee';
-        
+  
   it('should have the correct module name declared', () => {
     expect(jixieIdSubmodule.name).to.equal('jixieId');
   });
@@ -41,7 +41,7 @@ describe('JixieId  Submodule', () => {
       });
     });
   });
-  
+
   describe('getId()', () => {
     describe('getId', () => {
       context('when there is jixie_o in the window object (jx script on site)', () => {
@@ -218,7 +218,6 @@ describe('JixieId  Submodule', () => {
         context('when has rather stale pbjs jixie cookie', () => {
           it('should call the server and set the id; send available extra info (e.g. esha,psha, consent if available)', () => {
             const consentData = {gdpr: {gdprApplies: 1, consentString: MOCK_CONSENT_STRING}};
-        
             storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE)
             storage.setCookie(PBJS_IDLOGSTR_KEY, IDLOG_EXPIRED, COOKIE_EXPIRATION_FUTURE)
             storage.setCookie(EID_TYPE1_COOKIENAME, EID_TYPE1_SAMPLEVALUE, COOKIE_EXPIRATION_FUTURE)
@@ -275,7 +274,6 @@ describe('JixieId  Submodule', () => {
           it('should still call the server even though thre is a pbs jixie id', () => {
             storage.setCookie(PBJS_JXID_KEY, CLIENTID1, COOKIE_EXPIRATION_FUTURE)
             storage.setCookie(PBJS_IDLOGSTR_KEY, 'junk', COOKIE_EXPIRATION_FUTURE)
-         
             const completeCallback = sinon.spy();
             const { callback } = jixieIdSubmodule.getId({
               params: {
