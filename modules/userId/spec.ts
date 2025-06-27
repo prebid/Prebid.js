@@ -1,4 +1,4 @@
-import type {BidderCode} from "../../src/types/common";
+import type {BidderCode, StorageDisclosure} from "../../src/types/common";
 import {STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, type StorageType} from "../../src/storageManager.ts";
 import type {AllConsentData} from "../../src/consentHandler.ts";
 import type {Ext} from '../../src/types/ortb/common';
@@ -127,7 +127,7 @@ type EIDConfig<K extends keyof UserId> = {
 
 type EIDFn<K extends keyof UserId, P extends UserIdProvider> = (ids: IdValue<K>[], config: UserIdConfig<P>) => ORTBRequest['user']['eids'] | ORTBRequest['user']['eids'][number];
 
-export type IdProviderSpec<P extends UserIdProvider> = {
+export type IdProviderSpec<P extends UserIdProvider> = StorageDisclosure & {
     /**
      * Name of your ID provider, used to match your module with the publisher’s userIds configuration
      */
@@ -137,6 +137,7 @@ export type IdProviderSpec<P extends UserIdProvider> = {
      * GVL ID to use for TCF. If omitted your module may be excluded when TCF is in scope.
      */
     gvlid?: number;
+    disclosureURL?: string;
     /**
      * Invoked when:
      *  - Prebid.js did not previously store your ID, or

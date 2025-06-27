@@ -37,7 +37,7 @@ import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 import type {AnyFunction, Wraps} from "../types/functions.d.ts";
-import type {BidderCode} from "../types/common.d.ts";
+import type {BidderCode, StorageDisclosure} from "../types/common.d.ts";
 import type {Ajax, AjaxOptions, XHR} from "../ajax.ts";
 import type {AddBidResponse} from "../auction.ts";
 import type {MediaType} from "../mediaTypes.ts";
@@ -122,7 +122,7 @@ export type BidderError<B extends BidderCode> = {
     bidderRequest: BidderRequest<B>;
 }
 
-export interface BidderSpec<BIDDER extends BidderCode> {
+export interface BidderSpec<BIDDER extends BidderCode> extends StorageDisclosure {
     code: BIDDER;
     supportedMediaTypes?: readonly MediaType[];
     aliases?: readonly (BidderCode | { code: BidderCode, gvlid?: number, skipPbsAliasing?: boolean })[];

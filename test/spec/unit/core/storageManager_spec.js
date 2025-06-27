@@ -16,7 +16,7 @@ import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities
 import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
-  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_KEY,
   ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
 import {activityParams} from '../../../../src/activities/activityParams.js';
@@ -89,6 +89,28 @@ describe('storage manager', function() {
         [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockMod',
         [ACTIVITY_PARAM_STORAGE_TYPE]: STORAGE_TYPE_LOCALSTORAGE
       }));
+    });
+
+    it('should pass storage key as activity param', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').getCookie('foo');
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_STORAGE_TYPE]: STORAGE_TYPE_COOKIES,
+        [ACTIVITY_PARAM_STORAGE_KEY]: 'foo',
+      }));
+    });
+
+    it('should NOT pass storage key if advertiseKeys = false', () => {
+      newStorageManager({
+        moduleType: MODULE_TYPE_PREBID,
+        moduleName: 'mockMod',
+        advertiseKeys: false
+      }, {isAllowed}).getCookie('foo');
+      expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.not.exist;
+    })
+
+    it('should not pass storage key when not relevant', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').cookiesAreEnabled();
+      expect(isAllowed.getCall(0).args[1][ACTIVITY_PARAM_STORAGE_KEY]).to.be.undefined;
     });
 
     ['Local', 'Session'].forEach(type => {
