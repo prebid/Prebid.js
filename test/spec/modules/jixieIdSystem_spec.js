@@ -25,7 +25,7 @@ describe('JixieId  Submodule', () => {
   const EID_TYPE2_LSNAME = 'somesha2ls';
   const EID_TYPE1_SAMPLEVALUE = 'pppppppppp';
   const EID_TYPE2_SAMPLEVALUE = 'eeeeeeeeee';
-  
+
   it('should have the correct module name declared', () => {
     expect(jixieIdSubmodule.name).to.equal('jixieId');
   });
