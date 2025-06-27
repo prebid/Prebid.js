@@ -1,0 +1,18 @@
+{
+  "disclosures": [
+    {
+      "identifier": "__pb_unicorn_aud",
+      "type": "cookie",
+      "maxAgeSeconds": 864000,
+      "cookieRefresh": false,
+      "domains": ["*"],
+      "purposes": []
+    }
+  ],
+  "domains": [
+    {
+      "domain": "*",
+      "use": "Stores a unique identifier for bidding"
+    }
+  ]
+}

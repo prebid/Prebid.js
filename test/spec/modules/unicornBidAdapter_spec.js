@@ -1,6 +1,7 @@
 import {assert, expect} from 'chai';
 import * as utils from 'src/utils.js';
 import {spec} from 'modules/unicornBidAdapter.js';
+import {discloseStorageUse} from 'src/storageManager.js';
 import * as _ from 'lodash';
 
 const bidRequests = [
@@ -528,7 +529,7 @@ describe('unicornBidAdapterTest', () => {
       const uid2 = JSON.parse(req2.data)['user']['id'];
       assert.deepStrictEqual(uid, uid2);
     });
-    it('test if contains ID5', () => {
+  it('test if contains ID5', () => {
       let _validBidRequests = utils.deepClone(validBidRequests);
       _validBidRequests[0].userId = {
         id5id: {
@@ -548,8 +549,26 @@ describe('unicornBidAdapterTest', () => {
           ]
         }
       ]
-      assert.deepStrictEqual(reqData, openRTBRequestData);
-    })
+    assert.deepStrictEqual(reqData, openRTBRequestData);
+  })
+
+  it('should disclose storage use', () => {
+    const disclose = sinon.stub();
+    function hook(next, ...args) { disclose(...args); next(...args); }
+    discloseStorageUse.before(hook);
+    try {
+      spec.buildRequests(validBidRequests, bidderRequest);
+      sinon.assert.calledWith(disclose, 'unicorn', {
+        identifier: '__pb_unicorn_aud',
+        type: 'cookie',
+        maxAgeSeconds: 10 * 24 * 60 * 60,
+        cookieRefresh: false,
+        purposes: []
+      });
+    } finally {
+      discloseStorageUse.getHooks({hook}).remove();
+    }
+  });
   });
 
   describe('interpretResponse', () => {

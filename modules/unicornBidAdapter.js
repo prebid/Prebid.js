@@ -1,7 +1,7 @@
 import { logInfo, deepAccess, generateUUID } from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {getStorageManager, discloseStorageUse} from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -13,6 +13,7 @@ const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
 const UNICORN_PB_COOKIE_KEY = '__pb_unicorn_aud';
 const UNICORN_PB_VERSION = '1.1';
+const DISCLOSURE_URL = 'https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/unicornBidAdapter.json';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
@@ -155,6 +156,13 @@ const interpretResponse = (serverResponse, request) => {
  * Get or Create Uid for First Party Cookie
  */
 const getUid = () => {
+  discloseStorageUse(BIDDER_CODE, {
+    type: 'cookie',
+    identifier: UNICORN_PB_COOKIE_KEY,
+    maxAgeSeconds: 10 * 24 * 60 * 60,
+    cookieRefresh: false,
+    purposes: []
+  });
   const ck = storage.getCookie(UNICORN_PB_COOKIE_KEY);
   if (ck) {
     return JSON.parse(ck)['uid'];
@@ -179,6 +187,7 @@ const makeFormat = arr => arr.map((s) => {
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['uncn'],
+  disclosureURL: DISCLOSURE_URL,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
