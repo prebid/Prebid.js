@@ -69,6 +69,7 @@ export function newStorageManager({moduleName, moduleType}: {
         [ACTIVITY_PARAM_STORAGE_TYPE]: storageType
       }))
     };
+
     return cb(result);
   }
 
