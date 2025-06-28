@@ -63,7 +63,21 @@ const converter = ortbConverter({
     ttl: DEFAULT_TTL
   },
   imp(buildImp, bidRequest, context) {
-    const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
+    const { kadfloor, currency, adSlot = '', deals, dctr: origDctr, pmzoneid, hashedKey } = bidRequest.params;
+    let dctr = origDctr;
+
+    // Additive dctr logic: append IAS brand safety data if present
+    const ortb2Data = bidRequest?.ortb2 || {};
+    const iasBrandSafety = ortb2Data?.site?.ext?.data?.['ias-brand-safety'];
+    let iasDctr = '';
+    if (iasBrandSafety && typeof iasBrandSafety === 'object') {
+      iasDctr = Object.entries(iasBrandSafety)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('|');
+    }
+    if (iasDctr) {
+      dctr = dctr ? `${dctr}|${iasDctr}` : iasDctr;
+    }
     const { adUnitCode, mediaTypes, rtd } = bidRequest;
     const imp = buildImp(bidRequest, context);
 
