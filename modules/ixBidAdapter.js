@@ -1008,7 +1008,8 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
           _bannerImpression.banner.format[i].ext.bidfloor = bannerImps[i].bidfloor;
         }
 
-        if (JSON.stringify(_bannerImpression.banner.format[i].ext) === '{}') {
+        const formatExt = _bannerImpression.banner.format[i].ext;
+        if (formatExt && Object.keys(formatExt).length === 0) {
           delete _bannerImpression.banner.format[i].ext;
         }
       }
