@@ -150,19 +150,6 @@ describe('tadvertisingBidAdapter', () => {
       expect(data.imp[0].bidfloor).to.equal(2.5);
       expect(data.imp[0].bidfloorcur).to.equal('USD');
     })
-
-    it('should set imp.0.bidfloor to 0 and imp.0.bidfloorcur to USD when bidFloor is not present', function () {
-      let bidderRequest = getBidderRequest();
-      // Ensure no bidfloor in params and no getFloor function
-      delete bidderRequest.bids[0].params.bidfloor;
-      delete bidderRequest.bids[0].getFloor;
-
-      const request = spec.buildRequests(getBid(), bidderRequest);
-      const data = request.data;
-
-      expect(data.imp[0].bidfloor).to.equal(0);
-      expect(data.imp[0].bidfloorcur).to.equal('USD');
-    })
   });
 
   describe('interpretResponse', function () {

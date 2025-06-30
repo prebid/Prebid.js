@@ -165,10 +165,6 @@ export const spec = {
     if (bidFloor) {
       deepSetValue(data, 'imp.0.bidfloor', bidFloor)
       deepSetValue(data, 'imp.0.bidfloorcur', 'USD')
-    } else {
-      logWarn(BIDDER_CODE + ': params.bidFloor is not set. Defaulting to 0');
-      deepSetValue(data, 'imp.0.bidfloor', 0)
-      deepSetValue(data, 'imp.0.bidfloorcur', 'USD')
     }
 
     if (isStr(deepAccess(bidderRequest, 'bids.0.userId.tdid'))) {
