@@ -1,8 +1,8 @@
 /**
- * This module adds clean.io provider to the real time data module
+ * This module adds humansecurityMalvDefense provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will wrap bid responses markup in clean.io agent script for protection
- * @module modules/cleanioRtdProvider
+ * The module will wrap bid responses markup in humansecurityMalvDefense agent script for protection
+ * @module modules/humansecurityMalvDefenseRtdProvider
  * @requires module:modules/realTimeData
  */
 
@@ -59,7 +59,7 @@ function pageInitStepPreloadScript(scriptURL) {
  * @param {string} scriptURL The script URL to add to the page for protection
  */
 function pageInitStepProtectPage(scriptURL) {
-  loadExternalScript(scriptURL, MODULE_TYPE_RTD, 'clean.io');
+  loadExternalScript(scriptURL, MODULE_TYPE_RTD, 'humansecurityMalvDefense');
 }
 
 /**
@@ -119,7 +119,7 @@ class ConfigError extends Error { }
  */
 function readConfig(config) {
   if (!config.params) {
-    throw new ConfigError('Missing config parameters for clean.io RTD module provider.');
+    throw new ConfigError('Missing config parameters for humansecurityMalvDefense RTD module provider.');
   }
 
   if (typeof config.params.cdnUrl !== 'string' || !/^https?:\/\//.test(config.params.cdnUrl)) {
@@ -158,11 +158,11 @@ function readConfig(config) {
  * Defined as a variable to be able to reset it naturally
  */
 let startBillableEvents = function() {
-  // Upon clean.io submodule initialization, every winner bid is considered to be protected
+  // Upon humansecurityMalvDefense submodule initialization, every winner bid is considered to be protected
   // and therefore, subjected to billing
   events.on(EVENTS.BID_WON, winnerBidResponse => {
     events.emit(EVENTS.BILLABLE_EVENT, {
-      vendor: 'clean.io',
+      vendor: 'humansecurityMalvDefense',
       billingId: generateUUID(),
       type: 'impression',
       auctionId: winnerBidResponse.auctionId,
@@ -179,7 +179,7 @@ let startBillableEvents = function() {
  */
 function beforeInit() {
   submodule('realTimeData', /** @type {RtdSubmodule} */ ({
-    name: 'clean.io',
+    name: 'humansecurityMalvDefense',
 
     init: (config, userConsent) => {
       try {

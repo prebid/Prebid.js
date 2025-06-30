@@ -19,7 +19,7 @@ const _approvedLoadExternalJSList = [
   'airgrid',
   'browsi',
   'brandmetrics',
-  'clean.io',
+  'humansecurityMalvDefense',
   'humansecurity',
   'confiant',
   'contxtful',

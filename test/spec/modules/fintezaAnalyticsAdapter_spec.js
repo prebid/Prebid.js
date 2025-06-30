@@ -188,8 +188,8 @@ describe('finteza analytics adapter', function () {
         expect(url.search.value).to.equal(String(cpm));
         expect(url.search.unit).to.equal('usd');
 
-        // 1 Finteza event + 1 Clean.io event
-        sinon.assert.callCount(fntzAnalyticsAdapter.track, 2);
+        // 1 Finteza event
+        sinon.assert.callCount(fntzAnalyticsAdapter.track, 1);
       });
     });
 
