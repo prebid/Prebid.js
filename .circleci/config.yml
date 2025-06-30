@@ -80,7 +80,7 @@ workflows:
   commit:
     jobs:
       # workflows run only on master, legacy branches, or branches beginning
-      # with prebid-. Updated by Codex agent.
+      # with prebid-.
       - build:
           filters:
             branches:
