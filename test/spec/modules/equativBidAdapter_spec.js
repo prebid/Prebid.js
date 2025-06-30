@@ -1,4 +1,5 @@
-import { converter, spec, storage } from 'modules/equativBidAdapter.js';
+import { converter, getImpIdMap, spec, storage } from 'modules/equativBidAdapter.js';
+import { Renderer } from 'src/Renderer.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Equativ bid adapter tests', () => {
@@ -109,6 +110,7 @@ describe('Equativ bid adapter tests', () => {
     privacy: 1,
     ver: '1.2',
   };
+
   const DEFAULT_NATIVE_BID_REQUESTS = [
     {
       adUnitCode: 'equativ_native_42',
@@ -473,6 +475,14 @@ describe('Equativ bid adapter tests', () => {
       getDataFromLocalStorageStub.restore();
     });
 
+     it('should pass prebid version as ext.equativprebidjsversion param', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+      expect(request.data.ext.equativprebidjsversion).to.equal('$prebid.version$');
+    });
+
     it('should build a video request properly under normal circumstances', () => {
       // ASSEMBLE
       if (FEATURES.VIDEO) {
@@ -748,7 +758,142 @@ describe('Equativ bid adapter tests', () => {
         expect(secondImp).to.not.have.property('native');
         expect(secondImp).to.have.property('video');
       }
-    })
+    });
+
+    it('should not send ext.prebid', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        {
+          ...DEFAULT_BANNER_BIDDER_REQUEST,
+          ortb2: {
+            ext: {
+              prebid: {
+                previousauctioninfo: [
+                  {
+                    bidId: 'abcd1234',
+                    bidderCpm: 5,
+                    highestBidCpm: 6
+                  }
+                ]
+              }
+            }
+          }
+        }
+      )[0];
+      expect(request.data.ext).not.to.have.property('prebid');
+    });
+
+    it('should send feedback data when lost', () => {
+      const bidId = 'abcd1234';
+      const cpm = 3.7;
+      const impIdMap = getImpIdMap();
+      const token = 'y7hd87dw8';
+      const RESPONSE_WITH_FEEDBACK = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  ext: {
+                    feedback_token: token
+                  },
+                  impid: Object.keys(impIdMap).find(key => impIdMap[key] === bidId)
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      let request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+
+      spec.interpretResponse(RESPONSE_WITH_FEEDBACK, request);
+
+      request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        {
+          ...DEFAULT_BANNER_BIDDER_REQUEST,
+          ortb2: {
+            ext: {
+              prebid: {
+                previousauctioninfo: [
+                  {
+                    bidId,
+                    bidderCpm: 2.41,
+                    highestBidCpm: cpm
+                  }
+                ]
+              }
+            }
+          }
+        }
+      )[0];
+
+      expect(request.data.ext).to.have.property('bid_feedback').and.to.deep.equal({
+        feedback_token: token,
+        loss: 102,
+        price: cpm
+      });
+    });
+
+    it('should send feedback data when won', () => {
+      const bidId = 'abcd1234';
+      const cpm = 2.34;
+      const impIdMap = getImpIdMap();
+      const token = '87187y83';
+      const RESPONSE_WITH_FEEDBACK = {
+        body: {
+          seatbid: [
+            {
+              bid: [
+                {
+                  ext: {
+                    feedback_token: token
+                  },
+                  impid: Object.keys(impIdMap).find(key => impIdMap[key] === bidId)
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      let request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+
+      spec.interpretResponse(RESPONSE_WITH_FEEDBACK, request);
+
+      request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        {
+          ...DEFAULT_BANNER_BIDDER_REQUEST,
+          ortb2: {
+            ext: {
+              prebid: {
+                previousauctioninfo: [
+                  {
+                    bidId,
+                    bidderCpm: 2.34,
+                    highestBidCpm: cpm
+                  }
+                ]
+              }
+            }
+          }
+        }
+      )[0];
+
+      expect(request.data.ext).to.have.property('bid_feedback').and.to.deep.equal({
+        feedback_token: token,
+        loss: 0,
+        price: cpm
+      });
+    });
   });
 
   describe('getUserSyncs', () => {
@@ -889,6 +1034,123 @@ describe('Equativ bid adapter tests', () => {
       const response = utils.deepClone(SAMPLE_RESPONSE);
       delete response.body.seatbid;
       expect(spec.interpretResponse(response, request)).to.not.throw;
+    });
+
+    it('should pass exp as ttl parameter with its value', () => {
+      const request = spec.buildRequests(
+        DEFAULT_BANNER_BID_REQUESTS,
+        DEFAULT_BANNER_BIDDER_REQUEST
+      )[0];
+
+      const response = utils.deepClone(SAMPLE_RESPONSE);
+      const bidId = 'abcd1234';
+      const impIdMap = getImpIdMap();
+
+      response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+      response.body.seatbid[0].bid[0].exp = 120;
+
+      const result = spec.interpretResponse(response, request);
+
+      expect(result.bids[0]).to.have.property('ttl').that.eq(120);
+    });
+
+    describe('outstream', () => {
+      const bidId = 'abcd1234';
+
+      const bidRequests = [{
+        bidId,
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          },
+          video: {
+            context: 'outstream'
+          }
+        },
+        params: {
+          networkId: 111
+        }
+      }];
+
+      it('should add renderer', () => {
+        const request = spec.buildRequests(
+          bidRequests,
+          {
+            bidderCode: 'equativ',
+            bids: bidRequests
+          }
+        )[0];
+
+        const response = {
+          body: {
+            seatbid: [
+              {
+                bid: [{ mtype: 2 }]
+              }
+            ]
+          }
+        };
+
+        const impIdMap = getImpIdMap();
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+        const bid = spec.interpretResponse(response, request).bids[0];
+
+        expect(bid).to.have.property('renderer');
+        expect(bid.renderer).to.be.instanceof(Renderer);
+        expect(bid.renderer.url).eq('https://apps.sascdn.com/diff/video-outstream/equativ-video-outstream.js');
+      });
+
+      it('should initialize and set renderer', () => {
+        const fakeRenderer = {
+          push: (cb) => cb(),
+          setRender: sinon.stub()
+        };
+
+        const installStub = sandBox.stub(Renderer, 'install').returns(fakeRenderer);
+        const renderAdStub = sandBox.stub();
+
+        window.EquativVideoOutstream = { renderAd: renderAdStub };
+
+        const request = spec.buildRequests(
+          bidRequests,
+          {
+            bidderCode: 'equativ',
+            bids: bidRequests
+          }
+        )[0];
+
+        expect(installStub.notCalled).to.be.true;
+        expect(fakeRenderer.setRender.notCalled).to.be.true;
+
+        const response = {
+          body: {
+            seatbid: [
+              {
+                bid: [{
+                  mtype: 2,
+                  renderer: fakeRenderer
+                }]
+              }
+            ]
+          }
+        };
+
+        const impIdMap = getImpIdMap();
+        response.body.seatbid[0].bid[0].impid = Object.keys(impIdMap).find(key => impIdMap[key] === bidId);
+
+        const bid = spec.interpretResponse(response, request).bids[0];
+
+        expect(installStub.calledOnce).to.be.true;
+        expect(fakeRenderer.setRender.calledOnce).to.be.true;
+
+        const renderFn = fakeRenderer.setRender.firstCall.args[0];
+
+        renderFn(bid);
+
+        expect(renderAdStub.calledOnce).to.be.true;
+        expect(renderAdStub.firstCall.args[0]).to.have.property('slotId');
+        expect(renderAdStub.firstCall.args[0]).to.have.property('vast');
+      });
     });
   });
 

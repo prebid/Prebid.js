@@ -284,7 +284,7 @@ describe('pubmatic analytics adapter', function () {
 
   beforeEach(function () {
     setUADefault();
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     requests = server.requests;
 
@@ -544,6 +544,30 @@ describe('pubmatic analytics adapter', function () {
    
     it('Logger: best case + win tracker', function () {
       this.timeout(5000)
+
+      const mockUserIds = {
+        'pubmaticId': 'test-pubmaticId'
+      };
+
+      const mockUserSync = {
+        userIds: [
+          {
+            name: 'pubmaticId',
+            storage: { name: 'pubmaticId', type: 'cookie&html5' }
+          }
+        ]
+      };
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'adUnits').value([{
+        bids: [{
+          userId: mockUserIds
+        }]
+      }]);
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getConfig').callsFake((key) => {
+        if (key === 'userSync') return mockUserSync;
+        return null;
+      });
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
         return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]

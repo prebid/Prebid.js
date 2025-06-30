@@ -35,22 +35,6 @@ const DEFAULT_PUBLISHER_ID = 0;
 const DEFAULT_PROFILE_ID = 0;
 const DEFAULT_PROFILE_VERSION_ID = 0;
 
-// TODO : Remove - Once BM calculation moves to Server Side
-const BROWSER_MAP = [
-  { value: /(firefox)\/([\w\.]+)/i, key: 12 }, // Firefox
-  { value: /\b(?:crios)\/([\w\.]+)/i, key: 1 }, // Chrome for iOS
-  { value: /edg(?:e|ios|a)?\/([\w\.]+)/i, key: 2 }, // Edge
-  { value: /(opera|opr)(?:.+version\/|[\/ ]+)([\w\.]+)/i, key: 3 }, // Opera
-  { value: /(?:ms|\()(ie) ([\w\.]+)|(?:trident\/[\w\.]+)/i, key: 4 }, // Internet Explorer
-  { value: /fxios\/([-\w\.]+)/i, key: 5 }, // Firefox for iOS
-  { value: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, key: 6 }, // Facebook In-App Browser
-  { value: / wv\).+(chrome)\/([\w\.]+)/i, key: 7 }, // Chrome WebView
-  { value: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, key: 8 }, // Android Browser
-  { value: /(chrome|chromium|crios)\/v?([\w\.]+)/i, key: 9 }, // Chrome
-  { value: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, key: 10 }, // Safari Mobile
-  { value: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, key: 11 }, // Safari
-];
-
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
 let profileId = DEFAULT_PROFILE_ID; // int: optional
@@ -182,16 +166,51 @@ function getTgId() {
   return 0;
 }
 
-
 function getFeatureLevelDetails(auctionCache) {
-  if (!auctionCache?.floorData?.floorRequestData) return {};
+  const result = {};
+  
+  // Add floor data if available
+  if (auctionCache?.floorData?.floorRequestData) {
+    const flrData = {
+      ...auctionCache.floorData.floorRequestData,
+      ...(auctionCache.floorData.floorResponseData?.enforcements && { enforcements: auctionCache.floorData.floorResponseData.enforcements })
+    };
+    result.flr = flrData;
+  }
+  
+  // Add bdv object with list of identity partners
+  const identityPartners = getListOfIdentityPartners();
+  if (identityPartners) {
+    result.bdv = {
+      lip: identityPartners
+    };
+  }
 
-  const flrData = {
-    ...auctionCache.floorData.floorRequestData,
-    ...(auctionCache.floorData.floorResponseData?.enforcements && { enforcements: auctionCache.floorData.floorResponseData.enforcements })
-  };
+  return result;
+}
 
-  return { flr: flrData };
+function getListOfIdentityPartners() {
+  const namespace = getGlobal();
+  const publisherProvidedEids = namespace.getConfig("ortb2.user.eids") || [];
+  const availableUserIds = namespace.adUnits[0]?.bids[0]?.userId || {};
+  const identityModules = namespace.getConfig('userSync')?.userIds || [];
+  const identityModuleNameMap = identityModules.reduce((mapping, module) => {
+    if (module.storage?.name) {
+      mapping[module.storage.name] = module.name;
+    }
+    return mapping;
+  }, {});
+
+  const userIdPartners = Object.keys(availableUserIds).map(storageName =>
+    identityModuleNameMap[storageName] || storageName
+  );
+
+  const publisherProvidedEidList = publisherProvidedEids.map(eid =>
+    identityModuleNameMap[eid.source] || eid.source
+  );
+
+  const identityPartners = Array.from(new Set([...userIdPartners, ...publisherProvidedEidList]));
+  return identityPartners.length > 0 ? identityPartners : undefined;
 }
 
 function getRootLevelDetails(auctionCache, auctionId) {
@@ -306,11 +325,20 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 const eventHandlers = {
   auctionInit: (args) => {
     s2sBidders = (function () {
-      let s2sConf = config.getConfig('s2sConfig');
-      let s2sBidders = [];
-      (s2sConf || []) &&
-        isArray(s2sConf) ? s2sConf.map(conf => s2sBidders.push(...conf.bidders)) : s2sConf?.bidders ? s2sBidders.push(...s2sConf.bidders) : [];
-      return s2sBidders || [];
+      try {
+        let s2sConf = config.getConfig('s2sConfig');
+        if (isArray(s2sConf)) {
+          s2sConf.forEach(conf => {
+            if (conf?.bidders) {
+              s2sBidders.push(...conf.bidders);
+            }
+          });
+        } else if (s2sConf?.bidders) {
+          s2sBidders.push(...s2sConf.bidders);
+        }
+      } catch (e) {
+        logError('Error processing s2s bidders:', e);
+      }
     }());
     let cacheEntry = pick(args, [
       'timestamp',

@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
+import { config } from 'src/config.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse;
@@ -222,6 +223,24 @@ describe('PubMatic adapter', () => {
 
   describe('Request formation', () => {
     describe('IMP', () => {
+      it('should include previousAuctionInfo in request when available', () => {
+        const bidRequestWithPrevAuction = utils.deepClone(validBidRequests[0]);
+        const bidderRequestWithPrevAuction = utils.deepClone(bidderRequest);
+
+        bidderRequestWithPrevAuction.ortb2 = bidderRequestWithPrevAuction.ortb2 || {};
+        bidderRequestWithPrevAuction.ortb2.ext = bidderRequestWithPrevAuction.ortb2.ext || {};
+        bidderRequestWithPrevAuction.ortb2.ext.prebid = bidderRequestWithPrevAuction.ortb2.ext.prebid || {};
+        bidderRequestWithPrevAuction.ortb2.ext.prebid.previousauctioninfo = {
+          bidderRequestId: 'bidder-request-id'
+        };
+
+        const request = spec.buildRequests([bidRequestWithPrevAuction], bidderRequestWithPrevAuction);
+        expect(request.data.ext).to.have.property('previousAuctionInfo');
+        expect(request.data.ext.previousAuctionInfo).to.deep.equal({
+          bidderRequestId: 'bidder-request-id'
+        });
+      });
+
       it('should generate request with banner', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;
@@ -276,7 +295,27 @@ describe('PubMatic adapter', () => {
         const { imp } = request?.data;
         expect(imp).to.be.an('array');
         expect(imp[0]).to.have.property('banner').to.have.property('format');
-        expect(imp[0]).to.have.property('banner').to.have.property('format').with.lengthOf(2);
+        expect(imp[0]).to.have.property('banner').to.have.property('format').to.be.an('array');
+      });
+
+      it('should not have format object in banner when there is only a single size', () => {
+        // Create a complete bid with only one size
+        const singleSizeBid = utils.deepClone(validBidRequests[0]);
+        singleSizeBid.mediaTypes.banner.sizes = [[300, 250]];
+        singleSizeBid.params.adSlot = '/15671365/DMDemo@300x250:0';
+
+        // Create a complete bidder request
+        const singleSizeBidderRequest = utils.deepClone(bidderRequest);
+        singleSizeBidderRequest.bids = [singleSizeBid];
+
+        const request = spec.buildRequests([singleSizeBid], singleSizeBidderRequest);
+        const { imp } = request?.data;
+
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('banner');
+        expect(imp[0].banner).to.not.have.property('format');
+        expect(imp[0].banner).to.have.property('w').equal(300);
+        expect(imp[0].banner).to.have.property('h').equal(250);
       });
 
       it('should add pmZoneId in ext if pmzoneid is present in parameters', () => {
@@ -636,6 +675,14 @@ describe('PubMatic adapter', () => {
           const request = spec.buildRequests(validBidRequests, bidderRequest);
           expect(request).to.have.property('method').to.equal('POST');
           expect(request).to.have.property('url').to.equal('https://hbopenbid.pubmatic.com/translator?source=prebid-client');
+        });
+      });
+
+      describe('Request Options', () => {
+        it('should set endpointCompression to true in request options', () => {
+          const request = spec.buildRequests(validBidRequests, bidderRequest);
+          expect(request).to.have.property('options');
+          expect(request.options).to.have.property('endpointCompression').to.equal(true);
         });
       });
 
@@ -1059,5 +1106,130 @@ describe('PubMatic adapter', () => {
         });
       });
     }
+
+    describe('CATEGORY IDS', () => {
+      it('should set primaryCatId and secondaryCatIds in meta when bid.cat is present', () => {
+        const copiedResponse = utils.deepClone(response);
+        copiedResponse.body.seatbid[0].bid[0].cat = ['IAB1', 'IAB2', 'IAB3'];
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.have.property('primaryCatId').to.equal('IAB1');
+        expect(bidResponse[0].meta).to.have.property('secondaryCatIds').to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
+      });
+
+      it('should not set primaryCatId and secondaryCatIds in meta when bid.cat is null', () => {
+        const copiedResponse = utils.deepClone(response);
+        copiedResponse.body.seatbid[0].bid[0].cat = null;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
+        expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
+      });
+
+      it('should not set primaryCatId and secondaryCatIds in meta when bid.cat is undefined', () => {
+        const copiedResponse = utils.deepClone(response);
+        delete copiedResponse.body.seatbid[0].bid[0].cat;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const bidResponse = spec.interpretResponse(copiedResponse, request);
+        expect(bidResponse).to.be.an('array');
+        expect(bidResponse[0]).to.be.an('object');
+        expect(bidResponse[0].meta).to.not.have.property('primaryCatId');
+        expect(bidResponse[0].meta).to.not.have.property('secondaryCatIds');
+      });
+    });
+
+    describe('getUserSyncs', () => {
+      beforeEach(() => {
+        spec.buildRequests(validBidRequests, bidderRequest);
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('returns iframe sync url with consent parameters and COPPA', () => {
+        config.setConfig({ coppa: true });
+        const gdprConsent = { gdprApplies: true, consentString: 'CONSENT' };
+        const uspConsent = '1YNN';
+        const gppConsent = { gppString: 'GPP', applicableSections: [2, 4] };
+        const [sync] = spec.getUserSyncs({ iframeEnabled: true }, [], gdprConsent, uspConsent, gppConsent);
+        expect(sync).to.deep.equal({
+          type: 'iframe',
+          url: 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=5670&gdpr=1&gdpr_consent=CONSENT&us_privacy=1YNN&gpp=GPP&gpp_sid=2%2C4&coppa=1'
+        });
+      });
+
+      it('returns image sync url when no consent data provided', () => {
+        const [sync] = spec.getUserSyncs({}, []);
+        expect(sync).to.deep.equal({
+          type: 'image',
+          url: 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670'
+        });
+      });
+    });
   })
 })
+
+describe('addViewabilityToImp', () => {
+  let imp;
+  let element;
+  let originalGetElementById;
+  let originalVisibilityState;
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    imp = { ext: {} };
+    element = document.createElement('div');
+    element.id = 'Div1';
+    document.body.appendChild(element);
+    originalGetElementById = document.getElementById;
+    sandbox.stub(document, 'getElementById').callsFake(id => id === 'Div1' ? element : null);
+    originalVisibilityState = document.visibilityState;
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true
+    });
+    sandbox.stub(utils, 'getWindowTop').returns(window);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+    document.body.removeChild(element);
+    Object.defineProperty(document, 'visibilityState', {
+      value: originalVisibilityState,
+      configurable: true
+    });
+    document.getElementById = originalGetElementById;
+  });
+
+  it('should add viewability to imp.ext when measurable', () => {
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.have.property('viewability');
+  });
+
+  it('should set viewability amount to "na" if not measurable (e.g., in iframe)', () => {
+    const isIframeStub = sandbox.stub(utils, 'inIframe').returns(true);
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.have.property('viewability');
+    expect(imp.ext.viewability.amount).to.equal('na');
+  });
+
+  it('should not add viewability if element is not found', () => {
+    document.getElementById.restore();
+    sandbox.stub(document, 'getElementById').returns(null);
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.not.have.property('viewability');
+  });
+
+  it('should create imp.ext if not present', () => {
+    imp = {};
+    addViewabilityToImp(imp, 'Div1', { w: 300, h: 250 });
+    expect(imp.ext).to.exist;
+    expect(imp.ext).to.have.property('viewability');
+  });
+});

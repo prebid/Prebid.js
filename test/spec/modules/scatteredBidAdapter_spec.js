@@ -192,7 +192,7 @@ describe('interpretResponse', function () {
   it('should set proper values', function () {
     const results = spec.interpretResponse(serverResponse, request);
     const expected = {
-      ad: '<html><img src="https://some_banner.jpeg></img></html><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="https://scattered.eu/nurl"></div>',
+      ad: '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="https://scattered.eu/nurl"></div><html><img src="https://some_banner.jpeg></img></html>',
       cpm: '34.2',
       creativeId: '2345-2345-23',
       currency: 'PLN',

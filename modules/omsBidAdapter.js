@@ -52,6 +52,12 @@ function buildRequests(bidReqs, bidderRequest) {
 
       const imp = {
         id: bid.bidId,
+        banner: {
+          format: processedSizes,
+          ext: {
+            viewability: viewabilityAmountRounded,
+          }
+        },
         ext: {
           ...gpidData
         },
@@ -61,13 +67,6 @@ function buildRequests(bidReqs, bidderRequest) {
       if (bid?.mediaTypes?.video) {
         imp.video = {
           ...bid.mediaTypes.video,
-        }
-      } else {
-        imp.banner = {
-          format: processedSizes,
-          ext: {
-            viewability: viewabilityAmountRounded,
-          }
         }
       }
 
@@ -125,10 +124,6 @@ function buildRequests(bidReqs, bidderRequest) {
 
     if (bidReqs?.[0]?.userIdAsEids) {
       deepSetValue(payload, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
-    }
-
-    if (bidReqs?.[0].userId) {
-      deepSetValue(payload, 'user.ext.ids', bidReqs[0].userId || [])
     }
 
     if (bidderRequest?.ortb2?.site?.content) {
