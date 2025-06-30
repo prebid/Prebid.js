@@ -26,7 +26,7 @@ Module that connects to OPRx's demand sources.
         {
             bidder: 'oprx',
             params: {
-                key: '', //Required parameter
+                key: '', // Required parameter
                 placement_id: 11223344,  // Required parameter
                 width: 728,   // Optional parameter 
                 height: 90, // Optional parameter
