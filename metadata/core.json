@@ -9,7 +9,19 @@
       "componentType": "prebid",
       "componentName": "fpdEnrichment",
       "moduleName": "prebid-core",
-      "disclosureURL": "local://prebid/tld-probe.json"
+      "disclosureURL": "local://prebid/probes.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "debugging",
+      "moduleName": "prebid-core",
+      "disclosureURL": "local://prebid/debugging.json"
+    },
+    {
+      "componentType": "prebid",
+      "componentName": "debugging",
+      "moduleName": "debugging",
+      "disclosureURL": "local://prebid/debugging.json"
     },
     {
       "componentType": "prebid",
