@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { _map, getWinDimensions, isArray, triggerPixel } from '../src/utils.js';
+import { getViewportCoordinates } from '../libraries/viewport/viewport.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -176,6 +177,7 @@ function buildBidResponse(seedtagBid) {
         seedtagBid && seedtagBid.adomain && seedtagBid.adomain.length > 0
           ? seedtagBid.adomain
           : [],
+      mediaType: seedtagBid.realMediaType,
     },
   };
 
@@ -220,12 +222,12 @@ function ttfb() {
 function geom(adunitCode) {
   const slot = document.getElementById(adunitCode);
   if (slot) {
-    const scrollY = window.scrollY;
     const { top, left, width, height } = getBoundingClientRect(slot);
     const viewport = {
       width: getWinDimensions().innerWidth,
       height: getWinDimensions().innerHeight,
     };
+    const scrollY = getViewportCoordinates().top || 0;
 
     return {
       scrollY,

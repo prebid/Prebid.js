@@ -20,6 +20,13 @@ import {PbPromise} from '../../../src/utils/promise.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 
 describe('ID5 ID System', function () {
+  let logInfoStub;
+  before(function () {
+    logInfoStub = sinon.stub(utils, 'logInfo');
+  });
+  after(function () {
+    logInfoStub.restore();
+  });
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
@@ -845,7 +852,7 @@ describe('ID5 ID System', function () {
     describe('when legacy cookies are set', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(id5System.storage, 'getCookie');
       });
       afterEach(() => {
@@ -893,7 +900,7 @@ describe('ID5 ID System', function () {
   describe('Local storage', () => {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(id5System.storage, 'localStorageIsEnabled');
     });
     afterEach(() => {
@@ -926,7 +933,7 @@ describe('ID5 ID System', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       sinon.stub(events, 'getEvents').returns([]);
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME);
@@ -1270,6 +1277,7 @@ describe('ID5 ID System', function () {
         let logErrorSpy;
 
         beforeEach(function () {
+          utils.logError.restore?.();
           logErrorSpy = sinon.spy(utils, 'logError');
         });
         afterEach(function () {

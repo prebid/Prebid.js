@@ -85,6 +85,17 @@ describe('LogicadAdapter', function () {
           }
         ]
       }
+    },
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'exchange1.com',
+          sid: '1234',
+          hp: 1
+        }
+      ]
     }
   }];
   const nativeBidRequests = [{
@@ -360,6 +371,12 @@ describe('LogicadAdapter', function () {
       expect(data.userData[0].segment[0].id).to.equal('1');
       expect(data.userData[0].ext.segtax).to.equal(600);
       expect(data.userData[0].ext.segclass).to.equal('2206021246');
+
+      expect(data.schain.ver).to.equal('1.0');
+      expect(data.schain.complete).to.equal(1);
+      expect(data.schain.nodes[0].asi).to.equal('exchange1.com');
+      expect(data.schain.nodes[0].sid).to.equal('1234');
+      expect(data.schain.nodes[0].hp).to.equal(1);
     });
   });
 

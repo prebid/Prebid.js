@@ -1,6 +1,6 @@
 import {config} from './config.js';
 import {klona} from 'klona/json';
-import {includes} from './polyfill.js';
+
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -875,12 +875,12 @@ export function isValidMediaTypes(mediaTypes) {
 
   const types = Object.keys(mediaTypes);
 
-  if (!types.every(type => includes(SUPPORTED_MEDIA_TYPES, type))) {
+  if (!types.every(type => SUPPORTED_MEDIA_TYPES.includes(type))) {
     return false;
   }
 
   if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
-    return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
+    return SUPPORTED_STREAM_TYPES.includes(mediaTypes.video.context);
   }
 
   return true;
@@ -1377,4 +1377,46 @@ export function triggerNurlWithCpm(bid, cpm) {
     );
     triggerPixel(bid.nurl);
   }
+}
+
+// To ensure that isGzipCompressionSupported() doesn’t become an overhead, we have used memoization to cache the result after the first execution.
+// This way, even if the function is called multiple times, it will only perform the actual check once and return the cached result in subsequent calls.
+export const isGzipCompressionSupported = (function () {
+  let cachedResult; // Store the result
+
+  return function () {
+    if (cachedResult !== undefined) {
+      return cachedResult; // Return cached result if already computed
+    }
+
+    try {
+      if (typeof window.CompressionStream === 'undefined') {
+        cachedResult = false;
+      } else {
+        (() => new window.CompressionStream('gzip'))();
+        cachedResult = true;
+      }
+    } catch (error) {
+      cachedResult = false;
+    }
+
+    return cachedResult;
+  };
+})();
+
+// Make sure to use isGzipCompressionSupported before calling this function
+export async function compressDataWithGZip(data) {
+  if (typeof data !== 'string') { // TextEncoder (below) expects a string
+    data = JSON.stringify(data);
+  }
+
+  const encoder = new TextEncoder();
+  const encodedData = encoder.encode(data);
+  const compressedStream = new Blob([encodedData])
+    .stream()
+    .pipeThrough(new window.CompressionStream('gzip'));
+
+  const compressedBlob = await new Response(compressedStream).blob();
+  const compressedArrayBuffer = await compressedBlob.arrayBuffer();
+  return new Uint8Array(compressedArrayBuffer);
 }

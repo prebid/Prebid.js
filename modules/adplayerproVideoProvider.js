@@ -164,7 +164,6 @@ export function AdPlayerProProvider(config, adPlayerPro_, callbackStorage_, util
         return;
     }
 
-
     const playerEventName = utils.getPlayerEvent(externalEventName);
     const eventHandler = getEventHandler(externalEventName, callback, basePayload, getEventPayload)
     player && player.on(playerEventName, eventHandler);

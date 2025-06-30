@@ -300,7 +300,7 @@ function isS2SBidder(bidder) {
 
 function isOWPubmaticBid(adapterName) {
   let s2sConf = config.getConfig('s2sConfig');
-  let s2sConfArray = isArray(s2sConf) ? s2sConf : [s2sConf];
+  let s2sConfArray = s2sConf ? (isArray(s2sConf) ? s2sConf : [s2sConf]) : [];
   return s2sConfArray.some(conf => {
     if (adapterName === ADAPTER_CODE && conf.defaultVendor === VENDOR_OPENWRAP &&
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
@@ -426,6 +426,30 @@ function getFloorFetchStatus(floorData) {
   return isDataValid && (isAdUnitOrSetConfig || isFetchSuccessful);
 }
 
+function getListOfIdentityPartners() {
+  const namespace = getGlobal();
+  const publisherProvidedEids = namespace.getConfig("ortb2.user.eids") || [];
+  const availableUserIds = namespace.adUnits[0]?.bids[0]?.userId || {};
+  const identityModules = namespace.getConfig('userSync')?.userIds || [];
+  const identityModuleNameMap = identityModules.reduce((mapping, module) => {
+    if (module.storage?.name) {
+      mapping[module.storage.name] = module.name;
+    }
+    return mapping;
+  }, {});
+
+  const userIdPartners = Object.keys(availableUserIds).map(storageName =>
+    identityModuleNameMap[storageName] || storageName
+  );
+
+  const publisherProvidedEidList = publisherProvidedEids.map(eid =>
+    identityModuleNameMap[eid.source] || eid.source
+  );
+
+  const identityPartners = Array.from(new Set([...userIdPartners, ...publisherProvidedEidList]));
+  return identityPartners.length > 0 ? identityPartners : undefined;
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
@@ -459,6 +483,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dmv'] = '$prebid.version$' || '-1';
   outputObj['bm'] = getBrowserType();
   outputObj['ctr'] = country || '';
+  outputObj['lip'] = getListOfIdentityPartners();
 
   if (floorData) {
     const floorRootValues = getFloorsCommonField(floorData?.floorRequestData);
@@ -607,11 +632,22 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function auctionInitHandler(args) {
-  s2sBidders = (function() {
-    let s2sConf = config.getConfig('s2sConfig');
+  s2sBidders = (function () {
     let s2sBidders = [];
-    (s2sConf || []) &&
-      isArray(s2sConf) ? s2sConf.map(conf => s2sBidders.push(...conf.bidders)) : s2sBidders.push(...s2sConf.bidders);
+    try {
+      let s2sConf = config.getConfig('s2sConfig');
+      if (isArray(s2sConf)) {
+        s2sConf.forEach(conf => {
+          if (conf?.bidders) {
+            s2sBidders.push(...conf.bidders);
+          }
+        });
+      } else if (s2sConf?.bidders) {
+        s2sBidders.push(...s2sConf.bidders);
+      }
+    } catch (e) {
+      logError('Error processing s2s bidders:', e);
+    }
     return s2sBidders || [];
   }());
   let cacheEntry = pick(args, [
