@@ -1107,7 +1107,7 @@ describe('PubMatic adapter', () => {
       delete bidRequest.mediaTypes.video;
       bidRequest.sizes = undefined;
       const request = spec.buildRequests([bidRequest], bidderRequest);
-      console.log('***request', request);
+
       // Prepare a native bid response with invalid JSON and matching impid
       const invalidAdm = '{ native: { assets: [ { id: 1, title: { text: "Test" } } ] }'; // missing closing }
       const nativeBid = {
@@ -1454,7 +1454,6 @@ describe('PubMatic adapter', () => {
     cleanBidderRequest.ortb2.device.geo = { lat: 40.7128, lon: -74.0060 };
     
     const request = spec.buildRequests([bidRequestWithDeviceGeo], cleanBidderRequest);
-    console.log('Request data:', JSON.stringify(request.data, null, 2)); // Debug log
     expect(request.data.user).to.exist;
     expect(request.data.user.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
   });
@@ -1517,6 +1516,48 @@ describe('PubMatic adapter', () => {
     expect(request.data.imp.length).to.be.greaterThan(0);
   });
 
+  it('should set floor values correctly for multi-format requests using getFloor', () => {
+    // Start with a valid bid
+    const testBid = utils.deepClone(validBidRequests[0]);
+    testBid.mediaTypes = {
+      banner: {
+        sizes: [[300, 250], [728, 90]],
+        format: [{ w: 300, h: 250 }, { w: 728, h: 90 }]
+      },
+      video: {},
+      native: {}
+    };
+    testBid.getFloor = ({ currency, mediaType, size }) => {
+      if (mediaType === 'banner') return { currency: 'AUD', floor: 2.5 };
+      if (mediaType === 'video') return { currency: 'AUD', floor: 1.5 };
+      if (mediaType === 'native') return { currency: 'AUD', floor: 1.0 };
+      return { currency: 'AUD', floor: 0 };
+    };
+
+    const testBidderRequest = {
+      bids: [testBid],
+      auctionId: 'test-auction',
+      bidderCode: 'pubmatic',
+      refererInfo: { page: 'https://example.com', ref: '' },
+      ortb2: { device: { w: 1200, h: 1800 }, site: { domain: 'example.com', page: 'https://example.com' } },
+      timeout: 2000
+    };
+
+    const request = spec.buildRequests([testBid], testBidderRequest);
+    expect(request).to.exist;
+    const builtImp = request.data.imp[0];
+    if (builtImp.banner && builtImp.banner.ext) {
+      expect(builtImp.banner.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'AUD' });
+    }
+    if (builtImp.video && builtImp.video.ext) {
+      expect(builtImp.video.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'AUD' });
+    }
+    if (builtImp.native && builtImp.native.ext) {
+      expect(builtImp.native.ext).to.deep.equal({ bidfloor: 1, bidfloorcur: 'AUD' });
+    }
+    // The impression-level bidfloor should match the banner floor (2.5)
+    expect(builtImp.bidfloor).to.equal(2.5);
+  });
 
 })
 
