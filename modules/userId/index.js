@@ -895,7 +895,7 @@ export function getConsentHash() {
     bytes.push(String.fromCharCode(hash & 255));
     hash = hash >>> 8;
   }
-  return btoa(bytes.join());
+  return btoa(bytes.join(''));
 }
 
 function consentChanged(submodule) {
