@@ -628,7 +628,7 @@ export function newTargeting(auctionManager) {
       const cacheFilter = bidCacheEnabled || isBidFromLastAuction;
       const bidFilter = cacheFilter && filterFunctionResult;
 
-      if (bidFilter && deepAccess(bid, 'video.context') !== ADPOD && isBidUsable(bid)) {
+      if (bidFilter && bid?.video?.context !== ADPOD && isBidUsable(bid)) {
         bid.latestTargetedAuctionId = latestAuctionForAdUnit[bid.adUnitCode];
         bids.push(bid)
       }
