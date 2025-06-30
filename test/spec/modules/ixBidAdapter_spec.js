@@ -5433,6 +5433,32 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.device.ip).to.be.undefined;
       expect(payload.device.ip6).to.be.undefined;
     });
+
+    it('should add device.geo if available in fpd', () => {
+      const ortb2 = {
+        device: {
+          geo: {
+            lat: 1,
+            lon: 2,
+            lastfix: 1,
+            type: 1
+          }
+        }
+      };
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.geo.lat).to.equal(1);
+      expect(payload.device.geo.lon).to.equal(2);
+      expect(payload.device.geo.lastfix).to.equal(1);
+      expect(payload.device.geo.type).to.equal(1);
+    });
+
+    it('should not add device.geo if it does not exist', () => {
+      const ortb2 = {device: {}};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.geo).to.be.undefined;
+    });
   });
 
   describe('getDivIdFromAdUnitCode', () => {
