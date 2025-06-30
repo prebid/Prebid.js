@@ -39,9 +39,7 @@ const OPEN_AUCTION_DEAL_ID = '-1';
 const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
-// todo: input profileId and profileVersionId ; defaults to zero or one
-const DEFAULT_PUBLISHER_ID = 0;
-const DEFAULT_PROFILE_ID = 0;
+// todo: input profileId and profileVersionId ; defaults to empty string or zero
 const DEFAULT_PROFILE_VERSION_ID = 0;
 const enc = window.encodeURIComponent;
 const MEDIATYPE = {
@@ -67,8 +65,8 @@ const BROWSER_MAP = [
 ];
 
 /// /////////// VARIABLES //////////////
-let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
-let profileId = DEFAULT_PROFILE_ID; // int: optional
+let publisherId = null; // string: mandatory
+let profileId = ''; // string: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
 
@@ -475,7 +473,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['purl'] = referrer;
   outputObj['orig'] = getDomainFromUrl(referrer);
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
-  outputObj['pid'] = '' + profileId;
+  outputObj['pid'] = profileId;
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
@@ -783,9 +781,13 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
     if (typeof conf.options === 'object') {
       if (conf.options.publisherId) {
-        publisherId = Number(conf.options.publisherId);
+        // Ensure publisherId is a string (trim if it's a string, convert to string if it's a number)
+        publisherId = isStr(conf.options.publisherId) ? conf.options.publisherId.trim() : String(conf.options.publisherId);
       }
-      profileId = Number(conf.options.profileId) || DEFAULT_PROFILE_ID;
+      // Ensure profileId is a string (trim if it's a string, convert to string if it's a number)
+      if (conf.options.profileId) {
+        profileId = isStr(conf.options.profileId) ? conf.options.profileId.trim() : String(conf.options.profileId);
+      }
       profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');
@@ -793,7 +795,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
     }
 
     if (!publisherId) {
-      logError(LOG_PRE_FIX + 'Missing publisherId(Number).');
+      logError(LOG_PRE_FIX + 'Missing publisherId.');
       error = true;
     }
 
@@ -805,8 +807,8 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
   },
 
   disableAnalytics() {
-    publisherId = DEFAULT_PUBLISHER_ID;
-    profileId = DEFAULT_PROFILE_ID;
+    publisherId = null;
+    profileId = '';
     profileVersionId = DEFAULT_PROFILE_VERSION_ID;
     s2sBidders = [];
     baseAdapter.disableAnalytics.apply(this, arguments);
