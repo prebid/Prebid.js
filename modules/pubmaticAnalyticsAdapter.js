@@ -39,8 +39,7 @@ const OPEN_AUCTION_DEAL_ID = '-1';
 const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
-// todo: input profileId and profileVersionId ; defaults to empty string or zero
-const DEFAULT_PROFILE_VERSION_ID = 0;
+// todo: input profileId and profileVersionId ; defaults to empty string
 const enc = window.encodeURIComponent;
 const MEDIATYPE = {
   BANNER: 0,
@@ -67,7 +66,7 @@ const BROWSER_MAP = [
 /// /////////// VARIABLES //////////////
 let publisherId = null; // string: mandatory
 let profileId = ''; // string: optional
-let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
+let profileVersionId = ''; // string: optional
 let s2sBidders = [];
 
 /// /////////// HELPER FUNCTIONS //////////////
@@ -474,7 +473,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['orig'] = getDomainFromUrl(referrer);
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
   outputObj['pid'] = profileId;
-  outputObj['pdvid'] = '' + profileVersionId;
+  outputObj['pdvid'] = profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
   outputObj['dm'] = DISPLAY_MANAGER;
@@ -777,7 +776,10 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
       if (conf.options.profileId) {
         profileId = isStr(conf.options.profileId) ? conf.options.profileId.trim() : String(conf.options.profileId);
       }
-      profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
+      // Ensure profileVersionId is a string (trim if it's a string, convert to string if it's a number)
+      if (conf.options.profileVersionId) {
+        profileVersionId = isStr(conf.options.profileVersionId) ? conf.options.profileVersionId.trim() : String(conf.options.profileVersionId);
+      }
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');
       error = true;
@@ -798,7 +800,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
   disableAnalytics() {
     publisherId = null;
     profileId = '';
-    profileVersionId = DEFAULT_PROFILE_VERSION_ID;
+    profileVersionId = '';
     s2sBidders = [];
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
