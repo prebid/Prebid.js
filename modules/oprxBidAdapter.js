@@ -1,14 +1,8 @@
-import { 
-  BANNER 
-} from '../src/mediaTypes.js';
-import { 
-  ortbConverter 
-} from '../libraries/ortbConverter/converter.js';
-import { 
-  registerBidder 
-} from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-//bidder code
+// Bidder code
 const BIDDER_CODE = 'oprx';
 
 let EP = 'https://pb.optimizerx.com';
@@ -32,7 +26,6 @@ const converter = ortbConverter({
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
-
   // Checks if the request is valid or not
   isBidRequestValid: function (bid) {
     if (
@@ -46,7 +39,6 @@ export const spec = {
     }
     return false;
   },
-
   // To make a request from the list of BidRequests and BidderRequests
   buildRequests(bRequests, brRequest) {
     let data = converter.toORTB({ bRequests, brRequest });
@@ -59,7 +51,6 @@ export const spec = {
       },
     ];
   },
-  
   // Unpack the response from the server into a list of bids. 
   interpretResponse(response, request) {
     const bids = converter.fromORTB({
