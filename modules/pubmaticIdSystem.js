@@ -24,7 +24,6 @@ function generateQueryStringParams(config) {
 
   const params = {
     publisherId: config.params.publisherId,
-    profileId: config.params.profileId || '',
     gdpr: (gdprConsent && gdprConsent?.gdprApplies) ? 1 : 0,
     gdpr_consent: gdprConsent && gdprConsent?.consentString ? encodeURIComponent(gdprConsent.consentString) : '',
     src: 'pbjs_uid',
