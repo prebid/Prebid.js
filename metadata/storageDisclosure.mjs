@@ -3,7 +3,7 @@ import fs from 'fs';
 const GVL_URL = 'https://vendor-list.consensu.org/v3/vendor-list.json';
 const LOCAL_DISCLOSURE_PATTERN = /^local:\/\//;
 const LOCAL_DISCLOSURE_PATH = './metadata/disclosures/'
-const LOCAL_DISCLOSURES_URL = 'https://raw.githubusercontent.com/prebid/Prebid.js/refs/heads/master/metadata/disclosures/';
+const LOCAL_DISCLOSURES_URL = 'https://cdn.jsdelivr.net/gh/prebid/Prebid.js/metadata/disclosures/';
 
 export const getGvl = (() => {
   let gvl;
