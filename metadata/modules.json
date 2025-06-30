@@ -4762,6 +4762,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "chromeAi",
+      "gvlid": null,
+      "disclosureURL": "local://modules/chromeAiRtdProvider.json"
+    },
+    {
+      "componentType": "rtd",
       "componentName": "clean.io",
       "gvlid": null,
       "disclosureURL": null
@@ -5196,6 +5202,13 @@
       "componentType": "userId",
       "componentName": "intentIqId",
       "gvlid": "1323",
+      "disclosureURL": null,
+      "aliasOf": null
+    },
+    {
+      "componentType": "userId",
+      "componentName": "jixieId",
+      "gvlid": null,
       "disclosureURL": null,
       "aliasOf": null
     },
