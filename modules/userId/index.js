@@ -812,17 +812,21 @@ function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
   }
-  window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+  const providers = window.googletag.secureSignalProviders = window.googletag.secureSignalProviders || [];
+  const existingIds = new Set(providers.map(p => p.id));
   const encryptedSignalSources = config.getConfig('userSync.encryptedSignalSources');
   if (encryptedSignalSources) {
     const registerDelay = encryptedSignalSources.registerDelay || 0;
     setTimeout(() => {
       encryptedSignalSources['sources'] && encryptedSignalSources['sources'].forEach(({ source, encrypt, customFunc }) => {
         source.forEach((src) => {
-          window.googletag.secureSignalProviders.push({
-            id: src,
-            collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
-          });
+          if (!existingIds.has(src)) {
+            providers.push({
+              id: src,
+              collectorFunction: () => getEncryptedEidsForSource(src, encrypt, customFunc)
+            });
+            existingIds.add(src);
+          }
         });
       })
     }, registerDelay)
