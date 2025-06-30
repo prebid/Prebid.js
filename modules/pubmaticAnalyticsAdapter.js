@@ -40,6 +40,9 @@ const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
 // todo: input profileId and profileVersionId ; defaults to empty string
+const DEFAULT_PUBLISHER_ID = null;
+const DEFAULT_PROFILE_ID = '';
+const DEFAULT_PROFILE_VERSION_ID = '';
 const enc = window.encodeURIComponent;
 const MEDIATYPE = {
   BANNER: 0,
@@ -64,9 +67,9 @@ const BROWSER_MAP = [
 ];
 
 /// /////////// VARIABLES //////////////
-let publisherId = null; // string: mandatory
-let profileId = ''; // string: optional
-let profileVersionId = ''; // string: optional
+let publisherId = DEFAULT_PUBLISHER_ID; // string: mandatory
+let profileId = DEFAULT_PROFILE_ID; // string: optional
+let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // string: optional
 let s2sBidders = [];
 
 /// /////////// HELPER FUNCTIONS //////////////
@@ -809,9 +812,9 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
   },
 
   disableAnalytics() {
-    publisherId = null;
-    profileId = '';
-    profileVersionId = '';
+    publisherId = DEFAULT_PUBLISHER_ID;
+    profileId = DEFAULT_PROFILE_ID;
+    profileVersionId = DEFAULT_PROFILE_VERSION_ID;
     s2sBidders = [];
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
