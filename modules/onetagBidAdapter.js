@@ -301,7 +301,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.3'
+      adapter: '1.1.4'
     }
   };
 }
@@ -476,23 +476,23 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 
 function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor !== 'function') return [];
-  const getFloorObject = (size) => {
-    const floorData = bidRequest.getFloor({
-      currency: 'EUR',
-      mediaType: mediaType || '*',
-      size: size || '*'
-    }) || {};
+    const getFloorObject = (size) => {
+      const floorData = bidRequest.getFloor({
+        currency: 'EUR',
+        mediaType: mediaType || '*',
+        size: size || null
+      }) || {};
 
-    return {
-      ...floorData,
-      size: size ? deepClone(size) : undefined,
-      floor: floorData.floor != null ? floorData.floor : null
-    };
+      return {
+        ...floorData,
+        size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
+        floor: floorData.floor != null ? floorData.floor : null
+      };
   };
+
   if (Array.isArray(sizes) && sizes.length > 0) {
     return sizes.map(size => getFloorObject([size.width, size.height]));
-  }
-  return [getFloorObject('*')];
+  } return [getFloorObject(null)];
 }
 
 export function isSchainValid(schain) {
