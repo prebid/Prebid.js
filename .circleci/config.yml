@@ -79,10 +79,36 @@ workflows:
   version: 2
   commit:
     jobs:
-      - build
+      # workflows run only on master, legacy branches, or branches beginning
+      # with prebid-. Updated by Codex agent.
+      - build:
+          filters:
+            branches:
+              only:
+                - master
+                - /.*legacy.*/
+                - /prebid-.*/
+            pull_requests:
+              branches:
+                only:
+                  - master
+                  - /.*legacy.*/
+                  - /prebid-.*/
       - e2etest:
           requires:
             - build
+          filters:
+            branches:
+              only:
+                - master
+                - /.*legacy.*/
+                - /prebid-.*/
+            pull_requests:
+              branches:
+                only:
+                  - master
+                  - /.*legacy.*/
+                  - /prebid-.*/
 
 experimental:
   pipelines: true
