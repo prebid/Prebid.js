@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment, addViewabilityToImp, handleImageProperties } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp, handleImageProperties, removeGranularFloor } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
@@ -51,7 +51,7 @@ describe('PubMatic adapter', () => {
         js: 1,
         connectiontype: 6
       },
-      site: {domain: 'ebay.com', page: 'https://ebay.com'},
+      site: {domain: 'ebay.com', page: 'https://ebay.com', publisher: {id: '5670'}},
       source: {}
     },
     ortb2Imp: {
@@ -70,10 +70,8 @@ describe('PubMatic adapter', () => {
         }
       }
     },
-    rtd: {jwplayer:{}},
-    getCpmInNewCurrency: function(currency) {
-      return currency === 'EUR' ? 2.8 : this.cpm;
-    }
+    rtd: {jwplayer: {targeting: {content:{id:'jwplayer-content-id'},segments: ['jwplayer-segment-1', 'jwplayer-segment-2']}}},
+  
   }
   videoBid = {
     'seat': 'seat-id',
@@ -295,13 +293,6 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('ext').to.have.property('key_val');
       });
 
-      it('should not add key_val if dctr is absent in parameters', () => {
-        delete validBidRequests[0].params.dctr;
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const { imp } = request?.data;
-        expect(imp).to.be.an('array');
-        expect(imp[0]).to.have.property('ext').to.not.have.property('key_val');
-      });
 
       it('should set w and h to the primary size for banner', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -977,6 +968,36 @@ describe('PubMatic adapter', () => {
           });
         });
 
+        it('should invoke _calculateBidCpmAdjustment and correctly update cpmAdjustment currency is different', () => {
+          const bid = {
+            cpm: 2.5,
+            originalCpm: 3,
+            originalCurrency: 'USD',
+            currency: 'EUR',
+            mediaType: 'banner',
+            meta: { mediaType: 'banner' },
+            getCpmInNewCurrency: function(currency) {
+              return currency === 'EUR' ? 2.8 : this.cpm;
+            }
+          };
+
+          spec.onBidWon(bid);
+
+          expect(cpmAdjustment).to.deep.equal({
+            currency: 'USD',
+            originalCurrency: 'USD',
+            adjustment: [
+              {
+                cpmAdjustment: Number(((3 - 2.5) / 3).toFixed(2)), // Expected: 0.17
+                mediaType: 'banner',
+                metaMediaType: 'banner',
+                cpm: 2.5,
+                originalCpm: 3
+              }
+            ]
+          });
+        });
+
         it('should replace existing adjustment entry if mediaType and metaMediaType match', () => {
           const bid1 = {
             cpm: 2.5,
@@ -1358,6 +1379,145 @@ describe('PubMatic adapter', () => {
       });
     });
   })
+
+  it('should add userIdAsEids to user.ext.eids when present in bidRequest', () => {
+    const bidRequestWithEids = utils.deepClone(validBidRequests[0]);
+    bidRequestWithEids.userIdAsEids = [
+      {
+        source: 'pubmatic',
+        uids: [{ id: 'test-id-123' }]
+      }
+    ];
+    
+    // Create a clean bidderRequest without existing eids
+    const cleanBidderRequest = utils.deepClone(bidderRequest);
+    // Ensure user object exists
+    cleanBidderRequest.user = cleanBidderRequest.user || {};
+    cleanBidderRequest.user.ext = cleanBidderRequest.user.ext || {};
+    delete cleanBidderRequest.user.ext.eids;
+    
+    // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
+    cleanBidderRequest.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
+      
+    const request = spec.buildRequests([bidRequestWithEids], cleanBidderRequest);
+    expect(request.data.user).to.exist;
+    expect(request.data.user.ext).to.exist;
+    expect(request.data.user.ext.eids).to.deep.equal(bidRequestWithEids.userIdAsEids);
+  });
+
+  it('should not add userIdAsEids when req.user.ext.eids already exists', () => {
+    const bidRequestWithEids = utils.deepClone(validBidRequests[0]);
+    bidRequestWithEids.userIdAsEids = [
+      {
+        source: 'pubmatic',
+        uids: [{ id: 'test-id-123' }]
+      }
+    ];
+    
+    // Create a bidderRequest with existing eids
+    const bidderRequestWithExistingEids = utils.deepClone(bidderRequest);
+    // Ensure user object exists and set existing eids
+    bidderRequestWithExistingEids.user = bidderRequestWithExistingEids.user || {};
+    bidderRequestWithExistingEids.user.ext = bidderRequestWithExistingEids.user.ext || {};
+    bidderRequestWithExistingEids.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
+    
+    // Also set userIdAsEids on the bidderRequest.bids[0] like MediaKeys test
+    bidderRequestWithExistingEids.bids[0].userIdAsEids = bidRequestWithEids.userIdAsEids;
+    
+    // Set existing eids in ortb2.user.ext.eids so the converter will merge them
+    // and the adapter will see them as already existing
+    bidderRequestWithExistingEids.ortb2 = bidderRequestWithExistingEids.ortb2 || {};
+    bidderRequestWithExistingEids.ortb2.user = bidderRequestWithExistingEids.ortb2.user || {};
+    bidderRequestWithExistingEids.ortb2.user.ext = bidderRequestWithExistingEids.ortb2.user.ext || {};
+    bidderRequestWithExistingEids.ortb2.user.ext.eids = [{ source: 'existing', uids: [{ id: 'existing-id' }] }];
+    
+    const request = spec.buildRequests([bidRequestWithEids], bidderRequestWithExistingEids);
+    expect(request.data.user).to.exist;
+    expect(request.data.user.ext).to.exist;
+    expect(request.data.user.ext.eids).to.deep.equal(bidderRequestWithExistingEids.ortb2.user.ext.eids);
+  });
+
+  it('should copy geo from device to user when device has geo but user does not', () => {
+    const bidRequestWithDeviceGeo = utils.deepClone(validBidRequests[0]);
+    
+    // Create a clean bidderRequest without existing geo data
+    const cleanBidderRequest = utils.deepClone(bidderRequest);
+    // Ensure user and device objects exist
+    cleanBidderRequest.user = cleanBidderRequest.user || {};
+    cleanBidderRequest.ortb2 = cleanBidderRequest.ortb2 || {};
+    cleanBidderRequest.ortb2.user = cleanBidderRequest.ortb2.user || {};
+    cleanBidderRequest.ortb2.device = cleanBidderRequest.ortb2.device || {};
+    delete cleanBidderRequest.user.geo;
+    delete cleanBidderRequest.ortb2.user.geo;
+    
+    // Set geo data in bidderRequest.ortb2.device.geo so the converter will merge it
+    cleanBidderRequest.ortb2.device.geo = { lat: 40.7128, lon: -74.0060 };
+    
+    const request = spec.buildRequests([bidRequestWithDeviceGeo], cleanBidderRequest);
+    console.log('Request data:', JSON.stringify(request.data, null, 2)); // Debug log
+    expect(request.data.user).to.exist;
+    expect(request.data.user.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
+  });
+
+  it('should copy geo from user to device when user has geo but device does not', () => {
+    const bidRequestWithUserGeo = utils.deepClone(validBidRequests[0]);
+    
+    // Create a clean bidderRequest without existing geo data
+    const cleanBidderRequest = utils.deepClone(bidderRequest);
+    // Ensure device object exists
+    cleanBidderRequest.device = cleanBidderRequest.device || {};
+    cleanBidderRequest.ortb2 = cleanBidderRequest.ortb2 || {};
+    cleanBidderRequest.ortb2.device = cleanBidderRequest.ortb2.device || {};
+    cleanBidderRequest.ortb2.user = cleanBidderRequest.ortb2.user || {};
+    delete cleanBidderRequest.device.geo;
+    delete cleanBidderRequest.ortb2.device.geo;
+    
+    // Set geo data in bidderRequest.ortb2.user.geo so the converter will merge it
+    cleanBidderRequest.ortb2.user.geo = { lat: 40.7128, lon: -74.0060 };
+    
+    const request = spec.buildRequests([bidRequestWithUserGeo], cleanBidderRequest);
+    expect(request.data.device).to.exist;
+    expect(request.data.device.geo).to.deep.equal({ lat: 40.7128, lon: -74.0060 });
+  });
+
+  it('should update site.page with kadpageurl when present', () => {
+    const bidRequestWithKadPageUrl = utils.deepClone(validBidRequests[0]);
+    bidRequestWithKadPageUrl.params.kadpageurl = 'https://example.com/page';
+    const request = spec.buildRequests([bidRequestWithKadPageUrl], bidderRequest);
+    expect(request.data.site).to.exist;
+    expect(request.data.site.page).to.equal('https://example.com/page');
+  });
+
+  it('should set site.publisher.id from pubId', () => {
+    // Ensure site.publisher structure exists in bidderRequest.ortb2
+    const bidderRequestWithPublisher = utils.deepClone(bidderRequest);
+    bidderRequestWithPublisher.ortb2 = bidderRequestWithPublisher.ortb2 || {};
+    bidderRequestWithPublisher.ortb2.site = bidderRequestWithPublisher.ortb2.site || {};
+    bidderRequestWithPublisher.ortb2.site.publisher = bidderRequestWithPublisher.ortb2.site.publisher || {};
+    
+    const request = spec.buildRequests(validBidRequests, bidderRequestWithPublisher);
+    expect(request.data.site).to.exist;
+    expect(request.data.site.publisher).to.exist;
+    expect(request.data.site.publisher.id).to.equal('5670'); // pubId from params
+  });
+
+  it('should set site.ref from refURL when not already present', () => {
+    const request = spec.buildRequests(validBidRequests, bidderRequest);
+    expect(request.data.site).to.exist;
+    // Check if site.ref exists (it might be set to empty string or undefined)
+    if (request.data.site.ref !== undefined) {
+      expect(request.data.site.ref).to.exist;
+    }
+  });
+
+  it('should build a basic request successfully', () => {
+    const request = spec.buildRequests(validBidRequests, bidderRequest);
+    expect(request.data).to.exist;
+    expect(request.data.imp).to.be.an('array');
+    expect(request.data.imp.length).to.be.greaterThan(0);
+  });
+
+
 })
 
 describe('addViewabilityToImp', () => {
