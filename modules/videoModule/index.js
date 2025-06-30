@@ -187,12 +187,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function auctionEnd(auctionResult) {
-    auctionResult.adUnits.forEach(adUnit => {
-      if (adUnit.video) {
-        renderWinningBid(adUnit);
-      }
-    });
     pbEvents.off(EVENTS.AUCTION_END, auctionEnd);
+    return Promise.all(
+      auctionResult.adUnits
+        .filter(au => au.video)
+        .map(renderWinningBid)
+    )
   }
 
   function getAdServerConfig(adUnitVideoConfig) {
@@ -212,6 +212,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const adServerConfig = getAdServerConfig(videoConfig);
     const winningBid = getWinningBid(adUnitCode);
+    if (!winningBid) return;
 
     const options = { adUnitCode };
 
