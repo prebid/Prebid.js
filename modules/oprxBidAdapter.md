@@ -8,7 +8,7 @@ Maintainer: adsupport@optimizerx.com
 
 # Description
 
-OPRx currently supports the BANNER and NATIVE type ads through prebid js
+OPRx currently supports the BANNER type ads through prebid js
 
 Module that connects to OPRx's demand sources.
 
