@@ -23,6 +23,10 @@ aliases:
       keys:
         - v1-babel-cache-{{ checksum "package.json" }}
 
+  - &restore_webpack_cache
+      keys:
+        - v1-webpack-cache-{{ checksum "package.json" }}
+
   - &save_dep_cache
       paths:
         - node_modules
@@ -32,6 +36,11 @@ aliases:
       paths:
         - .cache
       key: v1-babel-cache-{{ checksum "package.json" }}
+
+  - &save_webpack_cache
+      paths:
+        - .cache/webpack
+      key: v1-webpack-cache-{{ checksum "package.json" }}
 
   - &install
       name: Install gulp cli
@@ -49,9 +58,11 @@ aliases:
     - checkout
     - restore_cache: *restore_dep_cache
     - restore_cache: *restore_babel_cache
+    - restore_cache: *restore_webpack_cache
     - run: npm ci
     - save_cache: *save_dep_cache
     - save_cache: *save_babel_cache
+    - save_cache: *save_webpack_cache
     - run: *install
     - run: *run_unit_test
 
@@ -59,9 +70,11 @@ aliases:
     - checkout
     - restore_cache: *restore_dep_cache
     - restore_cache: *restore_babel_cache
+    - restore_cache: *restore_webpack_cache
     - run: npm install
     - save_cache: *save_dep_cache
     - save_cache: *save_babel_cache
+    - save_cache: *save_webpack_cache
     - run: *install
     - run: *run_endtoend_test
 

@@ -17,7 +17,7 @@ exports.config = {
     './test/spec/e2e/longform/**/*'
   ],
   logLevel: 'info', // put option here: info | trace | debug | warn| error | silent
-  bail: 0,
+  bail: 1,
   waitforTimeout: 60000, // Default timeout for all waitFor* commands.
   connectionRetryTimeout: 60000, // Default timeout in milliseconds for request if Selenium Grid doesn't send response
   connectionRetryCount: 3, // Default request retries count
