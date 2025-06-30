@@ -24,6 +24,17 @@ import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
+const divIdCache = {};
+
+export function getDivIdFromAdUnitCode(adUnitCode) {
+  if (divIdCache[adUnitCode]) {
+    return divIdCache[adUnitCode];
+  }
+  const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  divIdCache[adUnitCode] = divId;
+  return divId;
+}
+
 const BIDDER_CODE = 'ix';
 const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
@@ -1385,7 +1396,7 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     nativeImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     nativeImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1408,7 +1419,7 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     videoImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     videoImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1465,7 +1476,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   }
 
   const adUnitCode = validBidRequest.adUnitCode;
-  const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  const divId = getDivIdFromAdUnitCode(adUnitCode);
   bannerImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
   bannerImps[validBidRequest.adUnitCode].divId = divId;
 
@@ -1533,7 +1544,7 @@ function createMissingBannerImp(bid, imp, newSize) {
 function outstreamRenderer(bid) {
   bid.renderer.push(function () {
     const adUnitCode = bid.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     if (!divId) {
       logWarn(`IX Bid Adapter: adUnitCode: ${divId} not found on page.`);
       return;
