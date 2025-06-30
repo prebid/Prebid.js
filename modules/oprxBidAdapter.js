@@ -51,7 +51,7 @@ export const spec = {
       },
     ];
   },
-  // Unpack the response from the server into a list of bids. 
+  // Unpack the response from the server into a list of bids
   interpretResponse(response, request) {
     const bids = converter.fromORTB({
       response: response.body,
