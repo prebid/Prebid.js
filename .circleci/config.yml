@@ -70,10 +70,12 @@ jobs:
   build:
     <<: *environment
     steps: *unit_test_steps
+    serial-group: "browserstack"
 
   e2etest:
     <<: *environment
     steps: *endtoend_test_steps
+    serial-group: "browserstack"
 
 workflows:
   version: 2
