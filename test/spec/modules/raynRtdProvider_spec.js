@@ -365,7 +365,7 @@ describe('rayn RTD Submodule', function () {
       setTimeout(() => {
         try {
           expect(callbackSpy.calledOnce).to.be.true;
-          expect(logErrorSpy.lastCall.lastArg).to.equal(rejectError);
+          expect(logErrorSpy.calledWith('RaynJS: ', rejectError)).to.be.true;
         } finally {
           logErrorSpy.restore();
           done();
