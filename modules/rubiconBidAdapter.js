@@ -1296,7 +1296,11 @@ export function encodeParam(key, param) {
  * @returns {Array}
  */
 function partitionArray(array, size) {
-  return array.map((e, i) => (i % size === 0) ? array.slice(i, i + size) : null).filter((e) => e)
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
 }
 
 var hasSynced = false;
