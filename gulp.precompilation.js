@@ -23,7 +23,8 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
   if (!PRECOMP_TASKS.has(key)) {
     const babelConfig = require('./babelConfig.js')({
       disableFeatures: disableFeatures ?? helpers.getDisabledFeatures(),
-      prebidDistUrlBase: distUrlBase ?? argv.distUrlBase
+      prebidDistUrlBase: distUrlBase ?? argv.distUrlBase,
+      ES5: argv.ES5
     });
     const precompile = function () {
       // `since: gulp.lastRun(task)` selects files that have been modified since the last time this gulp process ran `task`

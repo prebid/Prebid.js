@@ -9,6 +9,9 @@ var argv = require('yargs').argv;
 const fs = require('fs');
 const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
+// Check if ES5 mode is requested
+const isES5Mode = argv.ES5;
+
 var plugins = [
   new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
   new WebpackManifestPlugin({
@@ -40,6 +43,7 @@ if (argv.analyze) {
 module.exports = {
   mode: 'production',
   devtool: 'source-map',
+  target: isES5Mode ? ['web', 'es5'] : 'web',
   cache: {
     type: 'filesystem',
     cacheDirectory: path.resolve(__dirname, '.cache/webpack')
@@ -59,6 +63,28 @@ module.exports = {
         enforce: "pre",
         use: ["source-map-loader"],
       },
+      ...(() => {
+        if (!isES5Mode) {
+          return [];
+        } else {
+          const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase, ES5: true});
+          return [
+            {
+              test: /\.node_modules\/.*\.js$/,
+              use: [
+                {
+                  loader: 'babel-loader',
+                  options: Object.assign(
+                    {cacheDirectory: cacheDir, cacheCompression: false},
+                    babelConfig,
+                    helpers.getAnalyticsOptions()
+                  ),
+                }
+              ]
+            },
+          ]
+        }
+      })()
     ],
   },
   entry: (() => {
@@ -102,8 +128,16 @@ module.exports = {
       new TerserPlugin({
         extractComments: false, // do not generate unhelpful LICENSE comment
         terserOptions: {
-          module: true, // do not prepend every module with 'use strict'; allow mangling of top-level locals
-        }
+          module: isES5Mode ? false : true, // Force ES5 output if ES5 mode is enabled
+          ...(isES5Mode && {
+            ecma: 5, // Target ES5
+            compress: {
+              ecma: 5 // Ensure compression targets ES5
+            },
+            mangle: {
+              safari10: true // Ensure compatibility with older browsers
+            }
+          })        }
       })
     ],
     splitChunks: {

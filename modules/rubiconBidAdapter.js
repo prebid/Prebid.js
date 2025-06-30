@@ -608,7 +608,7 @@ export const spec = {
       data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
     }
 
-    data['rp_maxbids'] = bidderRequest.bidLimit || 1;
+    data['rp_maxbids'] = bidderRequest.bidLimit;
 
     applyFPD(bidRequest, BANNER, data);
 

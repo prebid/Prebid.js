@@ -1179,6 +1179,11 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     if (ipv6) {
       deepSetValue(r, 'device.ipv6', ipv6);
     }
+
+    const geo = fpd.device.geo;
+    if (geo) {
+      deepSetValue(r, 'device.geo', geo);
+    }
   }
 
   // regulations from ortb2
