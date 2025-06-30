@@ -363,10 +363,13 @@ describe('rayn RTD Submodule', function () {
       raynRTD.raynSubmodule.getBidRequestData(reqBidsConfigObj, callbackSpy, RTD_CONFIG.dataProviders[0]);
 
       setTimeout(() => {
-        expect(callbackSpy.calledOnce).to.be.true;
-        expect(logErrorSpy.lastCall.lastArg).to.equal(rejectError);
-        logErrorSpy.restore();
-        done();
+        try {
+          expect(callbackSpy.calledOnce).to.be.true;
+          expect(logErrorSpy.lastCall.lastArg).to.equal(rejectError);
+        } finally {
+          logErrorSpy.restore();
+          done();
+        }
       }, 0)
     });
   });
