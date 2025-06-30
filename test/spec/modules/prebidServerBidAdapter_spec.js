@@ -990,15 +990,10 @@ describe('S2S Adapter', function () {
 
         adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
 
-        const compressionSupported = processPBSRequest.toString().includes('endpointCompression');
         setTimeout(() => {
-          if (compressionSupported) {
-            expect(gzipStub.calledOnce).to.be.true;
-            expect(server.requests[0].url).to.include('gzip=1');
-            expect(server.requests[0].requestBody).to.equal('compressed');
-          } else {
-            expect(gzipStub.called).to.be.false;
-          }
+          expect(gzipStub.calledOnce).to.be.true;
+          expect(server.requests[0].url).to.include('gzip=1');
+          expect(server.requests[0].requestBody).to.equal('compressed');
           done();
         });
       });
