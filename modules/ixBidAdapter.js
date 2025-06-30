@@ -1952,7 +1952,7 @@ export function combineImps(imps) {
   const result = {}
   imps.forEach((imp) => {
     Object.keys(imp).forEach((key) => {
-      if (Object.keys(result).includes(key)) {
+      if (result.hasOwnProperty(key)) {
         if (result[key].hasOwnProperty('ixImps') && imp[key].hasOwnProperty('ixImps')) {
           result[key].ixImps = [...result[key].ixImps, ...imp[key].ixImps];
         } else if (result[key].hasOwnProperty('missingImps') && imp[key].hasOwnProperty('missingImps')) {
