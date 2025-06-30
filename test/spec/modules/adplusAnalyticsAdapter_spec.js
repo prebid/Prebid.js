@@ -11,7 +11,7 @@ describe('AdPlus analytics adapter', function () {
   let sandbox, clock;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.spy(console, 'log');
 
     clock = sandbox.useFakeTimers();
