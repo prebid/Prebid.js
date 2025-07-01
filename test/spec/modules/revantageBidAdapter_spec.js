@@ -430,7 +430,7 @@ describe('RevantageBidAdapter', function () {
       };
 
       const request = spec.buildRequests([bidWithEmptySizes], bidderRequest);
-      
+
       // Check if request is valid before parsing
       if (request && request.data) {
         const data = JSON.parse(request.data);
