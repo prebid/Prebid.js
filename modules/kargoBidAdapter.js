@@ -303,7 +303,8 @@ function getExtensions(ortb2, refererInfo) {
 
   if (ortb2) {
     ext.ortb2 = deepClone(ortb2);
-    if (ext.ortb2.user?.ext) {
+
+    if (ext.ortb2.user && ext.ortb2.user.ext) {
       delete ext.ortb2.user.ext.eids;
     }
   }
@@ -314,6 +315,7 @@ function getExtensions(ortb2, refererInfo) {
 
   return ext;
 }
+
 
 function _getCrb() {
   let localStorageCrb = getCrbFromLocalStorage();
