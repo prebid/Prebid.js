@@ -704,7 +704,13 @@ describe('rhythmone adapter tests', function () {
         'auctionId': '18fd8b8b0bd757',
         'bidRequestsCount': 1,
         'bidId': '51ef8751f9aead',
-        'schain': schain
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': schain
+            }
+          }
+        }
       }
     ];
 

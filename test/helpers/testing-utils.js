@@ -37,10 +37,9 @@ const utils = {
         it(`should render GAM creative`, async () => {
           await utils.switchFrame(expectGAMCreative);
           const creative = [
-            '> a > img', // banner
-            '> div[class="card"]' // native
-          ].map((child) => `body > div[class="GoogleActiveViewElement"] ${child}`)
-            .join(', ');
+            'a > img', // banner
+            'div[class="card"]' // native
+          ].join(', ');
           const existing = await $(creative).isExisting();
           expect(existing).to.be.true;
         });

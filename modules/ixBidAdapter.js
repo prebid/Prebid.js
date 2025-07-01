@@ -59,17 +59,6 @@ const SOURCE_RTI_MAPPING = {
   'uidapi.com': 'UID2',
   'adserver.org': 'TDID'
 };
-const PROVIDERS = [
-  'lipbid',
-  'criteoId',
-  'merkleId',
-  'parrableId',
-  'connectid',
-  'tapadId',
-  'quantcastId',
-  'pubProvidedId',
-  'pairId'
-];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [
   'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
@@ -174,7 +163,7 @@ function setDisplayManager(imp, bid) {
       renderer = deepAccess(bid, 'renderer');
     }
 
-    if (deepAccess(bid, 'schain', false)) {
+    if (deepAccess(bid, 'ortb2.source.ext.schain', false)) {
       imp.displaymanager = 'pbjs_wrapper';
     } else if (renderer && typeof (renderer) === 'object') {
       if (renderer.url !== undefined) {
@@ -860,9 +849,11 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
   }
 
   // if an schain is provided, send it along
-  if (validBidRequests[0].schain) {
-    r.source.ext = {};
-    r.source.ext.schain = validBidRequests[0].schain;
+  const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    r.source = r.source || {};
+    r.source.ext = r.source.ext || {};
+    r.source.ext.schain = schain;
   }
 
   if (userEids.length > 0) {
@@ -1258,34 +1249,16 @@ function addAdUnitFPD(imp, bid) {
  * @return {object}                    Reqyest object with added indentigfier info to ixDiag.
  */
 function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseUrl) {
-  const pbaAdSlot = impressions[impKeys[adUnitIndex]].pbadslot;
   const tagId = impressions[impKeys[adUnitIndex]].tagId;
   const adUnitCode = impressions[impKeys[adUnitIndex]].adUnitCode;
   const divId = impressions[impKeys[adUnitIndex]].divId;
-  if (pbaAdSlot || tagId || adUnitCode || divId) {
-    r.ext.ixdiag.pbadslot = pbaAdSlot;
+  if (tagId || adUnitCode || divId) {
     r.ext.ixdiag.tagid = tagId;
     r.ext.ixdiag.adunitcode = adUnitCode;
     r.ext.ixdiag.divId = divId;
   }
 
   return r;
-}
-
-/**
- * Return an object of user IDs stored by Prebid User ID module
- *
- * @returns {Array} ID providers that are present in userIds
- */
-function _getUserIds(bidRequest) {
-  const userIds = bidRequest.userId || {};
-
-  return PROVIDERS.filter(provider => {
-    if (provider === 'lipbid') {
-      return deepAccess(userIds, 'lipb.lipbid');
-    }
-    return userIds[provider];
-  });
 }
 
 /**
@@ -1310,7 +1283,6 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     allu: 0,
     ren: false,
     version: '$prebid.version$',
-    userIds: _getUserIds(validBidRequests[0]),
     url: window.location.href.split('?')[0],
     vpd: defaultVideoPlacement,
     ae: fledgeEnabled,
@@ -1386,7 +1358,6 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.adUnitCode].ixImps.push(imp);
     nativeImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
     nativeImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
-    nativeImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     nativeImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
@@ -1409,7 +1380,6 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.adUnitCode].ixImps.push(imp);
     videoImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
     videoImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
-    videoImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     videoImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
@@ -1437,7 +1407,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   bannerImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
   bannerImps[validBidRequest.adUnitCode].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
-  bannerImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 

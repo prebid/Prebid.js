@@ -263,8 +263,8 @@ export const spec = {
           deepSetValue(obj, `ext.${bidderKey}.customData.0.targeting`, fpd.site);
         }
       }
-      if (!schain && deepAccess(ozoneBidRequest, 'schain')) {
-        schain = ozoneBidRequest.schain;
+      if (!schain && deepAccess(ozoneBidRequest, 'ortb2.source.ext.schain')) {
+        schain = ozoneBidRequest.ortb2.source.ext.schain;
       }
       let gpid = deepAccess(ozoneBidRequest, 'ortb2Imp.ext.gpid');
       if (gpid) {

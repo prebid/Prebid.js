@@ -1,5 +1,4 @@
 import {deepClone, delayExecution} from '../../src/utils.js';
-import { STATUS } from '../../src/constants.js';
 
 export function makePbsInterceptor({createBid}) {
   return function pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {
@@ -17,7 +16,7 @@ export function makePbsInterceptor({createBid}) {
     function addBid(bid, bidRequest) {
       onBid({
         adUnit: bidRequest.adUnitCode,
-        bid: Object.assign(createBid(STATUS.GOOD, bidRequest), {requestBidder: bidRequest.bidder}, bid)
+        bid: Object.assign(createBid(bidRequest), {requestBidder: bidRequest.bidder}, bid)
       })
     }
     bidRequests = bidRequests

@@ -9,14 +9,19 @@
  *
  * @property {function(): Array} getBidsRequested - returns consolidated bid requests
  * @property {function(): Array} getBidsReceived - returns consolidated bid received
- * @property {function(): Array} getAllBidsForAdUnitCode - returns consolidated bid received for a given adUnit
+ * @property {function(string): Array} getAllBidsForAdUnitCode - returns consolidated bid received for a given adUnit
+ * @property {function(): Array} getAllWinningBids - returns all winning bids
  * @property {function(): Array} getAdUnits - returns consolidated adUnits
  * @property {function(): Array} getAdUnitCodes - returns consolidated adUnitCodes
- * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
- * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
+ * @property {function(): Array} getNoBids - returns consolidated adUnitCodes
+ * @property {function(string, string): void} setStatusForBids - set status for bids
+ * @property {function(): string} getLastAuctionId - returns last auctionId
+ * @property {function(Object): Object} createAuction - creates auction instance and stores it for future reference
+ * @property {function(string): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
  * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
  * @property {function(): void} clearAllAuctions - clear all auctions for testing
+ * @property {function(*): *} onExpiry
  * @property {AuctionIndex} index
  */
 

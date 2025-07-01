@@ -5,6 +5,7 @@ import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'relay';
+const GVLID = 631;
 const METHOD = 'POST';
 const ENDPOINT_URL = 'https://e.relay.bid/p/openrtb2';
 
@@ -81,6 +82,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
