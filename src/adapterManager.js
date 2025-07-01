@@ -18,7 +18,6 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  deepAccess,
   shuffle,
   timestamp,
   uniques,
