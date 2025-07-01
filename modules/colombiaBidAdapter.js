@@ -95,7 +95,9 @@ export const spec = {
             netRevenue: netRevenue,
             ttl: config.getConfig('_bidderTimeout') || 300,
             referrer: bidRequest.data.r,
-            ad: response.ad
+            ad: response.ad,
+            eventTrackers: response.eventTrackers,
+            ext: response.ext
           };
           bidResponses.push(bidResponse);
         }
