@@ -466,8 +466,8 @@ describe('Media Consortium Bid Adapter', function () {
       expect(formattedResponse[0].renderer).to.have.property('url', 'https://cdn.hubvisor.io/big/player.js')
       expect(formattedResponse[0].renderer).to.have.property('config')
       expect(formattedResponse[0].renderer.config).to.have.property('selector', '#video')
-      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 640)
-      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', true)
+      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 800) // remote config takes precedence
+      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', false) // remote config takes precedence
     })
 
     it('should handle video bid with missing impression request', function () {
@@ -639,8 +639,8 @@ describe('Media Consortium Bid Adapter', function () {
       expect(formattedResponse[0].renderer).to.have.property('url', 'https://cdn.hubvisor.io/big/player.js')
       expect(formattedResponse[0].renderer).to.have.property('config')
       expect(formattedResponse[0].renderer.config).to.have.property('selector', '#video')
-      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 640)
-      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', true)
+      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 800) // remote config takes precedence
+      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', false) // remote config takes precedence
     })
 
     it('should merge local and remote configurations correctly', function () {
@@ -700,8 +700,8 @@ describe('Media Consortium Bid Adapter', function () {
       const formattedResponse = spec.interpretResponse(serverResponse, params)
 
       expect(formattedResponse).to.have.length(1)
-      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 640)
-      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', true)
+      expect(formattedResponse[0].renderer.config).to.have.property('maxWidth', 800) // remote config takes precedence
+      expect(formattedResponse[0].renderer.config).to.have.property('isReplayable', false) // remote config takes precedence
     })
 
     it('should handle CSS selector formatting correctly', function () {
