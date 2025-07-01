@@ -111,7 +111,7 @@ describe('RevantageBidAdapter', function () {
     it('should include all required OpenRTB fields', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
-      
+
       expect(data.id).to.equal('1d1a030790a475');
       expect(data.imp).to.be.an('array').that.is.not.empty;
       expect(data.site).to.be.an('object');
@@ -126,7 +126,7 @@ describe('RevantageBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
       const imp = data.imp[0];
-      
+
       expect(imp.id).to.equal('30b31c1838de1e');
       expect(imp.tagid).to.equal('adunit-code');
       expect(imp.banner.w).to.equal(300);
@@ -139,7 +139,7 @@ describe('RevantageBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
       const imp = data.imp[0];
-      
+
       expect(imp.ext.feedId).to.equal('test-feed-123');
       expect(imp.ext.bidder.placementId).to.equal('test-placement');
       expect(imp.ext.bidder.publisherId).to.equal('test-publisher');
@@ -149,7 +149,7 @@ describe('RevantageBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
       const imp = data.imp[0];
-      
+
       expect(imp.ext.viewability).to.be.an('object');
       expect(imp.ext.viewability).to.have.property('percentInView');
       expect(imp.ext.viewability).to.have.property('inViewport');
@@ -158,7 +158,7 @@ describe('RevantageBidAdapter', function () {
     it('should include GDPR consent', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
-      
+
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
     });
@@ -166,14 +166,14 @@ describe('RevantageBidAdapter', function () {
     it('should include CCPA consent', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
-      
+
       expect(data.regs.ext.us_privacy).to.equal('1---');
     });
 
     it('should include page context', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
-      
+
       expect(data.ext.revantage.pageContext).to.be.an('object');
       expect(data.ext.revantage.pageContext).to.have.property('title');
       expect(data.ext.revantage.pageContext).to.have.property('metaTags');
@@ -183,20 +183,20 @@ describe('RevantageBidAdapter', function () {
     it('should handle missing getFloor function', function () {
       let bidRequestsWithoutFloor = deepClone(validBidRequests);
       delete bidRequestsWithoutFloor[0].getFloor;
-      
+
       const request = spec.buildRequests(bidRequestsWithoutFloor, bidderRequest);
       const data = JSON.parse(request.data);
-      
+
       expect(data.imp[0].bidfloor).to.equal(0);
     });
 
     it('should handle missing ortb2 data', function () {
       let bidderRequestWithoutOrtb2 = deepClone(bidderRequest);
       delete bidderRequestWithoutOrtb2.ortb2;
-      
+
       const request = spec.buildRequests(validBidRequests, bidderRequestWithoutOrtb2);
       const data = JSON.parse(request.data);
-      
+
       expect(data.site).to.be.an('object');
       expect(data.device).to.be.an('object');
     });
@@ -244,7 +244,7 @@ describe('RevantageBidAdapter', function () {
     it('should return valid bid responses', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest);
       expect(result).to.be.an('array').that.is.not.empty;
-      
+
       const bid = result[0];
       expect(bid.requestId).to.equal('30b31c1838de1e');
       expect(bid.cpm).to.equal(1.25);
@@ -260,7 +260,7 @@ describe('RevantageBidAdapter', function () {
     it('should include meta data', function () {
       const result = spec.interpretResponse(serverResponse, bidRequest);
       const bid = result[0];
-      
+
       expect(bid.meta).to.be.an('object');
       expect(bid.meta.advertiserDomains).to.deep.equal(['advertiser.com']);
       expect(bid.meta.dsp).to.equal('test-dsp');
@@ -271,10 +271,10 @@ describe('RevantageBidAdapter', function () {
       let responseWithoutDimensions = deepClone(serverResponse);
       delete responseWithoutDimensions.body.bids[0].raw_response.seatbid[0].bid[0].w;
       delete responseWithoutDimensions.body.bids[0].raw_response.seatbid[0].bid[0].h;
-      
+
       const result = spec.interpretResponse(responseWithoutDimensions, bidRequest);
       const bid = result[0];
-      
+
       expect(bid.width).to.equal(300); // Default from bid request
       expect(bid.height).to.equal(250); // Default from bid request
     });
@@ -288,7 +288,7 @@ describe('RevantageBidAdapter', function () {
     it('should filter out invalid bids', function () {
       let invalidServerResponse = deepClone(serverResponse);
       invalidServerResponse.body.bids[0].price = 0; // Invalid price
-      
+
       const result = spec.interpretResponse(invalidServerResponse, bidRequest);
       expect(result).to.deep.equal([]);
     });
@@ -296,7 +296,7 @@ describe('RevantageBidAdapter', function () {
     it('should handle missing bid request mapping', function () {
       let serverResponseWithUnknownImp = deepClone(serverResponse);
       serverResponseWithUnknownImp.body.bids[0].raw_response.seatbid[0].bid[0].impid = 'unknown-imp-id';
-      
+
       const result = spec.interpretResponse(serverResponseWithUnknownImp, bidRequest);
       expect(result).to.deep.equal([]);
     });
@@ -319,7 +319,7 @@ describe('RevantageBidAdapter', function () {
     it('should return iframe sync when enabled', function () {
       const syncs = spec.getUserSyncs({iframeEnabled: true}, [], gdprConsent, uspConsent);
       expect(syncs).to.be.an('array').that.is.not.empty;
-      
+
       const iframeSync = syncs.find(sync => sync.type === 'iframe');
       expect(iframeSync).to.exist;
       expect(iframeSync.url).to.include(SYNC_URL);
@@ -331,7 +331,7 @@ describe('RevantageBidAdapter', function () {
     it('should return pixel sync when enabled', function () {
       const syncs = spec.getUserSyncs({pixelEnabled: true}, [], gdprConsent, uspConsent);
       expect(syncs).to.be.an('array').that.is.not.empty;
-      
+
       const pixelSync = syncs.find(sync => sync.type === 'image');
       expect(pixelSync).to.exist;
       expect(pixelSync.url).to.include(SYNC_URL);
@@ -343,17 +343,17 @@ describe('RevantageBidAdapter', function () {
         gdprApplies: false,
         consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
       };
-      
+
       const syncs = spec.getUserSyncs(syncOptions, [], gdprNotApplies, uspConsent);
       const sync = syncs[0];
-      
+
       expect(sync.url).to.include('gdpr=0');
     });
 
     it('should handle missing GDPR consent', function () {
       const syncs = spec.getUserSyncs(syncOptions, [], null, uspConsent);
       const sync = syncs[0];
-      
+
       expect(sync.url).to.not.include('gdpr=');
       expect(sync.url).to.not.include('gdpr_consent=');
       expect(sync.url).to.include('us_privacy=' + uspConsent);
@@ -362,7 +362,7 @@ describe('RevantageBidAdapter', function () {
     it('should handle missing USP consent', function () {
       const syncs = spec.getUserSyncs(syncOptions, [], gdprConsent, null);
       const sync = syncs[0];
-      
+
       expect(sync.url).to.include('gdpr=1');
       expect(sync.url).to.not.include('us_privacy=');
     });
@@ -404,7 +404,7 @@ describe('RevantageBidAdapter', function () {
 
       const request = spec.buildRequests(multipleBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
-      
+
       expect(data.imp).to.have.length(2);
       expect(data.imp[0].ext.feedId).to.equal('test-feed-1');
       expect(data.imp[1].ext.feedId).to.equal('test-feed-2');
@@ -429,7 +429,7 @@ describe('RevantageBidAdapter', function () {
 
       const request = spec.buildRequests([bidWithEmptySizes], bidderRequest);
       const data = JSON.parse(request.data);
-      
+
       expect(data.imp[0].banner.w).to.equal(300); // Default size
       expect(data.imp[0].banner.h).to.equal(250); // Default size
     });
