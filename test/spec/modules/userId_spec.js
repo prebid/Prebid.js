@@ -2627,6 +2627,27 @@ describe('User ID', function () {
       it('pbjs.registerSignalSources should be defined', () => {
         expect(typeof (getGlobal()).registerSignalSources).to.equal('function');
       });
+
+      it('does not add duplicate secureSignalProviders', function () {
+        const clock = sinon.useFakeTimers();
+        mockGpt.reset();
+        window.googletag.secureSignalProviders = [];
+        init(config);
+        config.setConfig({
+          userSync: {
+            encryptedSignalSources: {
+              registerDelay: 0,
+              sources: [{source: ['pubcid.org'], encrypt: false}]
+            }
+          }
+        });
+        getGlobal().registerSignalSources();
+        clock.tick(0);
+        getGlobal().registerSignalSources();
+        clock.tick(0);
+        expect(window.googletag.secureSignalProviders.length).to.equal(1);
+        clock.restore();
+      });
     })
 
     describe('Call getEncryptedEidsForSource to get encrypted Eids for source', function() {
