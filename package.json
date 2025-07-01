@@ -2,7 +2,7 @@
   "name": "prebid.js",
   "version": "9.53.0-pre",
   "description": "Header Bidding Management Library",
-  "main": "build/precompiled/src/prebid.public.ts",
+  "main": "dist/src/prebid.public.ts",
   "exports": {
     ".": "./dist/src/src/prebid.public.js",
     "./prebid.js": "./dist/src/src/prebid.public.js",
@@ -12,7 +12,10 @@
     "./.babelrc.js": "./.babelrc.js",
     "./babelConfig.js": "./babelConfig.js",
     "./modules/*.js": "./dist/src/public/*.js",
-    "./modules/*": "./dist/src/public/*.js"
+    "./modules/*": "./dist/src/public/*.js",
+    "./metadata/*.js": "./dist/src/metadata/modules/*.js",
+    "./metadata/*.json": "./metadata/modules/*.json",
+    "./metadata/*": "./dist/src/metadata/modules/*.js"
   },
   "scripts": {
     "serve": "gulp serve",
@@ -104,6 +107,7 @@
     "karma-spec-reporter": "^0.0.32",
     "karma-webpack": "^5.0.0",
     "lodash": "^4.17.21",
+    "merge-stream": "^2.0.0",
     "mocha": "^10.7.3",
     "morgan": "^1.10.0",
     "neostandard": "^0.12.1",
@@ -111,6 +115,7 @@
     "node-html-parser": "^6.1.5",
     "opn": "^5.4.0",
     "plugin-error": "^2.0.1",
+    "puppeteer": "^24.10.0",
     "resolve-from": "^5.0.0",
     "sinon": "^20.0.0",
     "source-map-loader": "^5.0.0",

@@ -23,7 +23,7 @@ const SOURCE_FOLDERS = [
   'public'
 ]
 const IGNORE_SOURCES = [
-  'libraries/creative-renderer-*/**/*'
+  'libraries/creative-renderer-*/**/*',
 ]
 
 // get only subdirectories that contain package.json with 'main' property
@@ -42,7 +42,7 @@ module.exports = {
     return SOURCE_FOLDERS
   },
   getSourcePatterns() {
-    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.ts`])
+    return SOURCE_FOLDERS.flatMap(dir => [`./${dir}/**/*.js`, `./${dir}/**/*.mjs`, `./${dir}/**/*.ts`])
   },
   getIgnoreSources() {
     return IGNORE_SOURCES
@@ -126,7 +126,13 @@ module.exports = {
       return memo;
     }, internalModules));
   }),
-
+  getMetadataEntry(moduleName) {
+    if (fs.pathExistsSync(`./metadata/modules/${moduleName}.json`)) {
+      return `${moduleName}.metadata`;
+    } else {
+      return null;
+    }
+  },
   getBuiltPath(dev, assetPath) {
     return path.join(__dirname, dev ? DEV_PATH : BUILD_PATH, assetPath)
   },

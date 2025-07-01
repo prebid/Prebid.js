@@ -1,5 +1,5 @@
 import type {AllConsentData} from "../../src/consentHandler.ts";
-import type {AdUnitCode, ByAdUnit} from "../../src/types/common";
+import type {AdUnitCode, ByAdUnit, StorageDisclosure} from "../../src/types/common";
 import {EVENTS} from '../../src/constants.ts';
 import type {EventPayload} from "../../src/events.ts";
 import type {TargetingMap} from "../../src/targeting.ts";
@@ -39,7 +39,7 @@ type EventHandlers<P extends RTDProvider> = {
     [EV in RTDEvent]: (payload: EventPayload<EV>, config: RTDProviderConfig<P>, consent: AllConsentData) => void;
 };
 
-export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> & {
+export type RtdProviderSpec<P extends RTDProvider> = Partial<EventHandlers<P>> & StorageDisclosure & {
     /**
      * must match the name provided by the publisher in the on-page config
      */

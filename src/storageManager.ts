@@ -3,13 +3,14 @@ import {bidderSettings} from './bidderSettings.js';
 import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, type ModuleType} from './activities/modules.js';
 import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
 import {
-  ACTIVITY_PARAM_ADAPTER_CODE,
-  ACTIVITY_PARAM_COMPONENT_TYPE,
-  ACTIVITY_PARAM_STORAGE_TYPE
+    ACTIVITY_PARAM_ADAPTER_CODE,
+    ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_KEY,
+    ACTIVITY_PARAM_STORAGE_TYPE
 } from './activities/params.js';
 
 import {ACTIVITY_ACCESS_DEVICE, ACTIVITY_ACCESS_REQUEST_CREDENTIALS} from './activities/activities.js';
 import {config} from './config.js';
+import {hook} from "./hook.ts";
 import adapterManager from './adapterManager.js';
 import {activityParams} from './activities/activityParams.js';
 import type {AnyFunction} from "./types/functions.d.ts";
@@ -54,33 +55,41 @@ export type StorageManager = {
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
-export function newStorageManager({moduleName, moduleType}: {
+export function newStorageManager({moduleName, moduleType, advertiseKeys = true}: {
     moduleName: string;
     moduleType: ModuleType;
+    /**
+     * If false, do not pass the 'storageKey' to activity checks - turning off storageControl for this manager.
+     */
+    advertiseKeys?: boolean;
 } = {} as any, {isAllowed = isActivityAllowed} = {}) {
-  function isValid(cb, storageType) {
+  function isValid(cb, storageType, storageKey) {
     let mod = moduleName;
     const curBidder = config.getCurrentBidder();
     if (curBidder && moduleType === MODULE_TYPE_BIDDER && adapterManager.aliasRegistry[curBidder] === moduleName) {
       mod = curBidder;
     }
+    const params = {
+        [ACTIVITY_PARAM_STORAGE_TYPE]: storageType,
+    };
+    if (advertiseKeys && storageKey != null) {
+        params[ACTIVITY_PARAM_STORAGE_KEY] = storageKey;
+    }
     const result = {
-      valid: isAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(moduleType, mod, {
-        [ACTIVITY_PARAM_STORAGE_TYPE]: storageType
-      }))
+      valid: isAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(moduleType, mod, params))
     };
 
     return cb(result);
   }
 
-  function schedule(operation, storageType, done) {
+  function schedule(operation, storageType, storageKey, done) {
     if (done && typeof done === 'function') {
       storageCallbacks.push(function() {
-        let result = isValid(operation, storageType);
+        let result = isValid(operation, storageType, storageKey);
         done(result);
       });
     } else {
-      return isValid(operation, storageType);
+      return isValid(operation, storageType, storageKey);
     }
   }
 
@@ -105,7 +114,7 @@ export function newStorageManager({moduleName, moduleType}: {
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
-    return schedule(cb, STORAGE_TYPE_COOKIES, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, key, done);
   };
 
   /**
@@ -121,7 +130,7 @@ export function newStorageManager({moduleName, moduleType}: {
       }
       return null;
     }
-    return schedule(cb, STORAGE_TYPE_COOKIES, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, name, done);
   };
 
   /**
@@ -135,7 +144,7 @@ export function newStorageManager({moduleName, moduleType}: {
       }
       return false;
     }
-    return schedule(cb, STORAGE_TYPE_COOKIES, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, null, done);
   }
 
   function storageMethods(name) {
@@ -153,7 +162,7 @@ export function newStorageManager({moduleName, moduleType}: {
         }
         return false;
       }
-      return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+      return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, done);
     } as any;
 
     return {
@@ -173,7 +182,7 @@ export function newStorageManager({moduleName, moduleType}: {
           }
           return false;
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, done);
       },
       [`setDataIn${capName}`](key, value, done) {
         let cb = function (result) {
@@ -181,7 +190,7 @@ export function newStorageManager({moduleName, moduleType}: {
             backend().setItem(key, value);
           }
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
       },
       [`getDataFrom${capName}`](key, done) {
         let cb = function (result) {
@@ -190,7 +199,7 @@ export function newStorageManager({moduleName, moduleType}: {
           }
           return null;
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
       },
       [`removeDataFrom${capName}`](key, done) {
         let cb = function (result) {
@@ -198,7 +207,7 @@ export function newStorageManager({moduleName, moduleType}: {
             backend().removeItem(key);
           }
         }
-        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
+        return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
       }
     }
   }
@@ -230,7 +239,7 @@ export function newStorageManager({moduleName, moduleType}: {
       }
     }
 
-    return schedule(cb, STORAGE_TYPE_COOKIES, done);
+    return schedule(cb, STORAGE_TYPE_COOKIES, keyLike, done);
   }
 
   return {
@@ -316,3 +325,43 @@ registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'bidderSettings.*.storageAllowed
 export function resetData() {
   storageCallbacks = [];
 }
+
+type CookieStorageDisclosure = {
+    type: 'cookie',
+    /**
+     * The number, in seconds, of the duration for storage on a device, as set when using cookie storage.
+     */
+    maxAgeSeconds: number;
+    /**
+     * Indicates the vendor is refreshing a cookie.
+     */
+    cookieRefresh: boolean;
+}
+type HTML5StorageDisclosure = {
+    type: 'web'
+    maxAgeSeconds?: null;
+    cookieRefresh?: null;
+}
+
+/**
+ * First party storage use disclosure. Follows the same format as
+ * https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/Vendor%20Device%20Storage%20%26%20Operational%20Disclosures.md
+ * except that `domain` is omitted.
+ */
+export type StorageDisclosure = (CookieStorageDisclosure | HTML5StorageDisclosure) & {
+    /**
+     * Key or object name, depending on type, for the storage item.
+     * Wildcards '*' are permitted. For example, "id*" or "*id" describes multiple prefixed or suffixed identifiers,
+     * all having the same purpose(s).
+     */
+    identifier: string;
+    /**
+     * The purpose ID or purpose IDs from the Global Vendor List (GVL) for which the storage is used.
+     */
+    purposes: number[];
+}
+
+/**
+ * Disclose first party storage use.
+ */
+export const discloseStorageUse = hook('sync', (moduleName: string, disclosure: StorageDisclosure) => {});

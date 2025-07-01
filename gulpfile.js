@@ -28,6 +28,7 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+const merge = require('merge-stream');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -233,23 +234,26 @@ function nodeBundle(modules, dev = false) {
         reject(err);
       })
       .pipe(through.obj(function (file, enc, done) {
-        resolve(file.contents.toString(enc));
+        if (file.path.endsWith('.js')) {
+          resolve(file.contents.toString(enc));
+        }
         done();
       }));
+  });
+}
+
+function memoryVinyl(name, contents) {
+  return new Vinyl({
+    cwd: '',
+    base: 'generated',
+    path: name,
+    contents: Buffer.from(contents, 'utf-8')
   });
 }
 
 function wrapWithHeaderAndFooter(dev, modules) {
   // NOTE: gulp-header, gulp-footer & gulp-wrap do not play nice with source maps.
   // gulp-concat does; for that reason we are prepending and appending the source stream with "fake" header & footer files.
-  function memoryVinyl(name, contents) {
-    return new Vinyl({
-      cwd: '',
-      base: 'generated',
-      path: name,
-      contents: Buffer.from(contents, 'utf-8')
-    });
-  }
   return function wrap(stream) {
     const wrapped = through.obj();
     const placeholder = '$$PREBID_SOURCE$$';
@@ -280,6 +284,25 @@ function wrapWithHeaderAndFooter(dev, modules) {
   }
 }
 
+function disclosureSummary(modules, summaryFileName) {
+  const stream = through.obj();
+  import('./libraries/storageDisclosure/summary.mjs').then(({getStorageDisclosureSummary}) => {
+    const summary = getStorageDisclosureSummary(modules, (moduleName) => {
+      const metadataPath = `./metadata/modules/${moduleName}.json`;
+      if (fs.existsSync(metadataPath)) {
+        return JSON.parse(fs.readFileSync(metadataPath).toString());
+      } else {
+        return null;
+      }
+    })
+    stream.push(memoryVinyl(summaryFileName, JSON.stringify(summary, null, 2)));
+    stream.push(null);
+  })
+  return stream;
+}
+
+const MODULES_REQUIRING_METADATA = ['storageControl'];
+
 function bundle(dev, moduleArr) {
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
@@ -293,8 +316,14 @@ function bundle(dev, moduleArr) {
       throw new PluginError('bundle', 'invalid modules: ' + diff.join(', ') + '. Check your modules list.');
     }
   }
+
+  const metadataModules = modules.find(module => MODULES_REQUIRING_METADATA.includes(module))
+    ? modules.concat(['prebid-core']).map(helpers.getMetadataEntry).filter(name => name != null)
+    : [];
+
   const coreFile = helpers.getBuiltPrebidCoreFile(dev);
-  const moduleFiles = helpers.getBuiltModules(dev, modules);
+  const moduleFiles = helpers.getBuiltModules(dev, modules)
+    .concat(metadataModules.map(mod => helpers.getBuiltPath(dev, `${mod}.js`)));
   const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
   const dependencies = new Set();
   [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
@@ -308,16 +337,20 @@ function bundle(dev, moduleArr) {
   if (argv.tag && argv.tag.length) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
+  const disclosureFile = path.parse(outputFileName).name + '_disclosures.json';
 
   fancyLog('Concatenating files:\n', entries);
   fancyLog('Appending ' + prebid.globalVarName + '.processQueue();');
   fancyLog('Generating bundle:', outputFileName);
+  fancyLog('Generating storage use disclosure summary:', disclosureFile);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  return wrap(gulp.src(entries))
+  const source = wrap(gulp.src(entries))
     .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
     .pipe(concat(outputFileName))
     .pipe(gulpif(sm, sourcemaps.write('.')));
+  const disclosure = disclosureSummary(['prebid-core'].concat(modules), disclosureFile);
+  return merge(source, disclosure);
 }
 
 function setupDist() {
@@ -470,7 +503,7 @@ function startIntegServer(dev = false) {
 }
 
 function startLocalServer(options = {}) {
-  connect.server({
+  return connect.server({
     https: argv.https,
     port: port,
     host: INTEG_SERVER_HOST,
@@ -521,6 +554,7 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
+
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
 
@@ -568,4 +602,24 @@ gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenatin
 gulp.task(viewReview);
 gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
+gulp.task('extract-metadata', function (done) {
+  /**
+   * Run the complete bundle in a headless browser to extract metadata (such as aliases & GVL IDs) from all modules,
+   * with help from `modules/_moduleMetadata.js`
+   */
+  const server = startLocalServer();
+  import('./metadata/extractMetadata.mjs').then(({default: extract}) => {
+    extract().then(metadata => {
+      fs.writeFileSync('./metadata/modules.json', JSON.stringify(metadata, null, 2))
+    }).finally(() => {
+      server.close()
+    }).then(() => done(), done);
+  });
+})
+gulp.task('compile-metadata', function (done) {
+  import('./metadata/compileMetadata.mjs').then(({default: compile}) => {
+    compile().then(() => done(), done);
+  })
+})
+gulp.task('update-metadata', gulp.series('build', 'extract-metadata', 'compile-metadata'));
 module.exports = nodeBundle;
