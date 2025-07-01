@@ -782,16 +782,13 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
     if (typeof conf.options === 'object') {
       if (conf.options.publisherId) {
-        // Ensure publisherId is a string (trim if it's a string, convert to string if it's a number)
-        publisherId = isStr(conf.options.publisherId) ? conf.options.publisherId.trim() : String(conf.options.publisherId);
+        publisherId = String(conf.options.publisherId).trim();
       }
-      // Ensure profileId is a string (trim if it's a string, convert to string if it's a number)
       if (conf.options.profileId) {
-        profileId = isStr(conf.options.profileId) ? conf.options.profileId.trim() : String(conf.options.profileId);
+        profileId = String(conf.options.profileId).trim();
       }
-      // Ensure profileVersionId is a string (trim if it's a string, convert to string if it's a number)
       if (conf.options.profileVersionId) {
-        profileVersionId = isStr(conf.options.profileVersionId) ? conf.options.profileVersionId.trim() : String(conf.options.profileVersionId);
+        profileVersionId = String(conf.options.profileVersionId).trim();
       }
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');

@@ -95,11 +95,9 @@ function hasRequiredConfig(config) {
     return false;
   }
 
-  // Ensure publisherId is a string (trim if it's a string, convert to string if it's a number)
+  // Ensure publisherId is a string and trimmed
   if (config.params.publisherId) {
-    config.params.publisherId = isStr(config.params.publisherId)
-      ? config.params.publisherId.trim()
-      : String(config.params.publisherId);
+    config.params.publisherId = String(config.params.publisherId).trim();
   }
 
   if (!config.params.publisherId) {
@@ -108,9 +106,7 @@ function hasRequiredConfig(config) {
   }
   // Handle profileId if provided (optional)
   if (config.params.profileId) {
-    config.params.profileId = isStr(config.params.profileId)
-      ? config.params.profileId.trim()
-      : String(config.params.profileId);
+    config.params.profileId = String(config.params.profileId).trim();
   }
 
   if (config.storage.name !== STORAGE_NAME) {
