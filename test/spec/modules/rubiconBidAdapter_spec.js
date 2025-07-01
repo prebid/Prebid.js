@@ -11,7 +11,6 @@ import {
 } from 'modules/rubiconBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {find} from 'src/polyfill.js';
 import 'modules/schain.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
@@ -48,7 +47,7 @@ describe('the rubicon adapter', function () {
    * @return {sizeMapConverted}
    */
   function getSizeIdForBid(sizesMapConverted, bid) {
-    return find(sizesMapConverted, item => (item.width === bid.width && item.height === bid.height));
+    return sizesMapConverted.find(item => (item.width === bid.width && item.height === bid.height));
   }
 
   /**
@@ -57,7 +56,7 @@ describe('the rubicon adapter', function () {
    * @return {Object}
    */
   function getResponseAdBySize(ads, size) {
-    return find(ads, item => item.size_id === size.sizeId);
+    return ads.find(item => item.size_id === size.sizeId);
   }
 
   /**
@@ -66,7 +65,7 @@ describe('the rubicon adapter', function () {
    * @return {BidRequest}
    */
   function getBidRequestBySize(bidRequests, size) {
-    return find(bidRequests, item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
+    return bidRequests.find(item => item.sizes[0][0] === size.width && item.sizes[0][1] === size.height);
   }
 
   /**
@@ -398,7 +397,7 @@ describe('the rubicon adapter', function () {
   }
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     logErrorSpy = sinon.spy(utils, 'logError');
     getFloorResponse = {};
     bidderRequest = {
@@ -735,7 +734,7 @@ describe('the rubicon adapter', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'p_screen_res', 'rp_secure', 'tk_user_key', 'x_imp.ext.tid', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'p_screen_res', 'rp_secure', 'tk_user_key', 'x_imp.ext.tid', 'tg_fl.eid', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);

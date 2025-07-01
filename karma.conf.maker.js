@@ -40,7 +40,6 @@ function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
     'karma-coverage',
-    'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
     'karma-sinon',
@@ -56,7 +55,6 @@ function newPluginsArray(browserstack) {
   plugins.push('karma-opera-launcher');
   plugins.push('karma-safari-launcher');
   plugins.push('karma-script-launcher');
-  plugins.push('karma-ie-launcher');
   return plugins;
 }
 
@@ -134,7 +132,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon', 'webpack'],
+    frameworks: ['mocha', 'chai', 'sinon', 'webpack'],
 
     // test files should not be watched or they'll run twice after an update
     // (they are still, in fact, watched through autoWatch: true)
@@ -173,10 +171,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 3e5, // default 2000
-    browserNoActivityTimeout: 3e5, // default 10000
+    browserDisconnectTimeout: 1e5, // default 2000
+    browserNoActivityTimeout: 1e5, // default 10000
     captureTimeout: 3e5, // default 60000,
-    browserDisconnectTolerance: 3,
+    browserDisconnectTolerance: 1,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins

@@ -5,7 +5,7 @@ import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
-import { getUnixTimestampFromNow } from 'src/utils.js';
+import {deepClone, getUnixTimestampFromNow} from 'src/utils.js';
 import { getWinDimensions } from '../../../src/utils';
 
 describe('adnuntiusBidAdapter', function () {
@@ -24,10 +24,12 @@ describe('adnuntiusBidAdapter', function () {
       }
     };
     storage = getStorageManager({ bidderCode: 'adnuntius' });
+    resetExpectedUrls();
   });
 
   beforeEach(() => {
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta));
+    resetExpectedUrls();
   });
 
   afterEach(function () {
@@ -35,23 +37,37 @@ describe('adnuntiusBidAdapter', function () {
     config.setBidderConfig({ bidders: [] });
     localStorage.removeItem('adn.metaData');
     sandbox.restore();
+    resetExpectedUrls();
   });
 
   after(() => {
     getGlobal().bidderSettings = {};
+    resetExpectedUrls();
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const winDimensions = getWinDimensions();
-  const screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
-  const viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
   const prebidVersion = getGlobal().version;
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
-  const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
-  const LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
-  const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
-  const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+
+  let screen;
+  let viewport;
+  let ENDPOINT_URL_BASE;
+  let ENDPOINT_URL;
+  let LOCALHOST_URL;
+  let ENDPOINT_URL_NOCOOKIE;
+  let ENDPOINT_URL_SEGMENTS;
+  let ENDPOINT_URL_CONSENT;
+
+  function resetExpectedUrls() {
+    const winDimensions = getWinDimensions();
+    screen = winDimensions.screen.availWidth + 'x' + winDimensions.screen.availHeight;
+    viewport = winDimensions.innerWidth + 'x' + winDimensions.innerHeight;
+    ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}`;
+    ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
+    LOCALHOST_URL = `http://localhost:8078/i?tzo=${tzo}&format=prebid&pbv=${prebidVersion}&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+    ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
+    ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
+    ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&pbv=${prebidVersion}&consentString=consentString&gdpr=1&screen=${screen}&viewport=${viewport}&userId=${usi}`;
+  }
 
   function expectUrlsEqual(actual, expected) {
     const a = utils.parseUrl(actual);
@@ -947,6 +963,29 @@ describe('adnuntiusBidAdapter', function () {
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url');
       expectUrlsEqual(request[0].url, LOCALHOST_URL);
+    });
+
+    it('Test specifying deal IDs', function () {
+      const dealIdRequest = deepClone(bidderRequests);
+      dealIdRequest[0].params.dealId = 'simplestringdeal';
+      dealIdRequest[0].params.inventory = {
+        pmp: {
+          deals: [{id: '123', bidfloor: 12, bidfloorcur: 'USD'}]
+        }
+      };
+      let request = spec.buildRequests(dealIdRequest, {});
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('bid');
+      const bid = request[0].bid[0]
+      expect(bid).to.have.property('bidId');
+      expect(request[0]).to.have.property('url');
+      expectUrlsEqual(request[0].url, ENDPOINT_URL);
+      expect(request[0]).to.have.property('data');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","dealId":"simplestringdeal","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}]}');
+
+      delete dealIdRequest[0].params.dealId;
+      request = spec.buildRequests(dealIdRequest, {});
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","dealId":[{"id":"123","bidfloor":12,"bidfloorcur":"USD"}],"maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}]}');
     });
 
     it('Test requests with no local storage', function () {
