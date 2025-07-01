@@ -80,6 +80,7 @@ export const spec = {
       hardwareConcurrency: getHC(),
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',
+      eids: getUserIdAsEids(validBidRequests),
       ...getSharedViewerIdParameters(validBidRequests),
       outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -213,6 +214,10 @@ function getSharedViewerIdParameters(validBidRequests) {
     })
   }
   return sharedViewerIdObject;
+}
+
+function getUserIdAsEids(validBidRequests) {
+  return validBidRequests?.[0]?.userIdAsEids || [];
 }
 
 function getReferrerInfo(bidderRequest) {
