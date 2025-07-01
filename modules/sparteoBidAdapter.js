@@ -1,7 +1,8 @@
-import { deepAccess, deepSetValue, logError, parseSizesInput, triggerPixel } from '../src/utils.js';
+import { deepAccess, deepSetValue, logWarn, logError, parseSizesInput, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { Renderer } from '../src/Renderer.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -50,11 +51,57 @@ const converter = ortbConverter({
     if (context.mediaType == 'video') {
       response.nurl = bid.nurl;
       response.vastUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url') ?? null;
+
+      // extract renderer config, if present, and create Prebid renderer
+      const rendererConfig = deepAccess(bid, 'ext.prebid.renderer') ?? null;
+      if (rendererConfig && rendererConfig.url) {
+        response.renderer = createRenderer(rendererConfig);
+      }
     }
 
     return response;
   }
 });
+
+function createRenderer(rendererConfig) {
+  const renderer = Renderer.install({
+    url: rendererConfig.url,
+    loaded: false,
+    config: rendererConfig
+  });
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    logWarn('Sparteo Bid Adapter: Prebid Error calling setRender on renderer', err);
+  }
+  return renderer;
+}
+
+function outstreamRender(bid) {
+  if (!document.getElementById(bid.adUnitCode)) {
+    logError(`Sparteo Bid Adapter: Video renderer did not started. bidResponse.adUnitCode is probably not a DOM element : ${bid.adUnitCode}`);
+    return;
+  }
+
+  const config = bid.renderer.getConfig() ?? {};
+
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      targetId: bid.adUnitCode, // target div id to render video
+      adResponse: {
+        ad: {
+          video: {
+            content: bid.vastXml,
+            player_width: bid.width,
+            player_height: bid.height
+          }
+        }
+      },
+      sizes: [bid.width, bid.height],
+      rendererOptions: config.options ?? {}
+    });
+  });
+}
 
 export const spec = {
   code: BIDDER_CODE,
