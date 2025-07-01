@@ -6,8 +6,7 @@ var argv = require('yargs').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
 var fancyLog = require('fancy-log');
-var express = require('express');
-var http = require('http');
+var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
@@ -19,6 +18,7 @@ var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 const execaCmd = require('execa');
 var gulpif = require('gulp-if');
+var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
 var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
@@ -102,9 +102,12 @@ function viewCoverage(done) {
   var coveragePort = 1999;
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
 
-  const app = express();
-  app.use(express.static('build/coverage/lcov-report'));
-  http.createServer(app).listen(coveragePort);
+  connect.server({
+    port: coveragePort,
+    root: 'build/coverage/lcov-report',
+    livereload: false,
+    debug: true
+  });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
@@ -162,8 +165,12 @@ function makeDevpackPkg(config = webpackConfig) {
       mode: 'development'
     })
 
-    const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/'});
-
+    const babelConfig = require('./babelConfig.js')({
+      disableFeatures: helpers.getDisabledFeatures(), 
+      prebidDistUrlBase: argv.distUrlBase || '/build/dev/',
+      ES5: argv.ES5 // Pass ES5 flag to babel config
+    });
+    
     // update babel config to set local dist url
     cloned.module.rules
       .flatMap((rule) => rule.use)
@@ -171,7 +178,8 @@ function makeDevpackPkg(config = webpackConfig) {
       .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
 
     return prebidSource(cloned)
-      .pipe(gulp.dest('build/dev'));
+      .pipe(gulp.dest('build/dev'))
+      .pipe(connect.reload());
   }
 }
 
@@ -229,8 +237,7 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  const sm = dev || argv.sourceMaps;
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist'), {sourcemaps: sm ? '.' : false}));
+  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
 function nodeBundle(modules, dev = false) {
@@ -321,8 +328,10 @@ function bundle(dev, moduleArr) {
   fancyLog('Generating bundle:', outputFileName);
 
   const wrap = wrapWithHeaderAndFooter(dev, modules);
-  return wrap(gulp.src(entries, {sourcemaps: sm}))
-    .pipe(concat(outputFileName));
+  return wrap(gulp.src(entries))
+    .pipe(gulpif(sm, sourcemaps.init({ loadMaps: true })))
+    .pipe(concat(outputFileName))
+    .pipe(gulpif(sm, sourcemaps.write('.')));
 }
 
 function setupDist() {
@@ -477,17 +486,28 @@ function startIntegServer(dev = false) {
 }
 
 function startLocalServer(options = {}) {
-  const app = express();
-  app.use(function (req, res, next) {
-    res.setHeader('Ad-Auction-Allowed', 'True');
-    next();
+  connect.server({
+    https: argv.https,
+    port: port,
+    host: INTEG_SERVER_HOST,
+    root: './',
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
   });
-  app.use(express.static('./'));
-  http.createServer(app).listen(port, INTEG_SERVER_HOST);
 }
 
 // Watch Task with Live Reload
 function watchTaskMaker(options = {}) {
+  if (options.livereload == null) {
+    options.livereload = true;
+  }
   options.alsoWatch = options.alsoWatch || [];
 
   return function watch(done) {
@@ -499,7 +519,7 @@ function watchTaskMaker(options = {}) {
       'modules/**/*.js',
     ].concat(options.alsoWatch));
 
-    startLocalServer();
+    startLocalServer(options);
 
     mainWatcher.on('all', options.task());
     done();
@@ -507,7 +527,7 @@ function watchTaskMaker(options = {}) {
 }
 
 const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({task: () => gulp.series('build-bundle-dev')});
+const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
 
 // support tasks
 gulp.task(lint);
