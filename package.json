@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "9.51.0-pre",
+  "version": "9.53.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.public.js",
   "exports": {
@@ -72,6 +72,7 @@
     "gulp": "^5.0.1",
     "gulp-clean": "^0.4.0",
     "gulp-concat": "^2.6.0",
+    "gulp-connect": "^5.7.0",
     "gulp-if": "^3.0.0",
     "gulp-js-escape": "^1.0.1",
     "gulp-rename": "^2.0.0",
