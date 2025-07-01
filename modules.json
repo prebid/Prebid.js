@@ -33,6 +33,7 @@
     "linkedInAdsIdSystem",
     "liveIntentIdSystem",
     "medianetBidAdapter",
+    "mobkoiBidAdapter",
     "openwebBidAdapter",
     "openxBidAdapter",
     "pairIdSystem",
