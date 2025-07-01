@@ -19,6 +19,8 @@ describe('kargo adapter tests', function() {
     getFloor: () => {},
     ortb2: {
       device: {
+        w: 1720,
+        h: 1000,
         dnt: 0,
         language: 'en',
         ua: 'Mozilla/5.0'
@@ -26,6 +28,7 @@ describe('kargo adapter tests', function() {
       site: {
         domain: domain,
         mobile: 0,
+        page: topUrl,
         publisher: {
           domain: domain
         },
@@ -453,6 +456,57 @@ describe('kargo adapter tests', function() {
         user: { key: 'value' }
       }
       );
+    });
+
+    it('clones ortb2 and removes user.ext.eids without mutating original input', function () {
+      const ortb2WithEids = {
+        user: {
+          ext: {
+            eids: [{ source: 'adserver.org', uids: [{ id: 'abc', atype: 1 }] }],
+            other: 'data'
+          },
+          gender: 'M'
+        },
+        site: {
+          domain: 'example.com',
+          page: 'https://example.com/page'
+        },
+        source: {
+          tid: 'test-tid'
+        }
+      };
+
+      const expectedClonedOrtb2 = {
+        user: {
+          ext: {
+            other: 'data'
+          },
+          gender: 'M'
+        },
+        site: {
+          domain: 'example.com',
+          page: 'https://example.com/page'
+        },
+        source: {
+          tid: 'test-tid'
+        }
+      };
+
+      const testBid = {
+        ...minimumBidParams,
+        ortb2: utils.deepClone(ortb2WithEids)
+      };
+
+      const payload = getPayloadFromTestBids([testBid]);
+
+      // Confirm eids were removed from the payload
+      expect(payload.ext.ortb2.user.ext.eids).to.be.undefined;
+
+      // Confirm original object was not mutated
+      expect(testBid.ortb2.user.ext.eids).to.exist.and.be.an('array');
+
+      // Confirm the rest of the ortb2 object is intact
+      expect(payload.ext.ortb2).to.deep.equal(expectedClonedOrtb2);
     });
 
     it('copies the refererInfo object from bidderRequest if present', function() {

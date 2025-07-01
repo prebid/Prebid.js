@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject, generateUUID } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject, generateUUID, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -300,32 +300,18 @@ function onTimeout(timeoutData) {
 
 function getExtensions(ortb2, refererInfo) {
   const ext = {};
+
   if (ortb2) {
-    ext.ortb2 = JSON.parse(JSON.stringify(ortb2));
-    if (ext.ortb2.user && ext.ortb2.user.ext) {
+    ext.ortb2 = deepClone(ortb2);
+    if (ext.ortb2.user?.ext) {
       delete ext.ortb2.user.ext.eids;
-      delete ext.ortb2.user.ext.consent;
-    }
-    if (ext.ortb2.device) {
-      delete ext.ortb2.device.sua;
-      delete ext.ortb2.device.w;
-      delete ext.ortb2.device.h;
-    }
-    if (ext.ortb2.regs && ext.ortb2.regs.ext) {
-      delete ext.ortb2.regs.ext.gdpr;
-    }
-    if (ext.ortb2.site) {
-      delete ext.ortb2.site.cat;
-      delete ext.ortb2.site.page;
-    }
-    if (ext.refererInfo) {
-      delete ext.refererInfo.location;
-      delete ext.refererInfo.page;
     }
   }
+
   if (refererInfo) {
     ext.refererInfo = refererInfo;
   }
+
   return ext;
 }
 
