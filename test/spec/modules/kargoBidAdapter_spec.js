@@ -1916,13 +1916,7 @@ describe('kargo adapter tests', function() {
       sandbox.stub(spec, '_getCrb').callsFake(function() { return crb; });
 
       // Makes the seed in the URLs predictable
-      sandbox.stub(crypto, 'getRandomValues').callsFake(function (buf) {
-        var bytes = [50, 5, 232, 133, 141, 55, 49, 57, 244, 126, 248, 44, 255, 38, 128, 0];
-        for (var i = 0; i < bytes.length; i++) {
-          buf[i] = bytes[i];
-        }
-        return buf;
-      });
+      sandbox.stub(utils, 'generateUUID').returns('3205e885-8d37-4139-b47e-f82cff268000');
     });
 
     it('returns user syncs when an ID is present', function() {

@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, logError, isPlainObject, generateUUID } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -260,7 +260,7 @@ function interpretResponse(response, bidRequest) {
 
 function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   const syncs = [];
-  const seed = _generateRandomUUID();
+  const seed = generateUUID();
   const clientId = getClientId();
 
   var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
@@ -329,22 +329,6 @@ function getExtensions(ortb2, refererInfo) {
   return ext;
 }
 
-function _generateRandomUUID() {
-  try {
-    // crypto.getRandomValues is supported everywhere but Opera Mini for years
-    var buffer = new Uint8Array(16);
-    crypto.getRandomValues(buffer);
-    buffer[6] = (buffer[6] & ~176) | 64;
-    buffer[8] = (buffer[8] & ~64) | 128;
-    var hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
-      return ('00' + x.toString(16)).slice(-2);
-    }).join('');
-    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
-  } catch (e) {
-    return '';
-  }
-}
-
 function _getCrb() {
   let localStorageCrb = getCrbFromLocalStorage();
   if (Object.keys(localStorageCrb).length) {
@@ -355,7 +339,7 @@ function _getCrb() {
 
 function _getSessionId() {
   if (!sessionId) {
-    sessionId = _generateRandomUUID();
+    sessionId = generateUUID();
   }
   return sessionId;
 }
