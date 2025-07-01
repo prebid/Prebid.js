@@ -279,7 +279,7 @@ describe('RTBHouseAdapter', () => {
       const data = JSON.parse(request.data);
       expect(data.imp[0].ext.gpid).to.equal('example-gpid');
     });
-    
+
     it('should not include imp[].ext.ae set at impression level when provided', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].ortb2Imp.ext.ae = 1;
