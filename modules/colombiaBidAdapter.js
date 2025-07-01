@@ -1,3 +1,4 @@
+import { ajax } from '../src/ajax.js';
 import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -114,8 +115,8 @@ export const spec = {
     }
     if (!ENDPOINT_BIDWON) return;
     const payload = {};
-    payload.bidNotifyType = 1,
-    payload.evt = bid.ext && bid.ext.evtData,
+    payload.bidNotifyType = 1;
+    payload.evt = bid.ext && bid.ext.evtData;
 
     ajax(ENDPOINT_BIDWON, null, JSON.stringify(payload), {
       method: 'POST',
