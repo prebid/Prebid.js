@@ -1,1 +1,1 @@
-Go read AGENTS.md and CONTRIBUTING.md and PR_REVIEW.md
+C:/Users/pmccann/Documents/GitHub/Prebid.js/AGENTS.md
