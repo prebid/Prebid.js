@@ -67,8 +67,7 @@ const converter = ortbConverter({
     let dctr = origDctr;
 
     // Additive dctr logic: append IAS brand safety data if present
-    const ortb2Data = bidRequest?.ortb2 || {};
-    const iasBrandSafety = ortb2Data?.site?.ext?.data?.['ias-brand-safety'];
+    const iasBrandSafety = bidRequest?.ortb2?.site?.ext?.data?.['ias-brand-safety'] || {};
     const iasDctr = (typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length)
       ? Object.entries(iasBrandSafety)
         .map(([key, value]) => `${key}=${value}`)
