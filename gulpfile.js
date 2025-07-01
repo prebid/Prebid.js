@@ -39,6 +39,8 @@ const TerserPlugin = require('terser-webpack-plugin');
 
 const {precompile, babelPrecomp} = require('./gulp.precompilation.js');
 
+const TEST_CHUNKS = 4;
+
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
   'pre1api'
@@ -442,7 +444,7 @@ function runKarma(options, done) {
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
   const env = Object.assign({}, options.env, process.env);
   if (!env.TEST_CHUNKS) {
-    env.TEST_CHUNKS = '4';
+    env.TEST_CHUNKS = TEST_CHUNKS;
   }
   const child = fork('./karmaRunner.js', null, {
     env
@@ -466,9 +468,13 @@ function testCoverage(done) {
     file: argv.file,
     env: {
       NODE_OPTIONS: '--max-old-space-size=8096',
-      TEST_CHUNKS: '1'
+      TEST_CHUNKS
     }
   }, done);
+}
+
+function mergeCoverage() {
+  return execaTask(`npx lcov-result-merger 'build/coverage/chunks/*/*.info' build/coverage/lcov.info`)();
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
@@ -571,7 +577,7 @@ gulp.task('test-only', gulp.series(precompile(), test));
 gulp.task('test-all-features-disabled', gulp.series(precompile({disableFeatures: require('./features.json')}), testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false})));
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
-gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
+gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage, mergeCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
