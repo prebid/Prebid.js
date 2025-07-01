@@ -69,12 +69,12 @@ const converter = ortbConverter({
     // Additive dctr logic: append IAS brand safety data if present
     const ortb2Data = bidRequest?.ortb2 || {};
     const iasBrandSafety = ortb2Data?.site?.ext?.data?.['ias-brand-safety'];
-    let iasDctr = '';
-    if (iasBrandSafety && typeof iasBrandSafety === 'object') {
-      iasDctr = Object.entries(iasBrandSafety)
+    const iasDctr = (typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length)
+      ? Object.entries(iasBrandSafety)
         .map(([key, value]) => `${key}=${value}`)
-        .join('|');
-    }
+        .join('|')
+      : '';
+
     if (iasDctr) {
       dctr = dctr ? `${dctr}|${iasDctr}` : iasDctr;
     }
