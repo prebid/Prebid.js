@@ -84,19 +84,23 @@ describe('LogicadAdapter', function () {
             name: 'cd.ladsp.com'
           }
         ]
+      },
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'exchange1.com',
+                sid: '1234',
+                hp: 1
+              }
+            ]
+          }
+        }
       }
     },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'exchange1.com',
-          sid: '1234',
-          hp: 1
-        }
-      ]
-    }
   }];
   const nativeBidRequests = [{
     bidder: 'logicad',

@@ -1,7 +1,7 @@
 import { timestamp, logInfo } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { EVENTS, STATUS } from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 
 const URL = 'https://analytics.adnuntius.com/prebid';
@@ -63,7 +63,7 @@ const adnAnalyticsAdapter = Object.assign(adapter({url: '', analyticsType: 'endp
         logInfo('ADN_BID_RESPONSE:', args);
 
         const bidResp = cache.auctions[args.auctionId].bids[args.requestId];
-        bidResp.isBid = args.getStatusCode() === STATUS.GOOD;
+        bidResp.isBid = true;
         bidResp.width = args.width;
         bidResp.height = args.height;
         bidResp.cpm = args.cpm;
@@ -401,6 +401,7 @@ function getBidAdUnits() {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adnAnalyticsAdapter,
+  gvlid: 855,
   code: 'adnuntius'
 });
 

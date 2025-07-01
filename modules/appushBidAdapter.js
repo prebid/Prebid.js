@@ -6,6 +6,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'appush';
+const GVLID = 879;
 const AD_URL = 'https://hb.appush.com/pbjs';
 
 function isBidResponseValid(bid) {
@@ -27,7 +28,7 @@ function isBidResponseValid(bid) {
 
 function getPlacementReqData(bid) {
   const { params, bidId, mediaTypes } = bid;
-  const schain = bid.schain || {};
+  const schain = bid?.ortb2?.source?.ext?.schain || {};
   const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
 
@@ -94,6 +95,7 @@ function getBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid = {}) => {

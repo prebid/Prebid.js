@@ -67,7 +67,8 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
       queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
-      queryString = tryAppendQueryString(queryString, 'schain', spec.serializeSupplyChain(bidRequest.schain || []))
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      queryString = tryAppendQueryString(queryString, 'schain', spec.serializeSupplyChain(schain || []))
 
       const adFormatIDs = pickAdFormats(bidRequest)
       if (adFormatIDs && adFormatIDs.length > 0) {

@@ -132,8 +132,9 @@ export const spec = {
     }
 
     // Schain
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
     // Currency
     payload.currency_code = CURRENCY;
