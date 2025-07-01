@@ -524,16 +524,6 @@ function getImpression(bid) {
     }
   }
 
-  // Remove tid and gpid from imp.ext.ortb2Imp.ext if they exist
-  if (
-    imp.ext &&
-    imp.ext.ortb2Imp &&
-    imp.ext.ortb2Imp.ext
-  ) {
-    delete imp.ext.ortb2Imp.ext.tid;
-    delete imp.ext.ortb2Imp.ext.gpid;
-  }
-
   return imp
 }
 
