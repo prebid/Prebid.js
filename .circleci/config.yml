@@ -59,7 +59,7 @@ aliases:
     - checkout
     - restore_cache: *restore_dep_cache
     - restore_cache: *restore_babel_cache
-    - run: npm install
+    - run: npm ci --prefer-offline
     - save_cache: *save_dep_cache
     - save_cache: *save_babel_cache
     - run: *install
