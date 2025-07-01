@@ -39,7 +39,6 @@ const OPEN_AUCTION_DEAL_ID = '-1';
 const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
-// todo: input profileId and profileVersionId ; defaults to empty string
 const DEFAULT_PUBLISHER_ID = null;
 const DEFAULT_PROFILE_ID = '';
 const DEFAULT_PROFILE_VERSION_ID = '';
