@@ -5,6 +5,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'luponmedia';
+const GVLID = 1132;
 const keyIdRegex = /^uid(?:@[\w-]+)?_.*$/;
 
 const buildServerUrl = (keyId) => {
@@ -69,6 +70,7 @@ export const converter = ortbConverter({
 });
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
     return keyIdRegex.test(bid?.params?.keyId);

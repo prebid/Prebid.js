@@ -81,8 +81,9 @@ function getSource(validBidRequests, bidderRequest) {
   let source = {
     tid: bidderRequest?.ortb2?.source?.tid,
   };
-  if (validBidRequests[0].schain) {
-    utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
+  const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    utils.deepSetValue(source, 'ext.schain', schain);
   }
   return source;
 }
@@ -107,13 +108,14 @@ function getUser(bidderRequest, firstPartyData) {
     utils.deepSetValue(user, 'ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
-  if (utils.isStr(utils.deepAccess(bidderRequest, 'bids.0.userId.tdid'))) {
-    user.buyeruid = bidderRequest.bids[0].userId.tdid;
-  }
-
   var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
   if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
+
+    const tdid = eids.find(eid => eid.source == 'adserver.org')?.uids?.[0]?.id;
+    if (tdid) {
+      user.buyeruid = tdid
+    }
   }
 
   utils.mergeDeep(user, firstPartyData.user)

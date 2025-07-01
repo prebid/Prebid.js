@@ -743,14 +743,20 @@ describe('teadsBidAdapter', () => {
 
     it('should add schain info to payload if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{
-            asi: 'example.com',
-            sid: '00001',
-            hp: 1
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [{
+                  asi: 'example.com',
+                  sid: '00001',
+                  hp: 1
+                }]
+              }
+            }
+          }
         }
       });
 
@@ -921,6 +927,7 @@ describe('teadsBidAdapter', () => {
           for (const userId in userIdModules) {
             expect(payload, userId).not.to.have.property(userId);
           }
+          expect(payload['eids']).to.deep.equal([])
         });
 
         it(`should not add param to payload if user id field is absent`, function () {
@@ -930,15 +937,17 @@ describe('teadsBidAdapter', () => {
           for (const userId in userIdModules) {
             expect(payload, userId).not.to.have.property(userId);
           }
+          expect(payload['eids']).to.deep.equal([])
         });
 
         it(`should not add param to payload if user id is enabled but there is no value`, function () {
+          const userIdAsEids = [
+            toEid('idl_env', ''),
+            toEid('pubcid.org', 'publisherFirstPartyViewerId-id')
+          ]
           const bidRequest = {
             ...baseBidRequest,
-            userIdAsEids: [
-              toEid('idl_env', ''),
-              toEid('pubcid.org', 'publisherFirstPartyViewerId-id')
-            ]
+            userIdAsEids
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -946,6 +955,7 @@ describe('teadsBidAdapter', () => {
 
           expect(payload).not.to.have.property('liveRampId');
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
+          expect(payload['eids']).to.deep.equal(userIdAsEids)
         });
 
         it(`should add userId param to payload for each enabled user id system`, function () {
@@ -970,6 +980,7 @@ describe('teadsBidAdapter', () => {
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
           expect(payload['merkleId']).to.equal('merkleId-id');
           expect(payload['kinessoId']).to.equal('kinessoId-id');
+          expect(payload['eids']).to.deep.equal(Object.values(userIdModules))
         });
       })
 
