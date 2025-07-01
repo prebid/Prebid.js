@@ -102,6 +102,45 @@ export const spec = {
       utils.logError(error);
     }
     return bidResponses;
+  },
+  onBidWon: function (bid) {
+    let ENDPOINT_BIDWON = null;
+    if (bid.eventTrackers && bid.eventTrackers.length) {
+      const matched = bid.eventTrackers.find(tracker => tracker.event === 500);
+      if (matched && matched.url) {
+        ENDPOINT_BIDWON = matched.url;
+      }
+    }
+    if (!ENDPOINT_BIDWON) return;
+    const payload = {};
+    payload.bidNotifyType = 1,
+    payload.evt = bid.ext && bid.ext.evtData,
+
+    ajax(ENDPOINT_BIDWON, null, JSON.stringify(payload), {
+      method: 'POST',
+      withCredentials: false
+    });
+  },
+
+  onTimeout: function (timeoutData) {
+    if (timeoutData === null || !timeoutData.length) {
+      return;
+    }
+    let pubAdCodes = [];
+    timeoutData.forEach(data => {
+      if (data && data.ortb2Imp && data.ortb2Imp.ext && typeof data.ortb2Imp.ext.gpid === 'string') {
+        pubAdCodes.push(data.ortb2Imp.ext.gpid.split('#')[0]);
+      };
+    });
+    const pubAdCodesString = pubAdCodes.join(',');
+    const payload = {};
+    payload.bidNotifyType = 2;
+    payload.pubAdCodeNames = pubAdCodesString;
+
+    ajax(ENDPOINT_TIMEOUT, null, JSON.stringify(payload), {
+      method: 'POST',
+      withCredentials: false
+    });
   }
 }
 registerBidder(spec);
