@@ -83,7 +83,7 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const args = ['eslint'];
+  const args = ['eslint', '--cache', '--cache-strategy', 'content'];
   if (!argv.nolintfix) {
     args.push('--fix');
   }
