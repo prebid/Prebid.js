@@ -1188,6 +1188,11 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     if (ipv6) {
       deepSetValue(r, 'device.ipv6', ipv6);
     }
+
+    const geo = fpd.device.geo;
+    if (geo) {
+      deepSetValue(r, 'device.geo', geo);
+    }
   }
 
   // regulations from ortb2
@@ -1275,7 +1280,12 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
 
-  return PROVIDERS.filter(provider => userIds[provider]);
+  return PROVIDERS.filter(provider => {
+    if (provider === 'lipbid') {
+      return deepAccess(userIds, 'lipb.lipbid');
+    }
+    return userIds[provider];
+  });
 }
 
 /**
