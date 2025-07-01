@@ -52,20 +52,6 @@ function initializeClient(configParams) {
     timeout: configParams.ajaxTimeout ?? DEFAULT_AJAX_TIMEOUT
   }
 
-  let idCookieSettings
-  if (configParams.fpid != null) {
-    const fpidConfig = configParams.fpid
-    let source
-    if (fpidConfig.strategy === 'html5') {
-      source = 'local_storage'
-    } else {
-      source = fpidConfig.strategy
-    }
-    idCookieSettings = { idCookieSettings: { type: 'provided', source, key: fpidConfig.name } };
-  } else {
-    idCookieSettings = {}
-  }
-
   function loadConsent() {
     const consent = {}
     const usPrivacyString = uspDataHandler.getConsentData();
@@ -93,7 +79,6 @@ function initializeClient(configParams) {
     consent,
     partnerCookies,
     collectSettings,
-    ...idCookieSettings,
     resolveSettings
   })
 

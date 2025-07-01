@@ -183,21 +183,27 @@ describe('ApacdexBidAdapter', function () {
       userSync.canBidderRegisterSync.restore();
     });
     let bidRequest = [{
-      'schain': {
-        'ver': '1.0',
-        'complete': 1,
-        'nodes': [
-          {
-            'asi': 'indirectseller.com',
-            'sid': '00001',
-            'hp': 1
-          },
-          {
-            'asi': 'indirectseller-2.com',
-            'sid': '00002',
-            'hp': 0
-          },
-        ]
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
+              'ver': '1.0',
+              'complete': 1,
+              'nodes': [
+                {
+                  'asi': 'indirectseller.com',
+                  'sid': '00001',
+                  'hp': 1
+                },
+                {
+                  'asi': 'indirectseller-2.com',
+                  'sid': '00002',
+                  'hp': 0
+                },
+              ]
+            }
+          }
+        }
       },
       'bidder': 'apacdex',
       'params': {
@@ -314,7 +320,7 @@ describe('ApacdexBidAdapter', function () {
     })
     it('should return a properly formatted request with schain defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].schain)
+      expect(bidRequests.data.schain).to.deep.equal(bidRequest[0].ortb2.source.ext.schain)
     });
     it('should return a properly formatted request with eids defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
