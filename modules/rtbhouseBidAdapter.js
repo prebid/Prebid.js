@@ -165,14 +165,12 @@ function mapImpression(slot, bidderRequest) {
     imp.bidfloor = bidfloor;
   }
 
-  if (imp.ext?.ae) {
-    delete imp.ext.ae;
-  }
-
-  const tid = deepAccess(slot, 'ortb2Imp.ext.tid');
-  if (tid) {
-    imp.ext = imp.ext || {};
-    imp.ext.tid = tid;
+  const ext = deepAccess(slot, 'ortb2Imp.ext');
+  if (ext) {
+    imp.ext = deepClone(ext);
+    if (imp.ext.ae) {
+      delete imp.ext.ae;
+    }
   }
 
   return imp;

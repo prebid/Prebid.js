@@ -88,7 +88,8 @@ describe('RTBHouseAdapter', () => {
           'transactionId': 'example-transaction-id',
           'ortb2Imp': {
             'ext': {
-              'tid': 'ortb2Imp-transaction-id-1'
+              'tid': 'ortb2Imp-transaction-id-1',
+              'gpid': 'example-gpid'
             }
           },
           'schain': {
@@ -270,6 +271,21 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.imp[0].ext.tid).to.equal('ortb2Imp-transaction-id-1');
+    });
+
+    it('should include impression level GPID when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.gpid).to.equal('example-gpid');
+    });
+    
+    it('should not include imp[].ext.ae set at impression level when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].ortb2Imp.ext.ae = 1;
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.ae).to.be.undefined;
     });
 
     it('should not include invalid schain', () => {
