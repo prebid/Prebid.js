@@ -83,7 +83,7 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const args = ['eslint'];
+  const args = ['eslint', '--cache', '--cache-strategy', 'content'];
   if (!argv.nolintfix) {
     args.push('--fix');
   }
@@ -165,8 +165,12 @@ function makeDevpackPkg(config = webpackConfig) {
       mode: 'development'
     })
 
-    const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/'});
-
+    const babelConfig = require('./babelConfig.js')({
+      disableFeatures: helpers.getDisabledFeatures(), 
+      prebidDistUrlBase: argv.distUrlBase || '/build/dev/',
+      ES5: argv.ES5 // Pass ES5 flag to babel config
+    });
+    
     // update babel config to set local dist url
     cloned.module.rules
       .flatMap((rule) => rule.use)
