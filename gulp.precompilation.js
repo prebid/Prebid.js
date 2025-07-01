@@ -31,7 +31,9 @@ function babelPrecomp({distUrlBase = null, disableFeatures = null, dev = false} 
       return gulp.src(helpers.getSourcePatterns(), {base: '.', since: gulp.lastRun(precompile)})
         .pipe(sourcemaps.init())
         .pipe(babel(babelConfig))
-        .pipe(sourcemaps.write('.'))
+        .pipe(sourcemaps.write('.', {
+          sourceRoot: path.relative(helpers.getPrecompiledPath(), path.resolve('.'))
+        }))
         .pipe(gulp.dest(helpers.getPrecompiledPath()));
     }
     PRECOMP_TASKS.set(key, precompile)
