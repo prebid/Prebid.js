@@ -1,1 +1,1 @@
-C:/Users/pmccann/Documents/GitHub/Prebid.js/AGENTS.md
+./AGENTS.md
