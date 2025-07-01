@@ -58,7 +58,7 @@ function newPluginsArray(browserstack) {
   return plugins;
 }
 
-function setReporters(karmaConf, codeCoverage, browserstack) {
+function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
   // In browserstack, the default 'progress' reporter floods the logs.
   // The karma-spec-reporter reports failures more concisely
   if (browserstack) {
@@ -74,7 +74,7 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
   if (codeCoverage) {
     karmaConf.reporters.push('coverage');
     karmaConf.coverageReporter = {
-      dir: 'build/coverage',
+      dir: `build/coverage/chunks/${chunkNo}`,
       reporters: [
         { type: 'lcov', subdir: '.' }
       ]
@@ -112,7 +112,7 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
+module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures, chunkNo) {
   var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
   if (file) {
@@ -171,16 +171,16 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 3e5, // default 2000
-    browserNoActivityTimeout: 3e5, // default 10000
+    browserDisconnectTimeout: 1e5, // default 2000
+    browserNoActivityTimeout: 1e5, // default 10000
     captureTimeout: 3e5, // default 60000,
-    browserDisconnectTolerance: 3,
+    browserDisconnectTolerance: 1,
     concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins
   };
 
-  setReporters(config, codeCoverage, browserstack);
+  setReporters(config, codeCoverage, browserstack, chunkNo);
   setBrowsers(config, browserstack);
   return config;
 }

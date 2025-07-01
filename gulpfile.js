@@ -6,8 +6,7 @@ var argv = require('yargs').argv;
 var gulp = require('gulp');
 var PluginError = require('plugin-error');
 var fancyLog = require('fancy-log');
-var express = require('express');
-var http = require('http');
+var connect = require('gulp-connect');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var gulpClean = require('gulp-clean');
@@ -40,6 +39,8 @@ const INTEG_SERVER_HOST = argv.host ? argv.host : 'localhost';
 const INTEG_SERVER_PORT = 4444;
 const { spawn, fork } = require('child_process');
 const TerserPlugin = require('terser-webpack-plugin');
+
+const TEST_CHUNKS = 4;
 
 // these modules must be explicitly listed in --modules to be included in the build, won't be part of "all" modules
 var explicitModules = [
@@ -84,7 +85,7 @@ function lint(done) {
   if (argv.nolint) {
     return done();
   }
-  const args = ['eslint'];
+  const args = ['eslint', '--cache', '--cache-strategy', 'content'];
   if (!argv.nolintfix) {
     args.push('--fix');
   }
@@ -103,9 +104,12 @@ function viewCoverage(done) {
   var coveragePort = 1999;
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
 
-  const app = express();
-  app.use(express.static('build/coverage/lcov-report'));
-  http.createServer(app).listen(coveragePort);
+  connect.server({
+    port: coveragePort,
+    root: 'build/coverage/lcov-report',
+    livereload: false,
+    debug: true
+  });
   opens('http://' + mylocalhost + ':' + coveragePort);
   done();
 };
@@ -163,7 +167,11 @@ function makeDevpackPkg(config = webpackConfig) {
       mode: 'development'
     })
 
-    const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/'});
+    const babelConfig = require('./babelConfig.js')({
+      disableFeatures: helpers.getDisabledFeatures(),
+      prebidDistUrlBase: argv.distUrlBase || '/build/dev/',
+      ES5: argv.ES5 // Pass ES5 flag to babel config
+    });
 
     // update babel config to set local dist url
     cloned.module.rules
@@ -172,7 +180,8 @@ function makeDevpackPkg(config = webpackConfig) {
       .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
 
     return prebidSource(cloned)
-      .pipe(gulp.dest('build/dev'));
+      .pipe(gulp.dest('build/dev'))
+      .pipe(connect.reload());
   }
 }
 
@@ -418,7 +427,7 @@ function runKarma(options, done) {
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
   const env = Object.assign({}, options.env, process.env);
   if (!env.TEST_CHUNKS) {
-    env.TEST_CHUNKS = '4';
+    env.TEST_CHUNKS = TEST_CHUNKS;
   }
   const child = fork('./karmaRunner.js', null, {
     env
@@ -442,9 +451,13 @@ function testCoverage(done) {
     file: argv.file,
     env: {
       NODE_OPTIONS: '--max-old-space-size=8096',
-      TEST_CHUNKS: '1'
+      TEST_CHUNKS
     }
   }, done);
+}
+
+function mergeCoverage() {
+  return execaTask(`npx lcov-result-merger 'build/coverage/chunks/*/*.info' build/coverage/lcov.info`)();
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
@@ -479,17 +492,28 @@ function startIntegServer(dev = false) {
 }
 
 function startLocalServer(options = {}) {
-  const app = express();
-  app.use(function (req, res, next) {
-    res.setHeader('Ad-Auction-Allowed', 'True');
-    next();
+  connect.server({
+    https: argv.https,
+    port: port,
+    host: INTEG_SERVER_HOST,
+    root: './',
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
   });
-  app.use(express.static('./'));
-  http.createServer(app).listen(port, INTEG_SERVER_HOST);
 }
 
 // Watch Task with Live Reload
 function watchTaskMaker(options = {}) {
+  if (options.livereload == null) {
+    options.livereload = true;
+  }
   options.alsoWatch = options.alsoWatch || [];
 
   return function watch(done) {
@@ -501,7 +525,7 @@ function watchTaskMaker(options = {}) {
       'modules/**/*.js',
     ].concat(options.alsoWatch));
 
-    startLocalServer();
+    startLocalServer(options);
 
     mainWatcher.on('all', options.task());
     done();
@@ -509,7 +533,7 @@ function watchTaskMaker(options = {}) {
 }
 
 const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({task: () => gulp.series('build-bundle-dev')});
+const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
 
 // support tasks
 gulp.task(lint);
@@ -533,7 +557,7 @@ gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
-gulp.task('test-coverage', gulp.series(clean, testCoverage));
+gulp.task('test-coverage', gulp.series(clean, testCoverage, mergeCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
