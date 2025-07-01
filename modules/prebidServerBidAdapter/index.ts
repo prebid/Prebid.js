@@ -140,6 +140,10 @@ type S2SConfig = {
      * If true, enable gzip compression of outgoing requests.
      */
     endpointCompression?: boolean
+    /**
+     * If true, exclude ad units that have no bidders defined.
+     */
+    filterBidderlessCalls?: boolean;
 }
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
@@ -154,7 +158,8 @@ export const s2sDefaultConfig: Partial<S2SConfig> = {
       {event: 1, methods: [1, 2]}
     ],
   },
-  maxTimeout: 1500
+  maxTimeout: 1500,
+  filterBidderlessCalls: false
 };
 
 config.setDefaults({
