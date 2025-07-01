@@ -136,6 +136,10 @@ type S2SConfig = {
      * Base value for imp.native.request
      */
     ortbNative?: Partial<NativeRequest>;
+    /**
+     * If true, enable gzip compression of outgoing requests.
+     */
+    endpointCompression?: boolean
 }
 
 export const s2sDefaultConfig: Partial<S2SConfig> = {
