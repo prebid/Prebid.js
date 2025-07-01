@@ -120,7 +120,6 @@ function makeOpenRtbRequest(validBidRequests, bidderRequest) {
       const rect = getBoundingClientRect(bid.adUnitCode) || {};
       const winDims = getWinDimensions();
       const percentInView = getPercentInView(rect, winDims) || 0;
-      
       viewability = {
         percentInView: percentInView,
         inViewport: percentInView > 0,
