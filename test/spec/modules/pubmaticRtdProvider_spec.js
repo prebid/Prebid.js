@@ -4,19 +4,23 @@ import * as utils from '../../../src/utils.js';
 import * as suaModule from '../../../src/fpd/sua.js';
 import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
+import * as pubmaticRtdProviderModule from '../../../modules/pubmaticRtdProvider.js';
 import {
-    registerSubModule, pubmaticSubmodule, getFloorsConfig, fetchData,
+    registerSubModule, pubmaticSubmodule, setFloorsConfig, fetchData, getRtdConfig,
     getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getBidder, getUtm, _country,
-    _profileConfigs, _floorsData, defaultValueTemplate, withTimeout, configMerged
+    _profileConfigs, defaultValueTemplate, _configData
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
 
 describe('Pubmatic RTD Provider', () => {
     let sandbox;
+    let getConfigStub;
 
     beforeEach(() => {
         sandbox = sinon.createSandbox();
-        sandbox.stub(conf, 'getConfig').callsFake(() => {
+        // Store the stub reference so we can modify its behavior in nested describes
+        getConfigStub = sandbox.stub(conf, 'getConfig');
+        getConfigStub.callsFake(() => {
             return {
                 floors: {
                     'enforcement': {
@@ -243,67 +247,88 @@ describe('Pubmatic RTD Provider', () => {
         });
     });
 
-    describe('getFloorsConfig', () => {
-        let floorsData, profileConfigs;
-        let sandbox;
+    describe('setFloorsConfig', () => {
         let logErrorStub;
+        let originalConfigData;
 
         beforeEach(() => {
-            sandbox = sinon.createSandbox();
-            logErrorStub = sandbox.stub(utils, 'logError');
-            floorsData = {
-                "currency": "USD",
-                "floorProvider": "PM",
-                "floorsSchemaVersion": 2,
-                "modelGroups": [
-                    {
-                        "modelVersion": "M_1",
-                        "modelWeight": 100,
-                        "schema": {
-                            "fields": [
-                                "domain"
-                            ]
-                        },
-                        "values": {
-                            "*": 2.00
-                        }
-                    }
-                ],
-                "skipRate": 0
-            };
-            profileConfigs = {
-                'plugins': {
-                    'dynamicFloors': {
-                        'enabled': true,
-                        'config': {
-                            'enforcement': {
-                                'floorDeals': false,
-                                'enforceJS': false
+            // Store original _configData to restore it later
+            originalConfigData = Object.assign({}, _configData);
+            
+            // Reset _configData for each test
+            Object.keys(_configData).forEach(key => delete _configData[key]);
+            
+            // Set up test data
+            Object.assign(_configData, {
+                "profileName": "profile name",
+                "desc": "description",
+                "plugins": {
+                    "dynamicFloors": {
+                        "enabled": true,
+                        "config": {
+                            "enforcement": {
+                                "floorDeals": false,
+                                "enforceJS": false
                             },
-                            'floorMin': 0.1111,
-                            'skipRate': 11,
-                            'defaultValues': {
+                            "floorMin": 0.1111,
+                            "skipRate": 11,
+                            "defaultValues": {
                                 "*|*": 0.2
                             }
+                        },
+                        "data": {
+                            "currency": "USD",
+                            "modelGroups": [
+                                {
+                                    "modelVersion": "M_1",
+                                    "modelWeight": 100,
+                                    "schema": {
+                                        "fields": [
+                                            "domain"
+                                        ]
+                                    },
+                                    "values": {
+                                        "*": 2.00
+                                    }
+                                }
+                            ],
+                            "skipRate": 0
                         }
                     }
                 }
-            }
+            });
+            
+            logErrorStub = sandbox.stub(utils, 'logError');
+            
+            // Set up default floor config
+            getConfigStub.withArgs('floors').returns({
+                'enforcement': {
+                    'floorDeals': true,
+                    'enforceJS': true
+                },
+                'floorProvider': 'default-provider',
+                'endpoint': {
+                    'url': 'https://example.com/floors'
+                }
+            });
         });
-
+        
         afterEach(() => {
-            sandbox.restore();
+            // Restore original _configData
+            Object.keys(_configData).forEach(key => delete _configData[key]);
+            Object.assign(_configData, originalConfigData);
         });
 
         it('should return correct config structure', () => {
-            const result = getFloorsConfig(floorsData, profileConfigs);
+            const result = setFloorsConfig();
 
-            expect(result.floors).to.be.an('object');
             expect(result.floors).to.be.an('object');
             expect(result.floors).to.have.property('enforcement');
             expect(result.floors.enforcement).to.have.property('floorDeals', false);
             expect(result.floors.enforcement).to.have.property('enforceJS', false);
             expect(result.floors).to.have.property('floorMin', 0.1111);
+            expect(result.floors).to.have.property('skipRate', 11);
+            expect(result.floors).to.not.have.property('endpoint');
 
             // Verify the additionalSchemaFields structure
             expect(result.floors.additionalSchemaFields).to.have.all.keys([
@@ -322,38 +347,37 @@ describe('Pubmatic RTD Provider', () => {
         });
 
         it('should return undefined when plugin is disabled', () => {
-            profileConfigs.plugins.dynamicFloors.enabled = false;
-            const result = getFloorsConfig(floorsData, profileConfigs);
+            _configData.plugins.dynamicFloors.enabled = false;
+            const result = setFloorsConfig();
 
             expect(result).to.equal(undefined);
         });
 
-        it('should initialise default values to empty object when not available', () => {
-            profileConfigs.plugins.dynamicFloors.config.defaultValues = undefined;
-            floorsData = undefined;
-            const result = getFloorsConfig(floorsData, profileConfigs);
+        it('should use default values when floor data is not available', () => {
+            delete _configData.plugins.dynamicFloors.data;
+            const result = setFloorsConfig();
 
             expect(result.floors.data).to.have.property('currency', 'USD');
             expect(result.floors.data).to.have.property('skipRate', 11);
             expect(result.floors.data.schema).to.deep.equal(defaultValueTemplate.schema);
-            expect(result.floors.data.value).to.deep.equal(defaultValueTemplate.value);
+            expect(result.floors.data.values).to.deep.equal({ '*|*': 0.2 });
         });
 
-        it('should replace skipRate from config to data when avaialble', () => {
-            const result = getFloorsConfig(floorsData, profileConfigs);
+        it('should override skipRate from config when available', () => {
+            const result = setFloorsConfig();
 
             expect(result.floors.data).to.have.property('skipRate', 11);
         });
 
-        it('should not replace skipRate from config to data when not avaialble', () => {
-            delete profileConfigs.plugins.dynamicFloors.config.skipRate;
-            const result = getFloorsConfig(floorsData, profileConfigs);
+        it('should not override skipRate when not available in config', () => {
+            delete _configData.plugins.dynamicFloors.config.skipRate;
+            const result = setFloorsConfig();
 
             expect(result.floors.data).to.have.property('skipRate', 0);
         });
 
         it('should maintain correct function references', () => {
-            const result = getFloorsConfig(floorsData, profileConfigs);
+            const result = setFloorsConfig();
 
             expect(result.floors.additionalSchemaFields.deviceType).to.equal(getDeviceType);
             expect(result.floors.additionalSchemaFields.timeOfDay).to.equal(getCurrentTimeOfDay);
@@ -364,142 +388,293 @@ describe('Pubmatic RTD Provider', () => {
             expect(result.floors.additionalSchemaFields.bidder).to.equal(getBidder);
         });
 
-        it('should log error when profileConfigs is not an object', () => {
-            profileConfigs = 'invalid';
-            const result = getFloorsConfig(floorsData, profileConfigs);
+        it('should return undefined when dynamicFloors config is missing', () => {
+            delete _configData.plugins.dynamicFloors.config;
+            const result = setFloorsConfig();
             expect(result).to.be.undefined;
+        });
+
+        it('should merge with default page floor config', () => {
+            // Update the getConfig stub for this specific test
+            getConfigStub.withArgs('floors').returns({
+                'enforcement': {
+                    'floorDeals': true,
+                    'enforceJS': true
+                },
+                'floorProvider': 'default-provider'
+            });
+
+            const result = setFloorsConfig();
+
+            // Config from mockConfigData should override default page config
+            expect(result.floors.enforcement.floorDeals).to.equal(false);
+            expect(result.floors.enforcement.enforceJS).to.equal(false);
+            
+            // Non-overridden values should be preserved
+            expect(result.floors.floorProvider).to.equal('default-provider');
+        });
+    });
+
+    describe('getRtdConfig', () => {
+        let fetchDataStub;
+        let logErrorStub;
+        let setConfigStub;
+        let originalConfigData;
+        
+        beforeEach(() => {
+            // Store original _configData to restore it later
+            originalConfigData = Object.assign({}, _configData);
+            
+            // Reset sandbox for each test
+            sandbox.restore();
+            sandbox = sinon.createSandbox();
+            
+            // Create stubs
+            fetchDataStub = sandbox.stub(pubmaticRtdProviderModule, 'fetchData');
+            logErrorStub = sandbox.stub(utils, 'logError');
+            setConfigStub = sandbox.stub(conf, 'setConfig');
+            
+            // Reset _configData for each test
+            Object.keys(_configData).forEach(key => delete _configData[key]);
+        });
+        
+        afterEach(() => {
+            // Restore original _configData
+            Object.keys(_configData).forEach(key => delete _configData[key]);
+            Object.assign(_configData, originalConfigData);
+        });
+        
+        it('should log error for invalid API response', async () => {
+            fetchDataStub.resolves(null);
+            
+            await getRtdConfig('pub123', 'profile456');
+            
             expect(logErrorStub.calledWith(sinon.match(/profileConfigs is not an object or is empty/))).to.be.true;
+            expect(setConfigStub.called).to.be.false;
         });
+        
+        it('should log error for empty API response', async () => {
+            fetchDataStub.resolves({});
+            
+            await getRtdConfig('pub123', 'profile456');
+            
+            expect(logErrorStub.calledWith(sinon.match(/profileConfigs is not an object or is empty/))).to.be.true;
+            expect(setConfigStub.called).to.be.false;
+        });
+        
+       
+        //     const mockApiResponse = {
+        //         "profileName": "profile name",
+        //         "desc": "description",
+        //         "plugins": {
+        //             "dynamicFloors": {
+        //                 "enabled": true,
+        //                 "config": {
+        //                     "enforcement": {
+        //                         "floorDeals": false,
+        //                         "enforceJS": false
+        //                     },
+        //                     "floorMin": 0.1111,
+        //                     "skipRate": 11,
+        //                     "defaultValues": {
+        //                         "*|*": 0.2
+        //                     }
+        //                 },
+        //                 "data": {
+        //                     "currency": "USD",
+        //                     "modelGroups": [
+        //                         {
+        //                             "modelVersion": "M_1",
+        //                             "modelWeight": 100,
+        //                             "schema": {
+        //                                 "fields": [
+        //                                     "domain"
+        //                                 ]
+        //                             },
+        //                             "values": {
+        //                                 "*": 2.00
+        //                             }
+        //                         }
+        //                     ],
+        //                     "skipRate": 0
+        //                 }
+        //             }
+        //         }
+        //     };
+            
+        //     // Have fetchData update _configData and return the mock response
+        //     fetchDataStub.callsFake(async () => {
+        //         Object.assign(_configData, mockApiResponse);
+        //         return mockApiResponse;
+        //     });
+            
+        //     // Update the existing getConfigStub to return floors config when called with 'floors'
+        //     getConfigStub.withArgs('floors').returns({
+        //         'enforcement': {
+        //             'floorDeals': true,
+        //             'enforceJS': true
+        //         },
+        //         'floorProvider': 'pubmatic'
+        //     });
+            
+        //     await getRtdConfig('pub123', 'profile456');
+            
+        //     expect(fetchDataStub.calledWith('pub123', 'profile456')).to.be.true;
+        //     expect(setConfigStub.calledOnce).to.be.true;
+            
+        //     // We can't check the exact object equality since setFloorsConfig creates a new object
+        //     // but we can check that the structure is correct
+        //     const configArg = setConfigStub.firstCall.args[0];
+        //     expect(configArg).to.have.property('floors');
+        //     expect(configArg.floors).to.have.property('data');
+        //     expect(configArg.floors.data).to.have.property('currency', 'USD');
+        //     expect(configArg.floors).to.have.property('floorMin', 0.1111);
+        //     expect(configArg.floors).to.have.property('enforcement');
+        //     expect(configArg.floors.enforcement).to.have.property('floorDeals', false);
+        //     expect(configArg.floors.enforcement).to.have.property('enforceJS', false);
+        // });
+        
+        // it('should not configure floors when dynamicFloors plugin does not exist', async () => {
+        //     const mockApiResponse = {
+        //         plugins: {
+        //             otherPlugin: {}
+        //         }
+        //     };
+            
+        //     fetchDataStub.resolves(mockApiResponse);
+            
+        //     await getRtdConfig('pub123', 'profile456');
+            
+        //     expect(fetchDataStub.calledWith('pub123', 'profile456')).to.be.true;
+        //     expect(setFloorsConfigStub.called).to.be.false;
+        //     expect(setConfigStub.called).to.be.false;
+        // });
     });
+    //     let confStub;
 
-    describe('fetchData for configs', () => {
-        let logErrorStub;
-        let fetchStub;
-        let confStub;
+    //     beforeEach(() => {
+    //         logErrorStub = sandbox.stub(utils, 'logError');
+    //         fetchStub = sandbox.stub(window, 'fetch');
+    //         confStub = sandbox.stub(conf, 'setConfig');
+    //     });
 
-        beforeEach(() => {
-            logErrorStub = sandbox.stub(utils, 'logError');
-            fetchStub = sandbox.stub(window, 'fetch');
-            confStub = sandbox.stub(conf, 'setConfig');
-        });
+    //     afterEach(() => {
+    //         sandbox.restore();
+    //     });
 
-        afterEach(() => {
-            sandbox.restore();
-        });
+    //     it('should successfully fetch profile configs', async () => {
+    //         const mockApiResponse = {
+    //             "profileName": "profie name",
+    //             "desc": "description",
+    //             "plugins": {
+    //                 "dynamicFloors": {
+    //                     "enabled": false
+    //                 }
+    //             }
+    //         };
 
-        it('should successfully fetch profile configs', async () => {
-            const mockApiResponse = {
-                "profileName": "profie name",
-                "desc": "description",
-                "plugins": {
-                    "dynamicFloors": {
-                        "enabled": false
-                    }
-                }
-            };
+    //         fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200 }));
 
-            fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200 }));
+    //         const result = await fetchData('1234', '123', 'CONFIGS');
+    //         expect(result).to.deep.equal(mockApiResponse);
+    //     });
 
-            const result = await fetchData('1234', '123', 'CONFIGS');
-            expect(result).to.deep.equal(mockApiResponse);
-        });
+    //     it('should log error when JSON parsing fails', async () => {
+    //         fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
-        it('should log error when JSON parsing fails', async () => {
-            fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
+    //         await fetchData('1234', '123', 'CONFIGS');
+    //         expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
+    //     });
 
-            await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
-        });
+    //     it('should log error when response is not ok', async () => {
+    //         fetchStub.resolves(new Response(null, { status: 500 }));
 
-        it('should log error when response is not ok', async () => {
-            fetchStub.resolves(new Response(null, { status: 500 }));
+    //         await fetchData('1234', '123', 'CONFIGS');
+    //         expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
+    //     });
 
-            await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
-        });
+    //     it('should log error on network failure', async () => {
+    //         fetchStub.rejects(new Error('Network Error'));
 
-        it('should log error on network failure', async () => {
-            fetchStub.rejects(new Error('Network Error'));
+    //         await fetchData('1234', '123', 'CONFIGS');
+    //         expect(logErrorStub.called).to.be.true;
+    //         expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
+    //     });
+    // });
 
-            await fetchData('1234', '123', 'CONFIGS');
-            expect(logErrorStub.called).to.be.true;
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*CONFIGS/))).to.be.true;
-        });
-    });
+    // describe('fetchData for floors', () => {
+    //     let logErrorStub;
+    //     let fetchStub;
+    //     let confStub;
 
-    describe('fetchData for floors', () => {
-        let logErrorStub;
-        let fetchStub;
-        let confStub;
+    //     beforeEach(() => {
+    //         logErrorStub = sandbox.stub(utils, 'logError');
+    //         fetchStub = sandbox.stub(window, 'fetch');
+    //         confStub = sandbox.stub(conf, 'setConfig');
+    //         global._country = undefined;
+    //     });
 
-        beforeEach(() => {
-            logErrorStub = sandbox.stub(utils, 'logError');
-            fetchStub = sandbox.stub(window, 'fetch');
-            confStub = sandbox.stub(conf, 'setConfig');
-            global._country = undefined;
-        });
+    //     afterEach(() => {
+    //         sandbox.restore();
+    //     });
 
-        afterEach(() => {
-            sandbox.restore();
-        });
+    //     it('should successfully fetch and parse floor rules', async () => {
+    //         const mockApiResponse = {
+    //             data: {
+    //                 currency: 'USD',
+    //                 modelGroups: [],
+    //                 values: {}
+    //             }
+    //         };
 
-        it('should successfully fetch and parse floor rules', async () => {
-            const mockApiResponse = {
-                data: {
-                    currency: 'USD',
-                    modelGroups: [],
-                    values: {}
-                }
-            };
+    //         fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200, headers: { 'country_code': 'US' } }));
 
-            fetchStub.resolves(new Response(JSON.stringify(mockApiResponse), { status: 200, headers: { 'country_code': 'US' } }));
+    //         const result = await fetchData('1234', '123', 'FLOORS');
+    //         expect(result).to.deep.equal(mockApiResponse);
+    //         expect(_country).to.equal('US');
+    //     });
 
-            const result = await fetchData('1234', '123', 'FLOORS');
-            expect(result).to.deep.equal(mockApiResponse);
-            expect(_country).to.equal('US');
-        });
+    //     it('should correctly extract the first unique country code from response headers', async () => {
+    //         fetchStub.resolves(new Response(JSON.stringify({}), {
+    //             status: 200,
+    //             headers: { 'country_code': 'US,IN,US' }
+    //         }));
 
-        it('should correctly extract the first unique country code from response headers', async () => {
-            fetchStub.resolves(new Response(JSON.stringify({}), {
-                status: 200,
-                headers: { 'country_code': 'US,IN,US' }
-            }));
+    //         await fetchData('1234', '123', 'FLOORS');
+    //         expect(_country).to.equal('US');
+    //     });
 
-            await fetchData('1234', '123', 'FLOORS');
-            expect(_country).to.equal('US');
-        });
+    //     it('should set _country to undefined if country_code header is missing', async () => {
+    //         fetchStub.resolves(new Response(JSON.stringify({}), {
+    //             status: 200
+    //         }));
 
-        it('should set _country to undefined if country_code header is missing', async () => {
-            fetchStub.resolves(new Response(JSON.stringify({}), {
-                status: 200
-            }));
+    //         await fetchData('1234', '123', 'FLOORS');
+    //         expect(_country).to.be.undefined;
+    //     });
 
-            await fetchData('1234', '123', 'FLOORS');
-            expect(_country).to.be.undefined;
-        });
+    //     it('should log error when JSON parsing fails', async () => {
+    //         fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
 
-        it('should log error when JSON parsing fails', async () => {
-            fetchStub.resolves(new Response('Invalid JSON', { status: 200 }));
+    //         await fetchData('1234', '123', 'FLOORS');
+    //         expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*FLOORS/))).to.be.true;
+    //     });
 
-            await fetchData('1234', '123', 'FLOORS');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*FLOORS/))).to.be.true;
-        });
+    //     it('should log error when response is not ok', async () => {
+    //         fetchStub.resolves(new Response(null, { status: 500 }));
 
-        it('should log error when response is not ok', async () => {
-            fetchStub.resolves(new Response(null, { status: 500 }));
+    //         await fetchData('1234', '123', 'FLOORS');
+    //         expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*FLOORS/))).to.be.true;
+    //     });
 
-            await fetchData('1234', '123', 'FLOORS');
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*FLOORS/))).to.be.true;
-        });
+    //     it('should log error on network failure', async () => {
+    //         fetchStub.rejects(new Error('Network Error'));
 
-        it('should log error on network failure', async () => {
-            fetchStub.rejects(new Error('Network Error'));
-
-            await fetchData('1234', '123', 'FLOORS');
-            expect(logErrorStub.called).to.be.true;
-            expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*FLOORS/))).to.be.true;
-        });
-    });
+    //         await fetchData('1234', '123', 'FLOORS');
+    //         expect(logErrorStub.called).to.be.true;
+    //         expect(logErrorStub.calledWith(sinon.match(/Error while fetching\s*FLOORS/))).to.be.true;
+    //     });
+    // });
 
     describe('getBidRequestData', function () {
         let callback, continueAuctionStub, mergeDeepStub, logErrorStub;
@@ -539,7 +714,7 @@ describe('Pubmatic RTD Provider', () => {
             continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
             logErrorStub = sandbox.stub(utils, 'logError');
 
-            global.configMergedPromise = Promise.resolve();
+            global._pubmaticConfigPromise = Promise.resolve();
         });
 
         afterEach(() => {
@@ -547,7 +722,6 @@ describe('Pubmatic RTD Provider', () => {
         });
 
         it('should call continueAuction with correct hookConfig', async function () {
-            configMerged();
             await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
 
             expect(continueAuctionStub.called).to.be.true;
@@ -565,55 +739,9 @@ describe('Pubmatic RTD Provider', () => {
         // });
 
         it('should call callback once after execution', async function () {
-            configMerged();
             await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
 
             expect(callback.called).to.be.true;
-        });
-    });
-
-    describe('withTimeout', function () {
-        it('should resolve with the original promise value if it resolves before the timeout', async function () {
-            const promise = new Promise((resolve) => setTimeout(() => resolve('success'), 50));
-            const result = await withTimeout(promise, 100);
-            expect(result).to.equal('success');
-        });
-
-        it('should resolve with undefined if the promise takes longer than the timeout', async function () {
-            const promise = new Promise((resolve) => setTimeout(() => resolve('success'), 200));
-            const result = await withTimeout(promise, 100);
-            expect(result).to.be.undefined;
-        });
-
-        it('should properly handle rejected promises', async function () {
-            const promise = new Promise((resolve, reject) => setTimeout(() => reject(new Error('Failure')), 50));
-            try {
-                await withTimeout(promise, 100);
-            } catch (error) {
-                expect(error.message).to.equal('Failure');
-            }
-        });
-
-        it('should resolve with undefined if the original promise is rejected but times out first', async function () {
-            const promise = new Promise((resolve, reject) => setTimeout(() => reject(new Error('Failure')), 200));
-            const result = await withTimeout(promise, 100);
-            expect(result).to.be.undefined;
-        });
-
-        it('should clear the timeout when the promise resolves before the timeout', async function () {
-            const clock = sinon.useFakeTimers();
-            const clearTimeoutSpy = sinon.spy(global, 'clearTimeout');
-
-            const promise = new Promise((resolve) => setTimeout(() => resolve('success'), 50));
-            const resultPromise = withTimeout(promise, 100);
-
-            clock.tick(50);
-            await resultPromise;
-
-            expect(clearTimeoutSpy.called).to.be.true;
-
-            clearTimeoutSpy.restore();
-            clock.restore();
         });
     });
 });

@@ -31,7 +31,6 @@ const CONSTANTS = Object.freeze({
   },
   ENDPOINTS: {
     BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
-    FLOORS: 'floors.json',
     CONFIGS: 'config.json'
   }
 });
@@ -59,22 +58,9 @@ export const defaultValueTemplate = {
     }
 };
 
-let initTime;
-let _fetchFloorRulesPromise = null; let _fetchConfigPromise = null;
-export let configMerged;
-// configMerged is a reference to the function that can resolve configMergedPromise whenever we want
-let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
+export let _pubmaticConfigPromise = null;
+export let _configData = {};
 export let _country;
-
-// Waits for a given promise to resolve within a timeout
-export function withTimeout(promise, ms) {
-    let timeout;
-    const timeoutPromise = new Promise((resolve) => {
-      timeout = setTimeout(() => resolve(undefined), ms);
-    });
-
-    return Promise.race([promise.finally(() => clearTimeout(timeout)), timeoutPromise]);
-}
 
 // Utility Functions
 export const getCurrentTimeOfDay = () => {
@@ -115,41 +101,35 @@ export const getUtm = () => {
   return urlParams && urlParams.toString().includes(CONSTANTS.UTM) ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE;
 }
 
-export const getFloorsConfig = (floorsData, profileConfigs) => {
-    if (!isPlainObject(profileConfigs) || isEmpty(profileConfigs)) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
-      return undefined;
-    }
+export const setFloorsConfig = () => {
+    const dynamicFloors = _configData?.plugins?.dynamicFloors;
 
-    // Floor configs from adunit / setconfig
-    const defaultFloorConfig = conf.getConfig('floors') ?? {};
-    if (defaultFloorConfig?.endpoint) {
-      delete defaultFloorConfig.endpoint;
-    }
-    // Plugin data from profile
-    const dynamicFloors = profileConfigs?.plugins?.dynamicFloors;
-
-    // If plugin disabled or config not present, return undefined
     if (!dynamicFloors?.enabled || !dynamicFloors?.config) {
       return undefined;
     }
 
-    let config = { ...dynamicFloors.config };
+    // Floor configs from adunit / setconfig
+    const defaultPageFloorConfig = conf.getConfig('floors') ?? {};
+    if (defaultPageFloorConfig?.endpoint) {
+      delete defaultPageFloorConfig.endpoint;
+    }
 
-    // default values provided by publisher on profile
-    const defaultValues = config.defaultValues ?? {};
+    let uiConfig = { ...dynamicFloors.config };
+
+    // default values provided by publisher on YM UI
+    const defaultValues = uiConfig.defaultValues ?? {};
     // If floorsData is not present, use default values
-    const finalFloorsData = floorsData ?? { ...defaultValueTemplate, values: { ...defaultValues } };
+    const finalFloorsData = dynamicFloors.data ?? { ...defaultValueTemplate, values: { ...defaultValues } };
 
-    delete config.defaultValues;
+    delete uiConfig.defaultValues;
     // If skiprate is provided in configs, overwrite the value in finalFloorsData
-    (config.skipRate !== undefined) && (finalFloorsData.skipRate = config.skipRate);
+    (uiConfig.skipRate !== undefined) && (finalFloorsData.skipRate = uiConfig.skipRate);
 
     // merge default configs from page, configs
     return {
         floors: {
-            ...defaultFloorConfig,
-            ...config,
+            ...defaultPageFloorConfig,
+            ...uiConfig,
             data: finalFloorsData,
             additionalSchemaFields: {
                 deviceType: getDeviceType,
@@ -164,26 +144,37 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
     };
 };
 
-export const fetchData = async (publisherId, profileId, type) => {
+export const getRtdConfig = async (publisherId, profileId) => {
+  const apiResponse = await fetchData(publisherId, profileId);
+
+  if (!isPlainObject(apiResponse) || isEmpty(apiResponse)) {
+    logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
+    return undefined;
+  } else if (apiResponse) {
+    // Check for each module in config
+    if (apiResponse.plugins?.dynamicFloors) {
+      conf.setConfig(setFloorsConfig());
+    }
+  }
+};
+
+export const fetchData = async (publisherId, profileId) => {
     try {
-      const endpoint = CONSTANTS.ENDPOINTS[type];
-      const baseURL = (type == 'FLOORS') ? `${CONSTANTS.ENDPOINTS.BASEURL}/floors` : CONSTANTS.ENDPOINTS.BASEURL;
-      const url = `${baseURL}/${publisherId}/${profileId}/${endpoint}`;
+      const url = `${CONSTANTS.ENDPOINTS.BASEURL}/${publisherId}/${profileId}/${CONSTANTS.ENDPOINTS.CONFIGS}`;
       const response = await fetch(url);
 
       if (!response.ok) {
-        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: Not ok`);
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: Not ok`);
         return;
       }
 
-      if (type === "FLOORS") {
-        const cc = response.headers?.get('country_code');
-        _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
-      }
+      const cc = response.headers?.get('country_code');
+      _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
+      _configData = await response.json();
 
-      return await response.json();
+      return _configData;
     } catch (error) {
-      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching ${type}: ${error}`);
+      logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: ${error}`);
     }
 };
 
@@ -194,7 +185,6 @@ export const fetchData = async (publisherId, profileId, type) => {
  * @returns {boolean}
  */
 const init = (config, _userConsent) => {
-    initTime = Date.now(); // Capture the initialization time
     const { publisherId, profileId } = config?.params || {};
 
     if (!publisherId || !isStr(publisherId) || !profileId || !isStr(profileId)) {
@@ -213,21 +203,7 @@ const init = (config, _userConsent) => {
       return false;
     }
 
-    _fetchFloorRulesPromise = fetchData(publisherId, profileId, "FLOORS");
-    _fetchConfigPromise = fetchData(publisherId, profileId, "CONFIGS");
-
-    _fetchConfigPromise.then(async (profileConfigs) => {
-      const auctionDelay = conf?.getConfig('realTimeData')?.auctionDelay || 300;
-      const maxWaitTime = 0.8 * auctionDelay;
-
-      const elapsedTime = Date.now() - initTime;
-      const remainingTime = Math.max(maxWaitTime - elapsedTime, 0);
-      const floorsData = await withTimeout(_fetchFloorRulesPromise, remainingTime);
-
-      const floorsConfig = getFloorsConfig(floorsData, profileConfigs);
-      floorsConfig && conf?.setConfig(floorsConfig);
-      configMerged();
-    });
+    _pubmaticConfigPromise = getRtdConfig(publisherId, profileId);
 
     return true;
 };
@@ -237,7 +213,7 @@ const init = (config, _userConsent) => {
  * @param {function} callback
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
-    configMergedPromise.then(() => {
+  _pubmaticConfigPromise.then(() => {
         const hookConfig = {
             reqBidsConfigObj,
             context: this,
