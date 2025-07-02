@@ -157,7 +157,6 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
     adslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
     keywords: deepAccess(bidRequest, 'ortb2Imp.ext.data.keywords', '', ''),
     gpid: deepAccess(bidRequest, 'ortb2Imp.ext.gpid', '', ''),
-    pbadslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot', '', ''),
   };
   return ext;
 }

@@ -138,8 +138,9 @@ export const spec = {
         if (criteoId) {
           serverRequest.cri_prebid = criteoId;
         }
-        if (request.schain) {
-          serverRequest.schain = JSON.stringify(request.schain);
+        const schain = deepAccess(request, 'ortb2.source.ext.schain');
+        if (schain) {
+          serverRequest.schain = JSON.stringify(schain);
         }
         if (deepAccess(request, 'params.lr_env')) {
           serverRequest.ats_envelope = request.params.lr_env;
@@ -256,7 +257,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid');
   const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
@@ -413,7 +414,7 @@ function getId(request, idType) {
  * @return Object OpenRTB request object
  */
 function openRtbRequest(bidRequests, bidderRequest) {
-  const schain = bidRequests[0].schain;
+  const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
     tmax: bidderRequest.timeout || 400,
@@ -477,7 +478,7 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
   const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
   const size = extractPlayerSize(bidRequest);

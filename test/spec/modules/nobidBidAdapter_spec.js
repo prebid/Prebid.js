@@ -937,20 +937,26 @@ describe('Nobid Adapter', function () {
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
         coppa: true,
-        schain: {
-		    validation: 'strict',
-		    config: {
-		      ver: '1.0',
-		      complete: 1,
-		      nodes: [
-		        {
-		          asi: 'indirectseller.com',
-		          sid: '00001',
-		          name: 'name.com',
-		          hp: 1
-		        }
-		      ]
-		    }
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [
+                    {
+                      asi: 'indirectseller.com',
+                      sid: '00001',
+                      name: 'name.com',
+                      hp: 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
         }
       }
     ];
