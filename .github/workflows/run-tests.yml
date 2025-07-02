@@ -16,7 +16,7 @@ on:
 
 jobs:
   test-chunk-1:
-    name: Run tests ($ {{ inputs.description }}, chunk 1 of 4)
+    name: Run tests (${{ inputs.description }}, chunk 1 of 4)
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
