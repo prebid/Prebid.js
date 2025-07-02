@@ -171,6 +171,7 @@ describe('AcuityAdsBidAdapter', function () {
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.type).to.exist.and.to.equal('publisher');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
+        expect(placement.publisherId).to.exist.and.to.be.a('string');
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
