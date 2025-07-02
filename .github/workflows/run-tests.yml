@@ -14,7 +14,7 @@ on:
 jobs:
   test-chunk-1:
     name: 'Run tests (chunk 1 of 4)'
-    uses: ./.github/workflows/test/test-chunk.yml
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
     secrets:
@@ -23,7 +23,7 @@ jobs:
   test-chunk-2:
     name: 'Run tests (chunk 2 of 4)'
     needs: test-chunk-1
-    uses: ./.github/workflows/test/test-chunk.yml
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
     secrets:
@@ -32,7 +32,7 @@ jobs:
   test-chunk-3:
     name: 'Run tests (chunk 3 of 4)'
     needs: test-chunk-2
-    uses: ./.github/workflows/test/test-chunk.yml
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
     secrets:
@@ -41,7 +41,7 @@ jobs:
   test-chunk-4:
     name: 'Run tests (chunk 3 of 4)'
     needs: test-chunk-3
-    uses: ./.github/workflows/test/test-chunk.yml
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 4
     secrets:
