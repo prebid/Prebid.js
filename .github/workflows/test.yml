@@ -35,7 +35,7 @@ jobs:
 
   test:
     name: "Run tests (all features enabled + coverage)"
-    needs: build
+    needs: checkout
     uses: ./.github/workflows/run-tests.yml
     with:
       description: all features enabled + coverage
