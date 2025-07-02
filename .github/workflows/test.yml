@@ -8,11 +8,8 @@ on:
   pull_request:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    env:
-      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -25,20 +22,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Precompile
-        run: npx gulp precompile
+      - name: Build
+        run: npx gulp build
 
-      - name: Run tests (1 of 4)
-        run: TEST_CHUNKS=4 TEST_CHUNK=1 npx gulp test-only-no-precomp --browserstack
+      - name: Cache build output
+        uses: actions/cache/save@v4
+        with:
+          path: .
+          key: ${{ github.sha }}
 
-      - name: Run tests (2 of 4)
-        run: TEST_CHUNKS=4 TEST_CHUNK=2 npx gulp test-only-no-precomp --browserstack
+  test-1:
+    needs: ['build']
+    runs-on: ubuntu-latest
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      TEST_CHUNKS: 4
+      TEST_CHUNK: 1
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Run tests (3 of 4)
-        run: TEST_CHUNKS=4 TEST_CHUNK=3 npx gulp test-only-no-precomp --browserstack
+      - name: Restore cached Primes
+        id: cache-primes-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: ${{ github.sha }}
 
-      - name: Run tests (4 of 4)
-        run: TEST_CHUNKS=4 TEST_CHUNK=4 npx gulp test-only-no-precomp --browserstack
-
-      - name: Coveralls
-        uses: coverallsapp/github-action@v2
+      - name: Run tests
+        run: npx gulp test-pipeline

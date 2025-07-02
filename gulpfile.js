@@ -389,7 +389,7 @@ function testTaskMaker(options = {}) {
   }
 }
 
-const test = testTaskMaker({coverage: true});
+const test = testTaskMaker();
 
 function e2eTestTaskMaker() {
   return function test(done) {
@@ -570,7 +570,7 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), 'build-creative-dev'
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
 gulp.task('test-only', gulp.series(precompile(), test));
-gulp.task('test-only-no-precomp', test);
+gulp.task('test-pipeline', testTaskMaker({browserstack: true, coverage: true}))
 gulp.task('test-all-features-disabled', gulp.series(precompile({disableFeatures: require('./features.json')}), testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false})));
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
