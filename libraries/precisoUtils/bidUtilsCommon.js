@@ -66,7 +66,7 @@ export const buildBidRequests = (adurl) => (validBidRequests = [], bidderRequest
     const placement = {
       placementId: bid.params.placementId,
       bidId: bid.bidId,
-      schain: bid.schain || {},
+      schain: bid?.ortb2?.source?.ext?.schain || {},
       bidfloor: getBidFloor(bid)
     };
 

@@ -294,9 +294,7 @@ export function getImp(bid, id, mediaTypes) {
   };
 
   const gpid = bid?.ortb2Imp?.ext?.gpid;
-  const pbadslot = bid?.ortb2Imp?.ext?.data?.pbadslot;
   if (gpid) imp.ext.gpid = gpid;
-  if (pbadslot) imp.ext.data = { pbadslot };
 
   getImpBanner(imp, banner);
   getImpVideo(imp, video);
@@ -510,8 +508,7 @@ function getDeviceObj() {
 }
 
 export function getSourceObj(validBidRequests, bidderRequest) {
-  const schain = validBidRequests?.[0]?.schain ||
-    (bidderRequest?.ortb2?.source && (bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain));
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain || bidderRequest?.ortb2?.source?.schain || bidderRequest?.ortb2?.source?.ext?.schain;
 
   if (!schain) return;
 

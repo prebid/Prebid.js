@@ -5,10 +5,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'resetdigital';
+const GVLID = 1162;
 const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.pubId || bid.params.zoneId);

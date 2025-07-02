@@ -238,7 +238,13 @@ describe('ViouslyAdapter', function () {
         };
 
         let bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
-          schain: schain
+          ortb2: {
+            source: {
+              ext: {
+                schain: schain
+              }
+            }
+          }
         });
 
         let requests = mergeDeep(deepClone(VALID_REQUEST_VIDEO), {
