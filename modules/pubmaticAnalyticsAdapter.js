@@ -46,7 +46,47 @@ function formatSource(src = 'client') {
   return (src === 's2s' ? 'server' : src).toLowerCase();
 }
 
+/**
+ * Validates payload and sends API request with proper error handling
+ * @param {Object} options - Configuration options
+ * @param {Object} options.payload - The payload to send
+ * @param {string} options.endpoint - API endpoint to use
+ * @param {string} options.loggerType - Type of logger for error messages
+ * @returns {boolean} - True if request was sent, false if validation failed
+ */
+function validateAndSendRequest(options) {
+  const { payload, endpoint, loggerType } = options;
+  
+  // Check for critical payload data
+  if (!Object.keys(payload?.rd || {}).length || !Object.keys(payload?.sd || {}).length) {
+    logWarn(LOG_PRE_FIX + `Empty or invalid payload for ${loggerType}, suppressing API call`);
+    return false;
+  }
+
+  const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
+  const queryParams = `v=${END_POINT_VERSION}&psrc=${PAGE_SOURCE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
+
+  try {
+    sendAjaxRequest({
+      endpoint,
+      method: 'POST',
+      queryParams,
+      body: JSON.stringify(payload)
+    });
+    return true;
+  } catch (e) {
+    logError(LOG_PRE_FIX + `Error stringifying payload for ${loggerType}:`, e);
+    return false;
+  }
+}
+
 function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
+  // Return early if body is null or undefined
+  if (body === null || body === undefined) {
+    logWarn(LOG_PRE_FIX + 'Empty body in sendAjaxRequest, suppressing API call');
+    return;
+  }
+  
   const url = queryParams ? `${endpoint}${queryParams}` : endpoint;
   return ajax(url, null, body, { method });
 };
@@ -265,24 +305,11 @@ function executeBidsLoggerCall(event, highestCpmBids) {
   };
   auctionCache.sent = true;
 
-  // Check for critical payload data
-  if (!Object.keys(payload?.rd || {}).length || !Object.keys(payload?.sd || {}).length) {
-    logWarn(LOG_PRE_FIX + 'Empty or invalid payload for bid won logger, suppressing API call');
-    return;
-  }
-
-  const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
-  const queryParams = `v=${END_POINT_VERSION}&psrc=${PAGE_SOURCE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
-  try {
-    sendAjaxRequest({
-      endpoint: END_POINT_BID_LOGGER,
-      method: 'POST',
-      queryParams,
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    logError(LOG_PRE_FIX + 'Error stringifying payload for bid logger:', e);
-  }
+  validateAndSendRequest({
+    payload,
+    endpoint: END_POINT_BID_LOGGER,
+    loggerType: 'bid logger'
+  });
 }
 
 function executeBidWonLoggerCall(auctionId, adUnitId) {
@@ -317,25 +344,11 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     }
   };
 
-  // Check for critical payload data
-  if (!Object.keys(payload?.rd || {}).length || !Object.keys(payload?.sd || {}).length) {
-    logWarn(LOG_PRE_FIX + 'Empty or invalid payload for bid won logger, suppressing API call');
-    return;
-  }
-
-  const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
-  const queryParams = `v=${END_POINT_VERSION}&psrc=${PAGE_SOURCE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
-
-  try {
-    sendAjaxRequest({
-      endpoint: END_POINT_WIN_BID_LOGGER,
-      method: 'POST',
-      queryParams,
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    logError(LOG_PRE_FIX + 'Error stringifying payload for bid won logger:', e);
-  }
+  validateAndSendRequest({
+    payload,
+    endpoint: END_POINT_WIN_BID_LOGGER,
+    loggerType: 'bid won logger'
+  });
 }
 
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
