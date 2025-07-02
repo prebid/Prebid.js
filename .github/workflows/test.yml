@@ -36,19 +36,27 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
+      bs-username: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      bs-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-2:
     needs: test-chunk-1
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
+      bs-username: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      bs-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-3:
     needs: test-chunk-2
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
+      bs-username: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      bs-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-4:
     needs: test-chunk-3
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 4
+      bs-username: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      bs-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
 

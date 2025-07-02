@@ -5,6 +5,12 @@ on:
       chunk-no:
         required: true
         type: number
+      bs-username:
+        required: true
+        type: string
+      bs-key:
+        required: true
+        type: string
 
 jobs:
   test:
@@ -20,7 +26,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
 
       - name: Fetch build output from cache
         uses: actions/cache/restore@v4
