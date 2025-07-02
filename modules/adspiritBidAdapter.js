@@ -131,10 +131,11 @@ export const spec = {
         }
       };
 
-      if (bidRequest.schain) {
+      const schain = bidRequest?.ortb2?.source?.ext?.schain;
+      if (schain) {
         openRTBRequest.source = {
           ext: {
-            schain: bidRequest.schain
+            schain: schain
           }
         };
       }

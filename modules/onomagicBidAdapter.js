@@ -94,7 +94,7 @@ function buildRequests(bidReqs, bidderRequest) {
 }
 
 function isBidRequestValid(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+  if (typeof bid.params === 'undefined') {
     return false;
   }
 

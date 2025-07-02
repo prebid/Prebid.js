@@ -388,37 +388,17 @@ describe('ssp_genieeBidAdapter', function () {
         expect(String(request[0].data.gpid)).to.have.string(gpid);
       });
 
-      it('should include gpid when ortb2Imp.ext.data.pbadslot exists', function () {
-        const pbadslot = '/123/abc';
+      it('should include gpid when ortb2Imp.ext.gpid exists', function () {
+        const gpid = '/123/abc';
         const bidWithPbadslot = {
           ...BANNER_BID,
           ortb2Imp: {
             ext: {
-              data: {
-                pbadslot: pbadslot
-              }
+              gpid
             }
           }
         };
         const request = spec.buildRequests([bidWithPbadslot]);
-        expect(String(request[0].data.gpid)).to.have.string(pbadslot);
-      });
-
-      it('should prioritize ortb2Imp.ext.gpid over ortb2Imp.ext.data.pbadslot', function () {
-        const gpid = '/123/abc';
-        const pbadslot = '/456/def';
-        const bidWithBoth = {
-          ...BANNER_BID,
-          ortb2Imp: {
-            ext: {
-              gpid: gpid,
-              data: {
-                pbadslot: pbadslot
-              }
-            }
-          }
-        };
-        const request = spec.buildRequests([bidWithBoth]);
         expect(String(request[0].data.gpid)).to.have.string(gpid);
       });
 

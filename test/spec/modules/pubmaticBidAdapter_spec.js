@@ -298,6 +298,26 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('format').to.be.an('array');
       });
 
+      it('should not have format object in banner when there is only a single size', () => {
+        // Create a complete bid with only one size
+        const singleSizeBid = utils.deepClone(validBidRequests[0]);
+        singleSizeBid.mediaTypes.banner.sizes = [[300, 250]];
+        singleSizeBid.params.adSlot = '/15671365/DMDemo@300x250:0';
+
+        // Create a complete bidder request
+        const singleSizeBidderRequest = utils.deepClone(bidderRequest);
+        singleSizeBidderRequest.bids = [singleSizeBid];
+
+        const request = spec.buildRequests([singleSizeBid], singleSizeBidderRequest);
+        const { imp } = request?.data;
+
+        expect(imp).to.be.an('array');
+        expect(imp[0]).to.have.property('banner');
+        expect(imp[0].banner).to.not.have.property('format');
+        expect(imp[0].banner).to.have.property('w').equal(300);
+        expect(imp[0].banner).to.have.property('h').equal(250);
+      });
+
       it('should add pmZoneId in ext if pmzoneid is present in parameters', () => {
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const { imp } = request?.data;

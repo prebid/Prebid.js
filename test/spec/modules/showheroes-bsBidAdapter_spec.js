@@ -4,7 +4,6 @@ import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import { VIDEO } from 'src/mediaTypes.js'
 
 const bidderRequest = {
@@ -99,10 +98,18 @@ describe('shBidAdapter', () => {
       bids: [bidRequestVideoV2],
       ...bidderRequest,
       ...gdpr,
-      ...schain,
       ...{uspConsent: uspConsent},
+      ortb2: {
+        source: {
+          ext: {schain: schain.schain.config}
+        }
+      }
     };
-    bidRequest.schain = schain.schain.config;
+    bidRequest.ortb2 = {
+      source: {
+        ext: {schain: schain.schain.config}
+      }
+    };
     const getFloorResponse = {currency: 'EUR', floor: 3};
     bidRequest.getFloor = () => getFloorResponse;
     const request = spec.buildRequests([bidRequest], await addFPDToBidderRequest(fullRequest));
@@ -110,7 +117,7 @@ describe('shBidAdapter', () => {
     expect(payload.regs.ext.gdpr).to.eql(Number(gdpr.gdprConsent.gdprApplies));
     expect(payload.regs.ext.us_privacy).to.eql(uspConsent);
     expect(payload.user.ext.consent).to.eql(gdpr.gdprConsent.consentString);
-    expect(payload.source.ext.schain).to.eql(bidRequest.schain);
+    expect(payload.source.ext.schain).to.deep.equal(bidRequest.ortb2.source.ext.schain);
     expect(payload.test).to.eql(0);
     expect(payload.imp[0].bidfloor).eql(3);
     expect(payload.imp[0].bidfloorcur).eql('EUR');
