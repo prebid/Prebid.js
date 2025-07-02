@@ -115,7 +115,7 @@ const sampleBidRequestVideo = {
   ...sampleBidRequestBase,
   bidId: sampleRequestId + '_video',
   sizes: [[300, 150]],
-  schain: schainConfig,
+  ortb2: { source: { ext: { schain: schainConfig } } },
   mediaTypes: {
     [VIDEO]: {
       sizes: [[360, 250]],

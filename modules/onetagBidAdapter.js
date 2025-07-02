@@ -132,8 +132,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
-    payload.schain = validBidRequests[0].schain;
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain;
+  if (validBidRequests && validBidRequests.length !== 0 && schain && isSchainValid(schain)) {
+    payload.schain = schain;
   }
   try {
     if (storage.hasLocalStorage()) {
@@ -359,7 +360,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
   this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');

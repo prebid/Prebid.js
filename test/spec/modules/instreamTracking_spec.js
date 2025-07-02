@@ -124,7 +124,6 @@ function getMockInput(mediaType) {
 
   let adUnit;
   switch (mediaType) {
-    default:
     case 'banner':
       adUnit = bannerAdUnit;
       break;
@@ -134,6 +133,7 @@ function getMockInput(mediaType) {
     case INSTREAM:
       adUnit = inStreamAdUnit;
       break;
+    default:
   }
 
   const bidResponse = mockBidResponse(adUnit, utils.getUniqueIdentifierStr());

@@ -367,14 +367,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidId,
       mediaTypes = {},
       params = {},
-      schain,
       userId = {},
       ortb2Imp,
       adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
-    const gpid = deepAccess(ortb2Imp, 'ext.gpid') || deepAccess(ortb2Imp, 'ext.data.pbadslot');
+    const gpid = deepAccess(ortb2Imp, 'ext.gpid');
     const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
     let sizes = [1, 1];
     let data = {};
@@ -490,6 +489,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (coppa) {
       data.coppa = coppa;
     }
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
