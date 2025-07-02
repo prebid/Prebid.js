@@ -33,22 +33,22 @@ jobs:
 
   test-chunk-1:
     needs: build
-    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml@master
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
   test-chunk-2:
     needs: test-chunk-1
-    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml@master
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
   test-chunk-3:
     needs: test-chunk-2
-    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml@master
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
   test-chunk-4:
     needs: test-chunk-3
-    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml@master
+    uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 4
 
