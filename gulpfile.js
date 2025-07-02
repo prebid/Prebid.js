@@ -389,7 +389,7 @@ function testTaskMaker(options = {}) {
   }
 }
 
-const test = testTaskMaker();
+const test = testTaskMaker({coverage: true});
 
 function e2eTestTaskMaker() {
   return function test(done) {
@@ -471,10 +471,6 @@ function testCoverage(done) {
       TEST_CHUNKS
     }
   }, done);
-}
-
-function mergeCoverage() {
-  return execaTask(`npx lcov-result-merger 'build/coverage/chunks/*/*.info' build/coverage/lcov.info`)();
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
@@ -577,7 +573,7 @@ gulp.task('test-only', gulp.series(precompile(), test));
 gulp.task('test-all-features-disabled', gulp.series(precompile({disableFeatures: require('./features.json')}), testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false})));
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
-gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage, mergeCoverage));
+gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));

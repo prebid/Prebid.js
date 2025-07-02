@@ -10,7 +10,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -24,7 +26,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npx gulp test-coverage
-        
+        run: npx gulp test-only --browserstack
+
       - name: Coveralls
         uses: coverallsapp/github-action@v2
