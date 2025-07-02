@@ -32,21 +32,21 @@ jobs:
           path: .
           key: build-${{ github.sha }}
 
-      - name: Restore coverage cache
+      - name: Run tests
+        run: npx gulp test-pipeline --browserstack
+
+      - name: Restore coverage reports
         uses: actions/cache/restore@v4
         with:
           path: _coverage
           key: coverage-${{ github.sha }}
 
-      - name: Run tests
-        run: npx gulp test-pipeline --browserstack
-
-      - name: Move coverage result
+      - name: Add to coverage reports
         run: >
           mkdir -p _coverage
-          mv -r build/coverage/* _coverage/
+          mv build/coverage/* _coverage/
 
-      - name: Cache coverage result
+      - name: Cache coverage reports
         uses: actions/cache/save@v4
         with:
           path: _coverage
