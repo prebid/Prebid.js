@@ -39,7 +39,7 @@ jobs:
     uses: ./.github/workflows/run-tests.yml
     with:
       build-cmd: npx gulp precompile-all-features-disabled
-      test-cmd: npx gulp test-all-features-disabled-nobuild --browserstack
+      test-cmd: npx gulp test-all-features-disabled-nobuild
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
