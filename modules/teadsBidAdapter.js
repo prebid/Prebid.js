@@ -81,6 +81,7 @@ export const spec = {
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',
       timeout: bidderRequest?.timeout,
+      eids: getUserIdAsEids(validBidRequests),
       ...getSharedViewerIdParameters(validBidRequests),
       outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -88,8 +89,9 @@ export const spec = {
 
     const firstBidRequest = validBidRequests[0];
 
-    if (firstBidRequest.schain) {
-      payload.schain = firstBidRequest.schain;
+    const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     let gpp = bidderRequest.gppConsent;
@@ -214,6 +216,10 @@ function getSharedViewerIdParameters(validBidRequests) {
     })
   }
   return sharedViewerIdObject;
+}
+
+function getUserIdAsEids(validBidRequests) {
+  return validBidRequests?.[0]?.userIdAsEids || [];
 }
 
 function getReferrerInfo(bidderRequest) {
