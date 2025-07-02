@@ -2,9 +2,6 @@ name: Run tests
 on:
   workflow_call:
     inputs:
-      description:
-        required: true
-        type: string
       build-cmd:
         required: true
         type: string
