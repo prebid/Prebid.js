@@ -25,8 +25,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npx gulp test-only --browserstack
+      - name: Precompile
+        run: npx gulp precompile
+
+      - name: Run tests (1 of 4)
+        run: TEST_CHUNKS=4 TEST_CHUNK=1 npx gulp test-only-no-precomp --browserstack
+
+      - name: Run tests (2 of 4)
+        run: TEST_CHUNKS=4 TEST_CHUNK=2 npx gulp test-only-no-precomp --browserstack
+
+      - name: Run tests (3 of 4)
+        run: TEST_CHUNKS=4 TEST_CHUNK=3 npx gulp test-only-no-precomp --browserstack
+
+      - name: Run tests (4 of 4)
+        run: TEST_CHUNKS=4 TEST_CHUNK=4 npx gulp test-only-no-precomp --browserstack
 
       - name: Coveralls
         uses: coverallsapp/github-action@v2
