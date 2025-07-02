@@ -15,8 +15,8 @@ jobs:
   test:
     name: "Test chunk ${{ inputs.chunk-no }}"
     env:
-      BROWSERSTACK_USERNAME: ${{ inputs.bs-username }}
-      BROWSERSTACK_ACCESS_KEY: ${{ inputs.bs-key }}
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
       TEST_CHUNKS: 4
       TEST_CHUNK: ${{ inputs.chunk-no }}
     runs-on: ubuntu-latest
