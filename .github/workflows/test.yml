@@ -60,7 +60,8 @@ jobs:
     needs: checkout
     runs-on: ubuntu-latest
     concurrency:
-      group: 'browserstack'
+      # see test-chunk.yml for notes on concurrency groups
+      group: browserstack-${{ github.sha }}
       cancel-in-progress: false
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
