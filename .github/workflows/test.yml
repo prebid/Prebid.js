@@ -7,6 +7,10 @@ on:
       - '*-legacy'
   pull_request:
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,7 +40,21 @@ jobs:
     needs: build
     uses: ./.github/workflows/run-tests.yml
     with:
-      description: coverage
+      description: all features enabled + coverage
+      cmd: npx gulp test-pipeline --browserstack
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+  coveralls:
+    name: Update coveralls
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore working directory
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: test-${{ github.sha }}
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2

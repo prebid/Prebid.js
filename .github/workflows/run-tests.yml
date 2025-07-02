@@ -5,6 +5,9 @@ on:
       description:
         required: true
         type: string
+      cmd:
+        required: true
+        type: string
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -17,6 +20,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
+      cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -26,6 +30,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
+      cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -35,6 +40,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
+      cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -44,6 +50,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 4
+      cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

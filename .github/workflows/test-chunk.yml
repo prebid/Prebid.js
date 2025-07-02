@@ -2,6 +2,9 @@ name: Run tests
 on:
   workflow_call:
     inputs:
+      cmd:
+        required: true
+        type: string
       chunk-no:
         required: true
         type: number
@@ -11,6 +14,10 @@ on:
       BROWSERSTACK_ACCESS_KEY:
         description: "Browserstack access key"
 
+concurrency:
+  group: 'browserstack'
+  cancel-in-progress: false
+  
 jobs:
   test:
     name: "Test chunk ${{ inputs.chunk-no }}"
@@ -41,7 +48,7 @@ jobs:
           key: build-${{ github.sha }}
 
       - name: Run tests
-        run: npx gulp test-pipeline --browserstack
+        run: ${{ inputs.cmd }}
 
       - name: Save working directory
         uses: actions/cache/save@v4
