@@ -33,7 +33,7 @@ jobs:
 
   test:
     name: "Run tests"
-    uses: ./.github/workflows/run-tests.yml
+    uses: ./.github/workflows/test/run-tests.yml
     with:
       description: coverage
     secrets:
