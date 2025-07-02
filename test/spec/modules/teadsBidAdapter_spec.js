@@ -1214,22 +1214,23 @@ describe('teadsBidAdapter', () => {
       expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
     });
 
-    it('should include publisherTimeout in the payload with the correct value', function() {
+    it('should include timeout in the payload when provided', function() {
       const bidderRequest = {
         timeout: 3000
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.publisherTimeout).to.equal(3000);
+      expect(payload.timeout).to.exist;
+      expect(payload.timeout).to.equal(3000);
     });
 
-    it('should default publisherTimeout to 0 when not provided', function() {
+    it('should set timeout to undefined in the payload when not provided', function() {
       const bidderRequest = {};
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.publisherTimeout).to.equal(0);
+      expect(payload.timeout).to.be.undefined;
     });
   });
 
