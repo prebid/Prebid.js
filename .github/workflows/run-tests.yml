@@ -24,7 +24,13 @@ on:
 jobs:
   build:
     name: Build
+    runs-on: ubuntu-latest
     steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Fetch source
         uses: actions/cache/restore@v4
         with:
