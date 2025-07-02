@@ -186,6 +186,7 @@ gulp.task('ts', helpers.execaTask('tsc'));
 gulp.task('transpile', babelPrecomp());
 gulp.task('precompile-dev', precompile({dev: true}));
 gulp.task('precompile', precompile());
+gulp.task('precopile-all-features-disabled', precompile({disableFeatures: require('./features.json')}));
 gulp.task('verbatim', copyVerbatim)
 
 

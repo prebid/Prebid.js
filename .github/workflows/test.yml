@@ -33,14 +33,23 @@ jobs:
           path: .
           key: source-${{ github.sha }}
 
+  test-no-features:
+    name: "Run tests (all features disabled)"
+    needs: checkout
+    uses: ./.github/workflows/run-tests.yml
+    with:
+      build-cmd: npx gulp precompile-all-features-disabled
+      test-cmd: npx gulp test-all-features-disabled-nobuild --browserstack
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test:
     name: "Run tests (all features enabled + coverage)"
     needs: checkout
     uses: ./.github/workflows/run-tests.yml
     with:
-      description: all features enabled + coverage
       build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-pipeline --browserstack
+      test-cmd: npx gulp test-only-nobuild --browserstack
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
