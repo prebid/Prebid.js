@@ -19,6 +19,7 @@ const ENDPOINTS = {
   'gamoshi': 'https://rtb.gamoshi.io',
   'cleanmedianet': 'https://bidder.cleanmediaads.com'
 };
+const GVLID = 644;
 
 const DEFAULT_TTL = 360;
 
@@ -66,6 +67,7 @@ export const helper = {
 
 export const spec = {
   code: 'gamoshi',
+  gvlid: GVLID,
   aliases: ['gambid', 'cleanmedianet'],
   supportedMediaTypes: ['banner', 'video'],
 
@@ -111,8 +113,9 @@ export const spec = {
       deepSetValue(rtbBidRequest, 'regs.ext.gdpr', gdprConsent.consent_required === true ? 1 : 0);
       deepSetValue(rtbBidRequest, 'user.ext.consent', gdprConsent.consent_string);
 
-      if (validBidRequests[0].schain) {
-        deepSetValue(rtbBidRequest, 'source.ext.schain', validBidRequests[0].schain);
+      const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        deepSetValue(rtbBidRequest, 'source.ext.schain', schain);
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {

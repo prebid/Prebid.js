@@ -553,7 +553,7 @@ describe('ttdBidAdapter', function () {
         }]
       };
       let clonedBannerBidRequests = deepClone(baseBannerBidRequests);
-      clonedBannerBidRequests[0].schain = schain;
+      clonedBannerBidRequests[0].ortb2 = { source: { ext: { schain: schain } } };
 
       const requestBody = testBuildRequests(clonedBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source.ext.schain).to.deep.equal(schain);

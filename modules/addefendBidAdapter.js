@@ -1,9 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'addefend';
+const GVLID = 539;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   hostname: 'https://addefend-platform.com',
 
   getHostname() {

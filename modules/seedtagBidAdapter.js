@@ -320,8 +320,9 @@ export const spec = {
       payload['uspConsent'] = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     let coppa = config.getConfig('coppa');
