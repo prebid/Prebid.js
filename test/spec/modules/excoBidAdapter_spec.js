@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
-import { BANNER } from '../../../src/mediaTypes';
+import { BANNER, VIDEO } from '../../../src/mediaTypes';
 import { config } from '../../../src/config';
 import * as utils from '../../../src/utils.js';
 import sinon from 'sinon';
@@ -162,7 +162,7 @@ describe('ExcoBidAdapter', function () {
                 id: 'b7b6eddb-9924-425e-aa52-5eba56689abe',
                 impid: BID.bidId,
                 cpm: 10.56,
-                ad: '<iframe>console.log("hello world")</iframe>',
+                adm: '<iframe>console.log("hello world")</iframe>',
                 lurl: 'https://ads-ssp-stg.hit.buzz/loss?loss=${AUCTION_LOSS}&min_to_win=${AUCTION_MIN_TO_WIN}',
                 nurl: 'http://example.com/win/1234',
                 adomain: ['crest.com'],
@@ -212,11 +212,10 @@ describe('ExcoBidAdapter', function () {
           ],
           mediaType: BANNER
         },
-        ad: '<iframe>console.log("hello world")</iframe>',
+        ad: '<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="http://example.com/win/1234"></div><iframe>console.log("hello world")</iframe>',
         netRevenue: true,
         nurl: 'http://example.com/win/1234',
         currency: 'USD',
-        vastXml: undefined,
         adUrl: undefined,
       });
     });
@@ -317,12 +316,13 @@ describe('ExcoBidAdapter', function () {
       expect(adapter.onBidWon).to.exist.and.to.be.a('function');
     });
 
-    it('Should trigger event if bid nurl', function() {
+    it('Should trigger nurl pixel for mediaType "video"', function() {
       const bid = {
         bidder: adapter.code,
         adUnitCode: 'adunit-code',
         sizes: [[300, 250]],
         nurl: 'http://example.com/win/1234',
+        mediaType: VIDEO,
         params: {
           accountId: 'accountId',
           publisherId: 'publisherId',
@@ -332,6 +332,25 @@ describe('ExcoBidAdapter', function () {
 
       adapter.onBidWon(bid);
       expect(stubbedFetch.callCount).to.equal(1);
+    });
+
+
+    it('Should NOT trigger nurl pixel for mediaType "banner"', function() {
+      const bid = {
+        bidder: adapter.code,
+        adUnitCode: 'adunit-code',
+        sizes: [[300, 250]],
+        nurl: 'http://example.com/win/1234',
+        mediaType: BANNER,
+        params: {
+          accountId: 'accountId',
+          publisherId: 'publisherId',
+          tagId: 'tagId',
+        }
+      };
+
+      adapter.onBidWon(bid);
+      expect(stubbedFetch.callCount).to.equal(0);
     });
 
     it('Should not trigger pixel if no bid nurl', function() {
