@@ -56,6 +56,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: ${{ jobs.test.outputs.wdir }}
+          key: ${{ needs.test.outputs.wdir }}
       - name: Coveralls
         uses: coverallsapp/github-action@v2

@@ -34,7 +34,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
-      wdir: ${{ jobs.chunk-1.outputs.wdir }}
+      wdir: ${{ needs.chunk-1.outputs.wdir }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -45,7 +45,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
-      wdir: ${{ jobs.chunk-2.outputs.wdir }}
+      wdir: ${{ needs.chunk-2.outputs.wdir }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -56,7 +56,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 4
-      wdir: ${{ jobs.chunk-3.outputs.wdir }}
+      wdir: ${{ needs.chunk-3.outputs.wdir }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
