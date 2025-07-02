@@ -7,7 +7,7 @@ import * as hook from '../../../src/hook.js';
 import * as pubmaticRtdProviderModule from '../../../modules/pubmaticRtdProvider.js';
 import {
     registerSubModule, pubmaticSubmodule, setFloorsConfig, fetchData, getRtdConfig,
-    getCurrentTimeOfDay, getBrowserType, getOs, getDeviceType, getCountry, getBidder, getUtm, _country,
+    getTimeOfDay, getBrowser, getOs, getDeviceType, getCountry, getBidder, getUtm, _country,
     _profileConfigs, defaultValueTemplate, _configData
 } from '../../../modules/pubmaticRtdProvider.js';
 import sinon from 'sinon';
@@ -126,7 +126,7 @@ describe('Pubmatic RTD Provider', () => {
         });
     });
 
-    describe('getCurrentTimeOfDay', () => {
+    describe('getTimeOfDay', () => {
         let clock;
 
         beforeEach(() => {
@@ -148,13 +148,13 @@ describe('Pubmatic RTD Provider', () => {
         testTimes.forEach(({ hour, expected }) => {
             it(`should return ${expected} at ${hour}:00`, () => {
                 clock.setSystemTime(new Date().setHours(hour));
-                const result = getCurrentTimeOfDay();
+                const result = getTimeOfDay();
                 expect(result).to.equal(expected);
             });
         });
     });
 
-    describe('getBrowserType', () => {
+    describe('getBrowser', () => {
         let userAgentStub, getLowEntropySUAStub;
 
         const USER_AGENTS = {
@@ -179,43 +179,43 @@ describe('Pubmatic RTD Provider', () => {
 
         it('should detect Chrome', () => {
             userAgentStub.value(USER_AGENTS.chrome);
-            expect(getBrowserType()).to.equal('9');
+            expect(getBrowser()).to.equal('9');
         });
 
         it('should detect Firefox', () => {
             userAgentStub.value(USER_AGENTS.firefox);
-            expect(getBrowserType()).to.equal('12');
+            expect(getBrowser()).to.equal('12');
         });
 
         it('should detect Edge', () => {
             userAgentStub.value(USER_AGENTS.edge);
-            expect(getBrowserType()).to.equal('2');
+            expect(getBrowser()).to.equal('2');
         });
 
         it('should detect Internet Explorer', () => {
             userAgentStub.value(USER_AGENTS.ie);
-            expect(getBrowserType()).to.equal('4');
+            expect(getBrowser()).to.equal('4');
         });
 
         it('should detect Opera', () => {
             userAgentStub.value(USER_AGENTS.opera);
-            expect(getBrowserType()).to.equal('3');
+            expect(getBrowser()).to.equal('3');
         });
 
         it('should return 0 for unknown browser', () => {
             userAgentStub.value(USER_AGENTS.unknown);
-            expect(getBrowserType()).to.equal('0');
+            expect(getBrowser()).to.equal('0');
         });
 
         it('should return -1 when userAgent is null', () => {
             userAgentStub.value(null);
-            expect(getBrowserType()).to.equal('-1');
+            expect(getBrowser()).to.equal('-1');
         });
     });
 
     describe('Utility functions', () => {
         it('should set browser correctly', () => {
-            expect(getBrowserType()).to.be.a('string');
+            expect(getBrowser()).to.be.a('string');
         });
 
         it('should set OS correctly', () => {
@@ -227,7 +227,7 @@ describe('Pubmatic RTD Provider', () => {
         });
 
         it('should set time of day correctly', () => {
-            expect(getCurrentTimeOfDay()).to.be.a('string');
+            expect(getTimeOfDay()).to.be.a('string');
         });
 
         it('should set country correctly', () => {
@@ -380,8 +380,8 @@ describe('Pubmatic RTD Provider', () => {
             const result = setFloorsConfig();
 
             expect(result.floors.additionalSchemaFields.deviceType).to.equal(getDeviceType);
-            expect(result.floors.additionalSchemaFields.timeOfDay).to.equal(getCurrentTimeOfDay);
-            expect(result.floors.additionalSchemaFields.browser).to.equal(getBrowserType);
+            expect(result.floors.additionalSchemaFields.timeOfDay).to.equal(getTimeOfDay);
+            expect(result.floors.additionalSchemaFields.browser).to.equal(getBrowser);
             expect(result.floors.additionalSchemaFields.os).to.equal(getOs);
             expect(result.floors.additionalSchemaFields.country).to.equal(getCountry);
             expect(result.floors.additionalSchemaFields.utm).to.equal(getUtm);
@@ -729,14 +729,12 @@ describe('Pubmatic RTD Provider', () => {
             expect(continueAuctionStub.firstCall.args[0]).to.have.property('haveExited', false);
         });
 
-        // it('should merge country data into ortb2Fragments.bidder', async function () {
-        //     configMerged();
-        //     global._country = 'US';
-        //     pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
-
-        //     expect(reqBidsConfigObj.ortb2Fragments.bidder).to.have.property('pubmatic');
-        //     // expect(reqBidsConfigObj.ortb2Fragments.bidder.pubmatic.user.ext.ctr).to.equal('US');
-        // });
+        it('should merge country data into ortb2Fragments.bidder', async function () {
+            global._country = 'US';
+            pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);
+            expect(reqBidsConfigObj.ortb2Fragments.bidder).to.deep.include(ortb2);
+            // expect(reqBidsConfigObj.ortb2Fragments.bidder.pubmatic.user.ext.ctr).to.equal('US');
+        });
 
         it('should call callback once after execution', async function () {
             await pubmaticSubmodule.getBidRequestData(reqBidsConfigObj, callback);

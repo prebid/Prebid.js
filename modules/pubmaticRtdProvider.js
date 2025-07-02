@@ -2,7 +2,7 @@ import { submodule } from '../src/hook.js';
 import { logError, isStr, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
-import { getLowEntropySUA } from '../src/fpd/sua.js';
+import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../libraries/pubmaticUtils/pubmaticUtils.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -18,37 +18,11 @@ const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'pubmatic',
   REAL_TIME_MODULE: 'realTimeData',
   LOG_PRE_FIX: 'PubMatic-Rtd-Provider: ',
-  UTM: 'utm_',
-  UTM_VALUES: {
-    TRUE: '1',
-    FALSE: '0'
-  },
-  TIME_OF_DAY_VALUES: {
-    MORNING: 'morning',
-    AFTERNOON: 'afternoon',
-    EVENING: 'evening',
-    NIGHT: 'night',
-  },
   ENDPOINTS: {
     BASEURL: 'https://ads.pubmatic.com/AdServer/js/pwt',
     CONFIGS: 'config.json'
   }
 });
-
-const BROWSER_REGEX_MAP = [
-  { regex: /\b(?:crios)\/([\w\.]+)/i, id: 1 }, // Chrome for iOS
-  { regex: /(edg|edge)(?:e|ios|a)?(?:\/([\w\.]+))?/i, id: 2 }, // Edge
-  { regex: /(opera|opr)(?:.+version\/|[\/ ]+)([\w\.]+)/i, id: 3 }, // Opera
-  { regex: /(?:ms|\()(ie) ([\w\.]+)|(?:trident\/[\w\.]+)/i, id: 4 }, // Internet Explorer
-  { regex: /fxios\/([-\w\.]+)/i, id: 5 }, // Firefox for iOS
-  { regex: /((?:fban\/fbios|fb_iab\/fb4a)(?!.+fbav)|;fbav\/([\w\.]+);)/i, id: 6 }, // Facebook In-App Browser
-  { regex: / wv\).+(chrome)\/([\w\.]+)/i, id: 7 }, // Chrome WebView
-  { regex: /droid.+ version\/([\w\.]+)\b.+(?:mobile safari|safari)/i, id: 8 }, // Android Browser
-  { regex: /(chrome|crios)(?:\/v?([\w\.]+))?\b/i, id: 9 }, // Chrome
-  { regex: /version\/([\w\.\,]+) .*mobile\/\w+ (safari)/i, id: 10 }, // Safari Mobile
-  { regex: /version\/([\w(\.|\,)]+) .*(mobile ?safari|safari)/i, id: 11 }, // Safari
-  { regex: /(firefox)\/([\w\.]+)/i, id: 12 } // Firefox
-];
 
 export const defaultValueTemplate = {
     currency: 'USD',
@@ -62,44 +36,14 @@ export let _pubmaticConfigPromise = null;
 export let _configData = {};
 export let _country;
 
-// Utility Functions
-export const getCurrentTimeOfDay = () => {
-  const currentHour = new Date().getHours();
-
-  return currentHour < 5 ? CONSTANTS.TIME_OF_DAY_VALUES.NIGHT
-    : currentHour < 12 ? CONSTANTS.TIME_OF_DAY_VALUES.MORNING
-      : currentHour < 17 ? CONSTANTS.TIME_OF_DAY_VALUES.AFTERNOON
-        : currentHour < 19 ? CONSTANTS.TIME_OF_DAY_VALUES.EVENING
-          : CONSTANTS.TIME_OF_DAY_VALUES.NIGHT;
-}
-
-export const getBrowserType = () => {
-  const brandName = getLowEntropySUA()?.browsers
-    ?.map(b => b.brand.toLowerCase())
-    .join(' ') || '';
-  const browserMatch = brandName ? BROWSER_REGEX_MAP.find(({ regex }) => regex.test(brandName)) : -1;
-
-  if (browserMatch?.id) return browserMatch.id.toString();
-
-  const userAgent = navigator?.userAgent;
-  let browserIndex = userAgent == null ? -1 : 0;
-
-  if (userAgent) {
-    browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
-  }
-  return browserIndex.toString();
-}
-
 // Getter Functions
+export const getTimeOfDay = () => getCurrentTimeOfDay();
+export const getBrowser = () => getBrowserType();
 export const getOs = () => getOS().toString();
 export const getDeviceType = () => fetchDeviceType().toString();
 export const getCountry = () => _country;
 export const getBidder = (request) => request?.bidder;
-export const getUtm = () => {
-  const url = new URL(window.location?.href);
-  const urlParams = new URLSearchParams(url?.search);
-  return urlParams && urlParams.toString().includes(CONSTANTS.UTM) ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE;
-}
+export const getUtm = () => getUtmValue();
 
 export const setFloorsConfig = () => {
     const dynamicFloors = _configData?.plugins?.dynamicFloors;
@@ -133,8 +77,8 @@ export const setFloorsConfig = () => {
             data: finalFloorsData,
             additionalSchemaFields: {
                 deviceType: getDeviceType,
-                timeOfDay: getCurrentTimeOfDay,
-                browser: getBrowserType,
+                timeOfDay: getTimeOfDay,
+                browser: getBrowser,
                 os: getOs,
                 utm: getUtm,
                 country: getCountry,
@@ -149,7 +93,6 @@ export const getRtdConfig = async (publisherId, profileId) => {
 
   if (!isPlainObject(apiResponse) || isEmpty(apiResponse)) {
     logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
-    return undefined;
   } else if (apiResponse) {
     // Check for each module in config
     if (apiResponse.plugins?.dynamicFloors) {
