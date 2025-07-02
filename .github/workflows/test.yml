@@ -34,9 +34,9 @@ jobs:
           key: source-${{ github.sha }}
 
   test-no-features:
-    name: "Run tests (all features disabled)"
+    name: "Unit tests (all features disabled)"
     needs: checkout
-    uses: ./.github/workflows/run-tests.yml
+    uses: ./.github/workflows/run-unit-tests.yml
     with:
       build-cmd: npx gulp precompile-all-features-disabled
       test-cmd: npx gulp test-all-features-disabled-nobuild
@@ -45,9 +45,9 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test:
-    name: "Run tests (all features enabled + coverage)"
+    name: "Unit tests (all features enabled + coverage)"
     needs: checkout
-    uses: ./.github/workflows/run-tests.yml
+    uses: ./.github/workflows/run-unit-tests.yml
     with:
       build-cmd: npx gulp precompile
       test-cmd: npx gulp test-only-nobuild --browserstack
@@ -55,6 +55,25 @@ jobs:
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  test-e2e:
+    name: "End-to-end tests"
+    needs: checkout
+    runs-on: ubuntu-latest
+    concurrency:
+      group: 'browserstack'
+      cancel-in-progress: false
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore source
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: source-${{ github.sha }}
+      - name: Run tests
+        run: npx gulp e2e-test
 
   coveralls:
     name: Update coveralls

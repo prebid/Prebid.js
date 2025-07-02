@@ -25,7 +25,7 @@ on:
         description: "Browserstack access key"
 
 concurrency:
-  group: ${{ inputs.concurrency == 'true' && 'browserstack' || github.run_id }}-${{ inputs.concurrency == 'true' && 'browserstack' || inputs.cmd }}
+  group: ${{ inputs.concurrency == 'true' && 'browserstack' || github.run_id }}${{ inputs.concurrency == 'true' && '' || inputs.cmd }}
   cancel-in-progress: false
 
 jobs:
