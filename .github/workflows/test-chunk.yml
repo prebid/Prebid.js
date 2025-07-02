@@ -9,7 +9,7 @@ on:
         required: true
         type: number
       wdir:
-        required: false
+        required: true
         type: string
     outputs:
       wdir:
@@ -41,19 +41,11 @@ jobs:
           node-version: '20'
 
       - name: Restore working directory
-        if: ${{ inputs.wdir != null }}
         id: restore-dir
         uses: actions/cache/restore@v4
         with:
           path: .
           key: ${{ inputs.wdir }}
-
-      - name: Fetch build output from cache
-        if: ${{ inputs.wdir == null }}
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: build-${{ github.sha }}
 
       - name: Run tests
         run: ${{ inputs.cmd }}

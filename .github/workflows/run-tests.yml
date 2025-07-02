@@ -5,7 +5,10 @@ on:
       description:
         required: true
         type: string
-      cmd:
+      build-cmd:
+        required: true
+        type: string
+      test-cmd:
         required: true
         type: string
     outputs:
@@ -19,12 +22,32 @@ on:
         description: "Browserstack access key"
 
 jobs:
+  build:
+    name: Build
+    steps:
+      - name: Fetch source
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: source-${{ github.sha }}
+
+      - name: Build
+        run: ${{ inputs.build-cmd }}
+
+      - name: Cache build output
+        uses: actions/cache/save@v4
+        with:
+          path: .
+          key: build-${{ inputs.build-cmd }}-${{ github.sha }}
+
   chunk-1:
+    needs: build
     name: Run tests (${{ inputs.description }}, chunk 1 of 4)
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
-      cmd: ${{ inputs.cmd }}
+      wdir: build-${{ inputs.build-cmd }}-${{ github.sha }}
+      cmd: ${{ inputs.test-cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -35,7 +58,7 @@ jobs:
     with:
       chunk-no: 2
       wdir: ${{ needs.chunk-1.outputs.wdir }}
-      cmd: ${{ inputs.cmd }}
+      cmd: ${{ inputs.test-cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -46,7 +69,7 @@ jobs:
     with:
       chunk-no: 3
       wdir: ${{ needs.chunk-2.outputs.wdir }}
-      cmd: ${{ inputs.cmd }}
+      cmd: ${{ inputs.test-cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -57,7 +80,7 @@ jobs:
     with:
       chunk-no: 4
       wdir: ${{ needs.chunk-3.outputs.wdir }}
-      cmd: ${{ inputs.cmd }}
+      cmd: ${{ inputs.test-cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

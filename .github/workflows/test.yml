@@ -12,8 +12,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: "Build"
+  checkout:
+    name: "Check out source and install dependencies"
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
@@ -27,14 +27,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npx gulp build
-
-      - name: Cache build output
+      - name: Cache source
         uses: actions/cache/save@v4
         with:
           path: .
-          key: build-${{ github.sha }}
+          key: source-${{ github.sha }}
 
   test:
     name: "Run tests (all features enabled + coverage)"
@@ -42,7 +39,8 @@ jobs:
     uses: ./.github/workflows/run-tests.yml
     with:
       description: all features enabled + coverage
-      cmd: npx gulp test-pipeline --browserstack
+      build-cmd: npx gulp precompile
+      test-cmd: npx gulp test-pipeline --browserstack
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
