@@ -592,7 +592,7 @@ describe('pubmatic analytics adapter', function () {
       let request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?v=1&psrc=web');
       let data = getLoggerJsonFromRequest(request.requestBody);
-      
+
       // check mandatory fields
       expect(data).to.have.property('sd');
       expect(data).to.have.property('fd');

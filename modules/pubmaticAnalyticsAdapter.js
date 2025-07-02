@@ -56,7 +56,7 @@ function formatSource(src = 'client') {
  */
 function validateAndSendRequest(options) {
   const { payload, endpoint, loggerType } = options;
-  
+
   // Check for critical payload data
   if (!Object.keys(payload?.rd || {}).length || !Object.keys(payload?.sd || {}).length) {
     logWarn(LOG_PRE_FIX + `Empty or invalid payload for ${loggerType}, suppressing API call`);
@@ -86,7 +86,7 @@ function sendAjaxRequest({ endpoint, method, queryParams = '', body = null }) {
     logWarn(LOG_PRE_FIX + 'Empty body in sendAjaxRequest, suppressing API call');
     return;
   }
-  
+
   const url = queryParams ? `${endpoint}${queryParams}` : endpoint;
   return ajax(url, null, body, { method });
 };
