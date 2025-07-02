@@ -31,26 +31,24 @@ jobs:
           path: .
           key: ${{ github.sha }}
 
-  test-1:
-    needs: ['build']
-    runs-on: ubuntu-latest
-    env:
-      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
-      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-      TEST_CHUNKS: 4
-      TEST_CHUNK: 1
-    steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+  test-chunk-1:
+    needs: build
+    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 1
+  test-chunk-2:
+    needs: test-chunk-1
+    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 2
+  test-chunk-3:
+    needs: test-chunk-2
+    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 3
+  test-chunk-4:
+    needs: test-chunk-3
+    uses: ${{ github.repository }}/.github/workflows/test-chunk.yml
+    with:
+      chunk-no: 4
 
-      - name: Restore cached Primes
-        id: cache-primes-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: .
-          key: ${{ github.sha }}
-
-      - name: Run tests
-        run: npx gulp test-pipeline

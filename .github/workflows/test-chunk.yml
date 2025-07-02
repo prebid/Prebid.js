@@ -1,0 +1,32 @@
+name: Run tests
+on:
+  workflow_call:
+    inputs:
+      chunk-no:
+        required: true
+        type: number
+
+jobs:
+  test:
+    name: "Test chunk ${{ inputs.chunk-no }}"
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      TEST_CHUNKS: 4
+      TEST_CHUNK: ${{ inputs.chunk-no }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch build output from cache
+        id: cache-primes-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: ${{ github.sha }}
+
+      - name: Run tests
+        run: npx gulp test-pipeline
