@@ -16,7 +16,7 @@ on:
 
 jobs:
   test-chunk-1:
-    name: 'Run tests (chunk 1 of 4)'
+    name: Run tests ($ {{ inputs.description }}, chunk 1 of 4)
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
@@ -25,7 +25,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-2:
-    name: 'Run tests (chunk 2 of 4)'
+    name: Run tests ($ {{ inputs.description }}, chunk 2 of 4)
     needs: test-chunk-1
     uses: ./.github/workflows/test-chunk.yml
     with:
@@ -35,7 +35,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-3:
-    name: 'Run tests (chunk 3 of 4)'
+    name: Run tests ($ {{ inputs.description }}, chunk 3 of 4)
     needs: test-chunk-2
     uses: ./.github/workflows/test-chunk.yml
     with:
@@ -45,7 +45,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-4:
-    name: 'Run tests (chunk 3 of 4)'
+    name: Run tests ($ {{ inputs.description }}, chunk 4 of 4)
     needs: test-chunk-3
     uses: ./.github/workflows/test-chunk.yml
     with:

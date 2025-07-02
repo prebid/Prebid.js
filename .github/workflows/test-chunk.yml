@@ -17,7 +17,10 @@ on:
 concurrency:
   group: 'browserstack'
   cancel-in-progress: false
-  
+
+permissions:
+  actions: write
+
 jobs:
   test:
     name: "Test chunk ${{ inputs.chunk-no }}"
