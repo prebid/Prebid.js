@@ -98,36 +98,6 @@ function lint(done) {
   });
 };
 
-// View the code coverage report in the browser.
-function viewCoverage(done) {
-  var coveragePort = 1999;
-  var mylocalhost = (argv.host) ? argv.host : 'localhost';
-
-  connect.server({
-    port: coveragePort,
-    root: 'build/coverage/lcov-report',
-    livereload: false,
-    debug: true
-  });
-  opens('http://' + mylocalhost + ':' + coveragePort);
-  done();
-};
-
-viewCoverage.displayName = 'view-coverage';
-
-// View the reviewer tools page
-function viewReview(done) {
-  var mylocalhost = (argv.host) ? argv.host : 'localhost';
-  var reviewUrl = 'http://' + mylocalhost + ':' + port + '/integrationExamples/reviewerTools/index.html'; // reuse the main port from 9999
-
-  // console.log(`stdout: opening` + reviewUrl);
-
-  opens(reviewUrl);
-  done();
-};
-
-viewReview.displayName = 'view-review';
-
 function makeVerbose(config = webpackConfig) {
   return _.merge({}, config, {
     optimization: {
@@ -577,7 +547,6 @@ gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-dis
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
-gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
@@ -603,9 +572,6 @@ gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-p
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
-// build task for reviewers, runs test-coverage, serves, without watching
-gulp.task(viewReview);
-gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 gulp.task('extract-metadata', function (done) {
   /**
