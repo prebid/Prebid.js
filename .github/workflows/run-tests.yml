@@ -20,6 +20,7 @@ on:
 
 jobs:
   test-chunk-1:
+    id: chunk-1
     name: Run tests (${{ inputs.description }}, chunk 1 of 4)
     uses: ./.github/workflows/test-chunk.yml
     with:
@@ -29,23 +30,25 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-2:
+    id: chunk-2
     name: Run tests ($ {{ inputs.description }}, chunk 2 of 4)
     needs: test-chunk-1
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
-      prev-chunk: 1
+      wdir: ${{ jobs.chunk-1.outputs.out }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-3:
+    id: chunk-3
     name: Run tests ($ {{ inputs.description }}, chunk 3 of 4)
     needs: test-chunk-2
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
-      prev-chunk: 2
+      wdir: ${{ jobs.chunk-2.outputs.out }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -56,8 +59,8 @@ jobs:
     needs: test-chunk-3
     uses: ./.github/workflows/test-chunk.yml
     with:
-      prev-chunk: 3
       chunk-no: 4
+      wdir: ${{ jobs.chunk-3.outputs.out }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}

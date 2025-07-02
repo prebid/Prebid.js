@@ -8,9 +8,9 @@ on:
       chunk-no:
         required: true
         type: number
-      prev-chunk:
+      wdir:
         required: false
-        type: number
+        type: string
     outputs:
       out:
         description: "Cache key for the working directory after running tests"
@@ -41,14 +41,15 @@ jobs:
           node-version: '20'
 
       - name: Restore working directory
+        if: ${{ inputs.wdir != null }}
         id: restore-dir
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: test-${{ inputs.cmd }}-${{ inputs.prev-chunk }}-${{ github.sha }}
+          key: ${{ inputs.wdir }}
 
       - name: Fetch build output from cache
-        if: steps.restore-dir.outputs.cache-hit != 'true'
+        if: ${{ inputs.wdir == null }}
         uses: actions/cache/restore@v4
         with:
           path: .
