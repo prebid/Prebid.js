@@ -1213,6 +1213,24 @@ describe('teadsBidAdapter', () => {
       const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
       expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
     });
+
+    it('should include publisherTimeout in the payload with the correct value', function() {
+      const bidderRequest = {
+        timeout: 3000
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.publisherTimeout).to.equal(3000);
+    });
+
+    it('should default publisherTimeout to 0 when not provided', function() {
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.publisherTimeout).to.equal(0);
+    });
   });
 
   describe('interpretResponse', function() {

@@ -80,6 +80,7 @@ export const spec = {
       hardwareConcurrency: getHC(),
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',
+      publisherTimeout: bidderRequest?.timeout || 0,
       ...getSharedViewerIdParameters(validBidRequests),
       outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
