@@ -25,7 +25,7 @@ on:
         description: "Browserstack access key"
 
 concurrency:
-  group: ${{ inputs.serialize == 'true' && 'browserstack' || github.run_id }}${{ inputs.serialize == 'true' && '' || inputs.cmd }}
+  group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}
   cancel-in-progress: false
 
 jobs:
@@ -39,9 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Concurrency key"
-        run: >
+        run: |
           echo Serialize: ${{ inputs.serialize }}
-          echo Key: '"'"${{ inputs.serialize == 'true' && 'browserstack' || github.run_id }}${{ inputs.serialize == 'true' && '' || inputs.cmd }}"'"'
+          echo Key: '"'"${{ inputs.serialize && 'browserstack' || github.run_id }}${{ inputs.serialize && '' || inputs.cmd }}"'"'
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
