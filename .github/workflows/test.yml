@@ -62,6 +62,9 @@ jobs:
     concurrency:
       group: 'browserstack'
       cancel-in-progress: false
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v4
