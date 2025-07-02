@@ -38,6 +38,8 @@ jobs:
       TEST_CHUNK: ${{ inputs.chunk-no }}
     runs-on: ubuntu-latest
     steps:
+      - name: "Concurrency key"
+        run: echo '"'"${{ inputs.concurrency == 'true' && 'browserstack' || github.run_id }}${{ inputs.concurrency == 'true' && '' || inputs.cmd }}"'"'
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
