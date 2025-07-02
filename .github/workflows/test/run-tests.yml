@@ -1,0 +1,49 @@
+name: Run tests
+on:
+  workflow_call:
+    inputs:
+      description:
+        required: true
+        type: string
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
+
+jobs:
+  test-chunk-1:
+    name: 'Run tests (chunk 1 of 4)'
+    uses: ./.github/workflows/test/test-chunk.yml
+    with:
+      chunk-no: 1
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  test-chunk-2:
+    name: 'Run tests (chunk 2 of 4)'
+    needs: test-chunk-1
+    uses: ./.github/workflows/test/test-chunk.yml
+    with:
+      chunk-no: 2
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  test-chunk-3:
+    name: 'Run tests (chunk 3 of 4)'
+    needs: test-chunk-2
+    uses: ./.github/workflows/test/test-chunk.yml
+    with:
+      chunk-no: 3
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+  test-chunk-4:
+    name: 'Run tests (chunk 3 of 4)'
+    needs: test-chunk-3
+    uses: ./.github/workflows/test/test-chunk.yml
+    with:
+      chunk-no: 4
+    secrets:
+      BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
