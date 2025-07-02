@@ -1,6 +1,5 @@
 import {deepAccess, getBidIdParameter, isFn, logError, isArray, parseSizesInput, isPlainObject} from '../../src/utils.js';
 import {getAdUnitSizes} from '../sizeUtils/sizeUtils.js';
-import {findIndex} from '../../src/polyfill.js';
 
 export function getBidFloor(bid, currency = 'USD') {
   if (!isFn(bid.getFloor)) {
@@ -49,7 +48,7 @@ export function buildRequests(validBidRequests, bidderRequest, endpoint) {
     request.auctionId = req.ortb2?.source?.tid;
     request.transactionId = req.ortb2Imp?.ext?.tid;
     request.sizes = parseSizesInput(getAdUnitSizes(req));
-    request.schain = req.schain;
+    request.schain = bidderRequest?.ortb2?.source?.ext?.schain;
     request.location = {
       page: refererInfo.page,
       location: refererInfo.location,
@@ -114,9 +113,9 @@ export function interpretResponse(serverResponse, {bidderRequest}) {
   }
 
   serverResponse.body.data.forEach(serverBid => {
-    const bidIndex = findIndex(bidderRequest.bids, (bidRequest) => {
-      return bidRequest.bidId === serverBid.requestId;
-    });
+    const bidIndex = Array.isArray(bidderRequest.bids)
+      ? bidderRequest.bids.findIndex(bidRequest => bidRequest.bidId === serverBid.requestId)
+      : undefined;
 
     if (bidIndex !== -1) {
       const bid = {

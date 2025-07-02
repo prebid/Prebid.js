@@ -171,27 +171,33 @@ describe('gumgumAdapter', function () {
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'exchange1.com',
-              sid: '1234',
-              hp: 1,
-              rid: 'bid-request-1',
-              name: 'publisher',
-              domain: 'publisher.com'
-            },
-            {
-              asi: 'exchange2.com',
-              sid: 'abcd',
-              hp: 1,
-              rid: 'bid-request-2',
-              name: 'intermediary',
-              domain: 'intermediary.com'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'exchange1.com',
+                    sid: '1234',
+                    hp: 1,
+                    rid: 'bid-request-1',
+                    name: 'publisher',
+                    domain: 'publisher.com'
+                  },
+                  {
+                    asi: 'exchange2.com',
+                    sid: 'abcd',
+                    hp: 1,
+                    rid: 'bid-request-2',
+                    name: 'intermediary',
+                    domain: 'intermediary.com'
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       }
     ];
@@ -344,20 +350,20 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.ae).to.equal(true);
     });
 
-    it('should set the global placement id (gpid) if in pbadslot property', function () {
-      const pbadslot = 'abc123'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } } }
+    it('should set the global placement id (gpid) if in gpid property', function () {
+      const gpid = 'abc123'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(pbadslot);
+      expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the global placement id (gpid) if media type is video', function () {
-      const pbadslot = 'cde456'
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } }, params: zoneParam, mediaTypes: vidMediaTypes }
+      const gpid = 'cde456'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: {}, gpid } }, params: zoneParam, mediaTypes: vidMediaTypes }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(pbadslot);
+      expect(bidRequest.data.gpid).to.equal(gpid);
     });
 
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
@@ -734,6 +740,20 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
 
       expect(bidRequest.data).to.not.have.property('idl_env');
+    });
+    it('should add a uid2 parameter if request contains uid2 id', function () {
+      const uid2 = { id: 'sample-uid2' };
+      const request = { ...bidRequests[0], userId: { uid2 } };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.have.property('uid2');
+      expect(bidRequest.data.uid2).to.equal(uid2.id);
+    });
+    it('should not add uid2 parameter if uid2 id is not found', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+
+      expect(bidRequest.data).to.not.have.property('uid2');
     });
     it('should send schain parameter in serialized form', function () {
       const serializedForm = '1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'

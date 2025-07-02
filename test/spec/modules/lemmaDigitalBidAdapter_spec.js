@@ -59,13 +59,13 @@ describe('lemmaDigitalBidAdapter', function () {
         [300, 250],
         [300, 600]
       ],
-      schain: schainConfig
+      ortb2: { source: { ext: { schain: schainConfig } } }
     }];
     videoBidRequests = [{
       code: 'video1',
       mediaTypes: {
         video: {
-          playerSize: [640, 480],
+          playerSize: [[640, 480]],
           context: 'instream'
         }
       },
@@ -84,7 +84,7 @@ describe('lemmaDigitalBidAdapter', function () {
           maxduration: 30
         }
       },
-      schain: schainConfig
+      ortb2: { source: { ext: { schain: schainConfig } } }
     }];
     bidResponses = {
       'body': {
@@ -216,7 +216,7 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       it('Endpoint checking', function () {
         let request = spec.buildRequests(bidRequests);
-        expect(request.url).to.equal('https://bid.lemmadigital.com/lemma/servad?pid=1001&aid=1');
+        expect(request.url).to.equal('https://pbidj.lemmamedia.com/lemma/servad?pid=1001&aid=1');
         expect(request.method).to.equal('POST');
       });
       it('Request params check', function () {
@@ -227,7 +227,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0].tagid).to.equal('1'); // tagid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.bidFloor);
-        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.source.ext.schain).to.deep.equal(bidRequests[0].ortb2.source.ext.schain);
       });
 
       it('Set sizes from mediaTypes object', function () {
@@ -245,7 +245,7 @@ describe('lemmaDigitalBidAdapter', function () {
       });
       it('Check device, source object not present', function () {
         let newBannerRequest = utils.deepClone(bidRequests);
-        delete newBannerRequest[0].schain;
+        delete newBannerRequest[0].ortb2;
         let request = spec.buildRequests(newBannerRequest);
         let data = JSON.parse(request.data);
         delete data.device;
@@ -254,7 +254,7 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.device).to.equal(undefined);
       });
       it('Set content from config, set site.content', function () {
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -294,7 +294,7 @@ describe('lemmaDigitalBidAdapter', function () {
             },
           }
         }];
-        let sandbox = sinon.sandbox.create();
+        let sandbox = sinon.createSandbox();
         const content = {
           'id': 'alpha-numeric-id'
         };
@@ -459,9 +459,9 @@ describe('lemmaDigitalBidAdapter', function () {
         expect(data.imp[0]['video']['mimes'][1]).to.equal(videoBidRequests[0].params.video['mimes'][1]);
         expect(data.imp[0]['video']['minduration']).to.equal(videoBidRequests[0].params.video['minduration']);
         expect(data.imp[0]['video']['maxduration']).to.equal(videoBidRequests[0].params.video['maxduration']);
-        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
-        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
-        expect(data.source.ext.schain).to.deep.equal(videoBidRequests[0].schain);
+        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][0]);
+        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][1]);
+        expect(data.source.ext.schain).to.deep.equal(videoBidRequests[0].ortb2.source.ext.schain);
       });
       describe('setting imp.floor using floorModule', function () {
         /*
@@ -571,7 +571,7 @@ describe('lemmaDigitalBidAdapter', function () {
       let sandbox, utilsMock, newVideoRequest;
       beforeEach(() => {
         utilsMock = sinon.mock(utils);
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.spy(utils, 'logWarn');
         newVideoRequest = utils.deepClone(videoBidRequests);
       });
@@ -594,8 +594,8 @@ describe('lemmaDigitalBidAdapter', function () {
         let request = spec.buildRequests(newVideoRequest);
         let data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist;
-        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
-        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
+        expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][0]);
+        expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0][1]);
         expect(data.imp[0]['video']['battr']).to.equal(undefined);
       });
     });
@@ -603,7 +603,7 @@ describe('lemmaDigitalBidAdapter', function () {
       const syncurl_iframe = 'https://sync.lemmadigital.com/js/usersync.html?pid=1001';
       let sandbox;
       beforeEach(function () {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
       });
       afterEach(function () {
         sandbox.restore();

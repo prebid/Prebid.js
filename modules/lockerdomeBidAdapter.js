@@ -12,7 +12,8 @@ export const spec = {
     let schain;
 
     const adUnitBidRequests = bidRequests.map(function (bid) {
-      if (bid.schain) schain = schain || bid.schain;
+      const bidSchain = bid?.ortb2?.source?.ext?.schain;
+      if (bidSchain) schain = schain || bidSchain;
       return {
         requestId: bid.bidId,
         adUnitCode: bid.adUnitCode,

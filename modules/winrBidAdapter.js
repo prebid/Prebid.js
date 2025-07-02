@@ -3,7 +3,6 @@ import {
   getBidRequest,
   getParameterByName,
   isArray,
-  isFn,
   isNumber,
   isPlainObject,
   logError
@@ -16,6 +15,7 @@ import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 import { transformSizes } from '../libraries/sizeUtils/tranformSize.js';
+import {addUserId, hasUserInfo, hasAppDeviceInfo, hasAppId, getBidFloor} from '../libraries/adrelevantisUtils/bidderUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -193,7 +193,7 @@ export const spec = {
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
 
     const payload = {
       tags: [...tags],
@@ -455,7 +455,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -467,27 +467,6 @@ function bidToTag(bid) {
   }
 
   return tag;
-}
-
-function hasUserInfo(bid) {
-  return !!bid.params.user;
-}
-
-function hasMemberId(bid) {
-  return !!parseInt(bid.params.member, 10);
-}
-
-function hasAppDeviceInfo(bid) {
-  if (bid.params) {
-    return !!bid.params.app
-  }
-}
-
-function hasAppId(bid) {
-  if (bid.params && bid.params.app) {
-    return !!bid.params.app.id
-  }
-  return !!bid.params.app
 }
 
 function getRtbBid(tag) {
@@ -502,31 +481,8 @@ function parseMediaType(rtbBid) {
   return BANNER;
 }
 
-function addUserId(eids, id, source, rti) {
-  if (id) {
-    if (rti) {
-      eids.push({ source, id, rti_partner: rti });
-    } else {
-      eids.push({ source, id });
-    }
-  }
-  return eids;
-}
-
-function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return (bid.params.reserve) ? bid.params.reserve : null;
-  }
-
-  let floor = bid.getFloor({
-    currency: 'USD',
-    mediaType: '*',
-    size: '*'
-  });
-  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
-    return floor.floor;
-  }
-  return null;
+function hasMemberId(bid) {
+  return !!parseInt(bid.params.member, 10);
 }
 
 registerBidder(spec);

@@ -1,5 +1,4 @@
 import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
-import { } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -115,7 +114,7 @@ export const spec = {
       }
 
       const pbadslot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || pbadslot;
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
       if (gpid) {
         params['gpid'] = gpid;
       }

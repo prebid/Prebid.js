@@ -62,19 +62,25 @@ describe('E-Planning Adapter', function () {
     },
     'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
-    'schain': {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'directseller.com',
-          sid: '00001',
-          rid: 'BidRequest1',
-          hp: 1,
-          name: 'publisher',
-          domain: 'publisher.com'
+    'ortb2': {
+      'source': {
+        'ext': {
+          'schain': {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'directseller.com',
+                sid: '00001',
+                rid: 'BidRequest1',
+                hp: 1,
+                name: 'publisher',
+                domain: 'publisher.com'
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   };
   const validBidWithSchainNodes = {
@@ -85,35 +91,41 @@ describe('E-Planning Adapter', function () {
     },
     'adUnitCode': ADUNIT_CODE2,
     'sizes': [[300, 250], [300, 600]],
-    'schain': {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'directseller.com',
-          sid: '00001',
-          rid: 'BidRequest1',
-          hp: 1,
-          name: 'publisher',
-          domain: 'publisher.com'
-        },
-        {
-          asi: 'reseller.com',
-          sid: 'aaaaa',
-          rid: 'BidRequest2',
-          hp: 1,
-          name: 'publisher2',
-          domain: 'publisher2.com'
-        },
-        {
-          asi: 'reseller3.com',
-          sid: 'aaaaab',
-          rid: 'BidRequest3',
-          hp: 1,
-          name: 'publisher3',
-          domain: 'publisher3.com'
+    'ortb2': {
+      'source': {
+        'ext': {
+          'schain': {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'directseller.com',
+                sid: '00001',
+                rid: 'BidRequest1',
+                hp: 1,
+                name: 'publisher',
+                domain: 'publisher.com'
+              },
+              {
+                asi: 'reseller.com',
+                sid: 'aaaaa',
+                rid: 'BidRequest2',
+                hp: 1,
+                name: 'publisher2',
+                domain: 'publisher2.com'
+              },
+              {
+                asi: 'reseller3.com',
+                sid: 'aaaaab',
+                rid: 'BidRequest3',
+                hp: 1,
+                name: 'publisher3',
+                domain: 'publisher3.com'
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   };
   const ML = '1';
@@ -634,7 +646,7 @@ describe('E-Planning Adapter', function () {
           storageAllowed: true
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       getWindowTopStub = sandbox.stub(internal, 'getWindowTop');
       getWindowTopStub.returns(createWindow(800));
       resetWinDimensions();
@@ -796,7 +808,7 @@ describe('E-Planning Adapter', function () {
     });
     it('should return sch parameter', function () {
       let bidRequests = [validBidWithSchain], schainExpected, schain;
-      schain = validBidWithSchain.schain;
+      schain = validBidWithSchain.ortb2.source.ext.schain;
       schainExpected = schain.ver + ',' + schain.complete + '!' + schain.nodes.map(node => node.asi + ',' + node.sid + ',' + node.hp + ',' + node.rid + ',' + node.name + ',' + node.domain).join('!');
       const data = spec.buildRequests(bidRequests, bidderRequest).data;
       expect(data.sch).to.deep.equal(schainExpected);
@@ -1114,7 +1126,7 @@ describe('E-Planning Adapter', function () {
     let clock;
     let element;
     let getBoundingClientRectStub;
-    let sandbox = sinon.sandbox.create();
+    let sandbox = sinon.createSandbox();
     let intersectionObserverStub;
     let intersectionCallback;
 
@@ -1481,7 +1493,7 @@ describe('E-Planning Adapter', function () {
   describe('Send eids', function() {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       // TODO: bid adapters should look at request data, not call getGlobal().getUserIds
       sandbox.stub(getGlobal(), 'getUserIds').callsFake(() => ({
         pubcid: 'c29cb2ae-769d-42f6-891a-f53cadee823d',

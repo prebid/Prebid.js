@@ -12,7 +12,7 @@ describe('Livewrapped adapter tests', function () {
     bidderRequest;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     window.livewrapped = undefined;
 
@@ -1315,7 +1315,10 @@ describe('Livewrapped adapter tests', function () {
       ]
     };
 
-    testbidRequest.bids[0].schain = schain;
+    testbidRequest.bids[0].ortb2 = testbidRequest.bids[0].ortb2 || {};
+    testbidRequest.bids[0].ortb2.source = testbidRequest.bids[0].ortb2.source || {};
+    testbidRequest.bids[0].ortb2.source.ext = testbidRequest.bids[0].ortb2.source.ext || {};
+    testbidRequest.bids[0].ortb2.source.ext.schain = schain;
 
     let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
     let data = JSON.parse(result.data);

@@ -1,4 +1,3 @@
-
 import { submodule } from '../src/hook.js'
 import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
@@ -88,6 +87,7 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
 /** @type {RtdSubmodule} */
 export const adnuntiusSubmodule = {
   name: 'adnuntius',
+  gvlid: GVLID,
   init: init,
   getBidRequestData: alterBidRequests,
   setGlobalConfig: setGlobalConfig,

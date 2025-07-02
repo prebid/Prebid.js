@@ -26,7 +26,7 @@ describe('ID5 ID System', function () {
   });
   after(function () {
     logInfoStub.restore();
-  });  
+  });
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
@@ -852,7 +852,7 @@ describe('ID5 ID System', function () {
     describe('when legacy cookies are set', () => {
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(id5System.storage, 'getCookie');
       });
       afterEach(() => {
@@ -900,7 +900,7 @@ describe('ID5 ID System', function () {
   describe('Local storage', () => {
     let sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(id5System.storage, 'localStorageIsEnabled');
     });
     afterEach(() => {
@@ -933,7 +933,7 @@ describe('ID5 ID System', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       sinon.stub(events, 'getEvents').returns([]);
       coreStorage.removeDataFromLocalStorage(id5System.ID5_STORAGE_NAME);
@@ -960,8 +960,6 @@ describe('ID5 ID System', function () {
         startAuctionHook(wrapAsyncExpects(done, () => {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
-              expect(bid.userId.id5id.uid).is.equal(ID5_STORED_ID);
               expect(bid.userIdAsEids[0]).is.eql({
                 source: ID5_SOURCE,
                 uids: [{
@@ -988,8 +986,6 @@ describe('ID5 ID System', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.euid`);
-              expect(bid.userId.euid.uid).is.equal(EUID_STORED_ID);
               expect(bid.userIdAsEids[0].uids[0].id).is.equal(ID5_STORED_ID);
               expect(bid.userIdAsEids[1]).is.eql({
                 source: EUID_SOURCE,
@@ -1017,8 +1013,6 @@ describe('ID5 ID System', function () {
         startAuctionHook(wrapAsyncExpects(done, function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
-              expect(bid.userId.trueLinkId.uid).is.equal(TRUE_LINK_STORED_ID);
               expect(bid.userIdAsEids[1]).is.eql({
                 source: TRUE_LINK_SOURCE,
                 uids: [{
@@ -1074,11 +1068,6 @@ describe('ID5 ID System', function () {
         startAuctionHook(wrapAsyncExpects(done, () => {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.${ID5_EIDS_NAME}`);
-              expect(bid.userId.id5id).is.eql({
-                uid: id5IdEidUid.id,
-                ext: id5IdEidUid.ext
-              });
               expect(bid.userIdAsEids[0]).is.eql({
                 source: IDS_ID5ID.eid.source,
                 uids: [{
@@ -1108,11 +1097,6 @@ describe('ID5 ID System', function () {
         startAuctionHook(wrapAsyncExpects(done, () => {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.euid`);
-              expect(bid.userId.euid).is.eql({
-                uid: IDS_EUID.eid.uids[0].id,
-                ext: IDS_EUID.eid.uids[0].ext
-              });
               expect(bid.userIdAsEids[0]).is.eql(IDS_ID5ID.eid);
               expect(bid.userIdAsEids[1]).is.eql(IDS_EUID.eid);
             });
@@ -1137,8 +1121,6 @@ describe('ID5 ID System', function () {
         startAuctionHook(wrapAsyncExpects(done, function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
-              expect(bid.userId.trueLinkId.uid).is.eql(IDS_TRUE_LINK_ID.eid.uids[0].id);
               expect(bid.userIdAsEids[1]).is.eql(IDS_TRUE_LINK_ID.eid);
             });
           });
@@ -1178,8 +1160,6 @@ describe('ID5 ID System', function () {
         startAuctionHook(wrapAsyncExpects(done, function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property(`userId.otherId`);
-              expect(bid.userId.otherId.uid).is.eql('other-id-value');
               expect(bid.userIdAsEids[1]).is.eql({
                 source: 'other-id.com',
                 inserter: 'id5-sync.com',
@@ -1277,6 +1257,7 @@ describe('ID5 ID System', function () {
         let logErrorSpy;
 
         beforeEach(function () {
+          utils.logError.restore?.();
           logErrorSpy = sinon.spy(utils, 'logError');
         });
         afterEach(function () {

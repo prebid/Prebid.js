@@ -498,7 +498,7 @@ describe('33acrossBidAdapter:', function () {
         .withBanner()
         .build()
     );
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(Date, 'now').returns(1);
     sandbox.stub(document, 'getElementById').returns(element);
     sandbox.stub(internal, 'getWindowTop').returns(win);
@@ -1420,7 +1420,7 @@ describe('33acrossBidAdapter:', function () {
         ];
 
         schainValues.forEach((schain) => {
-          bidRequests[0].schain = schain;
+          bidRequests[0].ortb2.source = {ext: {schain: schain}};
 
           const ttxRequest = new TtxRequestBuilder()
             .withBanner()

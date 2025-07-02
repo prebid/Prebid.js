@@ -14,7 +14,6 @@ import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
 import {_internal as store} from 'src/videoCache.js';
 import * as ajaxLib from 'src/ajax.js';
-import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
 import {hook} from '../../src/hook.js';
 import {auctionManager} from '../../src/auctionManager.js';
@@ -596,7 +595,7 @@ describe('auctionmanager.js', function () {
 
     it('Standard bidCpmAdjustment changes the bid of any bidder', function () {
       const bid = Object.assign({},
-        createBid(2),
+        createBid(),
         fixtures.getBidResponses()[5]
       );
 
@@ -741,7 +740,7 @@ describe('auctionmanager.js', function () {
   describe('adjustBids', function () {
     it('should adjust bids if greater than zero and pass copy of bid object', function () {
       const bid = Object.assign({},
-        createBid(2),
+        createBid(),
         fixtures.getBidResponses()[5]
       );
 
@@ -1249,7 +1248,7 @@ describe('auctionmanager.js', function () {
         it('should use renderers on bid response', () => {
           auction.callBids();
 
-          const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode === ADUNIT_CODE);
+          const addedBid = auction.getBidsReceived().find(bid => bid.adUnitCode === ADUNIT_CODE);
           assert.equal(addedBid.renderer.url, 'renderer.js');
         });
 
@@ -1422,13 +1421,31 @@ describe('auctionmanager.js', function () {
             enabled: true,
             defaultVendor: 'appnexuspsp',
             bidders: ['mock-s2s-1'],
-            adapter: 'pbs'
+            adapter: 'pbs',
+            endpoint: {
+              p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
+              noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
+            },
+            maxTimeout: 1000,
+            syncEndpoint: {
+              p1Consent: "https://prebid.adnxs.com/pbs/v1/cookie_sync",
+              noP1Consent: "https://prebid.adnxs-simple.com/pbs/v1/cookie_sync"
+            },
           }, {
             accountId: '1',
             enabled: true,
             defaultVendor: 'rubicon',
             bidders: ['mock-s2s-2'],
-            adapter: 'pbs'
+            adapter: 'pbs',
+            endpoint: {
+              p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+              noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+            },
+            maxTimeout: 500,
+            syncEndpoint: {
+              p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
+              noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
+            },
           }]
         })
         adUnits[0].bids.push({bidder: 'mock-s2s-1'}, {bidder: 'mock-s2s-2'})
@@ -1693,7 +1710,7 @@ describe('auctionmanager.js', function () {
       assert.equal(auctionBidRequests.length > 0, true);
       assert.equal(Array.isArray(auctionBidRequests[0].bids), true);
 
-      const bid = find(auctionBidRequests[0].bids, bid => bid.adUnitCode === ADUNIT_CODE);
+      const bid = auctionBidRequests[0].bids.find(bid => bid.adUnitCode === ADUNIT_CODE);
       assert.equal(typeof bid !== 'undefined', true);
     });
   });
@@ -1845,7 +1862,7 @@ describe('auctionmanager.js', function () {
   describe('addWinningBid', () => {
     let auction, bid, adUnits, sandbox;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(adapterManager, 'callBidWonBidder');
       sandbox.stub(adapterManager, 'triggerBilling')
       adUnits = [{code: 'au1'}, {code: 'au2'}]

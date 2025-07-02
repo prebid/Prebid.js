@@ -21,7 +21,6 @@ import { Renderer } from '../src/Renderer.js';
 import { _ADAGIO } from '../libraries/adagioUtils/adagioUtils.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { find } from '../src/polyfill.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { userSync } from '../src/userSync.js';
@@ -156,7 +155,7 @@ function _getUspConsent(bidderRequest) {
 }
 
 function _getSchain(bidRequest) {
-  return deepAccess(bidRequest, 'schain');
+  return deepAccess(bidRequest, 'ortb2.source.ext.schain');
 }
 
 function _getEids(bidRequest) {
@@ -638,7 +637,7 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
-      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
       if (gpid) {
         bidRequest.gpid = gpid;
       }
@@ -757,7 +756,7 @@ export const spec = {
         }
         if (response.bids) {
           response.bids.forEach(bidObj => {
-            const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
+            const bidReq = bidRequest.data.adUnits.find(bid => bid.bidId === bidObj.requestId);
 
             if (bidReq) {
               // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response

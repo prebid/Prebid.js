@@ -5,7 +5,7 @@ describe('justpremium adapter', function () {
   let sandbox;
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function() {
@@ -46,7 +46,13 @@ describe('justpremium adapter', function () {
         zone: 28313,
         allow: ['lb', 'wp']
       },
-      schain: schainConfig
+      ortb2: {
+        source: {
+          ext: {
+            schain: schainConfig
+          }
+        }
+      }
     },
     {
       adUnitCode: 'div-gpt-ad-1471513102552-2',

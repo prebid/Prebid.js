@@ -2,9 +2,7 @@ import { expect } from 'chai';
 import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
 import { BANNER, VIDEO } from '../../../src/mediaTypes';
 import { config } from '../../../src/config';
-import * as utils from '../../../src/utils.js';
 import sinon from 'sinon';
-
 
 describe('ExcoBidAdapter', function () {
   const helpers = new AdapterHelpers();

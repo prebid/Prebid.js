@@ -8,7 +8,7 @@ import {
 } from 'src/targeting.js';
 import {config} from 'src/config.js';
 import {createBidReceived} from 'test/fixtures/fixtures.js';
-import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, STATUS, TARGETING_KEYS } from 'src/constants.js';
+import { DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, TARGETING_KEYS } from 'src/constants.js';
 import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
@@ -16,8 +16,8 @@ import {createBid} from '../../../../src/bidfactory.js';
 import { hook, setupBeforeHookFnOnce } from '../../../../src/hook.js';
 import {getHighestCpm} from '../../../../src/utils/reducers.js';
 
-function mkBid(bid, status = STATUS.GOOD) {
-  return Object.assign(createBid(status), bid);
+function mkBid(bid) {
+  return Object.assign(createBid(), bid);
 }
 
 const sampleBid = {
@@ -252,7 +252,7 @@ describe('targeting tests', function () {
   });
 
   beforeEach(function() {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
 
     useBidCache = true;
 
@@ -661,7 +661,7 @@ describe('targeting tests', function () {
           .filter((bid) => bid.adserverTargeting[key] != null)
           .map((bid) => bid.bidderCode)
           .forEach((code) => keys.add(`${key}_${code}`.substr(0, 20)));
-        return new Array(...keys);
+        return [...keys];
       }
 
       const targetingResult = function () {
@@ -684,9 +684,6 @@ describe('targeting tests', function () {
           }
         });
         const defaultKeys = new Set(Object.values(DEFAULT_TARGETING_KEYS));
-        if (FEATURES.NATIVE) {
-          Object.values(NATIVE_KEYS).forEach((k) => defaultKeys.add(k));
-        }
 
         const expectedKeys = new Set();
         bidsReceived
@@ -944,8 +941,9 @@ describe('targeting tests', function () {
         config.resetConfig();
       });
 
-      it('should merge custom targeting from all bids by default', function () {
+      it('should merge custom targeting from all bids when allBidsCustomTargeting: true', function () {
         // Default behavior - no specific configuration
+        config.setConfig({targetingControls: {allBidsCustomTargeting: true}});
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // Custom key values from both bids should be combined to maintain existing functionality
@@ -953,7 +951,7 @@ describe('targeting tests', function () {
         expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner,loser');
       });
 
-      it('should only use custom targeting from winning bid when allBidsCustomTargeting=false', function () {
+      it('should use custom targeting from winning bid when allBidsCustomTargeting=false', function () {
         // Set allBidsCustomTargeting to false
         config.setConfig({
           targetingControls: {
@@ -961,6 +959,15 @@ describe('targeting tests', function () {
           }
         });
 
+        const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
+
+        // Only the winning bid's custom key value should be used
+        expect(targeting['/123456/header-bid-tag-0']).to.have.property('foobar');
+        expect(targeting['/123456/header-bid-tag-0']['foobar']).to.equal('winner');
+      });
+
+      it('should use custom targeting from winning bid when allBidsCustomTargeting is not set', function () {
+        // allBidsCustomTargeting defaults to false
         const targeting = targetingInstance.getAllTargeting(['/123456/header-bid-tag-0']);
 
         // Only the winning bid's custom key value should be used
@@ -1018,12 +1025,7 @@ describe('targeting tests', function () {
         });
 
         let targeting = targetingInstance.getAllTargeting([nativeAdUnitCode]);
-        expect(targeting[nativeAdUnitCode].hb_native_image).to.equal(nativeBid1.native.image.url);
-        expect(targeting[nativeAdUnitCode].hb_native_linkurl).to.equal(nativeBid1.native.clickUrl);
-        expect(targeting[nativeAdUnitCode].hb_native_title).to.equal(nativeBid1.native.title);
-        expect(targeting[nativeAdUnitCode].hb_native_image_dgad).to.exist.and.to.equal(nativeBid2.native.image.url);
         expect(targeting[nativeAdUnitCode].hb_pb_dgads).to.exist.and.to.equal(nativeBid2.pbMg);
-        expect(targeting[nativeAdUnitCode].hb_native_body_appne).to.exist.and.to.equal(nativeBid1.native.body);
       });
     }
 
