@@ -11,6 +11,7 @@ import {createRenderer, getMediaTypeFromBid, hasVideoMandatoryParams} from '../l
  */
 
 const BIDDER_CODE = 'hybrid';
+const GVLID = 206;
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
 const TRAFFIC_TYPE_WEB = 1;
 const PLACEMENT_TYPE_BANNER = 1;
@@ -40,7 +41,6 @@ function buildBidRequests(validBidRequests) {
     return bidRequest;
   })
 }
-
 
 function buildBid(bidData) {
   const bid = {
@@ -105,7 +105,6 @@ function buildBid(bidData) {
   return bid;
 }
 
-
 function wrapAd(bid, bidData) {
   return `<!DOCTYPE html>
     <html lang="en">
@@ -132,6 +131,7 @@ function wrapAd(bid, bidData) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   placementTypes: placementTypes,
 

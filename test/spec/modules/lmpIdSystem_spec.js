@@ -87,7 +87,7 @@ describe('LMPID System', () => {
     let sandbox;
 
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
       init(config);
@@ -114,8 +114,6 @@ describe('LMPID System', () => {
       startAuctionHook(() => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.lmpid');
-            expect(bid.userId.lmpid).to.equal('stored-lmpid');
             const lmpidAsEid = bid.userIdAsEids.find(e => e.source == 'loblawmedia.ca');
             expect(lmpidAsEid).to.deep.equal({
               source: 'loblawmedia.ca',

@@ -10,7 +10,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 
 const IMAGE_SYNC_URL = 'https://s.ad.smaato.net/c/?adExInit=p'
 const IFRAME_SYNC_URL = 'https://s.ad.smaato.net/i/?adExInit=p'
@@ -141,7 +140,7 @@ describe('smaatoBidAdapterTest', () => {
 
       let sandbox;
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
       });
 
       afterEach(() => {
@@ -1272,7 +1271,15 @@ describe('smaatoBidAdapterTest', () => {
             }
           ]
         };
-        const bidRequestWithSchain = Object.assign({}, singleBannerBidRequest, {schain: schain});
+        const bidRequestWithSchain = Object.assign({}, singleBannerBidRequest, {
+          ortb2: {
+            source: {
+              ext: {
+                schain: schain
+              }
+            }
+          }
+        });
 
         const reqs = spec.buildRequests([bidRequestWithSchain], defaultBidderRequest);
 

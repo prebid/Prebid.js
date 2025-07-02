@@ -13,7 +13,7 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 const BIDDER_CODE = 'adtrgtme';
-const BIDDER_VERSION = '1.0.6';
+const BIDDER_VERSION = '1.0.7';
 const BIDDER_URL = 'https://z.cdn.adtarget.market/ssp?prebid&s=';
 const PREBIDJS_VERSION = '$prebid.version$';
 const DEFAULT_TTL = 300;
@@ -76,31 +76,29 @@ function createORTB(bR, bid) {
       ip,
     },
     regs: {
-      ext: {
-        us_privacy: usPrivacy,
-        gdpr,
-      },
+      gdpr,
+      us_privacy: usPrivacy,
     },
     source: {
       ext: {
         hb: 1,
         bidderver: BIDDER_VERSION,
         prebidjsver: PREBIDJS_VERSION,
-        ...(bid?.schain && { schain: bid.schain }),
       },
       fd: 1,
+      ...(bid?.ortb2?.source?.ext?.schain && { schain: bid?.ortb2?.source?.ext?.schain }),
     },
     user: {
       ...user,
+      consent: consentString,
       ext: {
-        consent: consentString,
         ...(user?.ext || {}),
       },
     },
   };
 
-  if (bid?.schain) {
-    oR.source.ext.schain.nodes[0].rid = oR.id;
+  if (bid?.ortb2?.source?.ext?.schain) {
+    oR.source.schain.nodes[0].rid = oR.id;
   }
 
   return oR;

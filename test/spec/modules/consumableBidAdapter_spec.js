@@ -33,22 +33,6 @@ const BIDDER_REQUEST_1 = {
       transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
     }
   ],
-  schain: {
-    'ver': '1.0',
-    'complete': 1,
-    'nodes': [
-      {
-        'asi': 'indirectseller.com',
-        'sid': '00001',
-        'hp': 1
-      },
-      {
-        'asi': 'indirectseller-2.com',
-        'sid': '00002',
-        'hp': 2
-      },
-    ]
-  },
   gdprConsent: {
     consentString: 'consent-test',
     gdprApplies: false
@@ -70,6 +54,26 @@ const BIDDER_REQUEST_1 = {
   ortb2: {
     device: {
       language: 'en'
+    },
+    source: {
+      ext: {
+        schain: {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [
+            {
+              'asi': 'indirectseller.com',
+              'sid': '00001',
+              'hp': 1
+            },
+            {
+              'asi': 'indirectseller-2.com',
+              'sid': '00002',
+              'hp': 2
+            },
+          ]
+        }
+      }
     }
   }
 };
@@ -488,7 +492,7 @@ describe('Consumable BidAdapter', function () {
       let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
       let data = JSON.parse(request.data);
 
-      expect(data.schain).to.deep.equal(BIDDER_REQUEST_1.schain)
+      expect(data.schain).to.deep.equal(BIDDER_REQUEST_1.ortb2.source.ext.schain)
     });
 
     it('should not contain schain if it does not exist in the bidRequest', function () {
@@ -549,7 +553,7 @@ describe('Consumable BidAdapter', function () {
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
       let bidRequest = spec.buildRequests(BIDDER_REQUEST_2.bidRequest, BIDDER_REQUEST_2);
-      let bid = createBid(1, bidRequest.bidRequest[0]);
+      let bid = createBid(bidRequest.bidRequest[0]);
 
       expect(bid.bidderCode).to.equal('consumable');
     });
@@ -729,7 +733,7 @@ describe('Consumable BidAdapter', function () {
   describe('unifiedId from userId module', function() {
     let sandbox, bidderRequest;
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       bidderRequest = deepClone(BIDDER_REQUEST_1);
     });
 
