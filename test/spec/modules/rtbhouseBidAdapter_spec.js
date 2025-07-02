@@ -92,17 +92,23 @@ describe('RTBHouseAdapter', () => {
               'gpid': 'example-gpid'
             }
           },
-          'schain': {
-            'ver': '1.0',
-            'complete': 1,
-            'nodes': [
-              {
-                'asi': 'directseller.com',
-                'sid': '00001',
-                'rid': 'BidRequest1',
-                'hp': 1
+          'ortb2': {
+            'source': {
+              'ext': {
+                'schain': {
+                  'ver': '1.0',
+                  'complete': 1,
+                  'nodes': [
+                    {
+                      'asi': 'directseller.com',
+                      'sid': '00001',
+                      'rid': 'BidRequest1',
+                      'hp': 1
+                    }
+                  ]
+                }
               }
-            ]
+            }
           }
         }
       ];
@@ -290,7 +296,10 @@ describe('RTBHouseAdapter', () => {
 
     it('should not include invalid schain', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].schain = {
+      bidRequest[0].ortb2 = bidRequest[0].ortb2 || {};
+      bidRequest[0].ortb2.source = bidRequest[0].ortb2.source || {};
+      bidRequest[0].ortb2.source.ext = bidRequest[0].ortb2.source.ext || {};
+      bidRequest[0].ortb2.source.ext.schain = {
         'nodes': [{
           'unknown_key': 1
         }]

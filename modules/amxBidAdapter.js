@@ -184,7 +184,7 @@ function convertRequest(bid) {
     aw: size[0],
     ah: size[1],
     tf: 0,
-    sc: bid.schain || {},
+    sc: bid?.ortb2?.source?.ext?.schain || {},
     f: ensureFloor(getFloor(bid)),
     rtb: bid.ortb2Imp,
   };
