@@ -170,6 +170,7 @@ const RESPONSE = {
   pid: 2222,
   adsize: '728x90',
   adtype: 'BANNER',
+  netRevenue: false,
 };
 
 const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
@@ -855,6 +856,16 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com');
       expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3]);
       expect(result[0].meta.dsa.adrender).to.equal(1);
+    });
+
+    it('should set netRevenue correctly', () => {
+      const NET_REVENUE_RESPONSE = {
+        ...RESPONSE,
+        netRevenue: true,
+      };
+      const result = spec.interpretResponse({body: [NET_REVENUE_RESPONSE]}, {validBidRequests: [bidRequest], queryParams: REQPARAMS});
+
+      expect(result[0].netRevenue).to.equal(true);
     });
   });
 
