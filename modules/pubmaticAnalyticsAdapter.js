@@ -301,7 +301,7 @@ function executeBidsLoggerCall(event, highestCpmBids) {
   const payload = {
     sd: auctionCache.adUnitCodes,
     fd: getFeatureLevelDetails(auctionCache),
-    rd: {ctr: country || '', ...getRootLevelDetails(auctionCache, auctionId)}
+    rd: { ctr: country || '', ...getRootLevelDetails(auctionCache, auctionId) }
   };
   auctionCache.sent = true;
 
@@ -358,20 +358,20 @@ const eventHandlers = {
     s2sBidders = (function () {
       let result = [];
       try {
-          let s2sConf = config.getConfig('s2sConfig');
-          if (isArray(s2sConf)) {
-            s2sConf.forEach(conf => {
-              if (conf?.bidders) {
-                result.push(...conf.bidders);
-              }
-            });
-          } else if (s2sConf?.bidders) {
-            result.push(...s2sConf.bidders);
-          }
+        let s2sConf = config.getConfig('s2sConfig');
+        if (isArray(s2sConf)) {
+          s2sConf.forEach(conf => {
+            if (conf?.bidders) {
+              result.push(...conf.bidders);
+            }
+          });
+        } else if (s2sConf?.bidders) {
+          result.push(...s2sConf.bidders);
+        }
       } catch (e) {
         logError('Error processing s2s bidders:', e);
       }
-     return result;
+      return result;
     }());
     let cacheEntry = pick(args, [
       'timestamp',
