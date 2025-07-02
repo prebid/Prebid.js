@@ -9,9 +9,9 @@ on:
         required: true
         type: string
     outputs:
-      out:
+      wdir:
         description: "Cache key for the working directory after running tests"
-        value: ${{ jobs.chunk-4.outputs.out }}
+        value: ${{ jobs.chunk-4.outputs.wdir }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -30,33 +30,33 @@ jobs:
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-2:
     name: Run tests ($ {{ inputs.description }}, chunk 2 of 4)
-    needs: test-chunk-1
+    needs: chunk-1
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
-      wdir: ${{ jobs.chunk-1.outputs.out }}
+      wdir: ${{ jobs.chunk-1.outputs.wdir }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-3:
     name: Run tests ($ {{ inputs.description }}, chunk 3 of 4)
-    needs: test-chunk-2
+    needs: chunk-2
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
-      wdir: ${{ jobs.chunk-2.outputs.out }}
+      wdir: ${{ jobs.chunk-2.outputs.wdir }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-4:
     name: Run tests ($ {{ inputs.description }}, chunk 4 of 4)
-    needs: test-chunk-3
+    needs: chunk-3
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 4
-      wdir: ${{ jobs.chunk-3.outputs.out }}
+      wdir: ${{ jobs.chunk-3.outputs.wdir }}
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}

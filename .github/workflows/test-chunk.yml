@@ -12,7 +12,7 @@ on:
         required: false
         type: string
     outputs:
-      out:
+      wdir:
         description: "Cache key for the working directory after running tests"
         value: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.sha }}
     secrets:
