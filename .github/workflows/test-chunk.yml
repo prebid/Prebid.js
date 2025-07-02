@@ -5,12 +5,11 @@ on:
       chunk-no:
         required: true
         type: number
-      bs-username:
-        required: true
-        type: string
-      bs-key:
-        required: true
-        type: string
+    secrets:
+      BROWSERSTACK_USER_NAME:
+        description: "Browserstack user name"
+      BROWSERSTACK_ACCESS_KEY:
+        description: "Browserstack access key"
 
 jobs:
   test:
