@@ -127,7 +127,8 @@
       "symitriDapRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider",
-      "wurflRtdProvider"
+      "wurflRtdProvider",
+      "oftmediaRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",
