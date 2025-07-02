@@ -8,6 +8,9 @@ on:
       test-cmd:
         required: true
         type: string
+      serialize:
+        required: false
+        type: boolean
     outputs:
       wdir:
         description: "Cache key for the working directory after running tests"
@@ -51,6 +54,7 @@ jobs:
       chunk-no: 1
       wdir: build-${{ inputs.build-cmd }}-${{ github.sha }}
       cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -62,6 +66,7 @@ jobs:
       chunk-no: 2
       wdir: ${{ needs.chunk-1.outputs.wdir }}
       cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -73,6 +78,7 @@ jobs:
       chunk-no: 3
       wdir: ${{ needs.chunk-2.outputs.wdir }}
       cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -84,6 +90,7 @@ jobs:
       chunk-no: 4
       wdir: ${{ needs.chunk-3.outputs.wdir }}
       cmd: ${{ inputs.test-cmd }}
+      serialize: ${{ inputs.serialize }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
