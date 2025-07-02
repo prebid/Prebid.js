@@ -1068,7 +1068,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
-/*function addUserId(eids, id, source, rti) {
+/* function addUserId(eids, id, source, rti) {
   if (id) {
     if (rti) {
       eids.push({ source, id, rti_partner: rti });
@@ -1077,7 +1077,7 @@ function parseMediaType(rtbBid) {
     }
   }
   return eids;
-}*/
+} */
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
