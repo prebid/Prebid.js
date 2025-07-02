@@ -271,7 +271,7 @@ export const spec = {
 
     if (bidRequests[0].userIdAsEids?.length > 0) {
       let eids = [];
-	  bidRequests[0].userIdAsEids.forEach(eid => {
+      bidRequests[0].userIdAsEids.forEach(eid => {
         if (!eid || !eid.uids || eid.uids.length < 1) { return; }
         eid.uids.forEach(uid => {
           let tmp = {'source': eid.source, 'id': uid.id};
@@ -1068,7 +1068,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
-function addUserId(eids, id, source, rti) {
+/*function addUserId(eids, id, source, rti) {
   if (id) {
     if (rti) {
       eids.push({ source, id, rti_partner: rti });
@@ -1077,7 +1077,7 @@ function addUserId(eids, id, source, rti) {
     }
   }
   return eids;
-}
+}*/
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
