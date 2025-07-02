@@ -265,15 +265,24 @@ function executeBidsLoggerCall(event, highestCpmBids) {
   };
   auctionCache.sent = true;
 
+  // Check for critical payload data
+  if (!Object.keys(payload?.rd || {}).length || !Object.keys(payload?.sd || {}).length) {
+    logWarn(LOG_PRE_FIX + 'Empty or invalid payload for bid won logger, suppressing API call');
+    return;
+  }
+
   const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
   const queryParams = `v=${END_POINT_VERSION}&psrc=${PAGE_SOURCE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
-
-  sendAjaxRequest({
-    endpoint: END_POINT_BID_LOGGER,
-    method: 'POST',
-    queryParams,
-    body: JSON.stringify(payload)
-  });
+  try {
+    sendAjaxRequest({
+      endpoint: END_POINT_BID_LOGGER,
+      method: 'POST',
+      queryParams,
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    logError(LOG_PRE_FIX + 'Error stringifying payload for bid logger:', e);
+  }
 }
 
 function executeBidWonLoggerCall(auctionId, adUnitId) {
@@ -308,15 +317,25 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     }
   };
 
+  // Check for critical payload data
+  if (!Object.keys(payload?.rd || {}).length || !Object.keys(payload?.sd || {}).length) {
+    logWarn(LOG_PRE_FIX + 'Empty or invalid payload for bid won logger, suppressing API call');
+    return;
+  }
+
   const urlParams = new URLSearchParams(new URL(payload.rd.purl).search);
   const queryParams = `v=${END_POINT_VERSION}&psrc=${PAGE_SOURCE}${urlParams.get('pmad') === '1' ? '&debug=1' : ''}`;
 
-  sendAjaxRequest({
-    endpoint: END_POINT_WIN_BID_LOGGER,
-    method: 'POST',
-    queryParams,
-    body: JSON.stringify(payload)
-  });
+  try {
+    sendAjaxRequest({
+      endpoint: END_POINT_WIN_BID_LOGGER,
+      method: 'POST',
+      queryParams,
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    logError(LOG_PRE_FIX + 'Error stringifying payload for bid won logger:', e);
+  }
 }
 
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
