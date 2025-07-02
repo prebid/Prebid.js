@@ -17,9 +17,7 @@ Analytics adapter for AdPlus platform. Contact [adplusdestek@turkcell.com.tr]() 
 # Example Configuration
 
 ```javascript
-
 pbjs.enableAnalytics({
     provider: 'adplus',
 });
-
 ```
