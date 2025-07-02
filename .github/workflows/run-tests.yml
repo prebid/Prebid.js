@@ -8,6 +8,10 @@ on:
       cmd:
         required: true
         type: string
+    outputs:
+      out:
+        description: "Cache key for the working directory after running tests"
+        value: ${{ jobs.final-chunk.outputs.out }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -30,6 +34,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 2
+      prev-chunk: 1
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -40,15 +45,18 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 3
+      prev-chunk: 2
       cmd: ${{ inputs.cmd }}
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-chunk-4:
+    id: final-chunk
     name: Run tests ($ {{ inputs.description }}, chunk 4 of 4)
     needs: test-chunk-3
     uses: ./.github/workflows/test-chunk.yml
     with:
+      prev-chunk: 3
       chunk-no: 4
       cmd: ${{ inputs.cmd }}
     secrets:

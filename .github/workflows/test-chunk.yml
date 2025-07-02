@@ -8,6 +8,13 @@ on:
       chunk-no:
         required: true
         type: number
+      prev-chunk:
+        required: false
+        type: number
+    outputs:
+      out:
+        description: "Cache key for the working directory after running tests"
+        value: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.sha }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -17,9 +24,6 @@ on:
 concurrency:
   group: 'browserstack'
   cancel-in-progress: false
-
-permissions:
-  actions: write
 
 jobs:
   test:
@@ -41,7 +45,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: test-${{ github.sha }}
+          key: test-${{ inputs.cmd }}-${{ inputs.prev-chunk }}-${{ github.sha }}
 
       - name: Fetch build output from cache
         if: steps.restore-dir.outputs.cache-hit != 'true'
@@ -57,5 +61,5 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .
-          key: test-${{ github.sha }}
+          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.sha }}
 
