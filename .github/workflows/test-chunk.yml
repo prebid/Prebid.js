@@ -21,12 +21,30 @@ jobs:
         with:
           node-version: '20'
 
+
       - name: Fetch build output from cache
-        id: cache-primes-restore
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: ${{ github.sha }}
+          key: build-${{ github.sha }}
+
+      - name: Restore coverage cache
+        uses: actions/cache/restore@v4
+        with:
+          path: _coverage
+          key: coverage-${{ github.sha }}
 
       - name: Run tests
-        run: npx gulp test-pipeline
+        run: npx gulp test-pipeline --browserstack
+
+      - name: Move coverage result
+        run: >
+          mkdir -p _coverage
+          mv -r build/coverage/* _coverage/
+
+      - name: Cache coverage result
+        uses: actions/cache/save@v4
+        with:
+          path: _coverage
+          key: coverage-${{ github.sha }}
+

@@ -29,7 +29,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .
-          key: ${{ github.sha }}
+          key: build-${{ github.sha }}
 
   test-chunk-1:
     needs: build
