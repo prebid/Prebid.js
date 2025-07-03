@@ -29,7 +29,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: isBidRequestValid(),
-  buildRequests: buildRequests(),
+  buildRequests,
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)
 };
