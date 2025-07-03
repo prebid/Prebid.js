@@ -429,9 +429,9 @@ function createBaseBidResponse(bidRequest, bidderBid, bidResponses) {
 }
 
 /* Convert banner bid response to compatible format */
-function buildBannerResponse(bidRequest, serverResponse) {
+function buildBannerResponse(bidRequest, bidResponse) {
   const bidResponses = [];
-  serverResponse.seatbid[0].bid.forEach(function (bidderBid) {
+  bidResponse.seatbid[0].bid.forEach(function (bidderBid) {
     if (bidRequest) {
       let bidResponse = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
       if (!bidResponse) return;
