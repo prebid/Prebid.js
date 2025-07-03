@@ -29,7 +29,7 @@ export const spec = {
       requestId: bidderRequest.bidderRequestId,
       bids,
       referer: bidderRequest.refererInfo.page,
-      schain: validBidRequests[0].schain
+      schain: validBidRequests[0]?.ortb2?.source?.ext?.schain
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
