@@ -242,7 +242,7 @@ module.exports = [
       'no-redeclare': 'off',
       'no-global-assign': 'off',
       'default-case-last': 'off',
-      '@stylistic/no-tabs': 'off',
+      '@stylistic/no-mixed-spaces-and-tabs': 'off',
     }
   },
   {
