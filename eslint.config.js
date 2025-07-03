@@ -136,7 +136,6 @@ module.exports = [
       'no-empty': 'off',
       'no-void': 'off',
       'array-callback-return': 'off',
-      'import-x/no-named-default': 'off',
       'prefer-const': 'off',
       'no-prototype-builtins': 'off',
       'object-shorthand': 'off',

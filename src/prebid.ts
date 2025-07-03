@@ -31,10 +31,9 @@ import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {storageCallbacks} from './storageManager.js';
-import {
+import adapterManager, {
     type AliasBidderOptions,
     type BidRequest,
-    default as adapterManager,
     getS2SBidderSet
 } from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
