@@ -415,35 +415,35 @@ function createBaseBidResponse(bidRequest, bidderBid, bidResponses) {
     bidResponses.push(bid);
     return null;
   }
-  let bidResp = createBid(1);
+  let bidResponse = createBid(1);
   bidRequest.status = STATUS.GOOD;
-  bidResp.requestId = bidRequest.bidId;
-  bidResp.placementCode = bidRequest.placementCode || '';
-  bidResp.cpm = responseCPM;
-  bidResp.creativeId = bidderBid.id;
-  bidResp.bidderCode = bidRequest.bidder;
-  bidResp.ttl = 300;
-  bidResp.netRevenue = true;
-  bidResp.currency = 'USD';
-  return bidResp;
+  bidResponse.requestId = bidRequest.bidId;
+  bidResponse.placementCode = bidRequest.placementCode || '';
+  bidResponse.cpm = responseCPM;
+  bidResponse.creativeId = bidderBid.id;
+  bidResponse.bidderCode = bidRequest.bidder;
+  bidResponse.ttl = 300;
+  bidResponse.netRevenue = true;
+  bidResponse.currency = 'USD';
+  return bidResponse;
 }
 
 /* Convert banner bid response to compatible format */
-function buildBannerResponse(bidRequest, bidResponse) {
+function buildBannerResponse(bidRequest, serverResponse) {
   const bidResponses = [];
-  bidResponse.seatbid[0].bid.forEach(function (bidderBid) {
+  serverResponse.seatbid[0].bid.forEach(function (bidderBid) {
     if (bidRequest) {
-      let bidResp = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
-      if (!bidResp) return;
+      let bidResponse = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
+      if (!bidResponse) return;
       let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
-      bidResp.size = bidSizes;
-      bidResp.width = parseInt(bidderBid.w);
-      bidResp.height = parseInt(bidderBid.h);
+      bidResponse.size = bidSizes;
+      bidResponse.width = parseInt(bidderBid.w);
+      bidResponse.height = parseInt(bidderBid.h);
       let responseAd = bidderBid.adm;
       let responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
-      bidResp.ad = decodeURIComponent(responseAd + responseNurl);
-      bidResp.mediaType = BANNER;
-      bidResponses.push(bidResp);
+      bidResponse.ad = decodeURIComponent(responseAd + responseNurl);
+      bidResponse.mediaType = BANNER;
+      bidResponses.push(bidResponse);
     }
   });
   return bidResponses;
@@ -454,8 +454,8 @@ function buildNativeResponse(bidRequest, response) {
   const bidResponses = [];
   response.seatbid[0].bid.forEach(function (bidderBid) {
     if (bidRequest) {
-      let bidResp = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
-      if (!bidResp) return;
+      let bidResponse = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
+      if (!bidResponse) return;
 
       let nativeResponse = JSON.parse(bidderBid.adm).native;
 
@@ -469,10 +469,10 @@ function buildNativeResponse(bidRequest, response) {
         native[keyVal.key] = keyVal.value;
       });
 
-      if (bidRequest.sizes) { bidResp.size = bidRequest.sizes; }
-      bidResp.native = native;
-      bidResp.mediaType = NATIVE;
-      bidResponses.push(bidResp);
+      if (bidRequest.sizes) { bidResponse.size = bidRequest.sizes; }
+      bidResponse.native = native;
+      bidResponse.mediaType = NATIVE;
+      bidResponses.push(bidResponse);
     }
   });
   return bidResponses;
@@ -483,8 +483,8 @@ function buildVideoResponse(bidRequest, response) {
   const bidResponses = [];
   response.seatbid[0].bid.forEach(function (bidderBid) {
     if (bidRequest) {
-      let bidResp = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
-      if (!bidResp) return;
+      let bidResponse = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
+      if (!bidResponse) return;
       let context = bidRequest.mediaTypes.video.context;
 
       let vastXml = decodeURIComponent(bidderBid.adm);
@@ -497,14 +497,14 @@ function buildVideoResponse(bidRequest, response) {
       var adUnitCode = bidRequest.adUnitCode;
       var sizeObj = getVideoAdUnitSize(bidRequest);
 
-      bidResp.height = sizeObj.adH;
-      bidResp.width = sizeObj.adW;
+      bidResponse.height = sizeObj.adH;
+      bidResponse.width = sizeObj.adW;
 
       switch (context) {
         case OUTSTREAM:
           var outstreamType = contains(OUTSTREAM_TYPES, bidRequest.params.outstreamType) ? bidRequest.params.outstreamType : '';
-          bidResp.outstreamType = outstreamType;
-          bidResp.ad = vastXml;
+          bidResponse.outstreamType = outstreamType;
+          bidResponse.ad = vastXml;
           if (!bidRequest.renderer) {
             const renderer = Renderer.install({
               id: bidderBid.id,
@@ -514,16 +514,16 @@ function buildVideoResponse(bidRequest, response) {
               adUnitCode
             });
             renderer.setRender(outstreamRender);
-            bidResp.renderer = renderer;
-          } else { bidResp.adResponse = vastXml; }
+            bidResponse.renderer = renderer;
+          } else { bidResponse.adResponse = vastXml; }
           break;
         case INSTREAM:
-          bidResp.vastUrl = vastUrl;
-          bidResp.adserverTargeting = setTargeting(vastUrl);
+          bidResponse.vastUrl = vastUrl;
+          bidResponse.adserverTargeting = setTargeting(vastUrl);
           break;
       }
-      bidResp.mediaType = VIDEO;
-      bidResponses.push(bidResp);
+      bidResponse.mediaType = VIDEO;
+      bidResponses.push(bidResponse);
     }
   });
   return bidResponses;
