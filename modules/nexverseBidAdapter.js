@@ -7,7 +7,6 @@ import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid } from '../libraries/nexverseUtils/index.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import { getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
 import { config } from '../src/config.js';
 
@@ -128,7 +127,52 @@ export const spec = {
     });
     return bidResponses;
   },
-  getUserSyncs: getUserSyncs(BIDDER_ENDPOINT),
+
+  /**
+   * Determines user sync options based on consent and supported sync types.
+   *
+   * @param {Object} syncOptions - Options for user syncing (iframe, pixel).
+   * @param {Array} serverResponses - List of bid responses.
+   * @param {Object} gdprConsent - GDPR consent details.
+   * @param {Object} uspConsent - CCPA consent details.
+   * @param {Object} gppConsent - GPP consent details.
+   * @returns {Array} List of user sync URLs.
+   */
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+    const type = syncOptions.iframeEnabled ? "iframe" : "image";
+    let url = BIDDER_ENDPOINT + `/${type}?pbjs=1`;
+
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === "boolean") {
+        url += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
+          gdprConsent.consentString
+        }`;
+      } else {
+        url += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+
+    if (uspConsent && uspConsent.consentString) {
+      url += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      url += "&gpp=" + gppConsent.gppString;
+      url += "&gpp_sid=" + gppConsent.applicableSections.join(",");
+    }
+
+    const coppa = config.getConfig("coppa") ? 1 : 0;
+    url += `&coppa=${coppa}`;
+
+    url += `&uid=${getUid(storage)}`;
+
+    return [
+      {
+        type,
+        url,
+      },
+    ];
+  },
 };
 
 /**

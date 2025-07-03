@@ -119,7 +119,7 @@ export const getUid = (storage) => {
     nexverseUid = generateUUID();
   }
   try {
-    const expirationInMs = 60 * 60 * 24 * 1000; // 1 day in milliseconds
+    const expirationInMs = 60 * 60 * 24 * 365 * 1000; // 1 year in milliseconds
     const expirationTime = new Date(Date.now() + expirationInMs); // Set expiration time
     // Set the cookie with the expiration date
     storage.setCookie(NEXVERSE_USER_COOKIE_KEY, nexverseUid, expirationTime.toUTCString());
