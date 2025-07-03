@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { isArray } from '../src/utils.js';
+import { isArray, isNumber } from '../src/utils.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid } from '../libraries/nexverseUtils/index.js';
@@ -8,6 +8,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'nexverse';
 const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
@@ -81,8 +82,8 @@ export const spec = {
           requestId: bid.impid,
           cpm: bid.price,
           currency: response.cur || DEFAULT_CURRENCY,
-          width: bid.width || 0,
-          height: bid.height || 0,
+          width: bid.w || 0,
+          height: bid.h || 0,
           creativeId: bid.crid || bid.id,
           ttl: BID_TTL,
           netRevenue: true,
@@ -142,11 +143,14 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     return null;
   }
 
-  const imp = [];
+  const imps = [];
+
+  let bidFloor = bid.params.bidFloor || 0
+  bidFloor = parseFloat(bid.params.bidFloor)
 
   // Handle different media types (Banner, Video, Native)
   if (bid.mediaTypes.banner) {
-    imp.push({
+    let imp = {
       id: bid.bidId,
       banner: {
         format: bid.sizes.map(size => ({ w: size[0], h: size[1] })), // List of size objects
@@ -154,10 +158,14 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         h: bid.sizes[0][1],
       },
       secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-    });
+    };
+    if (isNumber(bidFloor) && bidFloor !== 0) {
+      imp.bidFloor = bidFloor
+    }
+    imps.push(imp);
   }
   if (bid.mediaTypes.video) {
-    imp.push({
+    let imp = {
       id: bid.bidId,
       video: {
         w: bid.sizes[0][0],
@@ -169,22 +177,30 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         playbackmethod: bid.mediaTypes.video.playbackmethod || [2],
       },
       secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-    });
+    };
+    if (isNumber(bidFloor) && bidFloor !== 0) {
+      imp.bidFloor = bidFloor
+    }
+    imps.push(imp);
   }
   if (bid.mediaTypes.native) {
-    imp.push({
+     let imp = {
       id: bid.bidId,
       native: {
         request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string
       },
       secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-    });
+    };
+    if (isNumber(bidFloor) && bidFloor !== 0) {
+      imp.bidFloor = bidFloor
+    }
+    imps.push(imp);
   }
 
   // Construct the OpenRTB request object
   const openRtbRequest = {
     id: bidderRequest.auctionId,
-    imp: imp,
+    imp: imps,
     site: {
       page: bidderRequest.refererInfo.page,
       domain: bidderRequest.refererInfo.domain,
@@ -222,6 +238,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         auctiontimestamp: bidderRequest.auctionStart,
       },
     },
+    test: config.getConfig('debug') ? 1 : 0,
   };
 
   // Add app object if the request comes from a mobile app
