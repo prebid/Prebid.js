@@ -14,7 +14,7 @@ const {
   pageInitStepProtectPage,
   bidWrapStepAugmentHtml,
   bidWrapStepProtectByWrapping,
-  beforeInit,
+  beforeInit
 } = __TEST__;
 
 sinon.assert.expose(chai.assert, { prefix: 'sinon' });
@@ -68,7 +68,7 @@ describe('humansecurityMalvDefense RTD module', function () {
     });
 
     it('pageInitStepProtectPage() should insert script element', function() {
-      pageInitStepProtectPage(fakeScriptURL);
+      pageInitStepProtectPage(fakeScriptURL, 'humansecurityMalvDefense');
 
       sinon.assert.calledOnce(loadExternalScriptStub);
       sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, MODULE_TYPE_RTD, 'humansecurityMalvDefense');
@@ -100,7 +100,7 @@ describe('humansecurityMalvDefense RTD module', function () {
     });
   });
 
-  describe('Sumbodule execution', function() {
+  describe('Submodule execution', function() {
     let submoduleStub;
     let insertElementStub;
     beforeEach(function () {
