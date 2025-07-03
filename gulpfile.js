@@ -98,36 +98,6 @@ function lint(done) {
   });
 };
 
-// View the code coverage report in the browser.
-function viewCoverage(done) {
-  var coveragePort = 1999;
-  var mylocalhost = (argv.host) ? argv.host : 'localhost';
-
-  connect.server({
-    port: coveragePort,
-    root: 'build/coverage/lcov-report',
-    livereload: false,
-    debug: true
-  });
-  opens('http://' + mylocalhost + ':' + coveragePort);
-  done();
-};
-
-viewCoverage.displayName = 'view-coverage';
-
-// View the reviewer tools page
-function viewReview(done) {
-  var mylocalhost = (argv.host) ? argv.host : 'localhost';
-  var reviewUrl = 'http://' + mylocalhost + ':' + port + '/integrationExamples/reviewerTools/index.html'; // reuse the main port from 9999
-
-  // console.log(`stdout: opening` + reviewUrl);
-
-  opens(reviewUrl);
-  done();
-};
-
-viewReview.displayName = 'view-review';
-
 function makeVerbose(config = webpackConfig) {
   return _.merge({}, config, {
     optimization: {
@@ -473,10 +443,6 @@ function testCoverage(done) {
   }, done);
 }
 
-function mergeCoverage() {
-  return execaTask(`npx lcov-result-merger 'build/coverage/chunks/*/*.info' build/coverage/lcov.info`)();
-}
-
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
   // first send results of istanbul's test coverage to coveralls.io.
   return execaTask('cat build/coverage/lcov.info | node_modules/coveralls-next/bin/coveralls.js')();
@@ -573,12 +539,14 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), 'build-creative-dev'
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
-gulp.task('test-only', gulp.series(precompile(), test));
-gulp.task('test-all-features-disabled', gulp.series(precompile({disableFeatures: require('./features.json')}), testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false})));
+gulp.task('test-only-nobuild', testTaskMaker({coverage: true}))
+gulp.task('test-only', gulp.series('precompile', test));
+gulp.task('test-all-features-disabled-nobuild', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
+gulp.task('test-all-features-disabled', gulp.series('precompile-all-features-disabled', 'test-all-features-disabled-nobuild'));
+
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
-gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage, mergeCoverage));
-gulp.task(viewCoverage);
+gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage));
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
@@ -604,9 +572,6 @@ gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-p
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step
 
-// build task for reviewers, runs test-coverage, serves, without watching
-gulp.task(viewReview);
-gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 gulp.task('extract-metadata', function (done) {
   /**
