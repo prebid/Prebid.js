@@ -100,6 +100,17 @@ module.exports = [
       semi: 'off',
       'space-before-function-paren': 'off',
       'import/extensions': ['error', 'ignorePackages'],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "FunctionDeclaration[id.name=/^log(Message|Info|Warn|Error|Result)$/]",
+          message: "Defining a function named 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+        },
+        {
+          selector: "VariableDeclarator[id.name=/^log(Message|Info|Warn|Error|Result)$/][init.type=/FunctionExpression|ArrowFunctionExpression/]",
+          message: "Assigning a function to 'logResult, 'logMessage', 'logInfo', 'logWarn', or 'logError' is not allowed."
+        },
+      ],
 
       // Exceptions below this line are temporary (TM), so that eslint can be added into the CI process.
       // Violations of these styles should be fixed, and the exceptions removed over time.

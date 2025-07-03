@@ -26,6 +26,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const dupes = {};
   const DEDUPE_INTERVAL = 1000;
 
+  // eslint-disable-next-line no-restricted-syntax
   function logResult({activity, name, allow, reason, component}) {
     const msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`;
     const deduping = dupes.hasOwnProperty(msg);

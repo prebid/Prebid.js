@@ -574,7 +574,10 @@ gulp.task('build-bundle-verbose', gulp.series(precompile(), 'build-creative-dev'
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('update-browserslist', execaTask('npx update-browserslist-db@latest'));
 gulp.task('test-only', gulp.series(precompile(), test));
-gulp.task('test-all-features-disabled', gulp.series(precompile({disableFeatures: require('./features.json')}), testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false})));
+
+// test with all features disabled with exceptions for logging, as tests often assert logs
+const disableFeaturesForTests = require('./features.json').filter(f => f !== 'LOG_ERROR' && f !== 'LOG_NON_ERROR');
+gulp.task('test-all-features-disabled', gulp.series(precompile({disableFeatures: disableFeaturesForTests}), testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false})));
 gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, precompile(), testCoverage, mergeCoverage));
