@@ -2,7 +2,7 @@ import {config} from './config.js';
 
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
-import { default as deepAccess } from 'dlv/index.js';
+import deepAccess from 'dlv/index.js';
 import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
 
 export { deepAccess };
