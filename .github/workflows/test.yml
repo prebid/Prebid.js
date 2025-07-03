@@ -34,6 +34,23 @@ jobs:
           path: .
           key: source-${{ github.sha }}
 
+  lint:
+    name: "Run linter"
+    needs: checkout
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore source
+        uses: actions/cache/restore@v4
+        with:
+          path: .
+          key: source-${{ github.sha }}
+      - name: lint
+        run: npx eslint
+      
   test-no-features:
     name: "Unit tests (all features disabled)"
     needs: checkout
