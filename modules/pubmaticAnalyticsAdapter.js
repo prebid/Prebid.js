@@ -71,6 +71,7 @@ let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
 let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
+let _country;
 
 /// /////////// HELPER FUNCTIONS //////////////
 
@@ -460,10 +461,6 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
-  const country = e.bidderRequests?.length > 0
-    ? e.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext?.ctr || ''
-    : '';
-
   if (!auctionCache || auctionCache.sent) {
     return;
   }
@@ -482,7 +479,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dm'] = DISPLAY_MANAGER;
   outputObj['dmv'] = '$prebid.version$' || '-1';
   outputObj['bm'] = getBrowserType();
-  outputObj['ctr'] = country || '';
+  outputObj['ctr'] = _country || '';
   outputObj['lip'] = getListOfIdentityPartners();
 
   if (floorData) {
@@ -563,6 +560,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   let pixelURL = END_POINT_WIN_BID_LOGGER;
 
   pixelURL += 'pubid=' + publisherId;
+  pixelURL += '&to=' + enc(auctionCache.timeout);
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '');
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
   pixelURL += '&iid=' + enc(wiid);
@@ -616,6 +614,17 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     (floorValue !== undefined) && (pixelURL += '&fv=' + enc(floorValue));
   }
   pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
+
+  const bm = getBrowserType();
+  (bm !== undefined) && (pixelURL += '&bm=' + enc(bm));
+
+  (_country !== undefined) && (pixelURL += '&ctr=' + enc(_country));
+
+  const dealChannel = winningBid?.bidResponse?.dealChannel;
+  (dealChannel !== undefined) && (pixelURL += '&dc=' + enc(dealChannel));
+
+  const identityPartners = getListOfIdentityPartners();
+  (identityPartners !== undefined) && (pixelURL += '&lip=' + enc(identityPartners));
 
   ajax(
     pixelURL,
@@ -748,9 +757,16 @@ function bidWonHandler(args) {
   executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
 }
 
+function readSaveCountry(e) {
+  _country = e.bidderRequests?.length > 0
+    ? e.bidderRequests.find(bidder => bidder?.bidderCode === ADAPTER_CODE)?.ortb2?.user?.ext?.ctr || EMPTY_STRING
+    : EMPTY_STRING;
+}
+
 function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
+  readSaveCountry(args);
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId]?.bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
