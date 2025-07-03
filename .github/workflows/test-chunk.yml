@@ -17,7 +17,7 @@ on:
     outputs:
       wdir:
         description: "Cache key for the working directory after running tests"
-        value: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.sha }}
+        value: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -25,11 +25,11 @@ on:
         description: "Browserstack access key"
 
 concurrency:
-  # The following generates 'browserstack-<sha>' when inputs.serialize is true, and a hopefully unique ID otherwise
+  # The following generates 'browserstack-<run_id>' when inputs.serialize is true, and a hopefully unique ID otherwise
   # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
   # (cfr. https://github.com/orgs/community/discussions/12835)
-  # so we add the commit SHA to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-  group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}-${{ github.sha }}
+  # so we add the run_id to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
+  group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -65,5 +65,5 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .
-          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.sha }}
+          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.run_id }}
 
