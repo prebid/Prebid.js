@@ -82,7 +82,7 @@ jobs:
         with:
           timeout_minutes: 10
           max_attempts: 3
-          command: npx gulp e2e-tests
+          command: npx gulp e2e-test
 
   coveralls:
     name: Update coveralls
