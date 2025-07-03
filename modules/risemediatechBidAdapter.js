@@ -9,7 +9,7 @@ const ENDPOINT_URL = 'https://dev-ads.risemediatech.com/ads/rtb/prebid/js';
 const SYNC_URL_IFRAME = 'https://sync.risemediatech.com/iframe';
 const SYNC_URL_IMAGE = 'https://sync.risemediatech.com/image';
 const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_TTL = 300;
+const DEFAULT_TTL = 60;
 
 const converter = ortbConverter({
   context: {
