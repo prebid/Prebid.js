@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { logInfo, logWarn } from '../src/utils.js';
-import { log } from 'gulp-util';
 
 const BIDDER_CODE = 'risemediatech';
 const ENDPOINT_URL = 'https://dev-ads.risemediatech.com/ads/rtb/prebid/js';
@@ -81,12 +80,6 @@ const converter = ortbConverter({
  */
 const isBidRequestValid = (bid) => {
   logInfo('Validating bid request:', bid);
-
-  // // Validate params
-  // if (!bid.params || !bid.params.publisherId) {
-  //   logWarn('Invalid bid request: Missing required params (publisherId or adSlot).');
-  //   return false;
-  // }
 
   const { mediaTypes } = bid;
 
@@ -209,7 +202,7 @@ const interpretResponse = (serverResponse, request) => {
 const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
 
   // return [{ type, url }];
-  logInfo('User syncs are not implemented in this adapter.');
+  logInfo('User syncs are not implemented in this adapter yet.');
   return null;
 };
 
