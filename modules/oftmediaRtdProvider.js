@@ -340,5 +340,13 @@ export const oftmediaRtdSubmodule = {
   onBidRequestEvent: handleBidRequestEvent,
 };
 
-// Register the submodule
+export const __testing__ = {
+  loadOftmediaScript,
+  calculateRemainingTime,
+  convertDeviceTypeForBidder,
+  buildOrtb2Data,
+  raceWithTimeout, 
+  moduleState,
+};
+
 submodule("realTimeData", oftmediaRtdSubmodule);
