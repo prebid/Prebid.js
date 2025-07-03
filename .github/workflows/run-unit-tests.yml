@@ -39,7 +39,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: source-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+          key: source-${{ github.sha }}
 
       - name: Build
         run: ${{ inputs.build-cmd }}
@@ -48,7 +48,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .
-          key: build-${{ inputs.build-cmd }}-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+          key: build-${{ inputs.build-cmd }}-${{ github.sha }}
 
   chunk-1:
     needs: build
@@ -56,7 +56,7 @@ jobs:
     uses: ./.github/workflows/test-chunk.yml
     with:
       chunk-no: 1
-      wdir: build-${{ inputs.build-cmd }}-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+      wdir: build-${{ inputs.build-cmd }}-${{ github.sha }}
       cmd: ${{ inputs.test-cmd }}
       serialize: ${{ inputs.serialize }}
     secrets:

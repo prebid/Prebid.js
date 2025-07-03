@@ -17,7 +17,7 @@ on:
     outputs:
       wdir:
         description: "Cache key for the working directory after running tests"
-        value: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+        value: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.sha }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -29,7 +29,7 @@ concurrency:
   # Ideally we'd like to serialize browserstack access across all workflows, but github's max queue length is only 1
   # (cfr. https://github.com/orgs/community/discussions/12835)
   # so we add the commit SHA to serialize only within one push / pull request (which has the effect of queueing e2e and unit tests)
-  group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+  group: ${{ inputs.serialize && 'browser' || github.run_id }}${{ inputs.serialize && 'stack' || inputs.cmd }}-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -65,5 +65,5 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .
-          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+          key: test-${{ inputs.cmd }}-${{ inputs.chunk-no }}-${{ github.sha }}
 

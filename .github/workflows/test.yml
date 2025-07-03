@@ -33,7 +33,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .
-          key: source-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+          key: source-${{ github.sha }}
 
   lint:
     name: "Run linter"
@@ -48,7 +48,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: source-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+          key: source-${{ github.sha }}
       - name: lint
         run: npx eslint
       
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     concurrency:
       # see test-chunk.yml for notes on concurrency groups
-      group: browserstack-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+      group: browserstack-${{ github.sha }}
       cancel-in-progress: false
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
@@ -94,7 +94,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .
-          key: source-${{ github.events.pull_request.merge_commit_sha || github.sha }}
+          key: source-${{ github.sha }}
       - name: Run tests
         uses: nick-fields/retry@v3
         with:
