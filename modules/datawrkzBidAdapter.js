@@ -429,7 +429,7 @@ function createBaseBidResponse(bidRequest, bidderBid, bidResponses) {
 }
 
 /* Convert banner bid response to compatible format */
-function buildBannerResponse(bidRequest, serverResponse) {
+function buildBannerResponse(bidRequest, bidResponse) {
   const bidResponses = [];
   bidResponse.seatbid[0].bid.forEach(function (bidderBid) {
     if (bidRequest) {
