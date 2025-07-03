@@ -52,22 +52,28 @@ const DEFAULT_REQUEST = () => ({
       atype: 2,
     }],
   }],
-  schain: {
-    ver: '1.0',
-    complete: 1,
-    nodes: [
-      {
-        asi: 'indirectseller.com',
-        sid: '1',
-        hp: 1,
-      },
-      {
-        asi: 'indirectseller2.com',
-        name: 'indirectseller2 name with comma , and bang !',
-        sid: '2',
-        hp: 1,
-      },
-    ],
+  ortb2: {
+    source: {
+      ext: {
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '1',
+              hp: 1,
+            },
+            {
+              asi: 'indirectseller2.com',
+              name: 'indirectseller2 name with comma , and bang !',
+              sid: '2',
+              hp: 1,
+            },
+          ],
+        }
+      }
+    }
   },
 });
 
@@ -170,6 +176,7 @@ const RESPONSE = {
   pid: 2222,
   adsize: '728x90',
   adtype: 'BANNER',
+  netRevenue: false,
 };
 
 const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
@@ -430,7 +437,7 @@ describe('yieldlabBidAdapter', () => {
 
     it('passes unencoded schain string to bid request when complete == 0', () => {
       const schainRequest = DEFAULT_REQUEST();
-      schainRequest.schain.complete = 0; //
+      schainRequest.ortb2.source.ext.schain.complete = 0;
       const request = spec.buildRequests([schainRequest]);
       expect(request.url).to.include('schain=1.0,0!indirectseller.com,1,1,,,,!indirectseller2.com,2,1,,indirectseller2%20name%20with%20comma%20%2C%20and%20bang%20%21,,');
     });
@@ -855,6 +862,16 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com');
       expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3]);
       expect(result[0].meta.dsa.adrender).to.equal(1);
+    });
+
+    it('should set netRevenue correctly', () => {
+      const NET_REVENUE_RESPONSE = {
+        ...RESPONSE,
+        netRevenue: true,
+      };
+      const result = spec.interpretResponse({body: [NET_REVENUE_RESPONSE]}, {validBidRequests: [bidRequest], queryParams: REQPARAMS});
+
+      expect(result[0].netRevenue).to.equal(true);
     });
   });
 

@@ -8,6 +8,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   logError,
   mergeDeep,
   sizeTupleToRtbSize,
@@ -48,7 +49,7 @@ export const spec = {
     const test = getFirstWithKey(validBidRequests, 'params.test');
     const currency = getCurrencyFromBidderRequest(bidderRequest);
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
-    const schain = getFirstWithKey(validBidRequests, 'schain');
+    const schain = getFirstWithKey(validBidRequests, 'ortb2.source.ext.schain');
     const request = {
       // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bidderRequest.auctionId,
@@ -169,8 +170,10 @@ function getORTBCommon (bidderRequest) {
     }
   }
   const device = getConfig('device') || {};
-  device.w = device.w || window.innerWidth;
-  device.h = device.h || window.innerHeight;
+  const { innerWidth, innerHeight } = getWinDimensions();
+
+  device.w = device.w || innerWidth;
+  device.h = device.h || innerHeight;
   device.ua = device.ua || navigator.userAgent;
   return {
     app,

@@ -40,8 +40,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0 || !bidderRequest || !bidderRequest.bids) {
@@ -73,8 +74,9 @@ export const spec = {
       payload.pageTemplate = validBidRequests[0].params.pageTemplate;
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     const gdpr = deepAccess(bidderRequest, 'gdprConsent');

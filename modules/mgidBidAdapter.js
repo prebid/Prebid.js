@@ -14,7 +14,8 @@ import {
   isNumber,
   isBoolean,
   extractDomainFromHost,
-  isInteger, deepSetValue, getBidIdParameter, setOnAny
+  isInteger, deepSetValue, getBidIdParameter, setOnAny,
+  getWinDimensions
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -303,7 +304,7 @@ export const spec = {
         deepSetValue(request, 'regs.coppa', 1);
       }
     }
-    const schain = setOnAny(validBidRequests, 'schain');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
     if (schain) {
       deepSetValue(request, 'source.ext.schain', schain);
     }
@@ -653,8 +654,8 @@ function pageInfo() {
     location: l,
     referrer: r || '',
     masked: m,
-    wWidth: w.innerWidth,
-    wHeight: w.innerHeight,
+    wWidth: getWinDimensions().innerWidth,
+    wHeight: getWinDimensions().innerHeight,
     date: t.toUTCString(),
     timeOffset: t.getTimezoneOffset()
   };

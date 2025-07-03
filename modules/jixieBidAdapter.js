@@ -1,4 +1,4 @@
-import {deepAccess, getDNT, isArray, logWarn, isFn, isPlainObject, logError, logInfo} from '../src/utils.js';
+import {deepAccess, getDNT, isArray, logWarn, isFn, isPlainObject, logError, logInfo, getWinDimensions} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -20,7 +20,7 @@ const sidTTLMins_ = 30;
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {float||null}
+ * @returns {(number|null)}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
@@ -104,8 +104,8 @@ function fetchIds_(cfg) {
 // Now changed to an object. yes the backend is able to handle it.
 function getDevice_() {
   const device = config.getConfig('device') || {};
-  device.w = device.w || window.innerWidth;
-  device.h = device.h || window.innerHeight;
+  device.w = device.w || getWinDimensions().innerWidth;
+  device.h = device.h || getWinDimensions().innerHeight;
   device.ua = device.ua || navigator.userAgent;
   device.dnt = getDNT() ? 1 : 0;
   device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
@@ -175,7 +175,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
-    if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+    if (typeof bid.params === 'undefined') {
       return false;
     }
     if (typeof bid.params.unit === 'undefined') {
@@ -189,7 +189,7 @@ export const spec = {
 
     let bids = [];
     validBidRequests.forEach(function(one) {
-      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
+      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', '');
       let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,
@@ -209,7 +209,7 @@ export const spec = {
     let ids = fetchIds_(jxCfg);
     let eids = [];
     let miscDims = internal.getMiscDims();
-    let schain = deepAccess(validBidRequests[0], 'schain');
+    let schain = deepAccess(validBidRequests[0], 'ortb2.source.ext.schain');
 
     let eids1 = validBidRequests[0].userIdAsEids;
     // all available user ids are sent to our backend in the standard array layout:

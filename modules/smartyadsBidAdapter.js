@@ -63,8 +63,9 @@ export const spec = {
         traffic: traff,
         publisherId: bid.params.accountid
       });
-      if (bid.schain) {
-        placements.schain = bid.schain;
+      const schain = bid?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        placements.schain = schain;
       }
     }
 

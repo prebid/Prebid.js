@@ -20,24 +20,29 @@ describe('ColossussspAdapter', function () {
     ortb2Imp: {
       ext: {
         tid: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
-        data: {
-          pbadslot: '/19968336/prebid_cache_video_adunit'
-        }
+        gpid: '/19968336/prebid_cache_video_adunit',
+        data: {}
       }
     },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'example.com',
-          sid: '0',
-          hp: 1,
-          rid: 'bidrequestid',
-          // name: 'alladsallthetime',
-          domain: 'example.com'
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: '0',
+                hp: 1,
+                rid: 'bidrequestid',
+                // name: 'alladsallthetime',
+                domain: 'example.com'
+              }
+            ]
+          }
         }
-      ]
+      }
     }
   };
   let bidderRequest = {

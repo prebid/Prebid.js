@@ -8,7 +8,6 @@ const DISPLAY_REQUEST = {
   'params': {
     'aid': 12345
   },
-  'schain': { ver: 1 },
   'userId': { criteo: 2 },
   'mediaTypes': { 'banner': { 'sizes': [300, 250] } },
   'bidderRequestId': '7101db09af0db2',
@@ -95,7 +94,16 @@ const displayBidderRequestWithConsents = {
     gdprApplies: true,
     consentString: 'test'
   },
-  uspConsent: 'iHaveIt'
+  uspConsent: 'iHaveIt',
+  ortb2: {
+    source: {
+      ext: {
+        schain: {
+          ver: '1.0'
+        }
+      }
+    }
+  }
 };
 
 const videoEqResponse = [{
@@ -264,7 +272,7 @@ describe('adtargetBidAdapter', () => {
     });
 
     describe('publisher environment', () => {
-      const sandbox = sinon.sandbox.create();
+      const sandbox = sinon.createSandbox();
       sandbox.stub(config, 'getConfig').callsFake((key) => {
         const config = {
           'coppa': true
@@ -284,7 +292,7 @@ describe('adtargetBidAdapter', () => {
         expect(bidRequestWithPubSettingsData.Coppa).to.be.equal(1);
       })
       it('sets Schain', () => {
-        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(DISPLAY_REQUEST.schain);
+        expect(bidRequestWithPubSettingsData.Schain).to.be.deep.equal(displayBidderRequestWithConsents.ortb2.source.ext.schain);
       })
       it('sets UserId\'s', () => {
         expect(bidRequestWithPubSettingsData.UserIds).to.be.deep.equal(DISPLAY_REQUEST.userId);

@@ -190,7 +190,7 @@ class WeboramaRtdProvider {
   }
   /**
    * Initialize module
-   * @method
+   * @function
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
    * @param {Object} userConsent
@@ -245,7 +245,7 @@ class WeboramaRtdProvider {
 
   /**
    * function that will allow RTD sub-modules to modify the AdUnit object for each auction
-   * @method
+   * @function
    * @param {Object} reqBidsConfigObj
    * @param {doneCallback} onDone
    * @param {Object} moduleConfig
@@ -286,7 +286,7 @@ class WeboramaRtdProvider {
 
   /**
    * function that provides ad server targeting data to RTD-core
-   * @method
+   * @function
    * @param {string[]} adUnitsCodes
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
@@ -328,7 +328,7 @@ class WeboramaRtdProvider {
 
   /**
    * Initialize subsection module
-   * @method
+   * @function
    * @private
    * @param {ModuleParams} moduleParams
    * @param {string} subSection subsection name to initialize
@@ -380,7 +380,7 @@ class WeboramaRtdProvider {
 
   /**
    * check gdpr consent data
-   * @method
+   * @function
    * @private
    * @param {Object} gdpr
    * @param {?boolean} gdpr.gdprApplies
@@ -389,40 +389,75 @@ class WeboramaRtdProvider {
    * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.consents
    * @param {?Object} gdpr.vendorData.vendor
    * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.consents
+   * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.legitimateInterests
+   * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.legitimateInterests
+   * @param {?Object.<number, boolean>} gdpr.vendorData.publisher.restrictions
    * @return {boolean}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #checkTCFv2(gdpr) {
     if (gdpr?.gdprApplies !== true) {
       return true;
     }
 
-    if (
-      deepAccess(gdpr, 'vendorData.vendor.consents') &&
-      deepAccess(gdpr, 'vendorData.purpose.consents')
-    ) {
-      return (
-        gdpr.vendorData.vendor.consents[GVLID] === true && // check weborama vendor id
-        gdpr.vendorData.purpose.consents[1] === true && // info storage access
-        gdpr.vendorData.purpose.consents[3] === true && // create personalized ads
-        gdpr.vendorData.purpose.consents[4] === true && // select personalized ads
-        gdpr.vendorData.purpose.consents[5] === true && // create personalized content
-        gdpr.vendorData.purpose.consents[6] === true
-      ); // select personalized content
+    const vendorConsents = deepAccess(gdpr, 'vendorData.vendor.consents');
+    const vendorLegitimateInterests = deepAccess(gdpr, 'vendorData.vendor.legitimateInterests');
+    const purposeConsents = deepAccess(gdpr, 'vendorData.purpose.consents');
+    const purposeLegitimateInterests = deepAccess(gdpr, 'vendorData.purpose.legitimateInterests');
+    const publisherRestrictions = deepAccess(gdpr, 'vendorData.publisher.restrictions');
+
+    const consentPurposeIDSet = new Set([1, 3, 4, 5, 6]);
+    const legitimateInterestPurposeIDSet = new Set([2, 7, 8, 9, 10, 11]);
+
+    const allPurposeIDs = new Set([...consentPurposeIDSet, ...legitimateInterestPurposeIDSet]);
+
+    for (const purposeID of allPurposeIDs) {
+      if (publisherRestrictions?.[purposeID]?.[GVLID] === 0) {
+        return false;
+      }
+    }
+
+    for (const purposeID of legitimateInterestPurposeIDSet) {
+      if (publisherRestrictions?.[purposeID]?.[GVLID] === 1) {
+        legitimateInterestPurposeIDSet.delete(purposeID);
+        consentPurposeIDSet.add(purposeID);
+      }
+    }
+
+    if (consentPurposeIDSet.size > 0) {
+      if (!vendorConsents[GVLID]) {
+        return false;
+      }
+      for (const purposeID of consentPurposeIDSet) {
+        if (!purposeConsents[purposeID]) {
+          return false;
+        }
+      }
+    }
+
+    if (legitimateInterestPurposeIDSet.size > 0) {
+      if (!vendorLegitimateInterests[GVLID]) {
+        return false;
+      }
+      for (const purposeID of legitimateInterestPurposeIDSet) {
+        if (!purposeLegitimateInterests[purposeID]) {
+          return false;
+        }
+      }
     }
 
     return true;
   }
   /**
    * normalize submodule configuration
-   * @method
+   * @function
    * @private
    * @param {ModuleParams} moduleParams
    * @param {CommonConf} submoduleParams
    * @return {void}
    * @throws will throw an error in case of invalid configuration
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #normalizeConf(moduleParams, submoduleParams) {
     submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
 
@@ -449,13 +484,13 @@ class WeboramaRtdProvider {
 
   /**
    * coerce setPrebidTargeting to a callback
-   * @method
+   * @function
    * @private
    * @param {CommonConf} submoduleParams
    * @return {void}
    * @throws will throw an error in case of invalid configuration
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #coerceSetPrebidTargeting(submoduleParams) {
     try {
       submoduleParams.setPrebidTargeting = this.#wrapValidatorCallback(
@@ -468,13 +503,13 @@ class WeboramaRtdProvider {
 
   /**
    * coerce sendToBidders to a callback
-   * @method
+   * @function
    * @private
    * @param {CommonConf} submoduleParams
    * @return {void}
    * @throws will throw an error in case of invalid configuration
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #coerceSendToBidders(submoduleParams) {
     let sendToBidders = submoduleParams.sendToBidders;
 
@@ -521,7 +556,7 @@ class WeboramaRtdProvider {
    */
   /**
    * function that handles bid request data
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {AdUnit[]} reqBidsConfigObj.adUnits
@@ -530,7 +565,7 @@ class WeboramaRtdProvider {
    * @param {ModuleParams} moduleParams
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #handleBidRequestData(reqBidsConfigObj, moduleParams) {
     const profileHandlers = this.#buildProfileHandlers(moduleParams);
 
@@ -588,14 +623,14 @@ class WeboramaRtdProvider {
 
   /**
    * Fetch Bigsea Contextual Profile
-   * @method
+   * @function
    * @private
    * @param {WeboCtxConf} weboCtxConf
    * @param {successCallback} onSuccess callback
    * @param {doneCallback} onDone callback
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
     const token = weboCtxConf.token;
     const baseURLProfileAPI =
@@ -672,12 +707,12 @@ class WeboramaRtdProvider {
 
   /**
    * set bigsea contextual profile on module state
-   * @method
+   * @function
    * @private
    * @param {?Object} data
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #setWeboContextualProfile(data) {
     if (data && isPlainObject(data) && isValidProfile(data) && !isEmpty(data)) {
       this.#components.WeboCtx.data = data;
@@ -686,12 +721,12 @@ class WeboramaRtdProvider {
 
   /**
    * function that provides data handlers based on the configuration
-   * @method
+   * @function
    * @private
    * @param {ModuleParams} moduleParams
    * @returns {ProfileHandler[]}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #buildProfileHandlers(moduleParams) {
     const steps = [
       {
@@ -755,7 +790,7 @@ class WeboramaRtdProvider {
 
   /**
    * return specific profile handler
-   * @method
+   * @function
    * @private
    * @param {CommonConf} dataConf
    * @param {buildProfileHandlerCallback} callback
@@ -763,7 +798,7 @@ class WeboramaRtdProvider {
    * @param {string} source
    * @returns {ProfileHandler}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #buildProfileHandler(dataConf, callback, user, source) {
     if (!dataConf) {
       return;
@@ -788,7 +823,7 @@ class WeboramaRtdProvider {
   }
   /**
    * handle individual bid
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
@@ -799,7 +834,7 @@ class WeboramaRtdProvider {
    * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #handleBid(reqBidsConfigObj, bid, profile, metadata) {
     this.#handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
 
@@ -813,31 +848,31 @@ class WeboramaRtdProvider {
 
   /**
    * return adapter name based on alias, if any
-   * @method
+   * @function
    * @private
    * @param {string} aliasName
    * @returns {string}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #getAdapterNameForAlias(aliasName) {
     return adapterManager.aliasRegistry[aliasName] || aliasName;
   }
 
   /**
    * function that handles bid request data
-   * @method
+   * @function
    * @private
    * @param {ProfileHandler} ph profile handler
    * @returns {[Profile,dataCallbackMetadata]} deeply copy data + metadata
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #copyDataAndMetadata(ph) {
     return [deepClone(ph.data), deepClone(ph.metadata)];
   }
 
   /**
    * handle appnexus/xandr bid
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
@@ -847,7 +882,7 @@ class WeboramaRtdProvider {
    * @param {Profile} profile
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #handleAppnexusBid(reqBidsConfigObj, bid, profile) {
     const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
@@ -856,7 +891,7 @@ class WeboramaRtdProvider {
 
   /**
    * handle generic bid via ortb2 arbitrary data
-   * @method
+   * @function
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
@@ -866,7 +901,7 @@ class WeboramaRtdProvider {
    * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #handleBidViaORTB2(reqBidsConfigObj, bidder, profile, metadata) {
     if (isBoolean(metadata.user)) {
       logger.logMessage(
@@ -889,7 +924,7 @@ class WeboramaRtdProvider {
   }
   /**
    * set bidder ortb2 data
-   * @method
+   * @function
    * @private
    * @param {Object} bidderOrtb2Fragments
    * @param {string} bidder
@@ -897,21 +932,21 @@ class WeboramaRtdProvider {
    * @param {Profile} profile
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #setBidderOrtb2(bidderOrtb2Fragments, bidder, path, profile) {
     const base = `${bidder}.${path}`;
     this.#assignProfileToObject(bidderOrtb2Fragments, base, profile);
   }
   /**
    * assign profile to object
-   * @method
+   * @function
    * @private
    * @param {Object} destination
    * @param {string} base
    * @param {Profile} profile
    * @returns {void}
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #assignProfileToObject(destination, base, profile) {
     Object.entries(profile).forEach(([key, values]) => {
       const path = `${base}.${key}`;
@@ -933,14 +968,14 @@ class WeboramaRtdProvider {
 
   /**
    * wrap value into validator
-   * @method
+   * @function
    * @private
    * @param {*} value
    * @param {coerceCallback} coerce
    * @returns {validatorCallback}
    * @throws will throw an error in case of unsupported type
    */
-  // eslint-disable-next-line no-dupe-class-members
+
   #wrapValidatorCallback(value, coerce = (x) => x) {
     if (isFn(value)) {
       return value;

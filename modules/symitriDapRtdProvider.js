@@ -663,6 +663,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
       switch (config.api_version) {
         case 'x1':
         case 'x1-dev':
+        case 'x2':
           method = 'POST';
           path = '/data-activation/' + config.api_version + '/domain/' + config.domain + '/identity/tokenize';
           body = JSON.stringify(apiParams);
@@ -672,7 +673,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           return;
       }
 
-      let customHeaders = { 'Content-Type': 'application/json' };
+      let customHeaders = {};
       let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
       if (dapSSID) {
         customHeaders[headerPrefix + '-DAP-SS-ID'] = dapSSID;
@@ -685,6 +686,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
           switch (config.api_version) {
             case 'x1':
             case 'x1-dev':
+            case 'x2':
               token = request.getResponseHeader(headerPrefix + '-DAP-Token');
               break;
           }
@@ -697,7 +699,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       ajax(url, cb, body, {
         method: method,
-        customHeaders: customHeaders
+        customHeaders: customHeaders,
+        contentType: 'application/json'
       });
     },
 
@@ -744,8 +747,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         return;
       }
 
-      let path = '/data-activation/' +
-        config.api_version +
+      let path = '/data-activation/x1' +
         '/token/' + token +
         '/membership';
 
@@ -812,8 +814,7 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
         error: (error, request) => { onError(request, request.status, error, onDone); }
       };
 
-      let path = '/data-activation/' +
-        config.api_version +
+      let path = '/data-activation/x1' +
         '/token/' + token +
         '/membership/encrypt';
 
@@ -821,8 +822,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       ajax(url, cb, undefined, {
         method: 'GET',
+        contentType: 'application/json',
         customHeaders: {
-          'Content-Type': 'application/json',
           'Pragma': 'akamai-x-get-extracted-values'
         }
       });

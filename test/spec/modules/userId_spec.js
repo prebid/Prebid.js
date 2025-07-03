@@ -12,13 +12,12 @@ import {
   requestDataDeletion,
   setStoredValue,
   setSubmoduleRegistry,
-  syncDelay,
+  syncDelay, COOKIE_SUFFIXES, HTML5_SUFFIXES,
 } from 'modules/userId/index.js';
 import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
@@ -27,8 +26,7 @@ import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from '../../..
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import 'src/prebid.js';
-import {startAuction} from 'src/prebid';
+import {requestBids, startAuction} from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
@@ -37,6 +35,11 @@ import {allConsent, GDPR_GVLIDS, gdprDataHandler} from '../../../src/consentHand
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
+import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
+import {generateSubmoduleContainers} from '../../../modules/userId/index.js';
+import { registerActivityControl } from '../../../src/activities/rules.js';
+import { addIdData } from '../../../modules/userId/index.js';
+import { discloseStorageUse, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, getStorageManager } from '../../../src/storageManager.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -139,7 +142,7 @@ describe('User ID', function () {
   function runBidsHook(...args) {
     startDelay = delay();
 
-    const result = startAuctionHook(...args, {delay: startDelay});
+    const result = startAuctionHook(...args, {mkDelay: startDelay});
     return new Promise((resolve) => setTimeout(() => resolve(result)));
   }
 
@@ -152,7 +155,7 @@ describe('User ID', function () {
 
   function initModule(config) {
     callbackDelay = delay();
-    return init(config, {delay: callbackDelay});
+    return init(config, {mkDelay: callbackDelay});
   }
 
   before(function () {
@@ -163,12 +166,8 @@ describe('User ID', function () {
   });
 
   beforeEach(function () {
-    // TODO: this whole suite needs to be redesigned; it is passing by accident
-    // some tests do not pass if consent data is available
-    // (there are functions here with signature `getId(config, storedId)`, but storedId is actually consentData)
-    // also, this file is ginormous; do we really need to test *all* id systems as one?
     resetConsentData();
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     consentData = null;
     mockGdprConsent(sandbox, () => consentData);
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
@@ -271,7 +270,7 @@ describe('User ID', function () {
 
     afterEach(function () {
       mockGpt.enable();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       config.resetConfig();
       coreStorage.setCookie.restore();
       utils.logWarn.restore();
@@ -303,8 +302,6 @@ describe('User ID', function () {
 
         innerAdUnits1.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal(pubcid);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: pubcid, atype: 1}]
@@ -340,8 +337,6 @@ describe('User ID', function () {
 
         innerAdUnits1.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal(pubcid1);
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: pubcid1, atype: 1}]
@@ -360,8 +355,6 @@ describe('User ID', function () {
 
           innerAdUnits2.forEach((unit) => {
             unit.bids.forEach((bid) => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal(pubcid2);
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: pubcid2, atype: 1}]
@@ -387,8 +380,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('altpubcid200000');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: 'altpubcid200000', atype: 1}]
@@ -413,8 +404,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.have.deep.nested.property('userId.pubcid');
-            expect(bid.userId.pubcid).to.equal('altpubcid200000');
             expect(bid.userIdAsEids[0]).to.deep.equal({
               source: 'pubcid.org',
               uids: [{id: 'altpubcid200000', atype: 1}]
@@ -439,7 +428,6 @@ describe('User ID', function () {
       }, {adUnits}).then(() => {
         innerAdUnits.forEach((unit) => {
           unit.bids.forEach((bid) => {
-            expect(bid).to.not.have.deep.nested.property('userId.pubcid');
             expect(bid).to.not.have.deep.nested.property('userIdAsEids');
           });
         });
@@ -456,14 +444,54 @@ describe('User ID', function () {
             {'mockId2v1': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 1})}}),
           createMockIdSubmodule('mockId2v2', null, null,
             {'mockId2v2': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 2})}}),
+          createMockIdSubmodule('mockId2v3', null, null, {
+            'mockId2v3'(ids) {
+              return {
+                source: 'mock2source',
+                inserter: 'ins',
+                ext: {v: 2},
+                uids: ids.map(id => ({id, atype: 2}))
+              }
+            }
+          }),
+          createMockIdSubmodule('mockId2v4', null, null, {
+            'mockId2v4'(ids) {
+              return ids.map(id => ({
+                uids: [{id, atype: 0}],
+                source: 'mock2source',
+                inserter: 'ins',
+                ext: {v: 2}
+              }))
+            }
+          })
         ]);
       });
 
-      it('should group UIDs by source and ext', () => {
+      it('should filter out non-string uid returned by generator functions', () => {
+        const eids = createEidsArray({
+          mockId2v3: [null, 'id1', 123],
+        });
+        expect(eids[0].uids).to.eql([
+          {
+            atype: 2,
+            id: 'id1'
+          }
+        ]);
+      });
+
+      it('should filter out entire EID if none of the uids are strings', () => {
+        const eids = createEidsArray({
+          mockId2v3: [null],
+        });
+        expect(eids).to.eql([]);
+      })
+
+      it('should group UIDs by everything except uid', () => {
         const eids = createEidsArray({
           mockId1: ['mock-1-1', 'mock-1-2'],
           mockId2v1: ['mock-2-1', 'mock-2-2'],
-          mockId2v2: ['mock-2-1', 'mock-2-2']
+          mockId2v2: ['mock-2-1', 'mock-2-2'],
+          mockId2v3: ['mock-2-1', 'mock-2-2']
         });
         expect(eids).to.eql([
           {
@@ -510,10 +538,50 @@ describe('User ID', function () {
                 atype: 2,
               }
             ]
+          },
+          {
+            source: 'mock2source',
+            inserter: 'ins',
+            ext: {v: 2},
+            uids: [
+              {
+                id: 'mock-2-1',
+                atype: 2,
+              },
+              {
+                id: 'mock-2-2',
+                atype: 2,
+              }
+            ]
           }
         ])
       });
 
+      it('should group matching EIDs regardless of entry order', () => {
+        const eids = createEidsArray({
+          mockId2v3: ['id1', 'id2'],
+          mockId2v4: ['id3']
+        });
+        expect(eids).to.eql([{
+          source: 'mock2source',
+          inserter: 'ins',
+          uids: [
+            {
+              id: 'id1',
+              atype: 2,
+            },
+            {
+              id: 'id2',
+              atype: 2
+            },
+            {
+              id: 'id3',
+              atype: 0
+            }
+          ],
+          ext: {v: 2}
+        }])
+      })
       it('when merging with pubCommonId, should not alter its eids', () => {
         const uid = {
           pubProvidedId: [
@@ -704,6 +772,27 @@ describe('User ID', function () {
         done();
       });
     });
+
+    it('pbjs.getUserIdsAsEids should pass config to eid function', async function () {
+      const eidFn = sinon.stub();
+      init(config);
+      setSubmoduleRegistry([createMockIdSubmodule('mockId', null, null, {
+        mockId: eidFn
+      })]);
+      const moduleConfig = {
+        name: 'mockId',
+        value: {mockId: 'mockIdValue'},
+        some: 'config'
+      };
+      config.setConfig({
+        userSync: {
+          auctionDelay: 10,
+          userIds: [moduleConfig]
+        }
+      });
+      await getGlobal().getUserIdsAsync();
+      sinon.assert.calledWith(eidFn, ['mockIdValue'], moduleConfig);
+    })
 
     it('pbjs.getUserIdsAsEids should prioritize user ids according to config available to core', () => {
       init(config);
@@ -1379,7 +1468,7 @@ describe('User ID', function () {
     afterEach(function () {
       // removed cookie
       coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       utils.logInfo.restore();
     });
 
@@ -1408,7 +1497,7 @@ describe('User ID', function () {
     });
 
     afterEach(function () {
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
+      requestBids.removeAll();
       utils.logInfo.restore();
     });
 
@@ -1577,9 +1666,10 @@ describe('User ID', function () {
       });
 
       afterEach(function () {
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
         config.resetConfig();
         sandbox.restore();
+        coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       });
 
       it('delays auction if auctionDelay is set, timing out at auction delay', function () {
@@ -1643,8 +1733,6 @@ describe('User ID', function () {
           // check ids were copied to bids
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.mid');
-              expect(bid.userId.mid).to.equal('1234');
               expect(bid.userIdAsEids).to.not.exist;// "mid" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
@@ -1789,8 +1877,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1814,8 +1900,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1841,8 +1925,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1869,8 +1951,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1895,8 +1975,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              expect(bid.userId.pubcid).to.equal('testpubcid');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'pubcid.org',
                 uids: [{id: 'testpubcid', atype: 1}]
@@ -1918,8 +1996,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubcidvalue');
-              expect(bid.userId.pubcidvalue).to.equal('testpubcidvalue');
               expect(bid.userIdAsEids).to.not.exist; // "pubcidvalue" is an un-known submodule for USER_IDS_CONFIG in eids.js
             });
           });
@@ -1973,33 +2049,6 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              expect(bid).to.have.deep.nested.property('userId.pubProvidedId');
-              expect(bid.userId.pubProvidedId).to.deep.equal([{
-                source: 'example.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'ppuid'
-                  }
-                }]
-              }, {
-                source: 'id-partner.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'dmp'
-                  }
-                }]
-              }, {
-                source: 'provider.com',
-                uids: [{
-                  id: 'value read from cookie or local storage',
-                  ext: {
-                    stype: 'sha256email'
-                  }
-                }]
-              }]);
-
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'example.com',
                 uids: [{
@@ -2049,7 +2098,7 @@ describe('User ID', function () {
               'mid': value['MOCKID']
             };
           },
-          getId: function (config, storedId) {
+          getId: function (config, consentData, storedId) {
             if (storedId) return {};
             return {id: {'MOCKID': '1234'}};
           }
@@ -2058,11 +2107,8 @@ describe('User ID', function () {
         startAuctionHook(function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
-              // check PubCommonId id data was copied to bid
-              expect(bid).to.have.deep.nested.property('userId.pubcid');
-              // check MockId data was copied to bid
-              expect(bid).to.have.deep.nested.property('userId.mid');
-              expect(bid.userId.mid).to.equal('1234');
+              // check id data was copied to bid
+              expect(bid).to.have.property('userIdAsEids');
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2070,6 +2116,97 @@ describe('User ID', function () {
           done();
         }, {adUnits});
       });
+
+      describe('storage disclosure', () => {
+        let disclose;
+        function discloseStorageHook(next, ...args) {
+          disclose(...args);
+          next(...args);
+        }
+        before(() => {
+          discloseStorageUse.before(discloseStorageHook)
+        })
+        after(() => {
+          discloseStorageUse.getHooks({hook: discloseStorageHook}).remove();
+        })
+        beforeEach(() => {
+          disclose = sinon.stub();
+          setSubmoduleRegistry([
+            {
+              name: 'mockId',
+            }
+          ]);
+        });
+
+        function setStorage(storage) {
+          config.setConfig({
+            userSync: {
+              userIds: [{
+                name: 'mockId',
+                storage
+              }]
+            }
+          })
+        }
+
+        function expectDisclosure(storageType, name, maxAgeSeconds) {
+          const suffixes = storageType === STORAGE_TYPE_COOKIES ? COOKIE_SUFFIXES : HTML5_SUFFIXES;
+          suffixes.forEach(suffix => {
+            const expectation = {
+              identifier: name + suffix,
+              type: storageType === STORAGE_TYPE_COOKIES ? 'cookie' : 'web',
+              purposes: [1, 2, 3, 4, 7],
+            }
+            if (storageType === STORAGE_TYPE_COOKIES) {
+              Object.assign(expectation, {
+                maxAgeSeconds: maxAgeSeconds,
+                cookieRefresh: true
+              })
+            }
+            sinon.assert.calledWith(disclose, 'userId', expectation)
+          })
+        }
+
+        it('should disclose cookie storage', async () => {
+          setStorage({
+            name: 'mid_cookie',
+            type: STORAGE_TYPE_COOKIES,
+            expires: 1
+          })
+          await getGlobal().refreshUserIds();
+          expectDisclosure(STORAGE_TYPE_COOKIES, 'mid_cookie', 1 * 24 * 60 * 60);
+        });
+
+        it('should disclose html5 storage', async () => {
+          setStorage({
+            name: 'mid_localStorage',
+            type: STORAGE_TYPE_LOCALSTORAGE,
+            expires: 1
+          });
+          await getGlobal().refreshUserIds();
+          expectDisclosure(STORAGE_TYPE_LOCALSTORAGE, 'mid_localStorage');
+        });
+
+        it('should disclose both', async () => {
+          setStorage({
+            name: 'both',
+            type: `${STORAGE_TYPE_COOKIES}&${STORAGE_TYPE_LOCALSTORAGE}`,
+            expires: 1
+          });
+          await getGlobal().refreshUserIds();
+          expectDisclosure(STORAGE_TYPE_COOKIES, 'both', 1 * 24 * 60 * 60);
+          expectDisclosure(STORAGE_TYPE_LOCALSTORAGE, 'both');
+        });
+
+        it('should handle cookies with no expires', async () => {
+          setStorage({
+            name: 'cookie',
+            type: STORAGE_TYPE_COOKIES
+          });
+          await getGlobal().refreshUserIds();
+          expectDisclosure(STORAGE_TYPE_COOKIES, 'cookie', 0);
+        })
+      })
 
       describe('activity controls', () => {
         let isAllowed;
@@ -2095,7 +2232,7 @@ describe('User ID', function () {
           isAllowed.restore();
         });
 
-        it('should check for enrichEids activity permissions', (done) => {
+        it('should check for enrichEids activity permissions', () => {
           isAllowed.callsFake((activity, params) => {
             return !(activity === ACTIVITY_ENRICH_EIDS &&
               params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID &&
@@ -2110,10 +2247,10 @@ describe('User ID', function () {
               }))
             }
           });
-          startAuctionHook((req) => {
-            const activeIds = req.adUnits.flatMap(au => au.bids).flatMap(bid => Object.keys(bid.userId));
-            expect(Array.from(new Set(activeIds))).to.have.members([MOCK_IDS[1]]);
-            done();
+          return expectImmediateBidHook((req) => {
+            const activeSources = req.adUnits.flatMap(au => au.bids)
+              .flatMap(bid => bid.userIdAsEids ? bid.userIdAsEids.map(eid => eid.source) : []);
+            expect(Array.from(new Set(activeSources))).to.have.members([MOCK_IDS[1]]);
           }, {adUnits})
         });
       })
@@ -2468,15 +2605,19 @@ describe('User ID', function () {
         });
       });
 
-      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', () => {
+      it('should add userIdAsEids and merge ortb2.user.ext.eids even if no User ID submodules', async () => {
         init(config);
-        config.setConfig({
-          ortb2: {user: {ext: {eids: [eid]}}}
-        })
         expect(startAuction.getHooks({hook: startAuctionHook}).length).equal(0);
         expect(startAuction.getHooks({hook: addUserIdsHook}).length).equal(1);
-        $$PREBID_GLOBAL$$.requestBids({adUnits});
-        sinon.assert.calledWith(startAuctionStub, sinon.match.hasNested('adUnits[0].bids[0].userIdAsEids[0]', eid));
+        addUserIdsHook(sinon.stub(), {
+          adUnits,
+          ortb2Fragments: {
+            global: {
+              user: {ext: {eids: [eid]}}
+            }
+          }
+        });
+        expect(adUnits[0].bids[0].userIdAsEids[0]).to.eql(eid);
       });
     });
   });
@@ -2856,27 +2997,135 @@ describe('User ID', function () {
       });
     })
 
-    it('should exclude bidder-unrestricted IDs that conflict for some bidders', () => {
-      config.setConfig({
-        userSync: {
-          idPriority: {
-            mockId1: ['mockId1Module', 'mockId3Module'],
-          },
-          userIds: [
-            { name: 'mockId1Module', bidders: ['bidderA'] },
-            { name: 'mockId3Module' },
-          ]
+    describe('conflicting bidder filters', () => {
+      beforeEach(() => {
+        idValues.mockId2 = ['mockId1'];
+        idValues.mockId3 = ['mockId1'];
+        idValues.mockId4 = ['mockId1'];
+        setSubmoduleRegistry([
+          mockIdSubmodule('mockId1'),
+          mockIdSubmodule('mockId2', 'mockId1'),
+          mockIdSubmodule('mockId3', 'mockId1'),
+          mockIdSubmodule('mockId4', 'mockId1')
+        ]);
+      })
+
+      function bidderEids(bidderEidMap) {
+        return Object.fromEntries(
+          Object.entries(bidderEidMap).map(([bidder, eidMap]) => [bidder, {
+            user: {
+              ext: {
+                eids: eidsFrom(eidMap)
+              }
+            }
+          }])
+        )
+      }
+      describe('primary provider is restricted', () => {
+        function setup() {
+          config.setConfig({
+            userSync: {
+              idPriority: {
+                mockId1: ['mockId1Module', 'mockId2Module', 'mockId3Module', 'mockId4Module'],
+              },
+              userIds: [
+                { name: 'mockId1Module', bidders: ['bidderA'] },
+                { name: 'mockId2Module', bidders: ['bidderA', 'bidderB'] },
+                { name: 'mockId3Module', bidders: ['bidderC'] },
+                { name: 'mockId4Module' }
+              ]
+            }
+          });
         }
+
+        it('should restrict ID if it comes from restricted modules', async () => {
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId1Module'
+            },
+            bidderB: {
+              mockId1: 'mockId2Module'
+            },
+            bidderC: {
+              mockId1: 'mockId3Module'
+            }
+          }))
+        });
+        it('should use secondary module restrictions if ID comes from it', async () => {
+          idValues.mockId1 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId2Module'
+            },
+            bidderB: {
+              mockId1: 'mockId2Module'
+            },
+            bidderC: {
+              mockId1: 'mockId3Module'
+            }
+          }));
+        });
+        it('shoud not restrict if ID comes from unrestricted module', async () => {
+          idValues.mockId1 = [];
+          idValues.mockId2 = [];
+          idValues.mockId3 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global.user.ext.eids).to.eql(eidsFrom({
+            mockId1: 'mockId4Module'
+          }));
+          expect(bidder).to.eql({});
+        });
       });
-      return enrich().then(({global, bidder}) => {
-        expect(global.user.ext.eids).to.eql(eidsFrom({
-          mockId2: 'mockId3Module',
-          mockId3: 'mockId3Module',
-          mockId4: 'mockId3Module'
-        }));
-        expect(bidder).to.eql({});
-      });
-    });
+      describe('secondary provider is restricted', () => {
+        function setup() {
+          config.setConfig({
+            userSync: {
+              idPriority: {
+                mockId1: ['mockId1Module', 'mockId2Module', 'mockId3Module', 'mockId4Module'],
+              },
+              userIds: [
+                { name: 'mockId1Module' },
+                { name: 'mockId2Module', bidders: ['bidderA'] },
+                { name: 'mockId3Module', bidders: ['bidderA', 'bidderB'] },
+                { name: 'mockId4Module', bidders: ['bidderC'] },
+              ]
+            }
+          });
+        }
+        it('should not restrict if primary id is available', async () => {
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global.user.ext.eids).to.eql(eidsFrom({
+            mockId1: 'mockId1Module'
+          }));
+          expect(bidder).to.eql({});
+        });
+        it('should use secondary modules\' restrictions if they provide the ID', async () => {
+          idValues.mockId1 = [];
+          setup();
+          const {global, bidder} = await enrich();
+          expect(global).to.eql({});
+          expect(bidder).to.eql(bidderEids({
+            bidderA: {
+              mockId1: 'mockId2Module'
+            },
+            bidderB: {
+              mockId1: 'mockId3Module'
+            },
+            bidderC: {
+              mockId1: 'mockId4Module'
+            }
+          }))
+        });
+      })
+    })
 
     it('should provide bidder-specific IDs, even when they conflict across bidders', () => {
       config.setConfig({
@@ -2897,7 +3146,7 @@ describe('User ID', function () {
             mockId1: 'mockId1Module'
           },
           bidderB: {
-            mockId1: 'mockId1Module',
+            mockId1: 'mockId3Module',
             mockId2: 'mockId3Module',
             mockId3: 'mockId3Module',
             mockId4: 'mockId3Module'
@@ -2938,5 +3187,195 @@ describe('User ID', function () {
         }));
       });
     })
+
+    it('adUnits and ortbFragments should not contain ids from a submodule that was disabled by activityControls', () => {
+      const UNALLOWED_MODULE = 'mockId3';
+      const ALLOWED_MODULE = 'mockId1';
+      const UNALLOWED_MODULE_FULLNAME = UNALLOWED_MODULE + 'Module';
+      const ALLOWED_MODULE_FULLNAME = ALLOWED_MODULE + 'Module';
+      const bidders = ['bidderA', 'bidderB'];
+
+      idValues = {
+        [ALLOWED_MODULE]: [ALLOWED_MODULE],
+        [UNALLOWED_MODULE]: [UNALLOWED_MODULE],
+      };
+      init(config);
+
+      setSubmoduleRegistry([
+        mockIdSubmodule(ALLOWED_MODULE),
+        mockIdSubmodule(UNALLOWED_MODULE),
+      ]);
+
+      const unregisterRule = registerActivityControl(ACTIVITY_ENRICH_EIDS, 'ruleName', ({componentName, init}) => {
+        if (componentName === 'mockId3Module' && init === false) { return ({ allow: false, reason: "disabled" }); }
+      });
+
+      config.setConfig({
+        userSync: {
+          userIds: [
+            { name: ALLOWED_MODULE_FULLNAME, bidders },
+            { name: UNALLOWED_MODULE_FULLNAME, bidders },
+          ]
+        }
+      });
+
+      return getGlobal().getUserIdsAsync().then(() => {
+        const adUnits = [{
+          bids: [
+            { bidder: 'bidderA' },
+            { bidder: 'bidderB' },
+          ]
+        }];
+        const ortb2Fragments = {
+          global: {
+            user: {}
+          },
+          bidder: {
+            bidderA: {
+              user: {}
+            },
+            bidderB: {
+              user: {}
+            }
+          }
+        };
+        addIdData({ adUnits, ortb2Fragments });
+
+        adUnits[0].bids.forEach(({userIdAsEids}) => {
+          const userIdModules = (userIdAsEids || []).map(eid => eid.source.replace('.com', ''));
+          expect(userIdModules).to.include(ALLOWED_MODULE);
+          expect(userIdModules).to.not.include(UNALLOWED_MODULE);
+        });
+
+        bidders.forEach((bidderName) => {
+          const userIdModules = ortb2Fragments.bidder[bidderName].user.ext.eids.map(eid => eid.source);
+          expect(userIdModules).to.include(ALLOWED_MODULE + '.com');
+          expect(userIdModules).to.not.include(UNALLOWED_MODULE + '.com');
+        });
+
+        unregisterRule();
+      });
+    })
+  });
+
+  describe('generateSubmoduleContainers', () => {
+    it('should properly map registry to submodule containers for empty previous submodule containers', () => {
+      const previousSubmoduleContainers = [];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('mockId1Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].submodule.name).to.eql('sharedId');
+    });
+
+    it('should properly map registry to submodule containers for non-empty previous submodule containers', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'notSharedId'}, config: {name: 'notSharedId'}},
+        {submodule: {name: 'notSharedId2'}, config: {name: 'notSharedId2'}},
+      ];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('mockId1Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('mockId2Module', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].submodule.name).to.eql('sharedId');
+    });
+
+    it('should properly map registry to submodule containers for retainConfig flag', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'shouldBeKept'}, config: {name: 'shouldBeKept'}},
+      ];
+      const submoduleRegistry = [
+        sharedIdSystemSubmodule,
+        createMockIdSubmodule('shouldBeKept', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [{ name: 'sharedId' }];
+      const result = generateSubmoduleContainers({retainConfig: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].submodule.name).to.eql('sharedId');
+      expect(result[1].submodule.name).to.eql('shouldBeKept');
+    });
+
+    it('should properly map registry to submodule containers for autoRefresh flag', () => {
+      const previousSubmoduleContainers = [
+        {submodule: {name: 'modified'}, config: {name: 'modified', auctionDelay: 300}},
+        {submodule: {name: 'unchanged'}, config: {name: 'unchanged', auctionDelay: 300}},
+      ];
+      const submoduleRegistry = [
+        createMockIdSubmodule('modified', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('new', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+        createMockIdSubmodule('unchanged', { id: { uid2: { id: 'uid2_value' } } }, null, null),
+      ];
+      const configRegistry = [
+        {name: 'modified', auctionDelay: 200},
+        {name: 'new'},
+        {name: 'unchanged', auctionDelay: 300},
+      ];
+      const result = generateSubmoduleContainers({autoRefresh: true}, configRegistry, previousSubmoduleContainers, submoduleRegistry);
+      expect(result).to.have.lengthOf(3);
+      const itemsWithRefreshIds = result.filter(item => item.refreshIds);
+      const submoduleNames = itemsWithRefreshIds.map(item => item.submodule.name);
+      expect(submoduleNames).to.deep.eql(['modified', 'new']);
+    });
+  });
+  describe('user id modules - enforceStorageType', () => {
+    let warnLogSpy;
+    const UID_MODULE_NAME = 'userIdModule';
+    const userSync = {
+      userIds: [
+        {
+          name: UID_MODULE_NAME,
+          storage: {
+            type: STORAGE_TYPE_LOCALSTORAGE,
+            name: 'storageName'
+          }
+        }
+      ]
+    };
+
+    before(() => {
+      setSubmoduleRegistry([
+        createMockIdSubmodule(UID_MODULE_NAME, {id: {uid2: {id: 'uid2_value'}}}, null, []),
+      ]);
+    })
+
+    beforeEach(() => {
+      warnLogSpy = sinon.spy(utils, 'logWarn');
+    });
+
+    afterEach(() => {
+      warnLogSpy.restore();
+      document.cookie = ''
+    });
+
+    it('should warn and allow userId module to store data for enforceStorageType unset', () => {
+      const initialCookie = document.cookie;
+      config.setConfig({userSync});
+      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
+      storage.setCookie('cookieName', 'value', 20000);
+      sinon.assert.calledWith(warnLogSpy, `${UID_MODULE_NAME} attempts to store data in ${STORAGE_TYPE_COOKIES} while configuration allows ${STORAGE_TYPE_LOCALSTORAGE}.`);
+      expect(initialCookie).to.not.deep.eql(document.cookie);
+      expect(document.cookie).to.deep.include('cookieName');
+    });
+
+    it('should not allow userId module to store data for enforceStorageType set to true', () => {
+      const initialCookie = document.cookie;
+      config.setConfig({
+        userSync: {
+          enforceStorageType: true,
+          ...userSync,
+        }
+      })
+      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: UID_MODULE_NAME});
+      storage.setCookie('data', 'value', 20000);
+      expect(initialCookie).to.deep.eql(document.cookie);
+    });
   });
 });

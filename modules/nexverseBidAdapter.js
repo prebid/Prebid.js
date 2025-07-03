@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { isArray } from '../src/utils.js';

@@ -1,5 +1,4 @@
 import {
-  deepAccess,
   deepSetValue,
   generateUUID,
   logError
@@ -44,6 +43,10 @@ export const getBannerRequest = (bidRequests, bidderRequest, ENDPOINT) => {
       deepSetValue(req, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
     req.MediaType = getMediaType(bidReq);
+    // Adding eids if passed
+    if (bidReq.userIdAsEids) {
+      req.user.ext.eids = bidReq.userIdAsEids;
+    }
     request.push(req);
   });
   // Return the array of request
@@ -70,7 +73,7 @@ const formatResponse = (bidResponse, mediaType, assets) => {
   let responseArray = [];
   if (bidResponse) {
     try {
-      let bidResp = deepAccess(bidResponse, 'body.seatbid', []);
+      let bidResp = bidResponse?.body?.seatbid ?? [];
       if (bidResp && bidResp[0] && bidResp[0].bid) {
         bidResp[0].bid.forEach(bidReq => {
           let response = {};
@@ -146,7 +149,7 @@ const getBannerDetails = (bidReq) => {
 }
 // Function to get floor price
 const getFloorPrice = (bidReq) => {
-  let bidfloor = deepAccess(bidReq, 'params.bid_floor', 0);
+  let bidfloor = bidReq?.params?.bid_floor ?? 0;
   return bidfloor;
 }
 // Function to get site object
@@ -167,11 +170,13 @@ const getUserDetails = (bidReq) => {
     user.buyeruid = bidReq.ortb2.user.buyeruid ? bidReq.ortb2.user.buyeruid : '';
     user.keywords = bidReq.ortb2.user.keywords ? bidReq.ortb2.user.keywords : '';
     user.customdata = bidReq.ortb2.user.customdata ? bidReq.ortb2.user.customdata : '';
+    user.ext = bidReq.ortb2.user.ext ? bidReq.ortb2.user.ext : '';
   } else {
     user.id = '';
     user.buyeruid = '';
     user.keywords = '';
     user.customdata = '';
+    user.ext = {};
   }
   return user;
 }

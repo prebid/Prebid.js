@@ -40,7 +40,7 @@ export const spec = {
           gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           usp: (bidderRequest.uspConsent || '1---') !== '1---',
           eids: utils.deepAccess(r, 'userIdAsEids', []),
-          schain: serializeSchain(utils.deepAccess(r, 'schain', null)),
+          schain: serializeSchain(utils.deepAccess(r, 'ortb2.source.ext.schain', null)),
           pbVersion: '$prebid.version$',
         }),
       }

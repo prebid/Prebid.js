@@ -1,10 +1,10 @@
 import {isEmpty, logError, logWarn, mergeDeep, safeJSONParse} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
 import {getCoreStorageManager} from '../src/storageManager.js';
-import {includes} from '../src/polyfill.js';
+
 import {isActivityAllowed} from '../src/activities/rules.js';
 import {ACTIVITY_ENRICH_UFPD} from '../src/activities/activities.js';
 import {activityParams} from '../src/activities/activityParams.js';
@@ -92,13 +92,13 @@ export function getTopics(doc = document) {
 
   try {
     if (isTopicsSupported(doc)) {
-      topics = GreedyPromise.resolve(doc.browsingTopics());
+      topics = PbPromise.resolve(doc.browsingTopics());
     }
   } catch (e) {
     logError('Could not call topics API', e);
   }
   if (topics == null) {
-    topics = GreedyPromise.resolve([]);
+    topics = PbPromise.resolve([]);
   }
 
   return topics;
@@ -158,7 +158,7 @@ export function receiveMessage(evt) {
   if (evt && evt.data) {
     try {
       let data = safeJSONParse(evt.data);
-      if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
+      if (getLoadedIframeURL().includes(evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
         const iframeTopicsData = getTopicsData(domain, topics);
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);

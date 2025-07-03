@@ -24,6 +24,12 @@ export const ACTIVITY_PARAM_ADAPTER_CODE = 'adapterCode';
 export const ACTIVITY_PARAM_STORAGE_TYPE = 'storageType';
 
 /**
+ * Storage key - cookie name or localStorage key.
+ * Relevant for: accessDevice
+ */
+export const ACTIVITY_PARAM_STORAGE_KEY = 'storageKey'
+
+/**
  * s2sConfig[].configName, used to identify a particular s2s instance
  * relevant for: fetchBids, but only when component is 'prebid.pbsBidAdapter'
  */
@@ -39,9 +45,9 @@ export const ACTIVITY_PARAM_SYNC_TYPE = 'syncType'
  */
 export const ACTIVITY_PARAM_SYNC_URL = 'syncUrl';
 /**
- * @private
  * Configuration options for analytics adapter - the argument passed to `enableAnalytics`.
- * Relevant for: reportAnalytics.
+ * Relevant for: reportAnalytics
+ * @private
  * @constant
  * @type {string}
  */
