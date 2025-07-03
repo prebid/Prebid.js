@@ -16,7 +16,7 @@ const {
   AUCTION_TIMEOUT
 } = EVENTS;
 
-const URL = 'https://ps.itdsmr.com';
+const URL = 'https://ps.ivcsmrt.com';
 const ANALYTICS_TYPE = 'endpoint';
 const BIDDER_CODE = 'smartyads';
 const GVLID = 534;

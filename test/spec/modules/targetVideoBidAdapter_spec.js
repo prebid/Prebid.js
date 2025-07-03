@@ -82,7 +82,13 @@ describe('TargetVideo Bid Adapter', function() {
     };
 
     let videoRequestCloned = deepClone(videoRequest);
-    videoRequestCloned[0].schain = globalSchain;
+    videoRequestCloned[0].ortb2 = {
+      source: {
+        ext: {
+          schain: globalSchain
+        }
+      }
+    };
 
     const request = spec.buildRequests(videoRequestCloned, defaultBidderRequest);
     expect(request).to.not.be.empty;

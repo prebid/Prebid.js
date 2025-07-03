@@ -145,7 +145,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     bidId: 'bid12345',
     mediaTypes: {
       native: {
-        sendTargetingKeys: false,
         ortb: nativeOrtbRequest
       }
     },

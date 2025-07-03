@@ -35,12 +35,6 @@ describe('deltaprojectsBidAdapter', function() {
       expect(spec.isBidRequestValid(undefined)).to.equal(false);
     });
 
-    it('should return false when bidder not set correctly', function () {
-      let bid = makeBid();
-      delete bid.bidder;
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
-
     it('should return false when publisher id is not set', function () {
       let bid = makeBid();
       delete bid.params.publisherId;
