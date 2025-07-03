@@ -216,6 +216,13 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     }
   }
 
+  // Set test: 1 for debug mode
+  let test = config.getConfig('debug') ? 1 : 0;
+  const isDebug = bid.isDebug;
+  if (isDebug) {
+    test = 1;
+  }
+
   // Construct the OpenRTB request object
   const openRtbRequest = {
     id: bidderRequest.auctionId ?? generateUUID(),
@@ -258,7 +265,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       },
       viewabilityPercentage
     },
-    test: config.getConfig('debug') ? 1 : 0,
+    test: test,
   };
 
   // Add app object if the request comes from a mobile app
