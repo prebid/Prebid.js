@@ -5,7 +5,10 @@ on:
     branches:
       - master
       - '*-legacy'
-  pull_request:
+  pull_request_target:
+    branches:
+      - master
+      - '*-legacy'
 
 concurrency:
   group: test-${{ github.ref }}
