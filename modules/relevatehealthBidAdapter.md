@@ -27,11 +27,10 @@ Module that connects to relevatehealth's demand sources.
             bidder: 'relevatehealth',
             params: {
                 placement_id: 110011,  // Required parameter
-                user_id: '1111111' // Required parameter
                 width: 160,   // Optional parameter 
                 height: 600, // Optional parameter
                 domain: '', // Optional parameter
-		        bid_floor: 0.5 // Optional parameter
+		            bid_floor: 0.5 // Optional parameter
             }
         }
       ]

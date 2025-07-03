@@ -304,7 +304,7 @@ export const spec = {
         deepSetValue(request, 'regs.coppa', 1);
       }
     }
-    const schain = setOnAny(validBidRequests, 'schain');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
     if (schain) {
       deepSetValue(request, 'source.ext.schain', schain);
     }

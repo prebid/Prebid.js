@@ -1046,7 +1046,6 @@ describe('admaticBidAdapter', () => {
             ],
             'type': 'native',
             'mediatype': {
-              'sendTargetingKeys': false,
               'ortb': {
                 'ver': '1.1',
                 'context': 2,

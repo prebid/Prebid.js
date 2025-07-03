@@ -337,7 +337,7 @@ describe('WinrAdapter', function () {
     it('should add gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -470,16 +470,22 @@ describe('WinrAdapter', function () {
 
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'blob.com',
-              'sid': '001',
-              'hp': 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'blob.com',
+                    'sid': '001',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       });
 

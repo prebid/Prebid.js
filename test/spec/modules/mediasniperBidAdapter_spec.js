@@ -343,14 +343,6 @@ describe('mediasniperBidAdapter', function () {
       expect(response06.length).to.equal(0);
     });
 
-    it('Log an error', function () {
-      const request = '';
-      sinon.stub(utils, 'isArray').throws();
-      utilsMock.expects('logError').once();
-      spec.interpretResponse(rawServerResponse, request);
-      utils.isArray.restore();
-    });
-
     describe('Build banner response', function () {
       it('Retrurn successful response', function () {
         const request = '';

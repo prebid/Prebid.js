@@ -27,23 +27,19 @@ export const storage = getStorageManager({
  * @returns
  */
 export const manageCallbackResponse = (response) => {
-  try {
-    const foo = JSON.parse(response.response);
-    if (!Array.isArray(foo)) throw new Error('Invalid response');
-    const enrichedResponse = {
-      ext: {
-        segtax: 4
-      },
-      segment: foo.map((segment) => { return { id: segment } }),
-    };
-    const output = {
-      name: 'goldfishads.com',
-      ...enrichedResponse,
-    };
-    return output;
-  } catch (e) {
-    throw e;
+  const foo = JSON.parse(response.response);
+  if (!Array.isArray(foo)) throw new Error('Invalid response');
+  const enrichedResponse = {
+    ext: {
+      segtax: 4
+    },
+    segment: foo.map((segment) => { return { id: segment } }),
   };
+  const output = {
+    name: 'goldfishads.com',
+    ...enrichedResponse,
+  };
+  return output;
 };
 
 /**
