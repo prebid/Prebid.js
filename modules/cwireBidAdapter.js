@@ -40,8 +40,8 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
  * @returns {*&{cwExt: {dimensions: {width: number, height: number}, style: {maxWidth: number, maxHeight: number}}}}
  */
 function slotDimensions(bid) {
-  let adUnitCode = bid.adUnitCode;
-  let slotEl = document.getElementById(adUnitCode);
+  const adUnitCode = bid.adUnitCode;
+  const slotEl = document.getElementById(adUnitCode);
 
   if (slotEl) {
     logInfo(`Slot element found: ${adUnitCode}`);
@@ -78,7 +78,7 @@ function slotDimensions(bid) {
  * @returns *[]
  */
 function getFeatureFlags() {
-  let ffParam = getParameterByName("cwfeatures");
+  const ffParam = getParameterByName("cwfeatures");
   if (ffParam) {
     return ffParam.split(",");
   }
@@ -98,7 +98,7 @@ function getBidFloor(bid) {
     return {};
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: "USD",
     mediaType: "*",
     size: "*",
@@ -210,10 +210,10 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // There are more fields on the refererInfo object
-    let referrer = bidderRequest?.refererInfo?.page;
+    const referrer = bidderRequest?.refererInfo?.page;
 
     // process bid requests
-    let processed = validBidRequests
+    const processed = validBidRequests
       .map((bid) => slotDimensions(bid))
       .map((bid) => {
         const bidFloor = getBidFloor(bid);
@@ -321,7 +321,7 @@ export const spec = {
     const syncs = [];
     if (hasPurpose1Consent(gdprConsent) && gdprConsent.consentString) {
       logInfo("GDPR purpose 1 consent was given, adding user-syncs");
-      let type = syncOptions.pixelEnabled
+      const type = syncOptions.pixelEnabled
         ? "image"
         : null ?? syncOptions.iframeEnabled
         ? "iframe"

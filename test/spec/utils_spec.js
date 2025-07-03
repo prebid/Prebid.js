@@ -763,12 +763,12 @@ describe('Utils', function () {
 
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
-      let var1 = 'placementIdTest';
-      let test1 = convertCamelToUnderscore(var1);
+      const var1 = 'placementIdTest';
+      const test1 = convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
 
-      let var2 = 'my_test_value';
-      let test2 = convertCamelToUnderscore(var2);
+      const var2 = 'my_test_value';
+      const test2 = convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
     });
   });
@@ -1266,7 +1266,7 @@ describe('Utils', function () {
             if (typeof window.CompressionStream === 'undefined') {
               cachedResult = false;
             } else {
-              let newCompressionStream = new window.CompressionStream('gzip');
+              const newCompressionStream = new window.CompressionStream('gzip');
               cachedResult = true;
             }
           } catch (error) {

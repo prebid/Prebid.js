@@ -35,12 +35,12 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   let playerVersion = null;
   const playerConfig = config.playerConfig;
   const divId = config.divId;
-  let adState = adState_;
-  let timeState = timeState_;
-  let callbackStorage = callbackStorage_;
+  const adState = adState_;
+  const timeState = timeState_;
+  const callbackStorage = callbackStorage_;
   let pendingSeek = {};
   let supportedMediaTypes = null;
-  let minimumSupportedPlayerVersion = '8.20.1';
+  const minimumSupportedPlayerVersion = '8.20.1';
   let setupCompleteCallbacks = [];
   let setupFailedCallbacks = [];
   const MEDIA_TYPES = [
@@ -649,7 +649,7 @@ export const utils = {
 
   getPlayerSizeFromAspectRatio: function(player, config) {
     const aspectRatio = config.aspectratio;
-    let percentageWidth = config.width;
+    const percentageWidth = config.width;
 
     if (typeof aspectRatio !== 'string' || typeof percentageWidth !== 'string') {
       return {};
@@ -897,7 +897,7 @@ export function callbackStorageFactory() {
   }
 
   function getCallback(eventType, callback) {
-    let eventHandlers = storage[eventType];
+    const eventHandlers = storage[eventType];
     if (!eventHandlers) {
       return;
     }

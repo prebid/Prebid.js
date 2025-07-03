@@ -1347,7 +1347,7 @@ describe('33acrossBidAdapter:', function () {
           .withData(ttxRequest)
           .build();
 
-        let copyBidRequest = utils.deepClone(bidRequests);
+        const copyBidRequest = utils.deepClone(bidRequests);
         const bidRequestsWithGpid = copyBidRequest.map(function(bidRequest, index) {
           return {
             ...bidRequest,

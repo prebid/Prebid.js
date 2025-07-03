@@ -140,7 +140,7 @@ export const spec = {
       logMessage(e);
     }
     // TODO: does the fallback make sense here?
-    let location = refferLocation || winLocation;
+    const location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;
     const page = location.pathname;
@@ -174,9 +174,9 @@ export const spec = {
   },
 
   interpretResponse: (serverResponse) => {
-    let response = [];
+    const response = [];
     for (let i = 0; i < serverResponse.body.length; i++) {
-      let resItem = serverResponse.body[i];
+      const resItem = serverResponse.body[i];
       if (isBidResponseValid(resItem)) {
         const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
         resItem.meta = { ...resItem.meta, advertiserDomains };

@@ -206,7 +206,7 @@ function interpretResponse(response, bidRequest) {
   }
 
   for (const [bidID, adUnit] of Object.entries(bids)) {
-    let meta = {
+    const meta = {
       mediaType: adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType) ? adUnit.mediaType : BANNER
     };
 
@@ -323,7 +323,7 @@ function _generateRandomUUID() {
 }
 
 function _getCrb() {
-  let localStorageCrb = getCrbFromLocalStorage();
+  const localStorageCrb = getCrbFromLocalStorage();
   if (Object.keys(localStorageCrb).length) {
     return localStorageCrb;
   }
@@ -341,7 +341,7 @@ function getCrbFromCookie() {
   try {
     const crb = JSON.parse(STORAGE.getCookie(CERBERUS.KEY));
     if (crb && crb.v) {
-      let vParsed = JSON.parse(atob(crb.v));
+      const vParsed = JSON.parse(atob(crb.v));
       if (vParsed) {
         return vParsed;
       }

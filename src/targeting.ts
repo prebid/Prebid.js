@@ -51,7 +51,7 @@ const isBidNotExpired = (bid) => (bid.responseTimestamp + getBufferedTTL(bid) * 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && ![BID_STATUS.RENDERED].includes(bid.status)) || !bid.status);
 
-export let filters = {
+export const filters = {
   isBidNotExpired,
   isUnusedBid
 };
@@ -68,11 +68,11 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
     const bids = [];
     const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
     // bucket by adUnitcode
-    let buckets = groupBy(bidsReceived, 'adUnitCode');
+    const buckets = groupBy(bidsReceived, 'adUnitCode');
     // filter top bid for each bucket by bidder
     Object.keys(buckets).forEach(bucketKey => {
       let bucketBids = [];
-      let bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode')
+      const bidsByBidder = groupBy(buckets[bucketKey], 'bidderCode')
       Object.keys(bidsByBidder).forEach(key => { bucketBids.push(bidsByBidder[key].reduce(winReducer)) });
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit) {
@@ -198,7 +198,7 @@ declare module './config' {
 }
 
 export function newTargeting(auctionManager) {
-  let latestAuctionForAdUnit = {};
+  const latestAuctionForAdUnit = {};
 
   const targeting = {
       setLatestAuctionForAdUnit(adUnitCode: AdUnitCode, auctionId: Identifier) {
@@ -277,9 +277,9 @@ export function newTargeting(auctionManager) {
 
       setTargetingForGPT: hook('sync', function (adUnit?: AdUnitCode | AdUnitCode[], customSlotMatching?: SlotMatchingFn) {
           // get our ad unit codes
-          let targetingSet: ByAdUnit<GPTTargetingValues> = targeting.getAllTargeting(adUnit);
+          const targetingSet: ByAdUnit<GPTTargetingValues> = targeting.getAllTargeting(adUnit);
 
-          let resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
+          const resetMap = Object.fromEntries(pbTargetingKeys.map(key => [key, null]));
 
           Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingSet), customSlotMatching)).forEach(([targetId, slots]) => {
               slots.forEach(slot => {
@@ -342,7 +342,7 @@ export function newTargeting(auctionManager) {
        * Sets targeting for AST
        */
       setTargetingForAst(adUnitCodes?: AdUnitCode | AdUnitCode[]) {
-          let astTargeting = targeting.getAllTargeting(adUnitCodes);
+          const astTargeting = targeting.getAllTargeting(adUnitCodes);
 
           try {
               targeting.resetPresetTargetingAST(adUnitCodes);
@@ -355,8 +355,8 @@ export function newTargeting(auctionManager) {
                   logMessage(`Attempting to set targeting for targetId: ${targetId} key: ${key} value: ${astTargeting[targetId][key]}`);
                   // setKeywords supports string and array as value
                   if (isStr(astTargeting[targetId][key]) || isArray(astTargeting[targetId][key])) {
-                      let keywordsObj = {};
-                      let regex = /pt[0-9]/;
+                      const keywordsObj = {};
+                      const regex = /pt[0-9]/;
                       if (key.search(regex) < 0) {
                           keywordsObj[key.toUpperCase()] = astTargeting[targetId][key];
                       } else {
@@ -518,16 +518,16 @@ export function newTargeting(auctionManager) {
   //  - note this will encode the characters between the keys (ie = and &)
   function convertKeysToQueryForm(keyMap) {
     return Object.keys(keyMap).reduce(function (queryString, key) {
-      let encodedKeyPair = `${key}%3d${encodeURIComponent(keyMap[key])}%26`;
+      const encodedKeyPair = `${key}%3d${encodeURIComponent(keyMap[key])}%26`;
       return queryString += encodedKeyPair;
     }, '');
   }
 
   function filterTargetingKeys(targeting: ByAdUnit<TargetingValues>, auctionKeysThreshold: number) {
     // read each targeting.adUnit object and sort the adUnits into a list of adUnitCodes based on priorization setting (eg CPM)
-    let targetingCopy = deepClone(targeting);
+    const targetingCopy = deepClone(targeting);
 
-    let targetingMap = Object.keys(targetingCopy).map(adUnitCode => {
+    const targetingMap = Object.keys(targetingCopy).map(adUnitCode => {
       return {
         adUnitCode,
         adserverTargeting: targetingCopy[adUnitCode]
@@ -544,8 +544,8 @@ export function newTargeting(auctionManager) {
       }
 
       // if under running threshold add to result
-      let code = currMap.adUnitCode;
-      let querySize = adUnitQueryString.length;
+      const code = currMap.adUnitCode;
+      const querySize = adUnitQueryString.length;
       if (querySize <= auctionKeysThreshold) {
         auctionKeysThreshold -= querySize;
         logInfo(`AdUnit '${code}' auction keys comprised of ${querySize} characters.  Deducted from running threshold; new limit is ${auctionKeysThreshold}`, targetingCopy[code]);
@@ -620,7 +620,7 @@ export function newTargeting(auctionManager) {
   }
 
   function getBidsReceived(winReducer = getOldestHighestCpmBid, winSorter = undefined) {
-    let bidsReceived = auctionManager.getBidsReceived().reduce((bids, bid) => {
+    const bidsReceived = auctionManager.getBidsReceived().reduce((bids, bid) => {
       const bidCacheEnabled = config.getConfig('useBidCache');
       const filterFunction = config.getConfig('bidCacheFilterFunction');
       const isBidFromLastAuction = latestAuctionForAdUnit[bid.adUnitCode] === bid.auctionId;
@@ -646,8 +646,8 @@ export function newTargeting(auctionManager) {
    * @return winning bids targeting
    */
   function getWinningBidTargeting(bidsReceived, adUnitCodes): TargetingArray {
-    let winners = targeting.getWinningBids(adUnitCodes, bidsReceived);
-    let standardKeys = getStandardKeys();
+    const winners = targeting.getWinningBids(adUnitCodes, bidsReceived);
+    const standardKeys = getStandardKeys();
 
     return winners.map(winner => {
       return {
@@ -677,7 +677,7 @@ export function newTargeting(auctionManager) {
   }
 
   function getCustomKeys() {
-    let standardKeys = getStandardKeys();
+    const standardKeys = getStandardKeys();
     return function(key) {
       return standardKeys.indexOf(key) === -1;
     }

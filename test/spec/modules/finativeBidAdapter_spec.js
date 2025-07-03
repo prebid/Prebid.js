@@ -6,7 +6,7 @@ import { config } from 'src/config.js';
 
 describe('Finative adapter', function () {
   let serverResponse, bidRequest, bidResponses;
-  let bid = {
+  const bid = {
     'bidder': 'finative',
     'params': {
       'adUnitId': '1uyo'
@@ -26,41 +26,41 @@ describe('Finative adapter', function () {
 
   describe('buildRequests', function () {
     it('should send request with correct structure', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: {}
       }];
 
-      let request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
+      const request = spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } });
 
       assert.equal(request.method, 'POST');
       assert.ok(request.data);
     });
 
     it('should have default request structure', function () {
-      let keys = 'site,device,cur,imp,user,regs'.split(',');
-      let validBidRequests = [{
+      const keys = 'site,device,cur,imp,user,regs'.split(',');
+      const validBidRequests = [{
         bidId: 'bidId',
         params: {}
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
-      let data = Object.keys(request);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      const data = Object.keys(request);
 
       assert.deepEqual(keys, data);
     });
 
     it('Verify the device', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: {}
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
+      const request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data);
 
       assert.equal(request.device.ua, navigator.userAgent);
     });
 
     it('Verify native asset ids', function () {
-      let validBidRequests = [{
+      const validBidRequests = [{
         bidId: 'bidId',
         params: {},
         nativeParams: {
@@ -86,7 +86,7 @@ describe('Finative adapter', function () {
         }
       }];
 
-      let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
+      const assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' } }).data).imp[0].native.request.assets;
 
       assert.equal(assets[0].id, 1);
       assert.equal(assets[1].id, 3);

@@ -754,7 +754,7 @@ export const requestBids = (function() {
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
     const req = options as PrivRequestBidsOptions;
-    let adUnits = req.adUnits || pbjsInstance.adUnits;
+    const adUnits = req.adUnits || pbjsInstance.adUnits;
     req.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
     req.metrics = newMetrics();

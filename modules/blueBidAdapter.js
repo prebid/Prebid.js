@@ -50,7 +50,7 @@ export const spec = {
   interpretResponse: (serverResponse) => {
     if (!serverResponse || isEmpty(serverResponse.body)) return [];
 
-    let bids = [];
+    const bids = [];
     serverResponse.body.seatbid.forEach((response) => {
       response.bid.forEach((bid) => {
         const baseBid = buildBidObjectBase(bid, serverResponse.body, BIDDER_CODE, DEFAULT_CURRENCY);

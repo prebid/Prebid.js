@@ -13,7 +13,7 @@ const moduleConfig = {
   }
 };
 
-let request = {
+const request = {
   'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b',
   'timestamp': 1647424261187,
   'auctionEnd': 1647424261714,
@@ -45,7 +45,7 @@ let request = {
   ]
 };
 
-let bids = [{
+const bids = [{
   'bidderCode': 'mediasquare',
   'width': 640,
   'height': 480,
@@ -113,7 +113,7 @@ let bids = [{
 },
 ];
 
-let bidInterests = [
+const bidInterests = [
   {'id': 0, 'rate': 50.0, 'suggestion': true},
   {'id': 1, 'rate': 12.0, 'suggestion': false},
   {'id': 2, 'rate': 0.0, 'suggestion': true},
@@ -137,13 +137,13 @@ describe('oxxionRtdProvider', () => {
   });
 
   describe('Oxxion RTD sub module', () => {
-    let auctionEnd = request;
+    const auctionEnd = request;
     auctionEnd.bidsReceived = bids;
     it('call everything', function() {
       oxxionSubmodule.getBidRequestData(request, null, moduleConfig);
     });
     it('check bid filtering', function() {
-      let requestsList = oxxionSubmodule.getRequestsList(request);
+      const requestsList = oxxionSubmodule.getRequestsList(request);
       expect(requestsList.length).to.equal(4);
       expect(requestsList[0]).to.have.property('id');
       expect(request.adUnits[0].bids[0]).to.have.property('_id');

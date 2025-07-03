@@ -503,8 +503,8 @@ function idSystemInitializer({mkDelay = delay} = {}) {
 
   // grab a reference to global vars so that the promise chains remain isolated;
   // multiple calls to `init` (from tests) might otherwise cause them to interfere with each other
-  let initModules = initializedSubmodules;
-  let allModules = submodules;
+  const initModules = initializedSubmodules;
+  const allModules = submodules;
 
   function checkRefs(fn) {
     // unfortunately tests have their own global state that needs to be guarded, so even if we keep ours tidy,
@@ -663,7 +663,7 @@ function getUserIdsAsEidBySource(sourceName: string): ORTBRequest['user']['eids'
  */
 function getEncryptedEidsForSource(source, encrypt, customFunction) {
   return retryOnCancel().then(() => {
-    let eidsSignals = {};
+    const eidsSignals = {};
 
     if (isFn(customFunction)) {
       logInfo(`${MODULE_NAME} - Getting encrypted signal from custom function : ${customFunction.name} & source : ${source} `);
