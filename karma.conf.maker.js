@@ -58,7 +58,7 @@ function newPluginsArray(browserstack) {
   return plugins;
 }
 
-function setReporters(karmaConf, codeCoverage, browserstack) {
+function setReporters(karmaConf, codeCoverage, browserstack, chunkNo) {
   // In browserstack, the default 'progress' reporter floods the logs.
   // The karma-spec-reporter reports failures more concisely
   if (browserstack) {
@@ -74,7 +74,7 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
   if (codeCoverage) {
     karmaConf.reporters.push('coverage');
     karmaConf.coverageReporter = {
-      dir: 'build/coverage',
+      dir: `build/coverage/chunks/${chunkNo}`,
       reporters: [
         { type: 'lcov', subdir: '.' }
       ]
@@ -112,7 +112,7 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
+module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures, chunkNo) {
   var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
   if (file) {
@@ -180,7 +180,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     plugins: plugins
   };
 
-  setReporters(config, codeCoverage, browserstack);
+  setReporters(config, codeCoverage, browserstack, chunkNo);
   setBrowsers(config, browserstack);
   return config;
 }
