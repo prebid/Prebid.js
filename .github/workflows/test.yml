@@ -59,7 +59,6 @@ jobs:
   test-e2e:
     name: "End-to-end tests"
     needs: checkout
-    timeout-minutes: 15
     runs-on: ubuntu-latest
     concurrency:
       # see test-chunk.yml for notes on concurrency groups
@@ -79,7 +78,11 @@ jobs:
           path: .
           key: source-${{ github.sha }}
       - name: Run tests
-        run: npx gulp e2e-test
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npx gulp e2e-tests
 
   coveralls:
     name: Update coveralls

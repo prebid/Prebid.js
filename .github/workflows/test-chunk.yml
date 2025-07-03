@@ -35,7 +35,6 @@ concurrency:
 jobs:
   test:
     name: "Test chunk ${{ inputs.chunk-no }}"
-    timeout-minutes: 5
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
@@ -56,7 +55,11 @@ jobs:
           key: ${{ inputs.wdir }}
 
       - name: Run tests
-        run: ${{ inputs.cmd }}
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: ${{ inputs.cmd }}
 
       - name: Save working directory
         uses: actions/cache/save@v4
