@@ -14,6 +14,7 @@ concurrency:
 jobs:
   checkout:
     name: "Check out source and install dependencies"
+    timeout-minutes: 2
     runs-on: ubuntu-latest
     steps:
       - name: Set up Node.js
@@ -58,6 +59,7 @@ jobs:
   test-e2e:
     name: "End-to-end tests"
     needs: checkout
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     concurrency:
       # see test-chunk.yml for notes on concurrency groups

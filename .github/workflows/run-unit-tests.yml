@@ -1,19 +1,22 @@
-name: Run tests
+name: Run unit tests
 on:
   workflow_call:
     inputs:
       build-cmd:
+        description: Build command, run once
         required: true
         type: string
       test-cmd:
+        description: Test command, run once per chunk
         required: true
         type: string
       serialize:
+        description: If true, allow only one concurrent chunk (see note on concurrency below)
         required: false
         type: boolean
     outputs:
       wdir:
-        description: "Cache key for the working directory after running tests"
+        description: Cache key for the working directory after running tests
         value: ${{ jobs.chunk-4.outputs.wdir }}
     secrets:
       BROWSERSTACK_USER_NAME:
@@ -25,6 +28,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v4

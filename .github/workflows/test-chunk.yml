@@ -1,4 +1,4 @@
-name: Run tests
+name: Test chunk
 on:
   workflow_call:
     inputs:
@@ -35,6 +35,7 @@ concurrency:
 jobs:
   test:
     name: "Test chunk ${{ inputs.chunk-no }}"
+    timeout-minutes: 5
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
