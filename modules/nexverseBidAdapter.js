@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { isArray, isNumber } from '../src/utils.js';
+import { isArray, isNumber, generateUUID, getWinDimensions } from '../src/utils.js';
+import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid } from '../libraries/nexverseUtils/index.js';
@@ -197,9 +198,27 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     imps.push(imp);
   }
 
+  // Calculate viewability percentage for the ad unit
+  const adUnitElement = document.getElementById(bid.adUnitCode);
+  let viewabilityPercentage = 0;
+  if (adUnitElement) {
+    const rect = getBoundingClientRect(adUnitElement);
+    const { innerWidth, innerHeight } = getWinDimensions();
+    if (rect && innerWidth && innerHeight) {
+      // Calculate how much of the element is in view
+      const visibleHeight = Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0);
+      const visibleWidth = Math.min(rect.right, innerHeight) - Math.max(rect.left, 0);
+      if (visibleHeight > 0 && visibleWidth > 0) {
+        const totalArea = rect.width * rect.height;
+        const visibleArea = visibleHeight * visibleWidth;
+        viewabilityPercentage = Math.round((visibleArea / totalArea) * 100);
+      }
+    }
+  }
+
   // Construct the OpenRTB request object
   const openRtbRequest = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.auctionId ?? generateUUID(),
     imp: imps,
     site: {
       page: bidderRequest.refererInfo.page,
@@ -237,6 +256,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       prebid: {
         auctiontimestamp: bidderRequest.auctionStart,
       },
+      viewabilityPercentage
     },
     test: config.getConfig('debug') ? 1 : 0,
   };
