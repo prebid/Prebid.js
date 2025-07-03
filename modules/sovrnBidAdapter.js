@@ -13,7 +13,6 @@ import {
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
-  ADPOD,
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
@@ -32,7 +31,6 @@ const ORTB_VIDEO_PARAMS = {
 }
 
 const REQUIRED_VIDEO_PARAMS = {
-  context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols
@@ -88,8 +86,9 @@ export const spec = {
           })
         }
 
-        if (bid.schain) {
-          schain = schain || bid.schain
+        const bidSchain = bid?.ortb2?.source?.ext?.schain;
+        if (bidSchain) {
+          schain = schain || bidSchain
         }
         iv = iv || getBidIdParameter('iv', bid.params)
 
@@ -171,6 +170,11 @@ export const spec = {
         deepSetValue(sovrnBidReq, 'regs.coppa', 1);
       }
 
+      const bcat = deepAccess(bidderRequest, 'ortb2.bcat');
+      if (bcat) {
+        deepSetValue(sovrnBidReq, 'bcat', bcat);
+      }
+
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
@@ -212,8 +216,8 @@ export const spec = {
 
   /**
    * Format Sovrn responses as Prebid bid responses
-   * @param {id, seatbid, ext} sovrnResponse A successful response from Sovrn.
-   * @return An array of formatted bids (+ fledgeAuctionConfigs if available)
+   * @param {*} param0 A successful response from Sovrn.
+   * @return {Array} An array of formatted bids (+ fledgeAuctionConfigs if available)
    */
   interpretResponse: function({ body: {id, seatbid, ext} }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
@@ -231,15 +235,15 @@ export const spec = {
             dealId: sovrnBid.dealid || null,
             currency: 'USD',
             netRevenue: true,
-            mediaType: sovrnBid.nurl ? BANNER : VIDEO,
+            mediaType: sovrnBid.mtype == 2 ? VIDEO : BANNER,
             ttl: sovrnBid.ext?.ttl || 90,
             meta: { advertiserDomains: sovrnBid && sovrnBid.adomain ? sovrnBid.adomain : [] }
           }
 
-          if (sovrnBid.nurl) {
-            bid.ad = decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`)
-          } else {
+          if (sovrnBid.mtype == 2) {
             bid.vastXml = decodeURIComponent(sovrnBid.adm)
+          } else {
+            bid.ad = sovrnBid.nurl ? decodeURIComponent(`${sovrnBid.adm}<img src="${sovrnBid.nurl}">`) : decodeURIComponent(sovrnBid.adm)
           }
 
           return bid

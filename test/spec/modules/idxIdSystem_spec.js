@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
 import { init, startAuctionHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, idxIdSubmodule } from 'modules/idxIdSystem.js';
@@ -90,7 +89,7 @@ describe('IDx ID System', () => {
     let sandbox;
 
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       mockGdprConsent(sandbox);
       adUnits = [getAdUnitMock()];
       init(config);
@@ -112,9 +111,7 @@ describe('IDx ID System', () => {
       startAuctionHook(() => {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.idx');
-            expect(bid.userId.idx).to.equal(IDX_DUMMY_VALUE);
-            const idxIdAsEid = find(bid.userIdAsEids, e => e.source == 'idx.lat');
+            const idxIdAsEid = bid.userIdAsEids.find(e => e.source == 'idx.lat');
             expect(idxIdAsEid).to.deep.equal({
               source: 'idx.lat',
               uids: [{

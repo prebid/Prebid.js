@@ -20,15 +20,13 @@ const BIDDER_CODE = 'adverxo';
 
 const ALIASES = [
   {code: 'adport', skipPbsAliasing: true},
-  {code: 'bidsmind', skipPbsAliasing: true},
-  {code: 'mobupps', skipPbsAliasing: true}
+  {code: 'bidsmind', skipPbsAliasing: true}
 ];
 
 const AUCTION_URLS = {
   adverxo: 'js.pbsadverxo.com',
   adport: 'diclotrans.com',
-  bidsmind: 'egrevirda.com',
-  mobupps: 'traffhb.com'
+  bidsmind: 'egrevirda.com'
 };
 
 const ENDPOINT_URL_AD_UNIT_PLACEHOLDER = '{AD_UNIT}';
@@ -181,7 +179,7 @@ const adverxoUtils = {
     bidRequests.forEach(bidRequest => {
       const adUnit = {
         host: bidRequest.params.host,
-        id: bidRequest.params.adUnitId,
+        id: Number(bidRequest.params.adUnitId),
         auth: bidRequest.params.auth,
       };
 
@@ -229,8 +227,8 @@ export const spec = {
       return false;
     }
 
-    if (!bid.params.adUnitId || typeof bid.params.adUnitId !== 'number') {
-      utils.logWarn('Adverxo Bid Adapter: adUnitId bid param is required and must be a number');
+    if (!bid.params.adUnitId || isNaN(Number(bid.params.adUnitId)) || bid.params.adUnitId <= 0) {
+      utils.logWarn('Adverxo Bid Adapter: adUnitId bid param is required and must be a positive number');
       return false;
     }
 

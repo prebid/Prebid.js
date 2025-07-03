@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { deepAccess } from '../src/utils.js';
+import { deepAccess, getWinDimensions } from '../src/utils.js';
 
 const BIDDER_CODE = 'justpremium'
 const GVLID = 62
@@ -17,7 +17,9 @@ export const spec = {
 
   buildRequests: (validBidRequests, bidderRequest) => {
     const c = preparePubCond(validBidRequests)
-    const dim = getWebsiteDim()
+    const {
+      screen
+    } = getWinDimensions();
     const ggExt = getGumGumParams()
     const payload = {
       zone: validBidRequests.map(b => {
@@ -27,10 +29,10 @@ export const spec = {
       }),
       // TODO: is 'page' the right value here?
       referer: bidderRequest.refererInfo.page,
-      sw: dim.screenWidth,
-      sh: dim.screenHeight,
-      ww: dim.innerWidth,
-      wh: dim.innerHeight,
+      sw: screen.width,
+      sh: screen.height,
+      ww: getWinDimensions().innerWidth,
+      wh: getWinDimensions().innerHeight,
       c: c,
       id: validBidRequests[0].params.zone,
       sizes: {},
@@ -67,8 +69,9 @@ export const spec = {
       jp_adapter: JP_ADAPTER_VERSION
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     const payloadString = JSON.stringify(payload)
@@ -243,22 +246,6 @@ function arrayUnique (array) {
   }
 
   return a
-}
-
-function getWebsiteDim () {
-  let top
-  try {
-    top = window.top
-  } catch (e) {
-    top = window
-  }
-
-  return {
-    screenWidth: top.screen.width,
-    screenHeight: top.screen.height,
-    innerWidth: top.innerWidth,
-    innerHeight: top.innerHeight
-  }
 }
 
 function getGumGumParams () {

@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
 import {attachIdSystem, init, startAuctionHook, setSubmoduleRegistry} from 'modules/userId/index.js';
 import { storage, getStorage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
@@ -179,9 +178,7 @@ describe('Zeotap ID System', function() {
       startAuctionHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
-            expect(bid).to.have.deep.nested.property('userId.IDP');
-            expect(bid.userId.IDP).to.equal(ZEOTAP_COOKIE);
-            const zeotapIdAsEid = find(bid.userIdAsEids, e => e.source == 'zeotap.com');
+            const zeotapIdAsEid = bid.userIdAsEids.find(e => e.source == 'zeotap.com');
             expect(zeotapIdAsEid).to.deep.equal({
               source: 'zeotap.com',
               uids: [{

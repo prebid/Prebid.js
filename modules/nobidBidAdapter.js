@@ -1,4 +1,4 @@
-import { logInfo, deepAccess, logWarn, isArray, getParameterByName } from '../src/utils.js';
+import { logInfo, deepAccess, logWarn, isArray, getParameterByName, getWinDimensions } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -86,10 +86,11 @@ function nobidBuildRequests(bids, bidderRequest) {
       return gppConsent;
     }
     var schain = function(bids) {
-      if (bids && bids.length > 0) {
-        return bids[0].schain
+      try {
+        return bids[0]?.ortb2?.source?.ext?.schain;
+      } catch (e) {
+        return null;
       }
-      return null;
     }
     var coppa = function() {
       if (config.getConfig('coppa') === true) {
@@ -123,8 +124,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     };
     var clientDim = function() {
       try {
-        var width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-        var height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        const winDimensions = getWinDimensions();
+        var width = Math.max(winDimensions.document.documentElement.clientWidth, winDimensions.innerWidth || 0);
+        var height = Math.max(winDimensions.document.documentElement.clientHeight, winDimensions.innerHeight || 0);
         return `${width}x${height}`;
       } catch (e) {
         logWarn('Could not parse screen dimensions, error details:', e);
@@ -390,8 +392,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {Array} validBidRequests - an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     function resolveEndpoint() {
@@ -495,7 +498,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
+   * @param {Object} data Containing timeout specific data
    */
   onTimeout: function(data) {
     window.nobid.timeoutTotal++;

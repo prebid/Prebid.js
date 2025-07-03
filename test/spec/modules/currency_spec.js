@@ -1,4 +1,3 @@
-
 import {
   getCurrencyRates
 } from 'test/fixtures/fixtures.js';
@@ -14,7 +13,7 @@ import {
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import * as utils from 'src/utils.js';
-import {EVENTS, STATUS, REJECTION_REASON} from '../../../src/constants.js';
+import {EVENTS, REJECTION_REASON} from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 import { enrichFPD } from '../../../src/fpd/enrichment.js';
@@ -31,7 +30,7 @@ describe('currency', function () {
   let fn = sinon.spy();
 
   function makeBid(bidProps) {
-    return Object.assign(createBid(STATUS.GOOD), bidProps);
+    return Object.assign(createBid(), bidProps);
   }
 
   beforeEach(function () {
@@ -44,7 +43,7 @@ describe('currency', function () {
 
   describe('setConfig', function () {
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
     });
 
@@ -544,7 +543,7 @@ describe('currency', function () {
     let logWarnSpy;
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       clock = sinon.useFakeTimers(1046952000000); // 2003-03-06T12:00:00Z
       logWarnSpy = sinon.spy(utils, 'logWarn');
     });

@@ -104,6 +104,11 @@ function newBidRequest(bidRequest, bidderRequest) {
     data.userData = userData;
   }
 
+  const schain = bidRequest?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    data.schain = schain;
+  }
+
   return data;
 }
 

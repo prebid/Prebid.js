@@ -197,8 +197,9 @@ export const spec = {
     }
 
     // adding schain object
-    if (validBidRequests[0].schain) {
-      deepSetValue(payload, 'source.schain', validBidRequests[0].schain);
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      deepSetValue(payload, 'source.ext.schain', schain);
     }
 
     // Attaching GDPR Consent Params
@@ -230,9 +231,6 @@ export const spec = {
     if (validBidRequests[0].userIdAsEids && validBidRequests[0].userIdAsEids.length > 0) {
       // Standard ORTB structure
       deepSetValue(payload, 'user.eids', validBidRequests[0].userIdAsEids);
-    } else if (validBidRequests[0].userId && Object.keys(validBidRequests[0].userId).length > 0) {
-      // Fallback to non-ortb structure
-      deepSetValue(payload, 'user.ext.userId', validBidRequests[0].userId);
     }
 
     return {

@@ -99,18 +99,24 @@ describe('Adyoulike Adapter', function () {
           }
           },
         },
-      'schain': {
-        validation: 'strict',
-        config: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              asi: 'indirectseller.com',
-              sid: '00001',
-              hp: 1
+      'ortb2': {
+        'source': {
+          'ext': {
+            'schain': {
+              validation: 'strict',
+              config: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    asi: 'indirectseller.com',
+                    sid: '00001',
+                    hp: 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       },
       ortb2Imp: {
@@ -682,7 +688,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
       expect(payload.uspConsent).to.exist.and.to.equal(uspConsentData);
-      expect(payload.Bids.bid_id_0.SChain).to.exist.and.to.deep.equal(bidRequestWithSinglePlacement[0].schain);
+      expect(payload.Bids.bid_id_0.SChain).to.exist.and.to.deep.equal(bidRequestWithSinglePlacement[0].ortb2.source.ext.schain);
     });
 
     it('should not set a default value for gdpr consentRequired', function () {
@@ -932,7 +938,7 @@ describe('Adyoulike Adapter', function () {
         let sandbox;
 
         this.beforeEach(function() {
-          sandbox = sinon.sandbox.create();
+          sandbox = sinon.createSandbox();
         });
 
         this.afterEach(function() {

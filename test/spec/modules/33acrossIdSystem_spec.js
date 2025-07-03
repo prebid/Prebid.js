@@ -21,7 +21,7 @@ describe('33acrossIdSystem', () => {
   });
 
   describe('getId', () => {
-    it('should call endpoint and handle valid response', () => {
+    it('should call endpoint', () => {
       const completeCallback = sinon.spy();
 
       const { callback } = thirtyThreeAcrossIdSubmodule.getId({
@@ -50,7 +50,71 @@ describe('33acrossIdSystem', () => {
       const regExp = new RegExp('https://lexicon.33across.com/v1/envelope\\?pid=12345&gdpr=\\d&src=pbjs&ver=$prebid.version$');
 
       expect(request.url).to.match(regExp);
-      expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
+    });
+
+    context('when there\'s a successful response containing an ID', () => {
+      it('should execute the callback and pass the ID', () => {
+        const completeCallback = sinon.spy();
+
+        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            envelope: 'foo'
+          },
+          expires: 1645667805067
+        }));
+
+        expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
+      });
+
+      it('should NOT wipe any stored hashed email', () => {
+        const completeCallback = () => {};
+
+        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            envelope: 'foo'
+          },
+          expires: 1645667805067
+        }));
+
+        expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdHm')).to.be.false;
+        expect(setCookie.calledWithExactly('33acrossIdHm', '', sinon.match.string, 'Lax', 'foo.com')).to.be.false;
+
+        removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        domainUtils.domainOverride.restore();
+      });
     });
 
     const additionalOptions = {
@@ -578,7 +642,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdprApplies: true
+          gdpr: {gdprApplies: true}
         });
 
         expect(logWarnSpy.calledOnceWithExactly('33acrossId: Submodule cannot be used where GDPR applies')).to.be.true;
@@ -596,7 +660,7 @@ describe('33acrossIdSystem', () => {
             pid: '12345'
           }
         }, {
-          gdprApplies: false
+          gdpr: {gdprApplies: false}
         });
 
         callback(completeCallback);
@@ -614,8 +678,10 @@ describe('33acrossIdSystem', () => {
               pid: '12345'
             }
           }, {
-            gdprApplies: false,
-            consentString: 'foo'
+            gdpr: {
+              gdprApplies: false,
+              consentString: 'foo'
+            }
           });
 
           callback(completeCallback);
@@ -931,9 +997,194 @@ describe('33acrossIdSystem', () => {
 
         storage.getDataFromLocalStorage.restore();
       });
+
+      context('and the enabled storage types include "html5"', () => {
+        it('should store the hashed email in local storage', () => {
+          const completeCallback = () => {};
+
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345',
+              hem: '33acrossIdHmValue+'
+            },
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {
+              envelope: 'foo',
+              fp: 'bar'
+            },
+            expires: 1645667805067
+          }));
+
+          expect(setDataInLocalStorage.calledWithExactly('33acrossIdHm', '33acrossIdHmValue+')).to.be.true;
+
+          setDataInLocalStorage.restore();
+        });
+      });
+
+      context('and the enabled storage types include "cookie"', () => {
+        it('should store the hashed email in a cookie', () => {
+          const completeCallback = () => {};
+
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345',
+              hem: '33acrossIdHmValue+'
+            },
+            enabledStorageTypes: [ 'cookie' ],
+            storage: { expires: 30 }
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          const setCookie = sinon.stub(storage, 'setCookie');
+          sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {
+              envelope: 'foo',
+              fp: 'bar'
+            },
+            expires: 1645667805067
+          }));
+
+          expect(setCookie.calledWithExactly('33acrossIdHm', '33acrossIdHmValue+', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+          setCookie.restore();
+          domainUtils.domainOverride.restore();
+        });
+      });
     });
 
     context('when a hashed email is NOT provided via configuration options', () => {
+      context('but it\'s provided via global 33across object', () => {
+        beforeEach(() => {
+          window._33across = {
+            hem: {
+              sha256: 'fake-sha256-hashed-email+'
+            }
+          }
+        });
+
+        afterEach(() => {
+          delete window._33across;
+        });
+
+        it('should call endpoint with the hashed email included', () => {
+          const completeCallback = () => {};
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+              // No hashed email via config option.
+            },
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
+          });
+
+          // Prioritizes the hashed email given via global object over the one stored in LS.
+          sinon.stub(storage, 'getDataFromLocalStorage')
+            .withArgs('33acrossIdHm')
+            .returns('33acrossIdHmValueLS');
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).to.contain('sha256=fake-sha256-hashed-email%2B');
+
+          storage.getDataFromLocalStorage.restore();
+        });
+
+        context('and the enabled storage types include "html5"', () => {
+          it('should store the hashed email in local storage', () => {
+            const completeCallback = () => {};
+
+            const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+              params: {
+                pid: '12345'
+              },
+              enabledStorageTypes: [ 'html5' ],
+              storage: {}
+            });
+
+            callback(completeCallback);
+
+            const [request] = server.requests;
+
+            const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+            request.respond(200, {
+              'Content-Type': 'application/json'
+            }, JSON.stringify({
+              succeeded: true,
+              data: {
+                envelope: 'foo',
+                fp: 'bar'
+              },
+              expires: 1645667805067
+            }));
+
+            expect(setDataInLocalStorage.calledWithExactly('33acrossIdHm', 'fake-sha256-hashed-email+')).to.be.true;
+
+            setDataInLocalStorage.restore();
+          });
+        });
+
+        context('and the enabled storage types include "cookie"', () => {
+          it('should store the hashed email in a cookie', () => {
+            const completeCallback = () => {};
+
+            const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+              params: {
+                pid: '12345'
+              },
+              enabledStorageTypes: [ 'cookie' ],
+              storage: { expires: 30 }
+            });
+
+            callback(completeCallback);
+
+            const [request] = server.requests;
+
+            const setCookie = sinon.stub(storage, 'setCookie');
+            sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+            request.respond(200, {
+              'Content-Type': 'application/json'
+            }, JSON.stringify({
+              succeeded: true,
+              data: {
+                envelope: 'foo',
+                fp: 'bar'
+              },
+              expires: 1645667805067
+            }));
+
+            expect(setCookie.calledWithExactly('33acrossIdHm', 'fake-sha256-hashed-email+', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+            setCookie.restore();
+            domainUtils.domainOverride.restore();
+          });
+        });
+      });
+
       context('but it\'s provided via local storage', () => {
         it('should call endpoint with the hashed email included', () => {
           const completeCallback = () => {};
@@ -1159,28 +1410,30 @@ describe('33acrossIdSystem', () => {
     context('when the server returns a successful response but without ID', () => {
       it('should log a message', () => {
         const logMessageSpy = sinon.spy(utils, 'logMessage');
-        const completeCallback = () => {};
+        try {
+          const completeCallback = () => {};
 
-        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
-          params: {
-            pid: '12345'
-          }
-        });
+          const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
 
-        callback(completeCallback);
+          callback(completeCallback);
 
-        const [request] = server.requests;
+          const [request] = server.requests;
 
-        request.respond(200, {
-          'Content-Type': 'application/json'
-        }, JSON.stringify({
-          succeeded: true,
-          data: {}
-        }));
+          request.respond(200, {
+            'Content-Type': 'application/json'
+          }, JSON.stringify({
+            succeeded: true,
+            data: {}
+          }));
 
-        expect(logMessageSpy.calledOnceWithExactly(`${thirtyThreeAcrossIdSubmodule.name}: No envelope was received`)).to.be.true;
-
-        logMessageSpy.restore();
+          expect(logMessageSpy.calledWith(`${thirtyThreeAcrossIdSubmodule.name}: No envelope was received`)).to.be.true;
+        } finally {
+          logMessageSpy.restore();
+        }
       });
 
       it('should execute complete callback with undefined value', () => {
@@ -1204,6 +1457,43 @@ describe('33acrossIdSystem', () => {
         }));
 
         expect(completeCallback.calledOnceWithExactly(undefined)).to.be.true;
+      });
+
+      it('should wipe any stored hashed email', () => {
+        const completeCallback = () => {};
+
+        const { callback } = thirtyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            // no envelope field
+          },
+          expires: 1645667805067
+        }));
+
+        expect(removeDataFromLocalStorage.calledWithExactly('33acrossIdHm')).to.be.true;
+        expect(setCookie.calledWithExactly('33acrossIdHm', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+
+        removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        domainUtils.domainOverride.restore();
       });
     });
 

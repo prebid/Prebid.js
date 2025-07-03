@@ -33,7 +33,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests An array of bids
+   * @param {Object} bidderRequest The bidder's request info.
    * @return ServerRequest Info describing the request to the server.
    */
 
@@ -81,8 +82,9 @@ export const spec = {
       data.ccpa = bidderRequest.uspConsent;
     }
 
-    if (bidderRequest && bidderRequest.schain) {
-      data.schain = bidderRequest.schain;
+    const schain = bidderRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      data.schain = schain;
     }
 
     if (config.getConfig('coppa')) {
@@ -300,6 +302,7 @@ function retrieveAd(decision, unitId, unitName) {
 function handleEids(data, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    bidUserIdAsEids = bidUserIdAsEids.filter(e => typeof e === 'object');
     deepSetValue(data, 'user.eids', bidUserIdAsEids);
   } else {
     deepSetValue(data, 'user.eids', undefined);

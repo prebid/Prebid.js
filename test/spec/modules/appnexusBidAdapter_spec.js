@@ -431,6 +431,33 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
       });
 
+      it('should include ORTB video values when video params is empty - case 1', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            startdelay: 0,
+            skip: 0,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: false,
+          context: 1
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
       it('should convert and include ORTB2 device data when available', function () {
         const bidRequest = deepClone(bidRequests[0]);
         const bidderRequest = {
@@ -1191,18 +1218,44 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid);
     });
 
     it('should add backup gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid);
+    });
+
+    it('should add tid to the request', function () {
+      const testTid = '1234test';
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { tid: testTid } };
+      // bidRequest.ortb2 = { source: { tid: testTid } };
+
+      const bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        ortb2: {
+          source: {
+            tid: testTid
+          }
+        }
+      };
+      bidderRequest.bids = [bidRequest];
+
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].tid).to.exist.and.equal(testTid);
+      expect(payload.source.tid).to.exist.and.equal(testTid);
     });
 
     it('should add gdpr consent information to the request', function () {
@@ -1435,16 +1488,22 @@ describe('AppNexusAdapter', function () {
 
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'blob.com',
-              'sid': '001',
-              'hp': 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'blob.com',
+                    'sid': '001',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       });
 
@@ -1605,30 +1664,6 @@ describe('AppNexusAdapter', function () {
 
     it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        userId: {
-          tdid: 'sample-userid',
-          uid2: { id: 'sample-uid2-value' },
-          criteoId: 'sample-criteo-userid',
-          netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid',
-          pubProvidedId: [{
-            source: 'puburl.com',
-            uids: [{
-              id: 'pubid1',
-              atype: 1,
-              ext: {
-                stype: 'ppuid'
-              }
-            }]
-          }, {
-            source: 'puburl2.com',
-            uids: [{
-              id: 'pubid2'
-            }, {
-              id: 'pubid2-123'
-            }]
-          }]
-        },
         userIdAsEids: [{
           source: 'adserver.org',
           uids: [{ id: 'sample-userid' }]

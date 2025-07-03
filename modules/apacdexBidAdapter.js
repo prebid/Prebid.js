@@ -48,8 +48,9 @@ export const spec = {
     test = config.getConfig('debug');
 
     validBidRequests.forEach(bidReq => {
-      if (bidReq.schain) {
-        schain = schain || bidReq.schain
+      const bidSchain = bidReq?.ortb2?.source?.ext?.schain;
+      if (bidSchain) {
+        schain = schain || bidSchain
       }
 
       if (bidReq.userIdAsEids) {

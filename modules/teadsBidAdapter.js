@@ -1,8 +1,9 @@
-import {logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
+import {logError, parseSizesInput, isArray, getBidIdParameter, getWinDimensions} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 import {getDM, getHC, getHLen} from '../libraries/navigatorData/navigatorData.js';
+import {getTimeToFirstByte} from '../libraries/timeToFirstBytesUtils/timeToFirstBytesUtils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -18,7 +19,10 @@ const gdprStatus = {
   GDPR_DOESNT_APPLY: 0,
   CMP_NOT_FOUND_OR_ERROR: 22
 };
+
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
+const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
+
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
@@ -47,8 +51,9 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests an array of bids
+   * @param {Object} bidderRequest
+   * @return {Object} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
@@ -60,27 +65,33 @@ export const spec = {
       pageTitle: getPageTitle().slice(0, 300),
       pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
+      networkQuality: getNetworkQuality(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
+      domComplexity: getDomComplexity(document),
       device: bidderRequest?.ortb2?.device || {},
       deviceWidth: screen.width,
       deviceHeight: screen.height,
       devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: getHLen(),
-      viewportHeight: topWindow.visualViewport?.height,
-      viewportWidth: topWindow.visualViewport?.width,
+      viewportHeight: getWinDimensions().visualViewport.height,
+      viewportWidth: getWinDimensions().visualViewport.width,
       hardwareConcurrency: getHC(),
       deviceMemory: getDM(),
       hb_version: '$prebid.version$',
+      timeout: bidderRequest?.timeout,
+      eids: getUserIdAsEids(validBidRequests),
       ...getSharedViewerIdParameters(validBidRequests),
+      outbrainId: storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
     };
 
     const firstBidRequest = validBidRequests[0];
 
-    if (firstBidRequest.schain) {
-      payload.schain = firstBidRequest.schain;
+    const schain = firstBidRequest?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     let gpp = bidderRequest.gppConsent;
@@ -177,33 +188,38 @@ export const spec = {
 
 /**
  *
- * @param validBidRequests an array of bids
+ * @param {BidRequest[]} validBidRequests an array of bids
  * @returns {{sharedViewerIdKey : 'sharedViewerIdValue'}} object with all sharedviewerids
  */
 function getSharedViewerIdParameters(validBidRequests) {
   const sharedViewerIdMapping = {
-    unifiedId2: 'uid2.id', // uid2IdSystem
-    liveRampId: 'idl_env', // identityLinkIdSystem
-    lotamePanoramaId: 'lotamePanoramaId', // lotamePanoramaIdSystem
-    id5Id: 'id5id.uid', // id5IdSystem
-    criteoId: 'criteoId', // criteoIdSystem
-    yahooConnectId: 'connectId', // connectIdSystem
-    quantcastId: 'quantcastId', // quantcastIdSystem
-    epsilonPublisherLinkId: 'publinkId', // publinkIdSystem
-    publisherFirstPartyViewerId: 'pubcid', // sharedIdSystem
-    merkleId: 'merkleId.id', // merkleIdSystem
-    kinessoId: 'kpuid' // kinessoIdSystem
+    unifiedId2: 'uidapi.com', // uid2IdSystem
+    liveRampId: 'liveramp.com', // identityLinkIdSystem
+    lotamePanoramaId: 'crwdcntrl.net', // lotamePanoramaIdSystem
+    id5Id: 'id5-sync.com', // id5IdSystem
+    criteoId: 'criteo.com', // criteoIdSystem
+    yahooConnectId: 'yahoo.com', // connectIdSystem
+    quantcastId: 'quantcast.com', // quantcastIdSystem
+    epsilonPublisherLinkId: 'epsilon.com', // publinkIdSystem
+    publisherFirstPartyViewerId: 'pubcid.org', // sharedIdSystem
+    merkleId: 'merkleinc.com', // merkleIdSystem
+    kinessoId: 'kpuid.com' // kinessoIdSystem
   }
 
   let sharedViewerIdObject = {};
   for (const sharedViewerId in sharedViewerIdMapping) {
-    const key = sharedViewerIdMapping[sharedViewerId];
-    const value = deepAccess(validBidRequests, `0.userId.${key}`);
-    if (value) {
-      sharedViewerIdObject[sharedViewerId] = value;
-    }
+    const userIdKey = sharedViewerIdMapping[sharedViewerId];
+    validBidRequests[0].userIdAsEids?.forEach((eid) => {
+      if (eid.source === userIdKey && eid.uids?.[0].id) {
+        sharedViewerIdObject[sharedViewerId] = eid.uids[0].id;
+      }
+    })
   }
   return sharedViewerIdObject;
+}
+
+function getUserIdAsEids(validBidRequests) {
+  return validBidRequests?.[0]?.userIdAsEids || [];
 }
 
 function getReferrerInfo(bidderRequest) {
@@ -244,33 +260,14 @@ function getConnectionDownLink(nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
 
-function getTimeToFirstByte(win) {
-  const performance = win.performance || win.webkitPerformance || win.msPerformance || win.mozPerformance;
+function getNetworkQuality(navigator) {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
-  const ttfbWithTimingV2 = performance &&
-    typeof performance.getEntriesByType === 'function' &&
-    Object.prototype.toString.call(performance.getEntriesByType) === '[object Function]' &&
-    performance.getEntriesByType('navigation')[0] &&
-    performance.getEntriesByType('navigation')[0].responseStart &&
-    performance.getEntriesByType('navigation')[0].requestStart &&
-    performance.getEntriesByType('navigation')[0].responseStart > 0 &&
-    performance.getEntriesByType('navigation')[0].requestStart > 0 &&
-    Math.round(
-      performance.getEntriesByType('navigation')[0].responseStart - performance.getEntriesByType('navigation')[0].requestStart
-    );
+  return connection?.effectiveType ?? '';
+}
 
-  if (ttfbWithTimingV2) {
-    return ttfbWithTimingV2.toString();
-  }
-
-  const ttfbWithTimingV1 = performance &&
-    performance.timing.responseStart &&
-    performance.timing.requestStart &&
-    performance.timing.responseStart > 0 &&
-    performance.timing.requestStart > 0 &&
-    performance.timing.responseStart - performance.timing.requestStart;
-
-  return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
+function getDomComplexity(document) {
+  return document?.querySelectorAll('*')?.length ?? -1;
 }
 
 function findGdprStatus(gdprApplies, gdprData) {
@@ -343,7 +340,7 @@ function _validateId(id) {
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
 function getFirstPartyTeadsIdParameter(validBidRequests) {
-  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userId?.teadsId;
+  const firstPartyTeadsIdFromUserIdModule = validBidRequests?.[0]?.userIdAsEids?.find(eid => eid.source === 'teads.com')?.uids?.[0].id;
 
   if (firstPartyTeadsIdFromUserIdModule) {
     return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};

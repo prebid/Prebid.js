@@ -41,7 +41,8 @@ export const spec = {
         impMediaTypes: formatTypes,
         adUnitCode: bidRequest.adUnitCode,
         video: deepAccess(bidRequest, 'mediaTypes.video'),
-        banner: deepAccess(bidRequest, 'mediaTypes.banner')
+        banner: deepAccess(bidRequest, 'mediaTypes.banner'),
+        ext: bidRequest.ortb2Imp?.ext
       })
       bidIds.push(bidRequest.bidId)
     })
@@ -63,7 +64,7 @@ export const spec = {
       bidIds,
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
-      schain: validBidRequests[0].schain,
+      schain: validBidRequests[0]?.ortb2?.source?.ext?.schain,
       cpp: config.getConfig('coppa') ? 1 : 0,
       device: {
         dnt: getDNT() ? 1 : 0,
@@ -81,6 +82,7 @@ export const spec = {
         },
         at: ortb2?.at,
         bcat: ortb2?.bcat,
+        badv: ortb2?.badv,
         wseat: ortb2?.wseat
       }
     }

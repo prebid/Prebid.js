@@ -24,8 +24,7 @@ export const spec = {
       !!(bid.params.hash) &&
       (typeof bid.params.hash === 'string') &&
       !!(bid.mediaTypes) &&
-      (Object.keys(bid.mediaTypes).includes(NATIVE) || Object.keys(bid.mediaTypes).includes(BANNER)) &&
-      (bid.bidder === BIDDER_CODE);
+      (Object.keys(bid.mediaTypes).includes(NATIVE) || Object.keys(bid.mediaTypes).includes(BANNER))
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -38,7 +37,7 @@ export const spec = {
         adUnitCode: validBidRequests[i].adUnitCode,
         bidId: validBidRequests[i].bidId,
         placementHash: validBidRequests[i].params.hash,
-        userId: validBidRequests[i].userId,
+        eids: validBidRequests[i].userIdAsEids,
         referer: bidderRequest.refererInfo.page,
         userAgent: navigator.userAgent,
       }

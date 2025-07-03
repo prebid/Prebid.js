@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
+import { getWinDimensions } from '../../../src/utils.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -45,17 +46,23 @@ describe('InsticatorBidAdapter', function () {
         gpid: '1111/homepage'
       }
     },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'insticator.com',
-          sid: '00001',
-          hp: 1,
-          rid: bidderRequestId
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'insticator.com',
+                sid: '00001',
+                hp: 1,
+                rid: bidderRequestId
+              }
+            ]
+          }
         }
-      ]
+      }
     },
     userIdAsEids: [
       {
@@ -311,7 +318,7 @@ describe('InsticatorBidAdapter', function () {
       getCookieStub = sinon.stub(storage, 'getCookie');
       cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
 
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'generateUUID').returns(USER_ID_STUBBED);
     });
 
@@ -387,8 +394,8 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site.page).not.to.be.empty;
       expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
       expect(data.device).to.be.an('object');
-      expect(data.device.w).to.equal(window.innerWidth);
-      expect(data.device.h).to.equal(window.innerHeight);
+      expect(data.device.w).to.equal(getWinDimensions().innerWidth);
+      expect(data.device.h).to.equal(getWinDimensions().innerHeight);
       expect(data.device.js).to.equal(1);
       expect(data.device.ext).to.be.an('object');
       expect(data.device.ext.localStorage).to.equal(true);

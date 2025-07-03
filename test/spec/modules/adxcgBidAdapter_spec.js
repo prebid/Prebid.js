@@ -1,13 +1,10 @@
 // jshint esversion: 6, es3: false, node: true
-import { assert } from 'chai';
-import { spec } from 'modules/adxcgBidAdapter.js';
-import { config } from 'src/config.js';
-import { createEidsArray } from 'modules/userId/eids.js';
 /* eslint dot-notation:0, quote-props:0 */
-import { expect } from 'chai';
+import {assert, expect} from 'chai';
+import {spec} from 'modules/adxcgBidAdapter.js';
+import {config} from 'src/config.js';
 
-import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
-import { deepClone } from '../../../src/utils';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
 
 const utils = require('src/utils');
 
@@ -148,7 +145,6 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     bidId: 'bid12345',
     mediaTypes: {
       native: {
-        sendTargetingKeys: false,
         ortb: nativeOrtbRequest
       }
     },
@@ -229,15 +225,19 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     },
   }];
 
-  const bidderRequest = {
-    refererInfo: {
-      page: 'https://publisher.com/home',
-      ref: 'https://referrer'
-    }
-  };
+  let bidderRequest;
+
+  beforeEach(() => {
+    return addFPDToBidderRequest({
+      refererInfo: {
+        page: 'https://publisher.com/home',
+        ref: 'https://referrer'
+      }
+    }).then(br => { bidderRequest = br });
+  })
 
   it('Verify build request', function () {
-    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
     expect(request.method).to.equal('POST');
     const ortbRequest = request.data;
@@ -258,7 +258,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
   });
 
   it('Verify parse response', function () {
-    const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    const request = spec.buildRequests(slotConfigs, bidderRequest);
     const ortbRequest = request.data;
     const ortbResponse = {
       seatbid: [{
@@ -300,7 +300,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
 
   if (FEATURES.NATIVE) {
     it('Verify Native request', function () {
-      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(nativeSlotConfig, bidderRequest);
       expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -336,7 +336,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
     });
 
     it('Verify Native response', function () {
-      const request = spec.buildRequests(nativeSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(nativeSlotConfig, bidderRequest);
       expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -408,7 +408,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
 
   if (FEATURES.VIDEO) {
     it('Verify Video request', function () {
-      const request = spec.buildRequests(videoSlotConfig, syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests(videoSlotConfig, bidderRequest);
       expect(request.url).to.equal('https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
@@ -429,7 +429,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
   }
 
   it('Verify extra parameters', function () {
-    let request = spec.buildRequests(additionalParamsConfig, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(additionalParamsConfig, bidderRequest);
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.imp).to.have.lengthOf(1);
@@ -474,7 +474,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(slotConfigs, bidderRequest);
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.user).to.not.equal(null);
@@ -501,7 +501,7 @@ describe('adxcg v8 oRtbConverter Adapter Tests', function () {
         }
       }
     };
-    let request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(bidderRequest));
+    let request = spec.buildRequests(slotConfigs, bidderRequest);
     let ortbRequest = request.data;
     expect(ortbRequest).to.not.equal(null);
     expect(ortbRequest.site).to.not.equal(null);

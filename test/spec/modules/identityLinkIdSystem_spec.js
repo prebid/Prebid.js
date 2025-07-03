@@ -3,7 +3,6 @@ import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
 import {getCoreStorageManager} from '../../../src/storageManager.js';
 import {stub} from 'sinon';
-import { gppDataHandler } from '../../../src/adapterManager.js';
 import {attachIdSystem} from '../../../modules/userId/index.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 import {expect} from 'chai/index.mjs';
@@ -32,6 +31,7 @@ describe('IdentityLinkId tests', function () {
     // remove _lr_retry_request cookie before test
     storage.setCookie('_lr_retry_request', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
     storage.setCookie('_lr_env', testEnvelope, 'Thu, 01 Jan 1970 00:00:01 GMT');
+    storage.removeDataFromLocalStorage('_lr_env');
   });
 
   afterEach(function () {
@@ -68,13 +68,13 @@ describe('IdentityLinkId tests', function () {
       gdprApplies: true,
       consentString: ''
     };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData);
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
     expect(submoduleCallback).to.be.undefined;
   });
 
   it('should NOT call the LiveRamp envelope endpoint if gdpr applies but consent string is missing', function () {
     let consentData = { gdprApplies: true };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData);
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
     expect(submoduleCallback).to.be.undefined;
   });
 
@@ -87,7 +87,7 @@ describe('IdentityLinkId tests', function () {
         tcfPolicyVersion: 2
       }
     };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData).callback;
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData}).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=4&cv=CO4VThZO4VTiuADABBENAzCgAP_AAEOAAAAAAwwAgAEABhAAgAgAAA.YAAAAAAAAAA');
@@ -100,14 +100,13 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should call the LiveRamp envelope endpoint with GPP consent string', function() {
-    gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
-    gppConsentDataStub.returns({
+    const gppData = {
       ready: true,
       gppString: 'DBABLA~BVVqAAAACqA.QA',
       applicableSections: [7]
-    });
+    };
     let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&gpp=DBABLA~BVVqAAAACqA.QA&gpp_sid=7');
@@ -117,18 +116,16 @@ describe('IdentityLinkId tests', function () {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    gppConsentDataStub.restore();
   });
 
   it('should call the LiveRamp envelope endpoint without GPP consent string if consent string is not provided', function () {
-    gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
-    gppConsentDataStub.returns({
+    const gppData = {
       ready: true,
       gppString: '',
       applicableSections: [7]
-    });
+    };
     let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
@@ -138,7 +135,6 @@ describe('IdentityLinkId tests', function () {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    gppConsentDataStub.restore();
   });
 
   it('should not throw Uncaught TypeError when envelope endpoint returns empty response', function () {
@@ -211,6 +207,18 @@ describe('IdentityLinkId tests', function () {
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(callBackSpy.calledOnce).to.be.true;
+  })
+
+  it('should replace invalid characters if initial atob fails', function () {
+    setTestEnvelopeCookie();
+    const realAtob = window.atob;
+    const stubAtob = sinon.stub(window, 'atob');
+    stubAtob.onFirstCall().throws(new Error('bad'));
+    stubAtob.onSecondCall().callsFake(realAtob);
+    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    stubAtob.restore();
+    expect(stubAtob.calledTwice).to.be.true;
+    expect(envelopeValueFromStorage).to.equal(testEnvelopeValue);
   })
 
   it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {
