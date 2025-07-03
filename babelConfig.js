@@ -12,7 +12,7 @@ function useLocal(module) {
 
 module.exports = function (options = {}) {
 
-  const isES5Mode = argv.ES5 || options.ES5;
+  const isES5Mode = argv?.ES5 || options.ES5;
 
   return {
     'presets': [
