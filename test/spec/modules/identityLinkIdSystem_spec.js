@@ -31,6 +31,7 @@ describe('IdentityLinkId tests', function () {
     // remove _lr_retry_request cookie before test
     storage.setCookie('_lr_retry_request', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
     storage.setCookie('_lr_env', testEnvelope, 'Thu, 01 Jan 1970 00:00:01 GMT');
+    storage.removeDataFromLocalStorage('_lr_env');
   });
 
   afterEach(function () {
@@ -206,6 +207,18 @@ describe('IdentityLinkId tests', function () {
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(callBackSpy.calledOnce).to.be.true;
+  })
+
+  it('should replace invalid characters if initial atob fails', function () {
+    setTestEnvelopeCookie();
+    const realAtob = window.atob;
+    const stubAtob = sinon.stub(window, 'atob');
+    stubAtob.onFirstCall().throws(new Error('bad'));
+    stubAtob.onSecondCall().callsFake(realAtob);
+    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    stubAtob.restore();
+    expect(stubAtob.calledTwice).to.be.true;
+    expect(envelopeValueFromStorage).to.equal(testEnvelopeValue);
   })
 
   it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {

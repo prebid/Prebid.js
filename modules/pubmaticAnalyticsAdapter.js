@@ -134,8 +134,8 @@ function copyRequiredBidDetails(bid) {
   ]);
 }
 
-function setBidStatus(bid, args) {
-  switch (args.getStatusCode()) {
+function setBidStatus(bid, status) {
+  switch (status) {
     case STATUS.GOOD:
       bid.status = SUCCESS;
       delete bid.error; // it's possible for this to be set by a previous timeout
@@ -300,7 +300,7 @@ function isS2SBidder(bidder) {
 
 function isOWPubmaticBid(adapterName) {
   let s2sConf = config.getConfig('s2sConfig');
-  let s2sConfArray = isArray(s2sConf) ? s2sConf : [s2sConf];
+  let s2sConfArray = s2sConf ? (isArray(s2sConf) ? s2sConf : [s2sConf]) : [];
   return s2sConfArray.some(conf => {
     if (adapterName === ADAPTER_CODE && conf.defaultVendor === VENDOR_OPENWRAP &&
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
@@ -632,11 +632,22 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function auctionInitHandler(args) {
-  s2sBidders = (function() {
-    let s2sConf = config.getConfig('s2sConfig');
+  s2sBidders = (function () {
     let s2sBidders = [];
-    (s2sConf || []) &&
-      isArray(s2sConf) ? s2sConf.map(conf => s2sBidders.push(...conf.bidders)) : s2sBidders.push(...s2sConf.bidders);
+    try {
+      let s2sConf = config.getConfig('s2sConfig');
+      if (isArray(s2sConf)) {
+        s2sConf.forEach(conf => {
+          if (conf?.bidders) {
+            s2sBidders.push(...conf.bidders);
+          }
+        });
+      } else if (s2sConf?.bidders) {
+        s2sBidders.push(...s2sConf.bidders);
+      }
+    } catch (e) {
+      logError('Error processing s2s bidders:', e);
+    }
     return s2sBidders || [];
   }());
   let cacheEntry = pick(args, [
@@ -695,7 +706,7 @@ function bidResponseHandler(args) {
 
   bid.adId = args.adId;
   bid.source = formatSource(bid.source || args.source);
-  setBidStatus(bid, args);
+  setBidStatus(bid, 1);
   const latency = args?.timeToRespond || Date.now() - cache.auctions[args.auctionId].timestamp;
   const auctionTime = cache.auctions[args.auctionId].timeout;
   // Check if latency is greater than auctiontime+150, then log auctiontime+150 to avoid large numbers

@@ -132,8 +132,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
-    payload.schain = validBidRequests[0].schain;
+  const schain = validBidRequests?.[0]?.ortb2?.source?.ext?.schain;
+  if (validBidRequests && validBidRequests.length !== 0 && schain && isSchainValid(schain)) {
+    payload.schain = schain;
   }
   try {
     if (storage.hasLocalStorage()) {
@@ -301,7 +302,7 @@ function getPageInfo(bidderRequest) {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.3'
+      adapter: '1.1.4'
     }
   };
 }
@@ -359,7 +360,7 @@ function setGeneralInfo(bidRequest) {
   this['bidderRequestId'] = bidRequest.bidderRequestId;
   this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
   this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
   this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
@@ -476,23 +477,23 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gpp
 
 function getBidFloor(bidRequest, mediaType, sizes) {
   if (typeof bidRequest.getFloor !== 'function') return [];
-  const getFloorObject = (size) => {
-    const floorData = bidRequest.getFloor({
-      currency: 'EUR',
-      mediaType: mediaType || '*',
-      size: size || '*'
-    }) || {};
+    const getFloorObject = (size) => {
+      const floorData = bidRequest.getFloor({
+        currency: 'EUR',
+        mediaType: mediaType || '*',
+        size: size || null
+      }) || {};
 
-    return {
-      ...floorData,
-      size: size ? deepClone(size) : undefined,
-      floor: floorData.floor != null ? floorData.floor : null
-    };
+      return {
+        ...floorData,
+        size: size && size.length == 2 ? {width: size[0], height: size[1]} : null,
+        floor: floorData.floor != null ? floorData.floor : null
+      };
   };
+
   if (Array.isArray(sizes) && sizes.length > 0) {
     return sizes.map(size => getFloorObject([size.width, size.height]));
-  }
-  return [getFloorObject('*')];
+  } return [getFloorObject(null)];
 }
 
 export function isSchainValid(schain) {

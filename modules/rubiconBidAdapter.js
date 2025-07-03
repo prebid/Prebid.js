@@ -608,7 +608,7 @@ export const spec = {
       data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
     }
 
-    data['rp_maxbids'] = bidderRequest.bidLimit || 1;
+    data['rp_maxbids'] = bidderRequest.bidLimit;
 
     applyFPD(bidRequest, BANNER, data);
 
@@ -617,8 +617,9 @@ export const spec = {
     }
 
     // if SupplyChain is supplied and contains all required fields
-    if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-      data.rp_schain = spec.serializeSupplyChain(bidRequest.schain);
+    const schain = bidRequest?.ortb2?.source?.ext?.schain;
+    if (schain && hasValidSupplyChainParams(schain)) {
+      data.rp_schain = spec.serializeSupplyChain(schain);
     }
 
     return data;

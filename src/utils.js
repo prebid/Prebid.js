@@ -1,20 +1,14 @@
 import {config} from './config.js';
-import {klona} from 'klona/json';
 
 import {EVENTS} from './constants.js';
 import {PbPromise} from './utils/promise.js';
-import {getGlobal} from './prebidGlobal.js';
 import { default as deepAccess } from 'dlv/index.js';
+import {isArray, isFn, isStr, isPlainObject} from './utils/objects.js';
 
 export { deepAccess };
 export { dset as deepSetValue } from 'dset';
+export * from './utils/objects.js'
 
-var tStr = 'String';
-var tFn = 'Function';
-var tNumb = 'Number';
-var tObject = 'Object';
-var tBoolean = 'Boolean';
-var toString = Object.prototype.toString;
 let consoleExists = Boolean(window.console);
 let consoleLogExists = Boolean(consoleExists && window.console.log);
 let consoleInfoExists = Boolean(consoleExists && window.console.info);
@@ -23,8 +17,6 @@ let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
 let windowDimensions;
-
-const pbjsInstance = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -382,39 +374,6 @@ export function getParameterByName(name) {
 }
 
 /**
- * Return if the object is of the
- * given type.
- * @param {*} object to test
- * @param {String} _t type string (e.g., Array)
- * @return {Boolean} if object is of type _t
- */
-export function isA(object, _t) {
-  return toString.call(object) === '[object ' + _t + ']';
-}
-
-export function isFn(object) {
-  return isA(object, tFn);
-}
-
-export function isStr(object) {
-  return isA(object, tStr);
-}
-
-export const isArray = Array.isArray.bind(Array);
-
-export function isNumber(object) {
-  return isA(object, tNumb);
-}
-
-export function isPlainObject(object) {
-  return isA(object, tObject);
-}
-
-export function isBoolean(object) {
-  return isA(object, tBoolean);
-}
-
-/**
  * Return if the object is "empty";
  * this includes falsey, no keys, or no items at indices
  * @param {*} object object to test
@@ -646,7 +605,7 @@ export function getValue(obj, key) {
   return obj[key];
 }
 
-export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
+export function getBidderCodes(adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
@@ -692,10 +651,6 @@ export function shuffle(array) {
   }
 
   return array;
-}
-
-export function deepClone(obj) {
-  return klona(obj) || {};
 }
 
 export function inIframe() {
@@ -849,29 +804,9 @@ export function groupBy(xs, key) {
 }
 
 /**
- * Build an object consisting of only defined parameters to avoid creating an
- * object with defined keys and undefined values.
- * @param {Object} object The object to pick defined params out of
- * @param {string[]} params An array of strings representing properties to look for in the object
- * @returns {Object} An object containing all the specified values that are defined
- */
-export function getDefinedParams(object, params) {
-  return params
-    .filter(param => object[param])
-    .reduce((bid, param) => Object.assign(bid, { [param]: object[param] }), {});
-}
-
-/**
- * @typedef {Object} MediaTypes
- * @property {Object} banner banner configuration
- * @property {Object} native native configuration
- * @property {Object} video video configuration
- */
-
-/**
  * Validates an adunit's `mediaTypes` parameter
- * @param {MediaTypes} mediaTypes mediaTypes parameter to validate
- * @return {boolean} If object is valid
+ * @param mediaTypes mediaTypes parameter to validate
+ * @return If object is valid
  */
 export function isValidMediaTypes(mediaTypes) {
   const SUPPORTED_MEDIA_TYPES = ['banner', 'native', 'video'];
@@ -916,8 +851,8 @@ export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() ===
 
 /**
  * Returns filter function to match adUnitCode in slot
- * @param {Object} slot GoogleTag slot
- * @return {function} filter function
+ * @param slot GoogleTag slot
+ * @return filter function
  */
 export function isAdUnitCodeMatchingSlot(slot) {
   return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
@@ -938,13 +873,6 @@ export function unsupportedBidderMessage(adUnit, bidder) {
     This bidder won't fetch demand.
   `;
 }
-
-/**
- * Checks input is integer or not
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
- * @param {*} value
- */
-export const isInteger = Number.isInteger.bind(Number);
 
 /**
  * Returns a new object with undefined properties removed from given object
@@ -986,10 +914,6 @@ export function pick(obj, properties) {
 
     return newObj;
   }, {});
-}
-
-export function isArrayOfNums(val, size) {
-  return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
 
 export function parseQS(query) {
@@ -1220,7 +1144,7 @@ export function safeJSONEncode(data) {
  * @param fn
  * @param key cache key generator, invoked with the same arguments passed to `fn`.
  *        By default, the first argument is used as key.
- * @return {function(): any}
+ * @return {*}
  */
 export function memoize(fn, key = function (arg) { return arg; }) {
   const cache = new Map();

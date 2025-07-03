@@ -1596,9 +1596,8 @@ describe('Smart bid adapter tests', function () {
 
       bidRequests[0].ortb2Imp = {
         ext: {
-          data: {
-            pbadslot: gpid
-          }
+          data: {},
+          gpid
         }
       };
 

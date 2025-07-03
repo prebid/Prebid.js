@@ -69,8 +69,9 @@ export const spec = {
       jp_adapter: JP_ADAPTER_VERSION
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     const payloadString = JSON.stringify(payload)
