@@ -23,6 +23,7 @@ const matchResponse = function (requestBody) {
 
     // delete the 'uuid'
     delete body.uuid;
+    delete body.tid;
   });
 
   ['sdk', 'referrer_detection', 'gdpr_consent'].forEach(prop => {

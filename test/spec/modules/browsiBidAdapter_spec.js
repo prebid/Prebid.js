@@ -69,7 +69,13 @@ describe('browsi Bid Adapter Test', function () {
               tid: '1234567-3456-4562-7689-98765434B',
             }
           },
-          'schain': {},
+          'ortb2': {
+            'source': {
+              'ext': {
+                'schain': {}
+              }
+            }
+          },
           'mediaTypes': {video: {playerSize: [640, 480]}}
         }
       ];
@@ -117,7 +123,7 @@ describe('browsi Bid Adapter Test', function () {
           aUCode: inputRequest.adUnitCode,
           aID: inputRequest.auctionId,
           tID: inputRequest.ortb2Imp.ext.tid,
-          schain: inputRequest.schain,
+          schain: inputRequest.ortb2?.source?.ext?.schain,
           params: inputRequest.params
         }
       }

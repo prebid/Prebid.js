@@ -56,7 +56,7 @@ export const spec = {
 
       if (impExt) {
         data.transactionId = impExt.tid;
-        data.gpid = impExt.gpid ?? impExt.data?.pbadslot ?? impExt.data?.adserver?.adslot;
+        data.gpid = impExt.gpid ?? impExt.data?.adserver?.adslot;
       }
       if (bidderRequest.gdprConsent) {
         deepSetValue(data, 'regs.gdpr', {
@@ -93,8 +93,9 @@ export const spec = {
 
       data.params = request.params;
 
-      if (request.schain) {
-        data.schain = request.schain;
+      const schain = request?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        data.schain = schain;
       }
 
       const searchParams = new URLSearchParams({

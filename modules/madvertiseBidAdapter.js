@@ -9,8 +9,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 // use protocol relative urls for http or https
 const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
 
+const GVLID = 153;
+
 export const spec = {
   code: 'madvertise',
+  gvlid: GVLID,
   /**
    * @param {object} bid
    * @return boolean

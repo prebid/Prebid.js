@@ -1,7 +1,7 @@
 import { timestamp, logInfo } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { EVENTS, STATUS } from '../src/constants.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
@@ -78,7 +78,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
 
         let bidResponse = cache.auctions[args.auctionId].bids[args.requestId];
         if (bidResponse.cpm > args.cpm) break; // For now we only store the highest bid
-        bidResponse.isBid = args.getStatusCode() === STATUS.GOOD;
+        bidResponse.isBid = true;
         bidResponse.width = args.width;
         bidResponse.height = args.height;
         bidResponse.cpm = args.cpm;

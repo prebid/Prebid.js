@@ -49,8 +49,9 @@ export const spec = {
       request.regs = {ext: {gdpr: gdpr}};
       request.user = {ext: {consent: consentStr}};
     }
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    const bidSchain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (bidSchain) {
+      const schain = mapSchain(bidSchain);
       if (schain) {
         request.ext = {
           schain: schain,
@@ -165,14 +166,12 @@ function mapImpression(slot, bidderRequest) {
     imp.bidfloor = bidfloor;
   }
 
-  if (imp.ext?.ae) {
-    delete imp.ext.ae;
-  }
-
-  const tid = deepAccess(slot, 'ortb2Imp.ext.tid');
-  if (tid) {
-    imp.ext = imp.ext || {};
-    imp.ext.tid = tid;
+  const ext = deepAccess(slot, 'ortb2Imp.ext');
+  if (ext) {
+    imp.ext = deepClone(ext);
+    if (imp.ext.ae) {
+      delete imp.ext.ae;
+    }
   }
 
   return imp;
