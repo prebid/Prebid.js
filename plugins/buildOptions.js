@@ -18,6 +18,7 @@ function skipCallSet(features = {}) {
     r.add('logMessage');
     r.add('logInfo');
     r.add('logWarn');
+    r.add('logResult');
   }
   if (!features['LOG_ERROR']) {
     r.add('logError');
