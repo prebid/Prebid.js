@@ -409,7 +409,7 @@ function generateNativeDataObj(obj, type, id) {
 function createBaseBidResponse(bidRequest, bidderBid, bidResponses) {
   const responseCPM = parseFloat(bidderBid.price);
   if (responseCPM === 0 || isNaN(responseCPM)) {
-    let bid = createBid(2); // codex agent comment: base invalid bid
+    let bid = createBid(2);
     bid.requestId = bidRequest.bidId;
     bid.bidderCode = bidRequest.bidder;
     bidResponses.push(bid);
@@ -429,7 +429,7 @@ function createBaseBidResponse(bidRequest, bidderBid, bidResponses) {
 }
 
 /* Convert banner bid response to compatible format */
-function buildBannerResponse(bidRequest, bidResponse) {
+function buildBannerResponse(bidRequest, serverResponse) {
   const bidResponses = [];
   bidResponse.seatbid[0].bid.forEach(function (bidderBid) {
     if (bidRequest) {
