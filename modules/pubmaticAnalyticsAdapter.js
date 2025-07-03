@@ -39,10 +39,9 @@ const OPEN_AUCTION_DEAL_ID = '-1';
 const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
-// todo: input profileId and profileVersionId ; defaults to zero or one
-const DEFAULT_PUBLISHER_ID = 0;
-const DEFAULT_PROFILE_ID = 0;
-const DEFAULT_PROFILE_VERSION_ID = 0;
+const DEFAULT_PUBLISHER_ID = null;
+const DEFAULT_PROFILE_ID = '';
+const DEFAULT_PROFILE_VERSION_ID = '';
 const enc = window.encodeURIComponent;
 const MEDIATYPE = {
   BANNER: 0,
@@ -67,9 +66,9 @@ const BROWSER_MAP = [
 ];
 
 /// /////////// VARIABLES //////////////
-let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
-let profileId = DEFAULT_PROFILE_ID; // int: optional
-let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
+let publisherId = DEFAULT_PUBLISHER_ID; // string: mandatory
+let profileId = DEFAULT_PROFILE_ID; // string: optional
+let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // string: optional
 let s2sBidders = [];
 
 /// /////////// HELPER FUNCTIONS //////////////
@@ -475,8 +474,8 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['purl'] = referrer;
   outputObj['orig'] = getDomainFromUrl(referrer);
   outputObj['tst'] = Math.round((new window.Date()).getTime() / 1000);
-  outputObj['pid'] = '' + profileId;
-  outputObj['pdvid'] = '' + profileVersionId;
+  outputObj['pid'] = profileId;
+  outputObj['pdvid'] = profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
   outputObj['dm'] = DISPLAY_MANAGER;
@@ -783,17 +782,17 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
     if (typeof conf.options === 'object') {
       if (conf.options.publisherId) {
-        publisherId = Number(conf.options.publisherId);
+        publisherId = String(conf.options.publisherId).trim();
       }
-      profileId = Number(conf.options.profileId) || DEFAULT_PROFILE_ID;
-      profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
+      profileId = String(conf.options.profileId).trim() || DEFAULT_PROFILE_ID;
+      profileVersionId = String(conf.options.profileVersionId).trim() || DEFAULT_PROFILE_VERSION_ID;
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');
       error = true;
     }
 
     if (!publisherId) {
-      logError(LOG_PRE_FIX + 'Missing publisherId(Number).');
+      logError(LOG_PRE_FIX + 'Missing publisherId.');
       error = true;
     }
 

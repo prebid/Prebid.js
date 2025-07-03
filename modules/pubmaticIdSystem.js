@@ -23,7 +23,7 @@ function generateQueryStringParams(config) {
   const gdprConsent = gdprDataHandler.getConsentData();
 
   const params = {
-    publisherId: Number(config.params.publisherId),
+    publisherId: String(config.params.publisherId).trim(),
     gdpr: (gdprConsent && gdprConsent?.gdprApplies) ? 1 : 0,
     gdpr_consent: gdprConsent && gdprConsent?.consentString ? encodeURIComponent(gdprConsent.consentString) : '',
     src: 'pbjs_uid',
@@ -97,11 +97,16 @@ function hasRequiredConfig(config) {
 
   // convert publisherId to number
   if (config.params.publisherId) {
-    config.params.publisherId = Number(config.params.publisherId);
+    config.params.publisherId = String(config.params.publisherId).trim();
+  }
+
+  // Handle profileId if provided (optional)
+  if (config.params.profileId) {
+    config.params.profileId = String(config.params.profileId).trim();
   }
 
   if (!config.params.publisherId) {
-    logError(LOG_PREFIX + 'config.params.publisherId (Number) should be provided.');
+    logError(LOG_PREFIX + 'config.params.publisherId (String) should be provided.');
     return false;
   }
 
