@@ -186,7 +186,7 @@ export const spec = {
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     const omidSupport = ((bidRequests) || []).find(hasOmidSupport);
 
     const payload = {
@@ -269,14 +269,20 @@ export const spec = {
       });
     }
 
-    if (bidRequests[0].userId) {
+    if (bidRequests[0].userIdAsEids?.length > 0) {
       let eids = [];
-
-      addUserId(eids, deepAccess(bidRequests[0], `userId.criteoId`), 'criteo.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.netId`), 'netid.de', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.idl_env`), 'liveramp.com', null);
-      addUserId(eids, deepAccess(bidRequests[0], `userId.tdid`), 'adserver.org', 'TDID');
-      addUserId(eids, deepAccess(bidRequests[0], `userId.uid2.id`), 'uidapi.com', 'UID2');
+      bidRequests[0].userIdAsEids.forEach(eid => {
+        if (!eid || !eid.uids || eid.uids.length < 1) { return; }
+        eid.uids.forEach(uid => {
+          let tmp = {'source': eid.source, 'id': uid.id};
+          if (eid.source == 'adserver.org') {
+            tmp.rti_partner = 'TDID';
+          } else if (eid.source == 'uidapi.com') {
+            tmp.rti_partner = 'UID2';
+          }
+          eids.push(tmp);
+        });
+      });
 
       if (eids.length) {
         payload.eids = eids;
@@ -727,7 +733,7 @@ function bidToTag(bid) {
   if (!isEmpty(bid.params.keywords)) {
     tag.keywords = getANKewyordParamFromMaps(bid.params.keywords);
   }
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -1062,7 +1068,7 @@ function parseMediaType(rtbBid) {
   }
 }
 
-function addUserId(eids, id, source, rti) {
+/* function addUserId(eids, id, source, rti) {
   if (id) {
     if (rti) {
       eids.push({ source, id, rti_partner: rti });
@@ -1071,7 +1077,7 @@ function addUserId(eids, id, source, rti) {
     }
   }
   return eids;
-}
+} */
 
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

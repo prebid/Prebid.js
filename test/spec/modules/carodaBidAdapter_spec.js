@@ -109,10 +109,16 @@ describe('Caroda adapter', function () {
       const validBidRequests = [{
         bid_id: 'bidId',
         params: {},
-        schain: {
-          validation: 'strict',
-          config: {
-            ver: '1.0'
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                validation: 'strict',
+                config: {
+                  ver: '1.0'
+                }
+              }
+            }
           }
         }
       }];

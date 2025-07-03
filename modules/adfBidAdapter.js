@@ -72,7 +72,7 @@ export const spec = {
     const currency = getCurrencyFromBidderRequest(bidderRequest);
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
-    const schain = setOnAny(validBidRequests, 'schain');
+    const schain = setOnAny(validBidRequests, 'ortb2.source.ext.schain');
 
     if (eids) {
       deepSetValue(user, 'ext.eids', eids);
