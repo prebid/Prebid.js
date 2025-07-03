@@ -1,5 +1,5 @@
 import { submodule } from '../src/hook.js';
-import { logError, isStr, isPlainObject, isEmpty, isFn, mergeDeep } from '../src/utils.js';
+import { logError, isStr, isPlainObject, isEmpty, isFn, mergeDeep, logMessage } from '../src/utils.js';
 import { config as conf } from '../src/config.js';
 import { getDeviceType as fetchDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
 import { getBrowserType, getCurrentTimeOfDay, getUtmValue } from '../libraries/pubmaticUtils/pubmaticUtils.js';
@@ -32,7 +32,7 @@ export const defaultValueTemplate = {
     }
 };
 
-export let _pubmaticConfigPromise = null;
+export let _ymConfigPromise = null;
 export let _configData = {};
 export let _country;
 
@@ -53,28 +53,28 @@ export const setFloorsConfig = () => {
     }
 
     // Floor configs from adunit / setconfig
-    const defaultPageFloorConfig = conf.getConfig('floors') ?? {};
-    if (defaultPageFloorConfig?.endpoint) {
-      delete defaultPageFloorConfig.endpoint;
+    const defaultFloorConfig = conf.getConfig('floors') ?? {};
+    if (defaultFloorConfig?.endpoint) {
+      delete defaultFloorConfig.endpoint;
     }
 
-    let uiConfig = { ...dynamicFloors.config };
+    let ymUiConfig = { ...dynamicFloors.config };
 
     // default values provided by publisher on YM UI
-    const defaultValues = uiConfig.defaultValues ?? {};
+    const defaultValues = ymUiConfig.defaultValues ?? {};
     // If floorsData is not present, use default values
-    const finalFloorsData = dynamicFloors.data ?? { ...defaultValueTemplate, values: { ...defaultValues } };
+    const ymFloorsData = dynamicFloors.data ?? { ...defaultValueTemplate, values: { ...defaultValues } };
 
-    delete uiConfig.defaultValues;
-    // If skiprate is provided in configs, overwrite the value in finalFloorsData
-    (uiConfig.skipRate !== undefined) && (finalFloorsData.skipRate = uiConfig.skipRate);
+    delete ymUiConfig.defaultValues;
+    // If skiprate is provided in configs, overwrite the value in ymFloorsData
+    (ymUiConfig.skipRate !== undefined) && (ymFloorsData.skipRate = ymUiConfig.skipRate);
 
     // merge default configs from page, configs
     return {
         floors: {
-            ...defaultPageFloorConfig,
-            ...uiConfig,
-            data: finalFloorsData,
+            ...defaultFloorConfig,
+            ...ymUiConfig,
+            data: ymFloorsData,
             additionalSchemaFields: {
                 deviceType: getDeviceType,
                 timeOfDay: getTimeOfDay,
@@ -93,10 +93,15 @@ export const getRtdConfig = async (publisherId, profileId) => {
 
   if (!isPlainObject(apiResponse) || isEmpty(apiResponse)) {
     logError(`${CONSTANTS.LOG_PRE_FIX} profileConfigs is not an object or is empty`);
-  } else if (apiResponse) {
+  } else {
     // Check for each module in config
     if (apiResponse.plugins?.dynamicFloors) {
-      conf.setConfig(setFloorsConfig());
+      try{
+        conf.setConfig(setFloorsConfig());
+        logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicFloors config set successfully`);
+      } catch (error) {
+        logError(`${CONSTANTS.LOG_PRE_FIX} Error setting dynamicFloors config: ${error}`);
+      }
     }
   }
 };
@@ -146,7 +151,7 @@ const init = (config, _userConsent) => {
       return false;
     }
 
-    _pubmaticConfigPromise = getRtdConfig(publisherId, profileId);
+    _ymConfigPromise = getRtdConfig(publisherId, profileId);
 
     return true;
 };
@@ -156,7 +161,7 @@ const init = (config, _userConsent) => {
  * @param {function} callback
  */
 const getBidRequestData = (reqBidsConfigObj, callback) => {
-  _pubmaticConfigPromise.then(() => {
+  _ymConfigPromise.then(() => {
         const hookConfig = {
             reqBidsConfigObj,
             context: this,

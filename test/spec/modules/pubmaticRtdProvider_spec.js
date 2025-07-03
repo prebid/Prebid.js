@@ -714,7 +714,7 @@ describe('Pubmatic RTD Provider', () => {
             continueAuctionStub = sandbox.stub(priceFloors, 'continueAuction');
             logErrorStub = sandbox.stub(utils, 'logError');
 
-            global._pubmaticConfigPromise = Promise.resolve();
+            global._ymConfigPromise = Promise.resolve();
         });
 
         afterEach(() => {
