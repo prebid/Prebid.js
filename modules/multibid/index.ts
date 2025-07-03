@@ -82,7 +82,7 @@ config.getConfig(MODULE_NAME, conf => {
  */
 export function validateMultibid(conf) {
   let check = true;
-  let duplicate = conf.filter(entry => {
+  const duplicate = conf.filter(entry => {
     // Check if entry.bidder is not defined or typeof string, filter entry and reset configuration
     if ((!entry.bidder || typeof entry.bidder !== 'string') && (!entry.bidders || !Array.isArray(entry.bidders))) {
       logWarn('Filtering multibid entry. Missing required bidder or bidders property.');
@@ -143,7 +143,7 @@ declare module '../../src/bidfactory' {
  * @param {Object} bid object
  */
 export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook(fn, adUnitCode, bid, reject) {
-  let floor = deepAccess(bid, 'floorData.floorValue');
+  const floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
   // Checks if multiconfig exists and bid bidderCode exists within config and is an adpod bid
@@ -165,7 +165,7 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
         bid.requestId = getUniqueIdentifierStr();
         multibidUnits[adUnitCode][bid.bidderCode].ads.push(bid);
 
-        let length = multibidUnits[adUnitCode][bid.bidderCode].ads.length;
+        const length = multibidUnits[adUnitCode][bid.bidderCode].ads.length;
 
         if (multiConfig[bid.bidderCode].prefix) bid.targetingBidder = multiConfig[bid.bidderCode].prefix + length;
         if (length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
@@ -215,13 +215,13 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
   if (!config.getConfig('multibid')) resetMultiConfig();
   if (hasMultibid) {
     const dealPrioritization = config.getConfig('sendBidsControl.dealPrioritization');
-    let modifiedBids = [];
-    let buckets = groupBy(bidsReceived, 'adUnitCode');
-    let bids = [].concat(...Object.keys(buckets).reduce((result, slotId) => {
+    const modifiedBids = [];
+    const buckets = groupBy(bidsReceived, 'adUnitCode');
+    const bids = [].concat(...Object.keys(buckets).reduce((result, slotId) => {
       let bucketBids = [];
       // Get bids and group by property originalBidder
-      let bidsByBidderName = groupBy(buckets[slotId], 'originalBidder');
-      let adjustedBids = [].concat(...Object.keys(bidsByBidderName).map(key => {
+      const bidsByBidderName = groupBy(buckets[slotId], 'originalBidder');
+      const adjustedBids = [].concat(...Object.keys(bidsByBidderName).map(key => {
         // Reset all bidderCodes to original bidder values and sort by CPM
         return bidsByBidderName[key].sort((bidA, bidB) => {
           if (bidA.originalBidder && bidA.originalBidder !== bidA.bidderCode) bidA.bidderCode = bidA.originalBidder;
@@ -237,7 +237,7 @@ export function targetBidPoolHook(fn, bidsReceived, highestCpmCallback, adUnitBi
         })
       }));
       // Get adjustedBids by bidderCode and reduce using highestCpmCallback
-      let bidsByBidderCode = groupBy(adjustedBids, 'bidderCode');
+      const bidsByBidderCode = groupBy(adjustedBids, 'bidderCode');
       Object.keys(bidsByBidderCode).forEach(key => bucketBids.push(bidsByBidderCode[key].reduce(highestCpmCallback)));
       // if adUnitBidLimit is set, pass top N number bids
       if (adUnitBidLimit > 0) {

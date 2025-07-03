@@ -169,8 +169,8 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses) {
     if (serverResponses.length == 0) return [];
 
-    let syncList = [];
-    let userSync = serverResponses[0].body.pixels || [];
+    const syncList = [];
+    const userSync = serverResponses[0].body.pixels || [];
 
     userSync.forEach(function(sync) {
       if (syncOptions.pixelEnabled && sync.type == 'Redirect') {

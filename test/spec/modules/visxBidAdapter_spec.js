@@ -18,7 +18,7 @@ describe('VisxAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'visx',
       'params': {
         'uid': 903536
@@ -35,7 +35,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 0
@@ -44,7 +44,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should return false when uid can not be parsed as number', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 'sdvsdv'
@@ -53,7 +53,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should fail on invalid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -65,7 +65,7 @@ describe('VisxAdapter', function () {
     });
 
     it('it should pass on valid video bid', function () {
-      let videoBid = Object.assign({}, bid);
+      const videoBid = Object.assign({}, bid);
       videoBid.mediaTypes = {
         video: {
           context: 'instream',
@@ -142,7 +142,7 @@ describe('VisxAdapter', function () {
         {asi: 'exchange1.com', sid: '1234!abcd', hp: 1, name: 'publisher, Inc.', domain: 'publisher.com'}
       ]
     };
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'visx',
         'params': {
@@ -1952,7 +1952,7 @@ describe('VisxAdapter', function () {
       return { path, query };
     }
     it('should call iframe', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         iframeEnabled: true
       });
 
@@ -1968,7 +1968,7 @@ describe('VisxAdapter', function () {
     });
 
     it('should call image', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
 

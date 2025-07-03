@@ -17,7 +17,7 @@ const INTEGRATION_ID = '$$PREBID_GLOBAL$$';
 let partnerIdFromUserIdConfig;
 let sendAuctionInitEvents;
 
-let liAnalytics = Object.assign(adapter({URL, ANALYTICS_TYPE}), {
+const liAnalytics = Object.assign(adapter({URL, ANALYTICS_TYPE}), {
   track({ eventType, args }) {
     switch (eventType) {
       case AUCTION_INIT:

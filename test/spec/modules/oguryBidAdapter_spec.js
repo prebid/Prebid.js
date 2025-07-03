@@ -121,34 +121,34 @@ describe('OguryBidAdapter', () => {
 
   describe('isBidRequestValid', () => {
     it('should validate correct bid', () => {
-      let validBid = utils.deepClone(bidRequests[0]);
+      const validBid = utils.deepClone(bidRequests[0]);
 
-      let isValid = spec.isBidRequestValid(validBid);
+      const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.true;
     });
 
     it('should not validate when sizes is not defined', () => {
-      let invalidBid = utils.deepClone(bidRequests[0]);
+      const invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.sizes;
       delete invalidBid.mediaTypes;
 
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
     });
 
     it('should not validate bid when adunit is not defined', () => {
-      let invalidBid = utils.deepClone(bidRequests[0]);
+      const invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.adUnitId;
 
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.to.be.false;
     });
 
     it('should not validate bid when assetKey is not defined', () => {
-      let invalidBid = utils.deepClone(bidRequests[0]);
+      const invalidBid = utils.deepClone(bidRequests[0]);
       delete invalidBid.params.assetKey;
 
-      let isValid = spec.isBidRequestValid(invalidBid);
+      const isValid = spec.isBidRequestValid(invalidBid);
       expect(isValid).to.be.false;
     });
 
@@ -851,7 +851,7 @@ describe('OguryBidAdapter', () => {
   });
 
   describe('interpretResponse', function () {
-    let openRtbBidResponse = {
+    const openRtbBidResponse = {
       body: {
         id: 'id_of_bid_response',
         seatbid: [{

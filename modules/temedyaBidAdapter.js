@@ -108,8 +108,8 @@ export const spec = {
         });
       } else if (bidResponse && bidRequest.options.mediaType == 'display') {
         bidResponse.ads.forEach(function(ad) {
-          let w = ad.assets.width || 300;
-          let h = ad.assets.height || 250;
+          const w = ad.assets.width || 300;
+          const h = ad.assets.height || 250;
           let htmlTag = '<!doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" href="https://widget.cdn.vidyome.com/builds/neytivme.css"></head>';
           htmlTag += '<body><div id="tem_banner" class="size' + w + '-' + h + '" style="width:' + w + 'px;height:' + h + 'px">';
           htmlTag += '<i onclick="window.open(\'https://www.temedya.com\', \'_blank\')">TE Medya</i>';

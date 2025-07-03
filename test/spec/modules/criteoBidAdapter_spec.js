@@ -1192,7 +1192,7 @@ describe('The Criteo bidding adapter', function () {
           },
         },
       ];
-      let dsa = {
+      const dsa = {
         required: 3,
         pubrender: 0,
         datatopub: 2,
@@ -2432,7 +2432,7 @@ describe('The Criteo bidding adapter', function () {
     }
 
     it('should properly parse a bid response with FLEDGE auction configs', async function () {
-      let auctionConfig1 = {
+      const auctionConfig1 = {
         auctionSignals: {},
         decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
         interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
@@ -2472,7 +2472,7 @@ describe('The Criteo bidding adapter', function () {
         },
         sellerCurrency: 'USD',
       };
-      let auctionConfig2 = {
+      const auctionConfig2 = {
         auctionSignals: {},
         decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
         interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],

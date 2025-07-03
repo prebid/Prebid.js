@@ -133,7 +133,7 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const createWindow = (href, params = {}) => {
-    let {parent, top, frameElement, placementElements = []} = params;
+    const {parent, top, frameElement, placementElements = []} = params;
 
     const protocol = href.startsWith('https') ? 'https:' : 'http:';
     const win = {
@@ -342,7 +342,7 @@ describe('stroeerCore bid adapter', function () {
 
       it('should use hardcoded url as default endpoint', () => {
         const bidReq = buildBidderRequest();
-        let serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
         assert.equal(serverRequestInfo.method, 'POST');
         assert.isObject(serverRequestInfo.data);
@@ -375,7 +375,7 @@ describe('stroeerCore bid adapter', function () {
               bidReq.bids[0].params = sample.params;
               bidReq.bids.length = 1;
 
-              let serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+              const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
               assert.equal(serverRequestInfo.method, 'POST');
               assert.isObject(serverRequestInfo.data);
@@ -645,7 +645,7 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
 
-          for (let bid of serverRequestInfo.data.bids) {
+          for (const bid of serverRequestInfo.data.bids) {
             assert.isUndefined(bid.viz);
           }
         });
@@ -657,7 +657,7 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
           assert.lengthOf(serverRequestInfo.data.bids, 2);
 
-          for (let bid of serverRequestInfo.data.bids) {
+          for (const bid of serverRequestInfo.data.bids) {
             assert.isUndefined(bid.ref);
           }
         });
@@ -1010,7 +1010,7 @@ describe('stroeerCore bid adapter', function () {
     it('should interpret a video response', () => {
       const bidderResponse = buildBidderResponseWithVideo();
       const bidResponses = spec.interpretResponse({body: bidderResponse});
-      let videoBidResponse = bidResponses[0];
+      const videoBidResponse = bidResponses[0];
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
 

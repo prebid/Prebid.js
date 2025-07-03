@@ -4,8 +4,8 @@ import {EVENTS} from 'src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import {logError} from '../../../src/utils';
 
-let utils = require('src/utils');
-let events = require('src/events');
+const utils = require('src/utils');
+const events = require('src/events');
 
 const SAMPLE_EVENTS = {
   AUCTION_END: {

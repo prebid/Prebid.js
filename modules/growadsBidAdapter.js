@@ -57,7 +57,7 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const request = bidRequest.bidRequest;
-    let bidResponses = [];
+    const bidResponses = [];
     let CPM;
     let width;
     let height;
@@ -68,7 +68,7 @@ export const spec = {
     let maxCPM;
     let bid = {};
 
-    let body = serverResponse.body;
+    const body = serverResponse.body;
 
     try {
       response = JSON.parse(body);

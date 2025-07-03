@@ -59,7 +59,7 @@ const PBS_CONVERTER = ortbConverter({
     if (!imps.length) {
       logError('Request to Prebid Server rejected due to invalid media type(s) in adUnit.');
     } else {
-      let {s2sBidRequest} = context;
+      const {s2sBidRequest} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
       request.tmax = Math.floor(s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout));

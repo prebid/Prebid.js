@@ -248,7 +248,7 @@ describe('Opera Ads Bid Adapter', function () {
         expect(requestData.cur).to.be.an('array').that.not.be.empty;
         expect(requestData.user).to.be.an('object');
 
-        let impItem = requestData.imp[0];
+        const impItem = requestData.imp[0];
         expect(impItem).to.be.an('object');
         expect(impItem.id).to.equal(bidRequest.bidId);
         expect(impItem.tagid).to.equal(bidRequest.params.placementId);
@@ -292,7 +292,7 @@ describe('Opera Ads Bid Adapter', function () {
       }
 
       it('test default case', function () {
-        let requestData = getRequest();
+        const requestData = getRequest();
         expect(requestData.site).to.be.an('object');
         expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
         expect(requestData.site.domain).to.not.be.empty;
@@ -309,7 +309,7 @@ describe('Opera Ads Bid Adapter', function () {
             domain: 'www.test.com'
           }
         }
-        let requestData = getRequest();
+        const requestData = getRequest();
         expect(requestData.site).to.be.an('object');
         expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
         expect(requestData.site.name).to.equal('test-site-1');
@@ -326,7 +326,7 @@ describe('Opera Ads Bid Adapter', function () {
             name: 'test-app-1'
           }
         }
-        let requestData = getRequest();
+        const requestData = getRequest();
         expect(requestData.app).to.be.an('object');
         expect(requestData.app.id).to.equal(bidRequest.params.publisherId);
         expect(requestData.app.name).to.equal('test-app-1');
@@ -346,7 +346,7 @@ describe('Opera Ads Bid Adapter', function () {
             name: 'test-app-1'
           }
         }
-        let requestData = getRequest();
+        const requestData = getRequest();
         expect(requestData.site).to.be.an('object');
         expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
         expect(requestData.site.name).to.equal('test-site-2');

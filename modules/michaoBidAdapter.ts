@@ -73,7 +73,7 @@ export const spec: BidderSpec<typeof ENV.BIDDER_CODE> = {
     const bidRequests = [];
 
     validBidRequests.forEach((validBidRequest) => {
-      let bidRequestEachFormat = [];
+      const bidRequestEachFormat = [];
 
       if (validBidRequest.mediaTypes?.banner) {
         bidRequestEachFormat.push({

@@ -183,7 +183,7 @@ export const converter = ortbConverter({
 
     deepSetValue(data, 'ext.prebid.targeting.pricegranularity', getPriceGranularity(config));
 
-    let modules = (getGlobal()).installedModules;
+    const modules = (getGlobal()).installedModules;
     if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
       deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
     }
@@ -232,7 +232,7 @@ export const converter = ortbConverter({
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
 
-    let [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
+    const [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
     // 0 by default to avoid undefined size
     bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth || 0;
     bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight || 0;
@@ -274,7 +274,7 @@ export const spec = {
         return false
       }
     }
-    let bidFormats = bidType(bid, true);
+    const bidFormats = bidType(bid, true);
     // bidType is undefined? Return false
     if (!bidFormats.length) {
       return false;
@@ -293,7 +293,7 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
     let requests = [];
-    let filteredHttpRequest = [];
+    const filteredHttpRequest = [];
     let filteredRequests;
 
     filteredRequests = bidRequests.filter(req => {
@@ -533,8 +533,8 @@ export const spec = {
 
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
-    let posMapping = {1: 'atf', 3: 'btf'};
-    let pos = posMapping[deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
+    const posMapping = {1: 'atf', 3: 'btf'};
+    const pos = posMapping[deepAccess(bidRequest, 'mediaTypes.banner.pos')] || '';
     data['p_pos'] = (params.position === 'atf' || params.position === 'btf') ? params.position : pos;
 
     // pass publisher provided userId if configured
@@ -688,7 +688,7 @@ export const spec = {
       return [];
     }
 
-    let bids = ads.reduce((bids, ad, i) => {
+    const bids = ads.reduce((bids, ad, i) => {
       (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
 
       if (ad.status !== 'ok') {
@@ -699,7 +699,7 @@ export const spec = {
       const associatedBidRequest = Array.isArray(bidRequest) ? bidRequest[i - multibid] : bidRequest;
 
       if (associatedBidRequest && typeof associatedBidRequest === 'object') {
-        let bid = {
+        const bid = {
           requestId: associatedBidRequest.bidId,
           currency: 'USD',
           creativeId: ad.creative_id || `${ad.network || ''}-${ad.advertiser || ''}`,
@@ -758,7 +758,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
 
-    let fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
+    const fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
       return { config, bidId: config.bidId }
     });
 
@@ -880,7 +880,7 @@ function outstreamRenderer(rtbBid) {
 }
 
 function parseSizes(bid, mediaType) {
-  let params = bid.params;
+  const params = bid.params;
   if (mediaType === VIDEO) {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
@@ -919,9 +919,9 @@ function applyFPD(bidRequest, mediaType, data) {
 
   if (bidRequest.params.keywords) BID_FPD.site.keywords = (isArray(bidRequest.params.keywords)) ? bidRequest.params.keywords.join(',') : bidRequest.params.keywords;
 
-  let fpd = mergeDeep({}, bidRequest.ortb2 || {}, BID_FPD);
-  let impExt = deepAccess(bidRequest.ortb2Imp, 'ext') || {};
-  let impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
+  const fpd = mergeDeep({}, bidRequest.ortb2 || {}, BID_FPD);
+  const impExt = deepAccess(bidRequest.ortb2Imp, 'ext') || {};
+  const impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const dsa = deepAccess(fpd, 'regs.ext.dsa');
@@ -931,7 +931,7 @@ function applyFPD(bidRequest, mediaType, data) {
     if (key === 'data' && Array.isArray(prop)) {
       return prop.filter(name => name.segment && deepAccess(name, 'ext.segtax') && SEGTAX[parentName] &&
         SEGTAX[parentName].indexOf(deepAccess(name, 'ext.segtax')) !== -1).map(value => {
-        let segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
+        const segments = value.segment.filter(obj => obj.id).reduce((result, obj) => {
           result.push(obj.id);
           return result;
         }, []);
@@ -948,8 +948,8 @@ function applyFPD(bidRequest, mediaType, data) {
     }
   };
   const addBannerData = function(obj, name, key, isParent = true) {
-    let val = validate(obj, key, name);
-    let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
+    const val = validate(obj, key, name);
+    const loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
   };
 
@@ -1065,10 +1065,10 @@ function addDesiredSegtaxes(bidderRequest, target) {
   if (rubiConf.readTopics === false) {
     return;
   }
-  let iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
-  let vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
-  let userData = bidderRequest.ortb2?.user?.data || [];
-  let siteData = bidderRequest.ortb2?.site?.content?.data || [];
+  const iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  const vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
+  const userData = bidderRequest.ortb2?.user?.data || [];
+  const siteData = bidderRequest.ortb2?.site?.content?.data || [];
   userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
   siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
 }
@@ -1090,7 +1090,7 @@ function mapSizes(sizes) {
   return parseSizesInput(sizes)
   // map sizes while excluding non-matches
     .reduce((result, size) => {
-      let mappedSize = parseInt(sizeMap[size], 10);
+      const mappedSize = parseInt(sizeMap[size], 10);
       if (mappedSize) {
         result.push(mappedSize);
       }
@@ -1106,9 +1106,9 @@ function mapSizes(sizes) {
  */
 export function classifiedAsVideo(bidRequest) {
   let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
-  let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
-  let isBidOnMultiformat = typeof deepAccess(bidRequest, `params.bidonmultiformat`) !== 'undefined';
-  let isMissingVideoParams = typeof deepAccess(bidRequest, 'params.video') !== 'object';
+  const isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
+  const isBidOnMultiformat = typeof deepAccess(bidRequest, `params.bidonmultiformat`) !== 'undefined';
+  const isMissingVideoParams = typeof deepAccess(bidRequest, 'params.video') !== 'object';
   // If an ad has both video and banner types, a legacy implementation allows choosing video over banner
   // based on whether or not there is a video object defined in the params
   // Given this legacy implementation, other code depends on params.video being defined
@@ -1133,7 +1133,7 @@ export function classifiedAsVideo(bidRequest) {
  */
 function bidType(bid, log = false) {
   // Is it considered video ad unit by rubicon
-  let bidTypes = [];
+  const bidTypes = [];
   if (classifiedAsVideo(bid)) {
     // Removed legacy mediaType support. new way using mediaTypes.video object is now required
     // We require either context as instream or outstream
@@ -1207,7 +1207,7 @@ export function masSizeOrdering(sizes) {
 
 export function determineRubiconVideoSizeId(bid) {
   // If we have size_id in the bid then use it
-  let rubiconSizeId = parseInt(deepAccess(bid, 'params.video.size_id'));
+  const rubiconSizeId = parseInt(deepAccess(bid, 'params.video.size_id'));
   if (!isNaN(rubiconSizeId)) {
     return rubiconSizeId;
   }
@@ -1245,8 +1245,8 @@ export function getPriceGranularity(config) {
 export function hasValidVideoParams(bid) {
   let isValid = true;
   // incase future javascript changes the string represenation of the array or number classes!
-  let arrayType = Object.prototype.toString.call([]);
-  let numberType = Object.prototype.toString.call(0);
+  const arrayType = Object.prototype.toString.call([]);
+  const numberType = Object.prototype.toString.call(0);
   // required params and their associated object type
   var requiredParams = {
     mimes: arrayType,
@@ -1320,7 +1320,7 @@ function setBidFloors(bidRequest, imp) {
   }
 
   if (!imp.bidfloor) {
-    let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+    const bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
 
     if (!isNaN(bidFloor)) {
       imp.bidfloor = bidFloor;

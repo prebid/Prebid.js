@@ -79,7 +79,7 @@ let initTime;
 let _fetchFloorRulesPromise = null; let _fetchConfigPromise = null;
 export let configMerged;
 // configMerged is a reference to the function that can resolve configMergedPromise whenever we want
-let configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
+const configMergedPromise = new Promise((resolve) => { configMerged = resolve; });
 export let _country;
 // Store multipliers from floors.json, will use default values from CONSTANTS if not available
 export let _multipliers = null;
@@ -455,7 +455,7 @@ export const getFloorsConfig = (floorsData, profileConfigs) => {
       return undefined;
     }
 
-    let config = { ...dynamicFloors.config };
+    const config = { ...dynamicFloors.config };
 
     // default values provided by publisher on profile
     const defaultValues = config.defaultValues ?? {};

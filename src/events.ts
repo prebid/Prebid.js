@@ -73,18 +73,18 @@ let allEvents: (Event)[] = Object.values(EVENTS);
 const idPaths = EVENT_ID_PATHS;
 
 const _public = (function () {
-  let _handlers: any = {};
+  const _handlers: any = {};
 
   function _dispatch(eventName, args) {
     utils.logMessage('Emitting event for: ' + eventName);
 
-    let eventPayload = args[0] || {};
-    let idPath = idPaths[eventName];
-    let key = eventPayload[idPath];
-    let event = _handlers[eventName] || { que: [] };
+    const eventPayload = args[0] || {};
+    const idPath = idPaths[eventName];
+    const key = eventPayload[idPath];
+    const event = _handlers[eventName] || { que: [] };
     var eventKeys = Object.keys(event);
 
-    let callbacks = [];
+    const callbacks = [];
 
     // record the event:
     eventsFired.add({
@@ -128,7 +128,7 @@ const _public = (function () {
       on: function <E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
           // check whether available event or not
           if (_checkAvailableEvent(eventName)) {
-              let event = _handlers[eventName] || { que: [] };
+              const event = _handlers[eventName] || { que: [] };
 
               if (id) {
                   event[id] = event[id] || { que: [] };
@@ -146,7 +146,7 @@ const _public = (function () {
           _dispatch(eventName, args);
       },
       off: function<E extends Event>(eventName: E, handler: EventHandler<E>, id?: EventIDs[E]) {
-          let event = _handlers[eventName];
+          const event = _handlers[eventName];
 
           if (utils.isEmpty(event) || (utils.isEmpty(event.que) && utils.isEmpty(event[id]))) {
               return;
@@ -158,14 +158,14 @@ const _public = (function () {
 
           if (id) {
               (event[id].que || []).forEach(function (_handler) {
-                  let que = event[id].que;
+                  const que = event[id].que;
                   if (_handler === handler) {
                       que.splice(que.indexOf(_handler), 1);
                   }
               });
           } else {
               (event.que || []).forEach(function (_handler) {
-                  let que = event.que;
+                  const que = event.que;
                   if (_handler === handler) {
                       que.splice(que.indexOf(_handler), 1);
                   }

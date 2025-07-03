@@ -15,7 +15,7 @@ export function filterBidsListByFilters(list = [], filters) {
 }
 
 export function flattenObj(obj, parent, res = {}) {
-  for (let key in obj) {
+  for (const key in obj) {
     if (Array.isArray(obj[key])) {
       continue;
     }
@@ -43,8 +43,8 @@ export function formatQS(data) {
 
 export function getWindowSize() {
   const { width, height } = getViewportSize();
-  let w = width || -1;
-  let h = height || -1;
+  const w = width || -1;
+  const h = height || -1;
   return `${w}x${h}`;
 }
 

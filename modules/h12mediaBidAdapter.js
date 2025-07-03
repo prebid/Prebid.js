@@ -95,7 +95,7 @@ export const spec = {
   },
 
   interpretResponse: function(serverResponse, bidRequests) {
-    let bidResponses = [];
+    const bidResponses = [];
     try {
       const serverBody = serverResponse.body;
       if (serverBody) {

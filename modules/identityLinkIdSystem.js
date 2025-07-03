@@ -87,7 +87,7 @@ export const identityLinkSubmodule = {
         });
       } else {
         // try to get envelope directly from storage if ats lib is not present on a page
-        let envelope = getEnvelopeFromStorage();
+        const envelope = getEnvelopeFromStorage();
         if (envelope) {
           utils.logInfo('identityLink: LiveRamp envelope successfully retrieved from storage!');
           callback(JSON.parse(envelope).envelope);
@@ -137,19 +137,19 @@ function getEnvelope(url, callback, configParams) {
 }
 
 function setRetryCookie() {
-  let now = new Date();
+  const now = new Date();
   now.setTime(now.getTime() + 3600000);
   storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
 }
 
 function setEnvelopeSource(src) {
-  let now = new Date();
+  const now = new Date();
   now.setTime(now.getTime() + 2592000000);
   storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
 }
 
 export function getEnvelopeFromStorage() {
-  let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
+  const rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
   if (!rawEnvelope) {
     return undefined;
   }

@@ -35,7 +35,7 @@ describe('gdpr enforcement', function () {
   let nextFnSpy;
   let logWarnSpy;
   let gdprDataHandlerStub;
-  let staticConfig = {
+  const staticConfig = {
     cmpApi: 'static',
     timeout: 7500,
     consentData: {

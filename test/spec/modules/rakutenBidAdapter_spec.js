@@ -23,7 +23,7 @@ describe('rakutenBidAdapter', function() {
   });
 
   describe('isBidRequestValid', () => {
-    let bid = {
+    const bid = {
       bidder: 'rakuten',
       params: {
         adSpotId: '56789'
@@ -40,7 +40,7 @@ describe('rakutenBidAdapter', function() {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false)

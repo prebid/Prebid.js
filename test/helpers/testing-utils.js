@@ -7,11 +7,11 @@ const utils = {
     return `${utils.protocol}://${utils.host}:9999/test/pages/${name}`
   },
   waitForElement: async function(elementRef, time = DEFAULT_TIMEOUT) {
-    let element = $(elementRef);
+    const element = $(elementRef);
     await element.waitForExist({timeout: time});
   },
   switchFrame: async function(frameRef) {
-    let iframe = await $(frameRef);
+    const iframe = await $(frameRef);
     browser.switchFrame(iframe);
   },
   async loadAndWaitForElement(url, selector, pause = 3000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {

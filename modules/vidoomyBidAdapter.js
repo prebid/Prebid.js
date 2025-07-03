@@ -204,12 +204,12 @@ const render = (bid) => {
 
 const interpretResponse = (serverResponse, bidRequest) => {
   try {
-    let responseBodies = serverResponse.body;
+    const responseBodies = serverResponse.body;
     if (!Array.isArray(responseBodies) || responseBodies.length === 0) return;
 
     const bids = [];
 
-    for (let responseBody of responseBodies) {
+    for (const responseBody of responseBodies) {
       if (!responseBody) continue;
       if (responseBody.mediaType === 'video') {
         responseBody.ad = responseBody.vastUrl || responseBody.vastXml;

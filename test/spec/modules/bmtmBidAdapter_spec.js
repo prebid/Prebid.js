@@ -5,7 +5,7 @@ const BIDDER_CODE = 'bmtm';
 const PLACEMENT_ID = 329;
 
 describe('brightMountainMediaBidAdapter_spec', function () {
-  let bidBanner = {
+  const bidBanner = {
     bidId: '2dd581a2b6281d',
     bidder: BIDDER_CODE,
     bidderRequestId: '145e1d6a7837c9',
@@ -69,7 +69,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     ]
   };
 
-  let bidVideo = {
+  const bidVideo = {
     bidId: '2dd581a2b6281d',
     bidder: BIDDER_CODE,
     bidderRequestId: '145e1d6a7837c9',
@@ -90,7 +90,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
   };
 
-  let bidderRequest = {
+  const bidderRequest = {
     bidderCode: BIDDER_CODE,
     auctionId: 'fffffff-ffff-ffff-ffff-ffffffffffff',
     bidderRequestId: 'ffffffffffffff',
@@ -120,8 +120,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
   });
 
   describe('buildRequests', function () {
-    let request = spec.buildRequests([bidBanner], bidderRequest)[0];
-    let data = JSON.parse(request.data);
+    const request = spec.buildRequests([bidBanner], bidderRequest)[0];
+    const data = JSON.parse(request.data);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(request).to.exist;
@@ -166,12 +166,12 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(data.user.ext).to.have.property('eids');
       expect(data.user.ext.eids).to.not.equal(null).and.to.not.be.undefined;
       expect(data.user.ext.eids.length).to.greaterThan(0);
-      for (let index in data.user.ext.eids) {
-        let eid = data.user.ext.eids[index];
+      for (const index in data.user.ext.eids) {
+        const eid = data.user.ext.eids[index];
         expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
         expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
-        for (let uidsIndex in eid.uids) {
-          let uid = eid.uids[uidsIndex];
+        for (const uidsIndex in eid.uids) {
+          const uid = eid.uids[uidsIndex];
           expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
         }
       }
@@ -189,8 +189,8 @@ describe('brightMountainMediaBidAdapter_spec', function () {
 
     it('Returns valid data if array of bids is valid for video', function () {
       bidderRequest.bids = [bidVideo];
-      let serverRequest = spec.buildRequests([bidVideo], bidderRequest)[0];
-      let data = JSON.parse(serverRequest.data);
+      const serverRequest = spec.buildRequests([bidVideo], bidderRequest)[0];
+      const data = JSON.parse(serverRequest.data);
       expect(data).to.be.an('object');
       expect(data).to.have.property('imp');
       expect(data.imp.length).to.greaterThan(0);
@@ -202,7 +202,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
   });
 
   describe('interpretResponse', function () {
-    let resObjectBanner = {
+    const resObjectBanner = {
       'id': '2763-05f22da29b3ffb6-6959',
       'bidid': 'e5b41111bec9e4a4e94b85d082f8fb08',
       'seatbid': [
@@ -231,7 +231,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       'cur': 'USD'
     };
 
-    let resObjectVideo = {
+    const resObjectVideo = {
       'id': '2763-05f22da29b3ffb6-6959',
       'bidid': 'e5b41111bec9e4a4e94b85d082f8fb08',
       'seatbid': [
@@ -267,7 +267,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
 
       expect(bidResponse).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < bidResponse.length; i++) {
-        let dataItem = bidResponse[i];
+        const dataItem = bidResponse[i];
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
         expect(dataItem.width).to.be.a('number');
@@ -289,7 +289,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
 
       expect(bidResponse).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < bidResponse.length; i++) {
-        let dataItem = bidResponse[i];
+        const dataItem = bidResponse[i];
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
         expect(dataItem.width).to.be.a('number');
@@ -313,7 +313,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
   });
 
   describe('getUserSyncs', function () {
-    let syncoptionsIframe = {
+    const syncoptionsIframe = {
       'iframeEnabled': 'true'
     }
     it('should return iframe sync option', function () {

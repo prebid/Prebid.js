@@ -140,7 +140,7 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
     adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
     const context = adUnit.ortb2Imp.ext;
 
-    let adserverSlot = deepAccess(context, 'data.adserver.adslot');
+    const adserverSlot = deepAccess(context, 'data.adserver.adslot');
 
     // @todo: check if should have precedence over customPreAuction and defaultPreAuction
     if (context.gpid) return;

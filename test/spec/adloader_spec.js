@@ -37,7 +37,7 @@ describe('adLoader', function () {
     });
 
     it('callback function can be passed to the function', function() {
-      let callback = function() {};
+      const callback = function() {};
       adLoader.loadExternalScript('someURL1', MODULE_TYPE_PREBID, 'debugging', callback);
       expect(utilsinsertElementStub.called).to.be.true;
     });
@@ -91,7 +91,7 @@ describe('adLoader', function () {
         }
       },
       attrs = {'z': 'A', 'y': 2};
-    let script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
+    const script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);
   });

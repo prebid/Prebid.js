@@ -67,7 +67,7 @@ function resetTestVars() {
   adQueueCoordinatorFactoryMock = () => adQueueCoordinatorMock;
 }
 
-let pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator) => {
+const pbVideoFactory = (videoCore, getConfig, pbGlobal, requestBids, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator) => {
   const pbVideo = PbVideo(
     videoCore || videoCoreMock,
     getConfig || getConfigMock,
@@ -87,9 +87,9 @@ describe('Prebid Video', function () {
   beforeEach(() => resetTestVars());
 
   describe('Setting video to config', function () {
-    let providers = [{ divId: 'div1' }, { divId: 'div2' }];
+    const providers = [{ divId: 'div1' }, { divId: 'div2' }];
     let getConfigCallback;
-    let getConfig = (propertyName, callback) => {
+    const getConfig = (propertyName, callback) => {
       if (propertyName === 'video') {
         getConfigCallback = callback;
       }
@@ -211,8 +211,8 @@ describe('Prebid Video', function () {
 
   describe('Ad tag injection', function () {
     let auctionEndCallback;
-    let providers = [{ divId: 'div1', adServer: {} }, { divId: 'div2' }];
-    let getConfig = (propertyName, callbackFn) => {
+    const providers = [{ divId: 'div1', adServer: {} }, { divId: 'div2' }];
+    const getConfig = (propertyName, callbackFn) => {
       if (propertyName === 'video') {
         if (callbackFn) {
           callbackFn({ video: { providers } });

@@ -373,13 +373,13 @@ function getSizes(bid) {
 }
 
 function concatSizes(bid) {
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  let nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  const videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  const nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
+  const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
-    let mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
+    const mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
     return mediaTypesSizes
       .reduce(function (acc, currSize) {
         if (isArray(currSize)) {

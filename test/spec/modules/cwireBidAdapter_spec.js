@@ -11,7 +11,7 @@ describe("C-WIRE bid adapter", () => {
   config.setConfig({ debug: true });
   let sandbox;
   const adapter = newBidder(spec);
-  let bidRequests = [
+  const bidRequests = [
     {
       bidder: "cwire",
       params: {
@@ -87,7 +87,7 @@ describe("C-WIRE bid adapter", () => {
 
     it("should add creativeId if url parameter given", function () {
       // set from bid.params
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -108,7 +108,7 @@ describe("C-WIRE bid adapter", () => {
       });
     });
     it("width and height should be set", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -140,7 +140,7 @@ describe("C-WIRE bid adapter", () => {
       });
     });
     it("css maxWidth should be set", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -165,7 +165,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("read from url parameter", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -188,7 +188,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("read from url parameter", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -211,7 +211,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("read from url parameter", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -236,7 +236,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("cw_id is set", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -261,7 +261,7 @@ describe("C-WIRE bid adapter", () => {
       });
     });
     it("pageId flattened", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -277,7 +277,7 @@ describe("C-WIRE bid adapter", () => {
 
   describe("pageId and placementId are required params", function () {
     it("invalid request", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       delete bidRequest.params;
 
       const valid = spec.isBidRequestValid(bidRequest);
@@ -285,7 +285,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("valid request", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       bidRequest.params.pageId = 42;
       bidRequest.params.placementId = 42;
 
@@ -294,7 +294,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("cwcreative must be of type string", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       bidRequest.params.pageId = 42;
       bidRequest.params.placementId = 42;
 
@@ -303,7 +303,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("build request adds pageId", function () {
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -314,7 +314,7 @@ describe("C-WIRE bid adapter", () => {
 
   describe("process serverResponse", function () {
     it("html to ad mapping", function () {
-      let bidResponse = deepClone(response);
+      const bidResponse = deepClone(response);
       const bids = spec.interpretResponse(bidResponse, {});
 
       expect(bids[0].ad).to.exist;
@@ -328,7 +328,7 @@ describe("C-WIRE bid adapter", () => {
       expect(userSyncs).to.be.empty;
     });
     it("empty user-syncs if no syncOption enabled", function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: 1,
@@ -343,7 +343,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("user-syncs with enabled pixel option", function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: 1,
@@ -352,7 +352,7 @@ describe("C-WIRE bid adapter", () => {
         gdprApplies: false,
         consentString: "testConsentString",
       };
-      let synOptions = { pixelEnabled: true, iframeEnabled: true };
+      const synOptions = { pixelEnabled: true, iframeEnabled: true };
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal("image");
@@ -362,7 +362,7 @@ describe("C-WIRE bid adapter", () => {
     });
 
     it("user-syncs with enabled iframe option", function () {
-      let gdprConsent = {
+      const gdprConsent = {
         vendorData: {
           purpose: {
             consents: {
@@ -373,7 +373,7 @@ describe("C-WIRE bid adapter", () => {
         gdprApplies: true,
         consentString: "abc123",
       };
-      let synOptions = { iframeEnabled: true };
+      const synOptions = { iframeEnabled: true };
       const userSyncs = spec.getUserSyncs(synOptions, {}, gdprConsent, {});
 
       expect(userSyncs[0].type).to.equal("iframe");
@@ -391,7 +391,7 @@ describe("C-WIRE bid adapter", () => {
     it("should include autoplay: true when autoplay is enabled", function () {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(true);
 
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
@@ -401,7 +401,7 @@ describe("C-WIRE bid adapter", () => {
     it("should include autoplay: false when autoplay is disabled", function () {
       sandbox.stub(autoplayLib, "isAutoplayEnabled").returns(false);
 
-      let bidRequest = deepClone(bidRequests[0]);
+      const bidRequest = deepClone(bidRequests[0]);
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 

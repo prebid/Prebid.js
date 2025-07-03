@@ -16,7 +16,7 @@ const testEnvelope = 'eyJ0aW1lc3RhbXAiOjE2OTEwNjU5MzQwMTcsInZlcnNpb24iOiIxLjIuMS
 const testEnvelopeValue = '{"timestamp":1691065934017,"version":"1.2.1","envelope":"AhHzu20SwXvzOHOww6nLZ80-whh7cgwAjZYMvD4R0WOnqEW57msGekj_Pz56oQppgO9PvhREkuGsiLtnzsp6hmwx4mM4M-7-G-v6"}';
 
 function setTestEnvelopeCookie () {
-  let now = new Date();
+  const now = new Date();
   now.setTime(now.getTime() + 3000);
   storage.setCookie('_lr_env', testEnvelope, now.toUTCString());
 }
@@ -50,10 +50,10 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should call the LiveRamp envelope endpoint', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
     request.respond(
       200,
@@ -64,32 +64,32 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should NOT call the LiveRamp envelope endpoint if gdpr applies but consent string is empty string', function () {
-    let consentData = {
+    const consentData = {
       gdprApplies: true,
       consentString: ''
     };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
     expect(submoduleCallback).to.be.undefined;
   });
 
   it('should NOT call the LiveRamp envelope endpoint if gdpr applies but consent string is missing', function () {
-    let consentData = { gdprApplies: true };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
+    const consentData = { gdprApplies: true };
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
     expect(submoduleCallback).to.be.undefined;
   });
 
   it('should call the LiveRamp envelope endpoint with IAB consent string v2', function () {
-    let callBackSpy = sinon.spy();
-    let consentData = {
+    const callBackSpy = sinon.spy();
+    const consentData = {
       gdprApplies: true,
       consentString: 'CO4VThZO4VTiuADABBENAzCgAP_AAEOAAAAAAwwAgAEABhAAgAgAAA.YAAAAAAAAAA',
       vendorData: {
         tcfPolicyVersion: 2
       }
     };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData}).callback;
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData}).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=4&cv=CO4VThZO4VTiuADABBENAzCgAP_AAEOAAAAAAwwAgAEABhAAgAgAAA.YAAAAAAAAAA');
     request.respond(
       200,
@@ -105,10 +105,10 @@ describe('IdentityLinkId tests', function () {
       gppString: 'DBABLA~BVVqAAAACqA.QA',
       applicableSections: [7]
     };
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&gpp=DBABLA~BVVqAAAACqA.QA&gpp_sid=7');
     request.respond(
       200,
@@ -124,10 +124,10 @@ describe('IdentityLinkId tests', function () {
       gppString: '',
       applicableSections: [7]
     };
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
     request.respond(
       200,
@@ -138,10 +138,10 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should not throw Uncaught TypeError when envelope endpoint returns empty response', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
     request.respond(
       204,
@@ -152,10 +152,10 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should log an error and continue to callback if ajax request errors', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
     request.respond(
       503,
@@ -166,21 +166,21 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should not call the LiveRamp envelope endpoint if cookie _lr_retry_request exist', function () {
-    let now = new Date();
+    const now = new Date();
     now.setTime(now.getTime() + 3000);
     storage.setCookie('_lr_retry_request', 'true', now.toUTCString());
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request).to.be.eq(undefined);
   });
 
   it('should call the LiveRamp envelope endpoint if cookie _lr_retry_request does not exist and notUse3P config property was not set', function () {
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
     request.respond(
       200,
@@ -192,18 +192,18 @@ describe('IdentityLinkId tests', function () {
 
   it('should not call the LiveRamp envelope endpoint if config property notUse3P is set to true', function () {
     defaultConfigParams.params.notUse3P = true;
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request).to.be.eq(undefined);
   });
 
   it('should get envelope from storage if ats is not present on a page and pass it to callback', function () {
     setTestEnvelopeCookie();
-    let envelopeValueFromStorage = getEnvelopeFromStorage();
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const envelopeValueFromStorage = getEnvelopeFromStorage();
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(callBackSpy.calledOnce).to.be.true;
@@ -215,18 +215,18 @@ describe('IdentityLinkId tests', function () {
     const stubAtob = sinon.stub(window, 'atob');
     stubAtob.onFirstCall().throws(new Error('bad'));
     stubAtob.onSecondCall().callsFake(realAtob);
-    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    const envelopeValueFromStorage = getEnvelopeFromStorage();
     stubAtob.restore();
     expect(stubAtob.calledTwice).to.be.true;
     expect(envelopeValueFromStorage).to.equal(testEnvelopeValue);
   })
 
   it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {
-    let envelopeValueFromStorage = getEnvelopeFromStorage();
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const envelopeValueFromStorage = getEnvelopeFromStorage();
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[0];
+    const request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
     request.respond(
       204,
@@ -238,13 +238,13 @@ describe('IdentityLinkId tests', function () {
 
   it('if ats is present on a page, and envelope is generated and stored in storage, call a callback', function () {
     setTestEnvelopeCookie();
-    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    const envelopeValueFromStorage = getEnvelopeFromStorage();
     window.ats = {retrieveEnvelope: function() {
     }}
     // mock ats.retrieveEnvelope to return envelope
     stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage })
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    const callBackSpy = sinon.spy();
+    const submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(envelopeValueFromStorage).to.be.eq(testEnvelopeValue);

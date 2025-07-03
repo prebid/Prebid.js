@@ -268,14 +268,14 @@ export const spec = {
 
     if (storage.localStorageIsEnabled()) {
       const prefix = request.bidRequest.params.prefix || 'adHash';
-      let recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
+      const recentAdsPrebid = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAdsPrebid') || '[]');
       recentAdsPrebid.push([
         (new Date().getTime() / 1000) | 0,
         responseBody.creatives[0].advertiserId,
         responseBody.creatives[0].budgetId,
         responseBody.creatives[0].expectedHashes.length ? responseBody.creatives[0].expectedHashes[0] : '',
       ]);
-      let recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
+      const recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
       storage.setDataInLocalStorage(prefix + 'recentAdsPrebid', recentAdsPrebidFinal);
     }
 

@@ -87,7 +87,7 @@ export const spec = {
       return syncs;
     }
 
-    let appendGdprParams = function (url, gdprParams) {
+    const appendGdprParams = function (url, gdprParams) {
       if (gdprParams === null) {
         return url;
       }
@@ -107,7 +107,7 @@ export const spec = {
     serverResponses.forEach(resp => {
       if (resp.body) {
         Object.keys(resp.body).map(function(key, index) {
-          let respObject = resp.body[key];
+          const respObject = resp.body[key];
           if (respObject['syncs'] !== undefined &&
             Array.isArray(respObject.syncs) &&
             respObject.syncs.length > 0) {

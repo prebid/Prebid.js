@@ -8,7 +8,7 @@ const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
 describe('admediaBidAdapter', function () {
   const adapter = newBidder(spec);
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       adUnitCode: 'adunit-code',
 	  bidder: 'admedia',
 	  bidId: 'g7ghhs78',
@@ -26,7 +26,7 @@ describe('admediaBidAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         adUnitCode: 'adunit-code',
         bidder: 'admedia',
@@ -42,7 +42,7 @@ describe('admediaBidAdapter', function () {
       }
     ];
 
-    let bidderRequests = {
+    const bidderRequests = {
       refererInfo: {
         page: 'https://test.com',
       }
@@ -55,7 +55,7 @@ describe('admediaBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidRequest = {
+    const bidRequest = {
       method: 'POST',
       url: ENDPOINT_URL,
       data: {
@@ -74,7 +74,7 @@ describe('admediaBidAdapter', function () {
 		  'referer': 'https%3A%2F%test.com'
       }
     };
-    let serverResponse = {
+    const serverResponse = {
       body:
 			  {
 			    'tags': [
@@ -99,7 +99,7 @@ describe('admediaBidAdapter', function () {
 
     };
     it('should get the correct bid response', function () {
-      let expectedResponse =
+      const expectedResponse =
 		  {
 		    'tags': [
 			  {
@@ -120,7 +120,7 @@ describe('admediaBidAdapter', function () {
 			  }
 		    ]
 		  }
-      let result = spec.interpretResponse(serverResponse, bidRequest);
+      const result = spec.interpretResponse(serverResponse, bidRequest);
 	  expect(result).to.be.an('array').that.is.not.empty;
 	  expect(Object.keys(result[0])).to.have.members(
         Object.keys(expectedResponse.tags[0])

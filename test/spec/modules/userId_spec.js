@@ -36,13 +36,13 @@ import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 import {extractEids} from '../../../modules/prebidServerBidAdapter/bidderConfig.js';
-import {generateSubmoduleContainers} from '../../../modules/userId/index.js';
+import {generateSubmoduleContainers, addIdData } from '../../../modules/userId/index.js';
 import { registerActivityControl } from '../../../src/activities/rules.js';
-import { addIdData } from '../../../modules/userId/index.js';
+
 import { discloseStorageUse, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE, getStorageManager } from '../../../src/storageManager.js';
 
-let assert = require('chai').assert;
-let expect = require('chai').expect;
+const assert = require('chai').assert;
+const expect = require('chai').expect;
 const EXPIRED_COOKIE_DATE = 'Thu, 01 Jan 1970 00:00:01 GMT';
 const CONSENT_LOCAL_STORAGE_NAME = '_pbjs_userid_consent_data';
 
@@ -282,8 +282,8 @@ describe('User ID', function () {
     });
 
     it('Check same cookie behavior', function () {
-      let adUnits1 = [getAdUnitMock()];
-      let adUnits2 = [getAdUnitMock()];
+      const adUnits1 = [getAdUnitMock()];
+      const adUnits2 = [getAdUnitMock()];
       let innerAdUnits1;
       let innerAdUnits2;
 
@@ -318,8 +318,8 @@ describe('User ID', function () {
     });
 
     it('Check different cookies', function () {
-      let adUnits1 = [getAdUnitMock()];
-      let adUnits2 = [getAdUnitMock()];
+      const adUnits1 = [getAdUnitMock()];
+      const adUnits2 = [getAdUnitMock()];
       let innerAdUnits1;
       let innerAdUnits2;
       let pubcid1;
@@ -368,7 +368,7 @@ describe('User ID', function () {
     });
 
     it('Use existing cookie', function () {
-      let adUnits = [getAdUnitMock()];
+      const adUnits = [getAdUnitMock()];
       let innerAdUnits;
 
       init(config);
@@ -390,7 +390,7 @@ describe('User ID', function () {
     });
 
     it('Extend cookie', function () {
-      let adUnits = [getAdUnitMock()];
+      const adUnits = [getAdUnitMock()];
       let innerAdUnits;
       let customConfig = getConfigMock(['pubCommonId', 'pubcid_alt', 'cookie']);
       customConfig = addConfig(customConfig, 'params', {extend: true});
@@ -414,7 +414,7 @@ describe('User ID', function () {
     });
 
     it('Disable auto create', function () {
-      let adUnits = [getAdUnitMock()];
+      const adUnits = [getAdUnitMock()];
       let innerAdUnits;
       let customConfig = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
       customConfig = addConfig(customConfig, 'params', {create: false});
@@ -909,7 +909,7 @@ describe('User ID', function () {
     })
 
     it('should set googletag ppid correctly', function () {
-      let adUnits = [getAdUnitMock()];
+      const adUnits = [getAdUnitMock()];
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
@@ -931,7 +931,7 @@ describe('User ID', function () {
     });
 
     it('should set googletag ppid correctly when prioritized according to config available to core', () => {
-      let adUnits = [getAdUnitMock()];
+      const adUnits = [getAdUnitMock()];
       init(config);
       setSubmoduleRegistry([
         // some of the ids are padded to have length >= 32 characters
@@ -1036,7 +1036,7 @@ describe('User ID', function () {
     });
 
     it('should set PPID when the source needs to call out to the network', () => {
-      let adUnits = [getAdUnitMock()];
+      const adUnits = [getAdUnitMock()];
       init(config);
       const callback = sinon.stub();
       setSubmoduleRegistry([{
@@ -1073,7 +1073,7 @@ describe('User ID', function () {
     });
 
     it('should log a warning if PPID too big or small', function () {
-      let adUnits = [getAdUnitMock()];
+      const adUnits = [getAdUnitMock()];
 
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
@@ -1173,7 +1173,7 @@ describe('User ID', function () {
       beforeEach(() => {
         mockIdCallback = sinon.stub();
         coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
-        let mockIdSystem = {
+        const mockIdSystem = {
           name: 'mockId',
           decode: function(value) {
             return {
@@ -1299,9 +1299,9 @@ describe('User ID', function () {
       })
     });
     it('pbjs.refreshUserIds updates submodules', function(done) {
-      let sandbox = sinon.createSandbox();
-      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
-      let mockIdSystem = {
+      const sandbox = sinon.createSandbox();
+      const mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+      const mockIdSystem = {
         name: 'mockId',
         decode: function(value) {
           return {
@@ -1403,11 +1403,11 @@ describe('User ID', function () {
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('refreshedid', '', EXPIRED_COOKIE_DATE);
 
-      let sandbox = sinon.createSandbox();
-      let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
-      let refreshUserIdsCallback = sandbox.stub();
+      const sandbox = sinon.createSandbox();
+      const mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
+      const refreshUserIdsCallback = sandbox.stub();
 
-      let mockIdSystem = {
+      const mockIdSystem = {
         name: 'mockId',
         decode: function(value) {
           return {
@@ -1417,9 +1417,9 @@ describe('User ID', function () {
         getId: mockIdCallback
       };
 
-      let refreshedIdCallback = sandbox.stub().returns({id: {'REFRESH': '1111'}});
+      const refreshedIdCallback = sandbox.stub().returns({id: {'REFRESH': '1111'}});
 
-      let refreshedIdSystem = {
+      const refreshedIdSystem = {
         name: 'refreshedId',
         decode: function(value) {
           return {
@@ -2659,7 +2659,7 @@ describe('User ID', function () {
         });
         const encrypt = false;
         return (getGlobal()).getEncryptedEidsForSource(signalSources[0], encrypt).then((data) => {
-          let users = (getGlobal()).getUserIdsAsEids();
+          const users = (getGlobal()).getUserIdsAsEids();
           expect(data).to.equal(users[0].uids[0].id);
         })
       });

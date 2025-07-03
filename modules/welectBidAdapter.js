@@ -66,12 +66,12 @@ export const spec = {
     }
 
     return validBidRequests.map((bidRequest) => {
-      let rawSizes =
+      const rawSizes =
         deepAccess(bidRequest, 'mediaTypes.video.playerSize') ||
         bidRequest.sizes;
-      let size = rawSizes[0];
+      const size = rawSizes[0];
 
-      let url = `https://${WELECT_DOMAIN}/api/v2/preflight/${bidRequest.params.placementId}`;
+      const url = `https://${WELECT_DOMAIN}/api/v2/preflight/${bidRequest.params.placementId}`;
 
       const data = {
         width: size[0],

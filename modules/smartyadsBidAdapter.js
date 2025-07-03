@@ -23,11 +23,11 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let winTop = window;
+    const winTop = window;
     let location;
     location = bidderRequest?.refererInfo ?? null;
-    let placements = [];
-    let request = {
+    const placements = [];
+    const request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'host': location?.domain ?? '',
@@ -51,11 +51,11 @@ export const spec = {
     let adUrl;
 
     for (let i = 0; i < len; i++) {
-      let bid = validBidRequests[i];
+      const bid = validBidRequests[i];
 
       if (i === 0) adUrl = getAdUrlByRegion(bid);
 
-      let traff = bid.params.traffic || BANNER;
+      const traff = bid.params.traffic || BANNER;
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,

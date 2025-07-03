@@ -45,9 +45,9 @@ var eventQueue = [
 
 var startAuction = 0;
 var bidRequestTimeout = 0;
-let analyticsType = 'endpoint';
+const analyticsType = 'endpoint';
 
-let hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
+const hadronAnalyticsAdapter = Object.assign(adapter({url: HADRON_ANALYTICS_URL, analyticsType}), {
   track({eventType, args}) {
     args = args ? utils.deepClone(args) : {};
     var data = {};

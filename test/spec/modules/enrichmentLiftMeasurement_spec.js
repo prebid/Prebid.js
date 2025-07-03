@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig } from "../../../modules/enrichmentLiftMeasurement";
+import { getCalculatedSubmodules, internals, init, reset, storeSplitsMethod, storeTestConfig, suppressionMethod, getStoredTestConfig, compareConfigs, STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement";
 import {server} from 'test/mocks/xhr.js';
 import { config } from "../../../src/config"
 import { isInteger } from "../../../src/utils";
@@ -11,8 +11,6 @@ import { disableAjaxForAnalytics, enableAjaxForAnalytics } from "../../mocks/ana
 import AnalyticsAdapter from "../../../libraries/analyticsAdapter/AnalyticsAdapter";
 import { EVENTS } from "../../../src/constants";
 import { getCoreStorageManager } from "../../../src/storageManager";
-import { compareConfigs } from "../../../modules/enrichmentLiftMeasurement";
-import { STORAGE_KEY } from "../../../modules/enrichmentLiftMeasurement";
 
 describe('enrichmentLiftMeasurement', () => {
   beforeEach(() => {

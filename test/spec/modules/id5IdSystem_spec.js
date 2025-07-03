@@ -831,17 +831,17 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass gpp_string and gpp_sid to ID5 server', function () {
-      let xhrServerMock = new XhrServerMock(server);
+      const xhrServerMock = new XhrServerMock(server);
       const gppData = {
         ready: true,
         gppString: 'GPP_STRING',
         applicableSections: [2]
       };
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, ID5_STORED_OBJ);
+      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), {gpp: gppData}, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
+          const requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.gpp_string).is.equal('GPP_STRING');
           expect(requestBody.gpp_sid).contains(2);
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
@@ -865,12 +865,12 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass true link info to ID5 server even when true link is not booted', function () {
-      let xhrServerMock = new XhrServerMock(server);
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      const xhrServerMock = new XhrServerMock(server);
+      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
+          const requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.true_link).is.eql({booted: false});
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
           return submoduleResponse;
@@ -878,18 +878,18 @@ describe('ID5 ID System', function () {
     });
 
     it('should pass full true link info to ID5 server when true link is booted', function () {
-      let xhrServerMock = new XhrServerMock(server);
-      let trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
+      const xhrServerMock = new XhrServerMock(server);
+      const trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
       window.id5Bootstrap = {
         getTrueLinkInfo: function () {
           return trueLinkResponse;
         }
       };
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      const submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
         .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
+          const requestBody = JSON.parse(fetchRequest.requestBody);
           expect(requestBody.true_link).is.eql(trueLinkResponse);
           fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
           return submoduleResponse;
@@ -1029,13 +1029,13 @@ describe('ID5 ID System', function () {
 
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
       const xhrServerMock = new XhrServerMock(server);
-      let storedObject = ID5_STORED_OBJ;
+      const storedObject = ID5_STORED_OBJ;
       storedObject.nbPage = 1;
       const initialLocalStorageValue = JSON.stringify(storedObject);
       storeInStorage(id5System.ID5_STORAGE_NAME, initialLocalStorageValue, 1);
       storeInStorage(`${id5System.ID5_STORAGE_NAME}_last`, expDaysStr(-1), 1);
 
-      let id5Config = getFetchLocalStorageConfig();
+      const id5Config = getFetchLocalStorageConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
       id5Config.userSync.auctionDelay = 0; // do not trigger callback before auction
       init(config);
@@ -1209,7 +1209,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should decode all ids from a stored object with ids', function () {
-      let decoded = id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_IDS_ALL, getId5FetchConfig());
+      const decoded = id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_IDS_ALL, getId5FetchConfig());
       expect(decoded.id5id).is.eql({
         uid: IDS_ID5ID.eid.uids[0].id,
         ext: IDS_ID5ID.eid.uids[0].ext

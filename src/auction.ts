@@ -173,7 +173,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _bidsRejected: Partial<Bid>[] = [];
   let _callback = callback;
   let _bidderRequests: BidderRequest<BidderCode>[] = [];
-  let _bidsReceived = ttlCollection<Bid>({
+  const _bidsReceived = ttlCollection<Bid>({
     startTime: (bid) => bid.responseTimestamp,
     ttl: (bid) => getMinBidCacheTTL() == null ? null : Math.max(getMinBidCacheTTL(), bid.ttl) * 1000
   });
@@ -258,7 +258,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
-          let userSyncConfig = config.getConfig('userSync') ?? {} as any;
+          const userSyncConfig = config.getConfig('userSync') ?? {} as any;
           if (!userSyncConfig.enableOverride) {
             // Delay the auto sync by the config delay
             syncUsers(userSyncConfig.syncDelay);
@@ -284,7 +284,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
 
-    let bidRequests = metrics.measureTime('requestBids.makeRequests',
+    const bidRequests = metrics.measureTime('requestBids.makeRequests',
       () => adapterManager.makeBidRequests(_adUnits, _auctionStart, _auctionId, _timeout, _labels, ortb2Fragments, metrics));
     logInfo(`Bids Requested for Auction with id: ${_auctionId}`, bidRequests);
 
@@ -310,8 +310,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       addBidRequests(bidRequest);
     });
 
-    let requests = {};
-    let call = {
+    const requests = {};
+    const call = {
       bidRequests,
       run: () => {
         startAuctionTimer();
@@ -320,7 +320,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
         events.emit(EVENTS.AUCTION_INIT, getProperties());
 
-        let callbacks = auctionCallbacks(auctionDone, this);
+        const callbacks = auctionCallbacks(auctionDone, this);
         adapterManager.callBids(_adUnits, bidRequests, callbacks.addBidResponse, callbacks.adapterDone, {
           request(source, origin) {
             increment(outstandingRequests, origin);
@@ -357,11 +357,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     function runIfOriginHasCapacity(call) {
       let hasCapacity = true;
 
-      let maxRequests = config.getConfig('maxRequestsPerOrigin') || MAX_REQUESTS_PER_ORIGIN;
+      const maxRequests = config.getConfig('maxRequestsPerOrigin') || MAX_REQUESTS_PER_ORIGIN;
 
       call.bidRequests.some(bidRequest => {
         let requests = 1;
-        let source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC) ? 's2s'
+        const source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC) ? 's2s'
           : bidRequest.bidderCode;
         // if we have no previous info on this source just let them through
         if (sourceInfo[source]) {
@@ -483,8 +483,8 @@ export type AddBidResponse = {
 export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionManager.index} = {}) {
   let outstandingBidsAdded = 0;
   let allAdapterCalledDone = false;
-  let bidderRequestsDone = new Set();
-  let bidResponseMap = {};
+  const bidderRequestsDone = new Set();
+  const bidResponseMap = {};
 
   function afterBidAdded() {
     outstandingBidsAdded--;
@@ -502,7 +502,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
   function acceptBidResponse(adUnitCode: string, bid: Partial<Bid>) {
     handleBidResponse(adUnitCode, bid, (done) => {
-      let bidResponse = getPreparedBidForAuction(bid);
+      const bidResponse = getPreparedBidForAuction(bid);
       events.emit(EVENTS.BID_ACCEPTED, bidResponse);
       if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
@@ -528,7 +528,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
   function adapterDone() {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let bidderRequest = this;
+    const bidderRequest = this;
     let bidderRequests = auctionInstance.getBidRequests();
     const auctionOptionsConfig = config.getConfig('auctionOptions');
 
@@ -1074,7 +1074,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 }
 
 export function adjustBids(bid) {
-  let bidPriceAdjusted = adjustCpm(bid.cpm, bid);
+  const bidPriceAdjusted = adjustCpm(bid.cpm, bid);
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;

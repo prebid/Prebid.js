@@ -10,7 +10,7 @@ function encodeQueryData(data) {
 }
 
 describe('KubientAdapter', function () {
-  let bidBanner = {
+  const bidBanner = {
     bidId: '2dd581a2b6281d',
     bidder: 'kubient',
     bidderRequestId: '145e1d6a7837c9',
@@ -50,7 +50,7 @@ describe('KubientAdapter', function () {
       }
     }
   };
-  let bidVideo = {
+  const bidVideo = {
     bidId: '1dd581a2b6281d',
     bidder: 'kubient',
     bidderRequestId: '245e1d6a7837c9',
@@ -93,9 +93,9 @@ describe('KubientAdapter', function () {
       }
     }
   };
-  let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
-  let uspConsentData = '1YCC';
-  let bidderRequest = {
+  const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+  const uspConsentData = '1YCC';
+  const bidderRequest = {
     bidderCode: 'kubient',
     auctionId: 'fffffff-ffff-ffff-ffff-ffffffffffff',
     bidderRequestId: 'ffffffffffffff',
@@ -118,16 +118,16 @@ describe('KubientAdapter', function () {
     });
     it('Creates Banner 1 ServerRequest object with method, URL and data', function () {
       config.setConfig({'coppa': false});
-      let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
+      const serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
-        let serverRequest = serverRequests[i];
+        const serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
         expect(serverRequest.method).to.equal('POST');
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-        let data = JSON.parse(serverRequest.data);
+        const data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
         expect(data.v).to.exist.and.to.be.a('string');
@@ -138,7 +138,7 @@ describe('KubientAdapter', function () {
         expect(data.consent).to.equal(consentString);
         expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
         for (let j = 0; j < data['adSlots'].length; j++) {
-          let adSlot = data['adSlots'][i];
+          const adSlot = data['adSlots'][i];
           expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'banner', 'schain');
           expect(adSlot.bidId).to.be.a('string').and.to.equal(bidBanner.bidId);
           expect(adSlot.zoneId).to.be.a('string').and.to.equal(bidBanner.params.zoneid);
@@ -154,16 +154,16 @@ describe('KubientAdapter', function () {
     });
     it('Creates Video 1 ServerRequest object with method, URL and data', function () {
       config.setConfig({'coppa': false});
-      let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+      const serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
-        let serverRequest = serverRequests[i];
+        const serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
         expect(serverRequest.method).to.equal('POST');
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-        let data = JSON.parse(serverRequest.data);
+        const data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
         expect(data.v).to.exist.and.to.be.a('string');
@@ -174,7 +174,7 @@ describe('KubientAdapter', function () {
         expect(data.consent).to.equal(consentString);
         expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
         for (let j = 0; j < data['adSlots'].length; j++) {
-          let adSlot = data['adSlots'][i];
+          const adSlot = data['adSlots'][i];
           expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'floor', 'video', 'schain');
           expect(adSlot.bidId).to.be.a('string').and.to.equal(bidVideo.bidId);
           expect(adSlot.zoneId).to.be.a('string').and.to.equal(bidVideo.params.zoneid);
@@ -191,16 +191,16 @@ describe('KubientAdapter', function () {
     });
     it('Creates Banner 2 ServerRequest object with method, URL and data with bidBanner', function () {
       config.setConfig({'coppa': true});
-      let serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
+      const serverRequests = spec.buildRequests([bidBanner], Object.assign({}, bidderRequest, {bids: [bidBanner]}));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
-        let serverRequest = serverRequests[i];
+        const serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
         expect(serverRequest.method).to.equal('POST');
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-        let data = JSON.parse(serverRequest.data);
+        const data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'coppa', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
         expect(data.v).to.exist.and.to.be.a('string');
@@ -212,7 +212,7 @@ describe('KubientAdapter', function () {
         expect(data.consent).to.equal(consentString);
         expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
         for (let j = 0; j < data['adSlots'].length; j++) {
-          let adSlot = data['adSlots'][i];
+          const adSlot = data['adSlots'][i];
           expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'banner', 'schain');
           expect(adSlot.bidId).to.be.a('string').and.to.equal(bidBanner.bidId);
           expect(adSlot.zoneId).to.be.a('string').and.to.equal(bidBanner.params.zoneid);
@@ -228,16 +228,16 @@ describe('KubientAdapter', function () {
     });
     it('Creates Video 2 ServerRequest object with method, URL and data', function () {
       config.setConfig({'coppa': true});
-      let serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
+      const serverRequests = spec.buildRequests([bidVideo], Object.assign({}, bidderRequest, {bids: [bidVideo]}));
       expect(serverRequests).to.be.an('array');
       for (let i = 0; i < serverRequests.length; i++) {
-        let serverRequest = serverRequests[i];
+        const serverRequest = serverRequests[i];
         expect(serverRequest.method).to.be.a('string');
         expect(serverRequest.url).to.be.a('string');
         expect(serverRequest.data).to.be.a('string');
         expect(serverRequest.method).to.equal('POST');
         expect(serverRequest.url).to.equal('https://kssp.kbntx.ch/kubprebidjs');
-        let data = JSON.parse(serverRequest.data);
+        const data = JSON.parse(serverRequest.data);
         expect(data).to.be.an('object');
         expect(data).to.have.all.keys('v', 'requestId', 'adSlots', 'gdpr', 'coppa', 'referer', 'tmax', 'consent', 'consentGiven', 'uspConsent');
         expect(data.v).to.exist.and.to.be.a('string');
@@ -249,7 +249,7 @@ describe('KubientAdapter', function () {
         expect(data.consent).to.equal(consentString);
         expect(data.uspConsent).to.exist.and.to.equal(uspConsentData);
         for (let j = 0; j < data['adSlots'].length; j++) {
-          let adSlot = data['adSlots'][i];
+          const adSlot = data['adSlots'][i];
           expect(adSlot).to.have.all.keys('bidId', 'zoneId', 'floor', 'video', 'schain');
           expect(adSlot.bidId).to.be.a('string').and.to.equal(bidVideo.bidId);
           expect(adSlot.zoneId).to.be.a('string').and.to.equal(bidVideo.params.zoneid);
@@ -307,9 +307,9 @@ describe('KubientAdapter', function () {
             ]
           }
       };
-      let bannerResponses = spec.interpretResponse(serverResponse);
+      const bannerResponses = spec.interpretResponse(serverResponse);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta');
       expect(dataItem.requestId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].bidId);
       expect(dataItem.cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -358,9 +358,9 @@ describe('KubientAdapter', function () {
             ]
           }
       };
-      let bannerResponses = spec.interpretResponse(serverResponse);
+      const bannerResponses = spec.interpretResponse(serverResponse);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'ad', 'creativeId', 'width', 'height', 'currency', 'netRevenue', 'ttl', 'meta', 'mediaType', 'vastXml');
       expect(dataItem.requestId).to.exist.and.to.be.a('string').and.to.equal(serverResponse.body.seatbid[0].bid[0].bidId);
       expect(dataItem.cpm).to.exist.and.to.be.a('number').and.to.equal(serverResponse.body.seatbid[0].bid[0].price);
@@ -387,15 +387,15 @@ describe('KubientAdapter', function () {
       config.resetConfig();
     });
     it('should register the sync image without gdpr', function () {
-      let syncOptions = {
+      const syncOptions = {
         pixelEnabled: true
       };
-      let values = {};
-      let serverResponses = null;
-      let gdprConsent = {
+      const values = {};
+      const serverResponses = null;
+      const gdprConsent = {
         consentString: consentString
       };
-      let uspConsent = null;
+      const uspConsent = null;
       config.setConfig({
         userSync: {
           filterSettings: {
@@ -406,23 +406,23 @@ describe('KubientAdapter', function () {
           }
         }
       });
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
     it('should register the sync image with gdpr', function () {
-      let syncOptions = {
+      const syncOptions = {
         pixelEnabled: true
       };
-      let values = {};
-      let serverResponses = null;
-      let gdprConsent = {
+      const values = {};
+      const serverResponses = null;
+      const gdprConsent = {
         gdprApplies: true,
         consentString: consentString
       };
-      let uspConsent = null;
+      const uspConsent = null;
       config.setConfig({
         userSync: {
           filterSettings: {
@@ -433,7 +433,7 @@ describe('KubientAdapter', function () {
           }
         }
       });
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       values['gdpr'] = 1;
       values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
@@ -441,12 +441,12 @@ describe('KubientAdapter', function () {
       expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
     it('should register the sync image with gdpr vendor', function () {
-      let syncOptions = {
+      const syncOptions = {
         pixelEnabled: true
       };
-      let values = {};
-      let serverResponses = null;
-      let gdprConsent = {
+      const values = {};
+      const serverResponses = null;
+      const gdprConsent = {
         gdprApplies: true,
         consentString: consentString,
         apiVersion: 2,
@@ -458,7 +458,7 @@ describe('KubientAdapter', function () {
           }
         }
       };
-      let uspConsent = null;
+      const uspConsent = null;
       config.setConfig({
         userSync: {
           filterSettings: {
@@ -469,7 +469,7 @@ describe('KubientAdapter', function () {
           }
         }
       });
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       values['gdpr'] = 1;
       values['consent'] = consentString;
       expect(syncs).to.be.an('array').and.to.have.length(1);
@@ -477,15 +477,15 @@ describe('KubientAdapter', function () {
       expect(syncs[0].url).to.equal('https://matching.kubient.net/match/sp?' + encodeQueryData(values));
     });
     it('should register the sync image without gdpr and with uspConsent', function () {
-      let syncOptions = {
+      const syncOptions = {
         pixelEnabled: true
       };
-      let values = {};
-      let serverResponses = null;
-      let gdprConsent = {
+      const values = {};
+      const serverResponses = null;
+      const gdprConsent = {
         consentString: consentString
       };
-      let uspConsent = '1YNN';
+      const uspConsent = '1YNN';
       config.setConfig({
         userSync: {
           filterSettings: {
@@ -496,7 +496,7 @@ describe('KubientAdapter', function () {
           }
         }
       });
-      let syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
+      const syncs = spec.getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent);
       values['consent'] = consentString;
       values['usp'] = uspConsent;
       expect(syncs).to.be.an('array').and.to.have.length(1);

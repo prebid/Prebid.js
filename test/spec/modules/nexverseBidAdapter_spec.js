@@ -7,7 +7,7 @@ const BIDDER_ENDPOINT = 'https://rtb.nexverse.ai';
 
 describe('nexverseBidAdapterTests', () => {
   describe('isBidRequestValid', function () {
-    let sbid = {
+    const sbid = {
       'adUnitCode': 'div',
       'bidder': 'nexverse',
       'params': {
@@ -17,26 +17,26 @@ describe('nexverseBidAdapterTests', () => {
     };
 
     it('should not accept bid without required params', function () {
-      let isValid = spec.isBidRequestValid(sbid);
+      const isValid = spec.isBidRequestValid(sbid);
       expect(isValid).to.equal(false);
     });
 
     it('should return false when params are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when valid params are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.params = {uid: '', pubId: '', pubEpid: ''};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when valid params are not passed', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.adUnitCode = '';
       bid.mediaTypes = {
@@ -48,7 +48,7 @@ describe('nexverseBidAdapterTests', () => {
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
     it('should return true when valid params are passed as nums', function () {
-      let bid = Object.assign({}, sbid);
+      const bid = Object.assign({}, sbid);
       delete bid.params;
       bid.mediaTypes = {
         banner: {

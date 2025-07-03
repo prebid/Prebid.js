@@ -130,7 +130,7 @@ const VIDEO_BID_RESPONSE = {
 
 describe('BidtheatreAdapter', function () {
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': BIDDER_CODE,
       'params': {
         'publisherId': VALID_PUBLISHER_ID
@@ -143,7 +143,7 @@ describe('BidtheatreAdapter', function () {
     });
 
     it('should return false when required param is not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
 
@@ -152,7 +152,7 @@ describe('BidtheatreAdapter', function () {
     });
 
     it('should return false when required param of incorrect data type', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'publisherId': 12345
@@ -161,7 +161,7 @@ describe('BidtheatreAdapter', function () {
     });
 
     it('should return false when required param of incorrect length', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'publisherId': '73b20b3a-12a0-4869-b54e-8d42b55786e'

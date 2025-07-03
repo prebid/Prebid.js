@@ -56,7 +56,7 @@ export const spec = {
    */
   buildRequests: function(bidRequests) {
     return bidRequests.map(bidRequest => {
-      let giBidRequest = buildGiBidRequest(bidRequest);
+      const giBidRequest = buildGiBidRequest(bidRequest);
       return {
         method: 'GET',
         url: buildUrl(giBidRequest),
@@ -73,11 +73,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse) {
-    let responseBody = serverResponse.body;
+    const responseBody = serverResponse.body;
     const bids = [];
     if (responseBody && responseBody.no_bid !== 1) {
-      let size = parseSize(responseBody.size);
-      let bid = {
+      const size = parseSize(responseBody.size);
+      const bid = {
         requestId: responseBody.bid_id,
         ttl: BID_RESPONSE_TTL_SEC,
         netRevenue: IS_NET_REVENUE,
@@ -115,7 +115,7 @@ function buildUrl(bid) {
  * @return {object} GI bid request
  */
 function buildGiBidRequest(bidRequest) {
-  let giBidRequest = {
+  const giBidRequest = {
     bid_id: bidRequest.bidId,
     pid: bidRequest.params.pid, // required
     tid: bidRequest.params.tid, // required
@@ -165,7 +165,7 @@ function addVideo(videoParams, mediaTypesVideoParams, giBidRequest) {
   videoParams = videoParams || {};
   mediaTypesVideoParams = mediaTypesVideoParams || {};
 
-  for (let videoParam in VIDEO_PROPERTIES) {
+  for (const videoParam in VIDEO_PROPERTIES) {
     let paramValue;
 
     const mediaTypesVideoParam = VIDEO_PROPERTIES[videoParam];

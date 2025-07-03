@@ -511,7 +511,7 @@ class WeboramaRtdProvider {
    */
 
   #coerceSendToBidders(submoduleParams) {
-    let sendToBidders = submoduleParams.sendToBidders;
+    const sendToBidders = submoduleParams.sendToBidders;
 
     if (isPlainObject(sendToBidders)) {
       const sendToBiddersMap = Object.entries(sendToBidders).reduce(

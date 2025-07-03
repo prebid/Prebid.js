@@ -68,7 +68,7 @@ export const adqueryIdSubmodule = {
   getId(config) {
     logMessage('adqueryIdSubmodule getId');
 
-    let qid = storage.getDataFromLocalStorage('qid');
+    const qid = storage.getDataFromLocalStorage('qid');
 
     if (qid) {
       return {
@@ -110,7 +110,7 @@ export const adqueryIdSubmodule = {
             }
           }
           if (responseObj.qid) {
-            let myQid = responseObj.qid;
+            const myQid = responseObj.qid;
             storage.setDataInLocalStorage('qid', myQid);
             return callback(myQid);
           }

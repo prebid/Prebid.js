@@ -1,6 +1,5 @@
 import { expect } from 'chai';
-import { utiqIdSubmodule } from 'modules/utiqIdSystem.js';
-import { storage } from 'modules/utiqIdSystem.js';
+import { utiqIdSubmodule, storage } from 'modules/utiqIdSystem.js';
 
 describe('utiqIdSystem', () => {
   const utiqPassKey = 'utiqPass';

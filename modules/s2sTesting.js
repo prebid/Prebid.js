@@ -71,7 +71,7 @@ s2sTesting.getSource = function(sourceWeights = {}, bidSources = [SERVER, CLIENT
   // choose a source randomly based on weights
   var rndWeight = s2sTesting.globalRand * totWeight;
   for (var i = 0; i < bidSources.length; i++) {
-    let source = bidSources[i];
+    const source = bidSources[i];
     // choose the first source with an incremental weight > random weight
     if (rndWeight < srcIncWeight[source]) return source;
   }

@@ -171,7 +171,7 @@ function attachProperties(config, useDefaultValues = true) {
       return false
     }
 
-    for (let k of Object.keys(val)) {
+    for (const k of Object.keys(val)) {
       if (k !== 'secondaryBidders' && k !== 'suppressStaleRender' && k !== 'suppressExpiredRender') {
         logWarn(`Auction Options given an incorrect param: ${k}`)
         return false
@@ -276,7 +276,7 @@ interface GetConfig {
 }
 
 export function newConfig() {
-  let listeners = [];
+  const listeners = [];
   let defaults;
   let config;
   let bidderConfig;
@@ -285,7 +285,7 @@ export function newConfig() {
   function resetConfig() {
     defaults = {};
 
-    let newConfig = attachProperties({
+    const newConfig = attachProperties({
       // `debug` is equivalent to legacy `pbjs.logging` property
       debug: DEFAULT_DEBUG,
       bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
@@ -411,8 +411,8 @@ export function newConfig() {
       return;
     }
 
-    let topics = Object.keys(options);
-    let topicalConfig = {};
+    const topics = Object.keys(options);
+    const topicalConfig = {};
 
     topics.forEach(topic => {
       let option = options[topic];
@@ -531,7 +531,7 @@ export function newConfig() {
           bidderConfig[bidder] = attachProperties({}, false);
         }
         Object.keys(config.config).forEach(topic => {
-          let option = config.config[topic];
+          const option = config.config[topic];
           const currentConfig = bidderConfig[bidder][topic];
           if (isPlainObject(option) && (currentConfig == null || isPlainObject(currentConfig))) {
             const func = mergeFlag ? mergeDeep : Object.assign;

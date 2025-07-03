@@ -198,9 +198,9 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
 
 export function interpretResponseBuilder({addtlBidValidation = (bid) => true} = {}) {
   return function (serverResponse) {
-    let response = [];
+    const response = [];
     for (let i = 0; i < serverResponse.body.length; i++) {
-      let resItem = serverResponse.body[i];
+      const resItem = serverResponse.body[i];
       if (isBidResponseValid(resItem) && addtlBidValidation(resItem)) {
         const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
         resItem.meta = { ...resItem.meta, advertiserDomains };

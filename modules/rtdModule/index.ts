@@ -16,7 +16,7 @@ const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
-let registeredSubModules = [];
+const registeredSubModules = [];
 export let subModules = [];
 let _moduleConfig: RealTimeDataConfig;
 let _dataProviders = [];
@@ -117,7 +117,7 @@ function getConsentData() {
  */
 function initSubModules() {
   _userConsent = getConsentData();
-  let subModulesByOrder = [];
+  const subModulesByOrder = [];
   _dataProviders.forEach(provider => {
     const sm = ((registeredSubModules) || []).find(s => s.name === provider.name);
     const initResponse = sm && sm.init && sm.init(provider, _userConsent);
@@ -213,7 +213,7 @@ export function getAdUnitTargeting(auction) {
   if (!adUnitCodes) {
     return;
   }
-  let targeting = [];
+  const targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
     const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
     if (smTargeting && typeof smTargeting === 'object') {

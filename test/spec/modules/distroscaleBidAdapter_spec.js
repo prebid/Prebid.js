@@ -204,9 +204,9 @@ describe('distroscaleBidAdapter', function() {
 
     it('advertiserDomains is included when sent by server', function() {
       const ADOMAIN = ['advertiser_adomain'];
-      let RESPONSE_CLONE = utils.deepClone(RESPONSE);
+      const RESPONSE_CLONE = utils.deepClone(RESPONSE);
       RESPONSE_CLONE.body.seatbid[0].bid[0].adomain = utils.deepClone(ADOMAIN); ;
-      let result = spec.interpretResponse(RESPONSE_CLONE, REQUEST);
+      const result = spec.interpretResponse(RESPONSE_CLONE, REQUEST);
       expect(result[0].meta.advertiserDomains).to.deep.equal(ADOMAIN);
     });
   });

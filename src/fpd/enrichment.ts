@@ -77,7 +77,7 @@ export const enrichFPD = hook('sync', (fpd) => {
       }
 
       ortb2 = oneClient(ortb2);
-      for (let section of CLIENT_SECTIONS) {
+      for (const section of CLIENT_SECTIONS) {
         if (hasSection(ortb2, section)) {
           ortb2[section] = mergeDeep({}, clientEnrichment(ortb2, ri), ortb2[section]);
           break;

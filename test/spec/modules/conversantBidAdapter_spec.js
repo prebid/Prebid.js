@@ -605,7 +605,7 @@ describe('Conversant adapter tests', function() {
   describe('Extended ID', function() {
     it('Verify unifiedid and liveramp', function() {
       // clone bidRequests
-      let requests = utils.deepClone(bidRequests);
+      const requests = utils.deepClone(bidRequests);
 
       const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
 

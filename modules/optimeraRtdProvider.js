@@ -187,7 +187,7 @@ export function setScoresURL() {
   if (apiVersion === 'v1') {
     newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`;
   } else {
-    let encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
+    const encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
       .replaceAll('%2F', '/')
       .replaceAll('%20', '+');
 

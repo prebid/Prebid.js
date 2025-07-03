@@ -79,7 +79,7 @@ export function loadSession() {
   } catch (e) {}
 
   if (storage !== null) {
-    let debugging = ctl;
+    const debugging = ctl;
     let config = null;
     try {
       config = storage.getItem(DEBUG_KEY);

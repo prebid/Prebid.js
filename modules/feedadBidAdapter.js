@@ -231,11 +231,11 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (!bidderRequest) {
     return [];
   }
-  let acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
+  const acceptableRequests = validBidRequests.filter(request => !isMediaTypesEmpty(filterSupportedMediaTypes(request.mediaTypes)));
   if (acceptableRequests.length === 0) {
     return [];
   }
-  let data = Object.assign({}, bidderRequest, {
+  const data = Object.assign({}, bidderRequest, {
     bids: acceptableRequests.map(req => {
       req.params = createApiBidRParams(req);
       return req;
@@ -315,7 +315,7 @@ function trackingHandlerFactory(klass) {
     if (!data) {
       return;
     }
-    let params = createTrackingParams(data, klass);
+    const params = createTrackingParams(data, klass);
     if (params) {
       ajax(`${API_ENDPOINT}${API_PATH_TRACK_REQUEST}`, null, JSON.stringify(params), {
         withCredentials: true,

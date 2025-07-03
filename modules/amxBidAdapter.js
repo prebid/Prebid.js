@@ -462,7 +462,7 @@ export const spec = {
       setUIDSafe(response.am);
     }
 
-    let { bidderSettings } = getGlobal();
+    const { bidderSettings } = getGlobal();
     const currentBidder = config.getCurrentBidder();
     const allowAlternateBidderCodes = alternateCodesAllowed(bidderSettings ?? {}, currentBidder) ||
       alternateCodesAllowed(config.getConfig('bidderSettings') ?? {}, currentBidder);

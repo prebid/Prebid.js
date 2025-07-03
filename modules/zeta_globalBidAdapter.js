@@ -73,12 +73,12 @@ export const spec = {
     const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
     const params = request.params;
-    let impData = {
+    const impData = {
       id: request.bidId,
       secure: secure,
       banner: buildBanner(request)
     };
-    let payload = {
+    const payload = {
       id: bidderRequest.bidderRequestId,
       imp: [impData],
       site: params.site ? params.site : {},
@@ -137,11 +137,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    let bidResponse = [];
+    const bidResponse = [];
     if (Object.keys(serverResponse.body).length !== 0) {
-      let zetaResponse = serverResponse.body;
-      let zetaBid = zetaResponse.seatbid[0].bid[0];
-      let bid = {
+      const zetaResponse = serverResponse.body;
+      const zetaBid = zetaResponse.seatbid[0].bid[0];
+      const bid = {
         requestId: zetaBid.impid,
         cpm: zetaBid.price,
         currency: zetaResponse.cur,

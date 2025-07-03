@@ -37,7 +37,7 @@ function wrapURI(uri: string, impTrackerURLs: string | string[]) {
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
-  let impressions = impTrackerURLs ? impTrackerURLs.map(trk => `<Impression><![CDATA[${trk}]]></Impression>`).join('') : '';
+  const impressions = impTrackerURLs ? impTrackerURLs.map(trk => `<Impression><![CDATA[${trk}]]></Impression>`).join('') : '';
   return `<VAST version="3.0">
     <Ad>
       <Wrapper>
@@ -120,7 +120,7 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
 const vastValue = getVastXml(bid);
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
-  let payload: any = {
+  const payload: any = {
     type: 'xml',
     value: vastValue,
     ttlseconds: ttlWithBuffer

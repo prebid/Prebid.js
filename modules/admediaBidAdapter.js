@@ -43,7 +43,7 @@ export const spec = {
 
       var tagData = [];
       for (var i = 0, j = sizes.length; i < j; i++) {
-        let tag = {};
+        const tag = {};
         tag.sizes = [];
         tag.id = bidRequest.params.placementId;
         tag.aid = bidRequest.params.aid;

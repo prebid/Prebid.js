@@ -73,17 +73,17 @@ export const spec = {
       }
     }
     validRequest.forEach((bid) => {
-      let imp = {};
+      const imp = {};
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
       imp.ortb2 && delete imp.ortb2;
-      let bidFloor = getBidFloor(bid);
+      const bidFloor = getBidFloor(bid);
       if (bidFloor) {
         imp.bidFloor = bidFloor;
       }
       payload.imps.push(imp);
     });
 
-    let urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
+    const urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
     return {
       method: 'POST',
       url: urlForRequest,

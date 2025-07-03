@@ -211,7 +211,7 @@ export const spec = {
   },
 
   onTimeout: function (data) {
-    let url = raiGetTimeoutURL(data);
+    const url = raiGetTimeoutURL(data);
     if (url) {
       triggerPixel(url);
     }
@@ -273,8 +273,8 @@ function renderer(bid) {
 }
 
 function renderAd(bid) {
-  let raOutstreamHBPassback = `${bid.vastXml}`;
-  let raPlayerHB = {
+  const raOutstreamHBPassback = `${bid.vastXml}`;
+  const raPlayerHB = {
     adUnit: bid.adUnitCode
   };
 
@@ -300,7 +300,7 @@ function raiSetPbAdSlot(bid) {
 function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
-    let raiSync = {};
+    const raiSync = {};
     if (config.getConfig('userSync').filterSettings != null && typeof config.getConfig('userSync').filterSettings != 'undefined') {
       raConfig = config.getConfig('userSync').filterSettings
       if (raConfig.iframe != null && typeof raConfig.iframe != 'undefined') {
@@ -322,7 +322,7 @@ function raiGetFloor(bid, config) {
     if (bid.params.bidfloor != null) {
       raiFloor = bid.params.bidfloor;
     } else if (typeof bid.getFloor == 'function') {
-      let floorSpec = bid.getFloor({
+      const floorSpec = bid.getFloor({
         currency: config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD',
         mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
         size: '*'
@@ -337,7 +337,7 @@ function raiGetFloor(bid, config) {
 }
 
 function raiGetTimeoutURL(data) {
-  let {params, timeout} = data[0]
+  const {params, timeout} = data[0]
   let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
 
   url = url.replace('[timeout_publisher]', timeout)
@@ -349,6 +349,6 @@ function raiGetTimeoutURL(data) {
 }
 
 function setDSA(bid) {
-  let dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
+  const dsa = bid?.ortb2?.regs?.ext?.dsa ? bid?.ortb2?.regs?.ext?.dsa : null;
   return dsa;
 }

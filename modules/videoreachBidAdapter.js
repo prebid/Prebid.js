@@ -14,7 +14,7 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    let data = {
+    const data = {
       data: validBidRequests.map(function(bid) {
         return {
           TagId: getValue(bid.params, 'TagId'),

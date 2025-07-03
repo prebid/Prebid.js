@@ -23,7 +23,7 @@ describe('ProxistoreBidAdapter', function () {
       },
     },
   };
-  let bid = {
+  const bid = {
     sizes: [[300, 600]],
     params: {
       website: 'example.fr',

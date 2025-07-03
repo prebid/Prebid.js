@@ -17,17 +17,17 @@ const {
 
 let timestampInit = null;
 
-let noBidArray = [];
-let noBidObject = {};
+const noBidArray = [];
+const noBidObject = {};
 
-let isBidArray = [];
-let isBidObject = {};
+const isBidArray = [];
+const isBidObject = {};
 
-let bidTimeOutArray = [];
-let bidTimeOutObject = {};
+const bidTimeOutArray = [];
+const bidTimeOutObject = {};
 
-let bidWonArray = [];
-let bidWonObject = {};
+const bidWonArray = [];
+const bidWonObject = {};
 
 let initOptions = {};
 
@@ -155,7 +155,7 @@ function handleBidWon(eventType, args) {
 function handleBidRequested(args) {}
 
 function sendRequest(...objects) {
-  let obj = {
+  const obj = {
     publisher_id: initOptions.publisher_id.toString() || '',
     site: initOptions.site || '',
     ad_unit_size: initOptions.ad_unit_size || [''],
@@ -173,7 +173,7 @@ function handleAuctionEnd() {
   sendRequest(noBidObject, isBidObject, bidTimeOutObject);
 }
 
-let adWMGAnalyticsAdapter = Object.assign(adapter({
+const adWMGAnalyticsAdapter = Object.assign(adapter({
   url,
   analyticsType
 }), {

@@ -79,7 +79,7 @@ export const spec = {
       return [];
     }
 
-    let s = [];
+    const s = [];
     serverResponses.map((c) => {
       if (c.body.c_sync) {
         c.body.c_sync.bidder_status.map((p) => {

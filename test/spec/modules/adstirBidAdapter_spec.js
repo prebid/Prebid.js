@@ -199,7 +199,7 @@ describe('AdstirAdapter', function () {
     });
 
     it('when config.pageUrl is not set, ref.topurl equals to refererInfo.reachedTop', function () {
-      let bidderRequestClone = utils.deepClone(bidderRequest);
+      const bidderRequestClone = utils.deepClone(bidderRequest);
       [true, false].forEach(function (reachedTop) {
         bidderRequestClone.refererInfo.reachedTop = reachedTop;
         const requests = spec.buildRequests(validBidRequests, bidderRequestClone);
@@ -217,7 +217,7 @@ describe('AdstirAdapter', function () {
       });
 
       it('ref.topurl should be false', function () {
-        let bidderRequestClone = utils.deepClone(bidderRequest);
+        const bidderRequestClone = utils.deepClone(bidderRequest);
         [true, false].forEach(function (reachedTop) {
           bidderRequestClone.refererInfo.reachedTop = reachedTop;
           const requests = spec.buildRequests(validBidRequests, bidderRequestClone);
@@ -228,7 +228,7 @@ describe('AdstirAdapter', function () {
     });
 
     it('gdprConsent.gdprApplies is sent', function () {
-      let bidderRequestClone = utils.deepClone(bidderRequest);
+      const bidderRequestClone = utils.deepClone(bidderRequest);
       [true, false].forEach(function (gdprApplies) {
         bidderRequestClone.gdprConsent = { gdprApplies };
         const requests = spec.buildRequests(validBidRequests, bidderRequestClone);
@@ -238,7 +238,7 @@ describe('AdstirAdapter', function () {
     });
 
     it('includes in the request parameters whether CCPA applies', function () {
-      let bidderRequestClone = utils.deepClone(bidderRequest);
+      const bidderRequestClone = utils.deepClone(bidderRequest);
       const cases = [
         { uspConsent: '1---', expected: false },
         { uspConsent: '1YYY', expected: true },

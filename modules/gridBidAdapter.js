@@ -132,7 +132,7 @@ export const spec = {
         content = jwTargeting.content;
       }
 
-      let impObj = {
+      const impObj = {
         id: bidId.toString(),
         tagid: (secid || uid).toString(),
         ext: {
@@ -412,7 +412,7 @@ export const spec = {
         }
         return '';
       });
-      let currentSource = sources[i] || sp;
+      const currentSource = sources[i] || sp;
       const urlWithParams = url + (url.indexOf('?') > -1 ? '&' : '?') + 'no_mapping=1' + (currentSource ? `&sp=${currentSource}` : '');
       return {
         method: 'POST',
@@ -626,8 +626,8 @@ function createBannerRequest(bid, mediaType) {
   const sizes = mediaType.sizes || bid.sizes;
   if (!sizes || !sizes.length) return;
 
-  let format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
-  let result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
+  const format = sizes.map((size) => parseGPTSingleSizeArrayToRtbSize(size));
+  const result = parseGPTSingleSizeArrayToRtbSize(sizes[0]);
 
   if (format.length) {
     result.format = format

@@ -356,8 +356,8 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
     ortb2 = {};
   }
 
-  let site = ortb2.site = ortb2.site || {};
-  let content = site.content = site.content || {};
+  const site = ortb2.site = ortb2.site || {};
+  const content = site.content = site.content || {};
 
   if (shouldOverride(content.id, contentId, overrideContentId)) {
     content.id = contentId;
@@ -446,7 +446,7 @@ export function getPlayer(playerDivId) {
     return;
   }
 
-  let errorMessage = `player Div ID ${playerDivId} did not match any players.`;
+  const errorMessage = `player Div ID ${playerDivId} did not match any players.`;
 
   // If there are multiple instances on the page, we cannot guess which one should be targeted.
   if (playerOnPageCount > 1) {

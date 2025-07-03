@@ -87,7 +87,7 @@ export const spec = {
       });
     }
 
-    let computedEndpointUrl = ENDPOINT_URL;
+    const computedEndpointUrl = ENDPOINT_URL;
 
     return {
       method: 'POST',
@@ -212,7 +212,7 @@ function mapSite(slot, bidderRequest) {
       .toString()
       .slice(0, 50);
   }
-  let siteData = {
+  const siteData = {
     publisher: {
       id: pubId.toString(),
     },

@@ -642,11 +642,11 @@ export const spec = {
         bidRequest.gpid = gpid;
       }
 
-      let instl = deepAccess(bidRequest, 'ortb2Imp.instl');
+      const instl = deepAccess(bidRequest, 'ortb2Imp.instl');
       if (instl !== undefined) {
         bidRequest.instl = instl === 1 || instl === '1' ? 1 : undefined;
       }
-      let rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
+      const rwdd = deepAccess(bidRequest, 'ortb2Imp.rwdd');
       if (rwdd !== undefined) {
         bidRequest.rwdd = rwdd === 1 || rwdd === '1' ? 1 : undefined;
       }
@@ -741,7 +741,7 @@ export const spec = {
   },
 
   interpretResponse(serverResponse, bidRequest) {
-    let bidResponses = [];
+    const bidResponses = [];
     try {
       const response = serverResponse.body;
       if (response) {

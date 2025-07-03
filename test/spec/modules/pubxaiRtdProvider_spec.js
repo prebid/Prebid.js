@@ -75,7 +75,7 @@ const stubConfig = () => {
 describe('pubxaiRtdProvider', () => {
   describe('beforeInit', () => {
     it('should register RTD submodule provider', function () {
-      let submoduleStub = sinon.stub(hook, 'submodule');
+      const submoduleStub = sinon.stub(hook, 'submodule');
       beforeInit();
       assert(submoduleStub.calledOnceWith('realTimeData', pubxaiSubmodule));
       submoduleStub.restore();

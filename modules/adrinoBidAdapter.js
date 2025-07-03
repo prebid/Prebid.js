@@ -31,9 +31,9 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let bids = [];
+    const bids = [];
     for (let i = 0; i < validBidRequests.length; i++) {
-      let requestData = {
+      const requestData = {
         adUnitCode: validBidRequests[i].adUnitCode,
         bidId: validBidRequests[i].bidId,
         placementHash: validBidRequests[i].params.hash,
@@ -60,8 +60,8 @@ export const spec = {
       bids.push(requestData);
     }
 
-    let host = this.getBidderConfig('host') || BIDDER_HOST;
-    let bidRequests = [];
+    const host = this.getBidderConfig('host') || BIDDER_HOST;
+    const bidRequests = [];
     bidRequests.push({
       method: REQUEST_METHOD,
       url: host + '/bidder/bids/',
@@ -92,7 +92,7 @@ export const spec = {
 
   onBidWon: function (bid) {
     if (bid['requestId']) {
-      let host = this.getBidderConfig('host') || BIDDER_HOST;
+      const host = this.getBidderConfig('host') || BIDDER_HOST;
       triggerPixel(host + '/bidder/won/' + bid['requestId']);
     }
   }

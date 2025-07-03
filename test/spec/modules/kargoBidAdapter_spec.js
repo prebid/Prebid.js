@@ -117,7 +117,7 @@ describe('kargo adapter tests', function() {
     '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
   };
   function buildCrbValue(isCookie, withIds, withTdid, withLexId, withClientId, optOut) {
-    let value = {
+    const value = {
       expireTime: Date.now() + 60000,
       lastSyncedAt: Date.now() - 60000,
       optOut,
@@ -578,24 +578,24 @@ describe('kargo adapter tests', function() {
 
     it('does not send currency if it is not defined', function() {
       undefinedCurrency = true;
-      let payload = getPayloadFromTestBids(testBids);
+      const payload = getPayloadFromTestBids(testBids);
       expect(payload.cur).to.be.undefined;
     });
 
     it('does not send currency if it is missing', function() {
       noAdServerCurrency = true;
-      let payload = getPayloadFromTestBids(testBids);
+      const payload = getPayloadFromTestBids(testBids);
       expect(payload.cur).to.be.undefined;
     });
 
     it('does not send currency if it is USD', function() {
-      let payload = getPayloadFromTestBids(testBids);
+      const payload = getPayloadFromTestBids(testBids);
       expect(payload.cur).to.be.undefined;
     });
 
     it('provides the currency if it is not USD', function() {
       nonUSDAdServerCurrency = true;
-      let payload = getPayloadFromTestBids(testBids);
+      const payload = getPayloadFromTestBids(testBids);
       expect(payload.cur).to.equal('EUR');
     });
 
@@ -1285,7 +1285,7 @@ describe('kargo adapter tests', function() {
         sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
         localStorage.removeItem('krg_crb');
         document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-        let payload = getPayloadFromTestBids(testBids);
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.user).to.deep.equal({
           crbIDs: {},
           data: []
@@ -1295,7 +1295,7 @@ describe('kargo adapter tests', function() {
 
     describe('sua', function() {
       it('is not provided if not present in the first valid bid', function() {
-        let payload = getPayloadFromTestBids([
+        const payload = getPayloadFromTestBids([
           ...testBids,
           {
             ...minimumBidParams,
@@ -1328,7 +1328,7 @@ describe('kargo adapter tests', function() {
       });
 
       it('is provided if present in the first valid bid', function() {
-        let payload = getPayloadFromTestBids([
+        const payload = getPayloadFromTestBids([
           {
             ...minimumBidParams,
             ortb2: { device: { sua: {
@@ -1408,7 +1408,7 @@ describe('kargo adapter tests', function() {
       });
 
       it('does not send non-mapped attributes', function() {
-        let payload = getPayloadFromTestBids([{...minimumBidParams,
+        const payload = getPayloadFromTestBids([{...minimumBidParams,
           ortb2: { device: { sua: {
             other: 'value',
             objectMissing: {
@@ -1471,7 +1471,7 @@ describe('kargo adapter tests', function() {
           '      ',
           ' ',
         ].forEach(value => {
-          let payload = getPayloadFromTestBids([{...minimumBidParams,
+          const payload = getPayloadFromTestBids([{...minimumBidParams,
             ortb2: { device: { sua: {
               platform: value,
               browsers: [
@@ -1516,7 +1516,7 @@ describe('kargo adapter tests', function() {
       });
 
       it('does not send 0 for mobile or source', function() {
-        let payload = getPayloadFromTestBids([{
+        const payload = getPayloadFromTestBids([{
           ...minimumBidParams,
           ortb2: { device: { sua: {
             platform: {
@@ -1569,7 +1569,7 @@ describe('kargo adapter tests', function() {
     describe('page', function() {
       it('pulls the page ID from localStorage', function() {
         setLocalStorageValue('pageViewId', 'test-page-id');
-        let payload = getPayloadFromTestBids(testBids);
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           id: 'test-page-id'
         });
@@ -1577,7 +1577,7 @@ describe('kargo adapter tests', function() {
 
       it('pulls the page timestamp from localStorage', function() {
         setLocalStorageValue('pageViewTimestamp', '123456789');
-        let payload = getPayloadFromTestBids(testBids);
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           timestamp: 123456789
         });
@@ -1585,7 +1585,7 @@ describe('kargo adapter tests', function() {
 
       it('pulls the page ID from localStorage', function() {
         setLocalStorageValue('pageViewUrl', 'https://test-url.com');
-        let payload = getPayloadFromTestBids(testBids);
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           url: 'https://test-url.com'
         });
@@ -1595,7 +1595,7 @@ describe('kargo adapter tests', function() {
         setLocalStorageValue('pageViewId', 'test-page-id');
         setLocalStorageValue('pageViewTimestamp', '123456789');
         setLocalStorageValue('pageViewUrl', 'https://test-url.com');
-        let payload = getPayloadFromTestBids(testBids);
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.deep.equal({
           id: 'test-page-id',
           timestamp: 123456789,
@@ -1607,7 +1607,7 @@ describe('kargo adapter tests', function() {
         sandbox.stub(STORAGE, 'getDataFromLocalStorage').throws();
         localStorage.removeItem('krg_crb');
         document.cookie = 'krg_crb=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-        let payload = getPayloadFromTestBids(testBids);
+        const payload = getPayloadFromTestBids(testBids);
         expect(payload.page).to.be.undefined;
       });
     });
@@ -1725,13 +1725,13 @@ describe('kargo adapter tests', function() {
         {},
         1234,
       ].forEach(value => {
-        let bids = spec.interpretResponse({ body: value }, bidderRequest);
+        const bids = spec.interpretResponse({ body: value }, bidderRequest);
         expect(bids, `Value - ${JSON.stringify(value)}`).to.deep.equal([]);
       });
     });
 
     it('returns bid response for various objects', function() {
-      let bids = spec.interpretResponse(response, bidderRequest);
+      const bids = spec.interpretResponse(response, bidderRequest);
       expect(bids).to.have.length(Object.keys(response.body).length);
       expect(bids[0]).to.deep.equal({
         ad: '<div id="1"></div>',
@@ -1834,7 +1834,7 @@ describe('kargo adapter tests', function() {
     });
 
     it('adds landingPageDomain data', function() {
-      let response = spec.interpretResponse({ body: { 0: {
+      const response = spec.interpretResponse({ body: { 0: {
         metadata: {
           landingPageDomain: [
             'https://foo.com',
@@ -1868,7 +1868,7 @@ describe('kargo adapter tests', function() {
         }
       }
 
-      let result = spec.interpretResponse(response, bidderRequest);
+      const result = spec.interpretResponse(response, bidderRequest);
 
       // Test properties of bidResponses
       result.bids.forEach(bid => {
@@ -1905,7 +1905,7 @@ describe('kargo adapter tests', function() {
     const baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=';
 
     function buildSyncUrls(baseUrl = 'https://crb.kargo.com/api/v1/initsyncrnd/random-client-id-string?seed=3205e885-8d37-4139-b47e-f82cff268000&gdpr=0&gdpr_consent=&us_privacy=&gpp=&gpp_sid=') {
-      let syncs = [];
+      const syncs = [];
 
       syncs.push({
         type: 'iframe',

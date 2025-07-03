@@ -191,7 +191,7 @@ registerBidder(spec);
 function parseNative(bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
-  let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+  const clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
 
   if (link.clicktrackers) {
     link.clicktrackers.forEach(function (clicktracker, index) {

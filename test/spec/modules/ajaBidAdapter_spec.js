@@ -7,7 +7,7 @@ describe('AjaAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'aja',
       'params': {
         'asi': '123456'
@@ -24,7 +24,7 @@ describe('AjaAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'asi': 0
@@ -159,7 +159,7 @@ describe('AjaAdapter', function () {
 
   describe('interpretResponse', function () {
     it('should get correct banner bid response', function () {
-      let response = {
+      const response = {
         'is_ad_return': true,
         'ad': {
           'ad_type': 1,
@@ -184,7 +184,7 @@ describe('AjaAdapter', function () {
         ]
       };
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           'requestId': '51ef8751f9aead',
           'cpm': 12.34,
@@ -206,18 +206,18 @@ describe('AjaAdapter', function () {
       ];
 
       let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
     });
 
     it('handles nobid responses', function () {
-      let response = {
+      const response = {
         'is_ad_return': false,
         'ad': {}
       };
 
       let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
+      const result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result.length).to.equal(0);
     });
   });

@@ -75,7 +75,7 @@ export function insertVastTrackers(trackers, vastXml) {
 }
 
 export function getVastTrackers(bid, {index = auctionManager.index}) {
-  let trackers = [];
+  const trackers = [];
   vastTrackers.filter(
     ({
       moduleType,
@@ -85,7 +85,7 @@ export function getVastTrackers(bid, {index = auctionManager.index}) {
   ).forEach(({trackerFn}) => {
     const auction = index.getAuction(bid).getProperties();
     const bidRequest = index.getBidRequest(bid);
-    let trackersToAdd = trackerFn(bid, {auction, bidRequest});
+    const trackersToAdd = trackerFn(bid, {auction, bidRequest});
     trackersToAdd.forEach(trackerToAdd => {
       if (isValidVastTracker(trackers, trackerToAdd)) {
         trackers.push(trackerToAdd);

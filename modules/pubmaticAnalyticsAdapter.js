@@ -198,7 +198,7 @@ function parseBidResponse(bid) {
 }
 
 function getDomainFromUrl(url) {
-  let a = window.document.createElement('a');
+  const a = window.document.createElement('a');
   a.href = url;
   return a.hostname;
 }
@@ -249,10 +249,10 @@ function getAdapterNameForAlias(aliasName) {
 
 function getAdDomain(bidResponse) {
   if (bidResponse.meta && bidResponse.meta.advertiserDomains) {
-    let adomain = bidResponse.meta.advertiserDomains[0]
+    const adomain = bidResponse.meta.advertiserDomains[0]
     if (adomain) {
       try {
-        let hostname = (new URL(adomain));
+        const hostname = (new URL(adomain));
         return hostname.hostname.replace('www.', '');
       } catch (e) {
         logWarn(LOG_PRE_FIX + 'Adomain URL (Not a proper URL):', adomain);
@@ -299,8 +299,8 @@ function isS2SBidder(bidder) {
 }
 
 function isOWPubmaticBid(adapterName) {
-  let s2sConf = config.getConfig('s2sConfig');
-  let s2sConfArray = s2sConf ? (isArray(s2sConf) ? s2sConf : [s2sConf]) : [];
+  const s2sConf = config.getConfig('s2sConfig');
+  const s2sConfArray = s2sConf ? (isArray(s2sConf) ? s2sConf : [s2sConf]) : [];
   return s2sConfArray.some(conf => {
     if (adapterName === ADAPTER_CODE && conf.defaultVendor === VENDOR_OPENWRAP &&
       conf.bidders.indexOf(ADAPTER_CODE) > -1) {
@@ -338,7 +338,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid, e) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     adUnit.bids[bidId].forEach(function(bid) {
-      let adapterName = getAdapterNameForAlias(bid.adapterCode || bid.bidder);
+      const adapterName = getAdapterNameForAlias(bid.adapterCode || bid.bidder);
       if (isOWPubmaticBid(adapterName) && isS2SBidder(bid.bidder)) {
         return;
       }
@@ -451,13 +451,13 @@ function getListOfIdentityPartners() {
 }
 
 function executeBidsLoggerCall(e, highestCpmBids) {
-  let auctionId = e.auctionId;
-  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
-  let auctionCache = cache.auctions[auctionId];
-  let wiid = auctionCache?.wiid || auctionId;
-  let floorData = auctionCache?.floorData;
-  let floorFetchStatus = getFloorFetchStatus(floorData);
-  let outputObj = { s: [] };
+  const auctionId = e.auctionId;
+  const referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
+  const auctionCache = cache.auctions[auctionId];
+  const wiid = auctionCache?.wiid || auctionId;
+  const floorData = auctionCache?.floorData;
+  const floorFetchStatus = getFloorFetchStatus(floorData);
+  const outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
   const country = e.bidderRequests?.length > 0
@@ -504,10 +504,10 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   }
 
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
-    let adUnit = auctionCache.adUnitCodes[adUnitId];
-    let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId) || {};
+    const adUnit = auctionCache.adUnitCodes[adUnitId];
+    const origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId) || {};
     // getGptSlotInfoForAdUnitCode returns gptslot corresponding to adunit provided as input.
-    let slotObject = {
+    const slotObject = {
       'sn': adUnitId,
       'au': origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
@@ -551,15 +551,15 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   if (isOWPubmaticBid(adapterName) && isS2SBidder(winningBid.bidder)) {
     return;
   }
-  let origAdUnit = getAdUnit(cache.auctions[auctionId]?.origAdUnits, adUnitId) || {};
-  let owAdUnitId = origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId;
-  let auctionCache = cache.auctions[auctionId];
-  let floorData = auctionCache?.floorData;
-  let wiid = cache.auctions[auctionId]?.wiid || auctionId;
-  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
-  let adv = winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined;
-  let fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
-  let pg = window.parseFloat(Number(winningBid?.bidResponse?.adserverTargeting?.hb_pb || winningBid?.bidResponse?.adserverTargeting?.pwtpb)) || undefined;
+  const origAdUnit = getAdUnit(cache.auctions[auctionId]?.origAdUnits, adUnitId) || {};
+  const owAdUnitId = origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId;
+  const auctionCache = cache.auctions[auctionId];
+  const floorData = auctionCache?.floorData;
+  const wiid = cache.auctions[auctionId]?.wiid || auctionId;
+  const referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
+  const adv = winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined;
+  const fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
+  const pg = window.parseFloat(Number(winningBid?.bidResponse?.adserverTargeting?.hb_pb || winningBid?.bidResponse?.adserverTargeting?.pwtpb)) || undefined;
   let pixelURL = END_POINT_WIN_BID_LOGGER;
 
   pixelURL += 'pubid=' + publisherId;
@@ -633,9 +633,9 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 
 function auctionInitHandler(args) {
   s2sBidders = (function () {
-    let s2sBidders = [];
+    const s2sBidders = [];
     try {
-      let s2sConf = config.getConfig('s2sConfig');
+      const s2sConf = config.getConfig('s2sConfig');
       if (isArray(s2sConf)) {
         s2sConf.forEach(conf => {
           if (conf?.bidders) {
@@ -650,7 +650,7 @@ function auctionInitHandler(args) {
     }
     return s2sBidders || [];
   }());
-  let cacheEntry = pick(args, [
+  const cacheEntry = pick(args, [
     'timestamp',
     'timeout',
     'bidderDonePendingCount', () => args.bidderRequests.length,
@@ -686,7 +686,7 @@ function bidResponseHandler(args) {
     logWarn(LOG_PRE_FIX + 'Got null requestId in bidResponseHandler');
     return;
   }
-  let requestId = args.originalRequestId || args.requestId;
+  const requestId = args.originalRequestId || args.requestId;
   let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[requestId][0];
   if (!bid) {
     logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
@@ -728,7 +728,7 @@ function bidRejectedHandler(args) {
 function bidderDoneHandler(args) {
   cache.auctions[args.auctionId].bidderDonePendingCount--;
   args.bids.forEach(bid => {
-    let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.originalRequestId || bid.requestId];
+    const cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.originalRequestId || bid.requestId];
     if (typeof bid.serverResponseTimeMs !== 'undefined') {
       cachedBid.serverLatencyTimeMs = bid.serverResponseTimeMs;
     }
@@ -742,7 +742,7 @@ function bidderDoneHandler(args) {
 }
 
 function bidWonHandler(args) {
-  let auctionCache = cache.auctions[args.auctionId];
+  const auctionCache = cache.auctions[args.auctionId];
   auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.originalRequestId || args.requestId;
   auctionCache.adUnitCodes[args.adUnitCode].bidWonAdId = args.adId;
   executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
@@ -750,7 +750,7 @@ function bidWonHandler(args) {
 
 function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
-  let highestCpmBids = getGlobal().getHighestCpmBids() || [];
+  const highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId]?.bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
@@ -760,8 +760,8 @@ function bidTimeoutHandler(args) {
   // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
   // db = 0 and t = 1 means bidder did  respond with a bid but post timeout
   args.forEach(badBid => {
-    let auctionCache = cache.auctions[badBid.auctionId];
-    let bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.originalRequestId || badBid.requestId ][0];
+    const auctionCache = cache.auctions[badBid.auctionId];
+    const bid = auctionCache.adUnitCodes[badBid.adUnitCode].bids[ badBid.bidId || badBid.originalRequestId || badBid.requestId ][0];
     if (bid) {
       bid.status = ERROR;
       bid.error = {
@@ -775,8 +775,8 @@ function bidTimeoutHandler(args) {
 
 /// /////////// ADAPTER DEFINITION //////////////
 
-let baseAdapter = adapter({analyticsType: 'endpoint'});
-let pubmaticAdapter = Object.assign({}, baseAdapter, {
+const baseAdapter = adapter({analyticsType: 'endpoint'});
+const pubmaticAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(conf = {}) {
     let error = false;

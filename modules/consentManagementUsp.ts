@@ -90,7 +90,7 @@ function lookupUspConsent({onSuccess, onError}) {
     };
   }
 
-  let callbackHandler = handleUspApiResponseCallbacks();
+  const callbackHandler = handleUspApiResponseCallbacks();
 
   const cmp = cmpClient({
     apiName: '__uspapi',

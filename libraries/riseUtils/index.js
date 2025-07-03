@@ -113,7 +113,7 @@ export function getFloor(bid) {
   const mediaTypes = getBidRequestMediaTypes(bid)
   const firstMediaType = mediaTypes[0];
 
-  let floorResult = bid.getFloor({
+  const floorResult = bid.getFloor({
     currency: 'USD',
     mediaType: mediaTypes.length === 1 ? firstMediaType : '*',
     size: '*'

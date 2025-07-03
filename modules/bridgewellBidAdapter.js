@@ -119,12 +119,12 @@ export const spec = {
         return;
       }
 
-      let matchedResponse = ((serverResponse.body) || []).find(function (res) {
+      const matchedResponse = ((serverResponse.body) || []).find(function (res) {
         let valid = false;
 
         if (res && !res.consumed) {
-          let mediaTypes = req.mediaTypes;
-          let adUnitCode = req.adUnitCode;
+          const mediaTypes = req.mediaTypes;
+          const adUnitCode = req.adUnitCode;
           if (res.adUnitCode) {
             return res.adUnitCode === adUnitCode;
           } else if (res.width && res.height && mediaTypes) {
@@ -132,9 +132,9 @@ export const spec = {
               valid = true;
             } else if (mediaTypes.banner) {
               if (mediaTypes.banner.sizes) {
-                let width = res.width;
-                let height = res.height;
-                let sizes = mediaTypes.banner.sizes;
+                const width = res.width;
+                const height = res.height;
+                const sizes = mediaTypes.banner.sizes;
                 // check response size validation
                 if (typeof sizes[0] === 'number') { // for foramt Array[Number] check
                   valid = width === sizes[0] && height === sizes[1];
@@ -195,11 +195,11 @@ export const spec = {
               return;
             }
 
-            let reqNativeLayout = req.mediaTypes.native;
-            let resNative = matchedResponse.native;
+            const reqNativeLayout = req.mediaTypes.native;
+            const resNative = matchedResponse.native;
 
             // check title
-            let title = reqNativeLayout.title;
+            const title = reqNativeLayout.title;
             if (title && title.required) {
               if (typeof resNative.title !== 'string') {
                 return;
@@ -209,7 +209,7 @@ export const spec = {
             }
 
             // check body
-            let body = reqNativeLayout.body;
+            const body = reqNativeLayout.body;
             if (body && body.required) {
               if (typeof resNative.body !== 'string') {
                 return;
@@ -217,7 +217,7 @@ export const spec = {
             }
 
             // check image
-            let image = reqNativeLayout.image;
+            const image = reqNativeLayout.image;
             if (image && image.required) {
               if (resNative.image) {
                 if (typeof resNative.image.url !== 'string') { // check image url
@@ -233,7 +233,7 @@ export const spec = {
             }
 
             // check sponsoredBy
-            let sponsoredBy = reqNativeLayout.sponsoredBy;
+            const sponsoredBy = reqNativeLayout.sponsoredBy;
             if (sponsoredBy && sponsoredBy.required) {
               if (typeof resNative.sponsoredBy !== 'string') {
                 return;
@@ -241,7 +241,7 @@ export const spec = {
             }
 
             // check icon
-            let icon = reqNativeLayout.icon;
+            const icon = reqNativeLayout.icon;
             if (icon && icon.required) {
               if (resNative.icon) {
                 if (typeof resNative.icon.url !== 'string') { // check icon url
@@ -262,7 +262,7 @@ export const spec = {
             }
 
             // check clickTracker
-            let clickTrackers = resNative.clickTrackers;
+            const clickTrackers = resNative.clickTrackers;
             if (clickTrackers) {
               if (clickTrackers.length === 0) {
                 return;
@@ -272,7 +272,7 @@ export const spec = {
             }
 
             // check impressionTrackers
-            let impressionTrackers = resNative.impressionTrackers;
+            const impressionTrackers = resNative.impressionTrackers;
             if (impressionTrackers) {
               if (impressionTrackers.length === 0) {
                 return;

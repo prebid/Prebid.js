@@ -82,7 +82,7 @@ export const spec = {
       }
     });
 
-    let data = {};
+    const data = {};
     bids.forEach((bid) => { Object.assign(data, bid); });
 
     const payload = {
@@ -143,7 +143,7 @@ export const spec = {
       payload.eids = JSON.stringify(eids);
     }
 
-    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, ...validBidRequests.map(br => br.params.keywords)).join(',');
+    const keywords = getAllOrtbKeywords(bidderRequest.ortb2, ...validBidRequests.map(br => br.params.keywords)).join(',');
 
     if (keywords) {
       payload.kw = keywords;
@@ -253,7 +253,7 @@ export const spec = {
             bidRequest,
             'renderer.options'
           ));
-          let videoSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+          const videoSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
           if (videoSize) {
             bids.width = videoSize[0];
             bids.height = videoSize[1];
@@ -294,7 +294,7 @@ function _findBidderRequest(bidderRequests, bidId) {
 // This function takes all the possible sizes.
 // returns string csv.
 function _validateSize(bid) {
-  let size = [];
+  const size = [];
   if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
     size.push(deepAccess(bid, 'mediaTypes.video.playerSize'))
   }
@@ -356,11 +356,11 @@ function _validateMediaType(bidRequest) {
       mediaTypeValidation = `${mediaTypeValidation}pm=${deepAccess(bidRequest, 'mediaTypes.video.playbackmethod').join(':')},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.placement')) {
-      let placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
+      const placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
       mediaTypeValidation = `${mediaTypeValidation}p=${placement},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.plcmt')) {
-      let plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt');
+      const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt');
       mediaTypeValidation = `${mediaTypeValidation}pl=${plcmt},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.protocols')) {
@@ -377,35 +377,35 @@ function _validateMediaType(bidRequest) {
     }
 
     if (deepAccess(bidRequest, 'mediaTypes.video.minduration')) {
-      let minduration = deepAccess(bidRequest, 'mediaTypes.video.minduration');
+      const minduration = deepAccess(bidRequest, 'mediaTypes.video.minduration');
       mediaTypeValidation = `${mediaTypeValidation}minduration=${minduration},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.maxduration')) {
-      let maxduration = deepAccess(bidRequest, 'mediaTypes.video.maxduration');
+      const maxduration = deepAccess(bidRequest, 'mediaTypes.video.maxduration');
       mediaTypeValidation = `${mediaTypeValidation}maxduration=${maxduration},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.skip')) {
-      let skip = deepAccess(bidRequest, 'mediaTypes.video.skip');
+      const skip = deepAccess(bidRequest, 'mediaTypes.video.skip');
       mediaTypeValidation = `${mediaTypeValidation}skip=${skip},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.skipafter')) {
-      let skipafter = deepAccess(bidRequest, 'mediaTypes.video.skipafter');
+      const skipafter = deepAccess(bidRequest, 'mediaTypes.video.skipafter');
       mediaTypeValidation = `${mediaTypeValidation}skipafter=${skipafter},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.startdelay')) {
-      let startdelay = deepAccess(bidRequest, 'mediaTypes.video.startdelay');
+      const startdelay = deepAccess(bidRequest, 'mediaTypes.video.startdelay');
       mediaTypeValidation = `${mediaTypeValidation}startdelay=${startdelay},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.linearity')) {
-      let linearity = deepAccess(bidRequest, 'mediaTypes.video.linearity');
+      const linearity = deepAccess(bidRequest, 'mediaTypes.video.linearity');
       mediaTypeValidation = `${mediaTypeValidation}linearity=${linearity},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.minbitrate')) {
-      let minbitrate = deepAccess(bidRequest, 'mediaTypes.video.minbitrate');
+      const minbitrate = deepAccess(bidRequest, 'mediaTypes.video.minbitrate');
       mediaTypeValidation = `${mediaTypeValidation}minbitrate=${minbitrate},`;
     }
     if (deepAccess(bidRequest, 'mediaTypes.video.maxbitrate')) {
-      let maxbitrate = deepAccess(bidRequest, 'mediaTypes.video.maxbitrate');
+      const maxbitrate = deepAccess(bidRequest, 'mediaTypes.video.maxbitrate');
       mediaTypeValidation = `${mediaTypeValidation}maxbitrate=${maxbitrate},`;
     }
   } else if (mediaType === 'display') {
@@ -565,7 +565,7 @@ function getBidFloor(bid) {
     return (bid.params.floor) ? bid.params.floor : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

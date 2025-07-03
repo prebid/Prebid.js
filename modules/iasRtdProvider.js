@@ -56,7 +56,7 @@ export function init(config, userConsent) {
   }
   if (params.hasOwnProperty('keyMappings')) {
     const keyMappings = params.keyMappings;
-    for (let prop in keyMappings) {
+    for (const prop in keyMappings) {
       if (IAS_KEY_MAPPINGS.hasOwnProperty(prop)) {
         IAS_KEY_MAPPINGS[prop] = keyMappings[prop]
       }
@@ -114,8 +114,8 @@ function stringifyScreenSize() {
 }
 
 function renameKeyValues(source) {
-  let result = {};
-  for (let prop in IAS_KEY_MAPPINGS) {
+  const result = {};
+  for (const prop in IAS_KEY_MAPPINGS) {
     if (source.hasOwnProperty(prop)) {
       result[IAS_KEY_MAPPINGS[prop]] = source[prop];
     }
@@ -124,7 +124,7 @@ function renameKeyValues(source) {
 }
 
 function formatTargetingData(adUnit) {
-  let result = {};
+  const result = {};
   if (iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]) {
     utils.mergeDeep(result, iasTargeting[BRAND_SAFETY_OBJECT_FIELD_NAME]);
   }

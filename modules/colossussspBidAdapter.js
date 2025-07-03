@@ -99,8 +99,8 @@ export const spec = {
 
     // TODO: does the fallback to window.location make sense?
     const location = refferLocation || winLocation;
-    let placements = [];
-    let request = {
+    const placements = [];
+    const request = {
       deviceWidth,
       deviceHeight,
       language: (navigator && navigator.language) ? navigator.language : '',
@@ -133,9 +133,9 @@ export const spec = {
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
-      let bid = validBidRequests[i];
+      const bid = validBidRequests[i];
       const { mediaTypes } = bid;
-      let placement = {
+      const placement = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
@@ -148,7 +148,7 @@ export const spec = {
       if (schain) {
         placement.schain = schain;
       }
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
       if (gpid) {
         placement.gpid = gpid;
       }
@@ -189,7 +189,7 @@ export const spec = {
 
       if (typeof bid.getFloor === 'function') {
         let tmpFloor = {};
-        for (let size of placement.sizes) {
+        for (const size of placement.sizes) {
           tmpFloor = bid.getFloor({
             currency: 'USD',
             mediaType: placement.traffic,
@@ -217,11 +217,11 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
-    let response = [];
+    const response = [];
     try {
       serverResponse = serverResponse.body;
       for (let i = 0; i < serverResponse.length; i++) {
-        let resItem = serverResponse[i];
+        const resItem = serverResponse[i];
         if (isBidResponseValid(resItem)) {
           const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
           resItem.meta = { ...resItem.meta, advertiserDomains };
@@ -236,7 +236,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    const syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = G_URL_SYNC + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {

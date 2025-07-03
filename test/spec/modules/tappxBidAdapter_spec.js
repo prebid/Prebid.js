@@ -137,32 +137,32 @@ describe('Tappx bid adapter', function () {
     });
 
     it('should return false when tappxkey is missing', function () {
-      let badBidRequestTpxkey = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      const badBidRequestTpxkey = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
       delete badBidRequestTpxkey.bids[0].params.tappxkey;
       assert.isFalse(spec.isBidRequestValid(badBidRequestTpxkey.bids[0]));
     });
 
     it('should return false when host is missing', function () {
-      let badBidRequestHost = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      const badBidRequestHost = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
       delete badBidRequestHost.bids[0].params.host;
       assert.isFalse(spec.isBidRequestValid(badBidRequestHost.bids[0]));
     });
 
     it('should return false when classic endpoint is missing', function () {
-      let badBidRequestClEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      const badBidRequestClEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
       delete badBidRequestClEp.bids[0].params.endpoint;
       assert.isFalse(spec.isBidRequestValid(badBidRequestClEp.bids[0]));
     });
 
     it('should return true when endpoint is not set for new endpoints', function () {
-      let badBidRequestNwEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
+      const badBidRequestNwEp = JSON.parse(JSON.stringify(c_BIDREQUEST)); ;
       delete badBidRequestNwEp.bids[0].params.endpoint;
       badBidRequestNwEp.bids[0].params.host = 'zztesting.ssp.tappx.com/rtb/v2/';
       assert.isTrue(spec.isBidRequestValid(badBidRequestNwEp.bids[0]));
     });
 
     it('should return false for not instream/outstream requests', function () {
-      let badBidRequest_v = c_BIDDERREQUEST_V;
+      const badBidRequest_v = c_BIDDERREQUEST_V;
       delete badBidRequest_v.bids.mediaTypes.banner;
       badBidRequest_v.bids.mediaTypes.video = {};
       badBidRequest_v.bids.mediaTypes.video.context = '';
@@ -180,15 +180,15 @@ describe('Tappx bid adapter', function () {
    */
   describe('buildRequest', function () {
     // Web Test
-    let validBidRequests = c_VALIDBIDREQUESTS;
-    let validBidRequests_V = c_VALIDBIDREQUESTS;
-    let validBidRequests_Voutstream = c_VALIDBIDREQUESTS;
+    const validBidRequests = c_VALIDBIDREQUESTS;
+    const validBidRequests_V = c_VALIDBIDREQUESTS;
+    const validBidRequests_Voutstream = c_VALIDBIDREQUESTS;
     // App Test
-    let validAppBidRequests = c_VALIDBIDAPPREQUESTS;
+    const validAppBidRequests = c_VALIDBIDAPPREQUESTS;
 
-    let bidderRequest = c_BIDDERREQUEST_B;
-    let bidderRequest_V = c_BIDDERREQUEST_V;
-    let bidderRequest_VOutstream = c_BIDDERREQUEST_VOutstream;
+    const bidderRequest = c_BIDDERREQUEST_B;
+    const bidderRequest_V = c_BIDDERREQUEST_V;
+    const bidderRequest_VOutstream = c_BIDDERREQUEST_VOutstream;
 
     it('should add gdpr/usp consent information to the request', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
@@ -294,9 +294,9 @@ describe('Tappx bid adapter', function () {
     });
 
     it('should properly build a ext optional object', function() {
-      let extBidRequest = c_VALIDBIDREQUESTS;
+      const extBidRequest = c_VALIDBIDREQUESTS;
       extBidRequest[0].params.ext = {'optionalData': '1234'};
-      let extBidderRequest = c_BIDDERREQUEST_B;
+      const extBidderRequest = c_BIDDERREQUEST_B;
       extBidderRequest.bids[0].ext = {'optionalData': '1234'};
 
       const request = spec.buildRequests(extBidRequest, extBidderRequest);
@@ -306,9 +306,9 @@ describe('Tappx bid adapter', function () {
     });
 
     it('should ignore ext optional if is not a object', function() {
-      let badExtBidRequest = c_VALIDBIDREQUESTS;
+      const badExtBidRequest = c_VALIDBIDREQUESTS;
       badExtBidRequest[0].params.ext = 'stringValue';
-      let badExtBidderRequest = c_BIDDERREQUEST_B;
+      const badExtBidderRequest = c_BIDDERREQUEST_B;
       badExtBidderRequest.bids[0].ext = 'stringValue';
 
       const request = spec.buildRequests(badExtBidRequest, badExtBidderRequest);
@@ -337,7 +337,7 @@ describe('Tappx bid adapter', function () {
       expect(bid.ad).to.match(/^<\?xml version=\'1\.0\'\?><VAST version=/);
     });
 
-    let emptyServerResponse = { headers: {} };
+    const emptyServerResponse = { headers: {} };
     it('receive reponse without ad', function () {
       const bids = spec.interpretResponse(emptyServerResponse, c_BIDDERREQUEST_B);
       expect(bids).to.have.lengthOf(0);
@@ -349,7 +349,7 @@ describe('Tappx bid adapter', function () {
    */
   describe('getUserSync', function () {
     it('check pixel enabled', function () {
-      let syncOptions = {
+      const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: true
       }
@@ -360,7 +360,7 @@ describe('Tappx bid adapter', function () {
     });
 
     it('check iframe enabled', function () {
-      let syncOptions = {
+      const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: false
       }
@@ -417,25 +417,25 @@ describe('Tappx bid adapter', function () {
     HOST_VALIDBIDREQ.params.endpoint = 'ZZ1234PBJS';
 
     it('Test testing endpoints', function() {
-      let testHostValidRequest = HOST_VALIDBIDREQ;
+      const testHostValidRequest = HOST_VALIDBIDREQ;
       testHostValidRequest.params.host = 'testing.xxx.tappx.com\/rtb\/v2\/';
-      let testHostObject = _getHostInfo(testHostValidRequest);
+      const testHostObject = _getHostInfo(testHostValidRequest);
       assert.isObject(testHostObject);
       expect(testHostObject.newEndpoint).to.be.false;
       expect(testHostObject.endpoint).to.be.equal(testHostValidRequest.params.endpoint);
     })
     it('Test classic endpoints', function() {
-      let classicHostValidRequest = HOST_VALIDBIDREQ;
+      const classicHostValidRequest = HOST_VALIDBIDREQ;
       classicHostValidRequest.params.host = 'xxx.xxx.tappx.com\/rtb\/v2\/';
-      let classicHostObject = _getHostInfo(classicHostValidRequest);
+      const classicHostObject = _getHostInfo(classicHostValidRequest);
       assert.isObject(classicHostObject);
       expect(classicHostObject.newEndpoint).to.be.false;
       expect(classicHostObject.endpoint).to.be.equal(classicHostValidRequest.params.endpoint);
     })
     it('Test new endpoints', function() {
-      let newHostValidRequest = HOST_VALIDBIDREQ;
+      const newHostValidRequest = HOST_VALIDBIDREQ;
       newHostValidRequest.params.host = 'zz1111xxx.xxx.tappx.com\/rtb\/v2\/';
-      let newHostObject = _getHostInfo(newHostValidRequest);
+      const newHostObject = _getHostInfo(newHostValidRequest);
       assert.isObject(newHostObject);
       expect(newHostObject.newEndpoint).to.be.true;
       expect(newHostObject.endpoint).to.be.equal('zz1111xxx');
@@ -459,8 +459,8 @@ describe('Tappx bid adapter', function () {
   })
 
   describe('_extractPageUrl tests', function() {
-    let validBidRequests = c_VALIDBIDREQUESTS;
-    let bidderRequest = c_BIDDERREQUEST_B;
+    const validBidRequests = c_VALIDBIDREQUESTS;
+    const bidderRequest = c_BIDDERREQUEST_B;
     it('should return the Domain of the site', function () {
       validBidRequests[0].params.domainUrl = 'testUrl.com';
       assert.isString(_extractPageUrl(validBidRequests, bidderRequest));
@@ -468,7 +468,7 @@ describe('Tappx bid adapter', function () {
   })
 
   describe('Empty params values from bid tests', function() {
-    let validBidRequest = JSON.parse(JSON.stringify(c_BIDREQUEST));
+    const validBidRequest = JSON.parse(JSON.stringify(c_BIDREQUEST));
 
     it('should return false when tappxkey is empty', function () {
       validBidRequest.bids[0].params.tappxkey = '';

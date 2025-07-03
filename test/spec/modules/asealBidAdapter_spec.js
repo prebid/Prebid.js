@@ -4,13 +4,12 @@ import {
   BIDDER_CODE,
   API_ENDPOINT,
   HEADER_AOTTER_VERSION,
-  WEB_SESSION_ID_KEY,
+  WEB_SESSION_ID_KEY, storage
 } from 'modules/asealBidAdapter.js';
 import { getRefererInfo } from 'src/refererDetection.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { storage } from 'modules/asealBidAdapter.js';
 
 const TEST_CLIENT_ID = 'TEST_CLIENT_ID';
 const TEST_WEB_SESSION_ID = 'TEST_WEB_SESSION_ID';
@@ -87,7 +86,7 @@ describe('asealBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);

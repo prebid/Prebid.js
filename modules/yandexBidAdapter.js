@@ -412,7 +412,7 @@ function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
  * @return {Bid[]} An array of bids which were nested inside the server.
  */
 function interpretResponse(serverResponse, { bidRequest }) {
-  let response = serverResponse.body;
+  const response = serverResponse.body;
   if (!response.seatbid) {
     return [];
   }
@@ -426,7 +426,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
   return bidsReceived.map(bidReceived => {
     const price = bidReceived.price;
     /** @type {Bid} */
-    let prBid = {
+    const prBid = {
       requestId: bidRequest.bidId,
       cpm: price,
       currency: currency,

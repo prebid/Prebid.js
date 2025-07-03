@@ -83,18 +83,18 @@ const storage = getCoreStorageManager('usersync');
  *   UserSync object needs in order to behave properly.
  */
 export function newUserSync(deps) {
-  let publicApi: any = {};
+  const publicApi: any = {};
   // A queue of user syncs for each adapter
   // Let getDefaultQueue() set the defaults
   let queue = getDefaultQueue();
 
   // Whether or not user syncs have been trigger on this page load for a specific bidder
-  let hasFiredBidder = new Set();
+  const hasFiredBidder = new Set();
   // How many bids for each adapter
   let numAdapterBids = {};
 
   // for now - default both to false in case filterSettings config is absent/misconfigured
-  let permittedPixels = {
+  const permittedPixels = {
     image: true,
     iframe: false
   };
@@ -106,7 +106,7 @@ export function newUserSync(deps) {
     // Added this logic for https://github.com/prebid/Prebid.js/issues/4864
     // if userSync.filterSettings does not contain image/all configs, merge in default image config to ensure image pixels are fired
     if (conf.userSync) {
-      let fs = conf.userSync.filterSettings;
+      const fs = conf.userSync.filterSettings;
       if (isPlainObject(fs)) {
         if (!fs.image && !fs.all) {
           conf.userSync.filterSettings.image = {
@@ -185,7 +185,7 @@ export function newUserSync(deps) {
       return;
     }
     forEachFire(queue.image, (sync) => {
-      let [bidderName, trackingPixelUrl] = sync;
+      const [bidderName, trackingPixelUrl] = sync;
       logMessage(`Invoking image pixel user sync for bidder: ${bidderName}`);
       // Create image object and add the src url
       triggerPixel(trackingPixelUrl);
@@ -203,7 +203,7 @@ export function newUserSync(deps) {
     }
 
     forEachFire(queue.iframe, (sync) => {
-      let [bidderName, iframeUrl] = sync;
+      const [bidderName, iframeUrl] = sync;
       logMessage(`Invoking iframe user sync for bidder: ${bidderName}`);
       // Insert iframe into DOM
       insertUserSyncIframe(iframeUrl);
@@ -214,7 +214,7 @@ export function newUserSync(deps) {
 
   function removeImagePixelsForBidder(queue, iframeSyncBidderName) {
     queue.image = queue.image.filter(imageSync => {
-      let imageSyncBidderName = imageSync[0];
+      const imageSyncBidderName = imageSync[0];
       return imageSyncBidderName !== iframeSyncBidderName
     });
   }
@@ -286,15 +286,15 @@ export function newUserSync(deps) {
    * @returns {boolean} true => bidder is not allowed to register; false => bidder can register
    */
   function shouldBidderBeBlocked(type, bidder) {
-    let filterConfig = usConfig.filterSettings;
+    const filterConfig = usConfig.filterSettings;
 
     // apply the filter check if the config object is there (eg filterSettings.iframe exists) and if the config object is properly setup
     if (isFilterConfigValid(filterConfig, type)) {
       permittedPixels[type] = true;
 
-      let activeConfig = (filterConfig.all) ? filterConfig.all : filterConfig[type];
-      let biddersToFilter = (activeConfig.bidders === '*') ? [bidder] : activeConfig.bidders;
-      let filterType = activeConfig.filter || 'include'; // set default if undefined
+      const activeConfig = (filterConfig.all) ? filterConfig.all : filterConfig[type];
+      const biddersToFilter = (activeConfig.bidders === '*') ? [bidder] : activeConfig.bidders;
+      const filterType = activeConfig.filter || 'include'; // set default if undefined
 
       // return true if the bidder is either: not part of the include (ie outside the whitelist) or part of the exclude (ie inside the blacklist)
       const checkForFiltering = {
@@ -320,8 +320,8 @@ export function newUserSync(deps) {
       return false;
     }
 
-    let activeConfig = (filterConfig.all) ? filterConfig.all : filterConfig[type];
-    let activeConfigName = (filterConfig.all) ? 'all' : type;
+    const activeConfig = (filterConfig.all) ? filterConfig.all : filterConfig[type];
+    const activeConfigName = (filterConfig.all) ? 'all' : type;
 
     // if current pixel type isn't part of the config's logic, skip rest of the config checks...
     // we return false to skip subsequent filter checks in shouldBidderBeBlocked() function
@@ -329,8 +329,8 @@ export function newUserSync(deps) {
       return false;
     }
 
-    let filterField = activeConfig.filter;
-    let biddersField = activeConfig.bidders;
+    const filterField = activeConfig.filter;
+    const biddersField = activeConfig.bidders;
 
     if (filterField && filterField !== 'include' && filterField !== 'exclude') {
       logWarn(`UserSync "filterSettings.${activeConfigName}.filter" setting '${filterField}' is not a valid option; use either 'include' or 'exclude'.`);

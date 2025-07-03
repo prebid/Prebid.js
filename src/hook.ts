@@ -41,7 +41,7 @@ interface FunHooks {
  * see https://github.com/snapwich/fun-hooks/issues/42
  */
 
-export let hook: FunHooks = funHooks({
+export const hook: FunHooks = funHooks({
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
 
@@ -66,7 +66,7 @@ export const ready: Promise<void> = readyCtl.promise;
 export const getHook = hook.get;
 
 export function setupBeforeHookFnOnce<TYP extends HookType, FN extends AnyFunction>(baseFn: Hookable<TYP, FN>, hookFn: BeforeHook<TYP, FN>, priority = 15) {
-  let result = baseFn.getHooks({hook: hookFn});
+  const result = baseFn.getHooks({hook: hookFn});
   if (result.length === 0) {
     baseFn.before(hookFn, priority);
   }

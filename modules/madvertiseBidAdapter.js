@@ -22,7 +22,7 @@ export const spec = {
     if (typeof bid.params !== 'object') {
       return false;
     }
-    let sizes = parseSizesInput(bid.sizes);
+    const sizes = parseSizesInput(bid.sizes);
     if (!sizes || sizes.length === 0) {
       return false;
     }
@@ -80,7 +80,7 @@ export const spec = {
       return [];
     }
 
-    let bid = {
+    const bid = {
       requestId: bidRequest.bidId,
       cpm: responseObj.cpm,
       width: responseObj.Width,

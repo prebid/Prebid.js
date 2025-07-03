@@ -38,7 +38,7 @@ const converter = ortbConverter({
       return imp
     }
 
-    let floor = bidRequest.getFloor({
+    const floor = bidRequest.getFloor({
       currency: 'EUR',
       mediaType: '*',
       size: '*',

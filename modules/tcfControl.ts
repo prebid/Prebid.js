@@ -247,7 +247,7 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback: any = 
 
     if (shouldEnforce(consentData, purposeNo, modName)) {
       const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
-      let allow = !!checkConsent(consentData, modName, gvlid);
+      const allow = !!checkConsent(consentData, modName, gvlid);
       if (!allow) {
         blocked && blocked.add(modName);
         return {allow};

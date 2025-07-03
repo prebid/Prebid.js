@@ -12,7 +12,7 @@ describe('justpremium adapter', function () {
     sandbox.restore();
   });
 
-  let schainConfig = {
+  const schainConfig = {
     'ver': '1.0',
     'complete': 1,
     'nodes': [
@@ -24,7 +24,7 @@ describe('justpremium adapter', function () {
     ]
   }
 
-  let adUnits = [
+  const adUnits = [
     {
       adUnitCode: 'div-gpt-ad-1471513102552-1',
       bidder: 'justpremium',
@@ -64,7 +64,7 @@ describe('justpremium adapter', function () {
     },
   ]
 
-  let bidderRequest = {
+  const bidderRequest = {
     uspConsent: '1YYN',
     refererInfo: {
       referer: 'https://justpremium.com'
@@ -134,7 +134,7 @@ describe('justpremium adapter', function () {
   describe('interpretResponse', function () {
     const request = spec.buildRequests(adUnits, bidderRequest)
     it('Verify server response', function () {
-      let response = {
+      const response = {
         'bid': {
           '28313': [{
             'id': 3213123,
@@ -155,7 +155,7 @@ describe('justpremium adapter', function () {
         'deals': {}
       }
 
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: '319a5029c362f4',
           creativeId: 3213123,
@@ -176,7 +176,7 @@ describe('justpremium adapter', function () {
         }
       ]
 
-      let result = spec.interpretResponse({body: response}, request)
+      const result = spec.interpretResponse({body: response}, request)
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]))
 
       expect(result[0]).to.not.equal(null)
@@ -194,7 +194,7 @@ describe('justpremium adapter', function () {
     })
 
     it('Verify wrong server response', function () {
-      let response = {
+      const response = {
         'bid': {
           '28313': []
         },
@@ -203,7 +203,7 @@ describe('justpremium adapter', function () {
         }
       }
 
-      let result = spec.interpretResponse({body: response}, request)
+      const result = spec.interpretResponse({body: response}, request)
       expect(result.length).to.equal(0)
     })
   })

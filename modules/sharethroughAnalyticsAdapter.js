@@ -35,7 +35,7 @@ var sharethroughAdapter = Object.assign(adapter(
     const curBidderCode = args.bidderCode;
 
     if (curBidderCode !== STR_BIDDER_CODE && (args.adUnitCode in this.placementCodeSet)) {
-      let strBid = this.placementCodeSet[args.adUnitCode];
+      const strBid = this.placementCodeSet[args.adUnitCode];
       this.fireLoseBeacon(curBidderCode, args.cpm, strBid.adserverRequestId, 'headerBidLose');
     }
   },

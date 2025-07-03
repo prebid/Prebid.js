@@ -256,9 +256,9 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
     return fn.call(this, adUnitCode, bid, reject); // if no bid, call original and let it display warnings
   }
 
-  let bidder = bid.bidderCode || bid.bidder;
+  const bidder = bid.bidderCode || bid.bidder;
   if (bidderCurrencyDefault[bidder]) {
-    let currencyDefault = bidderCurrencyDefault[bidder];
+    const currencyDefault = bidderCurrencyDefault[bidder];
     if (bid.currency && currencyDefault !== bid.currency) {
       logWarn(`Currency default '${bidder}: ${currencyDefault}' ignored. adapter specified '${bid.currency}'`);
     } else {
@@ -301,9 +301,9 @@ function processBidResponseQueue() {
   while (bidResponseQueue.length > 0) {
     const [fn, ctx, adUnitCode, bid, reject] = bidResponseQueue.shift();
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
-      let fromCurrency = bid.currency;
+      const fromCurrency = bid.currency;
       try {
-        let conversion = getCurrencyConversion(fromCurrency);
+        const conversion = getCurrencyConversion(fromCurrency);
         if (conversion !== 1) {
           bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
           bid.currency = adServerCurrency;
@@ -322,7 +322,7 @@ function processBidResponseQueue() {
 function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {
   var conversionRate = null;
   var rates;
-  let cacheKey = `${fromCurrency}->${toCurrency}`;
+  const cacheKey = `${fromCurrency}->${toCurrency}`;
   if (cacheKey in conversionCache) {
     conversionRate = conversionCache[cacheKey];
     logMessage('Using conversionCache value ' + conversionRate + ' for ' + cacheKey);

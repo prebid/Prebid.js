@@ -173,8 +173,8 @@ export const id5IdSubmodule = {
       const responseObj = {};
       const eids = {};
       Object.entries(value.ids).forEach(([key, value]) => {
-        let eid = value.eid;
-        let uid = eid?.uids?.[0]
+        const eid = value.eid;
+        const uid = eid?.uids?.[0]
         responseObj[key] = {
           uid: uid?.id,
           ext: uid?.ext
@@ -198,7 +198,7 @@ export const id5IdSubmodule = {
       return undefined;
     }
     this.eids = DEFAULT_EIDS;
-    let responseObj = {
+    const responseObj = {
       id5id: {
         uid: universalUid,
         ext: ext
@@ -354,7 +354,7 @@ export class IdFetchFlow {
   }
 
   async #callForConfig() {
-    let url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
+    const url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
     const response = await fetch(url, {
       method: 'POST',
       body: JSON.stringify({
@@ -496,7 +496,7 @@ function validateConfig(config) {
 
   const partner = config.params.partner;
   if (typeof partner === 'string' || partner instanceof String) {
-    let parsedPartnerId = parseInt(partner);
+    const parsedPartnerId = parseInt(partner);
     if (isNaN(parsedPartnerId) || parsedPartnerId < 0) {
       logError(LOG_PREFIX + 'partner required to be a number or a String parsable to a positive integer');
       return false;

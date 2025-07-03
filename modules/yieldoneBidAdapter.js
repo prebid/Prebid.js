@@ -169,7 +169,7 @@ export const spec = {
 
       if (response.adTag && renderId === 'ViewableRendering') {
         bidResponse.mediaType = BANNER;
-        let viewableScript = `
+        const viewableScript = `
         <script src="${VIEWABLE_PERCENTAGE_URL}"></script>
         <script>
         let width =${bidResponse.width};

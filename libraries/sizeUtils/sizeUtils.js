@@ -11,7 +11,7 @@ export function getAdUnitSizes(adUnit) {
 
   let sizes = [];
   if (adUnit.mediaTypes && adUnit.mediaTypes.banner && Array.isArray(adUnit.mediaTypes.banner.sizes)) {
-    let bannerSizes = adUnit.mediaTypes.banner.sizes;
+    const bannerSizes = adUnit.mediaTypes.banner.sizes;
     if (Array.isArray(bannerSizes[0])) {
       sizes = bannerSizes;
     } else {
@@ -36,7 +36,7 @@ export function getAdUnitSizes(adUnit) {
  */
 
 export function normalizeBannerSizes(bidSizes) {
-  let sizes = [];
+  const sizes = [];
   if (Array.isArray(bidSizes) && bidSizes.length === 2 && !Array.isArray(bidSizes[0])) {
     sizes.push({
       width: parseInt(bidSizes[0], 10),

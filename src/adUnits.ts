@@ -143,7 +143,7 @@ export function reset() {
 }
 
 function ensureAdUnit(adunit, bidderCode?) {
-  let adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
+  const adUnit = adUnits[adunit] = adUnits[adunit] || { bidders: {} };
   if (bidderCode) {
     return adUnit.bidders[bidderCode] = adUnit.bidders[bidderCode] || {}
   }

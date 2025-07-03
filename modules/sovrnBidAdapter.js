@@ -68,7 +68,7 @@ export const spec = {
    */
   buildRequests: function(bidReqs, bidderRequest) {
     try {
-      let sovrnImps = [];
+      const sovrnImps = [];
       let iv;
       let schain;
       let eids;
@@ -223,7 +223,7 @@ export const spec = {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 
     try {
-      let bids = seatbid
+      const bids = seatbid
         .filter(seat => seat)
         .map(seat => seat.bid.map(sovrnBid => {
           const bid = {

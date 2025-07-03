@@ -247,7 +247,7 @@ describe('TeadsIdSystem', function () {
         expect(id).to.be.deep.equal(teadsCookieIdSent);
       });
 
-      let request = server.requests[0];
+      const request = server.requests[0];
       request.respond(200, {'Content-Type': 'application/json'}, teadsCookieIdSent);
 
       const cookiesMaxAge = getTimestampFromDays(365); // 1 year
@@ -264,7 +264,7 @@ describe('TeadsIdSystem', function () {
         expect(id).to.be.undefined
       });
 
-      let request = server.requests[0];
+      const request = server.requests[0];
       request.respond(200, {'Content-Type': 'application/json'}, '');
 
       expect(setCookieStub.calledWith(FP_TEADS_ID_COOKIE_NAME, '', EXPIRED_COOKIE_DATE)).to.be.true;

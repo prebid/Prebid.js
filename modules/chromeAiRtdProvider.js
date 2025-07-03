@@ -76,7 +76,7 @@ const _createAiApiInstance = async (ApiConstructor, options) => {
 
 const mergeModuleConfig = (config) => {
   // Start with a deep copy of default_config to ensure all keys are present
-  let newConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
+  const newConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
   if (config?.params) {
     mergeDeep(newConfig, config.params);
   }
