@@ -34,7 +34,8 @@ var adUnits = [{
     params: {
       uid: '12345',
       pubId: '54321',
-      pubEpid: 'abcde'
+      pubEpid: 'abcde',
+      bidFloor: 0.10
     },
     isDebug: false // Optional, i.e True for debug mode
   }]
