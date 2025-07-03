@@ -38,6 +38,12 @@ function isModuleDirectory(filePath) {
 }
 
 module.exports = {
+  getDevPath() {
+    return DEV_PATH
+  },
+  getBuildPath() {
+    return BUILD_PATH
+  },
   getSourceFolders() {
     return SOURCE_FOLDERS
   },
@@ -80,11 +86,11 @@ module.exports = {
 
     return modules;
   },
-  getModules: _.memoize(function(externalModules) {
+  getModules: _.memoize(function(externalModules, mPath) {
     externalModules = externalModules || [];
     var internalModules;
     try {
-      var absoluteModulePath = path.join(__dirname, MODULE_PATH);
+      var absoluteModulePath = path.join(__dirname, mPath ? mPath : MODULE_PATH);
       internalModules = fs.readdirSync(absoluteModulePath)
         .filter(file => (/^[^\.]+(\.js|\.tsx?)?$/).test(file))
         .reduce((memo, file) => {
