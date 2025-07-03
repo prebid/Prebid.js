@@ -40,8 +40,8 @@ const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
 const DEFAULT_PUBLISHER_ID = null;
-const DEFAULT_PROFILE_ID = '';
-const DEFAULT_PROFILE_VERSION_ID = '';
+const DEFAULT_PROFILE_ID = '0';
+const DEFAULT_PROFILE_VERSION_ID = '0';
 const enc = window.encodeURIComponent;
 const MEDIATYPE = {
   BANNER: 0,
@@ -784,8 +784,8 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
       if (conf.options.publisherId) {
         publisherId = String(conf.options.publisherId).trim();
       }
-      profileId = String(conf.options.profileId).trim() || DEFAULT_PROFILE_ID;
-      profileVersionId = String(conf.options.profileVersionId).trim() || DEFAULT_PROFILE_VERSION_ID;
+      profileId = conf.options?.profileId ? String(conf.options.profileId).trim() : DEFAULT_PROFILE_ID;
+      profileVersionId = conf.options?.profileVersionId ? String(conf.options.profileVersionId).trim() : DEFAULT_PROFILE_VERSION_ID;
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');
       error = true;
