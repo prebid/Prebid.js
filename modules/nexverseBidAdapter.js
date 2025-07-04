@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { isArray, generateUUID, getWinDimensions } from '../src/utils.js';
+import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
@@ -274,6 +274,13 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     test = 1;
   }
 
+  let yob = parseInt(bid.params.yob)
+  if (!isNumber(yob)) {
+    yob = null
+  }
+  let gender = bid.params.gender || ''
+  let keywords = bid.params.keywords || ''
+
   // Construct the OpenRTB request object
   const openRtbRequest = {
     id: bidderRequest.auctionId ?? generateUUID(),
@@ -301,6 +308,9 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     user: {
       id: getUid(storage),
       buyeruid: bidderRequest.userId || '', // User ID or Buyer ID
+      yob,
+      gender,
+      keywords,
       ext: {
         consent: bidderRequest.gdprConsent ? bidderRequest.gdprConsent.consentString : null, // GDPR consent string
       },
