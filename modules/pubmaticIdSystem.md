@@ -11,7 +11,7 @@ pbjs.setConfig({
       {
         name: "pubmaticId",
         params: {
-          publisherId: 123456
+          publisherId: "123456"
         },
         storage: {
           name: "pubmaticId",
@@ -48,4 +48,4 @@ The following settings are available in the `params` property in `userSync.userI
 
 | Param name | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| publisherId | Required | Number | Publisher ID provided by PubMatic | `123456` |
+| publisherId | Required | String | Publisher ID provided by PubMatic | `"123456"` |
