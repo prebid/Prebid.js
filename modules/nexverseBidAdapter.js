@@ -221,6 +221,10 @@ function buildOpenRtbRequest(bid, bidderRequest) {
     }
   ];
 
+  let impExt = {
+    gpid: bid.adUnitCode
+  };
+
   // Handle different media types (Banner, Video, Native)
   if (bid.mediaTypes.banner) {
     let imp = {
@@ -231,7 +235,8 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         h: bid.sizes[0][1],
       },
       secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-      metric: metrics
+      metric: metrics,
+      ext: impExt
     };
     imp.bidFloor = bidFloor
     imps.push(imp);
@@ -249,7 +254,8 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         playbackmethod: bid.mediaTypes.video.playbackmethod || [2],
       },
       secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-      metric: metrics
+      metric: metrics,
+      ext: impExt
     };
     imp.bidFloor = bidFloor
     imps.push(imp);
@@ -261,7 +267,8 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string
       },
       secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-      metric: metrics
+      metric: metrics,
+      ext: impExt
     };
     imp.bidFloor = bidFloor
     imps.push(imp);
