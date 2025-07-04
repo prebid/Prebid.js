@@ -276,7 +276,7 @@ export function detectReferer(win) {
          * the referrer (document.referrer) to the current page, or null if not available (due to cross-origin restrictions)
          */
         ref: ref || null,
-        // TODO: the "legacy" refererInfo object is provided here, for now, to accomodate
+        // TODO: the "legacy" refererInfo object is provided here, for now, to accommodate
         // adapters that decided to just send it verbatim to their backend.
         legacy: {
             reachedTop,

@@ -888,7 +888,7 @@ describe('PubWiseAdapter', function () {
         // when failing this gives an odd message about "AssertError: expected logWarn to be called with arguments" it means the specific message expected
         sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
       })
-      it('shoud not log Video.Placement param missing', function() {
+      it('should not log Video.Placement param missing', function() {
         videoData['placement'] = 1;
         _checkVideoPlacement(videoData, adUnit);
         sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
