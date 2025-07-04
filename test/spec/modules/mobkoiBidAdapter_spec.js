@@ -1,8 +1,11 @@
+import sinon from 'sinon';
+
 import {
   spec,
   utils,
   DEFAULT_AD_SERVER_BASE_URL
 } from 'modules/mobkoiBidAdapter.js';
+import * as prebidUtils from 'src/utils';
 
 describe('Mobkoi bidding Adapter', function () {
   const testAdServerBaseUrl = 'http://test.adServerBaseUrl.com';
@@ -13,6 +16,8 @@ describe('Mobkoi bidding Adapter', function () {
   const testTransactionId = 'test-transaction-id';
   const testAdUnitId = 'test-ad-unit-id';
   const testAuctionId = 'test-auction-id';
+
+  let sandbox;
 
   const getOrtb2 = () => ({
     site: {
@@ -91,6 +96,17 @@ describe('Mobkoi bidding Adapter', function () {
       ],
     }
   })
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(prebidUtils, 'logInfo');
+    sandbox.stub(prebidUtils, 'logWarn');
+    sandbox.stub(prebidUtils, 'logError');
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
 
   describe('isBidRequestValid', function () {
     let bid;
