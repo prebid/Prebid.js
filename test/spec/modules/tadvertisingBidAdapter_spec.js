@@ -61,6 +61,31 @@ describe('tadvertisingBidAdapter', () => {
   }
 
   describe('isBidRequestValid', function () {
+    // Helper function to check if FEATURES.VIDEO is enabled
+    function isVideoFeatureEnabled() {
+      // Create a test bid with video
+      let testBid = getBid();
+      delete testBid.mediaTypes.banner;
+      testBid.mediaTypes.video = {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4'],
+        protocols: [1, 2, 3],
+        api: [1, 2],
+        maxduration: 30
+      };
+
+      // Create the same bid but without maxduration
+      let testBidNoMaxduration = JSON.parse(JSON.stringify(testBid));
+      delete testBidNoMaxduration.mediaTypes.video.maxduration;
+
+      // If FEATURES.VIDEO is enabled, validation should fail without maxduration
+      // If not enabled, both should pass
+      return spec.isBidRequestValid(testBid) && !spec.isBidRequestValid(testBidNoMaxduration);
+    }
+
+    const videoFeatureEnabled = isVideoFeatureEnabled();
+
     it('should return true when required parameters are defined', function () {
       expect(spec.isBidRequestValid(getBid())).to.equal(true);
     });
@@ -82,6 +107,134 @@ describe('tadvertisingBidAdapter', () => {
       bid.params.publisherId = '111111111111111111111111111111111';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should return false when neither mediaTypes.banner nor mediaTypes.video is present', function () {
+      let bid = getBid();
+      delete bid.mediaTypes.banner;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return true when mediaTypes.video is properly configured', function () {
+      let bid = getBid();
+      delete bid.mediaTypes.banner;
+      bid.mediaTypes.video = {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4'],
+        protocols: [1, 2, 3],
+        api: [1, 2],
+        maxduration: 30
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    // Conditional tests based on FEATURES.VIDEO flag
+    if (videoFeatureEnabled) {
+      it('should return false when mediaTypes.video is missing maxduration (FEATURES.VIDEO enabled)', function () {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: ['video/mp4'],
+          protocols: [1, 2, 3],
+          api: [1, 2]
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false when mediaTypes.video.maxduration is not an integer (FEATURES.VIDEO enabled)', function () {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: ['video/mp4'],
+          protocols: [1, 2, 3],
+          api: [1, 2],
+          maxduration: '30'
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false when mediaTypes.video is missing api (FEATURES.VIDEO enabled)', function () {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: ['video/mp4'],
+          protocols: [1, 2, 3],
+          maxduration: 30
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false when mediaTypes.video.api is an empty array (FEATURES.VIDEO enabled)', function () {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: ['video/mp4'],
+          protocols: [1, 2, 3],
+          api: [],
+          maxduration: 30
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false when mediaTypes.video is missing mimes (FEATURES.VIDEO enabled)', function () {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480],
+          protocols: [1, 2, 3],
+          api: [1, 2],
+          maxduration: 30
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false when mediaTypes.video.mimes is an empty array (FEATURES.VIDEO enabled)', function () {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: [],
+          protocols: [1, 2, 3],
+          api: [1, 2],
+          maxduration: 30
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false when mediaTypes.video is missing protocols (FEATURES.VIDEO enabled)', function () {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: ['video/mp4'],
+          api: [1, 2],
+          maxduration: 30
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+    } else {
+      it('should skip video validation when FEATURES.VIDEO is not enabled', function() {
+        let bid = getBid();
+        delete bid.mediaTypes.banner;
+        bid.mediaTypes.video = {
+          context: 'instream',
+          playerSize: [640, 480]
+          // Missing required fields, but should still pass if FEATURES.VIDEO is not enabled
+        };
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+    }
   });
 
   describe('buildRequests', function () {

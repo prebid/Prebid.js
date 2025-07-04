@@ -8,7 +8,8 @@ import {
   triggerPixel,
   logError,
   isFn,
-  isPlainObject
+  isPlainObject,
+  isInteger
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from "../src/mediaTypes.js";
@@ -152,6 +153,33 @@ export const spec = {
     if (!bid.params.placementId) {
       logWarn(BIDDER_CODE + ': Missing required parameter params.placementId');
       return false;
+    }
+
+    const mediaTypesBanner = deepAccess(bid, 'mediaTypes.banner');
+    const mediaTypesVideo = deepAccess(bid, 'mediaTypes.video');
+
+    if (!mediaTypesBanner && !mediaTypesVideo) {
+      logWarn(BIDDER_CODE + ': one of mediaTypes.banner or mediaTypes.video must be passed');
+      return false;
+    }
+
+    if (FEATURES.VIDEO && mediaTypesVideo) {
+      if (!mediaTypesVideo.maxduration || !isInteger(mediaTypesVideo.maxduration)) {
+        logWarn(BIDDER_CODE + ': mediaTypes.video.maxduration must be set to the maximum video ad duration in seconds');
+        return false;
+      }
+      if (!mediaTypesVideo.api || mediaTypesVideo.api.length === 0) {
+        logWarn(BIDDER_CODE + ': mediaTypes.video.api should be an array of supported api frameworks. See the Open RTB v2.5 spec for valid values');
+        return false;
+      }
+      if (!mediaTypesVideo.mimes || mediaTypesVideo.mimes.length === 0) {
+        logWarn(BIDDER_CODE + ': mediaTypes.video.mimes should be an array of supported mime types');
+        return false;
+      }
+      if (!mediaTypesVideo.protocols) {
+        logWarn(BIDDER_CODE + ': mediaTypes.video.protocols should be an array of supported protocols. See the Open RTB v2.5 spec for valid values');
+        return false;
+      }
     }
     return true;
   },

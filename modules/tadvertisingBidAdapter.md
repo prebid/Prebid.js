@@ -49,6 +49,9 @@ var videoAdUnit = {
             mimes: ['video/mp4'],
             minduration: 1,
             maxduration: 60,
+            api: [1, 3],
+            placement: 3,
+            protocols: [2,3,5,6]
         }
     },
     bids: [
