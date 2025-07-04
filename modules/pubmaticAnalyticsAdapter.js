@@ -335,7 +335,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   let auctionCache = cache.auctions[auctionId];
   const payload = {
     fd: getFeatureLevelDetails(auctionCache),
-    rd: getRootLevelDetails(auctionCache, auctionId),
+    rd: { ctr: country || '', ...getRootLevelDetails(auctionCache, auctionId) },
     sd: {
       adapterName,
       adUnitId,
