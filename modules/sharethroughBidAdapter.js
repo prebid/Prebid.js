@@ -113,7 +113,7 @@ export const sharethroughAdapterSpec = {
 
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
-    req.user.ext.eids = bidRequests[0].userIdAsEids || [];
+    req.user.ext.eids = bidRequests?.[0]?.user?.ext?.eids || bidRequests[0].userIdAsEids || [];
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
