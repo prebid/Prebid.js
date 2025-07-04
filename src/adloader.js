@@ -19,6 +19,7 @@ const _approvedLoadExternalJSList = [
   'browsi',
   'brandmetrics',
   'clean.io',
+  'humansecurityMalvDefense',
   'humansecurity',
   'confiant',
   'contxtful',
