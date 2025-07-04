@@ -345,7 +345,7 @@ export const __testing__ = {
   calculateRemainingTime,
   convertDeviceTypeForBidder,
   buildOrtb2Data,
-  raceWithTimeout, 
+  raceWithTimeout,
   moduleState,
 };
 
