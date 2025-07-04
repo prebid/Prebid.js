@@ -586,7 +586,7 @@ describe('PubWiseAdapter', function () {
     });
 
     it('identifies banner adm type', function() {
-      let adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵	<h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
+      let adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵  <h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
       let newBid = {mediaType: 'unknown'};
       _checkMediaType({adm}, newBid);
       expect(newBid.mediaType).to.equal('banner', adm + ' Is a Banner adm');

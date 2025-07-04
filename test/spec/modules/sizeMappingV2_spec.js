@@ -24,8 +24,8 @@ const AD_UNITS = [{
   mediaTypes: {
     banner: {
       sizeConfig: [
-        { minViewPort: [0, 0], sizes: [] },		// remove if < 750px
-        { minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },		// between 750px and 1199px
+        { minViewPort: [0, 0], sizes: [] },    // remove if < 750px
+        { minViewPort: [750, 0], sizes: [[300, 250], [300, 600]] },    // between 750px and 1199px
         { minViewPort: [1200, 0], sizes: [[970, 90], [728, 90], [300, 250]] }, // between 1200px and 1599px
         { minViewPort: [1600, 0], sizes: [[1000, 300], [970, 90], [728, 90], [300, 250]] } // greater than 1600px
       ]
