@@ -51,7 +51,7 @@ describe('oftmedia RTD Submodule', function() {
 		});
 
 		localStorageIsEnabledStub = sandbox.stub(oftmediaRtd.storageManager, 'localStorageIsEnabled');
-		localStorageIsEnabledStub.callsFake((cb) => cb(true));
+		localStorageIsEnabledStub.callsFake((cback) => cback(true));
 
 		sandbox.stub(userAgentUtils, 'getDeviceType').returns(1);
 		sandbox.stub(userAgentUtils, 'getOS').returns(1);
@@ -240,7 +240,7 @@ describe('oftmedia RTD Submodule', function() {
 
 	describe('Script loading functionality', function() {
 		it('should load script successfully with valid publisher ID', function(done) {
-			localStorageIsEnabledStub.callsFake(cb => cb(true));
+			localStorageIsEnabledStub.callsFake(cback => cback(true));
 
 			const loadOftmediaScript = oftmediaRtd.__testing__.loadOftmediaScript;
 
@@ -255,7 +255,7 @@ describe('oftmedia RTD Submodule', function() {
 		});
 
 		it('should reject when localStorage is not available', function(done) {
-			localStorageIsEnabledStub.callsFake(cb => cb(false));
+			localStorageIsEnabledStub.callsFake(cback => cback(false));
 
 			const loadOftmediaScript = oftmediaRtd.__testing__.loadOftmediaScript;
 
