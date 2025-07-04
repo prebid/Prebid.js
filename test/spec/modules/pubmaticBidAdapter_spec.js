@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, cpmAdjustment, addViewabilityToImp, handleImageProperties, removeGranularFloor } from 'modules/pubmaticBidAdapter.js';
+import { spec, cpmAdjustment, addViewabilityToImp } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 import { config } from 'src/config.js';
@@ -93,7 +93,7 @@ describe('PubMatic adapter', () => {
       },
       'dealid': 'PUBDEAL1',
       'mtype': 2,
-      'params': {'outstreamAU': 'outstreamAU'}
+      'params': {'outstreamAU': 'outstreamAU', 'renderer': 'renderer_test_pubmatic'}
     }]
   };
   firstResponse = {
@@ -197,6 +197,7 @@ describe('PubMatic adapter', () => {
             linearity: 2
           }
         videoBidRequest.params.outstreamAU = 'outstreamAU';
+        videoBidRequest.params.renderer= 'renderer_test_pubmatic'
 
         });
         it('should return false if mimes are missing in a video impression request', () => {
@@ -431,6 +432,7 @@ describe('PubMatic adapter', () => {
               playerSize: [640, 480]
             }
             videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
+            videoBidderRequest.bids[0].params.renderer= 'renderer_test_pubmatic'
             videoBidderRequest.bids[0].adUnitCode = 'Div1';
           });
 
@@ -1255,6 +1257,8 @@ describe('PubMatic adapter', () => {
             playerSize: [640, 480]
           }
           videoBidderRequest.bids[0].params.outstreamAU = 'outstreamAU';
+
+          videoBidderRequest.bids[0].params.renderer = 'renderer_test_pubmatic';
           videoBidderRequest.bids[0].adUnitCode = 'Div1';
         });
 
@@ -1288,6 +1292,7 @@ describe('PubMatic adapter', () => {
         it('should set renderer and rendererCode for outstream video with outstreamAU', () => {
           const request = spec.buildRequests(validBidRequests, videoBidderRequest);
           const bidResponse = spec.interpretResponse(videoResponse, request);
+          console.log('****** bidResponse: check renderer', bidResponse[0].renderer);
           expect(bidResponse).to.be.an('array');
           expect(bidResponse[0]).to.be.an('object');
           expect(bidResponse[0]).to.have.property('renderer');
