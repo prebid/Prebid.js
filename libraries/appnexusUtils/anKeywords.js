@@ -122,9 +122,20 @@ export function getANKewyordParamFromMaps(...anKeywordMaps) {
   )
 }
 
+export function getANMapFromOrtbIASKeywords(ortb2) {
+  const iasBrandSafety = ortb2?.site?.ext?.data?.['ias-brand-safety'];
+  if (iasBrandSafety && typeof iasBrandSafety === 'object' && Object.keys(iasBrandSafety).length > 0) {
+    // Convert IAS object to array of key=value strings
+    const iasArray = Object.entries(iasBrandSafety).map(([key, value]) => `${key}=${value}`);
+    return convertKeywordsToANMap(iasArray);
+  }
+  return {};
+}
+
 export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
   return getANKewyordParamFromMaps(
     getANMapFromOrtbKeywords(ortb2),
+    getANMapFromOrtbIASKeywords(ortb2), // <-- include IAS
     getANMapFromOrtbSegments(ortb2),
     ...anKeywordsMaps
   )
