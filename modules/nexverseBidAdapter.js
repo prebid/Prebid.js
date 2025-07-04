@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { isArray, isNumber, generateUUID, getWinDimensions } from '../src/utils.js';
+import { isArray, generateUUID, getWinDimensions } from '../src/utils.js';
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
@@ -190,56 +190,10 @@ function buildOpenRtbRequest(bid, bidderRequest) {
 
   const imps = [];
 
-  let bidFloor = bid.params.bidFloor || 0
-  bidFloor = parseFloat(bid.params.bidFloor)
-
-  // Handle different media types (Banner, Video, Native)
-  if (bid.mediaTypes.banner) {
-    let imp = {
-      id: bid.bidId,
-      banner: {
-        format: bid.sizes.map(size => ({ w: size[0], h: size[1] })), // List of size objects
-        w: bid.sizes[0][0],
-        h: bid.sizes[0][1],
-      },
-      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-    };
-    if (isNumber(bidFloor) && bidFloor !== 0) {
-      imp.bidFloor = bidFloor
-    }
-    imps.push(imp);
-  }
-  if (bid.mediaTypes.video) {
-    let imp = {
-      id: bid.bidId,
-      video: {
-        w: bid.sizes[0][0],
-        h: bid.sizes[0][1],
-        mimes: bid.mediaTypes.video.mimes || ['video/mp4'], // Default to video/mp4 if not specified
-        protocols: bid.mediaTypes.video.protocols || [2, 3, 5, 6], // RTB video ad serving protocols
-        maxduration: bid.mediaTypes.video.maxduration || 30,
-        linearity: bid.mediaTypes.video.linearity || 1,
-        playbackmethod: bid.mediaTypes.video.playbackmethod || [2],
-      },
-      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-    };
-    if (isNumber(bidFloor) && bidFloor !== 0) {
-      imp.bidFloor = bidFloor
-    }
-    imps.push(imp);
-  }
-  if (bid.mediaTypes.native) {
-     let imp = {
-      id: bid.bidId,
-      native: {
-        request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string
-      },
-      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
-    };
-    if (isNumber(bidFloor) && bidFloor !== 0) {
-      imp.bidFloor = bidFloor
-    }
-    imps.push(imp);
+  let bidFloor = bid.params.bidFloor
+  bidFloor = parseFloat(bidFloor)
+  if (isNaN(bidFloor)) {
+    bidFloor = 0
   }
 
   // Calculate viewability percentage for the ad unit
@@ -258,6 +212,59 @@ function buildOpenRtbRequest(bid, bidderRequest) {
         viewabilityPercentage = Math.round((visibleArea / totalArea) * 100);
       }
     }
+  }
+  let metrics = [
+    {
+      type: "viewability",
+      value: viewabilityPercentage / 100,
+      vendor: "nexverse.ai"
+    }
+  ];
+
+  // Handle different media types (Banner, Video, Native)
+  if (bid.mediaTypes.banner) {
+    let imp = {
+      id: bid.bidId,
+      banner: {
+        format: bid.sizes.map(size => ({ w: size[0], h: size[1] })), // List of size objects
+        w: bid.sizes[0][0],
+        h: bid.sizes[0][1],
+      },
+      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
+      metric: metrics
+    };
+    imp.bidFloor = bidFloor
+    imps.push(imp);
+  }
+  if (bid.mediaTypes.video) {
+    let imp = {
+      id: bid.bidId,
+      video: {
+        w: bid.sizes[0][0],
+        h: bid.sizes[0][1],
+        mimes: bid.mediaTypes.video.mimes || ['video/mp4'], // Default to video/mp4 if not specified
+        protocols: bid.mediaTypes.video.protocols || [2, 3, 5, 6], // RTB video ad serving protocols
+        maxduration: bid.mediaTypes.video.maxduration || 30,
+        linearity: bid.mediaTypes.video.linearity || 1,
+        playbackmethod: bid.mediaTypes.video.playbackmethod || [2],
+      },
+      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
+      metric: metrics
+    };
+    imp.bidFloor = bidFloor
+    imps.push(imp);
+  }
+  if (bid.mediaTypes.native) {
+     let imp = {
+      id: bid.bidId,
+      native: {
+        request: JSON.stringify(bid.mediaTypes.native), // Convert native request to JSON string
+      },
+      secure: window.location.protocol === 'https:' ? 1 : 0, // Indicates whether the request is secure (HTTPS)
+      metric: metrics
+    };
+    imp.bidFloor = bidFloor
+    imps.push(imp);
   }
 
   // Set test: 1 for debug mode
@@ -307,7 +314,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       prebid: {
         auctiontimestamp: bidderRequest.auctionStart,
       },
-      viewabilityPercentage
     },
     test: test,
   };
