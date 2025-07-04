@@ -1,5 +1,5 @@
 // jscs:disable
-import { TARGETING_KEYS, STATUS } from 'src/constants.js';
+import { TARGETING_KEYS } from 'src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
@@ -1324,7 +1324,7 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
   if (typeof status !== 'undefined') {
     bid.status = status;
   }
-  return Object.assign(createBid(STATUS.GOOD), bid);
+  return Object.assign(createBid(), bid);
 }
 
 export function getServerTestingsAds() {

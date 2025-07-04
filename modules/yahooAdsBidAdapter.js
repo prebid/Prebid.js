@@ -27,7 +27,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'admixer.net',
   'adserver.org',
   'adtelligent.com',
-  'akamai.com',
   'amxdt.net',
   'audigent.com',
   'britepool.com',
@@ -329,9 +328,9 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    const schainData = deepAccess(bid, 'schain.nodes');
-    if (isArray(schainData) && schainData.length > 0) {
-      outBoundBidRequest.source.ext.schain = bid.schain;
+    const schain = bid?.ortb2?.source?.ext?.schain;
+    if (schain && isArray(schain.nodes) && schain.nodes.length > 0) {
+      outBoundBidRequest.source.ext.schain = schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
 

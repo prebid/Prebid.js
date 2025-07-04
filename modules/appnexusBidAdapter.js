@@ -238,7 +238,7 @@ export const spec = {
 
     const memberIdBid = ((bidRequests) || []).find(hasMemberId);
     const member = memberIdBid ? parseInt(memberIdBid.params.member, 10) : 0;
-    const schain = bidRequests[0].schain;
+    const schain = bidRequests[0]?.ortb2?.source?.ext?.schain;
     const omidSupport = ((bidRequests) || []).find(hasOmidSupport);
 
     const payload = {
@@ -282,6 +282,18 @@ export const spec = {
     let auctionKeywords = getANKeywordParam(ortb2, anAuctionKeywords)
     if (auctionKeywords.length > 0) {
       payload.keywords = auctionKeywords;
+    }
+
+    if (ortb2?.source?.tid) {
+      if (!payload.source) {
+        payload.source = {
+          tid: ortb2.source.tid
+        };
+      } else {
+        Object.assign({}, payload.source, {
+          tid: ortb2.source.tid
+        });
+      }
     }
 
     if (config.getConfig('adpod.brandCategoryExclusion')) {
@@ -909,9 +921,14 @@ function bidToTag(bid) {
     tag.keywords = auKeywords;
   }
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
+  }
+
+  let tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  if (tid) {
+    tag.tid = tid;
   }
 
   if (FEATURES.NATIVE && (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`))) {
