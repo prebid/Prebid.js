@@ -60,44 +60,6 @@ let _profileConfigs;
 export const getProfileConfigs = () => _profileConfigs;
 export const setProfileConfigs = (configs) => { _profileConfigs = configs; };
 
-// Waits for a given promise to resolve within a timeout
-export function withTimeout(promise, ms) {
-    let timeout;
-    const timeoutPromise = new Promise((resolve) => {
-      timeout = setTimeout(() => resolve(undefined), ms);
-    });
-
-    return Promise.race([promise.finally(() => clearTimeout(timeout)), timeoutPromise]);
-}
-
-// Utility Functions
-export const getCurrentTimeOfDay = () => {
-  const currentHour = new Date().getHours();
-
-  return currentHour < 5 ? CONSTANTS.TIME_OF_DAY_VALUES.NIGHT
-    : currentHour < 12 ? CONSTANTS.TIME_OF_DAY_VALUES.MORNING
-      : currentHour < 17 ? CONSTANTS.TIME_OF_DAY_VALUES.AFTERNOON
-        : currentHour < 19 ? CONSTANTS.TIME_OF_DAY_VALUES.EVENING
-          : CONSTANTS.TIME_OF_DAY_VALUES.NIGHT;
-}
-
-export const getBrowserType = () => {
-  const brandName = getLowEntropySUA()?.browsers
-    ?.map(b => b.brand.toLowerCase())
-    .join(' ') || '';
-  const browserMatch = brandName ? BROWSER_REGEX_MAP.find(({ regex }) => regex.test(brandName)) : -1;
-
-  if (browserMatch?.id) return browserMatch.id.toString();
-
-  const userAgent = navigator?.userAgent;
-  let browserIndex = userAgent == null ? -1 : 0;
-
-  if (userAgent) {
-    browserIndex = BROWSER_REGEX_MAP.find(({ regex }) => regex.test(userAgent))?.id || 0;
-  }
-  return browserIndex.toString();
-}
-
 // Find all bids for a specific ad unit
 function findBidsForAdUnit(auction, code) {
   return auction?.bidsReceived?.filter(bid => bid.adUnitCode === code) || [];
@@ -407,6 +369,27 @@ export const getUtm = () => getUtmValue();
 export const setFloorsConfig = () => {
     const dynamicFloors = _configData?.plugins?.dynamicFloors;
 
+    // Extract multipliers from floors.json if available
+    if (dynamicFloors?.data?.multiplier) {
+      // Map of source keys to destination keys
+      const multiplierKeys = {
+        'win': 'WIN',
+        'floored': 'FLOORED',
+        'nobid': 'NOBID'
+      };
+
+      // Initialize _multipliers and only add keys that exist in data.multiplier
+      _multipliers = Object.entries(multiplierKeys)
+        .reduce((acc, [srcKey, destKey]) => {
+          if (srcKey in dynamicFloors.data.multiplier) {
+            acc[destKey] = dynamicFloors.data.multiplier[srcKey];
+          }
+          return acc;
+        }, {});
+
+      logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
+    }
+
     if (!dynamicFloors?.enabled || !dynamicFloors?.config) {
       return undefined;
     }
@@ -455,7 +438,7 @@ export const getRtdConfig = async (publisherId, profileId) => {
   } else {
     // Check for each module in config
     if (apiResponse.plugins?.dynamicFloors) {
-      try{
+      try {
         conf.setConfig(setFloorsConfig());
         logMessage(`${CONSTANTS.LOG_PRE_FIX} dynamicFloors config set successfully`);
       } catch (error) {
@@ -478,31 +461,9 @@ export const fetchData = async (publisherId, profileId) => {
       const cc = response.headers?.get('country_code');
       _country = cc ? cc.split(',')?.map(code => code.trim())[0] : undefined;
       _configData = await response.json();
+      setProfileConfigs(_configData);
 
-      const data = await response.json();
-
-      // Extract multipliers from floors.json if available
-      if (type === "FLOORS" && data && data.multiplier) {
-        // Map of source keys to destination keys
-        const multiplierKeys = {
-          'win': 'WIN',
-          'floored': 'FLOORED',
-          'nobid': 'NOBID'
-        };
-
-        // Initialize _multipliers and only add keys that exist in data.multiplier
-        _multipliers = Object.entries(multiplierKeys)
-          .reduce((acc, [srcKey, destKey]) => {
-            if (srcKey in data.multiplier) {
-              acc[destKey] = data.multiplier[srcKey];
-            }
-            return acc;
-          }, {});
-
-        logInfo(CONSTANTS.LOG_PRE_FIX, `Using multipliers from floors.json: ${JSON.stringify(_multipliers)}`);
-      }
-
-      return data;
+      return _configData;
     } catch (error) {
       logError(`${CONSTANTS.LOG_PRE_FIX} Error while fetching config: ${error}`);
     }
