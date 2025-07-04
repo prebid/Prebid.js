@@ -95,10 +95,14 @@ export const spec = {
             netRevenue: netRevenue,
             ttl: config.getConfig('_bidderTimeout') || 300,
             referrer: bidRequest.data.r,
-            ad: response.ad,
-            eventTrackers: response.eventTrackers,
-            ext: response.ext
+            ad: response.ad
           };
+          if (response.eventTrackers) {
+            bidResponse.eventTrackers = response.eventTrackers;
+          }
+          if (response.ext) {
+            bidResponse.ext = response.ext;
+          }
           bidResponses.push(bidResponse);
         }
       });
