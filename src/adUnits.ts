@@ -24,7 +24,7 @@ export interface RendererConfig {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface BidderParams {
     /**
-     * Adapter-specific paramters - to be extended in the adapters
+     * Adapter-specific parameters - to be extended in the adapters
      */
 }
 

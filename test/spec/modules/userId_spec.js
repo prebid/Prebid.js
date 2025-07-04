@@ -3071,7 +3071,7 @@ describe('User ID', function () {
             }
           }));
         });
-        it('shoud not restrict if ID comes from unrestricted module', async () => {
+        it('should not restrict if ID comes from unrestricted module', async () => {
           idValues.mockId1 = [];
           idValues.mockId2 = [];
           idValues.mockId3 = [];

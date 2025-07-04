@@ -284,6 +284,18 @@ export const spec = {
       payload.keywords = auctionKeywords;
     }
 
+    if (ortb2?.source?.tid) {
+      if (!payload.source) {
+        payload.source = {
+          tid: ortb2.source.tid
+        };
+      } else {
+        Object.assign({}, payload.source, {
+          tid: ortb2.source.tid
+        });
+      }
+    }
+
     if (config.getConfig('adpod.brandCategoryExclusion')) {
       payload.brand_category_uniqueness = true;
     }
@@ -912,6 +924,11 @@ function bidToTag(bid) {
   let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
+  }
+
+  let tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  if (tid) {
+    tag.tid = tid;
   }
 
   if (FEATURES.NATIVE && (bid.mediaType === NATIVE || deepAccess(bid, `mediaTypes.${NATIVE}`))) {

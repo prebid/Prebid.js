@@ -4,7 +4,7 @@ import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
 
-import { __CLEANIO_TEST__ } from '../../../modules/cleanioRtdProvider.js';
+import { __TEST__ } from '../../../modules/humansecurityMalvDefenseRtdProvider.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules.js';
 
 const {
@@ -14,8 +14,8 @@ const {
   pageInitStepProtectPage,
   bidWrapStepAugmentHtml,
   bidWrapStepProtectByWrapping,
-  beforeInit,
-} = __CLEANIO_TEST__;
+  beforeInit
+} = __TEST__;
 
 sinon.assert.expose(chai.assert, { prefix: 'sinon' });
 
@@ -30,7 +30,7 @@ function makeFakeBidResponse() {
   };
 }
 
-describe('clean.io RTD module', function () {
+describe('humansecurityMalvDefense RTD module', function () {
   describe('readConfig()', function() {
     it('should throw ConfigError on invalid configurations', function() {
       expect(() => readConfig({})).to.throw(ConfigError);
@@ -38,13 +38,13 @@ describe('clean.io RTD module', function () {
       expect(() => readConfig({ params: { protectionMode: 'bids' } })).to.throw(ConfigError);
       expect(() => readConfig({ params: { cdnUrl: 'abc' } })).to.throw(ConfigError);
       expect(() => readConfig({ params: { cdnUrl: 'abc', protectionMode: 'bids' } })).to.throw(ConfigError);
-      expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: '123' } })).to.throw(ConfigError);
+      expect(() => readConfig({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: '123' } })).to.throw(ConfigError);
     });
 
     it('should accept valid configurations', function() {
-      expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } })).to.not.throw();
-      expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids' } })).to.not.throw();
-      expect(() => readConfig({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids-nowait' } })).to.not.throw();
+      expect(() => readConfig({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'full' } })).to.not.throw();
+      expect(() => readConfig({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'bids' } })).to.not.throw();
+      expect(() => readConfig({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'bids-nowait' } })).to.not.throw();
     });
   });
 
@@ -68,10 +68,10 @@ describe('clean.io RTD module', function () {
     });
 
     it('pageInitStepProtectPage() should insert script element', function() {
-      pageInitStepProtectPage(fakeScriptURL, 'clean.io');
+      pageInitStepProtectPage(fakeScriptURL, 'humansecurityMalvDefense');
 
       sinon.assert.calledOnce(loadExternalScriptStub);
-      sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, MODULE_TYPE_RTD, 'clean.io');
+      sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, MODULE_TYPE_RTD, 'humansecurityMalvDefense');
     });
   });
 
@@ -113,20 +113,20 @@ describe('clean.io RTD module', function () {
     });
 
     function getModule() {
-      beforeInit();
+      beforeInit('humansecurityMalvDefense');
 
       expect(submoduleStub.calledOnceWith('realTimeData')).to.equal(true);
 
       const registeredSubmoduleDefinition = submoduleStub.getCall(0).args[1];
       expect(registeredSubmoduleDefinition).to.be.an('object');
-      expect(registeredSubmoduleDefinition).to.have.own.property('name', 'clean.io');
+      expect(registeredSubmoduleDefinition).to.have.own.property('name', 'humansecurityMalvDefense');
       expect(registeredSubmoduleDefinition).to.have.own.property('init').that.is.a('function');
       expect(registeredSubmoduleDefinition).to.have.own.property('onBidResponseEvent').that.is.a('function');
 
       return registeredSubmoduleDefinition;
     }
 
-    it('should register clean.io RTD submodule provider', function () {
+    it('should register humansecurityMalvDefense RTD submodule provider', function () {
       getModule();
     });
 
@@ -138,9 +138,9 @@ describe('clean.io RTD module', function () {
 
     it('should initialize in full (page) protection mode', function () {
       const { init, onBidResponseEvent } = getModule();
-      expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } }, {})).to.equal(true);
+      expect(init({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'full' } }, {})).to.equal(true);
       sinon.assert.calledOnce(loadExternalScriptStub);
-      sinon.assert.calledWith(loadExternalScriptStub, 'https://abc1234567890.cloudfront.net/script.js', MODULE_TYPE_RTD, 'clean.io');
+      sinon.assert.calledWith(loadExternalScriptStub, 'https://cadmus.script.ac/abc1234567890/script.js', MODULE_TYPE_RTD, 'humansecurityMalvDefense');
 
       const fakeBidResponse = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse, {}, {});
@@ -149,18 +149,18 @@ describe('clean.io RTD module', function () {
 
     it('should iniitalize in bids (frame) protection mode', function () {
       const { init, onBidResponseEvent } = getModule();
-      expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids' } }, {})).to.equal(true);
+      expect(init({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'bids' } }, {})).to.equal(true);
       sinon.assert.calledOnce(insertElementStub);
       sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'LINK'));
 
       const fakeBidResponse = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse, {}, {});
-      ensureWrapBidResponse(fakeBidResponse, 'https://abc1234567890.cloudfront.net/script.js');
+      ensureWrapBidResponse(fakeBidResponse, 'https://cadmus.script.ac/abc1234567890/script.js');
     });
 
     it('should respect preload status in bids-nowait protection mode', function () {
       const { init, onBidResponseEvent } = getModule();
-      expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'bids-nowait' } }, {})).to.equal(true);
+      expect(init({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'bids-nowait' } }, {})).to.equal(true);
       sinon.assert.calledOnce(insertElementStub);
       sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'LINK'));
       const preloadLink = insertElementStub.getCall(0).args[0];
@@ -176,7 +176,7 @@ describe('clean.io RTD module', function () {
 
       const fakeBidResponse2 = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse2, {}, {});
-      ensureWrapBidResponse(fakeBidResponse2, 'https://abc1234567890.cloudfront.net/script.js');
+      ensureWrapBidResponse(fakeBidResponse2, 'https://cadmus.script.ac/abc1234567890/script.js');
 
       // Simulate error
       preloadLink.onerror();
@@ -189,14 +189,14 @@ describe('clean.io RTD module', function () {
 
     it('should send billable event per bid won event', function () {
       const { init } = getModule();
-      expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } }, {})).to.equal(true);
+      expect(init({ params: { cdnUrl: 'https://cadmus.script.ac/abc1234567890/script.js', protectionMode: 'full' } }, {})).to.equal(true);
 
-      const eventCounter = { registerCleanioBillingEvent: function() {} };
-      sinon.spy(eventCounter, 'registerCleanioBillingEvent');
+      const eventCounter = { registerHumansecurityMalvDefenseBillingEvent: function() {} };
+      sinon.spy(eventCounter, 'registerHumansecurityMalvDefenseBillingEvent');
 
       events.on(EVENTS.BILLABLE_EVENT, (evt) => {
-        if (evt.vendor === 'clean.io') {
-          eventCounter.registerCleanioBillingEvent()
+        if (evt.vendor === 'humansecurityMalvDefense') {
+          eventCounter.registerHumansecurityMalvDefenseBillingEvent()
         }
       });
 
@@ -205,7 +205,7 @@ describe('clean.io RTD module', function () {
       events.emit(EVENTS.BID_WON, {});
       events.emit(EVENTS.BID_WON, {});
 
-      sinon.assert.callCount(eventCounter.registerCleanioBillingEvent, 4);
+      sinon.assert.callCount(eventCounter.registerHumansecurityMalvDefenseBillingEvent, 4);
     });
   });
 });

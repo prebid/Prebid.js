@@ -30,7 +30,7 @@ describe('permutiveRtdProvider', function () {
   })
 
   describe('permutiveSubmodule', function () {
-    it('should initalise and return true', function () {
+    it('should initialise and return true', function () {
       expect(permutiveSubmodule.init()).to.equal(true)
     })
   })
