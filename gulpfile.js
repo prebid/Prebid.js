@@ -196,7 +196,7 @@ function getModulesListToAddInBanner(modules) {
 }
 
 function gulpBundle(dev) {
-  return bundle(dev).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
+  return bundle(dev, undefined, dev ? helpers.getDevPath() : helpers.getBuildPath()).pipe(gulp.dest('build/' + (dev ? 'dev' : 'dist')));
 }
 
 function nodeBundle(modules, dev = false) {
@@ -275,9 +275,9 @@ function disclosureSummary(modules, summaryFileName) {
 
 const MODULES_REQUIRING_METADATA = ['storageControl'];
 
-function bundle(dev, moduleArr) {
+function bundle(dev, moduleArr, mpath) {
   var modules = moduleArr || helpers.getArgModules();
-  var allModules = helpers.getModuleNames(modules);
+  var allModules = helpers.getModuleNames(modules, mpath);
   const sm = dev || argv.sourceMaps;
 
   if (modules.length === 0) {
