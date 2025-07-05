@@ -458,6 +458,57 @@ describe('kargo adapter tests', function() {
       );
     });
 
+    it('clones ortb2 and removes user.ext.eids without mutating original input', function () {
+      const ortb2WithEids = {
+        user: {
+          ext: {
+            eids: [{ source: 'adserver.org', uids: [{ id: 'abc', atype: 1 }] }],
+            other: 'data'
+          },
+          gender: 'M'
+        },
+        site: {
+          domain: 'example.com',
+          page: 'https://example.com/page'
+        },
+        source: {
+          tid: 'test-tid'
+        }
+      };
+
+      const expectedClonedOrtb2 = {
+        user: {
+          ext: {
+            other: 'data'
+          },
+          gender: 'M'
+        },
+        site: {
+          domain: 'example.com',
+          page: 'https://example.com/page'
+        },
+        source: {
+          tid: 'test-tid'
+        }
+      };
+
+      const testBid = {
+        ...minimumBidParams,
+        ortb2: utils.deepClone(ortb2WithEids)
+      };
+
+      const payload = getPayloadFromTestBids([testBid]);
+
+      // Confirm eids were removed from the payload
+      expect(payload.ext.ortb2.user.ext.eids).to.be.undefined;
+
+      // Confirm original object was not mutated
+      expect(testBid.ortb2.user.ext.eids).to.exist.and.be.an('array');
+
+      // Confirm the rest of the ortb2 object is intact
+      expect(payload.ext.ortb2).to.deep.equal(expectedClonedOrtb2);
+    });
+
     it('copies the refererInfo object from bidderRequest if present', function() {
       let payload;
       payload = getPayloadFromTestBids(testBids);
@@ -1930,13 +1981,7 @@ describe('kargo adapter tests', function() {
       sandbox.stub(spec, '_getCrb').callsFake(function() { return crb; });
 
       // Makes the seed in the URLs predictable
-      sandbox.stub(crypto, 'getRandomValues').callsFake(function (buf) {
-        var bytes = [50, 5, 232, 133, 141, 55, 49, 57, 244, 126, 248, 44, 255, 38, 128, 0];
-        for (var i = 0; i < bytes.length; i++) {
-          buf[i] = bytes[i];
-        }
-        return buf;
-      });
+      sandbox.stub(utils, 'generateUUID').returns('3205e885-8d37-4139-b47e-f82cff268000');
     });
 
     it('returns user syncs when an ID is present', function() {
