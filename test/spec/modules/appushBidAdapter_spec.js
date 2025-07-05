@@ -73,7 +73,10 @@ describe('AppushBidAdapter', function () {
 
   const bidderRequest = {
     uspConsent: '1---',
-    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+    gdprConsent: {
+      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+      vendorData: {}
+    },
     refererInfo: {
       referer: 'https://test.com'
     },
@@ -110,7 +113,8 @@ describe('AppushBidAdapter', function () {
     it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth',
+      expect(data).to.include.all.keys(
+        'deviceWidth',
         'deviceHeight',
         'language',
         'secure',
@@ -120,7 +124,11 @@ describe('AppushBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'bcat',
+        'badv',
+        'bapp',
+        'battr'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -129,7 +137,7 @@ describe('AppushBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       expect(data.coppa).to.be.a('number');
-      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.be.a('object');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
       expect(data.placements).to.have.lengthOf(3);
@@ -170,8 +178,10 @@ describe('AppushBidAdapter', function () {
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest.data;
       expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('string');
-      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
+      expect(data.gdpr).to.be.a('object');
+      expect(data.gdpr).to.have.property('consentString');
+      expect(data.gdpr).to.not.have.property('vendorData');
+      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
     });
