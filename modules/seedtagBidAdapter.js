@@ -127,7 +127,7 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
+    requestCount: validBidRequest.bidRequestsCount || 1,
   };
 
   if (hasVideoMediaType(validBidRequest)) {
