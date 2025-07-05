@@ -98,6 +98,10 @@ export const spec = {
         data.schain = schain;
       }
 
+      if (request.ortb2Imp?.instl === 1) {
+        data.instl = request.ortb2Imp?.instl;
+      }
+
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
         tagId: request.params.tagId,
