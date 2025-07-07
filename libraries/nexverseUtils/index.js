@@ -5,7 +5,7 @@ const LOG_ERROR_PREFIX = '[Nexverse error]: ';
 const LOG_INFO_PREFIX = '[Nexverse info]: ';
 const NEXVERSE_USER_COOKIE_KEY = 'user_nexverse';
 
-const ORTB_NATIVE_TYPE_MAPPING = {
+const NV_ORTB_NATIVE_TYPE_MAPPING = {
   img: {
     '3': 'image',
     '1': 'icon'
@@ -109,13 +109,13 @@ export function parseNativeResponse(adm) {
         if (!isEmpty(asset.title) && !isEmpty(asset.title.text)) {
           result.title = asset.title.text
         } else if (!isEmpty(asset.img)) {
-          result[ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
+          result[NV_ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
             url: asset.img.url,
             height: asset.img.h,
             width: asset.img.w
           }
         } else if (!isEmpty(asset.data)) {
-          result[ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
+          result[NV_ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
         }
       });
     }
