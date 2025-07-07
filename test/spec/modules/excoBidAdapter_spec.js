@@ -314,7 +314,7 @@ describe('ExcoBidAdapter', function () {
       expect(adapter.onBidWon).to.exist.and.to.be.a('function');
     });
 
-    it('Should trigger nurl pixel for mediaType "video"', function() {
+    it('Should trigger nurl pixel', function() {
       const bid = {
         bidder: adapter.code,
         adUnitCode: 'adunit-code',
@@ -332,14 +332,13 @@ describe('ExcoBidAdapter', function () {
       expect(stubbedFetch.callCount).to.equal(1);
     });
 
-
-    it('Should NOT trigger nurl pixel for mediaType "banner"', function() {
+    it('Should trigger nurl pixel with correct parameters', function() {
       const bid = {
         bidder: adapter.code,
         adUnitCode: 'adunit-code',
         sizes: [[300, 250]],
-        nurl: 'http://example.com/win/1234',
-        mediaType: BANNER,
+        nurl: 'http://example.com/win/1234?ad_auction_won',
+        mediaType: VIDEO,
         params: {
           accountId: 'accountId',
           publisherId: 'publisherId',
@@ -348,7 +347,9 @@ describe('ExcoBidAdapter', function () {
       };
 
       adapter.onBidWon(bid);
-      expect(stubbedFetch.callCount).to.equal(0);
+
+      expect(stubbedFetch.callCount).to.equal(1);
+      expect(stubbedFetch.firstCall.args[0]).to.contain('ext_auction_won');
     });
 
     it('Should not trigger pixel if no bid nurl', function() {
