@@ -12,6 +12,9 @@ export const cookieHelpers = {
 }
 
 export const runAuction = async () => {
+  // FIXME: this should preferably not call into base userId logic
+  // (it already has its own tests, so this makes it harder to refactor it)
+
   const adUnits = [{
     code: 'adUnit-code',
     mediaTypes: {banner: {}, native: {}},
