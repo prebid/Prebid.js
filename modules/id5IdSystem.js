@@ -102,6 +102,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {Diagnostics} [diagnostics] - Diagnostics options. Supported only in multiplexing
  * @property {Array<Segment>} [segments] - A list of segments to push to partners. Supported only in multiplexing.
  * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
+ * @property {string} [gamTargetingPrefix] - When set, the GAM targeting tags will be set and use the specified prefix, for example 'id5'.
  */
 
 const DEFAULT_EIDS = {
@@ -184,6 +185,7 @@ export const id5IdSubmodule = {
         }; // register function to get eid for each id (key) decoded
       });
       this.eids = eids; // overwrite global eids
+      updateTargeting(value, config);
       return responseObj;
     }
 
@@ -238,6 +240,7 @@ export const id5IdSubmodule = {
     }
 
     logInfo(LOG_PREFIX + 'Decoded ID', responseObj);
+    updateTargeting(value, config);
 
     return responseObj;
   },
@@ -524,6 +527,41 @@ function incrementNb(cachedObj) {
     return cachedObj.nbPage + 1;
   } else {
     return 1;
+  }
+}
+
+function updateTargeting(fetchResponse, config) {
+  if (config.params.gamTargetingPrefix) {
+    const tags = {};
+    let universalUid = fetchResponse.universal_uid;
+    if (universalUid.startsWith('ID5*')) {
+      tags.id = "y";
+    }
+    let abTestingResult = fetchResponse.ab_testing?.result;
+    switch (abTestingResult) {
+      case 'control':
+        tags.ab = 'c';
+        break;
+      case 'normal':
+        tags.ab = 'n';
+        break;
+    }
+    let enrichment = fetchResponse.enrichment;
+    if (enrichment?.enriched === true) {
+      tags.enrich = 'y';
+    } else if (enrichment?.enrichment_selected === true) {
+      tags.enrich = 's';
+    } else if (enrichment?.enrichment_selected === false) {
+      tags.enrich = 'c';
+    }
+
+    window.googletag = window.googletag || {cmd: []};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag.cmd.push(() => {
+      for (const tag in tags) {
+        window.googletag.pubads().setTargeting(config.params.gamTargetingPrefix + '_' + tag, tags[tag]);
+      }
+    });
   }
 }
 
