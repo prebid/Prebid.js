@@ -364,7 +364,7 @@ describe('bridgewellBidAdapter', function () {
       expect(String(result[0].meta.advertiserDomains)).to.equal('response.com');
     });
 
-    it('should give up bid if server response is undefiend', function () {
+    it('should give up bid if server response is undefined', function () {
       let result = spec.interpretResponse({ 'body': undefined }, bannerBidRequests);
 
       expect(result).to.deep.equal([]);

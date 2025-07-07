@@ -30,7 +30,6 @@ const USERID_CONFIG = [
 const configWithSamplingAll = {
   provider: 'liveintent',
   options: {
-    bidWonTimeout: 2000,
     sampling: 1,
     sendAuctionInitEvents: true
   }
@@ -39,7 +38,6 @@ const configWithSamplingAll = {
 const configWithSamplingNone = {
   provider: 'liveintent',
   options: {
-    bidWonTimeout: 2000,
     sampling: 0,
     sendAuctionInitEvents: true
   }
@@ -48,7 +46,6 @@ const configWithSamplingNone = {
 const configWithNoAuctionInit = {
   provider: 'liveintent',
   options: {
-    bidWonTimeout: 2000,
     sampling: 1,
     sendAuctionInitEvents: false
   }
