@@ -41,23 +41,23 @@ RisemediaTech supports Display & Video(Instream) currently.
             mediatypes: {
                 video: {
                     playerSize: [640, 480],           // required
-                    context: 'instream'
+                    context: 'instream',
+                    mimes: ['video/mp4','video/webm'],
+                    minduration: 5,
+                    maxduration: 30,
+                    startdelay: 30,
+                    maxseq: 2,
+                    poddur: 30,
+                    protocols: [1,3,4],
                 }
             },
             bids:[
-                {
+                {   
+                    bidder: 'risemediatech',
                     params: {
                         bidfloor: 0.1
-                        mimes: ['video/mp4','video/webm'],
-                        minduration: 5,
-                        maxduration: 30,
-                        startdelay: 30,
-                        maxseq: 2,
-                        poddur: 30,
-                        protocols: [1,3,4],
                         testMode: 0
                     }
-                    
                 }
             ]
         }
