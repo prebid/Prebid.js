@@ -1813,8 +1813,7 @@ describe('User ID', function () {
           expect(eids).to.eql([{
             source: 'pubcid.org',
             uids: [{id: 'testpubcid', atype: 1}]
-          }])
-
+          }]);
         } finally {
           localStorage.removeItem('pubcid');
           localStorage.removeItem('pubcid_exp');
