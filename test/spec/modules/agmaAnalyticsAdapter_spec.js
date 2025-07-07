@@ -255,7 +255,7 @@ describe('AGMA Analytics Adapter', () => {
 
     const ortb2 = {
       site: {
-        domain: 'inital.com'
+        domain: 'initial.com'
       }
     };
 

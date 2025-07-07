@@ -415,8 +415,11 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
 
 /**
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
+ * PBJS 10: Adding a deprecation warning
  */
 function initAdpodHooks() {
+  logWarn('DEPRECATION NOTICE: Prebid.js is not aware of any transactions requiring the ADPOD video mediatype context. Please open a github issue if you are relying on it as support for it may be removed in a future version.');
+
   setupBeforeHookFnOnce(getHook('callPrebidCache'), callPrebidCacheHook);
   setupBeforeHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
   setupBeforeHookFnOnce(checkVideoBidSetup, checkVideoBidSetupHook);
@@ -449,8 +452,6 @@ export function callPrebidCacheAfterAuction(bids, callback) {
 
 /**
  * Compare function to be used in sorting long-form bids. This will compare bids on price per second.
- * @param {Object} a
- * @param {Object} b
  */
 export function sortByPricePerSecond(a, b) {
   if (a.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / a.video.durationBucket < b.adserverTargeting[TARGETING_KEYS.PRICE_BUCKET] / b.video.durationBucket) {

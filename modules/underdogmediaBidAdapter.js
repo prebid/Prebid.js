@@ -36,6 +36,7 @@ export function resetUserSync() {
 export const spec = {
   NON_MEASURABLE,
   code: BIDDER_CODE,
+  gvlid: UDM_VENDOR_ID,
   bidParams: [],
 
   isBidRequestValid: function (bid) {
