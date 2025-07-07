@@ -607,6 +607,7 @@ function aliasEidsHook(next, bidderRequests) {
     bidderRequests.forEach(bidderRequest => {
         bidderRequest.bids.forEach(bid =>
             Object.defineProperty(bid, 'userIdAsEids', {
+                configurable: true,
                 get() {
                     return bidderRequest.ortb2.user?.ext?.eids;
                 }
