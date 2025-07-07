@@ -18,7 +18,7 @@ describe('Djax Adapter', function() {
     let bid = {
       'bidder': 'djax',
       'params': {
-    	  'publisherId': 2
+        'publisherId': 2
       },
       'adUnitCode': 'adunit-code',
       'mediaTypes': {
@@ -44,7 +44,7 @@ describe('Djax Adapter', function() {
       {
         'bidder': 'djax',
         'params': {
-        	'publisherId': 2
+          'publisherId': 2
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -73,7 +73,7 @@ describe('Djax Adapter', function() {
       {
         'bidder': 'djax',
         'params': {
-        	'publisherId': 2
+          'publisherId': 2
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {

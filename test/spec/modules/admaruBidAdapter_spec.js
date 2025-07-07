@@ -17,7 +17,7 @@ describe('Admaru Adapter', function () {
     let bid = {
       'bidder': 'admaru',
       'params': {
-    	  'pub_id': '1234',
+        'pub_id': '1234',
         'adspace_id': '1234'
       },
       'adUnitCode': 'adunit-code',
@@ -53,7 +53,7 @@ describe('Admaru Adapter', function () {
       {
         'bidder': 'admaru',
         'params': {
-        	'pub_id': '1234',
+          'pub_id': '1234',
           'adspace_id': '1234'
         },
         'adUnitCode': 'adunit-code',
@@ -95,7 +95,7 @@ describe('Admaru Adapter', function () {
       {
         'bidder': 'admaru',
         'params': {
-        	'pub_id': '1234',
+          'pub_id': '1234',
           'adspace_id': '1234'
         },
         'adUnitCode': 'adunit-code',

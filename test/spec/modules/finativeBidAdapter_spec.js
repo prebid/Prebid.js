@@ -104,19 +104,19 @@ describe('Finative adapter', function () {
         id: '4b516b80-886e-4ec0-82ae-9209e6d625fb',
         seatbid: [
           {
-          	seat: 'finative',
-          	bid: [{
+            seat: 'finative',
+            bid: [{
               adm: {
-            	native: {
-            		assets: [
-            			{id: 0, title: {text: 'this is a title'}}
-            		],
-            		imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
-            		link: {
-            			clicktrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
-            			url: 'https://domain.for/ad/'
-            		}
-            	}
+              native: {
+                assets: [
+                  {id: 0, title: {text: 'this is a title'}}
+                ],
+                imptrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
+                link: {
+                  clicktrackers: ['https://domain.for/imp/tracker?price=${AUCTION_PRICE}'],
+                  url: 'https://domain.for/ad/'
+                }
+              }
               },
               impid: 1,
               price: 0.55
@@ -163,11 +163,11 @@ describe('Finative adapter', function () {
       const regExpPrice = new RegExp('price=' + bid.price);
 
       result[0].native.clickTrackers.forEach(function (clickTracker) {
-        	assert.ok(clickTracker.search(regExpPrice) > -1);
+          assert.ok(clickTracker.search(regExpPrice) > -1);
       });
 
       result[0].native.impressionTrackers.forEach(function (impTracker) {
-        	assert.ok(impTracker.search(regExpPrice) > -1);
+          assert.ok(impTracker.search(regExpPrice) > -1);
       });
     });
   });

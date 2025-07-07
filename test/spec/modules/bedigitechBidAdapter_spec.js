@@ -83,9 +83,9 @@ describe('BedigitechAdapter', function () {
           'currency': 'USD',
           'height': 250,
           'id': 'bedigitechMyidfdfdf',
-          'netRevenue':	true,
-          'requestTime':	1686306237,
-          'timeToRespond':	300,
+          'netRevenue': true,
+          'requestTime': 1686306237,
+          'timeToRespond': 300,
           'ttl': 300,
           'width': 300
         }
@@ -107,10 +107,10 @@ describe('BedigitechAdapter', function () {
           'meta': {
             'mediaType': BANNER,
           },
-          'netRevenue':	true,
+          'netRevenue': true,
           'requestId': 'bedigitechMyidfdfdf',
-          'requestTimestamp':	1686306237,
-          'timeToRespond':	300,
+          'requestTimestamp': 1686306237,
+          'timeToRespond': 300,
           'ttl': 300,
           'width': 300,
           'bidderCode': 'bedigitech',
