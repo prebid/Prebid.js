@@ -88,20 +88,27 @@ describe('RTBHouseAdapter', () => {
           'transactionId': 'example-transaction-id',
           'ortb2Imp': {
             'ext': {
-              'tid': 'ortb2Imp-transaction-id-1'
+              'tid': 'ortb2Imp-transaction-id-1',
+              'gpid': 'example-gpid'
             }
           },
-          'schain': {
-            'ver': '1.0',
-            'complete': 1,
-            'nodes': [
-              {
-                'asi': 'directseller.com',
-                'sid': '00001',
-                'rid': 'BidRequest1',
-                'hp': 1
+          'ortb2': {
+            'source': {
+              'ext': {
+                'schain': {
+                  'ver': '1.0',
+                  'complete': 1,
+                  'nodes': [
+                    {
+                      'asi': 'directseller.com',
+                      'sid': '00001',
+                      'rid': 'BidRequest1',
+                      'hp': 1
+                    }
+                  ]
+                }
               }
-            ]
+            }
           }
         }
       ];
@@ -272,9 +279,27 @@ describe('RTBHouseAdapter', () => {
       expect(data.imp[0].ext.tid).to.equal('ortb2Imp-transaction-id-1');
     });
 
+    it('should include impression level GPID when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.gpid).to.equal('example-gpid');
+    });
+
+    it('should not include imp[].ext.ae set at impression level when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].ortb2Imp.ext.ae = 1;
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.ae).to.be.undefined;
+    });
+
     it('should not include invalid schain', () => {
       const bidRequest = Object.assign([], bidRequests);
-      bidRequest[0].schain = {
+      bidRequest[0].ortb2 = bidRequest[0].ortb2 || {};
+      bidRequest[0].ortb2.source = bidRequest[0].ortb2.source || {};
+      bidRequest[0].ortb2.source.ext = bidRequest[0].ortb2.source.ext || {};
+      bidRequest[0].ortb2.source.ext.schain = {
         'nodes': [{
           'unknown_key': 1
         }]

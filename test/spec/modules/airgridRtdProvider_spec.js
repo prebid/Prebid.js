@@ -36,7 +36,7 @@ describe('airgrid RTD Submodule', function () {
   });
 
   describe('Initialise module', function () {
-    it('should initalise and return true', function () {
+    it('should initialise and return true', function () {
       expect(agRTD.airgridSubmodule.init(RTD_CONFIG.dataProviders[0])).to.equal(
         true
       );

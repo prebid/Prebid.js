@@ -151,7 +151,7 @@ function createBid(response, bidRequests) {
   }
 
   const request = bidRequests && bidRequests.length && bidRequests.find(itm => response.requestId === itm.bidId);
-  // In case we don't retreive the size from the adserver, use the given one.
+  // In case we don't retrieve the size from the adserver, use the given one.
   if (request) {
     if (!response.width || response.width === '0') {
       response.width = request.width;
@@ -176,7 +176,7 @@ function createBid(response, bidRequests) {
     mediaType: response.mediaType
   };
 
-  // retreive video response if present
+  // retrieve video response if present
   if (response.mediaType === 'video') {
     bid.vastXml = window.atob(response.vastXml);
   } else {

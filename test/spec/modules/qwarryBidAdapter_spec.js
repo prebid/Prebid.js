@@ -10,14 +10,20 @@ const REQUEST = {
     zoneToken: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
     pos: 7
   },
-  'schain': {
-    ver: '1.0',
-    complete: 1,
-    nodes: [{
-      asi: 'qwarry.com',
-      sid: '00001',
-      hp: 1
-    }]
+  'ortb2': {
+    'source': {
+      'ext': {
+        'schain': {
+          'ver': '1.0',
+          'complete': 1,
+          'nodes': [{
+            'asi': 'qwarry.com',
+            'sid': '00001',
+            'hp': 1
+          }]
+        }
+      }
+    }
   }
 }
 

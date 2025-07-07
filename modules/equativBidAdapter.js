@@ -160,11 +160,13 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       window.addEventListener('message', function handler(event) {
         if (event.origin === COOKIE_SYNC_ORIGIN && event.data.action === 'getConsent') {
-          event.source.postMessage({
-            action: 'consentResponse',
-            id: event.data.id,
-            consents: gdprConsent.vendorData.vendor.consents
-          }, event.origin);
+          if (event.source && event.source.postMessage) {
+            event.source.postMessage({
+              action: 'consentResponse',
+              id: event.data.id,
+              consents: gdprConsent.vendorData.vendor.consents
+            }, event.origin);
+          }
 
           if (event.data.pid) {
             storage.setDataInLocalStorage(PID_STORAGE_NAME, event.data.pid);
