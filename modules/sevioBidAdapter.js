@@ -5,7 +5,7 @@ import { config } from "../src/config.js";
 
 const BIDDER_CODE = "sevio";
 const GVLID = `1393`;
-const ENDPOINT_URL = "https://work.targetblankdev.com/prebid"; // 'http://localhost:3000/ad'; // 'https://req.adx.ws/ad';
+const ENDPOINT_URL = "https://req.adx.ws/prebid"; // 'http://localhost:3000/ad'; // 'https://req.adx.ws/ad';
 const ACTION_METHOD = "POST";
 
 const detectAdType = (bid) =>

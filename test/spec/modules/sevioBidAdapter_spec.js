@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/sevioBidAdapter.js';
 
-const ENDPOINT_URL = 'https://work.targetblankdev.com/prebid';
+const ENDPOINT_URL = 'https://req.adx.ws/prebid';
 
 describe('sevioBidAdapter', function () {
   describe('isBidRequestValid', function () {
