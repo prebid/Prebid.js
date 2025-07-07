@@ -9,7 +9,6 @@ const SYNC_URL = 'https://cs.visiblemeasures.com';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-
   isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
   interpretResponse,

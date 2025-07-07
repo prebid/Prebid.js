@@ -1,6 +1,7 @@
 const TerserPlugin = require('terser-webpack-plugin');
 var prebid = require('./package.json');
 var path = require('path');
+const cacheDir = path.resolve(__dirname, '.cache/babel-loader');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
@@ -40,6 +41,10 @@ if (argv.analyze) {
 module.exports = {
   mode: 'production',
   devtool: 'source-map',
+  cache: {
+    type: 'filesystem',
+    cacheDirectory: path.resolve(__dirname, '.cache/webpack')
+  },
   resolve: {
     modules: [
       path.resolve('.'),
@@ -78,7 +83,11 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
+            options: Object.assign(
+              {cacheDirectory: cacheDir, cacheCompression: false},
+              babelConfig,
+              helpers.getAnalyticsOptions()
+            ),
           }
         ]
       },
@@ -88,7 +97,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: babelConfig
+            options: Object.assign({cacheDirectory: cacheDir, cacheCompression: false}, babelConfig)
           }
         ],
       }

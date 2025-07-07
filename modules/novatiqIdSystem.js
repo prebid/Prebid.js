@@ -35,7 +35,7 @@ export const novatiqIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @returns {novatiq: {snowflake: string}}
+   * @returns {{novatiq: {snowflake: string}}}
    */
   decode(novatiqId, config) {
     let responseObj = {
@@ -60,7 +60,7 @@ export const novatiqIdSubmodule = {
    * performs action to obtain id and return a value in the callback's response argument
    * @function
    * @param {SubmoduleConfig} config
-   * @returns {id: string}
+   * @returns {string}
    */
   getId(config) {
     const configParams = config.params || {};

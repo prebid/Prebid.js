@@ -1,4 +1,3 @@
-import {includes} from 'src/polyfill.js'
 import cloneDeep from 'lodash/cloneDeep'
 import unset from 'lodash/unset'
 import { expect } from 'chai'
@@ -221,7 +220,7 @@ describe('AFP Adapter', function() {
             expect(bid.sizes).to.equal(sizes)
           })
 
-          if (includes([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE], validBidRequests[index].params.placeType)) {
+          if ([IN_IMAGE_BANNER_TYPE, IN_IMAGE_MAX_BANNER_TYPE].includes(validBidRequests[index].params.placeType)) {
             it('imageUrl should be correct', function() {
               expect(bid.imageUrl).to.equal(imageUrl)
             })

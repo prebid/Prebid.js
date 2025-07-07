@@ -57,7 +57,7 @@ export const log = getLogger();
  */
 
 /**
- * @typedef {`${number}x${number}`} AdUnitSize
+ * @typedef {string} AdUnitSize
  */
 
 /**
@@ -159,7 +159,6 @@ class TransactionManager {
   #clearSendTimeout() {
     return clearTimeout(this.#sendTimeoutId);
   }
-
 
   #restartSendTimeout() {
     this.#clearSendTimeout();
@@ -376,7 +375,7 @@ function getCachedBid(auctionId, bidId) {
 /**
  * @param {Object} args
  * @param {Object} args.args Event data
- * @param {EVENTS[keyof EVENTS]} args.eventType
+ * @param {string} args.eventType
  */
 function analyticEventHandler({ eventType, args }) {
   if (!locals.cache) {
