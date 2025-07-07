@@ -4550,7 +4550,7 @@ describe('IndexexchangeAdapter', function () {
       expect(lsData.features.test.activated).to.be.true;
     });
 
-    it('should retrive features from localstorage when enabled', () => {
+    it('should retrieve features from localstorage when enabled', () => {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       serverResponse.body.ext.features.test.activated = true;
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
