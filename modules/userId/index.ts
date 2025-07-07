@@ -463,23 +463,9 @@ declare module '../../src/adapterManager' {
     }
 }
 
-export function addIdData({adUnits, ortb2Fragments}) {
+export function addIdData({ortb2Fragments}) {
   ortb2Fragments = ortb2Fragments ?? {global: {}, bidder: {}}
   enrichEids(ortb2Fragments);
-  if ([adUnits].some(i => !Array.isArray(i) || !i.length)) {
-    return;
-  }
-  const globalEids = ortb2Fragments.global.user?.ext?.eids || [];
-  adUnits.forEach(adUnit => {
-    if (adUnit.bids && isArray(adUnit.bids)) {
-      adUnit.bids.forEach(bid => {
-        const bidderEids = globalEids.concat(ortb2Fragments.bidder?.[bid.bidder]?.user?.ext?.eids || []);
-        if (bidderEids.length > 0) {
-          bid.userIdAsEids = bidderEids;
-        }
-      });
-    }
-  });
 }
 
 const INIT_CANCELED = {};
@@ -614,15 +600,21 @@ export const startAuctionHook = timedAuctionHook('userId', function requestBidsH
 });
 
 /**
- * Append user id data from config to bids to be accessed in adapters when there are no submodules.
- * @param {function} fn required; The next function in the chain, used by hook.ts
- * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
+ * Alias bid requests' `userIdAsEids` to `ortb2.user.ext.eids`
+ * Do this lazily (instead of attaching a copy) so that it also shows EIDs added after the userId module runs (e.g. from RTD modules)
  */
-export const addUserIdsHook = timedAuctionHook('userId', function requestBidsHook(fn, reqBidsConfigObj: StartAuctionOptions) {
-  addIdData(reqBidsConfigObj);
-  // calling fn allows prebid to continue processing
-  fn.call(this, reqBidsConfigObj);
-});
+function aliasEidsHook(next, bidderRequests) {
+    bidderRequests.forEach(bidderRequest => {
+        bidderRequest.bids.forEach(bid =>
+            Object.defineProperty(bid, 'userIdAsEids', {
+                get() {
+                    return bidderRequest.ortb2.user?.ext?.eids;
+                }
+            })
+        )
+    })
+    next(bidderRequests);
+}
 
 /**
  * Is startAuctionHook added
@@ -1099,7 +1091,6 @@ function updateSubmodules(options = {}) {
 
   if (submodules.length) {
     if (!addedStartAuctionHook()) {
-      startAuction.getHooks({hook: addUserIdsHook}).remove();
       startAuction.before(startAuctionHook, 100) // use higher priority than dataController / rtd
       adapterManager.callDataDeletionRequest.before(requestDataDeletion);
       coreGetPPID.after((next) => next(getPPID()));
@@ -1237,6 +1228,7 @@ export function init(config, {mkDelay = delay} = {}) {
       }
     }
   });
+  adapterManager.makeBidRequests.after(aliasEidsHook);
 
   // exposing getUserIds function in global-name-space so that userIds stored in Prebid can be used by external codes.
   addApiMethod('getUserIds', getUserIds);
@@ -1246,10 +1238,6 @@ export function init(config, {mkDelay = delay} = {}) {
   addApiMethod('refreshUserIds', normalizePromise(refreshUserIds));
   addApiMethod('getUserIdsAsync', normalizePromise(getUserIdsAsync));
   addApiMethod('getUserIdsAsEidBySource', getUserIdsAsEidBySource);
-  if (!addedStartAuctionHook()) {
-    // Add ortb2.user.ext.eids even if 0 submodules are added
-    startAuction.before(addUserIdsHook, 100); // use higher priority than dataController / rtd
-  }
 }
 
 export function resetUserIds() {
