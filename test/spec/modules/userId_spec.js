@@ -2101,6 +2101,11 @@ describe('User ID', function () {
             },
             getId: function () {
               return {id: `${name}Value`};
+            },
+            eids: {
+              [name]: {
+                source: name
+              }
             }
           }));
           mods.forEach(attachIdSystem);
@@ -2109,7 +2114,7 @@ describe('User ID', function () {
           isAllowed.restore();
         });
 
-        it('should check for enrichEids activity permissions', () => {
+        it('should check for enrichEids activity permissions', async () => {
           isAllowed.callsFake((activity, params) => {
             return !(activity === ACTIVITY_ENRICH_EIDS &&
               params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID &&
@@ -2124,11 +2129,9 @@ describe('User ID', function () {
               }))
             }
           });
-          return expectImmediateBidHook((req) => {
-            const activeSources = req.adUnits.flatMap(au => au.bids)
-              .flatMap(bid => bid.userIdAsEids ? bid.userIdAsEids.map(eid => eid.source) : []);
-            expect(Array.from(new Set(activeSources))).to.have.members([MOCK_IDS[1]]);
-          }, {adUnits})
+          const eids = await getGlobalEids();
+          const activeSources = eids.map(({source}) => source);
+          expect(Array.from(new Set(activeSources))).to.have.members([MOCK_IDS[1]]);
         });
       })
     });
@@ -2166,7 +2169,7 @@ describe('User ID', function () {
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.mergeConfig(customCfg);
-        return runBidsHook({}).then(() => {
+        return runBidsHook(sinon.stub(), {}).then(() => {
           expect(utils.triggerPixel.called).to.be.false;
           return endAuction();
         }).then(() => {
