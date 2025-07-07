@@ -466,14 +466,14 @@ export const spec = {
    * @param {import('../src/auction.js').BidResponse} bid - The bid that won the auction
    */
   onBidWon: function (bid) {
-    if (bid == null || bid.mediaType === BANNER) {
+    if (bid == null) {
       return;
     }
 
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
-      helpers.triggerUrl(
-        helpers.replaceMacro(bid.nurl)
-      );
+      const url = helpers.replaceMacro(bid.nurl)
+        .replace('ad_auction_won', 'ext_auction_won');
+      helpers.triggerUrl(url);
     }
   },
 };
