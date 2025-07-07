@@ -146,8 +146,8 @@ describe('SeedingAlliance adapter', function () {
         id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
+            seat: 'seedingAlliance',
+            bid: [{
               adm: JSON.stringify({
                 native: {
                   assets: [
@@ -175,8 +175,8 @@ describe('SeedingAlliance adapter', function () {
         id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
+            seat: 'seedingAlliance',
+            bid: [{
               adm: '<iframe src="https://domain.tld/cds/delivery?wp=0.90"></iframe>',
               impid: 1,
               price: 0.90,
