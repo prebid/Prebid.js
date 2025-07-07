@@ -1,19 +1,25 @@
 const jsdoc = require('eslint-plugin-jsdoc')
 const lintImports = require('eslint-plugin-import')
 const neostandard = require('neostandard')
-const babelParser = require('@babel/eslint-parser');
 const globals = require('globals');
 const prebid = require('./plugins/eslint/index.js');
 const {includeIgnoreFile} = require('@eslint/compat');
 const path = require('path');
 const _ = require('lodash');
+const tseslint = require('typescript-eslint');
+const {getSourceFolders, getIgnoreSources} = require('./gulpHelpers.js');
 
-function sourcePattern(name) {
+function jsPattern(name) {
   return [`${name}/**/*.js`, `${name}/**/*.mjs`]
 }
 
-const sources = ['src', 'modules', 'libraries', 'creative'].flatMap(sourcePattern)
-const autogen = 'libraries/creative-renderer-*/**/*'
+function tsPattern(name) {
+  return [`${name}/**/*.ts`]
+}
+
+function sourcePattern(name) {
+  return jsPattern(name).concat(tsPattern(name));
+}
 
 const allowedImports = {
   modules: [
@@ -44,8 +50,29 @@ function noGlobals(names) {
   }
 }
 
-function commonConfig(overrides) {
-  return _.merge({
+
+module.exports = [
+  includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
+  {
+    ignores: [
+      ...getIgnoreSources(),
+      'integrationExamples/**/*',
+      // do not lint build-related stuff
+      '*.js',
+      'metadata/**/*',
+      ...jsPattern('plugins'),
+      ...jsPattern('.github'),
+    ],
+  },
+  jsdoc.configs['flat/recommended'],
+  ...tseslint.configs.recommended,
+  ...neostandard({
+    files: getSourceFolders().flatMap(jsPattern),
+    ts: true,
+    filesTs: getSourceFolders().flatMap(tsPattern)
+  }),
+  {
+    files: getSourceFolders().flatMap(sourcePattern),
     plugins: {
       jsdoc,
       import: lintImports,
@@ -59,7 +86,6 @@ function commonConfig(overrides) {
       }
     },
     languageOptions: {
-      parser: babelParser,
       sourceType: 'module',
       ecmaVersion: 2018,
       globals: {
@@ -132,35 +158,14 @@ function commonConfig(overrides) {
       '@stylistic/object-property-newline': 'off',
 
     }
-  }, overrides);
-}
-
-module.exports = [
-  includeIgnoreFile(path.resolve(__dirname, '.gitignore')),
-  {
-    ignores: [
-      autogen,
-      'integrationExamples/**/*',
-      // do not lint build-related stuff
-      '*.js',
-      ...sourcePattern('plugins'),
-      ...sourcePattern('.github'),
-    ],
   },
-  jsdoc.configs['flat/recommended'],
-  ...neostandard({
-    files: sources,
-  }),
-  commonConfig({
-    files: sources,
-  }),
   ...Object.entries(allowedImports).map(([path, allowed]) => {
     const {globals, props} = noGlobals({
       require: 'use import instead',
       ...Object.fromEntries(['localStorage', 'sessionStorage'].map(k => [k, 'use storageManager instead'])),
       XMLHttpRequest: 'use ajax.js instead'
     })
-    return commonConfig({
+    return {
       files: sourcePattern(path),
       plugins: {
         prebid,
@@ -199,7 +204,7 @@ module.exports = [
           }))
         ]
       }
-    })
+    }
   }),
   {
     files: ['**/*BidAdapter.js'],
@@ -214,7 +219,7 @@ module.exports = [
       ]
     }
   },
-  commonConfig({
+  {
     files: sourcePattern('test'),
     languageOptions: {
       globals: {
@@ -239,7 +244,25 @@ module.exports = [
       'default-case-last': 'off',
       '@stylistic/no-mixed-spaces-and-tabs': 'off',
       '@stylistic/no-tabs': 'off',
-      '@stylistic/no-trailing-spaces': 'error'
+      '@stylistic/no-trailing-spaces': 'error',
     }
-  })
+  },
+  {
+    files: getSourceFolders().flatMap(tsPattern),
+    rules: {
+      // turn off no-undef for TS files - type checker does better
+      'no-undef': 'off',
+      '@typescript-eslint/no-explicit-any': 'off'
+    }
+  },
+  {
+    files: getSourceFolders().flatMap(jsPattern),
+    rules: {
+      // turn off typescript rules on js files - just too many violations
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-this-alias': 'off',
+      '@typescript-eslint/no-require-imports': 'off'
+    }
+  },
 ]

@@ -87,7 +87,8 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
-      const { params: { uid }, schain, userId, userIdAsEids } = bid;
+      const { params: { uid }, userId, userIdAsEids } = bid;
+      const schain = bid?.ortb2?.source?.ext?.schain;
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }

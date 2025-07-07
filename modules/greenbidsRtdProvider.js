@@ -5,7 +5,7 @@ import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
-const MODULE_VERSION = '2.0.1';
+const MODULE_VERSION = '2.0.2';
 const ENDPOINT = 'https://t.greenbids.ai';
 
 const rtdOptions = {};
@@ -63,12 +63,6 @@ function createPromise(reqBidsConfigObj, greenbidsId) {
         },
       },
       createPayload(reqBidsConfigObj, greenbidsId),
-      {
-        contentType: 'application/json',
-        customHeaders: {
-          'Greenbids-Pbuid': rtdOptions.pbuid
-        }
-      }
     );
   });
 }

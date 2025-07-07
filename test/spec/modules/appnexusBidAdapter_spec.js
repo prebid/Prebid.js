@@ -1218,18 +1218,44 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid);
     });
 
     it('should add backup gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid);
+    });
+
+    it('should add tid to the request', function () {
+      const testTid = '1234test';
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { tid: testTid } };
+      // bidRequest.ortb2 = { source: { tid: testTid } };
+
+      const bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        ortb2: {
+          source: {
+            tid: testTid
+          }
+        }
+      };
+      bidderRequest.bids = [bidRequest];
+
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].tid).to.exist.and.equal(testTid);
+      expect(payload.source.tid).to.exist.and.equal(testTid);
     });
 
     it('should add gdpr consent information to the request', function () {
@@ -1462,16 +1488,22 @@ describe('AppNexusAdapter', function () {
 
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'blob.com',
-              'sid': '001',
-              'hp': 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'blob.com',
+                    'sid': '001',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       });
 

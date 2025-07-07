@@ -2283,7 +2283,7 @@ describe('magnite analytics adapter', function () {
       config.setConfig({ rubicon: { updatePageView: true } });
     });
 
-    it('should add a no-bid bid to the add unit if it recieves one from the server', () => {
+    it('should add a no-bid bid to the add unit if it receives one from the server', () => {
       const bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
       const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
 
