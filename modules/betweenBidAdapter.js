@@ -13,11 +13,13 @@ import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
  */
 
 const BIDDER_CODE = 'between';
+const GVLID = 724;
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['btw'],
   supportedMediaTypes: ['banner', 'video'],
   /**
@@ -85,8 +87,9 @@ export const spec = {
         }
       }
 
-      if (i.schain) {
-        params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
+      const schain = i?.ortb2?.source?.ext?.schain;
+      if (schain) {
+        params.schain = encodeToBase64WebSafe(JSON.stringify(schain));
       }
 
       // TODO: is 'page' the right value here?

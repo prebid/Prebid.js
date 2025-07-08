@@ -134,7 +134,10 @@ describe('opscoBidAdapter', function () {
 
     it('should send schain in the payload if present', function () {
       const schain = {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'exchange1.com', 'sid': '1234', 'hp': 1}]};
-      validBid.schain = schain;
+      validBid.ortb2 = validBid.ortb2 || {};
+      validBid.ortb2.source = validBid.ortb2.source || {};
+      validBid.ortb2.source.ext = validBid.ortb2.source.ext || {};
+      validBid.ortb2.source.ext.schain = schain;
       const request = spec.buildRequests([validBid], bidderRequest);
       expect(JSON.parse(request.data).source.ext.schain).to.deep.equal(schain);
     });

@@ -9,6 +9,7 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'revcontent';
+const GVLID = 203;
 const NATIVE_PARAMS = {
   title: {
     id: 0,
@@ -29,6 +30,7 @@ const STYLE_EXTRA = '<style type="text/css">.undefined-photo { background-size: 
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
   isBidRequestValid: function (bid) {
     return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined');

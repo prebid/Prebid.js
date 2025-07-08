@@ -585,7 +585,7 @@ describe('TwistDigitalBidAdapter', function () {
       });
     });
 
-    it('should return seperated requests for video and banner if singleRequest is true', function () {
+    it('should return separated requests for video and banner if singleRequest is true', function () {
       config.setConfig({
         bidderTimeout: 3000,
         twistdigital: {

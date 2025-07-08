@@ -1,6 +1,7 @@
 import { submodule } from '../src/hook.js';
 import { logError, mergeDeep, logMessage, deepSetValue, deepAccess } from '../src/utils.js';
-import { getCoreStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 /* global LanguageDetector, Summarizer */
 /**
@@ -30,7 +31,8 @@ export const CONSTANTS = Object.freeze({
   }
 });
 
-const storage = getCoreStorageManager(CONSTANTS.SUBMODULE_NAME);
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: CONSTANTS.SUBMODULE_NAME});
+
 let moduleConfig = JSON.parse(JSON.stringify(CONSTANTS.DEFAULT_CONFIG));
 let detectedKeywords = null; // To store generated summary/keywords
 
@@ -410,6 +412,7 @@ const getBidRequestData = (reqBidsConfigObj, callback) => {
 /** @type {RtdSubmodule} */
 export const chromeAiSubmodule = {
   name: CONSTANTS.SUBMODULE_NAME,
+  disclosureURL: 'local://modules/chromeAiRtdProvider.json',
   init,
   getBidRequestData
 };

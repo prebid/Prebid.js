@@ -296,7 +296,7 @@ describe('ConnectAd Adapter', function () {
         };
 
         let bidRequest = {
-		      ortb2: {
+          ortb2: {
             regs: {
               ext: {
                 dsa
@@ -372,16 +372,22 @@ describe('ConnectAd Adapter', function () {
 
       it('should populate schain', function () {
         const bidRequest = Object.assign({}, bidRequests[0], {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                'asi': 'reseller1.com',
-                'sid': 'absc1',
-                'hp': 1
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [
+                    {
+                      'asi': 'reseller1.com',
+                      'sid': 'absc1',
+                      'hp': 1
+                    }
+                  ]
+                }
               }
-            ]
+            }
           }
         });
 

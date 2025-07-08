@@ -18,7 +18,7 @@ export const spec = {
   aliases: ['saambaa'],
   isBidRequestValid(bidRequest) {
     if (typeof bidRequest !== 'undefined') {
-      if (bidRequest.bidder !== BIDDER_CODE && typeof bidRequest.params === 'undefined') { return false; }
+      if (typeof bidRequest.params === 'undefined') { return false; }
       if (bidRequest === '' || bidRequest.params.placement === '' || bidRequest.params.pubid === '') { return false; }
       return true;
     } else { return false; }

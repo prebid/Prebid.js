@@ -71,7 +71,7 @@ function toPayload(bidRequest, bidderRequest) {
   payload.floor = bidFloor?.floor;
   payload.floor_currency = bidFloor?.currency;
   payload.currency = getCurrencyFromBidderRequest(bidderRequest);
-  payload.schain = bidRequest.schain;
+  payload.schain = bidRequest?.ortb2?.source?.ext?.schain;
   payload.autoplay = isAutoplayEnabled() === true ? 1 : 0;
   payload.screen = { height: getWinDimensions().screen.height, width: getWinDimensions().screen.width };
   payload.viewport = getViewportSize();

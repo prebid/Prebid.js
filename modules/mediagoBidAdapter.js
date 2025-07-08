@@ -139,7 +139,6 @@ function getItems(validBidRequests, bidderRequest) {
     const bidFloor = getBidFloor(req);
     const gpid =
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-      utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
       utils.deepAccess(req, 'params.placementId', 0);
 
     const gdprConsent = {};
@@ -387,7 +386,7 @@ export const spec = {
    */
   //   onTimeout: function (data) {
   //     // console.log('onTimeout', data);
-  //     // Bidder specifc code
+  //     // Bidder specific code
   //   },
 
   /**

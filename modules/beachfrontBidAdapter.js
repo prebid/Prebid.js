@@ -13,6 +13,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { getFirstSize, getOsVersion, getVideoSizes, getBannerSizes, isConnectedTV, getDoNotTrack, isMobile, isBannerBid, isVideoBid, getBannerBidFloor, getVideoBidFloor, getVideoTargetingParams, getTopWindowLocation } from '../libraries/advangUtils/index.js';
 
 const ADAPTER_VERSION = '1.21';
+const GVLID = 335;
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -37,6 +38,7 @@ let appId = '';
 
 export const spec = {
   code: 'beachfront',
+  gvlid: GVLID,
   supportedMediaTypes: [ VIDEO, BANNER ],
 
   isBidRequestValid(bid) {
@@ -328,8 +330,9 @@ function createVideoRequestData(bid, bidderRequest) {
     deepSetValue(payload, 'regs.gpp_sid', applicableSections);
   }
 
-  if (bid.schain) {
-    deepSetValue(payload, 'source.ext.schain', bid.schain);
+  const schain = bid?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    deepSetValue(payload, 'source.ext.schain', schain);
   }
 
   if (eids.length > 0) {
@@ -389,8 +392,9 @@ function createBannerRequestData(bids, bidderRequest) {
     payload.gppSid = applicableSections;
   }
 
-  if (bids[0] && bids[0].schain) {
-    payload.schain = bids[0].schain;
+  const schain = bids[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    payload.schain = schain;
   }
 
   SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
