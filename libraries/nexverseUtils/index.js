@@ -5,7 +5,7 @@ const LOG_ERROR_PREFIX = '[Nexverse error]: ';
 const LOG_INFO_PREFIX = '[Nexverse info]: ';
 const NEXVERSE_USER_COOKIE_KEY = 'user_nexverse';
 
-const NV_ORTB_NATIVE_TYPE_MAPPING = {
+export const NV_ORTB_NATIVE_TYPE_MAPPING = {
   img: {
     '3': 'image',
     '1': 'icon'
