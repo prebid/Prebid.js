@@ -1,11 +1,10 @@
 import {spec, converter} from 'modules/rumbleBidAdapter.js';
-import { config } from '../../../src/config';
-import {BANNER} from "../../../src/mediaTypes";
-import {deepClone, getUniqueIdentifierStr} from "../../../src/utils";
+import { config } from '../../../src/config.js';
+import {BANNER} from "../../../src/mediaTypes.js";
+import {deepClone, getUniqueIdentifierStr} from "../../../src/utils.js";
 import {expect} from "chai";
 
 const bidder = 'rumble';
-
 
 describe('RumbleBidAdapter', function() {
   describe('isBidRequestValid', function() {
@@ -69,7 +68,6 @@ describe('RumbleBidAdapter', function() {
   });
 
   describe('buildRequests', function() {
-
     let bidRequests = [{
       bidder: 'rumble',
       params: {
@@ -82,7 +80,7 @@ describe('RumbleBidAdapter', function() {
           sizes: [[300, 250]]
         }
       },
-      sizes:[[300, 250]],
+      sizes: [[300, 250]],
       bidId: getUniqueIdentifierStr(),
       bidderRequestId: getUniqueIdentifierStr(),
       auctionId: getUniqueIdentifierStr(),

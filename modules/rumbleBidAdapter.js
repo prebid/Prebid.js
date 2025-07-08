@@ -1,7 +1,7 @@
-import { registerBidder } from "../src/adapters/bidderFactory";
-import { BANNER, VIDEO } from "../src/mediaTypes";
-import { config } from "../src/config";
-import { ortbConverter } from "../libraries/ortbConverter/converter";
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { BANNER, VIDEO } from "../src/mediaTypes.js";
+import { config } from "../src/config.js";
+import { ortbConverter } from "../libraries/ortbConverter/converter.js";
 import {
   deepSetValue,
   deepAccess,
@@ -10,7 +10,7 @@ import {
   logWarn,
   triggerPixel,
   replaceAuctionPrice
-} from "../src/utils";
+} from "../src/utils.js";
 
 const BIDDER_CODE = 'rumble';
 const ENDPOINT = 'https://a.ads.rmbl.ws/v1/sites/:id/ortb';
@@ -26,7 +26,7 @@ function fillParameters(bid) {
     'siteId',
     'test',
   ].forEach(function(k) {
-    if(bid.params[k]) {
+    if (bid.params[k]) {
       return;
     }
 
@@ -115,7 +115,7 @@ export const spec = {
     return converter.fromORTB({response: response.body, request: request.data}).bids;
   },
   onBidWon: function(bid) {
-    if(bid.burl) {
+    if (bid.burl) {
       triggerPixel(replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm));
     }
 
