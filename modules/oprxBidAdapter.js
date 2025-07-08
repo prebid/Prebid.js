@@ -1,16 +1,47 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+let converterInstance;
 
-// Bidder code
-const BIDDER_CODE = 'oprx';
+export const spec = {
+  code: 'oprx',
+  supportedMediaTypes: [BANNER],
 
-let EP = 'https://pb.optimizerx.com';
-let PLACEMENT_ID = null;
-let NPI = null;
+  isBidRequestValid: function (bid) {
+    return !!(bid?.params?.key && bid?.params?.placement_id);
+  },
 
-// Converts to ortb
-const converter = ortbConverter({
+  buildRequests(bidRequests, bidderRequest) {
+    if (!bidRequests?.length) return [];
+
+    const bid = bidRequests[0];
+    const endpoint = `https://pb.optimizerx.com?placement_id=${bid.params.placement_id}&npi=${bid.params.npi}`;
+
+    const converter = converterInstance || defaultConverter;
+
+    const requestData = converter.toORTB({
+      bRequests: bidRequests,
+      brRequest: bidderRequest,
+    });
+
+    return [{
+      method: 'POST',
+      url: endpoint,
+      data: requestData,
+      options: { contentType: 'application/json;charset=utf-8' }
+    }];
+  },
+
+  interpretResponse(serverResponse, request) {
+    const converter = converterInstance || defaultConverter;
+    const response = serverResponse?.body || {};
+    const requestData = request?.data;
+    return converter.fromORTB({ response, request: requestData }).bids || [];
+  }
+};
+
+// defaultConverter = real one used in prod
+const defaultConverter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 50,
@@ -19,46 +50,16 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
+    if (bidRequest.params.bid_floor) {
+      imp.bidfloor = bidRequest.params.bid_floor;
+    }
     return imp;
   },
 });
 
-export const spec = {
-  code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
-  // Checks if the request is valid or not
-  isBidRequestValid: function (bid) {
-    if (
-      Boolean(bid.params.placement_id) &&
-      Boolean(bid.params.npi)
-    ) {
-      PLACEMENT_ID = bid.params.placement_id;
-      NPI = bid.params.npi;
-      EP = EP + '?placement_id=' + PLACEMENT_ID + '&npi=' + NPI;
-      return true;
-    }
-    return false;
-  },
-  // To make a request from the list of BidRequests and BidderRequests
-  buildRequests(bRequests, brRequest) {
-    let data = converter.toORTB({ bRequests, brRequest });
-    return [
-      {
-        method: 'POST',
-        url: EP,
-        data,
-        options: { contentType: 'application/json;charset=utf-8' },
-      },
-    ];
-  },
-  // Unpack the response from the server into a list of bids
-  interpretResponse(response, request) {
-    const bids = converter.fromORTB({
-      response: response.body,
-      request: request.data,
-    }).bids;
-    return bids;
-  },
-};
+// Allow test override
+export function __setTestConverter(mockConverter) {
+  converterInstance = mockConverter;
+}
 
 registerBidder(spec);
