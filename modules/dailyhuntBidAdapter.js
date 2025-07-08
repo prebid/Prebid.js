@@ -4,7 +4,7 @@ import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {NV_ORTB_NATIVE_TYPE_MAPPING} from '../libraries/nexverseUtils/index.js';
+import {parseNativeResponse} from '../libraries/nexverseUtils/index.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -48,13 +48,6 @@ const ORTB_NATIVE_PARAMS = {
     name: 'data',
     type: 10
   }};
-
-// Encode URI.
-const _encodeURIComponent = function (a) {
-  let b = window.encodeURIComponent(a);
-  b = b.replace(/'/g, '%27');
-  return b;
-}
 
 // Extract key from collections.
 const extractKeyInfo = (collection, key) => {
@@ -279,39 +272,13 @@ const createPrebidNativeBid = (bid, bidResponse) => ({
   currency: 'USD',
   ttl: 360,
   netRevenue: bid.netRevenue === 'net',
-  native: parseNative(bidResponse),
+  native: parseNativeResponse(bidResponse),
   mediaType: 'native',
   winUrl: bidResponse.nurl,
   width: bidResponse.w,
   height: bidResponse.h,
   adomain: bidResponse.adomain
 })
-
-const parseNative = (bid) => {
-  let adm = JSON.parse(bid.adm)
-  const { assets, link, imptrackers, jstracker } = adm.native;
-  const result = {
-    clickUrl: _encodeURIComponent(link.url),
-    clickTrackers: link.clicktrackers || [],
-    impressionTrackers: imptrackers || [],
-    javascriptTrackers: jstracker ? [ jstracker ] : []
-  };
-  assets.forEach(asset => {
-    if (!isEmpty(asset.title)) {
-      result.title = asset.title.text
-    } else if (!isEmpty(asset.img)) {
-      result[NV_ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
-        url: asset.img.url,
-        height: asset.img.h,
-        width: asset.img.w
-      }
-    } else if (!isEmpty(asset.data)) {
-      result[NV_ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
-    }
-  });
-
-  return result;
-}
 
 const createPrebidVideoBid = (bid, bidResponse) => {
   let videoBid = {
