@@ -69,7 +69,7 @@ describe('marsmedia adapter tests', function () {
       }
     ];
 
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(document, 'getElementById').withArgs('Unit-Code').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
@@ -612,7 +612,13 @@ describe('marsmedia adapter tests', function () {
         'auctionId': '18fd8b8b0bd757',
         'bidRequestsCount': 1,
         'bidId': '51ef8751f9aead',
-        'schain': schain
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': schain
+            }
+          }
+        }
       }
     ];
 

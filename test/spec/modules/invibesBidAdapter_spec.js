@@ -198,7 +198,7 @@ describe('invibesBidAdapter:', function () {
     };
     document.cookie = '';
     this.cStub1 = sinon.stub(console, 'info');
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -339,7 +339,7 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('sends bid request to default endpoint 1 via GET', function () {
-	  const request = spec.buildRequests([{
+    const request = spec.buildRequests([{
         bidId: 'b1',
         bidder: BIDDER_CODE,
         params: {
@@ -1259,7 +1259,7 @@ describe('invibesBidAdapter:', function () {
         AuctionStartTime: Date.now(),
         CreativeHtml: '<!-- Creative -->'
       },
-	  UseAdUnitCode: true
+    UseAdUnitCode: true
     };
 
     var buildResponse = function(placementId, cid, blcids, creativeId, ShouldSetLId) {

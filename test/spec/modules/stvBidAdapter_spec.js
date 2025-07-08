@@ -60,70 +60,76 @@ describe('stvAdapter', function() {
         'bidderRequestId': '22edbae2733bf61',
         'auctionId': '1d1a030790a475',
         'adUnitCode': 'testDiv1',
-        'schain': {
-          'ver': '1.0',
-          'complete': 0,
-          'nodes': [
-            {
-              'asi': 'reseller.com',
-              'sid': 'aaaaa',
-              'rid': 'BidRequest4',
-              'hp': 1
+        'ortb2': {
+          'source': {
+            'ext': {
+              'schain': {
+                'ver': '1.0',
+                'complete': 0,
+                'nodes': [
+                  {
+                    'asi': 'reseller.com',
+                    'sid': 'aaaaa',
+                    'rid': 'BidRequest4',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         },
         'userIdAsEids': [
           {
             'source': 'id5-sync.com',
-		    'uids': [{
+        'uids': [{
               'id': '1234',
               'ext': {
                 'linkType': 'abc'
               }
             }]
-		  },
+      },
           {
             'source': 'netid.de',
-		    'uids': [{
+        'uids': [{
               'id': '2345'
             }]
-		  },
+      },
           {
             'source': 'uidapi.com',
-		    'uids': [{
+        'uids': [{
               'id': '3456'
             }]
-		  },
+      },
           {
             'source': 'pubcid.org',
-		    'uids': [{
+        'uids': [{
               'id': '4567'
             }]
-		  },
+      },
           {
             'source': 'liveramp.com',
-		    'uids': [{
+        'uids': [{
               'id': '5678'
             }]
-		  },
+      },
           {
             'source': 'criteo.com',
-		    'uids': [{
+        'uids': [{
               'id': '6789'
             }]
-		  },
+      },
           {
             'source': 'utiq.com',
-		    'uids': [{
+        'uids': [{
               'id': '7890'
             }]
-		  },
+      },
           {
             'source': 'euid.eu',
-		    'uids': [{
+        'uids': [{
               'id': '8901'
             }]
-		  }
+      }
         ]
       },
       {
@@ -141,55 +147,55 @@ describe('stvAdapter', function() {
         'userIdAsEids': [
           {
             'source': 'id5-sync.com',
-		    'uids': [{
+        'uids': [{
               'id': '1234',
               'ext': {
                 'linkType': 'abc'
               }
             }]
-		  },
+      },
           {
             'source': 'netid.de',
-		    'uids': [{
+        'uids': [{
               'id': '2345'
             }]
-		  },
+      },
           {
             'source': 'uidapi.com',
-		    'uids': [{
+        'uids': [{
               'id': '3456'
             }]
-		  },
+      },
           {
             'source': 'pubcid.org',
-		    'uids': [{
+        'uids': [{
               'id': '4567'
             }]
-		  },
+      },
           {
             'source': 'liveramp.com',
-		    'uids': [{
+        'uids': [{
               'id': '5678'
             }]
-		  },
+      },
           {
             'source': 'criteo.com',
-		    'uids': [{
+        'uids': [{
               'id': '6789'
             }]
-		  },
+      },
           {
             'source': 'utiq.com',
-		    'uids': [{
+        'uids': [{
               'id': '7890'
             }]
-		  },
+      },
           {
             'source': 'euid.eu',
-		    'uids': [{
+        'uids': [{
               'id': '8901'
             }]
-		  }
+      }
         ]
       }, {
         'bidder': 'stv',

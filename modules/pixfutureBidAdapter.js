@@ -74,7 +74,7 @@ export const spec = {
           });
       }
 
-      const schain = validBidRequests[0].schain;
+      const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
 
       const payload = {
         tags: [...tags],
@@ -277,7 +277,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -301,7 +301,5 @@ function bidToTag(bid) {
 
   return tag;
 }
-
-
 
 registerBidder(spec);

@@ -51,7 +51,7 @@ describe('mediago:BidAdapterTests', function () {
         },
         ortb2: {
           site: {
-        	cat: ['IAB2'],
+          cat: ['IAB2'],
             keywords: 'power tools, drills, tools=industrial',
             content: {
               keywords: 'video, source=streaming'
@@ -146,7 +146,7 @@ describe('mediago:BidAdapterTests', function () {
       let sandbox;
 
       beforeEach(() => {
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
         sandbox.stub(storage, 'getCookie');
         sandbox.stub(storage, 'setCookie');
         sandbox.stub(utils, 'generateUUID').returns('new-uuid');

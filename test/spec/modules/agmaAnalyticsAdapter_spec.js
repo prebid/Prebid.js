@@ -55,7 +55,7 @@ describe('AGMA Analytics Adapter', () => {
   let agmaConfig, sandbox, clock;
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     clock = sandbox.useFakeTimers();
     sandbox.stub(events, 'getEvents').returns([]);
     agmaConfig = {
@@ -255,7 +255,7 @@ describe('AGMA Analytics Adapter', () => {
 
     const ortb2 = {
       site: {
-        domain: 'inital.com'
+        domain: 'initial.com'
       }
     };
 

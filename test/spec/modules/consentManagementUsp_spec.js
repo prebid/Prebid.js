@@ -9,7 +9,7 @@ import {
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import adapterManager, {gdprDataHandler, uspDataHandler} from 'src/adapterManager.js';
-import 'src/prebid.js';
+import {requestBids} from '../../../src/prebid.js';
 import {defer} from '../../../src/utils/promise.js';
 
 let expect = require('chai').expect;
@@ -26,7 +26,7 @@ function createIFrameMarker() {
 describe('consentManagement', function () {
   let sandbox;
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(adapterManager, 'callDataDeletionRequest');
   });
 
@@ -121,7 +121,7 @@ describe('consentManagement', function () {
     describe('valid setConsentConfig value', function () {
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
       });
 
       it('results in all user settings overriding system defaults', function () {
@@ -156,7 +156,7 @@ describe('consentManagement', function () {
     describe('static consent string setConsentConfig value', () => {
       afterEach(() => {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
       });
       it('results in user settings overriding system defaults', () => {
         let staticConfig = {
@@ -208,7 +208,7 @@ describe('consentManagement', function () {
         utils.logWarn.restore();
         utils.logError.restore();
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
         resetConsentData();
       });
 
@@ -246,7 +246,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
         uspStub.restore();
         document.body.removeChild(ifr);
         delete window.__uspapi;
@@ -325,7 +325,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
         delete window.__uspapi;
         utils.logError.restore();
         utils.logWarn.restore();
@@ -406,7 +406,7 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
         uspapiStub.restore();
         utils.logError.restore();
         utils.logWarn.restore();
@@ -449,7 +449,8 @@ describe('consentManagement', function () {
 
       afterEach(function () {
         config.resetConfig();
-        $$PREBID_GLOBAL$$.requestBids.removeAll();
+        requestBids.removeAll();
+        sandbox.restore();
         document.body.removeChild(ifr);
         delete window.__uspapi;
         resetConsentData();

@@ -208,16 +208,15 @@ describe('Unit: Prebid Module', function () {
   }
   before((done) => {
     hook.ready();
-    $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
+    pbjsModule.requestBids.getHooks().remove();
     resetDebugging();
-    sinon.stub(filters, 'isActualBid').returns(true); // stub this out so that we can use vanilla objects as bids
     getBidToRender.before(getBidToRenderHook, 100);
     // preload creative renderer
     getCreativeRenderer({}).then(() => done());
   });
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     mockFpdEnrichments(sandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
@@ -233,7 +232,6 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
-    filters.isActualBid.restore();
     getBidToRender.getHooks({hook: getBidToRenderHook}).remove();
   });
 
@@ -286,7 +284,7 @@ describe('Unit: Prebid Module', function () {
     }
 
     beforeEach(() => {
-      $$PREBID_GLOBAL$$.requestBids.before(deferringHook, 99);
+      pbjsModule.requestBids.before(deferringHook, 99);
       hookRan = new Promise((resolve) => {
         done = resolve;
       });
@@ -294,7 +292,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     afterEach(() => {
-      $$PREBID_GLOBAL$$.requestBids.getHooks({hook: deferringHook}).remove();
+      pbjsModule.requestBids.getHooks({hook: deferringHook}).remove();
       $$PREBID_GLOBAL$$.adUnits.splice(0, $$PREBID_GLOBAL$$.adUnits.length);
     })
 
@@ -319,7 +317,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should return targeting info as a string', function () {
       const adUnitCode = config.adUnitCodes[0];
-      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
+      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true, targetingControls: { allBidsCustomTargeting: true } });
       var expectedResults = [`foobar=300x250%2C300x600%2C0x0`, `${TARGETING_KEYS.SIZE}=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}=10.00`, `${TARGETING_KEYS.AD_ID}=233bcbee889d46d`, `${TARGETING_KEYS.BIDDER}=appnexus`, `${TARGETING_KEYS.SIZE}_triplelift=0x0`, `${TARGETING_KEYS.PRICE_BUCKET}_triplelift=10.00`, `${TARGETING_KEYS.AD_ID}_triplelift=222bb26f9e8bd`, `${TARGETING_KEYS.BIDDER}_triplelift=triplelift`, `${TARGETING_KEYS.SIZE}_appnexus=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_appnexus=10.00`, `${TARGETING_KEYS.AD_ID}_appnexus=233bcbee889d46d`, `${TARGETING_KEYS.BIDDER}_appnexus=appnexus`, `${TARGETING_KEYS.SIZE}_pagescience=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_pagescience=10.00`, `${TARGETING_KEYS.AD_ID}_pagescience=25bedd4813632d7`, `${TARGETING_KEYS.BIDDER}_pagescienc=pagescience`, `${TARGETING_KEYS.SIZE}_brightcom=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_brightcom=10.00`, `${TARGETING_KEYS.AD_ID}_brightcom=26e0795ab963896`, `${TARGETING_KEYS.BIDDER}_brightcom=brightcom`, `${TARGETING_KEYS.SIZE}_brealtime=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_brealtime=10.00`, `${TARGETING_KEYS.AD_ID}_brealtime=275bd666f5a5a5d`, `${TARGETING_KEYS.BIDDER}_brealtime=brealtime`, `${TARGETING_KEYS.SIZE}_pubmatic=300x250`, `${TARGETING_KEYS.PRICE_BUCKET}_pubmatic=10.00`, `${TARGETING_KEYS.AD_ID}_pubmatic=28f4039c636b6a7`, `${TARGETING_KEYS.BIDDER}_pubmatic=pubmatic`, `${TARGETING_KEYS.SIZE}_rubicon=300x600`, `${TARGETING_KEYS.PRICE_BUCKET}_rubicon=10.00`, `${TARGETING_KEYS.AD_ID}_rubicon=29019e2ab586a5a`, `${TARGETING_KEYS.BIDDER}_rubicon=rubicon`];
       var result = $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr(adUnitCode);
 
@@ -386,7 +384,7 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should return correct targeting with bid landscape targeting on', function () {
-      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true });
+      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true, targetingControls: { allBidsCustomTargeting: true } });
       var targeting = $$PREBID_GLOBAL$$.getAdserverTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       var expected = getAdServerTargeting(['/19968336/header-bid-tag-0', '/19968336/header-bid-tag1']);
       assert.deepEqual(targeting, expected);
@@ -983,7 +981,11 @@ describe('Unit: Prebid Module', function () {
     it('should return expected bid responses when not passed an adunitCode', function () {
       auctionManager.getLastAuctionId = () => 654321;
       var result = $$PREBID_GLOBAL$$.getBidResponses();
-      var compare = getBidResponsesFromAPI();
+      var compare = Object.fromEntries(Object.entries(getBidResponsesFromAPI()).map(([code, {bids}]) => {
+        const arr = bids.slice();
+        arr.bids = arr;
+        return [code, arr];
+      }));
       assert.deepEqual(result, compare, 'expected bid responses are returned');
     });
 
@@ -998,7 +1000,7 @@ describe('Unit: Prebid Module', function () {
       const adUnitCode = '/19968336/header-bid-tag-0';
       const result = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
       const bids = getBidResponses().filter(bid => bid.adUnitCode === adUnitCode);
-      const compare = { bids: bids };
+      const compare = (() => { const arr = bids.slice(); arr.bids = arr; return arr; })();
       assert.deepEqual(result, compare, 'expected id responses for ad unit code are returned');
     });
   });
@@ -1021,7 +1023,7 @@ describe('Unit: Prebid Module', function () {
 
       window.googletag.pubads().setSlots(slots);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]]);
-
+      $$PREBID_GLOBAL$$.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
 
       slots.forEach(function(slot) {
         targeting = {};
@@ -1068,7 +1070,7 @@ describe('Unit: Prebid Module', function () {
       slots[0].spySetTargeting.resetHistory();
       slots[1].spySetTargeting.resetHistory();
       window.googletag.pubads().setSlots(slots);
-
+      $$PREBID_GLOBAL$$.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync([config.adUnitCodes[0]], (slot) => {
         return (adUnitCode) => {
           return slots[0].getSlotElementId() === slot.getSlotElementId();
@@ -1102,7 +1104,7 @@ describe('Unit: Prebid Module', function () {
       var slots = createSlotArray();
       slots[0].spySetTargeting.resetHistory();
       window.googletag.pubads().setSlots(slots);
-
+      $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: true, targetingControls: { allBidsCustomTargeting: true } });
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       var expected = getTargetingKeys();
@@ -1279,13 +1281,6 @@ describe('Unit: Prebid Module', function () {
       })
     });
 
-    it('should log message with bid id', function () {
-      return renderAd(doc, bidId).then(() => {
-        var message = 'Calling renderAd with adId :' + bidId;
-        assert.ok(spyLogMessage.calledWith(message), 'expected message was logged');
-      })
-    });
-
     it('should write the ad to the doc', function () {
       pushBidResponseToAuction({
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
@@ -1395,16 +1390,12 @@ describe('Unit: Prebid Module', function () {
         ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js'></script>"
       });
       return renderAd(doc, bidId).then(() => {
-        var message = 'Calling renderAd with adId :' + bidId;
-        sinon.assert.calledWith(spyLogMessage, message);
-
         sinon.assert.calledOnce(spyAddWinningBid);
         sinon.assert.calledWith(spyAddWinningBid, adResponse);
       });
     });
 
     it('should warn stale rendering', function () {
-      var message = 'Calling renderAd with adId :' + bidId;
       var warning = `Ad id ${bidId} has been rendered before`;
       var onWonEvent = sinon.stub();
       var onStaleEvent = sinon.stub();
@@ -1418,7 +1409,6 @@ describe('Unit: Prebid Module', function () {
 
       // First render should pass with no warning and added to winning bids
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.neverCalledWith(spyLogWarn, warning);
 
         sinon.assert.calledOnce(spyAddWinningBid);
@@ -1438,7 +1428,6 @@ describe('Unit: Prebid Module', function () {
         return renderAd(doc, bidId);
       }).then(() => {
         // Second render should have a warning but still be rendered
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.calledWith(spyLogWarn, warning);
         sinon.assert.calledWith(onStaleEvent, adResponse);
         sinon.assert.called(doc.write);
@@ -1450,7 +1439,6 @@ describe('Unit: Prebid Module', function () {
     });
 
     it('should stop stale rendering', function () {
-      var message = 'Calling renderAd with adId :' + bidId;
       var warning = `Ad id ${bidId} has been rendered before`;
       var onWonEvent = sinon.stub();
       var onStaleEvent = sinon.stub();
@@ -1467,7 +1455,6 @@ describe('Unit: Prebid Module', function () {
 
       // First render should pass with no warning and added to winning bids
       return renderAd(doc, bidId).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.neverCalledWith(spyLogWarn, warning);
 
         sinon.assert.calledOnce(spyAddWinningBid);
@@ -1487,7 +1474,6 @@ describe('Unit: Prebid Module', function () {
         // Second render should have a warning and do not proceed further
         return renderAd(doc, bidId);
       }).then(() => {
-        sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.calledWith(spyLogWarn, warning);
 
         sinon.assert.notCalled(spyAddWinningBid);
@@ -1678,11 +1664,11 @@ describe('Unit: Prebid Module', function () {
 
       beforeEach(() => {
         // make sure the return value works correctly when hooks give up priority
-        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+        pbjsModule.requestBids.before(delayHook)
       });
 
       afterEach(() => {
-        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+        pbjsModule.requestBids.getHooks({hook: delayHook}).remove();
       });
 
       Object.entries({
@@ -1759,7 +1745,7 @@ describe('Unit: Prebid Module', function () {
   describe('requestBids', function () {
     let sandbox;
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       sandbox.restore();
@@ -1815,6 +1801,46 @@ describe('Unit: Prebid Module', function () {
         await auctionStarted;
       }
 
+      it('with normalized FPD', async () => {
+        configObj.setBidderConfig({
+          bidders: ['test'],
+          config: {
+            ortb2: {
+              source: {
+                schain: 'foo'
+              }
+            }
+          }
+        });
+        configObj.setConfig({
+          ortb2: {
+            source: {
+              schain: 'bar'
+            }
+          }
+        });
+        await runAuction();
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          ortb2Fragments: {
+            global: {
+              source: {
+                ext: {
+                  schain: 'bar'
+                }
+              }
+            },
+            bidder: {
+              test: {
+                source: {
+                  ext: {
+                    schain: 'foo'
+                  }
+                }
+              }
+            }
+          }
+        }));
+      })
       describe('with FPD', () => {
         let globalFPD, auctionFPD, mergedFPD;
         beforeEach(() => {
@@ -2701,7 +2727,7 @@ describe('Unit: Prebid Module', function () {
               });
             });
 
-            ['sendTargetingKeys', 'types'].forEach(key => {
+            ['types'].forEach(key => {
               it(`should reject native that includes both ortb and ${key}`, async () => {
                 const adUnit = {
                   code: 'au',
@@ -3002,7 +3028,7 @@ describe('Unit: Prebid Module', function () {
         };
 
         assert.equal(auctionManager.getBidsReceived().length, 8, '_bidsReceived contains 8 bids');
-
+        $$PREBID_GLOBAL$$.setConfig({ targetingControls: {allBidsCustomTargeting: true }});
         $$PREBID_GLOBAL$$.requestBids(requestObj1);
         $$PREBID_GLOBAL$$.requestBids(requestObj2);
         await auctionsStarted;
@@ -3343,19 +3369,6 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
-  describe('createBid', function () {
-    it('should return a bid object', function () {
-      const statusCode = 1;
-      const bid = $$PREBID_GLOBAL$$.createBid(statusCode);
-      assert.isObject(bid, 'bid is an object');
-      assert.equal(bid.getStatusCode(), statusCode, 'bid has correct status');
-
-      const defaultStatusBid = $$PREBID_GLOBAL$$.createBid();
-      assert.isObject(defaultStatusBid, 'bid is an object');
-      assert.equal(defaultStatusBid.getStatusCode(), 0, 'bid has correct status');
-    });
-  });
-
   describe('aliasBidder', function () {
     it('should call adapterManager.aliasBidder', function () {
       const aliasBidAdapterSpy = sinon.spy(adapterManager, 'aliasBidAdapter');
@@ -3597,9 +3610,9 @@ describe('Unit: Prebid Module', function () {
       resetAuction();
     })
 
-    it('returns an empty object if there is no bid for the given adUnitCode', () => {
+    it('returns null if there is no bid for the given adUnitCode', () => {
       const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('stallone');
-      expect(highestBid).to.deep.equal({});
+      expect(highestBid).to.equal(null);
     })
 
     it('returns undefined if adUnitCode is provided', () => {

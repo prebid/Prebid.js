@@ -143,7 +143,13 @@ describe('triplelift adapter', function () {
           transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
           auctionId: '1d1a030790a475',
           userId: {},
-          schain,
+          ortb2: {
+            source: {
+              ext: {
+                schain
+              }
+            }
+          },
           ortb2Imp: {
             ext: {
               tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
@@ -177,7 +183,13 @@ describe('triplelift adapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           userId: {},
-          schain,
+          ortb2: {
+            source: {
+              ext: {
+                schain
+              }
+            }
+          },
           ortb2Imp: {
             ext: {
               data: {
@@ -253,7 +265,13 @@ describe('triplelift adapter', function () {
           bidderRequestId: '22edbae2733bf6',
           auctionId: '1d1a030790a475',
           userId: {},
-          schain,
+          ortb2: {
+            source: {
+              ext: {
+                schain
+              }
+            }
+          },
           ortb2Imp: {
             misc: {
               test: 1
@@ -598,7 +616,7 @@ describe('triplelift adapter', function () {
           gdprApplies: true
         },
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       logErrorSpy = sinon.spy(utils, 'logError');
 
       $$PREBID_GLOBAL$$.bidderSettings = {
@@ -899,7 +917,7 @@ describe('triplelift adapter', function () {
       expect(payload.ext.schain).to.deep.equal(schain);
     });
     it('should not create root level ext when schain is not present', function() {
-      bidRequests[0].schain = undefined;
+      delete bidRequests[0].ortb2.source.ext.schain;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const { data: payload } = request;
       expect(payload.ext).to.deep.equal(undefined);

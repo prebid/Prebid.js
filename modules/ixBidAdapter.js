@@ -24,6 +24,17 @@ import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
+const divIdCache = {};
+
+export function getDivIdFromAdUnitCode(adUnitCode) {
+  if (divIdCache[adUnitCode]) {
+    return divIdCache[adUnitCode];
+  }
+  const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  divIdCache[adUnitCode] = divId;
+  return divId;
+}
+
 const BIDDER_CODE = 'ix';
 const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
@@ -59,17 +70,6 @@ const SOURCE_RTI_MAPPING = {
   'uidapi.com': 'UID2',
   'adserver.org': 'TDID'
 };
-const PROVIDERS = [
-  'lipbid',
-  'criteoId',
-  'merkleId',
-  'parrableId',
-  'connectid',
-  'tapadId',
-  'quantcastId',
-  'pubProvidedId',
-  'pairId'
-];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [
   'mimes', 'minduration', 'maxduration', 'protocols', 'protocol',
@@ -174,7 +174,7 @@ function setDisplayManager(imp, bid) {
       renderer = deepAccess(bid, 'renderer');
     }
 
-    if (deepAccess(bid, 'schain', false)) {
+    if (deepAccess(bid, 'ortb2.source.ext.schain', false)) {
       imp.displaymanager = 'pbjs_wrapper';
     } else if (renderer && typeof (renderer) === 'object') {
       if (renderer.url !== undefined) {
@@ -834,7 +834,7 @@ function addRequestedFeatureToggles(r, requestedFeatureToggles) {
 /**
  * enrichRequest adds userSync configs, source, and referer info to request and ixDiag objects.
  *
- * @param  {object} r                Base reuqest object.
+ * @param  {object} r                Base request object.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
  * @param  {Array}  impressions      A list of impressions to be added to the request.
  * @param  {Array}  validBidRequests A list of valid bid request config objects.
@@ -860,9 +860,11 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
   }
 
   // if an schain is provided, send it along
-  if (validBidRequests[0].schain) {
-    r.source.ext = {};
-    r.source.ext.schain = validBidRequests[0].schain;
+  const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+  if (schain) {
+    r.source = r.source || {};
+    r.source.ext = r.source.ext || {};
+    r.source.ext.schain = schain;
   }
 
   if (userEids.length > 0) {
@@ -878,9 +880,9 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 }
 
 /**
- * applyRegulations applies regulation info such as GDPR and GPP to the reqeust obejct.
+ * applyRegulations applies regulation info such as GDPR and GPP to the request object.
  *
- * @param  {object}  r                Base reuqest object.
+ * @param  {object}  r                Base request object.
  * @param  {object}  bidderRequest    An object containing other info like gdprConsent.
  * @return {object}                   Object enriched with regulation info describing the request to the server.
  */
@@ -997,7 +999,8 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
           _bannerImpression.banner.format[i].ext.bidfloor = bannerImps[i].bidfloor;
         }
 
-        if (JSON.stringify(_bannerImpression.banner.format[i].ext) === '{}') {
+        const formatExt = _bannerImpression.banner.format[i].ext;
+        if (formatExt && Object.keys(formatExt).length === 0) {
           delete _bannerImpression.banner.format[i].ext;
         }
       }
@@ -1188,6 +1191,11 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     if (ipv6) {
       deepSetValue(r, 'device.ipv6', ipv6);
     }
+
+    const geo = fpd.device.geo;
+    if (geo) {
+      deepSetValue(r, 'device.geo', geo);
+    }
   }
 
   // regulations from ortb2
@@ -1253,29 +1261,16 @@ function addAdUnitFPD(imp, bid) {
  * @return {object}                    Reqyest object with added indentigfier info to ixDiag.
  */
 function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseUrl) {
-  const pbaAdSlot = impressions[impKeys[adUnitIndex]].pbadslot;
   const tagId = impressions[impKeys[adUnitIndex]].tagId;
   const adUnitCode = impressions[impKeys[adUnitIndex]].adUnitCode;
   const divId = impressions[impKeys[adUnitIndex]].divId;
-  if (pbaAdSlot || tagId || adUnitCode || divId) {
-    r.ext.ixdiag.pbadslot = pbaAdSlot;
+  if (tagId || adUnitCode || divId) {
     r.ext.ixdiag.tagid = tagId;
     r.ext.ixdiag.adunitcode = adUnitCode;
     r.ext.ixdiag.divId = divId;
   }
 
   return r;
-}
-
-/**
- * Return an object of user IDs stored by Prebid User ID module
- *
- * @returns {Array} ID providers that are present in userIds
- */
-function _getUserIds(bidRequest) {
-  const userIds = bidRequest.userId || {};
-
-  return PROVIDERS.filter(provider => userIds[provider]);
 }
 
 /**
@@ -1300,7 +1295,6 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     allu: 0,
     ren: false,
     version: '$prebid.version$',
-    userIds: _getUserIds(validBidRequests[0]),
     url: window.location.href.split('?')[0],
     vpd: defaultVideoPlacement,
     ae: fledgeEnabled,
@@ -1376,11 +1370,10 @@ function createNativeImps(validBidRequest, nativeImps) {
     nativeImps[validBidRequest.adUnitCode].ixImps.push(imp);
     nativeImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
     nativeImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
-    nativeImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     nativeImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     nativeImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     nativeImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1399,11 +1392,10 @@ function createVideoImps(validBidRequest, videoImps) {
     videoImps[validBidRequest.adUnitCode].ixImps.push(imp);
     videoImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
     videoImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
-    videoImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
     videoImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
 
     const adUnitCode = validBidRequest.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     videoImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
     videoImps[validBidRequest.adUnitCode].divId = divId;
   }
@@ -1427,7 +1419,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].gpid = deepAccess(validBidRequest, 'ortb2Imp.ext.gpid');
   bannerImps[validBidRequest.adUnitCode].dfp_ad_unit_code = deepAccess(validBidRequest, 'ortb2Imp.ext.data.adserver.adslot');
   bannerImps[validBidRequest.adUnitCode].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
-  bannerImps[validBidRequest.adUnitCode].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.adUnitCode].tagId = deepAccess(validBidRequest, 'params.tagId');
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
@@ -1460,7 +1451,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   }
 
   const adUnitCode = validBidRequest.adUnitCode;
-  const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+  const divId = getDivIdFromAdUnitCode(adUnitCode);
   bannerImps[validBidRequest.adUnitCode].adUnitCode = adUnitCode;
   bannerImps[validBidRequest.adUnitCode].divId = divId;
 
@@ -1528,7 +1519,7 @@ function createMissingBannerImp(bid, imp, newSize) {
 function outstreamRenderer(bid) {
   bid.renderer.push(function () {
     const adUnitCode = bid.adUnitCode;
-    const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
+    const divId = getDivIdFromAdUnitCode(adUnitCode);
     if (!divId) {
       logWarn(`IX Bid Adapter: adUnitCode: ${divId} not found on page.`);
       return;
@@ -1935,7 +1926,7 @@ export function combineImps(imps) {
   const result = {}
   imps.forEach((imp) => {
     Object.keys(imp).forEach((key) => {
-      if (Object.keys(result).includes(key)) {
+      if (result.hasOwnProperty(key)) {
         if (result[key].hasOwnProperty('ixImps') && imp[key].hasOwnProperty('ixImps')) {
           result[key].ixImps = [...result[key].ixImps, ...imp[key].ixImps];
         } else if (result[key].hasOwnProperty('missingImps') && imp[key].hasOwnProperty('missingImps')) {

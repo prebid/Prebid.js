@@ -30,7 +30,6 @@ const USERID_CONFIG = [
 const configWithSamplingAll = {
   provider: 'liveintent',
   options: {
-    bidWonTimeout: 2000,
     sampling: 1,
     sendAuctionInitEvents: true
   }
@@ -39,7 +38,6 @@ const configWithSamplingAll = {
 const configWithSamplingNone = {
   provider: 'liveintent',
   options: {
-    bidWonTimeout: 2000,
     sampling: 0,
     sendAuctionInitEvents: true
   }
@@ -48,7 +46,6 @@ const configWithSamplingNone = {
 const configWithNoAuctionInit = {
   provider: 'liveintent',
   options: {
-    bidWonTimeout: 2000,
     sampling: 1,
     sendAuctionInitEvents: false
   }
@@ -56,7 +53,7 @@ const configWithNoAuctionInit = {
 
 describe('LiveIntent Analytics Adapter ', () => {
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(events, 'getEvents').returns([]);
     sandbox.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
     sandbox.stub(utils, 'generateUUID').returns(instanceId);
@@ -69,8 +66,8 @@ describe('LiveIntent Analytics Adapter ', () => {
   });
   afterEach(function () {
     liAnalytics.disableAnalytics();
-    sandbox.restore();
-    clock.restore();
+    sandbox?.restore();
+    clock?.restore();
     window.liTreatmentRate = undefined
     window.liModuleEnabled = undefined
   });

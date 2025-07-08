@@ -723,7 +723,7 @@ describe('MediaFuseAdapter', function () {
     it('should add gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
-      bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
+      bidRequest.ortb2Imp = { ext: { data: {}, gpid: testGpid } };
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
@@ -846,16 +846,22 @@ describe('MediaFuseAdapter', function () {
 
     it('should populate schain if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [
-            {
-              'asi': 'blob.com',
-              'sid': '001',
-              'hp': 1
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [
+                  {
+                    'asi': 'blob.com',
+                    'sid': '001',
+                    'hp': 1
+                  }
+                ]
+              }
             }
-          ]
+          }
         }
       });
 
@@ -934,13 +940,28 @@ describe('MediaFuseAdapter', function () {
 
     it('should populate eids when supported userIds are available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        userId: {
-          tdid: 'sample-userid',
-          uid2: { id: 'sample-uid2-value' },
-          criteoId: 'sample-criteo-userid',
-          netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid'
-        }
+        userIdAsEids: [{
+          source: 'adserver.org',
+          uids: [{ id: 'sample-userid' }]
+        }, {
+          source: 'criteo.com',
+          uids: [{ id: 'sample-criteo-userid' }]
+        }, {
+          source: 'netid.de',
+          uids: [{ id: 'sample-netId-userid' }]
+        }, {
+          source: 'liveramp.com',
+          uids: [{ id: 'sample-idl-userid' }]
+        }, {
+          source: 'uidapi.com',
+          uids: [{ id: 'sample-uid2-value' }]
+        }, {
+          source: 'puburl.com',
+          uids: [{ id: 'pubid1' }]
+        }, {
+          source: 'puburl2.com',
+          uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }]
+        }]
       });
 
       const request = spec.buildRequests([bidRequest]);

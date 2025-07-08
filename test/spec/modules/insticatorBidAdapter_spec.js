@@ -46,17 +46,23 @@ describe('InsticatorBidAdapter', function () {
         gpid: '1111/homepage'
       }
     },
-    schain: {
-      ver: '1.0',
-      complete: 1,
-      nodes: [
-        {
-          asi: 'insticator.com',
-          sid: '00001',
-          hp: 1,
-          rid: bidderRequestId
+    ortb2: {
+      source: {
+        ext: {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'insticator.com',
+                sid: '00001',
+                hp: 1,
+                rid: bidderRequestId
+              }
+            ]
+          }
         }
-      ]
+      }
     },
     userIdAsEids: [
       {
@@ -312,7 +318,7 @@ describe('InsticatorBidAdapter', function () {
       getCookieStub = sinon.stub(storage, 'getCookie');
       cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
 
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(utils, 'generateUUID').returns(USER_ID_STUBBED);
     });
 

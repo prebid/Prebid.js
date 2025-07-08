@@ -87,8 +87,9 @@ export const spec = {
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
-        if (bidReq.schain) {
-          accumulator[bidReq.bidId].SChain = bidReq.schain;
+        const schain = bidReq?.ortb2?.source?.ext?.schain;
+        if (schain) {
+          accumulator[bidReq.bidId].SChain = schain;
         }
         if (!eids && bidReq.userIdAsEids && bidReq.userIdAsEids.length) {
           eids = bidReq.userIdAsEids;
@@ -300,7 +301,7 @@ function createEndpointQS(bidderRequest) {
       qs.PageReferrer = encodeURIComponent(ref.location);
     }
 
-    // retreive info from ortb2 object if present (prebid7)
+    // retrieve info from ortb2 object if present (prebid7)
     const siteInfo = bidderRequest.ortb2?.site;
     if (siteInfo) {
       qs.PageUrl = encodeURIComponent(siteInfo.page || ref?.topmostLocation);
@@ -515,7 +516,7 @@ function createBid(response, bidRequests) {
 
   const request = bidRequests && bidRequests[response.BidID];
 
-  // In case we don't retreive the size from the adserver, use the given one.
+  // In case we don't retrieve the size from the adserver, use the given one.
   if (request) {
     if (!response.Width || response.Width === '0') {
       response.Width = request.Width;
@@ -536,7 +537,7 @@ function createBid(response, bidRequests) {
     meta: response.Meta || { advertiserDomains: [] }
   };
 
-  // retreive video response if present
+  // retrieve video response if present
   const vast64 = response.Vast;
   if (vast64) {
     bid.width = response.Width;

@@ -12,7 +12,6 @@ import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
-import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {hook} from '../../../src/hook.js';
 import {addFPDToBidderRequest} from '../../helpers/fpd.js';
@@ -224,6 +223,8 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests([simpleBidRequest], await addFPDToBidderRequest(bidderRequest))[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
+      expect(request.options).to.be.an('object');
+      expect(request.options.endpointCompression).to.equal(true);
       expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
       const payload = JSON.parse(request.data);
@@ -258,6 +259,8 @@ describe('Improve Digital Adapter Tests', function () {
       const request = spec.buildRequests(updateNativeParams([multiFormatBidRequest]), multiFormatBidderRequest)[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
+      expect(request.options).to.be.an('object');
+      expect(request.options.endpointCompression).to.equal(true);
       expect(request.url).to.equal(formatPublisherUrl(AD_SERVER_BASE_URL, 1234));
 
       const payload = JSON.parse(request.data);
@@ -553,8 +556,25 @@ describe('Improve Digital Adapter Tests', function () {
     it('should add schain', function () {
       const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.schain = schain;
-      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+
+      // Add schain to both locations in the bid
+      bidRequest.ortb2 = {
+        source: {
+          ext: {schain: schain}
+        }
+      };
+
+      // Add schain to bidderRequest as well
+      const modifiedBidderRequest = {
+        ...bidderRequestReferrer,
+        ortb2: {
+          source: {
+            ext: {schain: schain}
+          }
+        }
+      };
+
+      const request = spec.buildRequests([bidRequest], modifiedBidderRequest)[0];
       const payload = JSON.parse(request.data);
       expect(payload.source.ext.schain).to.equal(schain);
     });

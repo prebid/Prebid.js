@@ -57,7 +57,7 @@ describe('fluctAdapter', function () {
     let sb;
 
     beforeEach(function () {
-      sb = sinon.sandbox.create();
+      sb = sinon.createSandbox();
     });
 
     afterEach(function () {
@@ -139,13 +139,13 @@ describe('fluctAdapter', function () {
       expect(request.data.gpid).to.eql('gpid');
     });
 
-    it('sends ortb2Imp.ext.data.pbadslot as gpid', function () {
+    it('sends ortb2Imp.ext.gpid as gpid', function () {
       const request = spec.buildRequests(bidRequests.map((req) => ({
         ...req,
         ortb2Imp: {
           ext: {
+            gpid: 'data-pbadslot',
             data: {
-              pbadslot: 'data-pbadslot',
               adserver: {
                 adslot: 'data-adserver-adslot',
               },
@@ -338,16 +338,22 @@ describe('fluctAdapter', function () {
       // this should be done by schain.js
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign({}, bidReq, {
-          schain: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'example.com',
-                sid: 'publisher-id',
-                hp: 1
+          ortb2: {
+            source: {
+              ext: {
+                schain: {
+                  ver: '1.0',
+                  complete: 1,
+                  nodes: [
+                    {
+                      asi: 'example.com',
+                      sid: 'publisher-id',
+                      hp: 1
+                    }
+                  ]
+                }
               }
-            ]
+            }
           }
         })
       );

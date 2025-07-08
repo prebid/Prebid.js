@@ -299,7 +299,7 @@ describe('VidazooBidAdapter', function () {
           storageAllowed: true,
         }
       };
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       sandbox.stub(Date, 'now').returns(1000);
     });
 
@@ -604,7 +604,7 @@ describe('VidazooBidAdapter', function () {
       });
     });
 
-    it('should return seperated requests for video and banner if singleRequest is true', function () {
+    it('should return separated requests for video and banner if singleRequest is true', function () {
       config.setConfig({
         bidderTimeout: 3000,
         vidazoo: {

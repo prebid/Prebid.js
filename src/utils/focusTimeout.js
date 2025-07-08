@@ -26,7 +26,7 @@ export function reset() {
 /**
  * Wraps native setTimeout function in order to count time only when page is focused
  *
- * @param {function(): void} [callback] - A function that will be invoked after the passed time
+ * @param {function(void): void} [callback] - A function that will be invoked after passed time
  * @param {number} [milliseconds] - Minimum duration (in milliseconds) that the callback will be executed after
  * @returns {function(): number} - Getter function for current timer id
  */

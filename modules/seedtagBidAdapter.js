@@ -127,7 +127,7 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
+    requestCount: validBidRequest.bidRequestsCount || 1,
   };
 
   if (hasVideoMediaType(validBidRequest)) {
@@ -320,8 +320,9 @@ export const spec = {
       payload['uspConsent'] = bidderRequest.uspConsent;
     }
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const schain = validBidRequests[0]?.ortb2?.source?.ext?.schain;
+    if (schain) {
+      payload.schain = schain;
     }
 
     let coppa = config.getConfig('coppa');

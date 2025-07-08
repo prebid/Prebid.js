@@ -196,7 +196,10 @@ describe('VideoByteBidAdapter', function () {
           hp: 1
         }]
       };
-      bidRequest.schain = globalSchain;
+      bidRequest.ortb2 = bidRequest.ortb2 || {};
+      bidRequest.ortb2.source = bidRequest.ortb2.source || {};
+      bidRequest.ortb2.source.ext = bidRequest.ortb2.source.ext || {};
+      bidRequest.ortb2.source.ext.schain = globalSchain;
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const data = JSON.parse(requests[0].data);
       const schain = data.source.ext.schain;

@@ -81,6 +81,11 @@ describe('SeedingAlliance adapter', function () {
       });
     });
 
+    after(function () {
+      localStorageIsEnabledStub.restore();
+      getDataFromLocalStorageStub.restore();
+    });
+
     it('should return an empty array if local storage is not enabled', function () {
       localStorageIsEnabledStub.returns(false);
       $$PREBID_GLOBAL$$.bidderSettings = {
@@ -141,8 +146,8 @@ describe('SeedingAlliance adapter', function () {
         id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
+            seat: 'seedingAlliance',
+            bid: [{
               adm: JSON.stringify({
                 native: {
                   assets: [
@@ -170,8 +175,8 @@ describe('SeedingAlliance adapter', function () {
         id: 'bidid1',
         seatbid: [
           {
-          	seat: 'seedingAlliance',
-          	bid: [{
+            seat: 'seedingAlliance',
+            bid: [{
               adm: '<iframe src="https://domain.tld/cds/delivery?wp=0.90"></iframe>',
               impid: 1,
               price: 0.90,

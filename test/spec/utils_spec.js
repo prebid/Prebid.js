@@ -25,7 +25,7 @@ describe('Utils', function () {
     let sandbox;
 
     beforeEach(function () {
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
     });
 
     afterEach(function () {
@@ -505,15 +505,15 @@ describe('Utils', function () {
   });
 
   describe('contains', function () {
-    	it('should return true if the input string contains in the input obj', function () {
+      it('should return true if the input string contains in the input obj', function () {
       var output = utils.contains('123', '1');
       assert.deepEqual(output, true);
-    	});
+      });
 
-    	it('should return false if the input string do not contain in the input obj', function () {
+      it('should return false if the input string do not contain in the input obj', function () {
       var output = utils.contains('234', '1');
       assert.deepEqual(output, false);
-    	});
+      });
 
     it('should return false if the input string is empty', function () {
       var output = utils.contains();
@@ -522,37 +522,37 @@ describe('Utils', function () {
   });
 
   describe('_map', function () {
-    	it('return empty array when input object is empty', function () {
+      it('return empty array when input object is empty', function () {
       var input = {};
       var callback = function () {};
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, []);
-    	});
+      });
 
-    	it('return value array with vaild input object', function () {
+      it('return value array with vaild input object', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v) { return v; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['A', 'B']);
-    	});
+      });
 
-    	it('return value array with vaild input object_callback func changed 1', function () {
+      it('return value array with vaild input object_callback func changed 1', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k) { return v + k; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, ['Aa', 'Bb']);
-    	});
+      });
 
-    	it('return value array with vaild input object_callback func changed 2', function () {
+      it('return value array with vaild input object_callback func changed 2', function () {
       var input = { a: 'A', b: 'B' };
       var callback = function (v, k, o) { return o; };
 
       var output = utils._map(input, callback);
       assert.deepEqual(output, [input, input]);
-    	});
+      });
   });
 
   describe('createInvisibleIframe', function () {

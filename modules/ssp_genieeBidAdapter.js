@@ -1,4 +1,3 @@
-
 import * as utils from '../src/utils.js';
 import { isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -15,7 +14,8 @@ import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'ssp_geniee';
 export const BANNER_ENDPOINT = 'https://aladdin.genieesspv.jp/yie/ld/api/ad_call/v2';
-// export const ENDPOINT_USERSYNC = '';
+export const USER_SYNC_ENDPOINT_IMAGE = 'https://cs.gssprt.jp/yie/ld/mcs';
+export const USER_SYNC_ENDPOINT_IFRAME = 'https://cs.gssprt.jp/yie/ld';
 const SUPPORTED_MEDIA_TYPES = [ BANNER ];
 const DEFAULT_CURRENCY = 'JPY';
 const ALLOWED_CURRENCIES = ['USD', 'JPY'];
@@ -140,7 +140,7 @@ export const buildExtuidQuery = ({id5, imuId}) => {
  * @see https://docs.prebid.org/dev-docs/bidder-adaptor.html#location-and-referrers
  */
 function makeCommonRequestData(bid, geparameter, refererInfo) {
-  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid') || utils.deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
 
   const data = {
     zoneid: bid.params.zoneId,
@@ -157,7 +157,6 @@ function makeCommonRequestData(bid, geparameter, refererInfo) {
     ua: navigator.userAgent,
     tpaf: 1,
     cks: 1,
-    ib: 0,
     ...(gpid ? { gpid } : {}),
   };
 
@@ -414,14 +413,37 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return syncs;
 
-    // if we need user sync, we add this part after preparing the endpoint
-    /* if (syncOptions.pixelEnabled) {
-      syncs.push({
-        type: 'image',
-        url: ENDPOINT_USERSYNC
+    serverResponses.forEach((serverResponse) => {
+      if (!serverResponse?.body) return;
+
+      const bids = Object.values(serverResponse.body).filter(Boolean);
+      if (!bids.length) return;
+
+      bids.forEach(bid => {
+        if (syncOptions.iframeEnabled && bid.cs_url) {
+          syncs.push({ type: 'iframe', url: USER_SYNC_ENDPOINT_IFRAME + bid.cs_url });
+          return;
+        }
+
+        if (syncOptions.pixelEnabled && bid.adm) {
+          const decodedAdm = decodeURIComponent(bid.adm)
+          const reg = new RegExp('https:\\\\/\\\\/cs.gssprt.jp\\\\/yie\\\\/ld\\\\/mcs\\?([^\\\\"]+)\\\\"', 'g');
+          const csQuery = Array.from(decodedAdm.matchAll(reg), (match) => match[1]);
+          if (!csQuery.length) {
+            return;
+          }
+
+          csQuery.forEach((query) => {
+            syncs.push({
+              type: 'image',
+              url: USER_SYNC_ENDPOINT_IMAGE + '?' + query
+            });
+          });
+        }
       });
-    } */
+    });
 
     return syncs;
   },

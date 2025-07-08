@@ -1,6 +1,6 @@
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](https://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
-[![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
+[![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg?branch=master)](https://coveralls.io/github/prebid/Prebid.js?branch=master)
 
 # Prebid.js
 
@@ -24,71 +24,8 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 
 ## Usage (as a npm dependency)
 
-*Note:* Requires Prebid.js v1.38.0+
-
-Prebid.js depends on Babel and some Babel Plugins in order to run correctly in the browser.  Here are some examples for
-configuring webpack to work with Prebid.js.
-
-With Babel 7:
-```javascript
-// webpack.conf.js
-let path = require('path');
-module.exports = {
-  mode: 'production',
-  module: {
-    rules: [
-
-      // this rule can be excluded if you don't require babel-loader for your other application files
-      {
-        test: /\.m?js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-        }
-      },
-
-      // this separate rule is required to make sure that the Prebid.js files are babel-ified.  this rule will
-      // override the regular exclusion from above (for being inside node_modules).
-      {
-        test: /.js$/,
-        include: new RegExp(`\\${path.sep}prebid\\.js`),
-        use: {
-          loader: 'babel-loader',
-          // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
-          // this can be accomplished by requiring prebid's .babelrc.js file (requires Babel 7 and Node v8.9.0+)
-          // as of Prebid 6, babelrc.js only targets modern browsers. One can change the targets and build for
-          // older browsers if they prefer, but integration tests on ie11 were removed in Prebid.js 6.0
-          options: require('prebid.js/.babelrc.js')
-        }
-      }
-    ]
-  }
-}
-```
-
-Or for Babel 6:
-```javascript
-            // you must manually install and specify the presets and plugins yourself
-            options: {
-              plugins: [
-                "transform-object-assign", // required (for IE support) and "babel-plugin-transform-object-assign"
-                                           // must be installed as part of your package.
-                require('prebid.js/plugins/pbjsGlobals.js') // required!
-              ],
-              presets: [
-                ["env", {                 // you can use other presets if you wish.
-                  "targets": {            // this example is using "babel-presets-env", which must be installed if you
-                    "browsers": [         // follow this example.
-                      ... // your browser targets. they should probably match the targets you're using for the rest
-                          // of your application
-                    ]
-                  }
-                }]
-              ]
-            }
-```
-
-Then you can use Prebid.js as any other npm dependency
+**Note**: versions prior to v10 required some Babel plugins to be configured when used as an NPM dependency -
+refer to [v9 README](https://github.com/prebid/Prebid.js/blob/9.43.0/README.md)
 
 ```javascript
 import pbjs from 'prebid.js';
@@ -99,10 +36,26 @@ pbjs.processQueue();  // required to process existing pbjs.queue blocks and setu
 pbjs.requestBids({
   ...
 })
-
 ```
 
+You can import just type definitions for every module from `types.d.ts`, and for the `pbjs` global from `global.d.ts`:
 
+```typescript
+import 'prebid.js/types.d.ts';
+import 'prebid.js/global.d.ts';
+pbjs.que.push(/* ... */)
+```
+
+Or, if your Prebid bundle uses a different global variable name:
+
+```typescript
+import type {PrebidJS} from 'prebid.js/types.d.ts';
+declare global {
+    interface Window {
+        myCustomPrebidGlobal: PrebidJS;
+    }
+}
+```
 
 <a name="Install"></a>
 
@@ -231,12 +184,14 @@ Features that can be disabled this way are:
 
  - `VIDEO` - support for video bids;
  - `NATIVE` - support for native bids;
- - `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
- - `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).    
+- `UID2_CSTG` - support for UID2 client side token generation (see [Unified ID 2.0](https://docs.prebid.org/dev-docs/modules/userid-submodules/unified2.html))
+- `GREEDY` - disables the use blocking, "greedy" promises within Prebid (see below).
+
+`GREEDY` is disabled and all other features are enabled when no features are explicitly chosen. Use `--enable GREEDY` on the `gulp build` command or remove it from `disableFeatures` to restore the original behavior. If you disable any feature, you must explicitly also disable `GREEDY` to get the default behavior on promises.
 
 #### Greedy promises
 
-By default, Prebid attempts to hold control of the main thread when possible, using a [custom implementation of `Promise`](https://github.com/prebid/Prebid.js/blob/master/libraries/greedy/greedyPromise.js) that does not submit callbacks to the scheduler once the promise is resolved (running them immediately instead).
+When `GREEDY` is enabled, Prebid attempts to hold control of the main thread when possible, using a [custom implementation of `Promise`](https://github.com/prebid/Prebid.js/blob/master/libraries/greedy/greedyPromise.js) that does not submit callbacks to the scheduler once the promise is resolved (running them immediately instead).
 Disabling this behavior instructs Prebid to use the standard `window.Promise` instead; this has the effect of breaking up task execution, making them slower overall but giving the browser more chances to run other tasks in between, which can improve UX.         
 
 You may also override the `Promise` constructor used by Prebid through `pbjs.Promise`, for example:
@@ -255,6 +210,21 @@ gulp build-bundle-dev --modules=bidderA,module1,...
 ```
 
 The results will be in build/dev/prebid.js.
+
+## ES5 Output Support
+
+For compatibility with older parsers or environments that require ES5 syntax, you can generate ES5-compatible output using the `--ES5` flag:
+
+```bash
+gulp build-bundle-dev --modules=bidderA,module1,... --ES5
+```
+
+This will:
+- Transpile all code to ES5 syntax using CommonJS modules
+- Target browsers: IE11+, Chrome 50+, Firefox 50+, Safari 10+
+- Ensure compatibility with older JavaScript parsers
+
+**Note:** Without the `--ES5` flag, the build will use modern ES6+ syntax by default for better performance and smaller bundle sizes.
 
 ## Test locally
 
@@ -395,7 +365,7 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](https:/
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not dead; not Opera Mini; not IE11.
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).

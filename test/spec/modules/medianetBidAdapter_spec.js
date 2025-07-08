@@ -1918,7 +1918,7 @@ let VALID_BID_REQUEST = [{
 describe('Media.net bid adapter', function () {
   let sandbox;
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
     sandbox.stub(window.top, 'innerHeight').value(780)
     sandbox.stub(window.top, 'innerWidth').value(440)
     sandbox.stub(window.top, 'scrollY').value(100)
@@ -2065,7 +2065,7 @@ describe('Media.net bid adapter', function () {
       beforeEach(() => {
         spec.clearPageMeta();
       });
-      it('should pass canonical, twitter and fb paramters if available', () => {
+      it('should pass canonical, twitter and fb parameters if available', () => {
         let documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
           href: 'http://localhost:9999/canonical-test'

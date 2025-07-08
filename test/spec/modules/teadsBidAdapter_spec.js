@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec, storage} from 'modules/teadsBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import * as autoplay from 'libraries/autoplayDetection/autoplay.js'
+import { expect } from 'chai';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js';
+import { spec, storage } from 'modules/teadsBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -11,7 +11,7 @@ describe('teadsBidAdapter', () => {
   let sandbox;
 
   beforeEach(function () {
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -743,14 +743,20 @@ describe('teadsBidAdapter', () => {
 
     it('should add schain info to payload if available', function () {
       const bidRequest = Object.assign({}, bidRequests[0], {
-        schain: {
-          ver: '1.0',
-          complete: 1,
-          nodes: [{
-            asi: 'example.com',
-            sid: '00001',
-            hp: 1
-          }]
+        ortb2: {
+          source: {
+            ext: {
+              schain: {
+                ver: '1.0',
+                complete: 1,
+                nodes: [{
+                  asi: 'example.com',
+                  sid: '00001',
+                  hp: 1
+                }]
+              }
+            }
+          }
         }
       });
 
@@ -873,6 +879,11 @@ describe('teadsBidAdapter', () => {
       checkMediaTypesSizes(hybridMediaTypes, ['46x48', '50x34', '45x45']);
     });
 
+    const toEid = (sourceId, value) => ({
+      source: sourceId,
+      uids: [{id: value}]
+    })
+
     describe('User IDs', function () {
       const baseBidRequest = {
         'bidder': 'teads',
@@ -890,24 +901,24 @@ describe('teadsBidAdapter', () => {
       };
 
       const userIdModules = {
-        unifiedId2: {uid2: {id: 'unifiedId2-id'}},
-        liveRampId: {idl_env: 'liveRampId-id'},
-        lotamePanoramaId: {lotamePanoramaId: 'lotamePanoramaId-id'},
-        id5Id: {id5id: {uid: 'id5Id-id'}},
-        criteoId: {criteoId: 'criteoId-id'},
-        yahooConnectId: {connectId: 'yahooConnectId-id'},
-        quantcastId: {quantcastId: 'quantcastId-id'},
-        epsilonPublisherLinkId: {publinkId: 'epsilonPublisherLinkId-id'},
-        publisherFirstPartyViewerId: {pubcid: 'publisherFirstPartyViewerId-id'},
-        merkleId: {merkleId: {id: 'merkleId-id'}},
-        kinessoId: {kpuid: 'kinessoId-id'}
+        unifiedId2: toEid('uidapi.com', 'unifiedId2-id'),
+        liveRampId: toEid('liveramp.com', 'liveRampId-id'),
+        lotamePanoramaId: toEid('crwdcntrl.net', 'lotamePanoramaId-id'),
+        id5Id: toEid('id5-sync.com', 'id5Id-id'),
+        criteoId: toEid('criteo.com', 'criteoId-id'),
+        yahooConnectId: toEid('yahoo.com', 'yahooConnectId-id'),
+        quantcastId: toEid('quantcast.com', 'quantcastId-id'),
+        epsilonPublisherLinkId: toEid('epsilon.com', 'epsilonPublisherLinkId-id'),
+        publisherFirstPartyViewerId: toEid('pubcid.org', 'publisherFirstPartyViewerId-id'),
+        merkleId: toEid('merkleinc.com', 'merkleId-id'),
+        kinessoId: toEid('kpuid.com', 'kinessoId-id')
       };
 
       describe('User Id Modules', function () {
         it(`should not add param to payload if user id system is not enabled`, function () {
           const bidRequest = {
             ...baseBidRequest,
-            userId: {} // no property -> assumption that the system is disabled
+            userIdAsEids: [] // no property -> assumption that the system is disabled
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -916,6 +927,7 @@ describe('teadsBidAdapter', () => {
           for (const userId in userIdModules) {
             expect(payload, userId).not.to.have.property(userId);
           }
+          expect(payload['eids']).to.deep.equal([])
         });
 
         it(`should not add param to payload if user id field is absent`, function () {
@@ -925,15 +937,17 @@ describe('teadsBidAdapter', () => {
           for (const userId in userIdModules) {
             expect(payload, userId).not.to.have.property(userId);
           }
+          expect(payload['eids']).to.deep.equal([])
         });
 
         it(`should not add param to payload if user id is enabled but there is no value`, function () {
+          const userIdAsEids = [
+            toEid('idl_env', ''),
+            toEid('pubcid.org', 'publisherFirstPartyViewerId-id')
+          ]
           const bidRequest = {
             ...baseBidRequest,
-            userId: {
-              idl_env: '',
-              pubcid: 'publisherFirstPartyViewerId-id'
-            }
+            userIdAsEids
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -941,19 +955,15 @@ describe('teadsBidAdapter', () => {
 
           expect(payload).not.to.have.property('liveRampId');
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
+          expect(payload['eids']).to.deep.equal(userIdAsEids)
         });
 
         it(`should add userId param to payload for each enabled user id system`, function () {
-          let userIdObject = {};
-          for (const userId in userIdModules) {
-            userIdObject = {
-              ...userIdObject,
-              ...userIdModules[userId]
-            }
-          }
+          let userIdAsEidsObject = Object.values(userIdModules);
+
           const bidRequest = {
             ...baseBidRequest,
-            userId: userIdObject
+            userIdAsEids: userIdAsEidsObject
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -970,6 +980,7 @@ describe('teadsBidAdapter', () => {
           expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
           expect(payload['merkleId']).to.equal('merkleId-id');
           expect(payload['kinessoId']).to.equal('kinessoId-id');
+          expect(payload['eids']).to.deep.equal(Object.values(userIdModules))
         });
       })
 
@@ -980,9 +991,9 @@ describe('teadsBidAdapter', () => {
 
           const bidRequest = {
             ...baseBidRequest,
-            userId: {
-              pubcid: 'publisherFirstPartyViewerId-id'
-            }
+            userIdAsEids: [
+              toEid('pubcid.org', 'publisherFirstPartyViewerId-id')
+            ]
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -998,9 +1009,9 @@ describe('teadsBidAdapter', () => {
 
           const bidRequest = {
             ...baseBidRequest,
-            userId: {
-              pubcid: 'publisherFirstPartyViewerId-id'
-            }
+            userIdAsEids: [
+              toEid('pubcid.org', 'publisherFirstPartyViewerId-id')
+            ]
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -1016,9 +1027,9 @@ describe('teadsBidAdapter', () => {
 
           const bidRequest = {
             ...baseBidRequest,
-            userId: {
-              pubcid: 'publisherFirstPartyViewerId-id'
-            }
+            userIdAsEids: [
+              toEid('pubcid.org', 'publisherFirstPartyViewerId-id')
+            ]
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -1035,10 +1046,10 @@ describe('teadsBidAdapter', () => {
 
           const bidRequest = {
             ...baseBidRequest,
-            userId: {
-              pubcid: 'publisherFirstPartyViewerId-id',
-              teadsId: 'teadsId-fake-id'
-            }
+            userIdAsEids: [
+              toEid('pubcid.org', 'publisherFirstPartyViewerId-id'),
+              toEid('teads.com', 'teadsId-fake-id')
+            ]
           };
 
           const request = spec.buildRequests([bidRequest], bidderRequestDefault);
@@ -1212,6 +1223,25 @@ describe('teadsBidAdapter', () => {
 
       const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
       expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
+    });
+
+    it('should include timeout in the payload when provided', function() {
+      const bidderRequest = {
+        timeout: 3000
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.timeout).to.exist;
+      expect(payload.timeout).to.equal(3000);
+    });
+
+    it('should set timeout to undefined in the payload when not provided', function() {
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.timeout).to.be.undefined;
     });
   });
 

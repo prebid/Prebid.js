@@ -12,7 +12,6 @@ import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
 
-
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -20,11 +19,13 @@ import { getOsVersion } from '../libraries/advangUtils/index.js';
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  */
 const BIDDER_CODE = 'nextroll';
+const GVLID = 130;
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 5;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
 
   /**

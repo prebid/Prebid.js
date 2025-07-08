@@ -29,7 +29,7 @@ export const converter = ortbConverter({
     deepSetValue(ortbRequest, 'site.publisher.ext.adServerBaseUrl', utils.getAdServerEndpointBaseUrl(prebidBidRequest));
     // We only support one impression per request.
     deepSetValue(ortbRequest, 'imp.0.tagid', utils.getPlacementId(prebidBidRequest));
-    deepSetValue(ortbRequest, 'user.id', context.bidRequests[0].userId?.mobkoiId || null);
+    deepSetValue(ortbRequest, 'user.eids', context.bidRequests[0].userIdAsEids || []);
 
     return ortbRequest;
   },
@@ -90,6 +90,33 @@ export const spec = {
     });
     return prebidBidResponse.bids;
   },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
+    const syncs = [];
+
+    if (!syncOptions.pixelEnabled || !gdprConsent.gdprApplies) {
+      return syncs;
+    }
+
+    serverResponses.forEach(response => {
+      const pixels = deepAccess(response, 'body.ext.pixels');
+      if (!Array.isArray(pixels)) {
+        return;
+      }
+
+      pixels.forEach(pixel => {
+        const [type, url] = pixel;
+        if (type === 'image' && syncOptions.pixelEnabled) {
+          syncs.push({
+            type: 'image',
+            url: url
+          });
+        }
+      });
+    });
+
+    return syncs;
+  }
 };
 
 registerBidder(spec);

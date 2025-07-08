@@ -2,9 +2,10 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo, getDivIdFromAdUnitCode } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 import * as ajaxLib from 'src/ajax.js';
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
@@ -130,7 +131,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -157,7 +164,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -185,7 +198,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -214,7 +233,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -239,7 +264,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
       auctionId: '1aa2bb3cc4dd',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -273,7 +304,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -311,7 +348,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -349,7 +392,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -383,7 +432,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -427,7 +482,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -499,7 +560,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -546,7 +613,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4f',
       bidderRequestId: '11a22b33c44f',
       auctionId: '1aa2bb3cc4df',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -587,7 +660,13 @@ describe('IndexexchangeAdapter', function () {
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
       auctionId: '1aa2bb3cc4de',
-      schain: SAMPLE_SCHAIN
+      ortb2: {
+        source: {
+          ext: {
+            schain: SAMPLE_SCHAIN
+          }
+        }
+      }
     }
   ];
 
@@ -1811,32 +1890,6 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('getUserIds', function () {
-    it('request should contain userId information if configured and within bid request', function () {
-      config.setConfig({
-        userSync: {
-          syncDelay: 0,
-          userIds: [
-            { name: 'lotamePanoramaId' },
-            { name: 'merkleId' },
-            { name: 'parrableId' },
-          ]
-        }
-      });
-
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      bid.userId = DEFAULT_USERID_BID_DATA;
-
-      const request = spec.buildRequests([bid], DEFAULT_OPTION)[0];
-      const r = extractPayload(request);
-
-      expect(r.ext.ixdiag.userIds).to.be.an('array');
-      expect(r.ext.ixdiag.userIds.should.not.include('lotamePanoramaId'));
-      expect(r.ext.ixdiag.userIds.should.not.include('merkleId'));
-      expect(r.ext.ixdiag.userIds.should.not.include('parrableId'));
-    });
-  });
-
   describe('First party data', function () {
     it('should not set ixdiag.fpd value if not defined', function () {
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {} })[0];
@@ -2074,7 +2127,9 @@ describe('IndexexchangeAdapter', function () {
 
   describe('buildRequests', function () {
     const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
-    delete bidWithoutSchain[0].schain;
+    if (bidWithoutSchain[0].ortb2 && bidWithoutSchain[0].ortb2.source && bidWithoutSchain[0].ortb2.source.ext) {
+      delete bidWithoutSchain[0].ortb2.source.ext.schain;
+    }
     const GPID = '/19968336/some-adunit-path';
     let request, requestUrl, requestMethod, payloadData, requestWithoutSchain, payloadWithoutSchain;
 
@@ -2370,7 +2425,7 @@ describe('IndexexchangeAdapter', function () {
         expect(impression.banner.format[0].ext.fl).to.equal('x');
       });
 
-      it('banner multi size impression should have bidFloor both in imp and format ext obejcts', function () {
+      it('banner multi size impression should have bidFloor both in imp and format ext objects', function () {
         const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
         bid.params.bidFloor = 50;
         bid.params.bidFloorCur = 'USD';
@@ -2682,7 +2737,9 @@ describe('IndexexchangeAdapter', function () {
         const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
         bid[0].mediaTypes.video.context = 'outstream';
         bid[0].mediaTypes.video.w = [[300, 143]];
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('ix');
@@ -2695,7 +2752,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'http://publisherplayer.js',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
@@ -2708,7 +2767,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'publisherplayer.js',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.be.undefined;
@@ -2721,7 +2782,9 @@ describe('IndexexchangeAdapter', function () {
           url: 'http://js-sec.indexww.rendererplayer.com',
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('ix');
@@ -2733,7 +2796,9 @@ describe('IndexexchangeAdapter', function () {
         bid[0].mediaTypes.video.renderer = {
           render: () => { }
         };
-        bid[0].schain = undefined;
+        if (bid[0].ortb2 && bid[0].ortb2.source && bid[0].ortb2.source.ext) {
+          delete bid[0].ortb2.source.ext.schain;
+        }
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.be.undefined;
@@ -2742,7 +2807,13 @@ describe('IndexexchangeAdapter', function () {
         const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
         bid[0].mediaTypes.video.context = 'outstream';
         bid[0].mediaTypes.video.w = [[300, 143]];
-        bid[0].schain = SAMPLE_SCHAIN;
+        bid[0].ortb2 = {
+          source: {
+            ext: {
+              schain: SAMPLE_SCHAIN
+            }
+          }
+        };
         const request = spec.buildRequests(bid);
         const videoImpression = extractPayload(request[0]).imp[0];
         expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');
@@ -3391,7 +3462,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
@@ -4411,7 +4481,7 @@ describe('IndexexchangeAdapter', function () {
 
   describe('Features', () => {
     let localStorageValues = {};
-    let sandbox = sinon.sandbox.create();
+    let sandbox = sinon.createSandbox();
     let setDataInLocalStorageStub;
     let getDataFromLocalStorageStub;
     let removeDataFromLocalStorageStub;
@@ -4429,7 +4499,7 @@ describe('IndexexchangeAdapter', function () {
 
     beforeEach(() => {
       localStorageValues = {};
-      sandbox = sinon.sandbox.create();
+      sandbox = sinon.createSandbox();
       setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage').callsFake((key, value) => localStorageValues[key] = value);
       getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => localStorageValues[key]);
       removeDataFromLocalStorageStub = sandbox.stub(storage, 'removeDataFromLocalStorage').callsFake((key) => delete localStorageValues[key]);
@@ -4480,7 +4550,7 @@ describe('IndexexchangeAdapter', function () {
       expect(lsData.features.test.activated).to.be.true;
     });
 
-    it('should retrive features from localstorage when enabled', () => {
+    it('should retrieve features from localstorage when enabled', () => {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
       serverResponse.body.ext.features.test.activated = true;
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
@@ -4811,7 +4881,6 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
         expect(diagObj.url).to.equal('http://localhost:9876/context.html')
-        expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
@@ -5421,6 +5490,54 @@ describe('IndexexchangeAdapter', function () {
       const payload = extractPayload(request);
       expect(payload.device.ip).to.be.undefined;
       expect(payload.device.ip6).to.be.undefined;
+    });
+
+    it('should add device.geo if available in fpd', () => {
+      const ortb2 = {
+        device: {
+          geo: {
+            lat: 1,
+            lon: 2,
+            lastfix: 1,
+            type: 1
+          }
+        }
+      };
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.geo.lat).to.equal(1);
+      expect(payload.device.geo.lon).to.equal(2);
+      expect(payload.device.geo.lastfix).to.equal(1);
+      expect(payload.device.geo.type).to.equal(1);
+    });
+
+    it('should not add device.geo if it does not exist', () => {
+      const ortb2 = {device: {}};
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+      const payload = extractPayload(request);
+      expect(payload.device.geo).to.be.undefined;
+    });
+  });
+
+  describe('getDivIdFromAdUnitCode', () => {
+    it('returns adUnitCode when element exists', () => {
+      const adUnitCode = 'div-ad1';
+      const el = document.createElement('div');
+      el.id = adUnitCode;
+      document.body.appendChild(el);
+      expect(getDivIdFromAdUnitCode(adUnitCode)).to.equal(adUnitCode);
+      document.body.removeChild(el);
+    });
+
+    it('retrieves divId from GPT once and caches result', () => {
+      const adUnitCode = 'div-ad2';
+      const stub = sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode').returns({divId: 'gpt-div'});
+      const first = getDivIdFromAdUnitCode(adUnitCode);
+      const second = getDivIdFromAdUnitCode(adUnitCode);
+      expect(first).to.equal('gpt-div');
+      expect(second).to.equal('gpt-div');
+      expect(stub.calledOnce).to.be.true;
+      stub.restore();
     });
   });
 
