@@ -5,6 +5,7 @@ import {setResponseMediaType} from './mediaType.js';
 import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
 import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
+import { fillAudioImp, fillAudioResponse } from './audio.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -132,5 +133,16 @@ if (FEATURES.VIDEO) {
   DEFAULT_PROCESSORS[BID_RESPONSE].video = {
     // sets video response attributes if bidResponse.mediaType === VIDEO
     fn: fillVideoResponse
+  }
+}
+
+if (FEATURES.AUDIO) {
+  DEFAULT_PROCESSORS[IMP].audio = {
+    // populates imp.audio
+    fn: fillAudioImp
+  }
+  DEFAULT_PROCESSORS[BID_RESPONSE].audio = {
+    // sets video response attributes if bidResponse.mediaType === AUDIO
+    fn: fillAudioResponse
   }
 }

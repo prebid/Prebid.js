@@ -66,6 +66,7 @@ import type {ORTBRequest} from "./types/ortb/request.d.ts";
 import type {DeepPartial} from "./types/objects.d.ts";
 import type {AnyFunction, Wraps} from "./types/functions.d.ts";
 import type {BidderScopedSettings, BidderSettings} from "./bidderSettings.ts";
+import {fillAudioDefaults, validateOrtbAudioFields} from './audio.ts';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -205,6 +206,13 @@ function validateBannerMediaType(adUnit: AdUnit) {
   return validatedAdUnit;
 }
 
+function validateAudioMediaType(adUnit: AdUnit) {
+  const validatedAdUnit = deepClone(adUnit);
+  validateOrtbAudioFields(validatedAdUnit);
+  syncOrtb2(validatedAdUnit, 'audio');
+  return validatedAdUnit;
+}
+
 function validateVideoMediaType(adUnit: AdUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const video = validatedAdUnit.mediaTypes.video;
@@ -331,6 +339,10 @@ if (FEATURES.VIDEO) {
   Object.assign(adUnitSetupChecks, { validateVideoMediaType });
 }
 
+if (FEATURES.AUDIO) {
+  Object.assign(adUnitSetupChecks, { validateAudioMediaType });
+}
+
 export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition[]) {
   const validatedAdUnits = [];
 
@@ -339,7 +351,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
     if (adUnit == null) return;
 
     const mediaTypes = adUnit.mediaTypes;
-    let validatedBanner, validatedVideo, validatedNative;
+    let validatedBanner, validatedVideo, validatedNative, validatedAudio;
 
     if (mediaTypes.banner) {
       validatedBanner = validateBannerMediaType(adUnit);
@@ -355,7 +367,11 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
-    const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative);
+    if (FEATURES.AUDIO && mediaTypes.audio) {
+      validatedAudio = validatedNative ? validateAudioMediaType(validatedNative) : validateVideoMediaType(adUnit);
+    }
+
+    const validatedAdUnit = Object.assign({}, validatedBanner, validatedVideo, validatedNative, validatedAudio);
 
     validatedAdUnits.push(validatedAdUnit);
   });
@@ -366,6 +382,9 @@ export const checkAdUnitSetup = hook('sync', function (adUnits: AdUnitDefinition
 function fillAdUnitDefaults(adUnits: AdUnitDefinition[]) {
   if (FEATURES.VIDEO) {
     adUnits.forEach(au => fillVideoDefaults(au))
+  }
+  if (FEATURES.AUDIO) {
+    adUnits.forEach(au => fillAudioDefaults(au))
   }
 }
 

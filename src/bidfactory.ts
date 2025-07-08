@@ -113,11 +113,16 @@ export interface NativeBidResponseProperties {
     mediaType: 'native';
 }
 
+export interface AudioBidResponseProperties {
+    mediaType: 'audio';
+}
+
 export type BannerBidResponse = BaseBidResponse & BannerBidResponseProperties;
 export type VideoBidResponse = BaseBidResponse & VideoBidResponseProperties;
 export type NativeBidResponse = BaseBidResponse & NativeBidResponseProperties;
+export type AudioBidResponse = BaseBidResponse & AudioBidResponseProperties;
 
-export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse;
+export type BidResponse = BannerBidResponse | VideoBidResponse | NativeBidResponse | AudioBidResponse;
 
 export interface BaseBid extends ContextIdentifiers, Required<Pick<BaseBidResponse, 'meta' | 'deferRendering'>> {
     /**
@@ -165,13 +170,18 @@ export interface VideoBidProperties {
     mediaType: 'video';
 }
 
+export interface AudioBidProperties {
+    mediaType: 'audio';
+}
+
 type BidFrom<RESP, PROPS> = BaseBid & Omit<RESP, keyof BaseBid | keyof PROPS> & PROPS;
 
 type _BannerBid = BidFrom<BannerBidResponse, BannerBidProperties>;
 type _VideoBid = BidFrom<VideoBidResponse, VideoBidProperties>;
 type _NativeBid = BidFrom<NativeBidResponse, NativeBidProperties>;
+type _AudioBid = BidFrom<AudioBidResponse, AudioBidProperties>;
 
-type AnyBid = _BannerBid | _VideoBid | _NativeBid;
+type AnyBid = _BannerBid | _VideoBid | _NativeBid | _AudioBid;
 
 // the following adds `property?: undefined` declarations for each property
 // that is in some other format, to avoid requiring type casts
@@ -183,8 +193,9 @@ type ExtendBid<B extends AnyBid> = B & Omit<NullBid, keyof B>;
 export type BannerBid = ExtendBid<_BannerBid>;
 export type VideoBid = ExtendBid<_VideoBid>;
 export type NativeBid = ExtendBid<_NativeBid>;
+export type AudioBid = ExtendBid<_AudioBid>;
 
-export type Bid = BannerBid | VideoBid | NativeBid;
+export type Bid = BannerBid | VideoBid | NativeBid | AudioBid;
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 function Bid({src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId}: Partial<BidIdentifiers> = {}) {
