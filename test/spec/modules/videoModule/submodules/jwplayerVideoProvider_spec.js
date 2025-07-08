@@ -328,6 +328,7 @@ describe('JWPlayerProvider', function () {
       const player = getPlayerMock();
       const loadSpy = player.loadAdXml = sinon.spy();
       const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), {}, {}, {}, {}, sharedUtils);
+      provider.init();
       provider.setAdXml();
       expect(loadSpy.called).to.be.false;
     });
