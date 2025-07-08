@@ -317,7 +317,6 @@ function getExtensions(ortb2, refererInfo) {
   return ext;
 }
 
-
 function _getCrb() {
   let localStorageCrb = getCrbFromLocalStorage();
   if (Object.keys(localStorageCrb).length) {
