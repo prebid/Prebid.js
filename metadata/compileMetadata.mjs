@@ -5,7 +5,7 @@ import moduleMetadata from './modules.json' with {type: 'json'};
 import coreMetadata from './core.json' with {type: 'json'};
 
 import overrides from './overrides.mjs';
-import {fetchDisclosure, getDisclosureUrl} from './storageDisclosure.mjs';
+import {fetchDisclosure, getDisclosureUrl, logErrorSummary} from './storageDisclosure.mjs';
 
 function matches(moduleName, moduleSuffix) {
   moduleSuffix = moduleSuffix.toLowerCase();
@@ -111,6 +111,7 @@ async function compileModuleMetadata() {
 export default async function compileMetadata() {
   const allModules = new Set((await compileCoreMetadata())
     .concat(await compileModuleMetadata()));
+  logErrorSummary();
   fs.readdirSync('./metadata/modules')
     .map(name => path.parse(name))
     .filter(({name}) => !allModules.has(name))
