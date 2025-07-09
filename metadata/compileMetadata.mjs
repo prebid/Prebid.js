@@ -7,6 +7,8 @@ import coreMetadata from './core.json' with {type: 'json'};
 import overrides from './overrides.mjs';
 import {fetchDisclosure, getDisclosureUrl, logErrorSummary} from './storageDisclosure.mjs';
 
+const MAX_DISCLOSURE_AGE_DAYS = 14;
+
 function matches(moduleName, moduleSuffix) {
   moduleSuffix = moduleSuffix.toLowerCase();
   const shortName = moduleName.toLowerCase().replace(moduleSuffix, '');
@@ -23,6 +25,40 @@ const modules = {
   RtdProvider: 'rtd'
 };
 
+function previousDisclosure(moduleName, {componentType, componentName, disclosureURL}) {
+  return new Promise((resolve, reject) => {
+    function noPreviousDisclosure() {
+      console.info(`No previously fetched disclosure available for "${componentType}.${componentName}" (url: ${disclosureURL})`);
+      resolve(null);
+    }
+    fs.readFile(moduleMetadataPath(moduleName), (err, data) => {
+      if (err) {
+        err.code === 'ENOENT' ? noPreviousDisclosure() : reject(err);
+      } else {
+        try {
+          const disclosure = JSON.parse(data.toString()).disclosures?.[disclosureURL];
+          if (disclosure == null || disclosure.disclosures == null) {
+            noPreviousDisclosure();
+          } else {
+            const disclosureAgeDays = ((new Date()).getTime() - new Date(disclosure.timestamp).getTime()) /
+              (1000 * 60  * 60 * 24);
+            if (disclosureAgeDays <= MAX_DISCLOSURE_AGE_DAYS) {
+              console.info(`Using previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}, disclosure is ${Math.floor(disclosureAgeDays)} days old)`);
+              resolve(disclosure.disclosures)
+            } else {
+              console.warn(`Previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${disclosureAgeDays}) and won't be reused`);
+              resolve(null);
+            }
+          }
+        } catch (e) {
+          reject(e);
+        }
+      }
+    })
+  })
+
+}
+
 async function metadataFor(moduleName, metas) {
   const disclosures = {};
   for (const meta of metas) {
@@ -30,7 +66,10 @@ async function metadataFor(moduleName, metas) {
       meta.disclosureURL = await getDisclosureUrl(meta.gvlid);
     }
     if (meta.disclosureURL) {
-      const disclosure = await fetchDisclosure(meta);
+      let disclosure = await fetchDisclosure(meta);
+      if (disclosure == null) {
+        disclosure = await previousDisclosure(moduleName, meta);
+      }
       disclosures[meta.disclosureURL] = {
         timestamp: new Date().toISOString(),
         disclosures: disclosure
