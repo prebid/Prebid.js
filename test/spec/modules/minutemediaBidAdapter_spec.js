@@ -439,57 +439,33 @@ describe('minutemediaAdapter', function () {
         'architecture': 'x86'
       }
       const bid = utils.deepClone(bidRequests[0]);
-      bid.ortb2 = {
+      const bidderRequestWithSua = utils.deepClone(bidderRequest);
+      bidderRequestWithSua.ortb2 = {
         'device': {
-          'sua': {
-            'platform': {
-              'brand': 'macOS',
-              'version': [ '12', '4', '0' ]
-            },
-            'browsers': [
-              {
-                'brand': 'Chromium',
-                'version': [ '106', '0', '5249', '119' ]
-              },
-              {
-                'brand': 'Google Chrome',
-                'version': [ '106', '0', '5249', '119' ]
-              },
-              {
-                'brand': 'Not;A=Brand',
-                'version': [ '99', '0', '0', '0' ]
-              }
-            ],
-            'mobile': 0,
-            'model': '',
-            'bitness': '64',
-            'architecture': 'x86'
-          }
+          'sua': sua
         }
-      }
-      const requestWithSua = spec.buildRequests([bid], bidderRequest);
+      };
+      const requestWithSua = spec.buildRequests([bid], bidderRequestWithSua);
       const data = requestWithSua.data;
-      expect(data.bids[0].sua).to.exist;
-      expect(data.bids[0].sua).to.deep.equal(sua);
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[0].sua).to.not.exist;
+      expect(data.params.sua).to.exist;
+      expect(data.params.sua).to.deep.equal(JSON.stringify(sua));
     });
 
     describe('COPPA Param', function() {
-      it('should set coppa equal 0 in bid request if coppa is set to false', function() {
+      it('should set coppa equal 0 in bid request if coppa is set to 0', function() {
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.bids[0].coppa).to.be.equal(0);
+        expect(request.data.params.coppa).to.be.equal(0);
       });
 
-      it('should set coppa equal 1 in bid request if coppa is set to true', function() {
-        const bid = utils.deepClone(bidRequests[0]);
-        bid.ortb2 = {
+      it('should set coppa equal 1 in bid request if coppa is set to 1', function() {
+        const bidderRequestWithCoppa = utils.deepClone(bidderRequest);
+        bidderRequestWithCoppa.ortb2 = {
           'regs': {
-            'coppa': true,
+            'coppa': 1,
           }
         };
-        const request = spec.buildRequests([bid], bidderRequest);
-        expect(request.data.bids[0].coppa).to.be.equal(1);
+        const request = spec.buildRequests(bidRequests, bidderRequestWithCoppa);
+        expect(request.data.params.coppa).to.be.equal(1);
       });
     });
   });
