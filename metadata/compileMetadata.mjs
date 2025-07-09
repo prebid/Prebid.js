@@ -44,9 +44,9 @@ function previousDisclosure(moduleName, {componentType, componentName, disclosur
               (1000 * 60  * 60 * 24);
             if (disclosureAgeDays <= MAX_DISCLOSURE_AGE_DAYS) {
               console.info(`Using previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}, disclosure is ${Math.floor(disclosureAgeDays)} days old)`);
-              resolve(disclosure.disclosures)
+              resolve(disclosure)
             } else {
-              console.warn(`Previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${disclosureAgeDays}) and won't be reused`);
+              console.warn(`Previously fetched disclosure for ${componentType}.${componentName}" (url: ${disclosureURL}) is too old (${Math.floor(disclosureAgeDays)} days) and won't be reused`);
               resolve(null);
             }
           }
@@ -66,14 +66,14 @@ async function metadataFor(moduleName, metas) {
       meta.disclosureURL = await getDisclosureUrl(meta.gvlid);
     }
     if (meta.disclosureURL) {
-      let disclosure = await fetchDisclosure(meta);
-      if (disclosure == null) {
-        disclosure = await previousDisclosure(moduleName, meta);
-      }
-      disclosures[meta.disclosureURL] = {
+      const disclosure = {
         timestamp: new Date().toISOString(),
-        disclosures: disclosure
+        disclosures: await fetchDisclosure(meta)
       };
+      if (disclosure.disclosures == null) {
+        Object.assign(disclosure, await previousDisclosure(moduleName, meta));
+      }
+      disclosures[meta.disclosureURL] = disclosure;
     }
   }
   return {
