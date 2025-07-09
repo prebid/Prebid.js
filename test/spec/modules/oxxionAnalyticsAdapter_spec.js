@@ -169,7 +169,7 @@ describe('Oxxion Analytics', function () {
           'advertiserDomains': [
             'example.com'
           ],
-	  'demandSource': 'something'
+    'demandSource': 'something'
         },
         'renderer': 'something',
         'originalCpm': 25.02521,

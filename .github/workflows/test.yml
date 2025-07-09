@@ -49,6 +49,7 @@ jobs:
         with:
           path: .
           key: source-${{ github.run_id }}
+          fail-on-cache-miss: true
       - name: lint
         run: npx eslint
       
@@ -95,6 +96,7 @@ jobs:
         with:
           path: .
           key: source-${{ github.run_id }}
+          fail-on-cache-miss: true
       - name: Run tests
         uses: nick-fields/retry@v3
         with:
@@ -112,5 +114,6 @@ jobs:
         with:
           path: .
           key: ${{ needs.test.outputs.wdir }}
+          fail-on-cache-miss: true
       - name: Coveralls
         uses: coverallsapp/github-action@v2
