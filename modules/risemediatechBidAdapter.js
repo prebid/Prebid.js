@@ -25,10 +25,6 @@ const converter = ortbConverter({
         logInfo('Setting bid floor for impression:', bidRequest.params.bidfloor);
         imp.bidfloor = bidRequest.params.bidfloor;
       }
-      // if (bidRequest.params.testMode) {
-      //   logInfo('Invoking test impression:', bidRequest.params.testMode);
-      //   imp.ext.test = 1;
-      // }
     }
     if (mediaTypes[BANNER]) {
       logInfo('Adding banner media type to impression:', mediaTypes[BANNER]);
