@@ -75,10 +75,10 @@ describe('FreePass adapter', function () {
       expect(bidRequest.length).to.equal(0);
     });
 
-    it('should handle missing userIdAsEids gracefully', function () {
+    it('should handle missing userIdAsEids', function () {
       let localBidRequests = [JSON.parse(JSON.stringify(bidRequests[0]))];
       delete localBidRequests[0].userIdAsEids;
-      expect(() => spec.buildRequests(localBidRequests, bidderRequest)).to.throw();
+      expect(() => spec.buildRequests(localBidRequests, bidderRequest)).to.not.throw();
     });
 
     it('should return a valid bid request object', function () {
