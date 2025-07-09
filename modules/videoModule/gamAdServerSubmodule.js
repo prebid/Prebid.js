@@ -2,18 +2,23 @@ import { GAM_VENDOR } from '../../libraries/video/constants/vendorCodes.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 
 /**
- * @constructor
+ * @class
  * @param {Object} dfpModule_ - the DFP ad server module
  */
 function GamAdServerProvider(dfpModule_) {
   const dfp = dfpModule_;
 
-  function getAdTagUrl(adUnit, baseAdTag, params) {
-    return dfp.buildVideoUrl({ adUnit: adUnit, url: baseAdTag, params });
+  function getAdTagUrl(adUnit, baseAdTag, params, bid) {
+    return dfp.buildVideoUrl({ adUnit: adUnit, url: baseAdTag, params, bid });
+  }
+
+  async function getVastXml(adUnit, baseAdTag, params, bid) {
+    return dfp.getVastXml({ adUnit: adUnit, url: baseAdTag, params, bid });
   }
 
   return {
-    getAdTagUrl
+    getAdTagUrl,
+    getVastXml
   }
 }
 

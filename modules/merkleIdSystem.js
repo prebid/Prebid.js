@@ -143,7 +143,7 @@ export const merkleIdSubmodule = {
       return;
     }
 
-    if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
+    if (consentData?.gdpr?.gdprApplies === true) {
       logError('User ID - merkleId submodule does not currently handle consent strings');
       return;
     }

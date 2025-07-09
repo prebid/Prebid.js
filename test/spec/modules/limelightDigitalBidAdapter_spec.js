@@ -26,7 +26,11 @@ describe('limelightDigitalAdapter', function () {
     },
     ortb2Imp: {
       ext: {
-        tid: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
       }
     },
     userIdAsEids: [
@@ -70,7 +74,11 @@ describe('limelightDigitalAdapter', function () {
     sizes: [[350, 200]],
     ortb2Imp: {
       ext: {
-        tid: '068867d1-46ec-40bb-9fa0-e24611786fb4',
+        gpid: '/1111/homepage#300x250',
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
       }
     },
     userIdAsEids: [
@@ -120,7 +128,11 @@ describe('limelightDigitalAdapter', function () {
     sizes: [[800, 600]],
     ortb2Imp: {
       ext: {
+        gpid: '/1111/homepage#300x250',
         tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
       }
     },
     userIdAsEids: [
@@ -169,7 +181,11 @@ describe('limelightDigitalAdapter', function () {
     },
     ortb2Imp: {
       ext: {
+        gpid: '/1111/homepage#300x250',
         tid: '738d5915-6651-43b9-9b6b-d50517350917',
+        data: {
+          'pbadslot': '/1111/homepage#300x250'
+        }
       }
     },
     userIdAsEids: [
@@ -235,7 +251,9 @@ describe('limelightDigitalAdapter', function () {
           'secure',
           'adUnits',
           'sua',
-          'page'
+          'page',
+          'ortb2',
+          'refererInfo'
         );
         expect(data.deviceWidth).to.be.a('number');
         expect(data.deviceHeight).to.be.a('number');
@@ -254,7 +272,8 @@ describe('limelightDigitalAdapter', function () {
             'custom2',
             'custom3',
             'custom4',
-            'custom5'
+            'custom5',
+            'ortb2Imp'
           );
           expect(adUnit.id).to.be.a('number');
           expect(adUnit.bidId).to.be.a('string');
@@ -268,6 +287,7 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.custom3).to.be.a('string');
           expect(adUnit.custom4).to.be.a('string');
           expect(adUnit.custom5).to.be.a('string');
+          expect(adUnit.ortb2Imp).to.be.an('object');
         })
         expect(data.sua.browsers).to.be.a('array');
         expect(data.sua.platform).to.be.a('array');
@@ -275,6 +295,7 @@ describe('limelightDigitalAdapter', function () {
         expect(data.sua.architecture).to.be.a('string');
         expect(data.page).to.be.a('string');
         expect(data.page).to.be.equal('testPage');
+        expect(data.ortb2).to.be.an('object');
       })
     })
     it('Returns valid URL', function () {
@@ -495,10 +516,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -522,10 +543,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-1.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-1.ortb.net/sync.html';
               }
             }
@@ -557,10 +578,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -584,10 +605,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-1.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-1.ortb.net/sync.html';
               }
             }
@@ -597,10 +618,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-2.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-2.ortb.net/sync.html';
               }
             }
@@ -628,10 +649,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -641,10 +662,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -668,10 +689,10 @@ describe('limelightDigitalAdapter', function () {
         {
           headers: {
             get: function (header) {
-              if (header === 'X-PLL-UserSync-Image') {
+              if (header === 'x-pll-usersync-image') {
                 return 'https://tracker-lm.ortb.net/sync';
               }
-              if (header === 'X-PLL-UserSync-Iframe') {
+              if (header === 'x-pll-usersync-iframe') {
                 return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
@@ -719,4 +740,5 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
   expect(adUnit.supplyChain).to.deep.equal(bid.schain);
+  expect(adUnit.ortb2Imp).to.deep.equal(bid.ortb2Imp);
 }

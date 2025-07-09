@@ -2,7 +2,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
+import { sendBeacon } from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -151,14 +152,18 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (!bid.params?.placementId || !isNumber(bid.params.placementId)) {
-      logError('placementId not provided or not a number');
-      return false;
-    }
+    if (!bid.params?.domainId || !isNumber(bid.params.domainId)) {
+      logError('domainId not provided or not a number');
+      if (!bid.params?.placementId || !isNumber(bid.params.placementId)) {
+        logError('placementId not provided or not a number');
+        return false;
+      }
 
-    if (!bid.params?.pageId || !isNumber(bid.params.pageId)) {
-      logError('pageId not provided or not a number');
-      return false;
+      if (!bid.params?.pageId || !isNumber(bid.params.pageId)) {
+        logError('pageId not provided or not a number');
+        return false;
+      }
+      return true;
     }
     return true;
   },
@@ -176,8 +181,8 @@ export const spec = {
     // process bid requests
     let processed = validBidRequests
       .map(bid => slotDimensions(bid))
-      // Flattens the pageId and placement Id for backwards compatibility.
-      .map((bid) => ({...bid, pageId: bid.params?.pageId, placementId: bid.params?.placementId}));
+      // Flattens the pageId, domainId and placement Id for backwards compatibility.
+      .map((bid) => ({...bid, pageId: bid.params?.pageId, domainId: bid.params?.domainId, placementId: bid.params?.placementId}));
 
     const extensions = getCwExtension();
     const payload = {
@@ -224,7 +229,7 @@ export const spec = {
         bid: bid
       }
     }
-    navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
+    sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
   },
 
   onBidderError: function (error, bidderRequest) {
@@ -236,7 +241,7 @@ export const spec = {
         bidderRequest: bidderRequest
       }
     }
-    navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
+    sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {

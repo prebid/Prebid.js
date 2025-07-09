@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/undertoneBidAdapter.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {deepClone} from '../../../src/utils';
+import {deepClone, getWinDimensions} from '../../../src/utils';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';
@@ -503,8 +503,8 @@ describe('Undertone Adapter', () => {
       const bidCommons = JSON.parse(request.data)['commons'];
       expect(bidCommons).to.be.an('object');
       expect(bidCommons.pageSize).to.be.an('array');
-      expect(bidCommons.pageSize[0]).to.equal(window.innerWidth);
-      expect(bidCommons.pageSize[1]).to.equal(window.innerHeight);
+      expect(bidCommons.pageSize[0]).to.equal(getWinDimensions().innerWidth);
+      expect(bidCommons.pageSize[1]).to.equal(getWinDimensions().innerHeight);
     });
     it('should send banner coordinates', function() {
       const request = spec.buildRequests(bidReq, bidderReq);

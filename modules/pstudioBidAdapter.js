@@ -6,8 +6,6 @@ import {
   isNumber,
   generateUUID,
   isEmpty,
-  isFn,
-  isPlainObject,
 } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -59,7 +57,7 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     const params = bid.params || {};
-    return !!params.pubid && !!params.floorPrice && isVideoRequestValid(bid);
+    return !!params.pubid && !!params.adtagid && isVideoRequestValid(bid);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -145,7 +143,7 @@ function buildRequestData(bid, bidderRequest) {
 
 function buildBaseObject(bid, bidderRequest) {
   const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
-  const { pubid, bcat, badv, bapp } = bid.params;
+  const { pubid, adtagid, bcat, badv, bapp } = bid.params;
   const { userId } = bid;
   const uid2Token = userId?.uid2?.id;
 
@@ -168,8 +166,7 @@ function buildBaseObject(bid, bidderRequest) {
   return {
     id: bid.bidId,
     pubid,
-    floor_price: getBidFloor(bid),
-    adtagid: bid.adUnitCode,
+    adtagid: adtagid,
     ...(bcat && { bcat }),
     ...(badv && { badv }),
     ...(bapp && { bapp }),
@@ -417,7 +414,7 @@ function validateSizes(sizes) {
   );
 }
 
-function getBidFloor(bid) {
+/* function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return bid.params.floorPrice ? bid.params.floorPrice : null;
   }
@@ -431,6 +428,6 @@ function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
-}
+} */
 
 registerBidder(spec);

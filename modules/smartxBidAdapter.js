@@ -422,6 +422,12 @@ function createOutstreamConfig(bid) {
 
   var playerListener = function callback(event) {
     switch (event) {
+      case 'AdError':
+        try {
+          window.sc_smartIntxtError();
+        } catch (f) {}
+        break;
+
       case 'AdSlotStarted':
         try {
           window.sc_smartIntxtStart();

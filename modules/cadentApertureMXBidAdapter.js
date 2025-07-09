@@ -230,11 +230,6 @@ export const spec = {
       return false;
     }
 
-    if (bid.bidder !== BIDDER_CODE) {
-      logWarn(BIDDER_CODE + ': Must use "cadent_aperture_mx" as bidder code.');
-      return false;
-    }
-
     if (!bid.params.tagid || !isStr(bid.params.tagid)) {
       logWarn(BIDDER_CODE + ': Missing tagid param or tagid present and not type String.');
       return false;

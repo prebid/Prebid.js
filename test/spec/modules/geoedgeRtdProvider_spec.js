@@ -143,6 +143,14 @@ describe('Geoedge RTD module', function () {
         const hasCurrency = dict['%_hbCurrency!'] === bid.currency;
         expect(hasCpm && hasCurrency);
       });
+      it('return a dictionary of macros replaced with values from overrides object if provided', function () {
+        const bid = mockBid('testBidder');
+        window.grumi.overrides = { site: 'test-overrides' };
+        const overrides = window.grumi.overrides;
+        const dict = getMacros(bid, key);
+        const siteOveridden = dict['%%SITE%%'] === overrides.site;
+        expect(siteOveridden);
+      });
     });
     describe('onBidResponseEvent', function () {
       const bidFromA = mockBid('bidderA');

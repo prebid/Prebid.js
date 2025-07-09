@@ -77,8 +77,8 @@ export const mygaruIdSubmodule = {
    * @returns {{id: string | undefined}}
    */
   getId(config, consentData) {
-    const gdprApplies = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies ? 1 : 0;
-    const gdprConsentString = gdprApplies ? consentData.consentString : undefined;
+    const gdprApplies = consentData?.gdpr?.gdprApplies === true ? 1 : 0;
+    const gdprConsentString = gdprApplies ? consentData.gdpr.consentString : undefined;
     const url = buildUrl({
       gdprApplies,
       gdprConsentString

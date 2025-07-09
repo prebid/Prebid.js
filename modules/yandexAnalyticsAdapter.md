@@ -20,7 +20,7 @@ Disclosure: The adapter utilizes the Metrica Tag build based on [github.com/yand
 
 2. **Insert Counter Initialization Code:**
 
-   Retrieve the counter initialization code from the Yandex Metrica settings page at `https://metrica.yandex.com/settings?id={counterId}`, where `{counterId}` is your counter ID, and embed it into your website's HTML.
+   Retrieve the counter initialization code from the Yandex Metrica settings page at [metrica.yandex.com/r/settings](https://metrica.yandex.com/r/settings), and embed it into your website's HTML.
 
 3. **Initialize the Adapter in Prebid.js:**
 
@@ -43,4 +43,4 @@ Disclosure: The adapter utilizes the Metrica Tag build based on [github.com/yand
 
 ## Accessing Analytics Data
 
-You can view the collected analytics data in the Yandex Metrica dashboard. Navigate to [metrika.yandex.com/dashboard](https://metrika.yandex.com/dashboard) and look for the Prebid Analytics section to analyze your data.
+You can view the collected analytics data in the Yandex Metrica dashboard. Navigate to [metrika.yandex.com/r/stat/prebid_events](https://metrika.yandex.com/r/stat/prebid_events) to analyze your data.

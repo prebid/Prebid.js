@@ -3,7 +3,7 @@
  * @summary abstraction for any module to store and reference its submodules
  * @param {SubmoduleBuilder} submoduleBuilder_
  * @returns {ParentModule}
- * @constructor
+ * @class
  */
 export function ParentModule(submoduleBuilder_) {
   const submoduleBuilder = submoduleBuilder_;
@@ -53,7 +53,7 @@ export function ParentModule(submoduleBuilder_) {
  * @param {vendorSubmoduleDirectory} submoduleDirectory_
  * @param {Object|null|undefined} sharedUtils_
  * @returns {SubmoduleBuilder}
- * @constructor
+ * @class
  */
 export function SubmoduleBuilder(submoduleDirectory_, sharedUtils_) {
   const submoduleDirectory = submoduleDirectory_;

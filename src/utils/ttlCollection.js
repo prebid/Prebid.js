@@ -1,6 +1,6 @@
-import {GreedyPromise} from './promise.js';
+import {PbPromise} from './promise.js';
 import {binarySearch, logError, timestamp} from '../utils.js';
-import setFocusTimeout from './focusTimeout.js';
+import {setFocusTimeout} from './focusTimeout.js';
 
 /**
  * Create a set-like collection that automatically forgets items after a certain time.
@@ -93,7 +93,7 @@ export function ttlCollection(
       let currentCall;
       return function() {
         const thisCall = currentCall = {};
-        GreedyPromise.resolve(getter(item)).then((val) => {
+        PbPromise.resolve(getter(item)).then((val) => {
           if (thisCall === currentCall) {
             values[field] = val;
             update();

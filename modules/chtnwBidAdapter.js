@@ -2,6 +2,7 @@ import {
   generateUUID,
   getDNT,
   _each,
+  getWinDimensions,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -33,8 +34,9 @@ export const spec = {
       storage.setCookie(COOKIE_NAME, chtnwId);
     }
     const device = getConfig('device') || {};
-    device.w = device.w || window.innerWidth;
-    device.h = device.h || window.innerHeight;
+    const { innerWidth, innerHeight } = getWinDimensions();
+    device.w = device.w || innerWidth;
+    device.h = device.h || innerHeight;
     device.ua = device.ua || navigator.userAgent;
     device.dnt = getDNT() ? 1 : 0;
     device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';

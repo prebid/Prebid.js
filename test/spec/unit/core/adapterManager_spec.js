@@ -10,7 +10,8 @@ import {
   getAdUnits,
   getServerTestingConfig,
   getServerTestingsAds,
-  getBidRequests
+  getBidRequests,
+  getTwinAdUnits
 } from 'test/fixtures/fixtures.js';
 import { EVENTS, S2S } from 'src/constants.js';
 import * as utils from 'src/utils.js';
@@ -26,6 +27,12 @@ import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activit
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../../../../src/activities/activities.js';
 import {reset as resetAdUnitCounters} from '../../../../src/adUnits.js';
 import {deepClone} from 'src/utils.js';
+import {
+  EVENT_TYPE_IMPRESSION,
+  EVENT_TYPE_WIN,
+  TRACKER_METHOD_IMG,
+  TRACKER_METHOD_JS
+} from '../../../../src/eventTrackers.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -82,6 +89,7 @@ describe('adapterManager tests', function () {
   let orgPrebidServerAdapter;
   let orgRubiconAdapter;
   let orgBadBidderAdapter;
+  let sandbox;
   before(function () {
     orgAppnexusAdapter = adapterManager.bidderRegistry['appnexus'];
     orgAdequantAdapter = adapterManager.bidderRegistry['adequant'];
@@ -99,8 +107,12 @@ describe('adapterManager tests', function () {
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
   afterEach(() => {
     s2sTesting.clientTestBidders.clear();
+    sandbox.restore();
   });
 
   describe('callBids', function () {
@@ -111,7 +123,8 @@ describe('adapterManager tests', function () {
 
     beforeEach(function () {
       sinon.stub(utils, 'logError');
-      appnexusAdapterMock.callBids.reset();
+      appnexusAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetBehavior()
       adapterManager.bidderRegistry['appnexus'] = appnexusAdapterMock;
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['badBidder'] = badAdapterMock;
@@ -392,11 +405,55 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onBidWon when the bid is S2S', () => {
-        bids[0].src = S2S.SRC
+        bids[0].source = S2S.SRC
         adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onBidWon);
       })
     });
+
+    describe('triggerBilling', () => {
+      beforeEach(() => {
+        criteoSpec.onBidBillable = sinon.spy();
+        sandbox.stub(utils.internal, 'triggerPixel');
+      });
+      it('should fire impression pixels from eventtrackers', () => {
+        bids[0].eventtrackers = [
+          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'tracker'},
+        ]
+        adapterManager.triggerBilling(bids[0]);
+        sinon.assert.calledWith(utils.internal.triggerPixel, 'tracker');
+      });
+
+      it('should NOT fire non-impression or non-pixel trackers', () => {
+        bids[0].eventtrackers = [
+          {event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'ignored'},
+          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_JS, url: 'ignored'},
+        ]
+        adapterManager.triggerBilling(bids[0]);
+        sinon.assert.notCalled(utils.internal.triggerPixel);
+      })
+      describe('on client bids', () => {
+        it('should call bidder\'s onBidBillable', () => {
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.called(criteoSpec.onBidBillable);
+        });
+        it('should not call again on second trigger', () => {
+          adapterManager.triggerBilling(bids[0]);
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.calledOnce(criteoSpec.onBidBillable);
+        });
+      })
+      describe('on s2s bids', () => {
+        beforeEach(() => {
+          bids[0].source = S2S.SRC;
+        });
+        it('should not call onBidBillable', () => {
+          bids[0].burl = 'burl';
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.notCalled(criteoSpec.onBidBillable);
+        });
+      });
+    })
 
     describe('onSetTargeting', function () {
       beforeEach(() => {
@@ -409,7 +466,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onSetTargeting when bid is S2S', () => {
-        bids[0].src = S2S.SRC;
+        bids[0].source = S2S.SRC;
         adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onSetTargeting);
       })
@@ -423,10 +480,20 @@ describe('adapterManager tests', function () {
         sinon.assert.called(criteoSpec.onBidViewable);
       });
       it('should NOT call onBidViewable when bid is S2S', () => {
-        bids[0].src = S2S.SRC;
+        bids[0].source = S2S.SRC;
         adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
         sinon.assert.notCalled(criteoSpec.onBidViewable);
       })
+    });
+
+    describe('onAdRenderSucceeded', function () {
+      beforeEach(() => {
+        criteoSpec.onAdRenderSucceeded = sinon.stub()
+      });
+      it('should call spec\'s onAdRenderSucceeded callback', function () {
+        adapterManager.callAdRenderSucceededBidder(bids[0].bidder, bids[0]);
+        sinon.assert.called(criteoSpec.onAdRenderSucceeded);
+      });
     });
   })
   describe('onBidderError', function () {
@@ -465,7 +532,8 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: CONFIG});
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-      prebidServerAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
     });
 
     const bidRequests = [{
@@ -649,7 +717,8 @@ describe('adapterManager tests', function () {
       let cnt, count = () => cnt++;
 
       beforeEach(function () {
-        prebidServerAdapterMock.callBids.reset();
+        prebidServerAdapterMock.callBids.resetHistory();
+        prebidServerAdapterMock.callBids.resetBehavior();
         cnt = 0;
         events.on(EVENTS.BID_REQUESTED, count);
       });
@@ -690,7 +759,8 @@ describe('adapterManager tests', function () {
     beforeEach(function () {
       config.setConfig({s2sConfig: [CONFIG, CONFIG2]});
       adapterManager.bidderRegistry['prebidServer'] = prebidServerAdapterMock;
-      prebidServerAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
     });
 
     const bidRequests = [{
@@ -1037,7 +1107,8 @@ describe('adapterManager tests', function () {
       let cnt, count = () => cnt++;
 
       beforeEach(function () {
-        prebidServerAdapterMock.callBids.reset();
+        prebidServerAdapterMock.callBids.resetHistory();
+        prebidServerAdapterMock.callBids.resetBehavior();
         cnt = 0;
         events.on(EVENTS.BID_REQUESTED, count);
       });
@@ -1139,10 +1210,14 @@ describe('adapterManager tests', function () {
 
       stubGetSourceBidderMap = sinon.stub(s2sTesting, 'getSourceBidderMap');
 
-      prebidServerAdapterMock.callBids.reset();
-      adequantAdapterMock.callBids.reset();
-      appnexusAdapterMock.callBids.reset();
-      rubiconAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
+      adequantAdapterMock.callBids.resetHistory();
+      adequantAdapterMock.callBids.resetBehavior()
+      appnexusAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetBehavior()
+      rubiconAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetBehavior();
     });
 
     afterEach(function () {
@@ -1326,11 +1401,16 @@ describe('adapterManager tests', function () {
       adapterManager.bidderRegistry['rubicon'] = rubiconAdapterMock;
       adapterManager.bidderRegistry['pubmatic'] = pubmaticAdapterMock;
 
-      prebidServerAdapterMock.callBids.reset();
-      adequantAdapterMock.callBids.reset();
-      appnexusAdapterMock.callBids.reset();
-      rubiconAdapterMock.callBids.reset();
-      pubmaticAdapterMock.callBids.reset();
+      prebidServerAdapterMock.callBids.resetHistory();
+      adequantAdapterMock.callBids.resetHistory();
+      appnexusAdapterMock.callBids.resetHistory();
+      rubiconAdapterMock.callBids.resetHistory();
+      pubmaticAdapterMock.callBids.resetHistory();
+      prebidServerAdapterMock.callBids.resetBehavior();
+      adequantAdapterMock.callBids.resetBehavior();
+      appnexusAdapterMock.callBids.resetBehavior();
+      rubiconAdapterMock.callBids.resetBehavior();
+      pubmaticAdapterMock.callBids.resetBehavior();
     });
 
     it('calls server adapter if no sources defined for config where testing is true, ' +
@@ -1620,6 +1700,15 @@ describe('adapterManager tests', function () {
           expect(adapterManager.videoAdapters).to.include(alias);
         }
       });
+
+      it('should use gvlid of original adapter when option set', () => {
+        const gvlid = 'origvlid';
+        let thisSpec = Object.assign(spec, { gvlid });
+        registerBidder(thisSpec);
+        const alias = 'bidderWithGvlid';
+        adapterManager.aliasBidAdapter(CODE, alias, {useBaseGvlid: true});
+        expect(adapterManager.bidderRegistry[alias].getSpec()?.gvlid).to.deep.eql(gvlid);
+      })
     });
 
     describe('special case for s2s-only bidders', function () {
@@ -1675,13 +1764,14 @@ describe('adapterManager tests', function () {
   });
 
   describe('makeBidRequests', function () {
-    let adUnits;
+    let adUnits, twinAdUnits;
     beforeEach(function () {
       resetAdUnitCounters();
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
         return adUnit;
       })
+      twinAdUnits = getTwinAdUnits();
     });
 
     function makeBidRequests(au = adUnits) {
@@ -1725,6 +1815,14 @@ describe('adapterManager tests', function () {
 
       expect(sizes1).not.to.deep.equal(sizes2);
     });
+
+    it('should transfer deferBilling from ad unit', () => {
+      adUnits[0].deferBilling = true;
+      const requests = makeBidRequests();
+      requests.flatMap(req => req.bids).forEach(bidRequest => {
+        expect(bidRequest.deferBilling).to.equal(bidRequest.adUnitCode === adUnits[0].code);
+      })
+    })
 
     it('should set and increment bidRequestsCounter', () => {
       const [au1, au2] = adUnits;
@@ -1790,6 +1888,31 @@ describe('adapterManager tests', function () {
       })
     });
 
+    describe('adUnitAuctionsCounter', () => {
+      it('should set and increment auctionsCount at adUnitCode level', () => {
+        const [au1, au2] = adUnits;
+        makeBidRequests([au1]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(1);
+        });
+        makeBidRequests([au1]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(2);
+        });
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(bid.adUnitCode === au1.code ? 3 : 1);
+        });
+      });
+
+      it('should increment the auctionsCount of each adUnitCode exactly once per auction for twin ad units', () => {
+        const [au1, au2] = twinAdUnits;
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(1);
+        });
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.auctionsCount).to.eql(2);
+        });
+      });
+    });
+
     describe('and activity controls', () => {
       let redactOrtb2;
       let redactBidRequest;
@@ -1844,21 +1967,55 @@ describe('adapterManager tests', function () {
               {
                 enabled: true,
                 adapter: 'mockS2SDefault',
-                bidders: ['mockBidder1']
+                bidders: ['mockBidder1', 'mockBidder2', 'mockBidder3']
               },
               {
                 enabled: true,
                 adapter: 'mockS2S1',
-                configName: 'mock1',
+                name: 'mock1',
+                bidders: ['mockBidder1', 'mockBidder2']
               },
               {
                 enabled: true,
                 adapter: 'mockS2S2',
+                // for backwards compatibility, allow "configName" instead of the more sensible "name"
                 configName: 'mock2',
+                bidders: ['mockBidder1']
               }
             ]
           });
         });
+
+        it('should allow routing to specific s2s instances using s2sConfigName', () => {
+          adUnits = [
+            {
+              code: 'one', bids: [
+                {bidder: 'mockBidder1', s2sConfigName: ['mock1', 'mock2']},
+                {bidder: 'mockBidder2', s2sConfigName: 'mock1'},
+                {bidder: 'mockBidder3'}
+              ]
+            },
+          ];
+          dep.isAllowed.returns(true);
+          const requests = makeBidRequests();
+          const pbsAdUnits = requests.reduce((acc, request) => {
+            if (acc[request.uniquePbsTid] == null) {
+              acc[request.uniquePbsTid] = request.adUnitsS2SCopy;
+            } else {
+              expect(acc[request.uniquePbsTid]).to.eql(request.adUnitsS2SCopy);
+            }
+            return acc;
+          }, {});
+          expect(
+            Object.values(pbsAdUnits)
+              .map(adUnits => adUnits.flatMap(au => au.bids).map(bid => bid.bidder))
+          ).to.deep.include.members([
+            ['mockBidder3'], // default (unnamed) config - picks up only bidder3 as the rest routes differently
+            ['mockBidder1', 'mockBidder2'], // mock1 config
+            ['mockBidder1'], // mock2 config
+          ])
+        });
+
         it('should keep stored impressions, even if everything else is denied', () => {
           adUnits = [
             {code: 'one', bids: [{bidder: null}]},
@@ -2780,6 +2937,35 @@ describe('adapterManager tests', function () {
         const s2sConfig = {};
         expect(filterBids(['A', 'C', 'D'].map((code) => ({bidder: code})), s2sConfig)).to.eql([{bidder: 'A'}]);
         sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
+      })
+
+      describe('when bids specify s2sConfigName', () => {
+        let bids;
+        beforeEach(() => {
+          getS2SBidders.returns(new Set(['A', 'B', 'C']));
+          bids = [
+            {
+              bidder: 'A',
+              s2sConfigName: 'server1'
+            },
+            {
+              bidder: 'B',
+              s2sConfigName: ['server1', 'server2']
+            },
+            {
+              bidder: 'C'
+            }
+          ]
+        })
+        Object.entries({
+          server1: ['A', 'B', 'C'],
+          server2: ['B', 'C'],
+          server3: ['C']
+        }).forEach(([configName, expectedBidders]) => {
+          it(`should remove bidders that specify a different s2sConfig name (${configName} => ${expectedBidders.join(',')})`, () => {
+            expect(filterBids(bids, {name: configName}).map(bid => bid.bidder)).to.eql(expectedBidders);
+          });
+        })
       })
     });
   });

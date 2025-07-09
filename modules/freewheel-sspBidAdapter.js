@@ -231,7 +231,7 @@ function getBidFloor(bid, config) {
       mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloor?.floor;
   } catch (e) {
     return -1;
   }

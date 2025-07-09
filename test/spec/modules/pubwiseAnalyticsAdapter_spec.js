@@ -79,7 +79,7 @@ describe('PubWise Prebid Analytics', function () {
       /* check for critical values */
       let request = requests[0];
       let data = JSON.parse(request.requestBody);
-      // eslint-disable-next-line
+       
       // console.log(data.metaData);
       expect(data.metaData, 'metaData property').to.exist;
       expect(data.metaData.pbjs_version, 'pbjs version').to.equal('$prebid.version$')
@@ -133,7 +133,7 @@ describe('PubWise Prebid Analytics', function () {
       expect(data.eventList[0], 'eventList property').to.exist;
       expect(data.eventList[0].args, 'eventList property').to.exist;
 
-      // eslint-disable-next-line
+       
       // console.log(data.eventList[0].args);
 
       let eventArgs = data.eventList[0].args;

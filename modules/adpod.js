@@ -36,7 +36,7 @@ import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
 import {store} from '../src/videoCache.js';
 import {config} from '../src/config.js';
 import {ADPOD} from '../src/mediaTypes.js';
-import {find, arrayFrom as from} from '../src/polyfill.js';
+import {find} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
 import { TARGETING_KEYS } from '../src/constants.js';
 
@@ -176,7 +176,7 @@ function updateBidQueue(auctionInstance, bidResponse, afterBidAdded) {
   let bidListIter = bidCacheRegistry.getBids(bidResponse);
 
   if (bidListIter) {
-    let bidListArr = from(bidListIter);
+    let bidListArr = Array.from(bidListIter);
     let callDispatcher = bidCacheRegistry.getQueueDispatcher(bidResponse);
     let killQueue = !!(auctionInstance.getAuctionStatus() !== AUCTION_IN_PROGRESS);
     callDispatcher(auctionInstance, bidListArr, afterBidAdded, killQueue);

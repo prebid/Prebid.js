@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Rewarded Interest ID Example</title>
+    <script>
+        const FAILSAFE_TIMEOUT = 2000;
+        const adUnits = [
+            {
+                code: 'test-div',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250], [300, 600], [728, 90]]
+                    },
+                },
+                bids: [
+                    {
+                        bidder: 'rubicon',
+                        params: {
+                            accountId: '1001',
+                            siteId: '113932',
+                            zoneId: '535510'
+                        }
+                    }
+                ]
+            }
+        ];
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+    </script>
+    <script src="../../build/dev/prebid.js" async></script>
+
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                userSync: {
+                    userIds: [
+                        {
+                            name: 'rewardedInterestId',
+                        },
+                    ],
+                    syncDelay: 5000,
+                    auctionDelay: 1000,
+                }
+            });
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest
+            });
+        });
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        (function () {
+            var gads = document.createElement('script');
+            gads.async = true;
+            gads.type = 'text/javascript';
+            gads.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
+            var node = document.getElementsByTagName('script')[0];
+            node.parentNode.insertBefore(gads, node);
+        })();
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250], [300, 600], [728, 90]], 'test-div').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+<script>
+    pbjs.que.push(function () {
+        pbjs.getUserIdsAsync().then(ids => {
+            document.getElementById('ids-div').innerHTML = JSON.stringify(ids, null, ' ');
+            document.getElementById('eids-div').innerHTML = JSON.stringify(pbjs.getUserIdsAsEids(), null, ' ');
+        });
+    });
+</script>
+
+<h2>Rewarded Interest ID Example</h2>
+
+<h4>Generated IDs:</h4>
+<pre id="ids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
+
+<h4>Generated EIDs</h4>
+<pre id="eids-div" style="border:1px solid #333; padding:5px; overflow: auto"></pre>
+</body>
+
+</html>

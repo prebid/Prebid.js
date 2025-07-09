@@ -2,8 +2,9 @@ import liAnalytics from 'modules/liveIntentAnalyticsAdapter';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from 'src/auctionManager.js';
-import {expectEvents} from '../../helpers/analytics.js';
 import { EVENTS } from 'src/constants.js';
+import { config } from 'src/config.js';
+import { BID_WON_EVENT, AUCTION_INIT_EVENT, BID_WON_EVENT_UNDEFINED, AUCTION_INIT_EVENT_NOT_LI } from '../../fixtures/liveIntentAuctionEvents';
 
 let utils = require('src/utils');
 let refererDetection = require('src/refererDetection');
@@ -14,13 +15,24 @@ let clock;
 let now = new Date();
 
 let events = require('src/events');
-let auctionId = '99abbc81-c1f1-41cd-8f25-f7149244c897'
+
+const USERID_CONFIG = [
+  {
+    'name': 'liveIntentId',
+    'params': {
+      'liCollectConfig': {
+        'appId': 'a123'
+      }
+    }
+  }
+];
 
 const configWithSamplingAll = {
   provider: 'liveintent',
   options: {
     bidWonTimeout: 2000,
-    sampling: 1
+    sampling: 1,
+    sendAuctionInitEvents: true
   }
 }
 
@@ -28,291 +40,123 @@ const configWithSamplingNone = {
   provider: 'liveintent',
   options: {
     bidWonTimeout: 2000,
-    sampling: 0
+    sampling: 0,
+    sendAuctionInitEvents: true
   }
 }
 
-let args = {
-  auctionId: auctionId,
-  timestamp: 1660915379703,
-  auctionEnd: 1660915381635,
-  adUnits: [
-    {
-      code: 'ID_Bot100AdJ1',
-      mediaTypes: {
-        banner: {
-          sizes: [
-            [
-              300,
-              250
-            ],
-            [
-              320,
-              50
-            ]
-          ]
-        }
-      },
-      ortb2Imp: {
-        gpid: '/777/test/home/ID_Bot100AdJ1',
-        ext: {
-          data: {
-            aupName: '/777/test/home/ID_Bot100AdJ1',
-            adserver: {
-              name: 'gam',
-              adslot: '/777/test/home/ID_Bot100AdJ1'
-            },
-            pbadslot: '/777/test/home/ID_Bot100AdJ1'
-          },
-          gpid: '/777/test/home/ID_Bot100AdJ1'
-        }
-      },
-      bids: [
-        {
-          bidder: 'testBidder',
-          params: {
-            siteId: 321218,
-            zoneId: 1732558,
-            position: 'bug',
-            accountId: 10777
-          },
-          userIdAsEids: [
-            {
-              source: 'source1.com',
-              uids: [
-                {
-                  id: 'ID5*yO-L9xRugTx4mkIJ9z99eYva6CZQhz8B70QOkLLSEEQWowsxvVQqMaZOt4qpBTYAFqR3y6ZtZ8qLJJBAsRqnRRalTfy8iZszQavAAkZcAjkWpxp6DnOSkF3R5LafC10OFqhwcxH699dDc_fI6RVEGBasN6zrJwgqCGelgfQLtQwWrikWRyi0l3ICFj9JUiVGFrCF8SAFaqJD9A0_I07a8xa0-jADtEj1T8w30oX--sMWvTK_I5_3zA5f3z0OMoxbFsCMFdhfGRDuw5GrpI475g',
-                  atype: 1,
-                  ext: {
-                    linkType: 2
-                  }
-                }
-              ]
-            },
-            {
-              source: 'source2.com',
-              uids: [
-                {
-                  id: 'ID5*yO-L9xRugTx4mkIJ9z99eYva6CZQhz8B70QOkLLSEEQWowsxvVQqMaZOt4qpBTYAFqR3y6ZtZ8qLJJBAsRqnRRalTfy8iZszQavAAkZcAjkWpxp6DnOSkF3R5LafC10OFqhwcxH699dDc_fI6RVEGBasN6zrJwgqCGelgfQLtQwWrikWRyi0l3ICFj9JUiVGFrCF8SAFaqJD9A0_I07a8xa0-jADtEj1T8w30oX--sMWvTK_I5_3zA5f3z0OMoxbFsCMFdhfGRDuw5GrpI475g',
-                  atype: 1,
-                  ext: {
-                    linkType: 2
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          bidder: 'testBidder2',
-          params: {
-            adSlot: '2926251',
-            publisherId: '159423'
-          },
-          userIdAsEids: [
-            {
-              source: 'source1.com',
-              uids: [
-                {
-                  id: 'ID5*yO-L9xRugTx4mkIJ9z99eYva6CZQhz8B70QOkLLSEEQWowsxvVQqMaZOt4qpBTYAFqR3y6ZtZ8qLJJBAsRqnRRalTfy8iZszQavAAkZcAjkWpxp6DnOSkF3R5LafC10OFqhwcxH699dDc_fI6RVEGBasN6zrJwgqCGelgfQLtQwWrikWRyi0l3ICFj9JUiVGFrCF8SAFaqJD9A0_I07a8xa0-jADtEj1T8w30oX--sMWvTK_I5_3zA5f3z0OMoxbFsCMFdhfGRDuw5GrpI475g',
-                  atype: 1,
-                  ext: {
-                    linkType: 2
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  bidderRequests: [
-    {
-      bidderCode: 'tripl_ss1',
-      auctionId: '8e5a5eda-a7dc-49a3-bc7f-654fc',
-      bidderRequestId: '953fe1ee8a1645',
-      uniquePbsTid: '0da1f980-8351-415d-860d-ebbdb4274179',
-      auctionStart: 1660915379703
-    },
-    {
-      bidderCode: 'tripl_ss2',
-      auctionId: '8e5a5eda-a7dc-49a3-bc7f-6ca682ae893c',
-      bidderRequestId: '953fe1ee8a164e',
-      uniquePbsTid: '0da1f980-8351-415d-860d-ebbdb4274180',
-      auctionStart: 1660915379703
-    }
-  ],
-  bidsReceived: [
-    {
-      adUnitCode: 'ID_Bot100AdJ1',
-      timeToRespond: 824,
-      cpm: 0.447,
-      currency: 'USD',
-      ttl: 300,
-      bidder: 'testBidder'
-    }
-  ],
-  winningBids: []
-}
-
-let winningBids = [
-  {
-    adUnitCode: 'ID_Bot100AdJ1',
-    timeToRespond: 824,
-    cpm: 0.447,
-    currency: 'USD',
-    ttl: 300,
-    bidder: 'testBidder'
+const configWithNoAuctionInit = {
+  provider: 'liveintent',
+  options: {
+    bidWonTimeout: 2000,
+    sampling: 1,
+    sendAuctionInitEvents: false
   }
-];
-
-let expectedEvent = {
-  instanceId: instanceId,
-  url: url,
-  bidsReceived: [
-    {
-      adUnitCode: 'ID_Bot100AdJ1',
-      timeToRespond: 824,
-      cpm: 0.447,
-      currency: 'USD',
-      ttl: 300,
-      bidder: 'testBidder'
-    }
-  ],
-  auctionStart: 1660915379703,
-  auctionEnd: 1660915381635,
-  adUnits: [
-    {
-      code: 'ID_Bot100AdJ1',
-      mediaType: 'banner',
-      sizes: [
-        {
-          w: 300,
-          h: 250
-        },
-        {
-          w: 320,
-          h: 50
-        }
-      ],
-      ortb2Imp: {
-        gpid: '/777/test/home/ID_Bot100AdJ1',
-        ext: {
-          data: {
-            aupName: '/777/test/home/ID_Bot100AdJ1',
-            adserver: {
-              name: 'gam',
-              adslot: '/777/test/home/ID_Bot100AdJ1'
-            },
-            pbadslot: '/777/test/home/ID_Bot100AdJ1'
-          },
-          gpid: '/777/test/home/ID_Bot100AdJ1'
-        }
-      }
-    }
-  ],
-  winningBids: [
-    {
-      adUnitCode: 'ID_Bot100AdJ1',
-      timeToRespond: 824,
-      cpm: 0.447,
-      currency: 'USD',
-      ttl: 300,
-      bidder: 'testBidder'
-    }
-  ],
-  auctionId: auctionId,
-  userIds: [
-    {
-      source: 'source1.com',
-      uids: [
-        {
-          id: 'ID5*yO-L9xRugTx4mkIJ9z99eYva6CZQhz8B70QOkLLSEEQWowsxvVQqMaZOt4qpBTYAFqR3y6ZtZ8qLJJBAsRqnRRalTfy8iZszQavAAkZcAjkWpxp6DnOSkF3R5LafC10OFqhwcxH699dDc_fI6RVEGBasN6zrJwgqCGelgfQLtQwWrikWRyi0l3ICFj9JUiVGFrCF8SAFaqJD9A0_I07a8xa0-jADtEj1T8w30oX--sMWvTK_I5_3zA5f3z0OMoxbFsCMFdhfGRDuw5GrpI475g',
-          atype: 1,
-          ext: {
-            linkType: 2
-          }
-        }
-      ]
-    },
-    {
-      source: 'source2.com',
-      uids: [
-        {
-          id: 'ID5*yO-L9xRugTx4mkIJ9z99eYva6CZQhz8B70QOkLLSEEQWowsxvVQqMaZOt4qpBTYAFqR3y6ZtZ8qLJJBAsRqnRRalTfy8iZszQavAAkZcAjkWpxp6DnOSkF3R5LafC10OFqhwcxH699dDc_fI6RVEGBasN6zrJwgqCGelgfQLtQwWrikWRyi0l3ICFj9JUiVGFrCF8SAFaqJD9A0_I07a8xa0-jADtEj1T8w30oX--sMWvTK_I5_3zA5f3z0OMoxbFsCMFdhfGRDuw5GrpI475g',
-          atype: 1,
-          ext: {
-            linkType: 2
-          }
-        }
-      ]
-    }
-  ],
-  bidders: [
-    {
-      bidder: 'testBidder',
-      params: {
-        siteId: 321218,
-        zoneId: 1732558,
-        position: 'bug',
-        accountId: 10777
-      }
-    },
-    {
-      bidder: 'testBidder2',
-      params: {
-        adSlot: '2926251',
-        publisherId: '159423'
-      }
-    }
-  ]
-};
+}
 
 describe('LiveIntent Analytics Adapter ', () => {
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(events, 'getEvents').returns([]);
+    sandbox.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
+    sandbox.stub(utils, 'generateUUID').returns(instanceId);
+    sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
+    sandbox.stub(auctionManager.index, 'getAuction').withArgs({auctionId: AUCTION_INIT_EVENT.auctionId}).returns({
+      getBidRequests: () => AUCTION_INIT_EVENT.bidderRequests,
+      getAuctionStart: () => AUCTION_INIT_EVENT.timestamp
+    });
     clock = sandbox.useFakeTimers(now.getTime());
   });
   afterEach(function () {
     liAnalytics.disableAnalytics();
     sandbox.restore();
     clock.restore();
+    window.liTreatmentRate = undefined
+    window.liModuleEnabled = undefined
   });
 
   it('request is computed and sent correctly when sampling is 1', () => {
     liAnalytics.enableAnalytics(configWithSamplingAll);
-    sandbox.stub(utils, 'generateUUID').returns(instanceId);
-    sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
-    sandbox.stub(auctionManager.index, 'getAuction').withArgs(auctionId).returns({ getWinningBids: () => winningBids });
-    events.emit(EVENTS.AUCTION_END, args);
-    clock.tick(2000);
-    expect(server.requests.length).to.equal(1);
 
-    let requestBody = JSON.parse(server.requests[0].requestBody);
-    expect(requestBody).to.deep.equal(expectedEvent);
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
+    expect(server.requests.length).to.equal(1);
+    expect(server.requests[0].url).to.equal('https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=pbjs&liip=y&aun=2')
+
+    events.emit(EVENTS.BID_WON, BID_WON_EVENT);
+    expect(server.requests.length).to.equal(2);
+    expect(server.requests[1].url).to.equal('https://wba.liadm.com/analytic-events/bid-won?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&auc=test-div2&auid=afc6bc6a-3082-4940-b37f-d22e1b026e48&cpm=1.5&c=USD&b=appnexus&bc=appnexus&pid=a123&iid=pbjs&sts=1739971147744&rts=1739971147806&liip=y');
   });
 
-  it('track is called', () => {
-    sandbox.stub(liAnalytics, 'track');
+  it('request is computed and sent correctly when sampling is 1 and liModule is enabled', () => {
+    window.liModuleEnabled = true
     liAnalytics.enableAnalytics(configWithSamplingAll);
-    expectEvents().to.beTrackedBy(liAnalytics.track);
-  })
 
-  it('no request is computed when sampling is 0', () => {
-    liAnalytics.enableAnalytics(configWithSamplingNone);
-    sandbox.stub(utils, 'generateUUID').returns(instanceId);
-    sandbox.stub(refererDetection, 'getRefererInfo').returns({page: url});
-    sandbox.stub(auctionManager.index, 'getAuction').withArgs(auctionId).returns({ getWinningBids: () => winningBids });
-    events.emit(EVENTS.AUCTION_END, args);
-    clock.tick(2000);
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
+    expect(server.requests.length).to.equal(1);
+    expect(server.requests[0].url).to.equal('https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=pbjs&me=y&liip=y&aun=2')
+
+    events.emit(EVENTS.BID_WON, BID_WON_EVENT);
+    expect(server.requests.length).to.equal(2);
+    expect(server.requests[1].url).to.equal('https://wba.liadm.com/analytic-events/bid-won?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&auc=test-div2&auid=afc6bc6a-3082-4940-b37f-d22e1b026e48&cpm=1.5&c=USD&b=appnexus&bc=appnexus&pid=a123&iid=pbjs&sts=1739971147744&rts=1739971147806&me=y&liip=y');
+  });
+
+  it('request is computed and sent correctly when sampling is 1 and liModule is disabled', () => {
+    window.liModuleEnabled = false
+    liAnalytics.enableAnalytics(configWithSamplingAll);
+
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
+    expect(server.requests.length).to.equal(1);
+    expect(server.requests[0].url).to.equal('https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=pbjs&me=n&liip=y&aun=2')
+
+    events.emit(EVENTS.BID_WON, BID_WON_EVENT);
+    expect(server.requests.length).to.equal(2);
+    expect(server.requests[1].url).to.equal('https://wba.liadm.com/analytic-events/bid-won?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&auc=test-div2&auid=afc6bc6a-3082-4940-b37f-d22e1b026e48&cpm=1.5&c=USD&b=appnexus&bc=appnexus&pid=a123&iid=pbjs&sts=1739971147744&rts=1739971147806&me=n&liip=y');
+  });
+
+  it('request is computed and sent correctly when sampling is 1 and should forward the correct liTreatmentRate', () => {
+    window.liTreatmentRate = 0.95
+    liAnalytics.enableAnalytics(configWithSamplingAll);
+
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
+    expect(server.requests.length).to.equal(1);
+    expect(server.requests[0].url).to.equal('https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=pbjs&tr=0.95&liip=y&aun=2')
+
+    events.emit(EVENTS.BID_WON, BID_WON_EVENT);
+    expect(server.requests.length).to.equal(2);
+    expect(server.requests[1].url).to.equal('https://wba.liadm.com/analytic-events/bid-won?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&auc=test-div2&auid=afc6bc6a-3082-4940-b37f-d22e1b026e48&cpm=1.5&c=USD&b=appnexus&bc=appnexus&pid=a123&iid=pbjs&sts=1739971147744&rts=1739971147806&tr=0.95&liip=y');
+  });
+
+  it('not send any events on auction init if disabled in settings', () => {
+    liAnalytics.enableAnalytics(configWithNoAuctionInit);
+
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
     expect(server.requests.length).to.equal(0);
   });
 
-  it('track is not called', () => {
-    sandbox.stub(liAnalytics, 'track');
+  it('not send fields that are undefined', () => {
+    liAnalytics.enableAnalytics(configWithSamplingAll);
+
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
+    events.emit(EVENTS.BID_WON, BID_WON_EVENT_UNDEFINED);
+
+    expect(server.requests.length).to.equal(2);
+    expect(server.requests[1].url).to.equal('https://wba.liadm.com/analytic-events/bid-won?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=pbjs&liip=y');
+  });
+
+  it('liip should be n if there is no source or provider in userIdAsEids have the value liveintent.com', () => {
+    liAnalytics.enableAnalytics(configWithSamplingAll);
+
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT_NOT_LI);
+    expect(server.requests.length).to.equal(1);
+    expect(server.requests[0].url).to.equal('https://wba.liadm.com/analytic-events/auction-init?id=77abbc81-c1f1-41cd-8f25-f7149244c800&aid=87b4a93d-19ae-432a-96f0-8c2d4cc1c539&u=https%3A%2F%2Fwww.test.com&ats=1739969798557&pid=a123&iid=pbjs&liip=n&aun=2');
+  });
+
+  it('no request is computed when sampling is 0', () => {
     liAnalytics.enableAnalytics(configWithSamplingNone);
-    sinon.assert.callCount(liAnalytics.track, 0);
-  })
+
+    events.emit(EVENTS.AUCTION_INIT, AUCTION_INIT_EVENT);
+    events.emit(EVENTS.BID_WON, BID_WON_EVENT);
+
+    expect(server.requests.length).to.equal(0);
+  });
 });

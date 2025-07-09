@@ -1,5 +1,5 @@
 import {dep, enrichFPD} from 'src/fpd/enrichment.js';
-import {GreedyPromise} from '../../src/utils/promise.js';
+import {PbPromise} from '../../src/utils/promise.js';
 import {deepClone} from '../../src/utils.js';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 
@@ -13,7 +13,7 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
       return window
     },
     getHighEntropySUA() {
-      return GreedyPromise.resolve()
+      return PbPromise.resolve()
     }
   }, overrides)
   Object.entries(overrides)
@@ -35,10 +35,8 @@ export function mockFpdEnrichments(sandbox, overrides = {}) {
 export function addFPDEnrichments(ortb2 = {}, overrides) {
   const sandbox = sinon.sandbox.create();
   mockFpdEnrichments(sandbox, overrides)
-  return enrichFPD(GreedyPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
+  return enrichFPD(PbPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }
-
-export const syncAddFPDEnrichments = synchronize(addFPDEnrichments);
 
 export function addFPDToBidderRequest(bidderRequest, overrides) {
   overrides = Object.assign({}, {
@@ -58,14 +56,4 @@ export function addFPDToBidderRequest(bidderRequest, overrides) {
       ortb2
     }
   });
-}
-
-export const syncAddFPDToBidderRequest = synchronize(addFPDToBidderRequest);
-
-function synchronize(fn) {
-  return function () {
-    let result;
-    fn.apply(this, arguments).then(res => { result = res });
-    return result;
-  }
 }

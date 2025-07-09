@@ -23,6 +23,7 @@ import { EVENTS } from '../src/constants.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -53,6 +54,10 @@ export let wrapper
 let wrapperReady;
 /** @type {boolean} */;
 let preloaded;
+/** @type {object} */;
+let refererInfo = getRefererInfo();
+/** @type {object} */;
+let overrides = window.grumi?.overrides;
 
 /**
  * fetches the creative wrapper
@@ -75,9 +80,8 @@ export function setWrapper(responseText) {
 }
 
 export function getInitialParams(key) {
-  let refererInfo = getRefererInfo();
   let params = {
-    wver: 'pbjs',
+    wver: '1.1.1',
     wtype: 'pbjs-module',
     key,
     meta: {
@@ -105,7 +109,7 @@ export function preloadClient(key) {
   insertElement(iframe);
   iframe.contentWindow.grumi = getInitialParams(key);
   let url = getClientUrl(key);
-  loadExternalScript(url, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument);
+  loadExternalScript(url, MODULE_TYPE_RTD, SUBMODULE_NAME, markAsLoaded, iframe.contentDocument);
 }
 
 /**
@@ -141,7 +145,7 @@ export function getMacros(bid, key) {
     '%_hbcid!': bid.creativeId || '',
     '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
-    '%%SITE%%': location.hostname,
+    '%%SITE%%': overrides?.site || refererInfo.domain,
     '%_pimp%': PV_ID,
     '%_hbCpm!': bid.cpm,
     '%_hbCurrency!': bid.currency
@@ -256,7 +260,7 @@ function fireBillableEventsForApplicableBids(params) {
 function setupInPage(params) {
   window.grumi = params;
   window.grumi.fromPrebid = true;
-  loadExternalScript(getInPageUrl(params.key), SUBMODULE_NAME);
+  loadExternalScript(getInPageUrl(params.key), MODULE_TYPE_RTD, SUBMODULE_NAME);
 }
 
 function init(config, userConsent) {

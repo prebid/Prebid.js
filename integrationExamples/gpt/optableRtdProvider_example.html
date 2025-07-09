@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Optable RTD submodule example - Prebid.js</title>
+    <!--Optable bundle-->
+    <script async src="https://prebidtest.solutions.cdn.optable.co/public-assets/prebidtest-sdk.js"></script>
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            color: #222;
+            font-size: 1.5em;
+            line-height: 1.6;
+            font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .delim {
+            margin: 27px 0 35px;
+            border-width: 0;
+            border-top: 1px solid #e1e1e1;
+        }
+
+        h1 {
+            font-size: 30px;
+            line-height: 1.35;
+            font-weight: 100;
+            letter-spacing: -0.5px;
+        }
+
+        a {
+            color: #1eaedb;
+            text-decoration: underline;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 0;
+            }
+        }
+
+        #enriched-optable-data {
+            font-size: 12px;
+            max-width: 100%;
+            overflow-x: scroll;
+            padding: 16px;
+            background-color: #efefef;
+            border-radius: 6px;
+        }
+    </style>
+    <script>
+        var PREBID_TIMEOUT = 3000;
+        var FAILSAFE_TIMEOUT = 5000;
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+
+            pbjs.initAdserverSet = true;
+        }
+
+        pbjs.que.push(function () {
+            var adUnits = [
+                {
+                    code: '/22081946781/web-sdk-demo-gam360/header-ad',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[728, 90]],
+                        },
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13232392,
+                        }
+                    }]
+                },
+                {
+                    code: '/22081946781/web-sdk-demo-gam360/box-ad',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[250, 250], [300, 250], [200, 200]],
+                        },
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13232392,
+                        }
+                    }]
+                },
+                {
+                    code: '/22081946781/web-sdk-demo-gam360/footer-ad',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[728, 90]],
+                        },
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13232392,
+                        }
+                    }]
+                },
+            ];
+
+            pbjs.setConfig({
+                optableRtdConfig: { // optional, check the doc for explanation
+                    email: 'email-sha256-hash',
+                    phone: 'phone-sha256-hash',
+                    postal_code: 'postal_code',
+                },
+                debug: true, // use only for testing, remove in production
+                realTimeData: {
+                    auctionDelay: 1000, // should be set lower in production use
+                    dataProviders: [
+                        {
+                            name: 'optable',
+                            waitForIt: true,
+                            params: {
+                                // bundleUrl: "https://prebidtest.solutions.cdn.optable.co/public-assets/prebidtest-sdk.js?hello=world",
+                                // adserverTargeting: false,
+                                // handleRtd: async (reqBidsConfigObj, optableExtraData, mergeFn) => {
+                                //     const optableBundle = /** @type {Object} */ (window.optable);
+                                //     console.warn('Entering custom RTD handler');
+                                //     console.warn('reqBidsConfigObj', reqBidsConfigObj);
+                                //     console.warn('optableExtraData', optableExtraData);
+                                //     console.warn('mergeFn', mergeFn);
+                                //
+                                //     // Call Optable DCN for targeting data and return the ORTB2 object
+                                //     const targetingData = await optableBundle.instance.targeting();
+                                //
+                                //     if (!targetingData || !targetingData.ortb2) {
+                                //         return;
+                                //     }
+                                //
+                                //     mergeFn(
+                                //         reqBidsConfigObj.ortb2Fragments.global,
+                                //         targetingData.ortb2,
+                                //     );
+                                // }
+                            }
+                        }
+                    ]
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.onEvent('bidRequested', function (data) {
+                try {
+                    window.optable.cmd.push(() => {
+                        document.getElementById('enriched-optable').style.display = 'block';
+                        document.getElementById('enriched-optable-data').textContent = JSON.stringify(data.ortb2.user, null, 2);
+                    });
+                } catch (e) {
+                    console.error('Exception while trying to display enriched data', e);
+                }
+            });
+
+            pbjs.requestBids({
+                timeout: PREBID_TIMEOUT,
+                bidsBackHandler: function (bidResponses) {
+                    initAdserver();
+                }
+            });
+        });
+        setTimeout(initAdserver, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag
+                .defineSlot(
+                    '/22081946781/web-sdk-demo-gam360/header-ad',
+                    [[728, 90]],
+                    'div-gpt-ad-1598295788551-0'
+                )
+                .addService(googletag.pubads());
+
+            googletag
+                .defineSlot(
+                    '/22081946781/web-sdk-demo-gam360/box-ad',
+                    [[250, 250], [300, 250], [200, 200]],
+                    'div-gpt-ad-1598295897480-0'
+                )
+                .addService(googletag.pubads());
+
+            googletag
+                .defineSlot(
+                    '/22081946781/web-sdk-demo-gam360/footer-ad',
+                    [[728, 90]],
+                    'div-gpt-ad-1598296001655-0'
+                )
+                .addService(googletag.pubads());
+
+            googletag.pubads().disableInitialLoad();
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+<body>
+    <main class="container">
+        <div class="row">
+            <img
+                src="https://demo.optable.co/images/logo.png"
+                width="200"
+                alt="optable"
+                style="margin-top: 48px"/>
+            <hr class="delim" />
+        </div>
+        <div class="row">
+            <h1>Optable RTD module example</h1>
+        </div>
+
+        <h3>web-sdk-demo-gam360/header-ad</h3>
+        <div id="div-gpt-ad-1598295788551-0">
+            <p>No response</p>
+            <script type="text/javascript">
+                googletag.cmd.push(function () {
+                    googletag.display('div-gpt-ad-1598295788551-0');
+                });
+            </script>
+        </div>
+
+        <h3>web-sdk-demo-gam360/box-ad</h3>
+        <div id="div-gpt-ad-1598295897480-0">
+            <p>No response</p>
+            <script type="text/javascript">
+                googletag.cmd.push(function () {
+                    googletag.display('div-gpt-ad-1598295897480-0');
+                });
+            </script>
+        </div>
+
+        <h3>web-sdk-demo-gam360/footer-ad</h3>
+        <div id="div-gpt-ad-1598296001655-0">
+            <p>No response</p>
+            <script type="text/javascript">
+                googletag.cmd.push(function () {
+                    googletag.display('div-gpt-ad-1598296001655-0');
+                });
+            </script>
+        </div>
+
+        <div id="enriched-optable" style="display: none;">
+            <h3>Enriched ortb2.user data from Optable RTD module</h3>
+            <pre id="enriched-optable-data"></pre>
+        </div>
+    </main>
+</body>
+</html>

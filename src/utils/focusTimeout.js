@@ -1,16 +1,27 @@
-let outOfFocusStart;
+let outOfFocusStart = null; // enforce null otherwise it could be undefined and the callback wouldn't execute
 let timeOutOfFocus = 0;
 let suspendedTimeouts = [];
 
-document.addEventListener('visibilitychange', () => {
+function trackTimeOutOfFocus() {
   if (document.hidden) {
     outOfFocusStart = Date.now()
   } else {
-    timeOutOfFocus += Date.now() - outOfFocusStart
-    suspendedTimeouts.forEach(({ callback, startTime, setTimerId }) => setTimerId(setFocusTimeout(callback, timeOutOfFocus - startTime)()))
+    timeOutOfFocus += Date.now() - (outOfFocusStart ?? 0); // when the page is loaded in hidden state outOfFocusStart is undefined, which results in timeoutOffset being NaN
     outOfFocusStart = null;
+    suspendedTimeouts.forEach(({ callback, startTime, setTimerId }) => setTimerId(setFocusTimeout(callback, timeOutOfFocus - startTime)()));
+    suspendedTimeouts = [];
   }
-});
+}
+
+document.addEventListener('visibilitychange', trackTimeOutOfFocus);
+
+export function reset() {
+  outOfFocusStart = null;
+  timeOutOfFocus = 0;
+  suspendedTimeouts = [];
+  document.removeEventListener('visibilitychange', trackTimeOutOfFocus);
+  document.addEventListener('visibilitychange', trackTimeOutOfFocus);
+}
 
 /**
  * Wraps native setTimeout function in order to count time only when page is focused
@@ -19,7 +30,7 @@ document.addEventListener('visibilitychange', () => {
  * @param {number} [milliseconds] - Minimum duration (in milliseconds) that the callback will be executed after
  * @returns {function(*): (number)} - Getter function for current timer id
  */
-export default function setFocusTimeout(callback, milliseconds) {
+export function setFocusTimeout(callback, milliseconds) {
   const startTime = timeOutOfFocus;
   let timerId = setTimeout(() => {
     if (timeOutOfFocus === startTime && outOfFocusStart == null) {

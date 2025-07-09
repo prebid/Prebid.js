@@ -75,7 +75,8 @@ const getConvertedBidReq = () => {
         },
         bidfloor: 0,
         bidfloorcur: 'JPY',
-        id: '2e9f38ea93bb9e'
+        id: '2e9f38ea93bb9e',
+        secure: 1
       }
     ],
     test: 0,
@@ -239,7 +240,7 @@ describe('a1MediaBidAdapter', function() {
         const interpretedRes = spec.interpretResponse(bidderResponse, bidRequest);
 
         const expectedResPrice = 9;
-        const expectedAd = replaceAuctionPrice(macroAdm, expectedResPrice) + replaceAuctionPrice(interpretedNurl, expectedResPrice);
+        const expectedAd = replaceAuctionPrice(interpretedNurl, expectedResPrice) + replaceAuctionPrice(macroAdm, expectedResPrice);
 
         expect(interpretedRes[0].ad).equal(expectedAd);
       });

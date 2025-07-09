@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
-
+import { internal as utilInternal } from '../../../src/utils.js';
 import {
   isUsingNewSizeMapping,
   checkAdUnitSetupHook,
@@ -1174,20 +1174,22 @@ describe('sizeMappingV2', function () {
     });
   });
 
-  describe('getFilteredMediaTypes(mediaTypes)', function () {
+  describe('getFilteredMediaTypes(mediaTypes)', function () {    
     beforeEach(function () {
+      utils.resetWinDimensions();
       sinon
-        .stub(utils, 'getWindowTop')
+        .stub(utilInternal, 'getWindowTop')
         .returns({
           innerWidth: 1680,
-          innerHeight: 269
+          innerHeight: 269,
+          location: {
+            href: 'https://url'
+          }
         });
-
-      sinon.spy(utils, 'logWarn');
     });
     afterEach(function () {
-      utils.getWindowTop.restore();
-      utils.logWarn.restore();
+      utils.resetWinDimensions();
+      utilInternal.getWindowTop.restore();
     });
     it('should return filteredMediaTypes object with all properties (transformedMediaTypes, activeViewport, sizeBucketToSizeMap) evaluated correctly', function () {
       const [adUnit] = utils.deepClone(AD_UNITS);
@@ -1227,17 +1229,6 @@ describe('sizeMappingV2', function () {
       expect(activeViewport).to.deep.equal(expectedActiveViewport);
       expect(sizeBucketToSizeMap).to.deep.equal(expectedSizeBucketToSizeMap);
       expect(transformedMediaTypes).to.deep.equal(expectedTransformedMediaTypes);
-    });
-
-    it('should throw a warning message if Iframe blocks viewport size to be evaluated correctly', function () {
-      const [adUnit] = utils.deepClone(AD_UNITS);
-      utils.getWindowTop.restore();
-      sinon
-        .stub(utils, 'getWindowTop')
-        .throws();
-      getFilteredMediaTypes(adUnit.mediaTypes);
-      sinon.assert.callCount(utils.logWarn, 1);
-      sinon.assert.calledWith(utils.logWarn, `SizeMappingv2:: Unfriendly iframe blocks viewport size to be evaluated correctly`);
     });
   });
 

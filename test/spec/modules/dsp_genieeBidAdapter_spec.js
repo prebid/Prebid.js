@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { spec } from 'modules/dsp_genieeBidAdapter.js';
 import { config } from 'src/config';
+import { setConfig as setCurrencyConfig } from '../../../modules/currency';
+import { addFPDToBidderRequest } from '../../helpers/fpd';
 
 describe('Geniee adapter tests', () => {
   const validBidderRequest = {
@@ -38,7 +40,8 @@ describe('Geniee adapter tests', () => {
               ext: {
                 test: 1
               },
-              id: 'bid-id'
+              id: 'bid-id',
+              secure: 1
             }
           ],
           test: 1
@@ -73,13 +76,16 @@ describe('Geniee adapter tests', () => {
       config.resetConfig();
     });
     it('uncomfortable (currency)', () => {
-      config.setConfig({ currency: { adServerCurrency: 'TWD' } });
-      const request = spec.buildRequests(validBidderRequest.bids, validBidderRequest);
-      expect(request).deep.equal({
-        method: 'GET',
-        url: 'https://rt.gsspat.jp/prebid_uncomfortable',
+      setCurrencyConfig({ adServerCurrency: 'TWD' });
+      return addFPDToBidderRequest(validBidderRequest).then(res => {
+        const request = spec.buildRequests(validBidderRequest.bids, res);
+        expect(request).deep.equal({
+          method: 'GET',
+          url: 'https://rt.gsspat.jp/prebid_uncomfortable',
+        });
+        setCurrencyConfig({});
+        config.resetConfig();
       });
-      config.resetConfig();
     });
   });
   describe('interpretResponse function test', () => {
@@ -121,7 +127,9 @@ describe('Geniee adapter tests', () => {
         currency: 'JPY',
         mediaType: 'banner',
         meta: {
-          advertiserDomains: ['geniee.co.jp']
+          advertiserDomains: ['geniee.co.jp'],
+          primaryCatId: 'IAB1',
+          secondaryCatIds: []
         },
         netRevenue: true,
         requestId: 'bid-id',

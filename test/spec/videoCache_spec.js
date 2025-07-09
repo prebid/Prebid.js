@@ -5,6 +5,7 @@ import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import * as utils from 'src/utils.js';
+import { storeLocally } from '../../src/videoCache.js';
 
 const should = chai.should();
 
@@ -380,6 +381,7 @@ describe('The video cache', function () {
     });
     afterEach(() => {
       sandbox.restore();
+      config.resetConfig();
     })
     it('should log an error when store replies with an error', () => {
       err = new Error('err');
@@ -394,8 +396,39 @@ describe('The video cache', function () {
       expect(el.bidResponse.videoCacheKey).to.not.exist;
       sinon.assert.notCalled(batch[0].afterBidAdded);
       sinon.assert.called(utils.logError);
-    })
+    });
+    it('should set bids\' videoCacheKey and vastUrl', () => {
+      config.setConfig({
+        cache: {
+          url: 'mock-cache'
+        }
+      })
+      const el = {auctionInstance: {addBidReceived: sinon.stub()}, bidResponse: {}, afterBidAdded: sinon.stub()};
+      cacheIds = [{uuid: 'mock-id'}]
+      storeBatch([el]);
+      sinon.assert.match(el.bidResponse, {
+        videoCacheKey: 'mock-id',
+        vastUrl: 'mock-cache?uuid=mock-id'
+      })
+    });
   })
+
+  describe('local video cache', function() {
+    afterEach(function () {
+      config.resetConfig();
+    });
+
+    it('should store bid vast locally with blob by default', () => {
+      const bid = {
+        vastXml: `<VAST version="3.0"></VAST>`
+      };
+
+      storeLocally(bid);
+
+      expect(bid.vastUrl.startsWith('blob:http://')).to.be.true;
+      expect(bid.videoCacheKey).to.not.be.empty;
+    });
+  });
 });
 
 describe('The getCache function', function () {

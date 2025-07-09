@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, parseSizesInput} from '../src/utils.js';
+import {deepAccess, isPlainObject, parseSizesInput} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 /**
@@ -247,7 +247,7 @@ function _getFloor (bid, sizes, currency) {
         mediaType: 'banner',
         size: size
       });
-      if (typeof floorInfo === 'object' && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
+      if (isPlainObject(floorInfo) && floorInfo.currency === CUR && !isNaN(parseFloat(floorInfo.floor))) {
         floor = parseFloat(floorInfo.floor);
       }
     } catch (err) {}

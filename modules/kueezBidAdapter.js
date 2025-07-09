@@ -155,7 +155,7 @@ function getFloorPrice(bid, mediaType) {
       currency: MAIN_CURRENCY,
       mediaType: mediaType,
       size: '*'
-    });
+    }) || {};
     floor = floorResult.currency === MAIN_CURRENCY && floorResult.floor ? floorResult.floor : 0;
   }
 

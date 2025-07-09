@@ -1,6 +1,10 @@
 import funHooks from 'fun-hooks/no-eval/index.js';
 import {defer} from './utils/promise.js';
 
+/**
+ * NOTE: you must not call `next` asynchronously from 'sync' hooks
+ * see https://github.com/snapwich/fun-hooks/issues/42
+ */
 export let hook = funHooks({
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
@@ -58,4 +62,19 @@ export function wrapHook(hook, wrapper) {
     Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
   );
   return wrapper;
+}
+
+/**
+ * 'async' hooks expect the last argument to be a callback, and have special treatment for it if it's a function;
+ * which prevents it from being used as a normal argument in 'before' hooks - and presents a modified version of it
+ * to the hooked function.
+ *
+ * This returns a wrapper around a given 'async' hook that works around this, for when the last argument
+ * should be treated as a normal argument.
+ */
+export function ignoreCallbackArg(hook) {
+  return wrapHook(hook, function (...args) {
+    args.push(function () {})
+    return hook.apply(this, args);
+  })
 }

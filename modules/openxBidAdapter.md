@@ -34,6 +34,16 @@ Please note you should only include either openxBidAdapter or openxOrtbBidAdapte
 | `delDomain` | required | String |  OpenX delivery domain provided by your OpenX representative.  | "PUBLISHER-d.openx.net"
 | `video` | optional | OpenRTB video subtypes | Use of adUnit.mediaTypes.video is now preferred. | `{ video: {mimes: ['video/mp4']}`
 
+## Native
+
+| Name | Scope | Type | Description | Example
+| ---- | ----- | ---- | ----------- | -------
+| `delDomain` or `platform` | required | String | OpenX delivery domain or platform id provided by your OpenX representative.  | "PUBLISHER-d.openx.net" or "555not5a-real-plat-form-id0123456789"
+| `unit` | required | String | OpenX ad unit ID provided by your OpenX representative. | "1611023122"
+| `customParams` | optional | Object | User-defined targeting key-value pairs. customParams applies to a specific unit. | `{key1: "v1", key2: ["v2","v3"]}`
+| `customFloor` | optional | Number | Minimum price in USD. customFloor applies to a specific unit. For example, use the following value to set a $1.50 floor: 1.50 <br/><br/> **WARNING:**<br/> Misuse of this parameter can impact revenue | 1.50
+| `doNotTrack` | optional | Boolean | Prevents advertiser from using data for this user. <br/><br/> **WARNING:**<br/> Request-level setting.  May impact revenue. | true
+| `coppa` | optional | Boolean | Enables Child's Online Privacy Protection Act (COPPA) regulations. Use of `pbjs.setConfig({coppa: true});` is now preferred. | true
 
 # Example
 ```javascript
@@ -84,7 +94,42 @@ var adUnits = [
           mimes: ['video/x-ms-wmv, video/mp4'] // mediaTypes.video preferred
         }
       }
-    }]p
+    }]
+  }, 
+  {
+    code: 'native1',
+    mediaTypes: {
+      native: {
+        ortb: {
+          ver: '1.2', 
+          assets: [
+            {
+              required: 1,
+              img: {
+                type: 1,
+                hmin: 50
+              },
+            }, {
+              required: 1,
+              title: {
+                len: 80
+              }
+            }
+          ]
+        }
+      }
+    },
+    bids: [{
+        bidder: 'openx',
+        params: {
+            unit: '1611023124',
+            delDomain: 'PUBLISHER-d.openx.net',
+            customParams: {
+                key1: 'v1',
+                key2: ['v2', 'v3']
+            }
+        }
+    }]
   }
 ];
 ```

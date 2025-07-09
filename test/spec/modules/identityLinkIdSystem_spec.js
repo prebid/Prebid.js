@@ -3,7 +3,6 @@ import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
 import {getCoreStorageManager} from '../../../src/storageManager.js';
 import {stub} from 'sinon';
-import { gppDataHandler } from '../../../src/adapterManager.js';
 import {attachIdSystem} from '../../../modules/userId/index.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 import {expect} from 'chai/index.mjs';
@@ -68,13 +67,13 @@ describe('IdentityLinkId tests', function () {
       gdprApplies: true,
       consentString: ''
     };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData);
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
     expect(submoduleCallback).to.be.undefined;
   });
 
   it('should NOT call the LiveRamp envelope endpoint if gdpr applies but consent string is missing', function () {
     let consentData = { gdprApplies: true };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData);
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData});
     expect(submoduleCallback).to.be.undefined;
   });
 
@@ -87,7 +86,7 @@ describe('IdentityLinkId tests', function () {
         tcfPolicyVersion: 2
       }
     };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData).callback;
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gdpr: consentData}).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=4&cv=CO4VThZO4VTiuADABBENAzCgAP_AAEOAAAAAAwwAgAEABhAAgAgAAA.YAAAAAAAAAA');
@@ -100,14 +99,13 @@ describe('IdentityLinkId tests', function () {
   });
 
   it('should call the LiveRamp envelope endpoint with GPP consent string', function() {
-    gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
-    gppConsentDataStub.returns({
+    const gppData = {
       ready: true,
       gppString: 'DBABLA~BVVqAAAACqA.QA',
       applicableSections: [7]
-    });
+    };
     let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&gpp=DBABLA~BVVqAAAACqA.QA&gpp_sid=7');
@@ -117,18 +115,16 @@ describe('IdentityLinkId tests', function () {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    gppConsentDataStub.restore();
   });
 
   it('should call the LiveRamp envelope endpoint without GPP consent string if consent string is not provided', function () {
-    gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
-    gppConsentDataStub.returns({
+    const gppData = {
       ready: true,
       gppString: '',
       applicableSections: [7]
-    });
+    };
     let callBackSpy = sinon.spy();
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, {gpp: gppData}).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
@@ -138,7 +134,6 @@ describe('IdentityLinkId tests', function () {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    gppConsentDataStub.restore();
   });
 
   it('should not throw Uncaught TypeError when envelope endpoint returns empty response', function () {

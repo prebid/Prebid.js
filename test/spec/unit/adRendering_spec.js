@@ -1,17 +1,28 @@
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import {
-  doRender, getBidToRender,
+  deferRendering,
+  doRender,
+  getBidToRender,
+  emitAdRenderSucceeded,
   getRenderingData,
   handleCreativeEvent,
   handleNativeMessage,
-  handleRender
+  handleRender, markWinningBid, renderIfDeferred
 } from '../../../src/adRendering.js';
 import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
 import {auctionManager} from '../../../src/auctionManager.js';
+import adapterManager from '../../../src/adapterManager.js';
+import {filters} from 'src/targeting.js';
+import {
+  EVENT_TYPE_IMPRESSION,
+  EVENT_TYPE_WIN,
+  TRACKER_METHOD_IMG,
+  TRACKER_METHOD_JS
+} from '../../../src/eventTrackers.js';
 
 describe('adRendering', () => {
   let sandbox;
@@ -50,6 +61,12 @@ describe('adRendering', () => {
     let bidResponse;
     beforeEach(() => {
       bidResponse = {};
+    });
+
+    it('should carry over instl', () => {
+      bidResponse.instl = true;
+      const result = getRenderingData(bidResponse);
+      expect(result.instl).to.be.true;
     });
 
     ['ad', 'adUrl'].forEach((prop) => {
@@ -123,6 +140,12 @@ describe('adRendering', () => {
           sinon.assert.called(bidResponse.renderer.render);
         });
 
+        it('allows rendering on the main document', () => {
+          doRender({renderFn, bidResponse, isMainDocument: true});
+          sinon.assert.notCalled(renderFn);
+          sinon.assert.called(bidResponse.renderer.render);
+        })
+
         it('emits AD_RENDER_SUCCEDED', () => {
           doRender({renderFn, bidResponse});
           sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
@@ -139,6 +162,11 @@ describe('adRendering', () => {
           expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT)
         });
       }
+
+      it('should emit AD_RENDER_FAILED when renderer-less bid is being rendered on the main document', () => {
+        doRender({renderFn, bidResponse, isMainDocument: true});
+        expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT);
+      });
 
       it('invokes renderFn with rendering data', () => {
         const data = {ad: 'creative'};
@@ -163,6 +191,116 @@ describe('adRendering', () => {
       })
     });
 
+    describe('markWinningBid', () => {
+      let bid;
+      beforeEach(() => {
+        bid = {adId: '123'};
+        sandbox.stub(utils, 'triggerPixel');
+      });
+      it('should fire BID_WON', () => {
+        markWinningBid(bid);
+        sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bid);
+      })
+      it('should fire win tracking pixels', () => {
+        bid.eventtrackers = [{event: EVENT_TYPE_WIN, method: TRACKER_METHOD_IMG, url: 'tracker'}];
+        markWinningBid(bid);
+        sinon.assert.calledWith(utils.triggerPixel, 'tracker');
+      });
+      it('should NOT fire non-win or non-pixel trackers', () => {
+        bid.eventtrackers = [
+          {event: EVENT_TYPE_WIN, method: TRACKER_METHOD_JS, url: 'ignored'},
+          {event: EVENT_TYPE_IMPRESSION, method: TRACKER_METHOD_IMG, url: 'ignored'}
+        ];
+        markWinningBid(bid);
+        sinon.assert.notCalled(utils.triggerPixel);
+      });
+    })
+
+    describe('deferRendering', () => {
+      let fn, markWin;
+      function markWinHook(next, bidResponse) {
+        markWin(bidResponse);
+      }
+      before(() => {
+        markWinningBid.before(markWinHook);
+      })
+      after(() => {
+        markWinningBid.getHooks({hook: markWinHook}).remove();
+      })
+      beforeEach(() => {
+        fn = sinon.stub();
+        markWin = sinon.stub();
+      });
+
+      [null, undefined].forEach((bidResponse) => {
+        it(`should run fn immediately if bidResponse is ${bidResponse}`, () => {
+          deferRendering(bidResponse, fn);
+          sinon.assert.called(fn);
+        });
+      });
+
+      [undefined, false].forEach(defer => {
+        describe(`when bid has deferRendering = ${defer}`, () => {
+          if (defer != null) {
+            beforeEach(() => { bidResponse.deferRendering = defer })
+          }
+          it('should run fn and mark bid as rendered', () => {
+            deferRendering(bidResponse, fn);
+            sinon.assert.called(fn);
+            expect(bidResponse.status).to.equal(BID_STATUS.RENDERED);
+          });
+        });
+      });
+
+      describe('when bid is marked for deferred rendering', () => {
+        beforeEach(() => {
+          bidResponse.deferRendering = true;
+        });
+        it('should not run fn and not mark bid as rendered', () => {
+          deferRendering(bidResponse, fn);
+          sinon.assert.notCalled(fn);
+          expect(bidResponse.status).to.not.equal(BID_STATUS.RENDERED);
+        });
+
+        it('should render on subsequent call to renderIfDeferred', () => {
+          deferRendering(bidResponse, fn);
+          renderIfDeferred(bidResponse);
+          sinon.assert.called(fn);
+          expect(bidResponse.status).to.eql(BID_STATUS.RENDERED);
+        });
+
+        it('should not render again if renderIfDeferred is called multiple times', () => {
+          deferRendering(bidResponse, fn);
+          renderIfDeferred(bidResponse);
+          renderIfDeferred(bidResponse);
+          sinon.assert.calledOnce(fn);
+        });
+      });
+
+      it('should run fn if bid is not marked for deferral', () => {
+        deferRendering(bidResponse, fn);
+      });
+      [true, false].forEach(defer => {
+        it(`should mark bid as winning (deferRendering = ${defer})`, () => {
+          bidResponse.deferRendering = defer;
+          deferRendering(bidResponse, fn);
+          sinon.assert.calledWith(markWin, bidResponse);
+        });
+
+        it('should not mark a winner twice', () => {
+          bidResponse.deferRendering = defer;
+          deferRendering(bidResponse, fn);
+          deferRendering(bidResponse, fn);
+          sinon.assert.calledOnce(markWin);
+        })
+      })
+    });
+    describe('renderIfDeferred', () => {
+      it('should not choke on unmarked bids', () => {
+        renderIfDeferred(bidResponse);
+        expect(bidResponse.status).to.not.equal(BID_STATUS.RENDERED);
+      })
+    });
     describe('handleRender', () => {
       let doRenderStub
       function doRenderHook(next, ...args) {
@@ -210,11 +348,25 @@ describe('adRendering', () => {
         })
       });
 
-      it('should mark bid as won and emit BID_WON', () => {
-        handleRender({renderFn, bidResponse});
-        sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bidResponse);
-        sinon.assert.calledWith(auctionManager.addWinningBid, bidResponse);
-      })
+      describe('when bid has already expired', () => {
+        let isBidNotExpiredStub = sinon.stub(filters, 'isBidNotExpired');
+        beforeEach(() => {
+          isBidNotExpiredStub.returns(false);
+        });
+        afterEach(() => {
+          isBidNotExpiredStub.restore();
+        })
+        it('should emit EXPIRED_RENDER', () => {
+          handleRender({adId, bidResponse});
+          sinon.assert.calledWith(events.emit, EVENTS.EXPIRED_RENDER, bidResponse);
+          sinon.assert.called(doRenderStub);
+        });
+        it('should skip rendering if suppressExpiredRender', () => {
+          config.setConfig({auctionOptions: {suppressExpiredRender: true}});
+          handleRender({adId, bidResponse});
+          sinon.assert.notCalled(doRenderStub);
+        })
+      });
     })
   })
 
@@ -267,4 +419,29 @@ describe('adRendering', () => {
       sinon.assert.calledWith(fireTrackers, data, bid);
     })
   })
+
+  describe('onAdRenderSucceeded', () => {
+    let mockAdapterSpec, bids;
+    beforeEach(() => {
+      mockAdapterSpec = {
+        onAdRenderSucceeded: sinon.stub()
+      };
+      adapterManager.bidderRegistry['mockBidder'] = {
+        bidder: 'mockBidder',
+        getSpec: function () { return mockAdapterSpec; },
+      };
+      bids = [
+        { bidder: 'mockBidder', params: { placementId: 'id' } },
+      ];
+    });
+
+    afterEach(function () {
+      delete adapterManager.bidderRegistry['mockBidder'];
+    });
+
+    it('should invoke onAddRenderSucceeded on emitAdRenderSucceeded', () => {
+      emitAdRenderSucceeded({ bid: bids[0] });
+      sinon.assert.called(mockAdapterSpec.onAdRenderSucceeded);
+    });
+  });
 });

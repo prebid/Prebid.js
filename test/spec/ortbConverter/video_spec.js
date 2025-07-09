@@ -122,6 +122,16 @@ describe('pbjs -> ortb video conversion', () => {
     expect(imp.video.someParam).to.eql('someValue');
   });
 
+  it('should keep ortb2Imp.video.battr', () => {
+    const imp = {
+      video: {
+        battr: 'battr'
+      }
+    };
+    fillVideoImp(imp, {mediaTypes: {video: {sizes: [1, 2]}}}, {});
+    expect(imp.video.battr).to.eql('battr');
+  });
+
   it('does nothing is context.mediaType is set but is not VIDEO', () => {
     const imp = {};
     fillVideoImp(imp, {mediaTypes: {video: {playerSize: [[1, 2]]}}}, {mediaType: BANNER});

@@ -32,10 +32,13 @@ function isPrebidWindow(win) {
 
 export function renderer(win) {
   let target = win.parent;
-  while (target !== win.top && !isPrebidWindow(target)) {
-    target = target.parent;
+  try {
+    while (target !== win.top && !isPrebidWindow(target)) {
+      target = target.parent;
+    }
+    if (!isPrebidWindow(target)) target = win.parent;
+  } catch (e) {
   }
-  if (!isPrebidWindow(target)) target = win.parent;
 
   return function ({adId, pubUrl, clickUrl}) {
     const pubDomain = new URL(pubUrl, window.location).origin;

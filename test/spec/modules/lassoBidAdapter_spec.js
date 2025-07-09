@@ -3,6 +3,7 @@ import { spec } from 'modules/lassoBidAdapter.js';
 import { server } from '../../mocks/xhr';
 
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
+const GET_IUD_URL = 'https://secure.adnxs.com/getuid?';
 
 const bid = {
   bidder: 'lasso',
@@ -78,7 +79,7 @@ describe('lassoBidAdapter', function () {
     });
   });
 
-  describe('buildRequests', function () {
+  describe('buildRequests with standard flow', function () {
     let validBidRequests, bidRequest;
     before(() => {
       validBidRequests = spec.buildRequests([bid], bidderRequest);
@@ -96,6 +97,177 @@ describe('lassoBidAdapter', function () {
     it('Returns GET method', function() {
       expect(bidRequest.method).to.exist;
       expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to get uid and trc via get request', () => {
+      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(GET_IUD_URL + ENDPOINT_URL + '/request');
+    });
+  });
+
+  describe('buildRequests with dgid', function () {
+    let validBidRequests, bidRequest;
+    before(() => {
+      const updateBidParams = Object.assign({}, bid, {
+        params: {
+          adUnitId: 123456,
+          dgid: '123'
+        }
+      });
+      validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
+
+    it('Returns valid bidRequest', function () {
+      expect(bidRequest).to.exist;
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.url).to.exist;
+      expect(bidRequest.data).to.exist;
+    });
+
+    it('Returns GET method', function() {
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to trc via get request with dgid', () => {
+      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
+    });
+  });
+
+  describe('buildRequests with npi', function () {
+    let validBidRequests, bidRequest;
+    before(() => {
+      const updateBidParams = Object.assign({}, bid, {
+        params: {
+          adUnitId: 123456,
+          npi: '123'
+        }
+      });
+      validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
+
+    it('Returns valid bidRequest', function () {
+      expect(bidRequest).to.exist;
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.url).to.exist;
+      expect(bidRequest.data).to.exist;
+    });
+
+    it('Returns GET method', function() {
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to trc via get request with npi', () => {
+      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
+    });
+  });
+
+  describe('buildRequests with test npi', function () {
+    let validBidRequests, bidRequest;
+    before(() => {
+      const updateBidParams = Object.assign({}, bid, {
+        params: {
+          adUnitId: 123456,
+          testNPI: '123'
+        }
+      });
+      validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
+
+    it('Returns valid bidRequest', function () {
+      expect(bidRequest).to.exist;
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.url).to.exist;
+      expect(bidRequest.data).to.exist;
+    });
+
+    it('Returns GET method', function() {
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to trc via get request with npi and test param', () => {
+      expect(bidRequest.data.test).to.equal(true)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
+    });
+  });
+
+  describe('buildRequests with test dgid', function () {
+    let validBidRequests, bidRequest;
+    before(() => {
+      const updateBidParams = Object.assign({}, bid, {
+        params: {
+          adUnitId: 123456,
+          testDGID: '123'
+        }
+      });
+      validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
+
+    it('Returns valid bidRequest', function () {
+      expect(bidRequest).to.exist;
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.url).to.exist;
+      expect(bidRequest.data).to.exist;
+    });
+
+    it('Returns GET method', function() {
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to trc via get request with dgid and test param', () => {
+      expect(bidRequest.data.test).to.equal(true)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
+    });
+  });
+
+  describe('buildRequests with npi hash', function () {
+    let validBidRequests, bidRequest;
+    before(() => {
+      const updateBidParams = Object.assign({}, bid, {
+        params: {
+          adUnitId: 123456,
+          npiHash: '123'
+        }
+      });
+      validBidRequests = spec.buildRequests([updateBidParams], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
+
+    it('Returns valid bidRequest', function () {
+      expect(bidRequest).to.exist;
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.url).to.exist;
+      expect(bidRequest.data).to.exist;
+    });
+
+    it('Returns GET method', function() {
+      expect(bidRequest.method).to.exist;
+      expect(bidRequest.method).to.equal('GET');
+    });
+
+    it('should send request to trc via get request with npi', () => {
+      expect(bidRequest.data.test).to.equal(false)
+      expect(bidRequest.method).to.equal('GET');
+      expect(bidRequest.url).to.equal(ENDPOINT_URL + '/request');
     });
   });
 

@@ -38,7 +38,7 @@ function flagErrors(context, node, importPath) {
     }
 
     // do not allow imports outside `creative`
-    if (isInDirectory(absFileDir, CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
+    if ((isInDirectory(absFileDir, CREATIVE_PATH) || absFileDir == CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
       context.report(node, `import "${importPath}": importing from outside creative is not allowed`);
     }
 

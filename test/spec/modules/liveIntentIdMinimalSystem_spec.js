@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
-import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
+import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from '../../../libraries/liveIntentId/idSystem.js';
 import * as refererDetection from '../../../src/refererDetection.js';
 
 const PUBLISHER_ID = '89899';
@@ -47,11 +47,6 @@ describe('LiveIntentMinimalId', function() {
     })
     liveIntentIdSubmodule.getId(defaultConfigParams);
     expect(server.requests[0]).to.eql(undefined)
-  });
-
-  it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
-    const result = liveIntentIdSubmodule.decode({ additionalData: 'data' });
-    expect(result).to.be.eql({});
   });
 
   it('should initialize LiveConnect and send no data', function() {
@@ -245,6 +240,11 @@ describe('LiveIntentMinimalId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should decode values with the segments but no nonId', function() {
+    const result = liveIntentIdSubmodule.decode({segments: ['tak']}, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'segments': ['tak']}});
+  });
+
   it('should decode a uid2 to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' });
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
@@ -252,7 +252,7 @@ describe('LiveIntentMinimalId', function() {
 
   it('should decode values with uid2 but no nonId', function() {
     const result = liveIntentIdSubmodule.decode({ uid2: 'bar' });
-    expect(result).to.eql({'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+    expect(result).to.eql({'lipb': {'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a bidswitch id to a separate object when present', function() {
@@ -312,5 +312,35 @@ describe('LiveIntentMinimalId', function() {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should decode a sharethrough id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sharethrough: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sharethrough': 'bar'}, 'sharethrough': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a sonobi id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sonobi: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sonobi': 'bar'}, 'sonobi': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a triplelift id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', triplelift: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'triplelift': 'bar'}, 'triplelift': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a zetassp id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', zetassp: 'bar' }, defaultConfigParams);
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'zetassp': 'bar'}, 'zetassp': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a vidazoo id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', vidazoo: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'vidazoo': 'bar'}, 'vidazoo': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode the segments as part of lipb', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', 'segments': ['bar'] }, { params: defaultConfigParams });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'segments': ['bar']}});
   });
 });

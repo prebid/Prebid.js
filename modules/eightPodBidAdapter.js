@@ -4,7 +4,7 @@ import { BANNER } from '../src/mediaTypes.js'
 import * as utils from '../src/utils.js'
 
 export const BIDDER_CODE = 'eightPod'
-const url = 'https://demo.8pod.com/bidder/rtb/eightpod_exchange/bid?trace=true';
+const url = 'https://demo.8pod.com/bidder/rtb/eightpod_exchange/bid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -49,8 +49,9 @@ function isBidRequestValid(bidRequest) {
 function buildRequests(bids, bidderRequest) {
   let bannerBids = bids.filter((bid) => isBannerBid(bid))
   let requests = bannerBids.length
-    ? [createRequest(bannerBids, bidderRequest, BANNER)]
+    ? createRequest(bannerBids, bidderRequest, BANNER)
     : []
+
   return requests
 }
 
@@ -61,8 +62,10 @@ function bidResponse(buildBidResponse, bid, context) {
 
   bidResponse.height = context?.imp?.banner?.format?.[0].h;
   bidResponse.width = context?.imp?.banner?.format?.[0].w;
+  bidResponse.cid = bid.cid;
 
   bidResponse.burl = replacePriceInUrl(bid.burl, bidResponse.originalCpm || bidResponse.cpm);
+
   return bidResponse;
 }
 
@@ -119,64 +122,75 @@ export function getPageKeywords(win = window) {
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
-  const data = converter.toORTB({
-    bidRequests,
-    bidderRequest,
-    context: { mediaType },
-  });
+  const requests = bidRequests.map((bidRequest) => {
+    const data = converter.toORTB({
+      bidRequests: [bidRequest],
+      bidderRequest,
+      context: { mediaType },
+    });
 
-  data.adSlotPositionOnScreen = 'ABOVE_THE_FOLD';
-  data.at = 1;
+    data.adSlotPositionOnScreen = 'ABOVE_THE_FOLD';
+    data.at = 1;
 
-  const params = getBidderParams(bidRequests);
+    const userId =
+      utils.deepAccess(bidRequest, 'userId.unifiedId.id') ||
+      utils.deepAccess(bidRequest, 'userId.id5id.uid') ||
+      utils.deepAccess(bidRequest, 'userId.idl_env');
 
-  data.device = {
-    ...data.device,
-    model: parseUserAgent().device,
-    os: parseUserAgent().platform,
-    osv: parseUserAgent().version,
-    geo: {
-      country: params.country || 'GRB'
-    },
-    language: params.language || data.device.language,
-  }
-  data.site = {
-    ...data.site,
-    keywords: getPageKeywords(window),
-  }
-  data.imp = [
-    {
-      ...data.imp?.[0],
-      pmp: params.dealId
-        ? {
-          ...data.pmp,
-          deals: [
-            {
-              bidfloor: 0.5,
-              at: 2,
-              id: params.dealId,
-            },
-          ],
-          private_auction: 1,
-        }
-        : data.pmp,
+    const params = getBidderParams(bidRequest);
+    data.device = {
+      ...data.device,
+      devicetype: 4,
+      geo: {
+        country: params.country || 'GRB'
+      },
+      language: params.language || data.device.language,
     }
-  ]
-  data.adSlotPlacementId = params.placementId;
+    data.site = {
+      ...data.site,
+      keywords: getPageKeywords(window),
+      publisher: {
+        id: params.publisherId
+      }
+    }
+    data.imp = [
+      {
+        ...data.imp?.[0],
+        secure: 1,
+        pmp: params.dealId
+          ? {
+            ...data.pmp,
+            deals: [
+              {
+                id: params.dealId,
+              },
+            ],
+            private_auction: 1,
+          }
+          : data.pmp,
+      }
+    ]
+    data.adSlotPlacementId = params.placementId;
 
-  const req = {
-    method: 'POST',
-    url,
-    data
-  }
-  return req
+    if (userId) {
+      data.user = {
+        id: userId
+      }
+    }
+
+    const req = {
+      method: 'POST',
+      url: url && params.trace ? url + '?trace=true' : url,
+      options: { withCredentials: false },
+      data
+    }
+    return req
+  })
+
+  return requests;
 }
 
-function getBidderParams(bidRequests) {
-  const bid = bidRequests.find(bid => {
-    return bid.bidder === BIDDER_CODE
-  });
-
+function getBidderParams(bid) {
   return bid?.params ? bid.params : undefined;
 }
 
@@ -189,5 +203,47 @@ function isBannerBid(bid) {
 }
 
 function interpretResponse(resp, req) {
-  return converter.fromORTB({ request: req.data, response: resp.body })
+  const impressionId = resp.body.seatbid[0].bid[0].impid;
+  const bidResponses = converter.fromORTB({ request: req.data, response: resp.body });
+  const ad = bidResponses[0].ad;
+  const trackingTag = `<script src="https://cdn.doubleverify.com/dvtp_src.js?ctx=818052&cmp=APAC_Cert_20&sid=se_a551&plc=240411845&adsrv=0&btreg=ad-unit-container&auevent=${impressionId}&btadsrv=&crt=01&tagtype=&dvtagver=6.1.src" type="text/javascript"></script>
+        <script type="text/javascript">
+            (function() {
+                /** CONFIGURATION START **/
+                var _sf_async_config = window._sf_async_config = (window._sf_async_config || {});
+                _sf_async_config.uid = 67171;
+                _sf_async_config.domain = 'demo.8pod.com';
+                _sf_async_config.flickerControl = false;
+                _sf_async_config.useCanonical = true;
+                _sf_async_config.useCanonicalDomain = true;
+                _sf_async_config.sections = '';
+                _sf_async_config.authors = '';
+                /** CONFIGURATION END **/
+                function loadChartbeat() {
+                    var e = document.createElement('script');
+                    var n = document.getElementsByTagName('script')[0];
+                    e.type = 'text/javascript';
+                    e.async = true;
+                    e.src = '//static.chartbeat.com/js/chartbeat.js';
+                    n.parentNode.insertBefore(e, n);
+                }
+                loadChartbeat();
+            })();
+        </script>
+        <script async src="//static.chartbeat.com/js/chartbeat_mab.js"></script>
+
+        <script type="text/javascript">
+            var utag_data = {
+            }
+        </script>
+        <script type="text/javascript">
+            (function(a,b,c,d){
+                a='https://tags.tiqcdn.com/utag/sales-richard-coghlan/8pod/prod/utag.js';
+                b=document;c='script';d=b.createElement(c);d.src=a;d.type='text/java'+c;d.async=true;
+                a=b.getElementsByTagName(c)[0];a.parentNode.insertBefore(d,a);
+            })();
+        </script>`
+
+  bidResponses[0].ad = ad.replace('</head>', trackingTag + '</head>');
+  return bidResponses;
 }

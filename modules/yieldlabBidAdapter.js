@@ -100,7 +100,7 @@ export const spec = {
       if (bidderRequest.gdprConsent) {
         query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true;
         if (query.gdpr) {
-          query.consent = bidderRequest.gdprConsent.consentString;
+          query.gdpr_consent = bidderRequest.gdprConsent.consentString;
         }
       }
 
@@ -184,7 +184,7 @@ export const spec = {
         const extId = bidRequest.params.extId !== undefined ? '&id=' + bidRequest.params.extId : '';
         const adType = matchedBid.adtype !== undefined ? matchedBid.adtype : '';
         const gdprApplies = reqParams.gdpr ? '&gdpr=' + reqParams.gdpr : '';
-        const gdprConsent = reqParams.consent ? '&consent=' + reqParams.consent : '';
+        const gdprConsent = reqParams.gdpr_consent ? '&gdpr_consent=' + reqParams.gdpr_consent : '';
         const pvId = matchedBid.pvid !== undefined ? '&pvid=' + matchedBid.pvid : '';
         const iabContent = reqParams.iab_content ? '&iab_content=' + reqParams.iab_content : '';
 
@@ -201,7 +201,7 @@ export const spec = {
           referrer: '',
           ad: `<script src="${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}${iabContent}"></script>`,
           meta: {
-            advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a',
+            advertiserDomains: [(matchedBid.advertiser) ? matchedBid.advertiser : 'n/a'],
           },
         };
 
@@ -555,7 +555,7 @@ function getBidFloor(bid, sizes) {
     mediaType: mediaType !== undefined && spec.supportedMediaTypes.includes(mediaType) ? mediaType : '*',
     size: sizes.length !== 1 ? '*' : sizes[0].split(DIMENSION_SIGN),
   });
-  if (floor.currency === CURRENCY_CODE) {
+  if (floor?.currency === CURRENCY_CODE) {
     return (floor.floor * 100).toFixed(0);
   }
   return undefined;

@@ -79,7 +79,6 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
   // TODO: these should probably look at refererInfo
   let pageURL = window.location.href;
   let domain = window.location.hostname;
-  let secure = (window.location.protocol == 'https:' ? 1 : 0);
   let openRTBRequest = deepClone(DEFAULT['OpenRTBBidRequest']);
   openRTBRequest.id = bidderRequest.bidderRequestId;
   openRTBRequest.ext = {
@@ -120,7 +119,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
     }
     let imp = deepClone(DEFAULT['OpenRTBBidRequestImp']);
     imp.id = bid.bidId;
-    imp.secure = secure;
+    imp.secure = bid.ortb2Imp?.secure ?? 1;
     imp.tagid = bid.adUnitCode;
     imp.ext = {
       rawdata: bid

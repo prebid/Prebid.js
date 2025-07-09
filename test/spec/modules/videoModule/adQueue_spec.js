@@ -9,6 +9,7 @@ describe('Ad Queue Coordinator', function () {
       onEvents: sinon.spy(),
       offEvents: sinon.spy(),
       setAdTagUrl: sinon.spy(),
+      setAdXml: sinon.spy(),
     }
   };
 
@@ -56,6 +57,24 @@ describe('Ad Queue Coordinator', function () {
       emitArgs = mockEvents.emit.secondCall.args;
       expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
       expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
+    });
+
+    it('should run setAdXml instead of setAdTagUrl if vast has been prefetched', function () {
+      const mockVideoCore = mockVideoCoreFactory();
+      const mockEvents = mockEventsFactory();
+      let setupComplete;
+      mockVideoCore.onEvents = function(events, callback, id) {
+        if (events[0] === SETUP_COMPLETE && id === testId) {
+          setupComplete = callback;
+        }
+      };
+      const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
+      coordinator.registerProvider(testId);
+      coordinator.queueAd('testAdTag', testId, {prefetchedVastXml: '<VAST></VAST>'});
+
+      setupComplete('', { divId: testId });
+      expect(mockVideoCore.setAdXml.calledOnce).to.be.true;
+      expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.false;
     });
 
     it('should load ads without queueing', function () {

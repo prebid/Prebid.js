@@ -950,6 +950,33 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.tmax).to.equal(null);
     })
 
+    it('should add ORTB2 device data to the request', function () {
+      const bidderRequestWithDevice = {
+        ...bidderRequest,
+        ...{
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            },
+          },
+        },
+      };
+
+      const [request] = spec.buildRequests([bidRequests[0]], bidderRequestWithDevice);
+      const payload = parseRequest(request.data);
+
+      expect(payload.device).to.deep.equal(bidderRequestWithDevice.ortb2.device);
+    });
+
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',

@@ -1,6 +1,10 @@
 
 name-template: 'Prebid $RESOLVED_VERSION Release'
 tag-template: '$RESOLVED_VERSION'
+autolabeler:
+  - label: 'maintenance'
+    title:
+      - '/^(?!.*(bug|initial|release|fix)).*$/i'
 categories:
   - title: '🚀 New Features'
     label: 'feature'

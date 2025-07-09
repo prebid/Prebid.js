@@ -12,6 +12,7 @@ import {
   getVatFromCache,
   getVatFromPlayer,
   setOverrides,
+  getPlayer,
   jwplayerSubmodule
 } from 'modules/jwplayerRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
@@ -1600,6 +1601,66 @@ describe('jwplayerRtdProvider', function() {
       const rtd = bid.rtd;
       expect(rtd).to.have.property('jwplayer');
       expect(rtd).to.have.nested.property('jwplayer.targeting', targeting);
+    });
+  });
+
+  describe('Player detection', function () {
+    const playerInstanceMock = {
+      getPlaylist: () => [],
+      getPlaylistItem: () => ({})
+    };
+
+    beforeEach(function () {
+      window.jwplayer = sinon.stub();
+    });
+
+    afterEach(function () {
+      delete window.jwplayer;
+    });
+
+    it('should fail if jwplayer global does not exist', function () {
+      delete window.jwplayer;
+      expect(getPlayer('divId')).to.be.undefined;
+    });
+
+    it('should return the player instance for the specified div id', function () {
+      window.jwplayer.returns(playerInstanceMock);
+      const player = getPlayer('divId');
+      expect(player).to.deep.equal(playerInstanceMock);
+    });
+
+    it('should request a player when the div id does not match a player on the page and only 1 player is in the DOM', function () {
+      const playerDomElement = document.createElement('div');
+      playerDomElement.className = 'jwplayer';
+      document.body.appendChild(playerDomElement);
+
+      window.jwplayer.withArgs('invalidDivId').returns(undefined);
+      window.jwplayer.returns(playerInstanceMock);
+
+      const playerInstance = getPlayer('invalidDivId');
+
+      expect(playerInstance).to.deep.equal(playerInstanceMock);
+
+      document.body.removeChild(playerDomElement);
+    });
+
+    it('should fail when the div id does not match a player on the page, and multiple players are instantiated', function () {
+      const firstPlayerDomElement = document.createElement('div');
+      const secondPlayerDomElement = document.createElement('div');
+      firstPlayerDomElement.className = 'jwplayer';
+      secondPlayerDomElement.className = 'jwplayer';
+      document.body.appendChild(firstPlayerDomElement);
+      document.body.appendChild(secondPlayerDomElement);
+
+      window.jwplayer.withArgs('invalidDivId').returns(undefined);
+      window.jwplayer.returns(playerInstanceMock);
+
+      const playerInstance = getPlayer('invalidDivId');
+
+      expect(playerInstance).to.be.undefined;
+
+      document.body.removeChild(firstPlayerDomElement);
+      document.body.removeChild(secondPlayerDomElement);
     });
   });
 

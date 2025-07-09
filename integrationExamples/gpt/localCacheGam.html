@@ -1,0 +1,134 @@
+<html>
+
+<head>
+  <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+  <script async src="../../../build/dev/prebid.js"></script>
+
+  <title>JW Player with Local Cache</title>
+
+  <script>
+    // Setup ad units
+    var adUnits = [{
+      code: 'div-gpt-ad-51545-0',
+      mediaTypes: {
+        video: {
+            playerSize: [640, 360], 
+        }
+      },
+      video: {
+        divId: 'player', // required to indicate which player is being used to render this ad unit.
+      },
+
+      bids: [{
+        bidder: 'jwplayer',
+        params: {
+          publisherId: 'test-publisher-id',
+          siteId: 'test-site-id',
+          placementId: 'test-placement-id'
+        }
+      }, {
+        bidder: 'ix',
+        params: {
+          siteId: '300',
+        }
+      }]
+    }];
+    const vastXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST version=\"3.0\"><Ad><InLine><AdSystem>GDFP</AdSystem><AdTitle>Demo</AdTitle><Description><![CDATA[Demo]]></Description><Creatives><Creative><Linear ><Duration>00:00:11</Duration><VideoClicks><ClickThrough><![CDATA[https://adplayer.pro/]]></ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" width=\"640\" height=\"360\" type=\"video/mp4\" scalable=\"true\" maintainAspectRatio=\"true\"><![CDATA[https://static.adplayer.pro/video/demo_v2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>"
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    pbjs.que.push(function () {
+      pbjs.setConfig({
+        cache: {
+            useLocal: true
+        },
+        debugging: {
+          enabled: true,
+          intercept: [
+            {
+              when: {
+                adUnitCode: 'div-gpt-ad-51545-0',
+              },
+              then: {
+                cpm: 25,
+                mediaType: "video",
+                vastXml
+              }
+            },
+          ]
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+
+      pbjs.onEvent('videoSetupComplete', e => {
+        console.log('player setup complete: ', e);
+      });
+
+      pbjs.onEvent('videoSetupFailed', e => {
+        console.log('player setup failed: ', e);
+      });
+
+      pbjs.onEvent('videoPlaylist', (e) => {
+        console.log('videos pb playlist: ', e);
+      });
+
+      // request a bid when media is loaded
+      pbjs.onEvent('videoContentLoaded', (e) => {
+        console.log('videos pb contentLoaded: ', e);
+      });
+
+      pbjs.onEvent('videoComplete', (e) => {
+        console.log('videos pb complete: ', e);
+      });
+
+      pbjs.onEvent('videoPlaylistComplete', (e) => {
+        console.log('videos pb playlistComplete: ', e);
+      });
+
+      pbjs.requestBids({
+        bidsBackHandler: async function(bidResponses) {
+            const bidResponse = bidResponses['div-gpt-ad-51545-0'];
+            if (!bidResponse) {
+              return;
+            }
+
+            const bid = bidResponse.bids[0];
+
+            const vastXml = await pbjs.adServers.dfp.getVastXml({
+              bid,
+              adUnit: 'div-gpt-ad-51545-0',
+              params: {
+                iu: '/41758329/localcache',
+                url: "https://pubads.g.doubleclick.net/gampad/ads?iu=/41758329/localcache&sz=640x480&gdfp_req=1&output=vast&env=vp",
+              }                
+            });
+
+            jwplayer("player").setup({
+              playlist: "https://cdn.jwplayer.com/v2/media/hWF9vG66",
+              autostart: "viewable",
+              advertising: {
+                  client: "vast",
+                  schedule: [
+                    { 
+                      vastxml: vastXml,
+                      offset: 'pre'
+                    }
+                  ]
+              }
+            });
+        }
+      });
+    });
+  </script>
+
+</head>
+
+<body>
+<h2>JW Player with Local cache</h2>
+
+<h5>Div-1: Player placeholder div</h5>
+<div id='player'></div>
+</body>
+
+</html>

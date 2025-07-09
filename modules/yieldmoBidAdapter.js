@@ -1,6 +1,7 @@
 import {
   deepAccess,
   deepSetValue,
+  getWinDimensions,
   getWindowTop,
   isArray,
   isArrayOfNums,
@@ -114,8 +115,8 @@ export const spec = {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
         serverRequest.scrd = LOCAL_WINDOW.devicePixelRatio || 0;
         serverRequest.title = LOCAL_WINDOW.document.title || '';
-        serverRequest.w = LOCAL_WINDOW.innerWidth;
-        serverRequest.h = LOCAL_WINDOW.innerHeight;
+        serverRequest.w = getWinDimensions().innerWidth;
+        serverRequest.h = getWinDimensions().innerHeight;
       }
 
       const mtp = window.navigator.maxTouchPoints;
@@ -258,6 +259,8 @@ function hasVideoMediaType(bidRequest) {
  */
 function addPlacement(request) {
   const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const tagid = deepAccess(request, 'ortb2Imp.ext.tagid');
+  const divid = deepAccess(request, 'ortb2Imp.ext.divid');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -274,6 +277,12 @@ function addPlacement(request) {
   }
   if (gpid) {
     placementInfo.gpid = gpid;
+  }
+  if (tagid) {
+    placementInfo.tagid = tagid;
+  }
+  if (divid) {
+    placementInfo.divid = divid;
   }
 
   // get the transaction id for the banner bid.
@@ -471,6 +480,8 @@ function getTopics(bidderRequest) {
  */
 function openRtbImpression(bidRequest) {
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const tagid = deepAccess(bidRequest, 'ortb2Imp.ext.tagid');
+  const divid = deepAccess(bidRequest, 'ortb2Imp.ext.divid');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
@@ -507,6 +518,12 @@ function openRtbImpression(bidRequest) {
   }
   if (gpid) {
     imp.ext.gpid = gpid;
+  }
+  if (tagid) {
+    imp.ext.tagid = tagid;
+  }
+  if (divid) {
+    imp.ext.divid = divid;
   }
   return imp;
 }
@@ -655,7 +672,8 @@ function validateVideoParams(bid) {
     validate('video.protocols', val => isDefined(val), paramRequired);
 
     validate('video.api', val => isDefined(val), paramRequired);
-    validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
+    // PS-6597 - Allow video.api to be any number greater than 0
+    validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1)),
       paramInvalid, 'array of numbers, ex: [2,3]');
 
     validate('video.playbackmethod', val => !isDefined(val) || isArrayOfNums(val), paramInvalid,

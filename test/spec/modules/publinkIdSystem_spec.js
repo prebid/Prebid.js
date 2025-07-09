@@ -2,7 +2,6 @@ import {publinkIdSubmodule} from 'modules/publinkIdSystem.js';
 import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager';
 import {server} from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {uspDataHandler} from '../../../src/adapterManager';
 import {parseUrl} from '../../../src/utils';
 
 const storage = getCoreStorageManager();
@@ -117,9 +116,9 @@ describe('PublinkIdSystem', () => {
         expect(callbackSpy.lastCall.lastArg).to.equal(serverResponse.publink);
       });
 
-      it('Fetch with consent data', () => {
+      it('Fetch with GDPR consent data', () => {
         const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', site_id: '102030'}};
-        const consentData = {gdprApplies: 1, consentString: 'myconsentstring'};
+        const consentData = {gdpr: {gdprApplies: 1, consentString: 'myconsentstring'}};
         let submoduleCallback = publinkIdSubmodule.getId(config, consentData).callback;
         submoduleCallback(callbackSpy);
 
@@ -170,18 +169,10 @@ describe('PublinkIdSystem', () => {
 
     describe('usPrivacy', () => {
       let callbackSpy = sinon.spy();
-      const oldPrivacy = uspDataHandler.getConsentData();
-      before(() => {
-        uspDataHandler.setConsentData('1YNN');
-      });
-      after(() => {
-        uspDataHandler.setConsentData(oldPrivacy);
-        callbackSpy.resetHistory();
-      });
 
       it('Fetch with usprivacy data', () => {
         const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', api_key: 'abcdefg'}};
-        let submoduleCallback = publinkIdSubmodule.getId(config).callback;
+        let submoduleCallback = publinkIdSubmodule.getId(config, {usp: '1YNN'}).callback;
         submoduleCallback(callbackSpy);
 
         let request = server.requests[0];

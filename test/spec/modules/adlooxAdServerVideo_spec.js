@@ -34,7 +34,6 @@ describe('Adloox Ad Server Video', function () {
   };
 
   const analyticsOptions = {
-    js: 'https://j.adlooxtracking.com/ads/js/tfav_adl_%%clientid%%.js',
     client: 'adlooxtest',
     clientid: 127,
     platformid: 0,

@@ -13,7 +13,7 @@ Module that connects to Shinez's demand sources.
 
 The Shinez adapter requires setup and approval from the Shinez. Please reach out to tech-team@shinez.io to create an Shinez account.
 
-The adapter supports Video(instream) & Banner.
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video

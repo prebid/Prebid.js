@@ -255,7 +255,7 @@ function getFloor(bidRequest, size, mediaType) {
     size: [ size.width, size.height ]
   });
 
-  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
+  if (!isNaN(bidFloors?.floor) && (bidFloors?.currency === CURRENCY)) {
     return bidFloors.floor;
   }
 }

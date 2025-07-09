@@ -13,7 +13,7 @@ Module that connects to Rise's demand sources.
 
 The Rise adapter requires setup and approval from the Rise. Please reach out to prebid-rise-engage@risecodes.com to create an Rise account.
 
-The adapter supports Video(instream).
+The adapter supports Video(instream), Banner, Native and multi-format bid requests.
 
 # Bid Parameters
 ## Video

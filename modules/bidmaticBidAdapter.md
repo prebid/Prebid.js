@@ -24,3 +24,9 @@ var adUnits = [{
     }]
 }]
 ```
+
+
+# Testing 
+```gulp test-only --file=./test/spec/modules/bidmaticBidAdapter_spec.js```
+```gulp test-coverage --file=./test/spec/modules/bidmaticBidAdapter_spec.js```
+```gulp view-coverage```

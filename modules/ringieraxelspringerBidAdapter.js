@@ -7,6 +7,7 @@ import {
 } from '../src/utils.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
+import { BO_CSR_ONET } from '../libraries/paapiTools/buyerOrigins.js';
 
 const BIDDER_CODE = 'ringieraxelspringer';
 const VERSION = '1.0';
@@ -314,9 +315,9 @@ const parseAuctionConfigs = (serverResponse, bidRequest) => {
     auctionConfigs.push({
       'bidId': bid.bidId,
       'config': {
-        'seller': 'https://csr.onet.pl',
-        'decisionLogicUrl': `https://csr.onet.pl/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
-        'interestGroupBuyers': ['https://csr.onet.pl'],
+        'seller': BO_CSR_ONET,
+        'decisionLogicUrl': `${BO_CSR_ONET}/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
+        'interestGroupBuyers': [ BO_CSR_ONET ],
         'auctionSignals': {
           'params': bid.params,
           'sizes': bid.sizes,

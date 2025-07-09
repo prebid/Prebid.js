@@ -51,7 +51,7 @@ Please use ```admixer``` as the bidder code.
        ];
 ```
 
-### AdmixerWL Test Parameters
+### RTB Stack Test Parameters
 ```
     var adUnits = [
            {
@@ -59,10 +59,9 @@ Please use ```admixer``` as the bidder code.
                sizes: [[300, 250]],  // a display size
                bids: [
                    {
-                       bidder: "admixer",
+                       bidder: "rtbstack",
                        params: {
-                           endpointId: 41512,
-                           clientId: 62
+                           tagId: 41512
                        }
                    }
                ]
@@ -71,10 +70,9 @@ Please use ```admixer``` as the bidder code.
                sizes: [[300, 50]],   // a mobile size
                bids: [
                    {
-                       bidder: "admixer",
+                       bidder: "rtbstack",
                        params: {
-                           endpointId: 41512,
-                           clientId: 62
+                           tagId: 41512
                        }
                    }
                ]
@@ -84,10 +82,9 @@ Please use ```admixer``` as the bidder code.
                mediaType: 'video',
                bids: [
                    {
-                       bidder: "admixer",
+                       bidder: "rtbstack",
                        params: {
-                           endpointId: 41512,
-                           clientId: 62
+                           tagId: 41512
                        }
                    }
                ]

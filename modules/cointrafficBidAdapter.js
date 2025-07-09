@@ -2,6 +2,7 @@ import { parseSizesInput, logError, isEmpty } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -45,7 +46,7 @@ export const spec = {
       const sizes = parseSizesInput(bidRequest.params.size || bidRequest.sizes);
       const currency =
         config.getConfig(`currency.bidderCurrencyDefault.${BIDDER_CODE}`) ||
-        config.getConfig('currency.adServerCurrency') ||
+        getCurrencyFromBidderRequest(bidderRequest) ||
         DEFAULT_CURRENCY;
 
       if (ALLOWED_CURRENCIES.indexOf(currency) === -1) {

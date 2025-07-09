@@ -304,18 +304,18 @@ describe('VideoheroesBidAdapter', function() {
         creativeId: response_video.seatbid[0].bid[0].crid,
         dealId: response_video.seatbid[0].bid[0].dealid,
         mediaType: 'video',
-        vastUrl: response_video.seatbid[0].bid[0].adm
+        vastXml: response_video.seatbid[0].bid[0].adm
       }
 
       let videoResponses = spec.interpretResponse(videoResponse);
 
       expect(videoResponses).to.be.an('array').that.is.not.empty;
       let dataItem = videoResponses[0];
-      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastUrl', 'ttl', 'creativeId',
+      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'vastXml', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType');
       expect(dataItem.requestId).to.equal(expectedBidResponse.requestId);
       expect(dataItem.cpm).to.equal(expectedBidResponse.cpm);
-      expect(dataItem.vastUrl).to.equal(expectedBidResponse.vastUrl)
+      expect(dataItem.vastXml).to.equal(expectedBidResponse.vastXml)
       expect(dataItem.ttl).to.equal(expectedBidResponse.ttl);
       expect(dataItem.creativeId).to.equal(expectedBidResponse.creativeId);
       expect(dataItem.netRevenue).to.be.true;

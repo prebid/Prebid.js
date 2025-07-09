@@ -101,6 +101,8 @@ export function getProfileApiUrl(customeUrl, enableReadFpid) {
 
 export function readFpidFromLocalStrage() {
   try {
+    // TODO: use storageManager
+    // eslint-disable-next-line no-restricted-properties
     const fpid = window.localStorage.getItem('ope_fpid');
     if (fpid) {
       return fpid;

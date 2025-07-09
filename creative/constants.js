@@ -1,6 +1,8 @@
+
 // eslint-disable-next-line prebid/validate-imports
 import {AD_RENDER_FAILED_REASON, EVENTS, MESSAGES} from '../src/constants.js';
 
+// eslint-disable-next-line prebid/validate-imports
 export {PB_LOCATOR} from '../src/constants.js';
 export const MESSAGE_REQUEST = MESSAGES.REQUEST;
 export const MESSAGE_RESPONSE = MESSAGES.RESPONSE;

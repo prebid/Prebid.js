@@ -8,7 +8,7 @@ import { gdprDataHandler } from '../../../src/adapterManager.js';
 import { expect } from 'chai';
 import * as events from '../../../src/events.js';
 import { EVENTS } from '../../../src/constants.js';
-import { generateUUID } from '../../../src/utils.js';
+import * as utils from 'src/utils.js';
 import { server } from '../../mocks/xhr.js';
 import { config } from 'src/config.js';
 
@@ -80,7 +80,7 @@ describe('AGMA Analytics Adapter', () => {
   describe('getPayload', () => {
     it('should use non extended payload with no consent info', () => {
       sandbox.stub(gdprDataHandler, 'getConsentData').callsFake(() => null)
-      const payload = getPayload([generateUUID()], {
+      const payload = getPayload([utils.generateUUID()], {
         code: 'test',
       });
 
@@ -97,7 +97,7 @@ describe('AGMA Analytics Adapter', () => {
           },
         },
       }));
-      const payload = getPayload([generateUUID()], {
+      const payload = getPayload([utils.generateUUID()], {
         code: 'test',
       });
       expect(payload).to.have.all.keys([...nonExtendedKey, 'debug']);
@@ -113,7 +113,7 @@ describe('AGMA Analytics Adapter', () => {
           },
         },
       }));
-      const payload = getPayload([generateUUID()], {
+      const payload = getPayload([utils.generateUUID()], {
         code: 'test',
       });
       expect(payload).to.have.all.keys([...extendedKey, 'debug']);
@@ -242,6 +242,35 @@ describe('AGMA Analytics Adapter', () => {
     });
   });
 
+  it('can be overwritten with a global agma variable', () => {
+    sandbox.stub(utils, 'getWindowSelf').returns({
+      agma: {
+        ortb2: {
+          site: {
+            domain: 'overwritten.com',
+          },
+        },
+      },
+    });
+
+    const ortb2 = {
+      site: {
+        domain: 'inital.com'
+      }
+    };
+
+    const result = getOrtb2Data({
+      ortb2,
+    });
+
+    expect(result).to.deep.equal({
+      user: undefined,
+      site: {
+        domain: 'overwritten.com',
+      }
+    });
+  });
+
   describe('Event Payload', () => {
     beforeEach(() => {
       agmaAnalyticsAdapter.enableAnalytics({
@@ -278,26 +307,26 @@ describe('AGMA Analytics Adapter', () => {
         },
       }));
       const auction = {
-        auctionId: generateUUID(),
+        auctionId: utils.generateUUID(),
       };
 
       events.emit(EVENTS.AUCTION_INIT, {
-        auctionId: generateUUID('1'),
+        auctionId: utils.generateUUID('1'),
         auction,
       });
 
       clock.tick(200);
 
       events.emit(EVENTS.AUCTION_INIT, {
-        auctionId: generateUUID('2'),
+        auctionId: utils.generateUUID('2'),
         auction,
       });
       events.emit(EVENTS.AUCTION_INIT, {
-        auctionId: generateUUID('3'),
+        auctionId: utils.generateUUID('3'),
         auction,
       });
       events.emit(EVENTS.AUCTION_INIT, {
-        auctionId: generateUUID('4'),
+        auctionId: utils.generateUUID('4'),
         auction,
       });
 
@@ -324,7 +353,7 @@ describe('AGMA Analytics Adapter', () => {
         },
       }));
       const auction = {
-        auctionId: generateUUID(),
+        auctionId: utils.generateUUID(),
       };
 
       events.emit(EVENTS.AUCTION_INIT, auction);
@@ -348,7 +377,7 @@ describe('AGMA Analytics Adapter', () => {
       }));
 
       const auction = {
-        auctionId: generateUUID(),
+        auctionId: utils.generateUUID(),
       };
 
       events.emit(EVENTS.AUCTION_INIT, auction);
@@ -373,7 +402,7 @@ describe('AGMA Analytics Adapter', () => {
         },
       });
       const auction = {
-        auctionId: generateUUID(),
+        auctionId: utils.generateUUID(),
       };
 
       events.emit(EVENTS.AUCTION_INIT, auction);

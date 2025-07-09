@@ -136,7 +136,7 @@ function impression(slot) {
       mediaType: 'native',
       size: '\*'
     });
-    bidFloorFromModule = floorInfo.currency === 'USD' ? floorInfo.floor : undefined;
+    bidFloorFromModule = floorInfo?.currency === 'USD' ? floorInfo?.floor : undefined;
   }
   const imp = {
     id: slot.bidId,

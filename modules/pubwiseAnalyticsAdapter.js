@@ -46,7 +46,6 @@ let sessTimeoutName = 'sess_timeout';
 
 function enrichWithSessionInfo(dataBag) {
   try {
-    // eslint-disable-next-line
     // console.log(sessionData);
     dataBag['session_id'] = sessionData.sessionId;
     dataBag['activation_id'] = sessionData.activationId;
@@ -315,7 +314,7 @@ pubwiseAnalytics.ensureSession = function () {
   } else if (sessionId != null) {
     sessionData.sessionId = sessionId;
   }
-  // eslint-disable-next-line
+
   // console.log('ensured session');
   extendUserSessionTimeout();
 };

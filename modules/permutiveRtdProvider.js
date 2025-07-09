@@ -95,7 +95,8 @@ export function getModuleConfig(customModuleConfig) {
 /**
  * Sets ortb2 config for ac bidders
  * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
- * @param {Object} customModuleConfig - Publisher config for module
+ * @param {Object} moduleConfig - Publisher config for module
+ * @param {Object} segmentData - Segment data grouped by bidder or type
  */
 export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
@@ -129,13 +130,13 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
 
 /**
  * Updates `user.data` object in existing bidder config with Permutive segments
- * @param string bidder - The bidder
+ * @param {string} bidder - The bidder identifier
  * @param {Object} currConfig - Current bidder config
- * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
- *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
  * @param {Object} topics - Privacy Sandbox Topics, keyed by IAB taxonomy version (600, 601, etc.)
+ * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
+ *                                           the transformations on user data to include the ORTB2 object
  * @param {Object} segmentData - The segments available for targeting
  * @return {Object} Merged ortb2 object
  */
@@ -270,7 +271,7 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
  */
 function makeSafe (fn) {
   try {
-    fn()
+    return fn()
   } catch (e) {
     logError(e)
   }
@@ -310,23 +311,71 @@ export function isPermutiveOnPage () {
  * @param {number} maxSegs - Maximum number of segments to be included
  * @return {Object}
  */
-export function getSegments (maxSegs) {
-  const legacySegs = readSegments('_psegs', []).map(Number).filter(seg => seg >= 1000000).map(String)
-  const _ppam = readSegments('_ppam', [])
-  const _pcrprs = readSegments('_pcrprs', [])
-
+export function getSegments(maxSegs) {
   const segments = {
-    ac: [..._pcrprs, ..._ppam, ...legacySegs],
-    ix: readSegments('_pindexs', []),
-    rubicon: readSegments('_prubicons', []),
-    appnexus: readSegments('_papns', []),
-    gam: readSegments('_pdfps', []),
-    ssp: readSegments('_pssps', {
-      cohorts: [],
-      ssps: []
+    ac:
+      makeSafe(() => {
+        const legacySegs =
+          makeSafe(() =>
+            readSegments('_psegs', [])
+              .map(Number)
+              .filter((seg) => seg >= 1000000)
+              .map(String),
+          ) || [];
+        const _ppam = makeSafe(() => readSegments('_ppam', []).map(String)) || [];
+        const _pcrprs = makeSafe(() => readSegments('_pcrprs', []).map(String)) || [];
+
+        return [..._pcrprs, ..._ppam, ...legacySegs];
+      }) || [],
+
+    ix:
+      makeSafe(() => {
+        const _pindexs = readSegments('_pindexs', []);
+        return _pindexs.map(String);
+      }) || [],
+
+    rubicon:
+      makeSafe(() => {
+        const _prubicons = readSegments('_prubicons', []);
+        return _prubicons.map(String);
+      }) || [],
+
+    appnexus:
+      makeSafe(() => {
+        const _papns = readSegments('_papns', []);
+        return _papns.map(String);
+      }) || [],
+
+    gam:
+      makeSafe(() => {
+        const _pdfps = readSegments('_pdfps', []);
+        return _pdfps.map(String);
+      }) || [],
+
+    ssp: makeSafe(() => {
+      const _pssps = readSegments('_pssps', {
+        cohorts: [],
+        ssps: [],
+      });
+
+      return {
+        cohorts: makeSafe(() => _pssps.cohorts.map(String)) || [],
+        ssps: makeSafe(() => _pssps.ssps.map(String)) || [],
+      };
     }),
-    topics: readSegments('_ppsts', {}),
-  }
+
+    topics:
+      makeSafe(() => {
+        const _ppsts = readSegments('_ppsts', {});
+
+        const topics = {};
+        for (const [k, value] of Object.entries(_ppsts)) {
+          topics[k] = makeSafe(() => value.map(String)) || [];
+        }
+
+        return topics;
+      }) || {},
+  };
 
   for (const bidder in segments) {
     if (bidder === 'ssp') {
@@ -342,7 +391,8 @@ export function getSegments (maxSegs) {
     }
   }
 
-  return segments
+  logger.logInfo(`Read segments`, segments)
+  return segments;
 }
 
 /**
@@ -393,7 +443,7 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  * Pull the latest configuration and cohort information and update accordingly.
  *
  * @param reqBidsConfigObj - Bidder provided config for request
- * @param customModuleConfig - Publisher provide config
+ * @param moduleConfig - Publisher provided config
  */
 export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
   const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))

@@ -246,7 +246,7 @@ describe('RetailSpot Adapter', function () {
   ];
   const adapter = newBidder(spec);
 
-  const DEV_URL = 'http://localhost:8090/';
+  const DEV_URL = 'http://localhost:3030/';
 
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -333,7 +333,7 @@ describe('RetailSpot Adapter', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(request.url).to.contain('https://ssp.retail-spot.io/prebid');
+      expect(request.url).to.contain('https://hbapi.retailspotads.com/');
       expect(request.method).to.equal('POST');
 
       expect(payload).to.deep.equal(bidderRequest);
@@ -344,7 +344,7 @@ describe('RetailSpot Adapter', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(request.url).to.contain('https://ssp.retail-spot.io/prebid');
+      expect(request.url).to.contain('https://hbapi.retailspotads.com/');
       expect(request.method).to.equal('POST');
 
       expect(payload).to.deep.equal(bidderRequest);
@@ -355,7 +355,7 @@ describe('RetailSpot Adapter', function () {
       const request = spec.buildRequests(bidRequestMultiPlacements, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(request.url).to.contain('https://ssp.retail-spot.io/prebid');
+      expect(request.url).to.contain('https://hbapi.retailspotads.com/');
       expect(request.method).to.equal('POST');
 
       expect(payload).to.deep.equal(bidderRequest);

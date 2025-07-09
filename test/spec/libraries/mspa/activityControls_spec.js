@@ -45,6 +45,13 @@ describe('Consent interpretation', () => {
       expect(isBasicConsentDenied(mkConsent({
         KnownChildSensitiveDataConsents: [0, null]
       }))).to.be.false;
+    });
+
+    it('should deny when Version = 2 & childconsent[3] is 1', () => {
+      expect(isBasicConsentDenied(mkConsent({
+        Version: 2,
+        KnownChildSensitiveDataConsents: [null, null, 1]
+      }))).to.be.true;
     })
   });
 
@@ -84,13 +91,60 @@ describe('Consent interpretation', () => {
       expect(result).to.equal(false);
     });
     Object.entries({
-      'health information': 2,
-      'biometric data': 6,
-    }).forEach(([t, flagNo]) => {
-      it(`'should be true (consent denied to add ufpd) if no consent to process ${t}'`, () => {
-        const consent = mkConsent();
-        consent.SensitiveDataProcessing[flagNo] = 1;
-        expect(isTransmitUfpdConsentDenied(consent)).to.be.true;
+      'health information': {
+        flagNo: 2,
+        consents: {
+          1: true,
+          2: false
+        },
+        versions: [1, 2]
+      },
+      'biometric data': {
+        flagNo: 6,
+        consents: {
+          1: true,
+          2: true
+        },
+        versions: [1, 2]
+      },
+      'consumer health data': {
+        flagNo: 12,
+        consents: {
+          1: true,
+          2: false
+        },
+        versions: [2]
+      },
+      'status as transgender': {
+        flagNo: 15,
+        consents: {
+          1: true,
+          2: true,
+        },
+        versions: [2]
+      }
+
+    }).forEach(([t, {flagNo, consents, versions}]) => {
+      describe(t, () => {
+        Object.entries(consents).forEach(([flagValue, shouldBeDenied]) => {
+          const flagDescription = ({
+            1: 'denied',
+            2: 'given'
+          })[flagValue]
+          describe(`consent is ${flagValue} (${flagDescription})`, () => {
+            let consent;
+            beforeEach(() => {
+              consent = mkConsent();
+              consent.SensitiveDataProcessing[flagNo] = parseInt(flagValue, 10);
+            });
+            versions.forEach(version => {
+              it(`should ${shouldBeDenied ? 'deny' : 'allow'} (version ${version})`, () => {
+                consent.Version = version;
+                expect(isTransmitUfpdConsentDenied(consent)).to.eql(shouldBeDenied);
+              })
+            })
+          })
+        })
       })
     });
 
@@ -181,13 +235,18 @@ describe('mspaRule', () => {
       expect(mkRule()().allow).to.equal(false);
     });
 
+    it('should deny when consent is using version other than 1/2', () => {
+      consent = {Version: 3};
+      expect(mkRule()().allow).to.equal(false);
+    })
+
     Object.entries({
       'denies': true,
       'allows': false
     }).forEach(([t, denied]) => {
       it(`should check if deny fn ${t}`, () => {
         denies.returns(denied);
-        consent = {mock: 'value'};
+        consent = {mock: 'value', Version: 1};
         const result = mkRule()();
         sinon.assert.calledWith(denies, consent);
         if (denied) {
@@ -212,6 +271,7 @@ describe('setupRules', () => {
       parsedSections: {
         mockApi: [
           {
+            Version: 1,
             mock: 'consent'
           }
         ]
@@ -226,8 +286,15 @@ describe('setupRules', () => {
   it('should use flatten section data for the given api', () => {
     runSetup('mockApi', [1]);
     expect(isAllowed('mockActivity', {})).to.equal(false);
-    sinon.assert.calledWith(rules.mockActivity, {mock: 'consent'})
+    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi[0])
   });
+
+  it('should accept already flattened section data', () => {
+    consent.parsedSections.mockApi = {flat: 'consent', Version: 1};
+    runSetup('mockApi', [1]);
+    isAllowed('mockActivity', {});
+    sinon.assert.calledWith(rules.mockActivity, consent.parsedSections.mockApi)
+  })
 
   it('should not choke when no consent data is available', () => {
     consent = null;
@@ -241,11 +308,11 @@ describe('setupRules', () => {
   });
 
   it('should pass flattened consent through normalizeConsent', () => {
-    const normalize = sinon.stub().returns({normalized: 'consent'})
+    const normalize = sinon.stub().returns({normalized: 'consent', Version: 1})
     runSetup('mockApi', [1], normalize);
     expect(isAllowed('mockActivity', {})).to.equal(false);
-    sinon.assert.calledWith(normalize, {mock: 'consent'});
-    sinon.assert.calledWith(rules.mockActivity, {normalized: 'consent'});
+    sinon.assert.calledWith(normalize, {mock: 'consent', Version: 1});
+    sinon.assert.calledWith(rules.mockActivity, {normalized: 'consent', Version: 1});
   });
 
   it('should return a function that unregisters activity controls', () => {

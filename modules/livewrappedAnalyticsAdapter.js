@@ -77,6 +77,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         logInfo('LIVEWRAPPED_BID_RESPONSE:', args);
 
         let bidResponse = cache.auctions[args.auctionId].bids[args.requestId];
+        if (bidResponse.cpm > args.cpm) break; // For now we only store the highest bid
         bidResponse.isBid = args.getStatusCode() === STATUS.GOOD;
         bidResponse.width = args.width;
         bidResponse.height = args.height;
@@ -84,7 +85,7 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.originalCpm = prebidGlobal.convertCurrency(args.originalCpm, args.originalCurrency, args.currency);
         bidResponse.ttr = args.timeToRespond;
         bidResponse.readyToSend = 1;
-        bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
+        bidResponse.mediaType = getMediaTypeEnum(args.mediaType);
         bidResponse.floorData = args.floorData;
         bidResponse.meta = args.meta;
 
@@ -115,6 +116,11 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         logInfo('LIVEWRAPPED_BID_WON:', args);
         let wonBid = cache.auctions[args.auctionId].bids[args.requestId];
         wonBid.won = true;
+        wonBid.width = args.width;
+        wonBid.height = args.height;
+        wonBid.cpm = args.cpm;
+        wonBid.originalCpm = prebidGlobal.convertCurrency(args.originalCpm, args.originalCurrency, args.currency);
+        wonBid.mediaType = getMediaTypeEnum(args.mediaType);
         wonBid.floorData = args.floorData;
         wonBid.rUp = args.rUp;
         wonBid.meta = args.meta;
@@ -184,6 +190,10 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
 };
+
+function getMediaTypeEnum(mediaType) {
+  return mediaType == 'native' ? 2 : (mediaType == 'video' ? 4 : 1);
+}
 
 function getSentRequests() {
   var sentRequests = [];

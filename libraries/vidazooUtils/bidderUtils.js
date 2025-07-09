@@ -171,10 +171,10 @@ export function createUserSyncGetter(options = {
     const {iframeEnabled, pixelEnabled} = syncOptions;
     const {gdprApplies, consentString = ''} = gdprConsent;
     const {gppString, applicableSections} = gppConsent;
+    const coppa = config.getConfig('coppa') ? 1 : 0;
 
     const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-    let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`;
-
+    let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}&coppa=${encodeURIComponent((coppa))}`;
     if (gppString && applicableSections?.length) {
       params += '&gpp=' + encodeURIComponent(gppString);
       params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
@@ -245,6 +245,9 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
   const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
+  const contentLang = deepAccess(bidderRequest, 'ortb2.site.content.language') || document.documentElement.lang;
+  const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa', 0);
+  const device = deepAccess(bidderRequest, 'ortb2.device', {});
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -253,7 +256,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
       size: '*'
     });
 
-    if (floorInfo.currency === 'USD') {
+    if (floorInfo?.currency === 'USD') {
       bidFloor = floorInfo.floor;
     }
   }
@@ -278,6 +281,8 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     gpid: gpid,
     cat: cat,
     contentData,
+    contentLang,
+    coppa,
     userData: userData,
     pagecat: pagecat,
     transactionId: ortb2Imp?.ext?.tid,
@@ -286,6 +291,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestsCount: bidderRequestsCount,
     bidderWinsCount: bidderWinsCount,
     bidderTimeout: bidderTimeout,
+    device,
     ...uniqueRequestData
   };
 
@@ -322,6 +328,22 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     if (fledge) {
       data.fledge = fledge;
     }
+  }
+
+  const api = deepAccess(mediaTypes, 'video.api', []);
+  if (api.includes(7)) {
+    const sourceExt = deepAccess(bidderRequest, 'ortb2.source.ext');
+    if (sourceExt?.omidpv) {
+      data.omidpv = sourceExt.omidpv;
+    }
+    if (sourceExt?.omidpn) {
+      data.omidpn = sourceExt.omidpn;
+    }
+  }
+
+  const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+  if (dsa) {
+    data.dsa = dsa;
   }
 
   _each(ext, (value, key) => {
@@ -446,7 +468,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
 
   return function buildRequests(validBidRequests, bidderRequest) {
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-    const bidderTimeout = config.getConfig('bidderTimeout');
+    const bidderTimeout = bidderRequest.timeout || config.getConfig('bidderTimeout');
 
     const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
 

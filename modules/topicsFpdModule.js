@@ -1,7 +1,7 @@
 import {isEmpty, logError, logWarn, mergeDeep, safeJSONParse} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
-import {GreedyPromise} from '../src/utils/promise.js';
+import {PbPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
 import {getCoreStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
@@ -92,13 +92,13 @@ export function getTopics(doc = document) {
 
   try {
     if (isTopicsSupported(doc)) {
-      topics = GreedyPromise.resolve(doc.browsingTopics());
+      topics = PbPromise.resolve(doc.browsingTopics());
     }
   } catch (e) {
     logError('Could not call topics API', e);
   }
   if (topics == null) {
-    topics = GreedyPromise.resolve([]);
+    topics = PbPromise.resolve([]);
   }
 
   return topics;

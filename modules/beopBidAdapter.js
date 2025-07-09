@@ -1,28 +1,33 @@
+import { getCurrencyFromBidderRequest } from '../libraries/ortb2Utils/currency.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 import {
   buildUrl,
-  deepAccess, getBidIdParameter,
+  deepAccess, generateUUID, getBidIdParameter,
   getValue,
   isArray,
+  isPlainObject,
   logInfo,
   logWarn,
   triggerPixel
 } from '../src/utils.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const BIDDER_CODE = 'beop';
-const ENDPOINT_URL = 'https://hb.beop.io/bid';
+const ENDPOINT_URL = 'https://hb.collectiveaudience.co/bid';
+const COOKIE_NAME = 'beopid';
 const TCF_VENDOR_ID = 666;
 
 const validIdRegExp = /^[0-9a-fA-F]{24}$/
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -52,7 +57,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the BeOp's server
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const slots = validBidRequests.map(beOpRequestSlotsMaker);
+    const slots = validBidRequests.map((bid) => beOpRequestSlotsMaker(bid, bidderRequest));
     const firstPartyData = bidderRequest.ortb2 || {};
     const psegs = firstPartyData.user?.ext?.permutive || firstPartyData.user?.ext?.data?.permutive || [];
     const userBpSegs = firstPartyData.user?.ext?.bpsegs || firstPartyData.user?.ext?.data?.bpsegs || [];
@@ -63,22 +68,36 @@ export const spec = {
     const kwdsFromRequest = firstSlot.kwds;
     let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
+    let beopid = '';
+    if (storage.cookiesAreEnabled) {
+      beopid = storage.getCookie(COOKIE_NAME, undefined);
+      if (!beopid) {
+        beopid = generateUUID();
+        let expirationDate = new Date();
+        expirationDate.setTime(expirationDate.getTime() + 86400 * 183 * 1000);
+        storage.setCookie(COOKIE_NAME, beopid, expirationDate.toUTCString());
+      }
+    } else {
+      storage.setCookie(COOKIE_NAME, '', 0);
+    }
+
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
       pid: firstSlot.pid,
-      psegs: psegs,
-      bpsegs: (userBpSegs.concat(siteBpSegs)).map(item => item.toString()),
+      bpsegs: (userBpSegs.concat(siteBpSegs, psegs)).map(item => item.toString()),
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
       dbg: false,
+      fg: beopid,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
       eids: firstSlot.eids,
+      pv: '$prebid.version$'
     };
 
     const payloadString = JSON.stringify(payloadObject);
@@ -104,7 +123,7 @@ export const spec = {
     logWarn(BIDDER_CODE + ': timed out request');
     triggerPixel(buildUrl({
       protocol: 'https',
-      hostname: 't.beop.io',
+      hostname: 't.collectiveaudience.co',
       pathname: '/bid',
       search: trackingParams
     }));
@@ -118,19 +137,47 @@ export const spec = {
     logInfo(BIDDER_CODE + ': won request');
     triggerPixel(buildUrl({
       protocol: 'https',
-      hostname: 't.beop.io',
+      hostname: 't.collectiveaudience.co',
       pathname: '/bid',
       search: trackingParams
     }));
   },
-  onSetTargeting: function(bid) {}
+
+  /**
+   * User syncs.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {UserSync[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function(syncOptions, serverResponses) {
+    const syncs = [];
+
+    if (serverResponses.length > 0) {
+      const body = serverResponses[0].body;
+
+      if (syncOptions.iframeEnabled && Array.isArray(body.sync_frames)) {
+        body.sync_frames.forEach(url => {
+          syncs.push({ type: 'iframe', url });
+        });
+      }
+
+      if (syncOptions.pixelEnabled && Array.isArray(body.sync_pixels)) {
+        body.sync_pixels.forEach(url => {
+          syncs.push({ type: 'image', url });
+        });
+      }
+    }
+
+    return syncs;
+  }
 }
 
 function buildTrackingParams(data, info, value) {
   let params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: params.accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : params.accountId,
+    pid: params.accountId ?? (data.ad?.match(/account: \“([a-f\d]{24})\“/)?.[1] ?? ''),
     nid: params.networkId,
     nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
@@ -138,17 +185,18 @@ function buildTrackingParams(data, info, value) {
     se_ca: 'bid',
     se_ac: info,
     se_va: value,
-    url: pageUrl
+    url: pageUrl,
+    pv: '$prebid.version$'
   };
 }
 
-function beOpRequestSlotsMaker(bid) {
+function beOpRequestSlotsMaker(bid, bidderRequest) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-  const publisherCurrency = config.getConfig('currency.adServerCurrency') || getValue(bid.params, 'currency') || 'EUR';
+  const publisherCurrency = getCurrencyFromBidderRequest(bidderRequest) || getValue(bid.params, 'currency') || 'EUR';
   let floor;
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({currency: publisherCurrency, mediaType: 'banner', size: [1, 1]});
-    if (typeof floorInfo === 'object' && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
+    if (isPlainObject(floorInfo) && floorInfo.currency === publisherCurrency && !isNaN(parseFloat(floorInfo.floor))) {
       floor = parseFloat(floorInfo.floor);
     }
   }
