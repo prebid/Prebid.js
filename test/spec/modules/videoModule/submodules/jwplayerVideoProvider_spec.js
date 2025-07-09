@@ -1018,8 +1018,8 @@ describe('utils', function () {
     it('should convert segments to objects', function () {
       const segs = ['a', 'b'];
       expect(getSegments(segs)).to.deep.equal([
-        {id: 'a', value: 'a'},
-        {id: 'b', value: 'b'}
+        {id: 'a'},
+        {id: 'b'}
       ]);
     });
   });
@@ -1031,7 +1031,7 @@ describe('utils', function () {
     });
 
     it('should set media id and segments', function () {
-      const segments = [{id: 'x', value: 'x'}];
+      const segments = [{id: 'x'}];
       expect(getContentDatum('id1', segments)).to.deep.equal({
         name: 'jwplayer.com',
         segment: segments,

@@ -836,7 +836,6 @@ export const utils = {
     const formattedSegments = jwpsegs.reduce((convertedSegments, rawSegment) => {
       convertedSegments.push({
         id: rawSegment,
-        value: rawSegment
       });
       return convertedSegments;
     }, []);
