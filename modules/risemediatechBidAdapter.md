@@ -1,12 +1,12 @@
 # Overview
 
-Module Name : RisemediaTech Bidder Adapter
+Module Name : RiseMediaTech Bidder Adapter
 Module Type : Bid Adapter
 Maintainer : prebid@risemediatech.io
 
 # Description
-Connects to RisemediaTech Exchange for bids
-RisemediaTech supports Display & Video(Instream) currently.
+Connects to RiseMediaTech Exchange for bids
+RiseMediaTech supports Display & Video(Instream) currently.
 
 # Sample Ad Unit : Banner
 ```
