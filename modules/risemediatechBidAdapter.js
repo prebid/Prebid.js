@@ -25,10 +25,10 @@ const converter = ortbConverter({
         logInfo('Setting bid floor for impression:', bidRequest.params.bidfloor);
         imp.bidfloor = bidRequest.params.bidfloor;
       }
-      if (bidRequest.params.testMode) {
-        logInfo('Invoking test impression:', bidRequest.params.testMode);
-        imp.ext.test = 0;
-      }
+      // if (bidRequest.params.testMode) {
+      //   logInfo('Invoking test impression:', bidRequest.params.testMode);
+      //   imp.ext.test = 1;
+      // }
     }
     if (mediaTypes[BANNER]) {
       logInfo('Adding banner media type to impression:', mediaTypes[BANNER]);
@@ -49,6 +49,15 @@ const converter = ortbConverter({
     request.cur = [DEFAULT_CURRENCY];
     request.tmax = bidderRequest.timeout;
     request.test = bidderRequest.test || 0;
+
+    if (Array.isArray(bidderRequest.bids)) {
+      const hasTestMode = bidderRequest.bids.some(bid => bid.params && bid.params.testMode === 1);
+      if (hasTestMode) {
+        request.ext = request.ext || {};
+        request.ext.test = 1;
+        logInfo('Test mode detected in bid params, setting test flag in request:', request.ext.test);
+      }
+    }
 
     if (bidderRequest.gdprConsent) {
       logInfo('Adding GDPR consent information to request:', bidderRequest.gdprConsent);

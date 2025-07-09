@@ -24,8 +24,8 @@ RisemediaTech supports Display & Video(Instream) currently.
                 {
                     bidder: 'risemediatech',
                     params: {
-                        bidfloor: 0.5,        
-                        testMode: 0
+                        bidfloor: 0.001,        
+                        testMode: 1
                     }
                 }
             ]
@@ -55,8 +55,8 @@ RisemediaTech supports Display & Video(Instream) currently.
                 {   
                     bidder: 'risemediatech',
                     params: {
-                        bidfloor: 0.1
-                        testMode: 0
+                        bidfloor: 0.001
+                        testMode: 1
                     }
                 }
             ]
