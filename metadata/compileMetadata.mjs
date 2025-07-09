@@ -23,7 +23,7 @@ const modules = {
   RtdProvider: 'rtd'
 };
 
-async function metadataFor(metas) {
+async function metadataFor(moduleName, metas) {
   const disclosures = {};
   for (const meta of metas) {
     if (meta.disclosureURL == null && meta.gvlid != null) {
@@ -31,7 +31,10 @@ async function metadataFor(metas) {
     }
     if (meta.disclosureURL) {
       const disclosure = await fetchDisclosure(meta);
-      disclosures[meta.disclosureURL] = disclosure;
+      disclosures[meta.disclosureURL] = {
+        timestamp: new Date().toISOString(),
+        disclosures: disclosure
+      };
     }
   }
   return {
@@ -56,10 +59,14 @@ async function compileCoreMetadata() {
   return Object.keys(modules);
 }
 
+function moduleMetadataPath(moduleName) {
+  return path.resolve(`./metadata/modules/${moduleName}.json`);
+}
+
 async function updateModuleMetadata(moduleName, metadata) {
   fs.writeFileSync(
-    path.resolve(`./metadata/modules/${moduleName}.json`),
-    JSON.stringify(await metadataFor(metadata), null, 2)
+    moduleMetadataPath(moduleName),
+    JSON.stringify(await metadataFor(moduleName, metadata), null, 2)
   );
 }
 
