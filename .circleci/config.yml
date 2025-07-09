@@ -1,0 +1,12 @@
+version: 2.1
+jobs:
+  noop:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - run: echo "CircleCI build skipped - using GitHub Actions."
+workflows:
+  version: 2
+  default:
+    jobs:
+      - noop
