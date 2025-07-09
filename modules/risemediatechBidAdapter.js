@@ -37,13 +37,7 @@ const converter = ortbConverter({
       logInfo('Adding video media type to impression:', mediaTypes[VIDEO]);
       imp.video = {
         ...mediaTypes[VIDEO],
-        mimes: bidRequest.params.mimes,
-        minduration: bidRequest.params.minduration,
-        maxduration: bidRequest.params.maxduration,
-        startdelay: bidRequest.params.startdelay,
-        maxseq: bidRequest.params.maxseq,
-        poddur: bidRequest.params.poddur,
-        protocols: bidRequest.params.protocols
+        // all video parameters are mapped.
       };
     }
 
