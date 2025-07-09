@@ -46,7 +46,12 @@ import {USERSYNC_DEFAULT_CONFIG, type UserSyncConfig} from '../../src/userSync.j
 import type {ORTBRequest} from "../../src/types/ortb/request.d.ts";
 import type {AnyFunction, Wraps} from "../../src/types/functions.d.ts";
 import type {ProviderParams, UserId, UserIdProvider, UserIdConfig, IdProviderSpec, ProviderResponse} from "./spec.ts";
-import { ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE, ACTIVITY_PARAM_STORAGE_TYPE } from '../../src/activities/params.js';
+import {
+    ACTIVITY_PARAM_COMPONENT_NAME,
+    ACTIVITY_PARAM_COMPONENT_TYPE,
+    ACTIVITY_PARAM_STORAGE_KEY,
+    ACTIVITY_PARAM_STORAGE_TYPE
+} from '../../src/activities/params.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -1179,7 +1184,10 @@ declare module '../../src/prebidGlobal' {
 
 const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
   return (params) => {
-    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID) return;
+    if (
+        params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_UID ||
+        !params[ACTIVITY_PARAM_STORAGE_KEY] // do not check if there's no storage key - e.g. calls to `cookiesAreEnabled()`
+    ) return;
 
     const matchesName = (query) => params[ACTIVITY_PARAM_COMPONENT_NAME]?.toLowerCase() === query?.toLowerCase();
     const submoduleConfig = userIdsConfig.find((configItem) => matchesName(configItem.name));
@@ -1187,7 +1195,7 @@ const enforceStorageTypeRule = (userIdsConfig, enforceStorageType) => {
     if (!submoduleConfig || !submoduleConfig.storage) return;
 
     if (params[ACTIVITY_PARAM_STORAGE_TYPE] !== submoduleConfig.storage.type) {
-      const reason = `${submoduleConfig.name} attempts to store data in ${params[ACTIVITY_PARAM_STORAGE_TYPE]} while configuration allows ${submoduleConfig.storage.type}.`;
+      const reason = `${submoduleConfig.name} uses ${params[ACTIVITY_PARAM_STORAGE_TYPE]} while configuration allows ${submoduleConfig.storage.type}.`;
       if (enforceStorageType) {
         return {allow: false, reason};
       } else {

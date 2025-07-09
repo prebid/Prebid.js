@@ -7,14 +7,22 @@
 
 import {parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {newStorageManager} from '../src/storageManager.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
 
 import type {IdProviderSpec} from "./userId/spec.ts";
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'sharedId'});
+export const storage = newStorageManager({
+    moduleType: MODULE_TYPE_UID,
+    moduleName: 'sharedId',
+    // turn off 'enforceStorageType' checks since we are using this only to look for an optout flag
+    // note that this also turns off storageControl (disclosures) checks
+    // be careful to review if this is appropriate when any changes are made to how this storageManager is used
+    advertiseKeys: false
+});
+
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
