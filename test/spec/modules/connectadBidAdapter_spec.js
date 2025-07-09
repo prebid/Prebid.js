@@ -295,8 +295,8 @@ describe('ConnectAd Adapter', function () {
           ]
         };
 
-        const bidRequest = {
-		      ortb2: {
+        let bidRequest = {
+          ortb2: {
             regs: {
               ext: {
                 dsa

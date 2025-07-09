@@ -14,7 +14,7 @@ describe('blueconicRtdProvider', function() {
 
   describe('blueconicSubmodule', function() {
     it('successfully instantiates', function () {
-		  expect(blueconicSubmodule.init()).to.equal(true);
+      expect(blueconicSubmodule.init()).to.equal(true);
     });
   });
 

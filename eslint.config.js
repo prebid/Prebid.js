@@ -240,9 +240,7 @@ module.exports = [
       'no-redeclare': 'off',
       'import-x/no-duplicates': 'off',
       'no-global-assign': 'off',
-      'default-case-last': 'off',
-      '@stylistic/no-mixed-spaces-and-tabs': 'off',
-      '@stylistic/no-tabs': 'off',
+      'default-case-last': 'off'
     }
   },
   {

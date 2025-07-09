@@ -172,7 +172,7 @@ export function baseImpressionVerifier(bidTracker_) {
       return;
     }
 
-    for (const wrapperId in adWrapperIds) {
+    for (const wrapperId of adWrapperIds) {
       const bidInfo = bidTracker.remove(wrapperId);
       if (bidInfo) {
         return bidInfo;

@@ -64,7 +64,7 @@ function brandSafety(badWords, maxScore) {
    * @param {string} rule rule type (full, partial, starts, ends, regexp)
    * @param {string} decodedWord decoded word
    * @param {string} wordsToMatch list of all words on the page separated by delimiters
-   * @returns {object|boolean} matched rule and occurances. If nothing is matched returns false
+   * @returns {object|boolean} matched rule and occurrences. If nothing is matched returns false
    */
   const wordsMatchedWithRule = function (rule, decodedWord, wordsToMatch) {
     if (!wordsToMatch) {

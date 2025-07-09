@@ -386,7 +386,7 @@ export const spec = {
    */
   //   onTimeout: function (data) {
   //     // console.log('onTimeout', data);
-  //     // Bidder specifc code
+  //     // Bidder specific code
   //   },
 
   /**

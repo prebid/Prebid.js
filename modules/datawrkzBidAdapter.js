@@ -406,40 +406,42 @@ function generateNativeDataObj(obj, type, id) {
   };
 }
 
+function createBaseBidResponse(bidRequest, bidderBid, bidResponses) {
+  const responseCPM = parseFloat(bidderBid.price);
+  if (responseCPM === 0 || isNaN(responseCPM)) {
+    let bid = createBid(2);
+    bid.requestId = bidRequest.bidId;
+    bid.bidderCode = bidRequest.bidder;
+    bidResponses.push(bid);
+    return null;
+  }
+  let bidResponse = createBid(1);
+  bidRequest.status = STATUS.GOOD;
+  bidResponse.requestId = bidRequest.bidId;
+  bidResponse.placementCode = bidRequest.placementCode || '';
+  bidResponse.cpm = responseCPM;
+  bidResponse.creativeId = bidderBid.id;
+  bidResponse.bidderCode = bidRequest.bidder;
+  bidResponse.ttl = 300;
+  bidResponse.netRevenue = true;
+  bidResponse.currency = 'USD';
+  return bidResponse;
+}
+
 /* Convert banner bid response to compatible format */
 function buildBannerResponse(bidRequest, bidResponse) {
   const bidResponses = [];
   bidResponse.seatbid[0].bid.forEach(function (bidderBid) {
-    let responseCPM;
-    let placementCode = '';
-
     if (bidRequest) {
-      const bidResponse = createBid();
-      placementCode = bidRequest.placementCode;
-      bidRequest.status = STATUS.GOOD;
-      responseCPM = parseFloat(bidderBid.price);
-      if (responseCPM === 0 || isNaN(responseCPM)) {
-        const bid = createBid();
-        bid.requestId = bidRequest.bidId;
-        bid.bidderCode = bidRequest.bidder;
-        bidResponses.push(bid);
-        return;
-      }
-      const bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
-      bidResponse.requestId = bidRequest.bidId;
-      bidResponse.placementCode = placementCode;
-      bidResponse.cpm = responseCPM;
+      let bidResponse = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
+      if (!bidResponse) return;
+      let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
       bidResponse.size = bidSizes;
       bidResponse.width = parseInt(bidderBid.w);
       bidResponse.height = parseInt(bidderBid.h);
       const responseAd = bidderBid.adm;
       const responseNurl = '<img src="' + bidderBid.nurl + '" height="0px" width="0px">';
       bidResponse.ad = decodeURIComponent(responseAd + responseNurl);
-      bidResponse.creativeId = bidderBid.id;
-      bidResponse.bidderCode = bidRequest.bidder;
-      bidResponse.ttl = 300;
-      bidResponse.netRevenue = true;
-      bidResponse.currency = 'USD';
       bidResponse.mediaType = BANNER;
       bidResponses.push(bidResponse);
     }
@@ -451,24 +453,9 @@ function buildBannerResponse(bidRequest, bidResponse) {
 function buildNativeResponse(bidRequest, response) {
   const bidResponses = [];
   response.seatbid[0].bid.forEach(function (bidderBid) {
-    let responseCPM;
-    let placementCode = '';
-
     if (bidRequest) {
-      const bidResponse = createBid();
-      placementCode = bidRequest.placementCode;
-      bidRequest.status = STATUS.GOOD;
-      responseCPM = parseFloat(bidderBid.price);
-      if (responseCPM === 0 || isNaN(responseCPM)) {
-        const bid = createBid();
-        bid.requestId = bidRequest.bidId;
-        bid.bidderCode = bidRequest.bidder;
-        bidResponses.push(bid);
-        return;
-      }
-      bidResponse.requestId = bidRequest.bidId;
-      bidResponse.placementCode = placementCode;
-      bidResponse.cpm = responseCPM;
+      let bidResponse = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
+      if (!bidResponse) return;
 
       const nativeResponse = JSON.parse(bidderBid.adm).native;
 
@@ -482,12 +469,7 @@ function buildNativeResponse(bidRequest, response) {
         native[keyVal.key] = keyVal.value;
       });
 
-      bidResponse.creativeId = bidderBid.id;
-      bidResponse.bidderCode = bidRequest.bidder;
-      bidResponse.ttl = 300;
       if (bidRequest.sizes) { bidResponse.size = bidRequest.sizes; }
-      bidResponse.netRevenue = true;
-      bidResponse.currency = 'USD';
       bidResponse.native = native;
       bidResponse.mediaType = NATIVE;
       bidResponses.push(bidResponse);
@@ -500,34 +482,13 @@ function buildNativeResponse(bidRequest, response) {
 function buildVideoResponse(bidRequest, response) {
   const bidResponses = [];
   response.seatbid[0].bid.forEach(function (bidderBid) {
-    let responseCPM;
-    let placementCode = '';
-
     if (bidRequest) {
-      const bidResponse = createBid();
-      placementCode = bidRequest.placementCode;
-      bidRequest.status = STATUS.GOOD;
-      responseCPM = parseFloat(bidderBid.price);
-      if (responseCPM === 0 || isNaN(responseCPM)) {
-        const bid = createBid();
-        bid.requestId = bidRequest.bidId;
-        bid.bidderCode = bidRequest.bidder;
-        bidResponses.push(bid);
-        return;
-      }
-      const context = bidRequest.mediaTypes.video.context;
+      let bidResponse = createBaseBidResponse(bidRequest, bidderBid, bidResponses);
+      if (!bidResponse) return;
+      let context = bidRequest.mediaTypes.video.context;
 
-      bidResponse.requestId = bidRequest.bidId;
-      bidResponse.placementCode = placementCode;
-      bidResponse.cpm = responseCPM;
+      let vastXml = decodeURIComponent(bidderBid.adm);
 
-      const vastXml = decodeURIComponent(bidderBid.adm);
-
-      bidResponse.creativeId = bidderBid.id;
-      bidResponse.bidderCode = bidRequest.bidder;
-      bidResponse.ttl = 300;
-      bidResponse.netRevenue = true;
-      bidResponse.currency = 'USD';
       var ext = bidderBid.ext;
       var vastUrl = '';
       if (ext) {

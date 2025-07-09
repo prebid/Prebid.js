@@ -305,9 +305,9 @@ describe('multibid adapter', function () {
       expect(result.bid).to.deep.equal(bids[2]);
     });
 
-    it('only modifies and returns bids under limit for a specifc bidder in the multibid configuration', function () {
+    it('only modifies and returns bids under limit for a specific bidder in the multibid configuration', function () {
       const adUnitCode = 'test.div';
-      const bids = [{...bidArray[0]}, {...bidArray[1]}];
+      let bids = [{...bidArray[0]}, {...bidArray[1]}];
 
       bids.push({
         'bidderCode': 'bidderA',

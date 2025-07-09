@@ -11,7 +11,7 @@ import {
 } from 'libraries/video/constants/ortb.js';
 
 import {
-  SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION, videoEvents
+  SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION, AD_STARTED, SEEK_END, videoEvents
 } from 'libraries/video/constants/events.js';
 
 import { PLAYBACK_MODE } from 'libraries/video/constants/constants.js';
@@ -320,6 +320,28 @@ describe('JWPlayerProvider', function () {
       expect(playAdSpy.called).to.be.true;
       const argument = playAdSpy.args[0][0];
       expect(argument).to.be.equal('tag');
+    });
+  });
+
+  describe('setAdXml', function () {
+    it('should not call loadAdXml when xml is missing', function () {
+      const player = getPlayerMock();
+      const loadSpy = player.loadAdXml = sinon.spy();
+      const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), {}, {}, {}, {}, sharedUtils);
+      provider.init();
+      provider.setAdXml();
+      expect(loadSpy.called).to.be.false;
+    });
+
+    it('should call loadAdXml with xml and options', function () {
+      const player = getPlayerMock();
+      const loadSpy = player.loadAdXml = sinon.spy();
+      const provider = JWPlayerProvider({ divId: 'test' }, makePlayerFactoryMock(player), {}, {}, {}, {}, sharedUtils);
+      provider.init();
+      const xml = '<VAST></VAST>';
+      const options = {foo: 'bar'};
+      provider.setAdXml(xml, options);
+      expect(loadSpy.calledOnceWith(xml, options)).to.be.true;
     });
   });
 
@@ -970,6 +992,58 @@ describe('utils', function () {
       player.getCurrentAudioTrack = () => 2;
       const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.equal('es');
+    });
+  });
+
+  describe('getJwEvent', function () {
+    const getJwEvent = utils.getJwEvent;
+    it('should map known events', function () {
+      expect(getJwEvent(SETUP_COMPLETE)).to.equal('ready');
+      expect(getJwEvent(SEEK_END)).to.equal('seeked');
+      expect(getJwEvent(AD_STARTED)).to.equal(AD_IMPRESSION);
+    });
+
+    it('should return event name when not mapped', function () {
+      expect(getJwEvent('custom')).to.equal('custom');
+    });
+  });
+
+  describe('getSegments', function () {
+    const getSegments = utils.getSegments;
+    it('should return undefined for empty input', function () {
+      expect(getSegments()).to.be.undefined;
+      expect(getSegments([])).to.be.undefined;
+    });
+
+    it('should convert segments to objects', function () {
+      const segs = ['a', 'b'];
+      expect(getSegments(segs)).to.deep.equal([
+        {id: 'a', value: 'a'},
+        {id: 'b', value: 'b'}
+      ]);
+    });
+  });
+
+  describe('getContentDatum', function () {
+    const getContentDatum = utils.getContentDatum;
+    it('should return undefined when no data provided', function () {
+      expect(getContentDatum()).to.be.undefined;
+    });
+
+    it('should set media id and segments', function () {
+      const segments = [{id: 'x', value: 'x'}];
+      expect(getContentDatum('id1', segments)).to.deep.equal({
+        name: 'jwplayer.com',
+        segment: segments,
+        ext: { cids: ['id1'], segtax: 502 }
+      });
+    });
+
+    it('should set only media id when segments missing', function () {
+      expect(getContentDatum('id2')).to.deep.equal({
+        name: 'jwplayer.com',
+        ext: { cids: ['id2'] }
+      });
     });
   });
 });

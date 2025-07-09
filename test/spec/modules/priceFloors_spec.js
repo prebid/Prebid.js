@@ -910,7 +910,7 @@ describe('the price floors module', function () {
         noFloorSignaled: false
       })
     });
-    it('should use adUnit level data if not setConfig or fetch has occured', function () {
+    it('should use adUnit level data if not setConfig or fetch has occurred', function () {
       handleSetFloorsConfig({
         ...basicFloorConfig,
         data: undefined

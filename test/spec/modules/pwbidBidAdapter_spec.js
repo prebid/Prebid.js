@@ -586,8 +586,8 @@ describe('PubWiseAdapter', function () {
     });
 
     it('identifies banner adm type', function() {
-      const adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵	<h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
-      const newBid = {mediaType: 'unknown'};
+      let adm = '<div style="box-sizing: border-box;width:298px;height:248px;border: 1px solid rgba(0,0,0,.25);border-radius:10px;">↵  <h3 style="margin-top:80px;text-align: center;">PubWise Test Bid</h3>↵</div>';
+      let newBid = {mediaType: 'unknown'};
       _checkMediaType({adm}, newBid);
       expect(newBid.mediaType).to.equal('banner', adm + ' Is a Banner adm');
     });
@@ -888,7 +888,7 @@ describe('PubWiseAdapter', function () {
         // when failing this gives an odd message about "AssertError: expected logWarn to be called with arguments" it means the specific message expected
         sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
       })
-      it('shoud not log Video.Placement param missing', function() {
+      it('should not log Video.Placement param missing', function() {
         videoData['placement'] = 1;
         _checkVideoPlacement(videoData, adUnit);
         sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);

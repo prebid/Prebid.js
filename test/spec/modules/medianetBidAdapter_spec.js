@@ -2065,7 +2065,8 @@ describe('Media.net bid adapter', function () {
       beforeEach(() => {
         spec.clearPageMeta();
       });
-      it('should pass canonical, twitter and fb paramters if available', () => {
+
+      it('should pass canonical, twitter and fb parameters if available', () => {
         const documentStub = sandbox.stub(window.top.document, 'querySelector');
         documentStub.withArgs('link[rel="canonical"]').returns({
           href: 'http://localhost:9999/canonical-test'
