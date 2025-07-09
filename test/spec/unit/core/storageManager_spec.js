@@ -118,7 +118,6 @@ describe('storage manager', function() {
       }
     })
 
-
     it('should NOT pass storage key if advertiseKeys = false', () => {
       newStorageManager({
         moduleType: MODULE_TYPE_PREBID,
