@@ -1035,6 +1035,7 @@ describe('utils', function () {
       expect(getContentDatum('id1', segments)).to.deep.equal({
         name: 'jwplayer.com',
         segment: segments,
+        cids: ['id1'],
         ext: { cids: ['id1'], segtax: 502 }
       });
     });
@@ -1042,6 +1043,7 @@ describe('utils', function () {
     it('should set only media id when segments missing', function () {
       expect(getContentDatum('id2')).to.deep.equal({
         name: 'jwplayer.com',
+        cids: ['id2'],
         ext: { cids: ['id2'] }
       });
     });
