@@ -17,23 +17,7 @@ jobs:
     name: "Check out source and install dependencies"
     timeout-minutes: 2
     runs-on: ubuntu-latest
-    outputs:
-      ref: ${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}
-      commit: ${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}
-      branch: ${{ github.head_ref || github.ref }}
-      fork: ${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}
-      base-branch: ${{ github.event.pull_request.base.ref || github.ref }}
-      base-commit: ${{ github.event.pull_request.base.sha || github.event.before }}
     steps:
-      - name: Environment information
-        run: |
-          echo "head_ref" "${{ github.head_ref }}"
-          echo "pull_request.head.ref" "${{ github.event.pull_request.head.ref }}"
-          echo "push.before" "${{ github.event.before }}"
-          echo "event.pull_request.head.repo.owner.login" "${{ github.event.pull_request.head.repo.owner.login }}"
-          echo "repository_owner" "${{ github.repository_owner }}"
-          echo "coveralls branch (for PRs)" "${{ github.event.pull_request.head.repo.owner.login != github.repository_owner && format('{0}:', github.event.pull_request.head.repo.owner.login) || '' }}${{ github.head_ref }}"
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -50,6 +34,15 @@ jobs:
         id: checkout-push
         if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v4
+
+      - name: Commit info
+        run: |
+          echo ref="${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}" >> $GITHUB_OUTPUT
+          echo commit="${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}" >> $GITHUB_OUTPUT
+          echo branch="${{ github.head_ref || github.ref }}" >> $GITHUB_OUTPUT
+          echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
+          echo base-branch="${{ github.event.pull_request.base.ref || github.ref }}" >> $GITHUB_OUTPUT
+          echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
         run: npm ci
