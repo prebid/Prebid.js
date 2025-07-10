@@ -1,4 +1,4 @@
-import { logError, logInfo, logWarn, generateUUID, isEmpty, isArray } from '../../src/utils.js';
+import { logError, logInfo, logWarn, generateUUID, isEmpty, isArray, isPlainObject, isFn } from '../../src/utils.js';
 
 const LOG_WARN_PREFIX = '[Nexverse warn]: ';
 const LOG_ERROR_PREFIX = '[Nexverse error]: ';
@@ -174,3 +174,11 @@ export const getUid = (storage) => {
   }
   return nexverseUid;
 };
+
+export const getBidFloor = (bid, creative) => {
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
+  if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor)) {
+    return floorInfo.floor
+  }
+  return (bid.params.bidFloor ? bid.params.bidFloor : 0.0);
+}

@@ -4,7 +4,7 @@ import { isArray, generateUUID, getWinDimensions, isNumber } from '../src/utils.
 import { getBoundingClientRect } from '../libraries/boundingClientRect/boundingClientRect.js';
 import {getConnectionType} from '../libraries/connectionInfo/connectionUtils.js'
 import { getDeviceType, getOS } from '../libraries/userAgentUtils/index.js';
-import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid } from '../libraries/nexverseUtils/index.js';
+import { getDeviceModel, buildEndpointUrl, isBidRequestValid, parseNativeResponse, printLog, getUid, getBidFloor } from '../libraries/nexverseUtils/index.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { getOsVersion } from '../libraries/advangUtils/index.js';
@@ -190,12 +190,6 @@ function buildOpenRtbRequest(bid, bidderRequest) {
 
   const imps = [];
 
-  let bidFloor = bid.params.bidFloor
-  bidFloor = parseFloat(bidFloor)
-  if (isNaN(bidFloor)) {
-    bidFloor = 0
-  }
-
   // Calculate viewability percentage for the ad unit
   const adUnitElement = document.getElementById(bid.adUnitCode);
   let viewabilityPercentage = 0;
@@ -238,7 +232,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       metric: metrics,
       ext: impExt
     };
-    imp.bidFloor = bidFloor
+    imp.bidFloor = getBidFloor(bid, 'banner');
     imps.push(imp);
   }
   if (bid.mediaTypes.video) {
@@ -257,7 +251,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       metric: metrics,
       ext: impExt
     };
-    imp.bidFloor = bidFloor
+    imp.bidFloor = getBidFloor(bid, 'video');
     imps.push(imp);
   }
   if (bid.mediaTypes.native) {
@@ -270,7 +264,7 @@ function buildOpenRtbRequest(bid, bidderRequest) {
       metric: metrics,
       ext: impExt
     };
-    imp.bidFloor = bidFloor
+    imp.bidFloor = getBidFloor(bid, 'native');
     imps.push(imp);
   }
 

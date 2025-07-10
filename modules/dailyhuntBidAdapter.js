@@ -4,7 +4,7 @@ import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {parseNativeResponse} from '../libraries/nexverseUtils/index.js';
+import {parseNativeResponse, getBidFloor} from '../libraries/nexverseUtils/index.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -96,12 +96,6 @@ const createOrtbSiteObj = (validBidRequests, page) => {
 }
 
 const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `publisher`) })
-
-// get bidFloor Function for different creatives
-function getBidFloor(bid, creative) {
-  let floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
-  return Math.floor(floorInfo?.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
-}
 
 const createOrtbImpObj = (bid) => {
   let params = bid.params
