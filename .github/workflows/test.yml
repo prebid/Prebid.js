@@ -27,6 +27,11 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Print stuff
+        run: |
+          echo owner github.event.pull_request.head.repo.owner.name
+          echo headref github.event.pull_request.head.ref
+          
       - name: Checkout code (PR)
         id: checkout-pr
         if: ${{ github.event_name == 'pull_request_target' }}
