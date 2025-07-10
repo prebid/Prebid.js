@@ -3,8 +3,8 @@ import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import {expectEvents, fireEvents} from '../../helpers/analytics.js';
 
-let events = require('src/events');
-let utils = require('src/utils.js');
+const events = require('src/events');
+const utils = require('src/utils.js');
 
 describe('Pubperf Analytics Adapter', function() {
   describe('Prebid Manager Analytic tests', function() {

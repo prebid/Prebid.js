@@ -6,7 +6,7 @@ import { config } from 'src/config.js';
 
 describe('PubMatic adapter', () => {
   let firstBid, videoBid, firstResponse, response, videoResponse;
-  let request = {};
+  const request = {};
   firstBid = {
     adUnitCode: 'Div1',
     bidder: 'pubmatic',
@@ -132,8 +132,8 @@ describe('PubMatic adapter', () => {
       seatbid: [videoBid]
     }
   }
-  let validBidRequests = [firstBid];
-  let bidderRequest = {
+  const validBidRequests = [firstBid];
+  const bidderRequest = {
     bids: [firstBid],
     auctionId: 'ee3074fe-97ce-4681-9235-d7622aede74c',
     auctionStart: 1725514077194,
@@ -839,7 +839,7 @@ describe('PubMatic adapter', () => {
 
       describe('GPP', () => {
         it('should have gpp & gpp_sid in request if set using ortb2 and not present in request', () => {
-          let copiedBidderRequest = utils.deepClone(bidderRequest);
+          const copiedBidderRequest = utils.deepClone(bidderRequest);
           copiedBidderRequest.ortb2.regs = {
             gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
             gpp_sid: [5]
@@ -1235,7 +1235,7 @@ describe('PubMatic adapter', () => {
     if (FEATURES.VIDEO) {
       describe('VIDEO', () => {
         beforeEach(() => {
-          let videoBidderRequest = utils.deepClone(bidderRequest);
+          const videoBidderRequest = utils.deepClone(bidderRequest);
           delete videoBidderRequest.bids[0].mediaTypes.banner;
           
           videoBidderRequest.bids[0].mediaTypes.video = {

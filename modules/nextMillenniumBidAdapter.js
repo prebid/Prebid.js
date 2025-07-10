@@ -227,7 +227,7 @@ export const spec = {
     const bidder = bids[0]?.bidder || bids[0]?.bidderCode;
     if (bidder != BIDDER_CODE) return;
 
-    let params = [];
+    const params = [];
     _each(bids, bid => {
       if (bid.params) {
         params.push(bid.params);
@@ -383,7 +383,7 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 };
 
 export function setOrtb2Parameters(postBody, ortb2 = {}) {
-  for (let parameter of ALLOWED_ORTB2_PARAMETERS) {
+  for (const parameter of ALLOWED_ORTB2_PARAMETERS) {
     const value = deepAccess(ortb2, parameter);
     if (value) deepSetValue(postBody, parameter, value);
   }
@@ -431,7 +431,7 @@ function getCurrency(bid = {}) {
     };
 
     if (typeof bid.getFloor === 'function') {
-      let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      const floorInfo = bid.getFloor({currency, mediaType, size: '*'});
       mediaTypes[mediaType].bidfloorcur = floorInfo?.currency;
       mediaTypes[mediaType].bidfloor = floorInfo?.floor;
     } else {
@@ -451,7 +451,7 @@ export function getPlacementId(bid) {
   const placementId = getBidIdParameter('placement_id', bid.params);
   if (!groupId) return placementId;
 
-  let windowTop = getTopWindow(window);
+  const windowTop = getTopWindow(window);
   let sizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.banner) sizes = [...bid.mediaTypes.banner.sizes];
@@ -520,7 +520,7 @@ export function getSourceObj(validBidRequests, bidderRequest) {
 }
 
 function getSua() {
-  let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  const {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 
   return {

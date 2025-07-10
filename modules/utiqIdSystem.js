@@ -27,7 +27,7 @@ export const storage = getStorageManager({
  */
 function getUtiqFromStorage() {
   let utiqPass;
-  let utiqPassStorage = JSON.parse(
+  const utiqPassStorage = JSON.parse(
     storage.getDataFromLocalStorage('utiqPass')
   );
 

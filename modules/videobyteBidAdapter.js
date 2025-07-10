@@ -96,7 +96,7 @@ export const spec = {
     if (response && response.seatbid && response.seatbid.length === 1 && response.seatbid[0].bid && response.seatbid[0].bid.length === 1) {
       const bid = response.seatbid[0].bid[0]
       if (bid.adm && bid.price) {
-        let bidResponse = {
+        const bidResponse = {
           requestId: response.id,
           cpm: bid.price,
           width: bid.w,

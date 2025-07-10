@@ -689,8 +689,8 @@ describe('KoblerAdapter', function () {
 
     it('Should trigger pixel with replaced nurl if nurl is not empty', function () {
       setCurrencyConfig({ adServerCurrency: 'NOK' });
-      let validBidRequests = [{ params: {} }];
-      let refererInfo = { page: 'page' };
+      const validBidRequests = [{ params: {} }];
+      const refererInfo = { page: 'page' };
       const bidderRequest = { refererInfo };
       return addFPDToBidderRequest(bidderRequest).then(res => {
         JSON.parse(spec.buildRequests(validBidRequests, res).data);

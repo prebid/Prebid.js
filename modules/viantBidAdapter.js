@@ -66,10 +66,10 @@ export const spec = {
 }
 
 function buildRequests(bids, bidderRequest) {
-  let videoBids = bids.filter(bid => isVideoBid(bid));
-  let bannerBids = bids.filter(bid => isBannerBid(bid));
-  let nativeBids = bids.filter(bid => isNativeBid(bid));
-  let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
+  const videoBids = bids.filter(bid => isVideoBid(bid));
+  const bannerBids = bids.filter(bid => isBannerBid(bid));
+  const nativeBids = bids.filter(bid => isNativeBid(bid));
+  const requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
   videoBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
   });
@@ -91,8 +91,8 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     if (!data.regs.ext) data.regs.ext = {};
     data.regs.ext.us_privacy = bidderRequest.uspConsent;
   }
-  let imp = data.imp || [];
-  let dealsMap = new Map();
+  const imp = data.imp || [];
+  const dealsMap = new Map();
   if (bidderRequest.bids) {
     bidderRequest.bids.forEach(bid => {
       if (bid.ortb2Imp && bid.ortb2Imp.pmp) {
@@ -101,7 +101,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     });
   }
   imp.forEach((element) => {
-    let deals = dealsMap.get(element.id);
+    const deals = dealsMap.get(element.id);
     if (deals) {
       element.pmp = deals;
     }

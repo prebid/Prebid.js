@@ -14,7 +14,7 @@ describe('TheMediaGrid Adapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'grid',
       'params': {
         'uid': '1'
@@ -30,7 +30,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'uid': 0
@@ -56,7 +56,7 @@ describe('TheMediaGrid Adapter', function () {
       }
     };
     const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'grid',
         'params': {
@@ -449,7 +449,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should add gpp information to the request via bidderRequest.gppConsent', function () {
-      let consentString = 'abc1234';
+      const consentString = 'abc1234';
       const gppBidderRequest = Object.assign({gppConsent: {gppString: consentString, applicableSections: [8]}}, bidderRequest);
 
       const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
@@ -461,7 +461,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should add gpp information to the request via bidderRequest.ortb2.regs.gpp', function () {
-      let consentString = 'abc1234';
+      const consentString = 'abc1234';
       const gppBidderRequest = {
         ...bidderRequest,
         ortb2: {
@@ -890,7 +890,7 @@ describe('TheMediaGrid Adapter', function () {
       const fpdUserIdNumVal = 2345543345;
       const getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage').callsFake(
         arg => arg === 'tmguid' ? fpdUserIdNumVal : null);
-      let bidRequestWithNumId = {
+      const bidRequestWithNumId = {
         'bidder': 'grid',
         'params': {
           'uid': 1,
@@ -1609,7 +1609,7 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should register the Emily iframe', function () {
-      let syncs = spec.getUserSyncs({
+      const syncs = spec.getUserSyncs({
         pixelEnabled: true
       });
 

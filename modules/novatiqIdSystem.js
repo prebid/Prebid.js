@@ -38,7 +38,7 @@ export const novatiqIdSubmodule = {
    * @returns {{novatiq: {snowflake: string}}}
    */
   decode(novatiqId, config) {
-    let responseObj = {
+    const responseObj = {
       novatiq: {
         snowflake: novatiqId
       }
@@ -85,7 +85,7 @@ export const novatiqIdSubmodule = {
     const sharedStatus = (sharedId != undefined && sharedId != false) ? 'Found' : 'Not Found';
 
     if (useCallbacks) {
-      let res = this.sendAsyncSyncRequest(novatiqId, url); ;
+      const res = this.sendAsyncSyncRequest(novatiqId, url); ;
       res.sharedStatus = sharedStatus;
 
       return res;
@@ -149,7 +149,7 @@ export const novatiqIdSubmodule = {
   },
 
   getSyncUrl(sharedId, sspid, urlParams) {
-    let novatiqId = this.getNovatiqId(urlParams);
+    const novatiqId = this.getNovatiqId(urlParams);
 
     let url = 'https://spadsync.com/sync?' + urlParams.novatiqId + '=' + novatiqId;
 
@@ -158,7 +158,7 @@ export const novatiqIdSubmodule = {
     }
 
     if (urlParams.useSspHost) {
-      let ssphost = getWindowLocation().hostname;
+      const ssphost = getWindowLocation().hostname;
       logInfo('NOVATIQ partner hostname: ' + ssphost);
 
       url = url + '&ssphost=' + ssphost;
@@ -176,7 +176,7 @@ export const novatiqIdSubmodule = {
   },
 
   getUrlParams(configParams) {
-    let urlParams = {
+    const urlParams = {
       novatiqId: 'snowflake',
       useStandardUuid: false,
       useSspId: true,
@@ -224,7 +224,7 @@ export const novatiqIdSubmodule = {
   getSharedId(configParams) {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
-      let cookieOrStorageID = this.getCookieOrStorageID(configParams);
+      const cookieOrStorageID = this.getCookieOrStorageID(configParams);
       const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
       // first check local storage
