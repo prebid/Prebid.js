@@ -145,10 +145,13 @@ jobs:
 
   coveralls-comment:
     needs: [checkout, coveralls]
-    if: needs.checkout.outputs.fork != ''
     name: Post coveralls comment
     runs-on: ubuntu-latest
     steps:
+      - name: Debug
+        run: |
+          echo fork "${{ needs.checkout.output.fork }}"
+          echo isfork "${{ needs.checkout.output.fork != '' }}"
       - name: Get job ID
         id: get-job-id
         run: |

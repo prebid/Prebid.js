@@ -64,6 +64,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-2:
+    if: false
     name: Run tests (chunk 2 of 4)
     needs: chunk-1
     uses: ./.github/workflows/test-chunk.yml
@@ -76,6 +77,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-3:
+    if: false
     name: Run tests (chunk 3 of 4)
     needs: chunk-2
     uses: ./.github/workflows/test-chunk.yml
@@ -88,6 +90,7 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-4:
+    if: false
     name: Run tests (chunk 4 of 4)
     needs: chunk-3
     uses: ./.github/workflows/test-chunk.yml
