@@ -20,18 +20,12 @@ jobs:
     outputs:
       ref: ${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}
       commit: ${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}
-      branch: ${{ ((github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.owner.name == github.repository_owner ) && github.event.pull_request.head.ref) || github.ref }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Print stuff
-        run: |
-          echo owner github.event.pull_request.head.repo.owner.name
-          echo headref github.event.pull_request.head.ref
-          
       - name: Checkout code (PR)
         id: checkout-pr
         if: ${{ github.event_name == 'pull_request_target' }}
@@ -139,7 +133,7 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: ${{ needs.checkout.outputs.branch }}
+          git-branch: ${{ needs.checkout.outputs.ref }}
           git-commit: ${{ needs.checkout.outputs.commit }}
           compare-ref: ${{ github.ref }}
           compare-sha: ${{ github.event.push.before }}
@@ -147,7 +141,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request_target' }}
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: ${{ needs.checkout.outputs.branch }}
+          git-branch: ${{ needs.checkout.outputs.ref }}
           git-commit: ${{ needs.checkout.outputs.commit }}
           compare-ref: ${{ github.event.pull_request.base.ref }}
           compare-sha: ${{ github.event.pull_request.base.sha }}
