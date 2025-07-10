@@ -142,31 +142,3 @@ jobs:
           git-commit: ${{ needs.checkout.outputs.commit }}
           compare-ref: ${{ needs.checkout.outputs.base-branch }}
           compare-sha: ${{ needs.checkout.outputs.base-commit }}
-
-  coveralls-comment:
-    needs: [checkout, coveralls]
-    name: Post coveralls comment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug
-        run: |
-          echo fork "${{ needs.checkout.outputs.fork }}"
-          echo isfork "${{ needs.checkout.outputs.fork != '' }}"
-      - name: Get job ID
-        id: get-job-id
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh_job_id="$(gh run view --repo "${{ github.repository }}" ${{ github.run_id }} --json jobs | jq '.jobs[] | select(.name == "Update coveralls") | .databaseId')";
-          echo job="$(gh run view --repo "${{ github.repository }}" --job "$gh_job_id" --log | sed -n 's/.*"\(https:\/\/coveralls\.io\/jobs\/.*\?\)".*/\1/p')" >> $GITHUB_OUTPUT
-      - name: Post comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            comment = `Coverage report available at ${{ steps.get-job-id.outputs.job }}\n\n(@coveralls won't post its summary on PRs created from forks)`
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: comment
-            });
