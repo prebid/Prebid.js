@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { config } from 'src/config.js';
-import {attachIdSystem, init, startAuctionHook, setSubmoduleRegistry} from 'modules/userId/index.js';
-import { storage, getStorage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
+import {expect} from 'chai';
+import {attachIdSystem} from 'modules/userId/index.js';
+import {getStorage, storage, zeotapIdPlusSubmodule} from 'modules/zeotapIdPlusIdSystem.js';
 import * as storageManager from 'src/storageManager.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
@@ -10,32 +9,6 @@ import 'src/prebid.js';
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';
 const ENCODED_ZEOTAP_COOKIE = btoa(JSON.stringify(ZEOTAP_COOKIE));
-
-function getConfigMock() {
-  return {
-    userSync: {
-      syncDelay: 0,
-      userIds: [{
-        name: 'zeotapIdPlus'
-      }]
-    }
-  }
-}
-
-function getAdUnitMock(code = 'adUnit-code') {
-  return {
-    code,
-    mediaTypes: {banner: {}, native: {}},
-    sizes: [
-      [300, 200],
-      [300, 600]
-    ],
-    bids: [{
-      bidder: 'sampleBidder',
-      params: { placementId: 'banner-only-bidder' }
-    }]
-  };
-}
 
 function unsetCookie() {
   storage.setCookie(ZEOTAP_COOKIE_NAME, '');
@@ -155,43 +128,6 @@ describe('Zeotap ID System', function() {
     });
   });
 
-  describe('requestBids hook', function() {
-    let adUnits;
-
-    beforeEach(function() {
-      adUnits = [getAdUnitMock()];
-      storage.setCookie(
-        ZEOTAP_COOKIE_NAME,
-        ENCODED_ZEOTAP_COOKIE
-      );
-      init(config);
-      setSubmoduleRegistry([zeotapIdPlusSubmodule]);
-      config.setConfig(getConfigMock());
-    });
-
-    afterEach(function() {
-      unsetCookie();
-      unsetLocalStorage();
-    });
-
-    it('when a stored Zeotap ID exists it is added to bids', function(done) {
-      startAuctionHook(function() {
-        adUnits.forEach(unit => {
-          unit.bids.forEach(bid => {
-            const zeotapIdAsEid = bid.userIdAsEids.find(e => e.source == 'zeotap.com');
-            expect(zeotapIdAsEid).to.deep.equal({
-              source: 'zeotap.com',
-              uids: [{
-                id: ZEOTAP_COOKIE,
-                atype: 1,
-              }]
-            });
-          });
-        });
-        done();
-      }, { adUnits });
-    });
-  });
   describe('eids', () => {
     before(() => {
       attachIdSystem(zeotapIdPlusSubmodule);

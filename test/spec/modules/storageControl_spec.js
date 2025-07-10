@@ -38,24 +38,26 @@ describe('storageControl', () => {
       beforeEach(() => {
         metadata.register('mockModule', {
           disclosures: {
-            'mock.url': [
-              {
-                identifier: 'mockCookie',
-                type: 'cookie'
-              },
-              {
-                identifier: 'mockKey',
-                type: 'web'
-              },
-              {
-                identifier: 'wildcard*',
-                type: 'cookie'
-              },
-              {
-                identifier: 'wrongType',
-                type: 'wrong'
-              }
-            ]
+            'mock.url': {
+              disclosures: [
+                {
+                  identifier: 'mockCookie',
+                  type: 'cookie'
+                },
+                {
+                  identifier: 'mockKey',
+                  type: 'web'
+                },
+                {
+                  identifier: 'wildcard*',
+                  type: 'cookie'
+                },
+                {
+                  identifier: 'wrongType',
+                  type: 'wrong'
+                }
+              ]
+            }
           },
           components: [
             {
