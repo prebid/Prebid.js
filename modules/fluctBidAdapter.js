@@ -1,4 +1,4 @@
-import { _each, deepSetValue, isEmpty } from '../src/utils.js';
+import { _each, deepAccess, deepSetValue, isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -97,9 +97,7 @@ export const spec = {
         data.schain = request.schain;
       }
 
-      if (request.ortb2Imp?.instl === 1) {
-        data.instl = request.ortb2Imp?.instl;
-      }
+      data.instl = deepAccess(request, 'ortb2Imp.instl') === 1 || request.params.instl === 1 ? 1 : 0;
 
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,

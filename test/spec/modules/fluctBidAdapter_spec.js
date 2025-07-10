@@ -433,9 +433,9 @@ describe('fluctAdapter', function () {
       expect(request.data.regs.gpp.sid).to.eql([1, 2, 3]);
     });
 
-    it('sends no instl default', function () {
+    it('sends no instl as instl = 0', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
-      expect(request.data.instl).to.eql(undefined);
+      expect(request.data.instl).to.eql(0);
     })
 
     it('sends ortb2Imp.instl as instl = 0', function () {
@@ -445,7 +445,7 @@ describe('fluctAdapter', function () {
           instl: 0,
         },
       })), bidderRequest)[0];
-      expect(request.data.instl).to.eql(undefined);
+      expect(request.data.instl).to.eql(0);
     });
 
     it('sends ortb2Imp.instl as instl', function () {
