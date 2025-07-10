@@ -145,7 +145,7 @@ jobs:
 
   coveralls-comment:
     needs: [checkout, coveralls]
-    if: ${{ needs.checkout.outputs.fork }}
+    if: ${{ needs.checkout.outputs.fork != '' }}
     name: Post coveralls comment
     runs-on: ubuntu-latest
     steps:
