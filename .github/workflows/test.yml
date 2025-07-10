@@ -41,7 +41,7 @@ jobs:
           echo commit="${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}" >> $GITHUB_OUTPUT
           echo branch="${{ github.head_ref || github.ref }}" >> $GITHUB_OUTPUT
           echo fork="${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}" >> $GITHUB_OUTPUT
-          echo base-branch="${{ githu b.event.pull_request.base.ref || github.ref }}" >> $GITHUB_OUTPUT
+          echo base-branch="${{ github.event.pull_request.base.ref || github.ref }}" >> $GITHUB_OUTPUT
           echo base-commit="${{ github.event.pull_request.base.sha || github.event.before }}" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
