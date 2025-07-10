@@ -23,7 +23,14 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Checkout code
+      - name: Checkout code (PR)
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.pull_request.merge_commit_sha }}
+
+      - name: Checkout code (push)
+        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v4
 
       - name: Install dependencies
