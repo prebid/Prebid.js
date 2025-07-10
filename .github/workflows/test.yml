@@ -158,7 +158,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            comment = `Coverage report available at ${{ steps.get-job-id.outputs.job }}\n\n(@coveralls won't post its summary on PRs created from forks)
+            comment = `Coverage report available at ${{ steps.get-job-id.outputs.job }}\n\n(@coveralls won't post its summary on PRs created from forks)`
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
