@@ -72,7 +72,6 @@ jobs:
         run: npx eslint
       
   test-no-features:
-    if: false
     name: "Unit tests (all features disabled)"
     needs: checkout
     uses: ./.github/workflows/run-unit-tests.yml
@@ -89,13 +88,12 @@ jobs:
     uses: ./.github/workflows/run-unit-tests.yml
     with:
       build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild
+      test-cmd: npx gulp test-only-nobuild --browserstack
       serialize: true
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-e2e:
-    if: false
     name: "End-to-end tests"
     needs: checkout
     runs-on: ubuntu-latest

@@ -17,7 +17,7 @@ on:
     outputs:
       wdir:
         description: Cache key for the working directory after running tests
-        value: ${{ jobs.chunk-1.outputs.wdir }}
+        value: ${{ jobs.chunk-4.outputs.wdir }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
@@ -64,7 +64,6 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-2:
-    if: false
     name: Run tests (chunk 2 of 4)
     needs: chunk-1
     uses: ./.github/workflows/test-chunk.yml
@@ -77,7 +76,6 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-3:
-    if: false
     name: Run tests (chunk 3 of 4)
     needs: chunk-2
     uses: ./.github/workflows/test-chunk.yml
@@ -90,7 +88,6 @@ jobs:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   chunk-4:
-    if: false
     name: Run tests (chunk 4 of 4)
     needs: chunk-3
     uses: ./.github/workflows/test-chunk.yml
