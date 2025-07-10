@@ -149,7 +149,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Debug
-        if: ${{ needs.checkout.outputs.fork != '' }}
         run: |
           echo fork "${{ needs.checkout.outputs.fork }}"
           echo isfork "${{ needs.checkout.outputs.fork != '' }}"
@@ -158,8 +157,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh_job_id="$(gh run view ${{ github.run_id }} --json jobs | jq '.jobs[] | select(.name == "Update coveralls") | .databaseId')";
-          echo job="$(gh run view --job "$gh_job_id" --log | sed -n 's/.*"\(https:\/\/coveralls\.io\/jobs\/.*\?\)".*/\1/p')" >> $GITHUB_OUTPUT
+          gh_job_id="$(gh run view --repo "${{ github.repository }}" ${{ github.run_id }} --json jobs | jq '.jobs[] | select(.name == "Update coveralls") | .databaseId')";
+          echo job="$(gh run view --repo "${{ github.repository }}" --job "$gh_job_id" --log | sed -n 's/.*"\(https:\/\/coveralls\.io\/jobs\/.*\?\)".*/\1/p')" >> $GITHUB_OUTPUT
       - name: Post comment
         uses: actions/github-script@v7
         with:
