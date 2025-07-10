@@ -17,13 +17,25 @@ jobs:
     name: "Check out source and install dependencies"
     timeout-minutes: 2
     runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}
+      commit: ${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Checkout code
+      - name: Checkout code (PR)
+        id: checkout-pr
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+
+      - name: Checkout code (push)
+        id: checkout-push
+        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v4
 
       - name: Install dependencies
@@ -107,7 +119,7 @@ jobs:
 
   coveralls:
     name: Update coveralls
-    needs: test
+    needs: [checkout, test]
     runs-on: ubuntu-latest
     steps:
       - name: Restore working directory
@@ -116,5 +128,19 @@ jobs:
           path: .
           key: ${{ needs.test.outputs.wdir }}
           fail-on-cache-miss: true
-      - name: Coveralls
+      - name: Coveralls (push)
+        if: ${{ github.event_name == 'push' }}
         uses: coverallsapp/github-action@v2
+        with:
+          git-branch: ${{ needs.checkout.outputs.ref }}
+          git-commit: ${{ needs.checkout.outputs.commit }}
+          compare-ref: ${{ github.ref }}
+          compare-sha: ${{ github.event.push.before }}
+      - name: Coveralls (PR)
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: coverallsapp/github-action@v2
+        with:
+          git-branch: ${{ needs.checkout.outputs.ref }}
+          git-commit: ${{ needs.checkout.outputs.commit }}
+          compare-ref: ${{ github.event.pull_request.base.ref }}
+          compare-sha: ${{ github.event.pull_request.base.sha }}
