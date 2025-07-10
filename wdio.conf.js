@@ -40,7 +40,9 @@ exports.config = {
   ...shared.config,
   services: [
     ['browserstack', {
-      browserstackLocal: true
+      browserstackLocal: true,
+      observability: false,
+      accessibility: false
     }]
   ],
   user: process.env.BROWSERSTACK_USERNAME,
