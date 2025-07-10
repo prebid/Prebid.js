@@ -155,6 +155,8 @@ jobs:
           echo isfork "${{ needs.checkout.outputs.fork != '' }}"
       - name: Get job ID
         id: get-job-id
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh_job_id="$(gh run view ${{ github.run_id }} --json jobs | jq '.jobs[] | select(.name == "Update coveralls") | .databaseId')";
           echo job="$(gh run view --job "$gh_job_id" --log | sed -n 's/.*"\(https:\/\/coveralls\.io\/jobs\/.*\?\)".*/\1/p')" >> $GITHUB_OUTPUT
