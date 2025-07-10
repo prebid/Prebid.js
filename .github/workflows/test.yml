@@ -20,6 +20,10 @@ jobs:
     outputs:
       ref: ${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}
       commit: ${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}
+      branch: ${{ github.head_ref || github.ref }}
+      fork: ${{ (github.event.pull_request && github.event.pull_request.head.repo.owner.login != github.repository_owner) && github.event.pull_request.head.repo.owner.login || null }}
+      base-branch: ${{ github.event.pull_request.base.ref || github.ref }}
+      base-commit: ${{ github.event.pull_request.base.sha || github.event.before }}
     steps:
       - name: Environment information
         run: |
@@ -28,7 +32,7 @@ jobs:
           echo "push.before" "${{ github.event.before }}"
           echo "event.pull_request.head.repo.owner.login" "${{ github.event.pull_request.head.repo.owner.login }}"
           echo "repository_owner" "${{ github.repository_owner }}"
-          echo "coveralls branch" "${{ github.event.pull_request.head.repo.owner.login != github.repository_owner && format('{0}:', github.event.pull_request.head.repo.owner.login) || '' }}${{ github.head_ref }}"
+          echo "coveralls branch (for PRs)" "${{ github.event.pull_request.head.repo.owner.login != github.repository_owner && format('{0}:', github.event.pull_request.head.repo.owner.login) || '' }}${{ github.head_ref }}"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -138,19 +142,10 @@ jobs:
           path: .
           key: ${{ needs.test.outputs.wdir }}
           fail-on-cache-miss: true
-      - name: Coveralls (push)
-        if: ${{ github.event_name == 'push' }}
+      - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: ${{ github.ref }}
-          git-commit: ${{ github.sha }}
-          compare-ref: ${{ github.ref }}
-          compare-sha: ${{ github.event.before }}
-      - name: Coveralls (PR)
-        if: ${{ github.event_name == 'pull_request_target' }}
-        uses: coverallsapp/github-action@v2
-        with:
-          git-branch: ${{ github.event.pull_request.head.repo.owner.login != github.repository_owner && format('{0}:', github.event.pull_request.head.repo.owner.login) || '' }}${{ github.head_ref }}
-          git-commit: ${{ needs.checkout.outputs.commit }}
-          compare-ref: ${{ github.event.pull_request.base.ref }}
-          compare-sha: ${{ github.event.pull_request.base.sha }}
+          git-branch: ${{ needs.checkout.fork && format('{0}:{1}', needs.checkout.fork, needs.checkout.branch) || needs.checkout.branch }}
+          git-commit: ${{ needs.checkout.commit }}
+          compare-ref: ${{ needs.checkout.base-branch }}
+          compare-sha: ${{ needs.checkout.base-commit }}
