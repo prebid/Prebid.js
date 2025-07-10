@@ -17,6 +17,13 @@ jobs:
     name: "Check out source and install dependencies"
     timeout-minutes: 2
     runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.info.outputs.ref }}
+      commit: ${{ steps.info.outputs.commit }}
+      branch: ${{ steps.info.outputs.branch }}
+      fork: ${{ steps.info.outputs.fork }}
+      base-branch: ${{ steps.info.outputs.base-branch }}
+      base-commit: ${{ steps.info.outputs.base-commit }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -36,6 +43,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Commit info
+        id: info
         run: |
           echo ref="${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}" >> $GITHUB_OUTPUT
           echo commit="${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}" >> $GITHUB_OUTPUT
