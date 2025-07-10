@@ -7,7 +7,7 @@ import {createEidsArray} from '../../../modules/userId/eids.js';
 import {attachIdSystem} from '../../../modules/userId/index.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 
-let expect = require('chai').expect;
+const expect = require('chai').expect;
 
 describe('SharedId System', function () {
   const UUID = '15fde1dc-1861-4894-afdf-b757272f3568';
@@ -37,7 +37,7 @@ describe('SharedId System', function () {
     });
 
     it('should call UUID', function () {
-      let config = {
+      const config = {
         storage: {
           type: 'cookie',
           name: '_pubcid',
@@ -45,7 +45,7 @@ describe('SharedId System', function () {
         }
       };
 
-      let submoduleCallback = sharedIdSystemSubmodule.getId(config, undefined).callback;
+      const submoduleCallback = sharedIdSystemSubmodule.getId(config, undefined).callback;
       submoduleCallback(callbackSpy);
       expect(callbackSpy.calledOnce).to.be.true;
       expect(callbackSpy.lastCall.lastArg).to.equal(UUID);
@@ -68,7 +68,7 @@ describe('SharedId System', function () {
       sandbox.restore();
     });
     it('should call UUID', function () {
-      let config = {
+      const config = {
         params: {
           extend: true
         },
@@ -78,7 +78,7 @@ describe('SharedId System', function () {
           expires: 10
         }
       };
-      let pubcommId = sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').id;
+      const pubcommId = sharedIdSystemSubmodule.extendId(config, undefined, 'TestId').id;
       expect(pubcommId).to.equal('TestId');
     });
     it('should abort if coppa is set', function () {

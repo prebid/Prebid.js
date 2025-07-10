@@ -10,7 +10,7 @@ describe('colombiaBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'colombia',
       'params': {
         placementId: '307466'
@@ -34,14 +34,14 @@ describe('colombiaBidAdapter', function () {
     });
 
     it('should return false when require params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'colombia',
         'params': {
@@ -69,7 +69,7 @@ describe('colombiaBidAdapter', function () {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -89,7 +89,7 @@ describe('colombiaBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidRequest = [
+    const bidRequest = [
       {
         'method': 'POST',
         'url': 'https://ade.clmbtech.com/cde/prebid.htm',
@@ -106,7 +106,7 @@ describe('colombiaBidAdapter', function () {
       }
     ];
 
-    let serverResponse = [{
+    const serverResponse = [{
       'ad': '<div>This is test case for colombia adapter</div> ',
       'cpm': 3.14,
       'creativeId': '6b958110-612c-4b03-b6a9-7436c9f746dc-1sk24',
@@ -121,7 +121,7 @@ describe('colombiaBidAdapter', function () {
     }];
 
     it('should get the correct bid response', function () {
-      let expectedResponse = [{
+      const expectedResponse = [{
         'requestId': '23beaa6af6cdde',
         'cpm': 3.14,
         'width': 728,
@@ -134,12 +134,12 @@ describe('colombiaBidAdapter', function () {
         'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
         'ad': '<div>This is test case for colombia adapter</div>'
       }];
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      const result = spec.interpretResponse(serverResponse, bidRequest[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
     });
 
     it('handles empty bid response', function () {
-      let response = {
+      const response = {
         body: {
           'uid': '23beaa6af6cdde',
           'height': 0,
@@ -149,7 +149,7 @@ describe('colombiaBidAdapter', function () {
           'cpm': 0
         }
       };
-      let result = spec.interpretResponse(response, bidRequest[0]);
+      const result = spec.interpretResponse(response, bidRequest[0]);
       expect(result.length).to.equal(0);
     });
   });

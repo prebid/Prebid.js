@@ -29,18 +29,18 @@ describe('IDx ID System', () => {
   describe('IDx: test "getId" method', () => {
     it('provides the stored IDx if a cookie exists', () => {
       getCookieStub.withArgs(IDX_COOKIE_NAME).returns(IDX_COOKIE_STORED);
-      let idx = idxIdSubmodule.getId();
+      const idx = idxIdSubmodule.getId();
       expect(idx).to.deep.equal(ID_COOKIE_OBJECT);
     });
 
     it('provides the stored IDx if cookie is absent but present in local storage', () => {
       getDataFromLocalStorageStub.withArgs(IDX_COOKIE_NAME).returns(IDX_COOKIE_STORED);
-      let idx = idxIdSubmodule.getId();
+      const idx = idxIdSubmodule.getId();
       expect(idx).to.deep.equal(ID_COOKIE_OBJECT);
     });
 
     it('returns undefined if both cookie and local storage are empty', () => {
-      let idx = idxIdSubmodule.getId();
+      const idx = idxIdSubmodule.getId();
       expect(idx).to.be.undefined;
     })
   });

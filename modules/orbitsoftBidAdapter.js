@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getBidIdParameter} from '../src/utils.js';
 
 const BIDDER_CODE = 'orbitsoft';
-let styleParamsMap = {
+const styleParamsMap = {
   'title.family': 'f1', // headerFont
   'title.size': 'fs1', // headerFontSize
   'title.weight': 'w1', // headerWeight
@@ -42,12 +42,12 @@ export const spec = {
   },
   buildRequests: function (validBidRequests) {
     let bidRequest;
-    let serverRequests = [];
+    const serverRequests = [];
     for (let i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
-      let bidRequestParams = bidRequest.params;
-      let placementId = getBidIdParameter('placementId', bidRequestParams);
-      let requestUrl = getBidIdParameter('requestUrl', bidRequestParams);
+      const bidRequestParams = bidRequest.params;
+      const placementId = getBidIdParameter('placementId', bidRequestParams);
+      const requestUrl = getBidIdParameter('requestUrl', bidRequestParams);
       let referrer = getBidIdParameter('ref', bidRequestParams);
       let location = getBidIdParameter('loc', bidRequestParams);
       // Append location & referrer
@@ -59,14 +59,14 @@ export const spec = {
       }
 
       // Styles params
-      let stylesParams = getBidIdParameter('style', bidRequestParams);
-      let stylesParamsArray = {};
-      for (let currentValue in stylesParams) {
+      const stylesParams = getBidIdParameter('style', bidRequestParams);
+      const stylesParamsArray = {};
+      for (const currentValue in stylesParams) {
         if (stylesParams.hasOwnProperty(currentValue)) {
-          let currentStyle = stylesParams[currentValue];
-          for (let field in currentStyle) {
+          const currentStyle = stylesParams[currentValue];
+          for (const field in currentStyle) {
             if (currentStyle.hasOwnProperty(field)) {
-              let styleField = styleParamsMap[currentValue + '.' + field];
+              const styleField = styleParamsMap[currentValue + '.' + field];
               if (typeof styleField !== 'undefined') {
                 stylesParamsArray[styleField] = currentStyle[field];
               }
@@ -75,18 +75,18 @@ export const spec = {
         }
       }
       // Custom params
-      let customParams = getBidIdParameter('customParams', bidRequestParams);
-      let customParamsArray = {};
-      for (let customField in customParams) {
+      const customParams = getBidIdParameter('customParams', bidRequestParams);
+      const customParamsArray = {};
+      for (const customField in customParams) {
         if (customParams.hasOwnProperty(customField)) {
           customParamsArray['c.' + customField] = customParams[customField];
         }
       }
 
       // Sizes params (not supports by server, for future features)
-      let sizesParams = bidRequest.sizes;
-      let parsedSizes = utils.parseSizesInput(sizesParams);
-      let requestData = Object.assign({
+      const sizesParams = bidRequest.sizes;
+      const parsedSizes = utils.parseSizesInput(sizesParams);
+      const requestData = Object.assign({
         'scid': placementId,
         'callback_uid': utils.generateUUID(),
         'loc': location,
@@ -105,7 +105,7 @@ export const spec = {
     return serverRequests;
   },
   interpretResponse: function (serverResponse, request) {
-    let bidResponses = [];
+    const bidResponses = [];
     if (!serverResponse || serverResponse.error) {
       utils.logError(BIDDER_CODE + ': Server response error');
       return bidResponses;
@@ -124,9 +124,9 @@ export const spec = {
     const CALLBACK_UID = serverBody.callback_uid;
     const TIME_TO_LIVE = 60;
     const REFERER = utils.getWindowTop();
-    let bidRequest = request.bidRequest;
+    const bidRequest = request.bidRequest;
     if (CPM > 0 && WIDTH > 0 && HEIGHT > 0) {
-      let bidResponse = {
+      const bidResponse = {
         requestId: bidRequest.bidId,
         cpm: CPM,
         width: WIDTH,

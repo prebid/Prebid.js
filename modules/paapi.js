@@ -591,7 +591,7 @@ function callAdapterApi(spec, method, bids, bidderRequest) {
  */
 export function parallelPaapiProcessing(next, spec, bids, bidderRequest, ...args) {
   function makeDeferrals(defaults = {}) {
-    let promises = {};
+    const promises = {};
     const deferrals = Object.fromEntries(ASYNC_SIGNALS.map(signal => {
       const def = defer({promiseFactory: (resolver) => new Promise(resolver)});
       def.default = defaults.hasOwnProperty(signal) ? defaults[signal] : null;

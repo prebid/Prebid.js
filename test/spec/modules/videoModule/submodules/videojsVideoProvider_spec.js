@@ -176,7 +176,7 @@ describe('videojsProvider', function () {
         }
       }
 
-      let provider = VideojsProvider(config, videojs, null, null, null, utils);
+      const provider = VideojsProvider(config, videojs, null, null, null, utils);
       provider.init();
       const video = provider.getOrtbVideo();
 

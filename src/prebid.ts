@@ -31,10 +31,9 @@ import {isBidUsable, type SlotMatchingFn, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {storageCallbacks} from './storageManager.js';
-import {
+import adapterManager, {
     type AliasBidderOptions,
     type BidRequest,
-    default as adapterManager,
     getS2SBidderSet
 } from './adapterManager.js';
 import {BID_STATUS, EVENTS, NATIVE_KEYS} from './constants.js';
@@ -754,7 +753,7 @@ export const requestBids = (function() {
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
     const req = options as PrivRequestBidsOptions;
-    let adUnits = req.adUnits || pbjsInstance.adUnits;
+    const adUnits = req.adUnits || pbjsInstance.adUnits;
     req.adUnits = (Array.isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
     req.metrics = newMetrics();

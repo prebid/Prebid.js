@@ -132,7 +132,7 @@ function getBidfloor(bidRequest) {
     return null;
   }
 
-  let floor = bidRequest.getFloor();
+  const floor = bidRequest.getFloor();
   if (floor.currency === 'USD') {
     return floor.floor;
   }
