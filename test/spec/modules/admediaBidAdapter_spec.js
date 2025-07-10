@@ -10,8 +10,8 @@ describe('admediaBidAdapter', function () {
   describe('isBidRequestValid', function () {
     let bid = {
       adUnitCode: 'adunit-code',
-	  bidder: 'admedia',
-	  bidId: 'g7ghhs78',
+    bidder: 'admedia',
+    bidId: 'g7ghhs78',
       mediaTypes: {banner: {sizes: [[300, 250]]}},
       params: {
         placementId: '782332',
@@ -34,7 +34,7 @@ describe('admediaBidAdapter', function () {
         mediaTypes: {banner: {sizes: [[300, 250]]}},
         params: {
           placementId: '782332',
-		  aid: '86858'
+      aid: '86858'
         },
         refererInfo: {
           page: 'https://test.com'
@@ -59,70 +59,70 @@ describe('admediaBidAdapter', function () {
       method: 'POST',
       url: ENDPOINT_URL,
       data: {
-		  'id': '782332',
-		  'aid': '86858',
-		  'tags': [
+      'id': '782332',
+      'aid': '86858',
+      'tags': [
           {
-			  'sizes': [
+        'sizes': [
               '300x250'
-			  ],
-			  'id': '782332',
-			  'aid': '86858'
+        ],
+        'id': '782332',
+        'aid': '86858'
           }
-		  ],
-		  'bidId': '2556388472b168',
-		  'referer': 'https%3A%2F%test.com'
+      ],
+      'bidId': '2556388472b168',
+      'referer': 'https%3A%2F%test.com'
       }
     };
     let serverResponse = {
       body:
-			  {
-			    'tags': [
-				  {
-			        'requestId': '2b8bf2ac497ae',
-			        'ad': "<img src='https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia'>",
-			        'width': 300,
-			        'height': 250,
-			        'cpm': 0.71,
-			        'currency': 'USD',
-			        'ttl': 200,
-			        'creativeId': 128,
-			        'netRevenue': true,
-			        'meta': {
-					  'advertiserDomains': [
-			            'https://www.test.com'
-					  ]
-			        }
-				  }
-			    ]
-			  }
+        {
+          'tags': [
+          {
+              'requestId': '2b8bf2ac497ae',
+              'ad': "<img src='https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia'>",
+              'width': 300,
+              'height': 250,
+              'cpm': 0.71,
+              'currency': 'USD',
+              'ttl': 200,
+              'creativeId': 128,
+              'netRevenue': true,
+              'meta': {
+            'advertiserDomains': [
+                  'https://www.test.com'
+            ]
+              }
+          }
+          ]
+        }
 
     };
     it('should get the correct bid response', function () {
       let expectedResponse =
-		  {
-		    'tags': [
-			  {
-			    'requestId': '2b8bf2ac497ae',
-			    'ad': "<img src='https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia'>",
-			    'width': 300,
-			    'height': 250,
-			    'cpm': 0.71,
-			    'currency': 'USD',
-			    'ttl': 200,
-			    'creativeId': 128,
-			    'netRevenue': true,
-			    'meta': {
-				  'advertiserDomains': [
-			        'https://www.test.com'
-				  ]
-			    }
-			  }
-		    ]
-		  }
+      {
+        'tags': [
+        {
+          'requestId': '2b8bf2ac497ae',
+          'ad': "<img src='https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia'>",
+          'width': 300,
+          'height': 250,
+          'cpm': 0.71,
+          'currency': 'USD',
+          'ttl': 200,
+          'creativeId': 128,
+          'netRevenue': true,
+          'meta': {
+          'advertiserDomains': [
+              'https://www.test.com'
+          ]
+          }
+        }
+        ]
+      }
       let result = spec.interpretResponse(serverResponse, bidRequest);
-	  expect(result).to.be.an('array').that.is.not.empty;
-	  expect(Object.keys(result[0])).to.have.members(
+    expect(result).to.be.an('array').that.is.not.empty;
+    expect(Object.keys(result[0])).to.have.members(
         Object.keys(expectedResponse.tags[0])
       );
     });

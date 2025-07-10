@@ -1,10 +1,10 @@
-import {sharedIdSystemSubmodule, storage} from 'modules/sharedIdSystem.js';
+import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {config} from 'src/config.js';
 
 import sinon from 'sinon';
 import * as utils from 'src/utils.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
-import {attachIdSystem, init} from '../../../modules/userId/index.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 
 let expect = require('chai').expect;
@@ -117,7 +117,7 @@ describe('SharedId System', function () {
           }]
         }
       });
-      await getGlobal().getUserIdsAsync();
+      await getGlobal().refreshUserIds();
       const eids = getGlobal().getUserIdsAsEids();
       sinon.assert.match(eids[0], {
         source: 'pubcid.org',

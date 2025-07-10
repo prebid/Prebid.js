@@ -56,8 +56,8 @@ describe('PubMatic adapter', () => {
     },
     ortb2Imp: {
       ext: {
-        	tid: '92489f71-1bf2-49a0-adf9-000cea934729',
-        	gpid: '/1111/homepage-leftnav',
+          tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+          gpid: '/1111/homepage-leftnav',
         data: {
           pbadslot: '/1111/homepage-leftnav',
           adserver: {
@@ -76,7 +76,7 @@ describe('PubMatic adapter', () => {
   videoBid = {
     'seat': 'seat-id',
     'ext': {
-		  'buyid': 'BUYER-ID-987'
+      'buyid': 'BUYER-ID-987'
     },
     'bid': [{
       'id': '74858439-49D7-4169-BA5D-44A046315B2F',
@@ -99,7 +99,7 @@ describe('PubMatic adapter', () => {
   firstResponse = {
     'seat': 'seat-id',
     'ext': {
-		  'buyid': 'BUYER-ID-987'
+      'buyid': 'BUYER-ID-987'
     },
     'bid': [{
       'id': '74858439-49D7-4169-BA5D-44A046315B2F',
@@ -120,16 +120,16 @@ describe('PubMatic adapter', () => {
   };
   response = {
     'body': {
-		  cur: 'USD',
-		  id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
-		  seatbid: [firstResponse]
+      cur: 'USD',
+      id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+      seatbid: [firstResponse]
     }
   };
   videoResponse = {
     'body': {
-		  cur: 'USD',
-		  id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
-		  seatbid: [videoBid]
+      cur: 'USD',
+      id: '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+      seatbid: [videoBid]
     }
   }
   let validBidRequests = [firstBid];
@@ -169,16 +169,16 @@ describe('PubMatic adapter', () => {
     it('should return false if publisherId is missing', () => {
       const bid = utils.deepClone(validBidRequests[0]);
       delete bid.params.publisherId;
-	  	const isValid = spec.isBidRequestValid(bid);
-	  	expect(isValid).to.equal(false);
-  	});
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equal(false);
+    });
 
     it('should return false if publisherId is not of type string', () => {
       const bid = utils.deepClone(validBidRequests[0]);
       bid.params.publisherId = 5890;
-	    const isValid = spec.isBidRequestValid(bid);
-	    expect(isValid).to.equal(false);
-  	});
+      const isValid = spec.isBidRequestValid(bid);
+      expect(isValid).to.equal(false);
+    });
 
     if (FEATURES.VIDEO) {
       describe('VIDEO', () => {
@@ -201,8 +201,8 @@ describe('PubMatic adapter', () => {
 
         });
         it('should return false if mimes are missing in a video impression request', () => {
-			  	const isValid = spec.isBidRequestValid(videoBidRequest);
-			  	expect(isValid).to.equal(false);
+          const isValid = spec.isBidRequestValid(videoBidRequest);
+          expect(isValid).to.equal(false);
         });
 
         it('should return false if context is missing in a video impression request', () => {
@@ -407,7 +407,7 @@ describe('PubMatic adapter', () => {
         expect(imp[0]).to.have.property('banner').to.have.property('pos').equal(0);
       });
 
-	  	if (FEATURES.VIDEO) {
+      if (FEATURES.VIDEO) {
         describe('VIDEO', () => {
           beforeEach(() => {
             utilsLogWarnMock = sinon.stub(utils, 'logWarn');
@@ -485,8 +485,8 @@ describe('PubMatic adapter', () => {
             expect(imp[0]).to.have.property('video').to.have.property('h');
           });
         });
-	  	}
-	  	if (FEATURES.NATIVE) {
+      }
+      if (FEATURES.NATIVE) {
         describe('NATIVE', () => {
           beforeEach(() => {
             utilsLogWarnMock = sinon.stub(utils, 'logWarn');
@@ -530,7 +530,7 @@ describe('PubMatic adapter', () => {
             expect(imp[0]).to.have.property('native');
           });
         });
-	 		}
+       }
       //   describe('MULTIFORMAT', () => {
       //     let multiFormatBidderRequest;
       //     it('should have both banner & video impressions', () => {
@@ -857,14 +857,14 @@ describe('PubMatic adapter', () => {
           pubrender: 0,
           datatopub: 2,
           transparency: [
-    			  {
+            {
               domain: 'platform1domain.com',
               dsaparams: [1]
-    			  },
-    			  {
+            },
+            {
               domain: 'SSP2domain.com',
               dsaparams: [1, 2]
-    			  }
+            }
           ]
         };
         beforeEach(() => {
@@ -1032,32 +1032,32 @@ describe('PubMatic adapter', () => {
       });
 
       // describe('USER ID/ EIDS', () => {
-      // 	let copiedBidderRequest;
-      // 	beforeEach(() => {
-      // 		copiedBidderRequest = utils.deepClone(bidderRequest);
-      // 		copiedBidderRequest.bids[0].userId = {
-      // 			id5id : {
-      // 				uid: 'id5id-xyz-user-id'
-      // 			}
-      // 		}
-      // 		copiedBidderRequest.bids[0].userIdAsEids = [{
-      // 			source: 'id5-sync.com',
-      // 			uids: [{
-      // 				'id': "ID5*G3_osFE_-UHoUjSuA4T8-f51U-JTNOoGcb2aMpx1APnDy8pDwkKCzXCcoSb1HXIIw9AjWBOWmZ3QbMUDTXKq8MPPW8h0II9mBYkP4F_IXkvD-XG64NuFFDPKvez1YGGx",
-      // 				'atype': 1,
-      // 				'ext': {
-      // 					'linkType': 2,
-      // 					'pba': 'q6Vzr0jEebxzmvS8aSrVQJFoJnOxs9gKBKCOLw1y6ew='
-      // 				}
-      // 			}]
-      // 		}]
-      // 	});
+      //   let copiedBidderRequest;
+      //   beforeEach(() => {
+      //     copiedBidderRequest = utils.deepClone(bidderRequest);
+      //     copiedBidderRequest.bids[0].userId = {
+      //       id5id : {
+      //         uid: 'id5id-xyz-user-id'
+      //       }
+      //     }
+      //     copiedBidderRequest.bids[0].userIdAsEids = [{
+      //       source: 'id5-sync.com',
+      //       uids: [{
+      //         'id': "ID5*G3_osFE_-UHoUjSuA4T8-f51U-JTNOoGcb2aMpx1APnDy8pDwkKCzXCcoSb1HXIIw9AjWBOWmZ3QbMUDTXKq8MPPW8h0II9mBYkP4F_IXkvD-XG64NuFFDPKvez1YGGx",
+      //         'atype': 1,
+      //         'ext': {
+      //           'linkType': 2,
+      //           'pba': 'q6Vzr0jEebxzmvS8aSrVQJFoJnOxs9gKBKCOLw1y6ew='
+      //         }
+      //       }]
+      //     }]
+      //   });
 
-      // 	it('should send gpid if specified', () => {
-      // 		const request = spec.buildRequests(validBidRequests, copiedBidderRequest);
-      // 		expect(request.data).to.have.property('user');
-      // 		expect(request.data.user).to.have.property('eids');
-      // 	});
+      //   it('should send gpid if specified', () => {
+      //     const request = spec.buildRequests(validBidRequests, copiedBidderRequest);
+      //     expect(request.data).to.have.property('user');
+      //     expect(request.data.user).to.have.property('eids');
+      //   });
       // });
     });
   });
