@@ -145,7 +145,7 @@ jobs:
       - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: ${{ needs.checkout.fork && format('{0}:{1}', needs.checkout.fork, needs.checkout.branch) || needs.checkout.branch }}
-          git-commit: ${{ needs.checkout.commit }}
-          compare-ref: ${{ needs.checkout.base-branch }}
-          compare-sha: ${{ needs.checkout.base-commit }}
+          git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
+          git-commit: ${{ needs.checkout.outputs.commit }}
+          compare-ref: ${{ needs.checkout.outputs.base-branch }}
+          compare-sha: ${{ needs.checkout.outputs.base-commit }}
