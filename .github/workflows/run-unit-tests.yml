@@ -17,7 +17,7 @@ on:
     outputs:
       wdir:
         description: Cache key for the working directory after running tests
-        value: ${{ jobs.chunk-4.outputs.wdir }}
+        value: ${{ jobs.chunk-1.outputs.wdir }}
     secrets:
       BROWSERSTACK_USER_NAME:
         description: "Browserstack user name"
