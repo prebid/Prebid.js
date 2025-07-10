@@ -15,7 +15,7 @@ describe('GmosspAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       bidder: 'gmossp',
       params: {
         sid: '123456'
@@ -27,7 +27,7 @@ describe('GmosspAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
@@ -35,7 +35,7 @@ describe('GmosspAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         bidder: 'gmossp',
         params: {

@@ -83,7 +83,7 @@ function handleAdMessage(e) {
     track.trackPost(_moduleParams.impressionUrl, args);
 
     // Send response back to the Advertiser tag
-    let response = {
+    const response = {
       type: MessageType.IMPRESSION_RESPONSE,
       id: data.id,
       args: Object.assign(
@@ -173,10 +173,10 @@ export function getSlotByWin(win) {
 
   return (
     ((slots) || []).find((s) => {
-      let slotElement = document.getElementById(s.getSlotElementId());
+      const slotElement = document.getElementById(s.getSlotElementId());
 
       if (slotElement) {
-        let slotIframe = slotElement.querySelector('iframe');
+        const slotIframe = slotElement.querySelector('iframe');
 
         if (slotIframe && slotIframe.contentWindow === win) {
           return true;

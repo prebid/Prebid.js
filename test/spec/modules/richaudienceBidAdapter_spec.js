@@ -803,7 +803,7 @@ describe('Richaudience adapter tests', function () {
   });
 
   it('should pass schain', function () {
-    let schain = {
+    const schain = {
       'ver': '1.0',
       'complete': 1,
       'nodes': [{

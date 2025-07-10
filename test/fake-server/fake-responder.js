@@ -12,8 +12,8 @@ const fixturesPath = path.join(__dirname, 'fixtures');
  * @returns {object} responseBody
  */
 const matchResponse = function (requestBody) {
-  let actualUuids = [];
-  let reqResMap = generateFixtures(fixturesPath);
+  const actualUuids = [];
+  const reqResMap = generateFixtures(fixturesPath);
   const requestResponsePairs = Object.keys(reqResMap).map(testName => reqResMap[testName]);
 
   // delete 'uuid' property

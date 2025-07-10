@@ -66,9 +66,9 @@ export const spec = {
   },
 
   buildRequests(bids, bidderRequest) {
-    let requests = [];
-    let videoBids = bids.filter(bid => isVideoBidValid(bid));
-    let bannerBids = bids.filter(bid => isBannerBidValid(bid));
+    const requests = [];
+    const videoBids = bids.filter(bid => isVideoBidValid(bid));
+    const bannerBids = bids.filter(bid => isBannerBidValid(bid));
     videoBids.forEach(bid => {
       appId = getVideoBidParam(bid, 'appId');
       requests.push({
@@ -98,12 +98,12 @@ export const spec = {
         logWarn(`No valid video bids from ${spec.code} bidder`);
         return [];
       }
-      let sizes = getVideoSizes(bidRequest);
-      let firstSize = getFirstSize(sizes);
-      let context = deepAccess(bidRequest, 'mediaTypes.video.context');
-      let responseType = getVideoBidParam(bidRequest, 'responseType') || 'both';
-      let responseMeta = Object.assign({ mediaType: VIDEO, advertiserDomains: [] }, response.meta);
-      let bidResponse = {
+      const sizes = getVideoSizes(bidRequest);
+      const firstSize = getFirstSize(sizes);
+      const context = deepAccess(bidRequest, 'mediaTypes.video.context');
+      const responseType = getVideoBidParam(bidRequest, 'responseType') || 'both';
+      const responseMeta = Object.assign({ mediaType: VIDEO, advertiserDomains: [] }, response.meta);
+      const bidResponse = {
         requestId: bidRequest.bidId,
         cpm: response.bidPrice,
         width: firstSize.w,
@@ -134,8 +134,8 @@ export const spec = {
       return response
         .filter(bid => bid.adm)
         .map((bid) => {
-          let request = ((bidRequest) || []).find(req => req.adUnitCode === bid.slot);
-          let responseMeta = Object.assign({ mediaType: BANNER, advertiserDomains: [] }, bid.meta);
+          const request = ((bidRequest) || []).find(req => req.adUnitCode === bid.slot);
+          const responseMeta = Object.assign({ mediaType: BANNER, advertiserDomains: [] }, bid.meta);
           return {
             requestId: request.bidId,
             bidderCode: spec.code,
@@ -155,12 +155,12 @@ export const spec = {
   },
 
   getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = {}) {
-    let { gdprApplies, consentString = '' } = gdprConsent;
-    let { gppString = '', applicableSections = [] } = gppConsent;
-    let bannerResponse = ((serverResponses) || []).find((res) => isArray(res.body));
+    const { gdprApplies, consentString = '' } = gdprConsent;
+    const { gppString = '', applicableSections = [] } = gppConsent;
+    const bannerResponse = ((serverResponses) || []).find((res) => isArray(res.body));
 
-    let syncs = [];
-    let params = {
+    const syncs = [];
+    const params = {
       id: appId,
       gdpr: gdprApplies ? 1 : 0,
       gc: consentString,
@@ -230,7 +230,7 @@ function getBannerBidParam(bid, key) {
 }
 
 function getPlayerBidParam(bid, key, defaultValue) {
-  let param = deepAccess(bid, 'params.player.' + key);
+  const param = deepAccess(bid, 'params.player.' + key);
   return param === undefined ? defaultValue : param;
 }
 
@@ -250,13 +250,13 @@ function getEids(bid) {
 
 function getUserId(bid) {
   return ({ key, source, rtiPartner, atype }) => {
-    let id = deepAccess(bid, `userId.${key}`);
+    const id = deepAccess(bid, `userId.${key}`);
     return id ? formatEid(id, source, rtiPartner, atype) : null;
   };
 }
 
 function formatEid(id, source, rtiPartner, atype) {
-  let uid = { id };
+  const uid = { id };
   if (rtiPartner) {
     uid.ext = { rtiPartner };
   }
@@ -270,16 +270,16 @@ function formatEid(id, source, rtiPartner, atype) {
 }
 
 function createVideoRequestData(bid, bidderRequest) {
-  let sizes = getVideoSizes(bid);
-  let firstSize = getFirstSize(sizes);
-  let video = getVideoTargetingParams(bid, VIDEO_TARGETING);
-  let appId = getVideoBidParam(bid, 'appId');
-  let bidfloor = getVideoBidFloor(bid);
-  let tagid = getVideoBidParam(bid, 'tagid');
-  let topLocation = getTopWindowLocation(bidderRequest);
-  let eids = getEids(bid);
-  let ortb2 = deepClone(bidderRequest.ortb2);
-  let payload = {
+  const sizes = getVideoSizes(bid);
+  const firstSize = getFirstSize(sizes);
+  const video = getVideoTargetingParams(bid, VIDEO_TARGETING);
+  const appId = getVideoBidParam(bid, 'appId');
+  const bidfloor = getVideoBidFloor(bid);
+  const tagid = getVideoBidParam(bid, 'tagid');
+  const topLocation = getTopWindowLocation(bidderRequest);
+  const eids = getEids(bid);
+  const ortb2 = deepClone(bidderRequest.ortb2);
+  const payload = {
     isPrebid: true,
     appId: appId,
     domain: document.location.hostname,
@@ -319,13 +319,13 @@ function createVideoRequestData(bid, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    let { gdprApplies, consentString } = bidderRequest.gdprConsent;
+    const { gdprApplies, consentString } = bidderRequest.gdprConsent;
     deepSetValue(payload, 'regs.ext.gdpr', gdprApplies ? 1 : 0);
     deepSetValue(payload, 'user.ext.consent', consentString);
   }
 
   if (bidderRequest && bidderRequest.gppConsent) {
-    let { gppString, applicableSections } = bidderRequest.gppConsent;
+    const { gppString, applicableSections } = bidderRequest.gppConsent;
     deepSetValue(payload, 'regs.gpp', gppString);
     deepSetValue(payload, 'regs.gpp_sid', applicableSections);
   }
@@ -339,7 +339,7 @@ function createVideoRequestData(bid, bidderRequest) {
     deepSetValue(payload, 'user.ext.eids', eids);
   }
 
-  let connection = navigator.connection || navigator.webkitConnection;
+  const connection = navigator.connection || navigator.webkitConnection;
   if (connection && connection.effectiveType) {
     deepSetValue(payload, 'device.connectiontype', connection.effectiveType);
   }
@@ -348,9 +348,9 @@ function createVideoRequestData(bid, bidderRequest) {
 }
 
 function createBannerRequestData(bids, bidderRequest) {
-  let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = bidderRequest.refererInfo?.ref;
-  let slots = bids.map(bid => {
+  const topLocation = getTopWindowLocation(bidderRequest);
+  const topReferrer = bidderRequest.refererInfo?.ref;
+  const slots = bids.map(bid => {
     return {
       slot: bid.adUnitCode,
       id: getBannerBidParam(bid, 'appId'),
@@ -359,8 +359,8 @@ function createBannerRequestData(bids, bidderRequest) {
       sizes: getBannerSizes(bid)
     };
   });
-  let ortb2 = deepClone(bidderRequest.ortb2);
-  let payload = {
+  const ortb2 = deepClone(bidderRequest.ortb2);
+  const payload = {
     slots: slots,
     ortb2: ortb2,
     page: topLocation.href,
@@ -381,13 +381,13 @@ function createBannerRequestData(bids, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    let { gdprApplies, consentString } = bidderRequest.gdprConsent;
+    const { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.gdpr = gdprApplies ? 1 : 0;
     payload.gdprConsent = consentString;
   }
 
   if (bidderRequest && bidderRequest.gppConsent) {
-    let { gppString, applicableSections } = bidderRequest.gppConsent;
+    const { gppString, applicableSections } = bidderRequest.gppConsent;
     payload.gpp = gppString;
     payload.gppSid = applicableSections;
   }
@@ -398,7 +398,7 @@ function createBannerRequestData(bids, bidderRequest) {
   }
 
   SUPPORTED_USER_IDS.forEach(({ key, queryParam }) => {
-    let id = deepAccess(bids, `0.userId.${key}`)
+    const id = deepAccess(bids, `0.userId.${key}`)
     if (id) {
       payload[queryParam] = id;
     }

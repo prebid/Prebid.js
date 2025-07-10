@@ -56,13 +56,13 @@ describe('Zeotap ID System', function() {
     });
 
     it('should check if cookies are enabled', function() {
-      let id = zeotapIdPlusSubmodule.getId();
+      const id = zeotapIdPlusSubmodule.getId();
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
     });
 
     it('should call getCookie if cookies are enabled', function() {
       cookiesAreEnabledStub.returns(true);
-      let id = zeotapIdPlusSubmodule.getId();
+      const id = zeotapIdPlusSubmodule.getId();
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
       expect(getCookieStub.calledOnce).to.be.true;
       sinon.assert.calledWith(getCookieStub, 'IDP');
@@ -71,7 +71,7 @@ describe('Zeotap ID System', function() {
     it('should check for localStorage if cookies are disabled', function() {
       cookiesAreEnabledStub.returns(false);
       localStorageIsEnabledStub.returns(true)
-      let id = zeotapIdPlusSubmodule.getId();
+      const id = zeotapIdPlusSubmodule.getId();
       expect(cookiesAreEnabledStub.calledOnce).to.be.true;
       expect(getCookieStub.called).to.be.false;
       expect(localStorageIsEnabledStub.calledOnce).to.be.true;
@@ -88,7 +88,7 @@ describe('Zeotap ID System', function() {
 
     it('provides the stored Zeotap id if a cookie exists', function() {
       storage.setCookie(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
-      let id = zeotapIdPlusSubmodule.getId();
+      const id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
         id: ENCODED_ZEOTAP_COOKIE
       });
@@ -96,21 +96,21 @@ describe('Zeotap ID System', function() {
 
     it('provides the stored Zeotap id if cookie is absent but present in local storage', function() {
       storage.setDataInLocalStorage(ZEOTAP_COOKIE_NAME, ENCODED_ZEOTAP_COOKIE);
-      let id = zeotapIdPlusSubmodule.getId();
+      const id = zeotapIdPlusSubmodule.getId();
       expect(id).to.deep.equal({
         id: ENCODED_ZEOTAP_COOKIE
       });
     });
 
     it('returns undefined if both cookie and local storage are empty', function() {
-      let id = zeotapIdPlusSubmodule.getId();
+      const id = zeotapIdPlusSubmodule.getId();
       expect(id).to.be.undefined
     })
   });
 
   describe('test method: decode', function() {
     it('provides the Zeotap ID (IDP) from a stored object', function() {
-      let zeotapId = {
+      const zeotapId = {
         id: ENCODED_ZEOTAP_COOKIE,
       };
 
@@ -120,7 +120,7 @@ describe('Zeotap ID System', function() {
     });
 
     it('provides the Zeotap ID (IDP) from a stored string', function() {
-      let zeotapId = ENCODED_ZEOTAP_COOKIE;
+      const zeotapId = ENCODED_ZEOTAP_COOKIE;
 
       expect(zeotapIdPlusSubmodule.decode(zeotapId)).to.deep.equal({
         IDP: ZEOTAP_COOKIE

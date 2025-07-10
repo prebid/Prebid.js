@@ -164,7 +164,7 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics,
   const ortbConfig = mergeDeep({}, currConfig)
   const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
 
-  let topicsUserData = []
+  const topicsUserData = []
   for (const [k, value] of Object.entries(topics)) {
     topicsUserData.push({
       name,

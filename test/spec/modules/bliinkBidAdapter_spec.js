@@ -171,7 +171,7 @@ const getConfigCreativeVideo = (isNoVast) => {
  * @return {{bidderRequestId: string, bidderCode: string, bids: {bidderWinsCount: number, adUnitCode: string, bidder: string, src: string, bidRequestsCount: number, params: {tagId: string, placement: string}, bidId: string, transactionId: string, auctionId: string, bidderRequestId: string, bidderRequestsCount: number, mediaTypes: {banner: {sizes: number[][]}}, sizes: number[][], crumbs: {pubcid: string}, ortb2Imp: {ext: {data: {pbadslot: string}}}}[], refererInfo: {referer: string, canonicalUrl: null, isAmp: boolean, reachedTop: boolean, numIframes: number}}}
  */
 const getConfigBuildRequest = (placement) => {
-  let buildRequest = {
+  const buildRequest = {
     bidderRequestId: '164ddfd207e94d',
     bidderCode: 'bliink',
     bids: [getConfigBid(placement)],

@@ -122,8 +122,8 @@ const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
 ]
 
 let isInvalidNativeRequest = false
-let NATIVE_ASSET_ID_TO_KEY_MAP = {};
-let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+const NATIVE_ASSET_ID_TO_KEY_MAP = {};
+const NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // together allows traversal of NATIVE_ASSETS_LIST in any direction
 // id -> key
@@ -154,8 +154,8 @@ export const spec = {
       // video ad validation
       if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
         // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
-        let mediaTypesVideoMimes = deepAccess(bid.mediaTypes, 'video.mimes');
-        let paramsVideoMimes = deepAccess(bid, 'params.video.mimes');
+        const mediaTypesVideoMimes = deepAccess(bid.mediaTypes, 'video.mimes');
+        const paramsVideoMimes = deepAccess(bid, 'params.video.mimes');
         if (_isNonEmptyArray(mediaTypesVideoMimes) === false && _isNonEmptyArray(paramsVideoMimes) === false) {
           _logWarn('Error: For video ads, bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array. Call suppressed:', JSON.stringify(bid));
           return false;
@@ -300,7 +300,7 @@ export const spec = {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     _logInfo('interpretResponse request', request);
-    let parsedRequest = request.data; // not currently stringified
+    const parsedRequest = request.data; // not currently stringified
     // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
 
     // try {
@@ -312,7 +312,7 @@ export const spec = {
         seatbidder.bid &&
             isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              let newBid = {
+              const newBid = {
                 requestId: bid.impid,
                 cpm: (parseFloat(bid.price) || 0).toFixed(2),
                 width: bid.w,
@@ -468,7 +468,7 @@ function _parseNativeResponse(bid, newBid) {
 }
 
 function _getDomainFromURL(url) {
-  let anchor = document.createElement('a');
+  const anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
 }
@@ -669,9 +669,9 @@ function _addFloorFromFloorModule(impObj, bid) {
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubwise.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (impObj.hasOwnProperty(mediaType)) {
-        let floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
+        const floorInfo = bid.getFloor({ currency: impObj.bidFloorCur, mediaType: mediaType, size: '*' });
         if (isPlainObject(floorInfo) && floorInfo.currency === impObj.bidFloorCur && !isNaN(parseInt(floorInfo.floor))) {
-          let mediaTypeFloor = parseFloat(floorInfo.floor);
+          const mediaTypeFloor = parseFloat(floorInfo.floor);
           bidFloor = (bidFloor == -1 ? mediaTypeFloor : Math.min(mediaTypeFloor, bidFloor))
         }
       }
