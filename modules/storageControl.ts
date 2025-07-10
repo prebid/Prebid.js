@@ -56,6 +56,7 @@ export function getDisclosures(params, meta = metadata) {
   }
   Object.entries(disclosureURLs).forEach(([componentName, disclosureURL]) => {
     meta.getStorageDisclosure(disclosureURL)
+      ?.disclosures
       ?.filter(disclosure => matches(params, disclosure))
       ?.forEach(disclosure => {
         matchingDisclosures.push({
