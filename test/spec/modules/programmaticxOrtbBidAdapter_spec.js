@@ -20,7 +20,7 @@ import {
   getUniqueDealId,
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
+export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'netId', 'tdid', 'pubProvidedId', 'intentIqId', 'liveIntentId'];
 
 const SUB_DOMAIN = 'exchange';
 
