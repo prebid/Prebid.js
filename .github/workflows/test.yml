@@ -27,7 +27,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request_target' }}
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
 
       - name: Checkout code (push)
         if: ${{ github.event_name == 'push' }}
