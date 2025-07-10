@@ -26,7 +26,9 @@ jobs:
           echo "head_ref" "${{ github.head_ref }}"
           echo "pull_request.head.ref" "${{ github.event.pull_request.head.ref }}"
           echo "push.before" "${{ github.event.push.before }}"
-
+          echo "push.after"  "${{ github.event.push.after }}"
+          echo "push.ref" "${{ github.event.push.ref }}"
+          
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
