@@ -149,9 +149,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Debug
+        if: ${{ needs.checkout.outputs.fork != '' }}
         run: |
-          echo fork "${{ needs.checkout.output.fork }}"
-          echo isfork "${{ needs.checkout.output.fork != '' }}"
+          echo fork "${{ needs.checkout.outputs.fork }}"
+          echo isfork "${{ needs.checkout.outputs.fork != '' }}"
       - name: Get job ID
         id: get-job-id
         run: |
