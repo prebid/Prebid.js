@@ -134,8 +134,7 @@ jobs:
           path: .
           key: ${{ needs.test.outputs.wdir }}
           fail-on-cache-miss: true
-      - name: Coveralls (push)
-        if: ${{ github.event_name == 'push' }}
+      - name: Coveralls
         uses: coverallsapp/github-action@v2
         with:
           git-branch: ${{ needs.checkout.outputs.fork && format('{0}:{1}', needs.checkout.outputs.fork, needs.checkout.outputs.branch) || needs.checkout.outputs.branch }}
