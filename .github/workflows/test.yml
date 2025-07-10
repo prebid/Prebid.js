@@ -26,7 +26,7 @@ jobs:
           echo "head_ref" "${{ github.head_ref }}"
           echo "pull_request.head.ref" "${{ github.event.pull_request.head.ref }}"
           echo "push.before" "${{ github.event.before }}"
-          echo "event.pull_request.head.repo.owner.id" "${{ github.event.pull_request.head.repo.owner.id }}"
+          echo "event.pull_request.head.repo.owner.login" "${{ github.event.pull_request.head.repo.owner.login }}"
           echo "repository_owner" "${{ github.repository_owner }}"
 
       - name: Set up Node.js
