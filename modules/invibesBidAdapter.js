@@ -778,13 +778,8 @@ const keywords = (function () {
 
   function parse(str, cap) {
     let parsedStr = str.replace(/[<>~|\\"`!@#$%^&*()=+?]/g, '');
-
-    function onlyUnique(value, index, self) {
-      return value !== '' && self.indexOf(value) === index;
-    }
-
-    const words = parsedStr.split(/[\s,;.:]+/);
-    const uniqueWords = words.filter(onlyUnique);
+    let words = parsedStr.split(/[\s,;.:]+/);
+    let uniqueWords = Array.from(new Set(words.filter(word => word)));
     parsedStr = '';
 
     for (let i = 0; i < uniqueWords.length; i++) {
