@@ -1,11 +1,12 @@
 import { expect } from 'chai';
 import { spec } from 'modules/colombiaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
+import * as ajaxLib from 'src/ajax.js';
 
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
-describe('colombiaBidAdapter', function() {
+describe('colombiaBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('isBidRequestValid', function () {
@@ -150,6 +151,128 @@ describe('colombiaBidAdapter', function() {
       };
       let result = spec.interpretResponse(response, bidRequest[0]);
       expect(result.length).to.equal(0);
+    });
+  });
+  describe('onBidWon', function () {
+    let ajaxStub;
+    beforeEach(() => {
+      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+    });
+
+    afterEach(() => {
+      ajaxStub.restore();
+    });
+
+    it('should call ajax with correct URL and encoded evtData when event 500 is present', function () {
+      const bid = {
+        eventTrackers: [{
+          event: 500,
+          method: 500,
+          url: 'https://ade.clmbtech.com/cde/bidNotify.htm'
+        }],
+        ext: {
+          evtData: 'd_1_%7B%22iId%22%3A%22abc123-impr-id%22%2C%22aId%22%3A%22ad5678%22%2C%22ci%22%3A%22call-id-789%22%2C%22fpc%22%3A%22some-fpc-value%22%2C%22prebid%22%3A1%7D'
+        }
+      };
+      spec.onBidWon(bid);
+      expect(ajaxStub.calledOnce).to.be.true;
+      const [url, , data, options] = ajaxStub.firstCall.args;
+      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm');
+      const parsedPayload = JSON.parse(data);
+      expect(parsedPayload).to.deep.equal({
+        bidNotifyType: 1,
+        evt: 'd_1_%7B%22iId%22%3A%22abc123-impr-id%22%2C%22aId%22%3A%22ad5678%22%2C%22ci%22%3A%22call-id-789%22%2C%22fpc%22%3A%22some-fpc-value%22%2C%22prebid%22%3A1%7D'
+      });
+      expect(options).to.deep.include({
+        method: 'POST',
+        withCredentials: false
+      });
+    });
+    it('should not call ajax if eventTrackers is missing or event 500 not present', function () {
+      spec.onBidWon({});
+      spec.onBidWon({ eventTrackers: [{ event: 200 }] });
+
+      expect(ajaxStub.notCalled).to.be.true;
+    });
+  });
+  describe('onTimeout', function () {
+    let ajaxStub;
+
+    beforeEach(function () {
+      ajaxStub = sinon.stub(ajaxLib, 'ajax');
+    });
+
+    afterEach(function () {
+      ajaxStub.restore();
+    });
+
+    it('should call ajax with correct payload and pubAdCodeNames from gpid', function () {
+      const timeoutData = [
+        {
+          ortb2Imp: {
+            ext: {
+              gpid: 'abc#123'
+            }
+          }
+        },
+        {
+          ortb2Imp: {
+            ext: {
+              gpid: 'def#456'
+            }
+          }
+        },
+        {
+          ortb2Imp: {
+            ext: {
+              gpid: 'ghi#789'
+            }
+          }
+        }
+      ];
+
+      spec.onTimeout(timeoutData);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+
+      const [url, , data, options] = ajaxStub.firstCall.args;
+
+      expect(url).to.equal('https://ade.clmbtech.com/cde/bidNotify.htm');
+
+      const parsedPayload = JSON.parse(data);
+      expect(parsedPayload).to.deep.equal({
+        bidNotifyType: 2,
+        pubAdCodeNames: 'abc,def,ghi'
+      });
+
+      expect(options).to.deep.include({
+        method: 'POST',
+        withCredentials: false
+      });
+    });
+
+    it('should not call ajax if timeoutData is null or empty', function () {
+      spec.onTimeout(null);
+      spec.onTimeout([]);
+
+      expect(ajaxStub.notCalled).to.be.true;
+    });
+
+    it('should skip entries without valid gpid', function () {
+      const timeoutData = [
+        { ortb2Imp: { ext: { gpid: 'valid#123' } } },
+        { ortb2Imp: { ext: {} } },
+        { ortb2Imp: {} },
+        {},
+      ];
+
+      spec.onTimeout(timeoutData);
+
+      expect(ajaxStub.calledOnce).to.be.true;
+      const [, , data] = ajaxStub.firstCall.args;
+      const parsed = JSON.parse(data);
+
+      expect(parsed.pubAdCodeNames).to.equal('valid');
     });
   });
 });

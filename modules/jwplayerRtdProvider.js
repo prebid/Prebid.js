@@ -340,7 +340,7 @@ export function getContentData(mediaId, segments) {
   };
 
   if (mediaId) {
-    contentData.ext.cids = [mediaId];
+    contentData.ext.cids = contentData.cids = [mediaId];
   }
 
   if (segments) {
