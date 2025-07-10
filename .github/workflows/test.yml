@@ -51,7 +51,8 @@ jobs:
           key: source-${{ github.run_id }}
           fail-on-cache-miss: true
       - name: lint
-        run: npx eslint
+        run: |
+          npx eslint
       
   test-no-features:
     name: "Unit tests (all features disabled)"
