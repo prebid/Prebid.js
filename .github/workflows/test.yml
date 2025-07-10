@@ -117,20 +117,18 @@ jobs:
           path: .
           key: ${{ needs.test.outputs.wdir }}
           fail-on-cache-miss: true
-      - name: Coveralls
+      - name: Coveralls (push)
         if: ${{ github.event_name == 'push' }}
         uses: coverallsapp/github-action@v2
         with:
-          debug: true
           git-branch: ${{ github.ref }}
           git-commit: ${{ github.sha }}
           compare-ref: ${{ github.ref }}
           compare-sha: ${{ github.event.push.before }}
-      - name: Coveralls
+      - name: Coveralls (PR)
         if: ${{ github.event_name == 'pull_request_target' }}
         uses: coverallsapp/github-action@v2
         with:
-          debug: true
           git-branch: ${{ github.event.pull_request.head.ref }}
           git-commit: ${{ github.event.pull_request.head.sha }}
           compare-ref: ${{ github.event.pull_request.base.ref }}
