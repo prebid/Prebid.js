@@ -21,11 +21,13 @@ jobs:
       ref: ${{ steps.checkout-pr.outputs.ref || steps.checkout-push.outputs.ref }}
       commit: ${{ steps.checkout-pr.outputs.commit || steps.checkout-push.outputs.commit }}
     steps:
-      - name: Job information
+      - name: Environment information
         run: |
           echo "head_ref" "${{ github.head_ref }}"
           echo "pull_request.head.ref" "${{ github.event.pull_request.head.ref }}"
           echo "push.before" "${{ github.event.before }}"
+          echo "event.pull_request.head.repo.owner.name" "${{ github.event.pull_request.head.repo.owner.name }}"
+          echo "repository_owner" "${{ github.repository_owner }}"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -139,15 +141,15 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: ${{ needs.checkout.outputs.ref }}
-          git-commit: ${{ needs.checkout.outputs.commit }}
+          git-branch: ${{ github.ref }}
+          git-commit: ${{ github.sha }}
           compare-ref: ${{ github.ref }}
-          compare-sha: ${{ github.event.push.before }}
+          compare-sha: ${{ github.event.before }}
       - name: Coveralls (PR)
         if: ${{ github.event_name == 'pull_request_target' }}
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: ${{ needs.checkout.outputs.ref }}
+          git-branch: ${{ github.head_ref }}
           git-commit: ${{ needs.checkout.outputs.commit }}
           compare-ref: ${{ github.event.pull_request.base.ref }}
           compare-sha: ${{ github.event.pull_request.base.sha }}
