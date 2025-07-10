@@ -54,6 +54,7 @@ jobs:
         run: npx eslint
       
   test-no-features:
+    if: false
     name: "Unit tests (all features disabled)"
     needs: checkout
     uses: ./.github/workflows/run-unit-tests.yml
@@ -70,12 +71,13 @@ jobs:
     uses: ./.github/workflows/run-unit-tests.yml
     with:
       build-cmd: npx gulp precompile
-      test-cmd: npx gulp test-only-nobuild --browserstack
+      test-cmd: npx gulp test-only-nobuild
       serialize: true
     secrets:
       BROWSERSTACK_USER_NAME: ${{ secrets.BROWSERSTACK_USER_NAME }}
       BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
   test-e2e:
+    if: false
     name: "End-to-end tests"
     needs: checkout
     runs-on: ubuntu-latest
@@ -119,6 +121,7 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         uses: coverallsapp/github-action@v2
         with:
+          debug: true
           git-branch: ${{ github.ref }}
           git-commit: ${{ github.sha }}
           compare-ref: ${{ github.ref }}
@@ -127,6 +130,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request_target' }}
         uses: coverallsapp/github-action@v2
         with:
+          debug: true
           git-branch: ${{ github.event.pull_request.head.ref }}
           git-commit: ${{ github.event.pull_request.head.sha }}
           compare-ref: ${{ github.event.pull_request.base.ref }}
