@@ -28,6 +28,7 @@ jobs:
           echo "push.before" "${{ github.event.before }}"
           echo "event.pull_request.head.repo.owner.login" "${{ github.event.pull_request.head.repo.owner.login }}"
           echo "repository_owner" "${{ github.repository_owner }}"
+          echo "coveralls branch" "${{ github.event.pull_request.head.repo.owner.login != github.repository_owner && format('{0}:', github.event.pull_request.head.repo.owner.login) || '' }}${{ github.head_ref }}"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -149,7 +150,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request_target' }}
         uses: coverallsapp/github-action@v2
         with:
-          git-branch: ${{ github.head_ref }}
+          git-branch: ${{ github.event.pull_request.head.repo.owner.login != github.repository_owner && format('{0}:', github.event.pull_request.head.repo.owner.login) || '' }}${{ github.head_ref }}
           git-commit: ${{ needs.checkout.outputs.commit }}
           compare-ref: ${{ github.event.pull_request.base.ref }}
           compare-sha: ${{ github.event.pull_request.base.sha }}
