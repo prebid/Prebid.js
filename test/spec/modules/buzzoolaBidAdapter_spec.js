@@ -374,7 +374,9 @@ describe('buzzoolaBidAdapter', () => {
 
       result.adUnitCode = 'adUnitCode';
 
-      scriptElement.onload && scriptElement.onload();
+      if (scriptElement.onload) {
+        scriptElement.onload();
+      }
 
       scriptStub.restore();
     });

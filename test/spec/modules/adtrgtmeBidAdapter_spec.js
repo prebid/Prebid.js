@@ -75,7 +75,9 @@ const createAdm = (type) => {
       ADM = `<script>(new Image()).src="${DEFAULT_PIXEL_URL}"</script>
       <img src="${DEFAULT_BANNER_URL}" />`;
       break;
-    default: '<span>Ad is here</span>'; break;
+    default:
+      ADM = '<span>Ad is here</span>';
+      break;
   };
   return ADM;
 };

@@ -294,7 +294,7 @@ describe('OrakiBidAdapter', function () {
       expect(data).to.have.property('gpp');
       expect(data).to.have.property('gpp_sid');
 
-      bidderRequest.ortb2;
+      expect(bidderRequest).to.have.property('ortb2');
     })
   });
 

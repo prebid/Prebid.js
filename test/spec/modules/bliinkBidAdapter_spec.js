@@ -967,9 +967,9 @@ const testsBuildRequests = [
 describe('BLIINK Adapter buildRequests', function () {
   for (const test of testsBuildRequests) {
     it(test.title, () => {
-      const res = test.args.fn;
-      expect(res).to.eql(test.want);
-      test.args.after;
+    const res = test.args.fn;
+    expect(res).to.eql(test.want);
+    test.args.after();
     });
   }
 });

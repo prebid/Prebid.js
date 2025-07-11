@@ -2,14 +2,18 @@ import {cmpClient, MODE_CALLBACK, MODE_RETURN} from '../../../../libraries/cmp/c
 
 describe('cmpClient', () => {
   function mockWindow(props = {}) {
-    let listeners = [];
-    const win = {
-      addEventListener: sinon.stub().callsFake((evt, listener) => {
-        evt === 'message' && listeners.push(listener)
-      }),
-      removeEventListener: sinon.stub().callsFake((evt, listener) => {
-        evt === 'message' && (listeners = listeners.filter((l) => l !== listener));
-      }),
+      let listeners = [];
+      const win = {
+        addEventListener: sinon.stub().callsFake((evt, listener) => {
+          if (evt === 'message') {
+            listeners.push(listener);
+          }
+        }),
+        removeEventListener: sinon.stub().callsFake((evt, listener) => {
+          if (evt === 'message') {
+            listeners = listeners.filter((l) => l !== listener);
+          }
+        }),
       postMessage: sinon.stub().callsFake((msg) => {
         listeners.forEach(ln => ln({data: msg}))
       }),

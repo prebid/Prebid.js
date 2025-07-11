@@ -2679,7 +2679,7 @@ describe('IndexexchangeAdapter', function () {
       it('should return the original URL referer page url if ortb2 does not exist', () => {
         config.setConfig({ ix: {} });
         const bidderRequest = deepClone(DEFAULT_OPTION);
-        delete bidderRequest.ortb2;
+        delete expect(bidderRequest).to.have.property('ortb2');
         bidderRequest.refererInfo.page = 'https://example.com';
         const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
         const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
