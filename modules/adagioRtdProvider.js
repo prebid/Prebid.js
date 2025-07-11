@@ -522,7 +522,7 @@ function getSlotPosition(divId) {
         return '';
       }
 
-      let box = getBoundingClientRect(domElement);
+      const box = getBoundingClientRect(domElement);
 
       const windowDimensions = getWinDimensions();
 

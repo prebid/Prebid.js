@@ -53,7 +53,7 @@ function getUniqId() {
   }
 
   if (uniq && isUniqFromLS) {
-    let expires = new Date();
+    const expires = new Date();
     expires.setFullYear(expires.getFullYear() + 10);
 
     try {

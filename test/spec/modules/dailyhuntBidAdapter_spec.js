@@ -13,7 +13,7 @@ const _encodeURIComponent = function (a) {
 
 describe('DailyhuntAdapter', function () {
   describe('isBidRequestValid', function () {
-    let bid = {
+    const bid = {
       'bidder': 'dailyhunt',
       'params': {
         placement_id: 1,
@@ -27,14 +27,14 @@ describe('DailyhuntAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
   describe('buildRequests', function() {
-    let bidRequests = [
+    const bidRequests = [
       {
         bidder: 'dailyhunt',
         params: {
@@ -62,7 +62,7 @@ describe('DailyhuntAdapter', function () {
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
-    let nativeBidRequests = [
+    const nativeBidRequests = [
       {
         bidder: 'dailyhunt',
         params: {
@@ -95,7 +95,7 @@ describe('DailyhuntAdapter', function () {
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
-    let videoBidRequests = [
+    const videoBidRequests = [
       {
         bidder: 'dailyhunt',
         params: {
@@ -121,7 +121,7 @@ describe('DailyhuntAdapter', function () {
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
       }
     ];
-    let bidderRequest = {
+    const bidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
       'bidderCode': 'dailyhunt',
@@ -134,7 +134,7 @@ describe('DailyhuntAdapter', function () {
         'referer': 'http://m.dailyhunt.in/'
       }
     };
-    let nativeBidderRequest = {
+    const nativeBidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
       'bidderCode': 'dailyhunt',
@@ -147,7 +147,7 @@ describe('DailyhuntAdapter', function () {
         'referer': 'http://m.dailyhunt.in/'
       }
     };
-    let videoBidderRequest = {
+    const videoBidderRequest = {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
       'bidderCode': 'dailyhunt',
@@ -180,7 +180,7 @@ describe('DailyhuntAdapter', function () {
     });
   });
   describe('interpretResponse', function () {
-    let bidResponses = {
+    const bidResponses = {
       id: 'da32def7-6779-403c-ada7-0b201dbc9744',
       seatbid: [
         {
@@ -271,7 +271,7 @@ describe('DailyhuntAdapter', function () {
     };
 
     it('should get correct bid response', function () {
-      let expectedResponse = [
+      const expectedResponse = [
         {
           requestId: '1',
           cpm: 1.4,
@@ -342,7 +342,7 @@ describe('DailyhuntAdapter', function () {
           vastXml: 'adm',
         },
       ];
-      let bidderRequest = {
+      const bidderRequest = {
         bids: [
           {
             bidId: 'banner-impid',
@@ -376,7 +376,7 @@ describe('DailyhuntAdapter', function () {
           },
         ]
       }
-      let result = spec.interpretResponse({ body: bidResponses }, bidderRequest);
+      const result = spec.interpretResponse({ body: bidResponses }, bidderRequest);
       result.forEach((r, i) => {
         expect(Object.keys(r)).to.have.members(Object.keys(expectedResponse[i]));
       });
@@ -384,7 +384,7 @@ describe('DailyhuntAdapter', function () {
   })
   describe('onBidWon', function () {
     it('should hit win url when bid won', function () {
-      let bid = {
+      const bid = {
         requestId: '1',
         cpm: 1.4,
         creativeId: 'asd5ddbf014cac993.66466212',

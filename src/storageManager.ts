@@ -85,7 +85,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
   function schedule(operation, storageType, storageKey, done) {
     if (done && typeof done === 'function') {
       storageCallbacks.push(function() {
-        let result = isValid(operation, storageType, storageKey);
+        const result = isValid(operation, storageType, storageKey);
         done(result);
       });
     } else {
@@ -105,7 +105,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @param {function} [done]
    */
   const setCookie = function (key, value, expires, sameSite, domain, done) {
-    let cb = function (result) {
+    const cb = function (result) {
       if (result && result.valid) {
         const domainPortion = (domain && domain !== '') ? ` ;domain=${encodeURIComponent(domain)}` : '';
         const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
@@ -123,9 +123,9 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @returns {(string|null)}
    */
   const getCookie = function(name, done) {
-    let cb = function (result) {
+    const cb = function (result) {
       if (result && result.valid) {
-        let m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
+        const m = window.document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]*)\\s*(;|$)');
         return m ? decodeURIComponent(m[2]) : null;
       }
       return null;
@@ -138,7 +138,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @returns {boolean}
    */
   const cookiesAreEnabled = function (done) {
-    let cb = function (result) {
+    const cb = function (result) {
       if (result && result.valid) {
         return checkCookieSupport();
       }
@@ -152,7 +152,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
     const backend = () => window[name] as any;
 
     const hasStorage: AcceptsCallback<() => boolean> = function (done) {
-      let cb = function (result) {
+      const cb = function (result) {
         if (result && result.valid) {
           try {
             return !!backend();
@@ -168,7 +168,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
     return {
       [`has${capName}`]: hasStorage,
       [`${name}IsEnabled`](done) {
-        let cb = function (result) {
+        const cb = function (result) {
           if (result && result.valid) {
             try {
               backend().setItem('prebid.cookieTest', '1');
@@ -185,7 +185,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, null, done);
       },
       [`setDataIn${capName}`](key, value, done) {
-        let cb = function (result) {
+        const cb = function (result) {
           if (result && result.valid && hasStorage()) {
             backend().setItem(key, value);
           }
@@ -193,7 +193,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
       },
       [`getDataFrom${capName}`](key, done) {
-        let cb = function (result) {
+        const cb = function (result) {
           if (result && result.valid && hasStorage()) {
             return backend().getItem(key);
           }
@@ -202,7 +202,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
         return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, key, done);
       },
       [`removeDataFrom${capName}`](key, done) {
-        let cb = function (result) {
+        const cb = function (result) {
           if (result && result.valid && hasStorage()) {
             backend().removeItem(key);
           }
@@ -220,7 +220,7 @@ export function newStorageManager({moduleName, moduleType, advertiseKeys = true}
    * @returns {string[]}
    */
   const findSimilarCookies = function(keyLike, done) {
-    let cb = function (result) {
+    const cb = function (result) {
       if (result && result.valid) {
         const all = [];
         if (hasDeviceAccess()) {

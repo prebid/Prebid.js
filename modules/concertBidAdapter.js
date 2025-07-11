@@ -44,7 +44,7 @@ export const spec = {
 
     const eids = [];
 
-    let payload = {
+    const payload = {
       meta: {
         prebidVersion: '$prebid.version$',
         pageUrl: bidderRequest.refererInfo.page,
@@ -73,7 +73,7 @@ export const spec = {
       const adUnitElement = document.getElementById(bidRequest.adUnitCode);
       const coordinates = getOffset(adUnitElement);
 
-      let slot = {
+      const slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
         transactionId: bidRequest.ortb2Imp?.ext?.tid,

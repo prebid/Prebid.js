@@ -360,7 +360,7 @@ function handlerAuctionEnd(event) {
 }
 
 function handlerBidWon(event) {
-  let auctionId = getTargetedAuctionId(event);
+  const auctionId = getTargetedAuctionId(event);
 
   if (!guard.bidTracked(auctionId, event.adUnitCode)) {
     return;
@@ -396,7 +396,7 @@ function handlerBidWon(event) {
 
 function handlerAdRender(event, isSuccess) {
   const { adUnitCode } = event.bid;
-  let auctionId = getTargetedAuctionId(event.bid);
+  const auctionId = getTargetedAuctionId(event.bid);
 
   if (!guard.bidTracked(auctionId, adUnitCode)) {
     return;
@@ -483,7 +483,7 @@ function gamSlotCallback(event) {
   }
 }
 
-let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
+const adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
   track: function(event) {
     const { eventType, args } = event;
     try {
@@ -535,7 +535,7 @@ adagioAdapter.originEnableAnalytics = adagioAdapter.enableAnalytics;
 adagioAdapter.enableAnalytics = config => {
   _internal.getAdagioNs().versions.adagioAnalyticsAdapter = VERSION;
 
-  let modules = getGlobal().installedModules;
+  const modules = getGlobal().installedModules;
   if (modules && (!modules.length || modules.indexOf('adagioRtdProvider') === -1 || modules.indexOf('rtdModule') === -1)) {
     logError('Adagio Analytics Adapter requires rtdModule & adagioRtdProvider modules which are not installed. No beacon will be sent');
     return;

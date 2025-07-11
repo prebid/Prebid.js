@@ -50,7 +50,7 @@ export const spec = {
     let contents = [];
     let data = {};
 
-    let placements = validBidRequests.map(bidRequest => {
+    const placements = validBidRequests.map(bidRequest => {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
       if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
@@ -58,9 +58,9 @@ export const spec = {
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
 
-      let adUnitId = bidRequest.adUnitCode;
-      let placementId = bidRequest.params.placementId;
-      let sizes = generateSizeParam(bidRequest.sizes);
+      const adUnitId = bidRequest.adUnitCode;
+      const placementId = bidRequest.params.placementId;
+      const sizes = generateSizeParam(bidRequest.sizes);
 
       return {
         sizes: sizes,
@@ -72,7 +72,7 @@ export const spec = {
       };
     });
 
-    let body = {
+    const body = {
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
       storageId: storageId,
