@@ -237,6 +237,8 @@ module.exports = [
       'import/extensions': 'off',
       'camelcase': 'off',
       'no-redeclare': 'off',
+      'no-loss-of-precision': 'off',
+      'import-x/no-duplicates': 'off',
       'no-global-assign': 'off',
       'default-case-last': 'off'
     }
