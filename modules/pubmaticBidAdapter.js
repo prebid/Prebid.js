@@ -62,10 +62,12 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const { kadfloor, currency, adSlot = '', deals, dctr, pmzoneid, hashedKey } = bidRequest.params;
-    const { adUnitCode, mediaTypes, rtd } = bidRequest;
+    const { adUnitCode, mediaTypes, rtd, ortb2 } = bidRequest;
     const imp = buildImp(bidRequest, context);
+    const imSegments = deepAccess(ortb2, 'user.ext.data.im_segments');
     if (deals) addPMPDeals(imp, deals);
     if (dctr) addDealCustomTargetings(imp, dctr);
+    if (imSegments) addImSegmentData(imp, imSegments);
     if (rtd?.jwplayer) addJWPlayerSegmentData(imp, rtd.jwplayer);
     imp.bidfloor = _parseSlotParam('kadfloor', kadfloor);
     imp.bidfloorcur = currency ? _parseSlotParam('currency', currency) : DEFAULT_CURRENCY;
@@ -352,6 +354,13 @@ const updateVideoImp = (videoImp, videoParams, adUnitCode, imp) => {
     logWarn(`${LOG_WARN_PREFIX}Error: Missing ${!videoParams ? 'video config params' : 'video size params (playersize or w&h)'} for adunit: ${adUnitCode} with mediaType set as video. Ignoring video impression in the adunit.`);
   }
 }
+
+const addImSegmentData = (imp, imSegments) => {
+  if (!imSegments || !isArray(imSegments) || imSegments.length === 0) return;
+  const imSegData = `im_segments=${imSegments.join(',')}`;
+  imp.ext = imp.ext || {};
+  imp.ext.key_val = imp.ext.key_val ? `${imp.ext.key_val}|${imSegData}` : imSegData;
+};
 
 const addJWPlayerSegmentData = (imp, jwplayer) => {
   const jwSegData = jwplayer?.targeting;
