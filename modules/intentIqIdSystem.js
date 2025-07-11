@@ -303,6 +303,20 @@ function storeCounters(storage, partnerData) {
   storeData(PARTNER_DATA_KEY, JSON.stringify(partnerData), storage, firstPartyData);
 }
 
+export function setPPID(gamObjectReference, shouldSetPPID, eids) {
+  if (!shouldSetPPID || !isPlainObject(gamObjectReference) || !Array.isArray(eids)) return;
+
+  const intentIqEid = eids.find(eid => eid.source === 'intentiq.com');
+  if (!intentIqEid?.uids?.length) return;
+
+  const ppuid = intentIqEid.uids.find(uid => uid.ext?.stype === 'ppuid')?.id;
+  if (!ppuid) return;
+
+  gamObjectReference.cmd?.push(() => {
+    gamObjectReference.pubads().setPublisherProvidedId(ppuid);
+  });
+}
+
 /** @type {Submodule} */
 export const intentIqIdSubmodule = {
   /**
@@ -444,6 +458,7 @@ export const intentIqIdSubmodule = {
       if (partnerData.data.length) { // encrypted data
         decryptedData = tryParse(decryptData(partnerData.data));
         runtimeEids = decryptedData;
+        setPPID(gamObjectReference, configParams.shouldSetPPID, runtimeEids.eids);
       }
     }
 
@@ -611,6 +626,7 @@ export const intentIqIdSubmodule = {
 
             if (respJson.data?.eids) {
               runtimeEids = respJson.data
+              setPPID(gamObjectReference, configParams.shouldSetPPID, runtimeEids.eids);
               callback(respJson.data.eids);
               firePartnerCallback()
               const encryptedData = encryptData(JSON.stringify(respJson.data))
