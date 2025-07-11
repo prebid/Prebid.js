@@ -50,11 +50,11 @@ describe('ConcertAnalyticsAdapter', function() {
       clock.tick(3000 + 1000);
 
       const eventsToReport = ['bidResponse', 'bidWon'];
-      for (var i = 0; i < concertAnalytics.eventsStorage.length; i++) {
+      for (let i = 0; i < concertAnalytics.eventsStorage.length; i++) {
         expect(eventsToReport.indexOf(concertAnalytics.eventsStorage[i].event)).to.be.above(-1);
       }
 
-      for (var i = 0; i < eventsToReport.length; i++) {
+      for (let i = 0; i < eventsToReport.length; i++) {
         expect(concertAnalytics.eventsStorage.some(function(event) {
           return event.event === eventsToReport[i]
         })).to.equal(true);
