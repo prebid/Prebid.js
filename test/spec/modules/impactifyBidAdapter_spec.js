@@ -357,7 +357,7 @@ describe('ImpactifyAdapter', function () {
                     bidder: {
                       appnexus: {
                         brand_id: 182979,
-                          auction_id: '8657683934873599656',
+                        auction_id: '8657683934873599656',
                         bidder_id: 2,
                         bid_ad_type: 1,
                         creative_info: {
@@ -495,7 +495,7 @@ describe('ImpactifyAdapter', function () {
                   bidder: {
                     appnexus: {
                       brand_id: 182979,
-                        auction_id: '8657683934873599656',
+                      auction_id: '8657683934873599656',
                       bidder_id: 2,
                       bid_ad_type: 1,
                       creative_info: {
