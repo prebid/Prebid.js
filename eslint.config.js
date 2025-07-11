@@ -239,7 +239,6 @@ module.exports = [
       'camelcase': 'off',
       'import-x/no-duplicates': 'off',
       'no-loss-of-precision': 'off',
-      // allow assignments to global variables in tests
       'no-global-assign': 'off',
       'default-case-last': 'off',
       '@stylistic/no-trailing-spaces': 'error',
