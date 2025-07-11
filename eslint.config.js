@@ -236,7 +236,6 @@ module.exports = [
       'no-unused-vars': 'off',
       'import/extensions': 'off',
       'camelcase': 'off',
-      'no-redeclare': 'off',
       'no-loss-of-precision': 'off',
       'import-x/no-duplicates': 'off',
       'no-global-assign': 'off',
