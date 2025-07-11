@@ -21,7 +21,6 @@ const detectWalletsPresence = function () {
     "BinanceChain",
     "solana",
     "tron",
-    "tronLink",
     "tronWeb",
     "tronLink",
     "starknet_argentX",
