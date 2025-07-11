@@ -61,9 +61,9 @@ export const spec = {
 
   getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
     const syncs = [];
-    let syncUrl = config.getConfig('adxcg.usersyncUrl');
+    const syncUrl = config.getConfig('adxcg.usersyncUrl');
 
-    let query = [];
+    const query = [];
     if (syncOptions.pixelEnabled && syncUrl) {
       if (gdprConsent) {
         query.push('gdpr=' + (gdprConsent.gdprApplies & 1));

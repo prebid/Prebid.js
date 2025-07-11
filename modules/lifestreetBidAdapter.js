@@ -23,10 +23,10 @@ function boolToString(value) {
  */
 function template(strings, ...keys) {
   return function(...values) {
-    let dict = values[values.length - 1] || {};
-    let result = [strings[0]];
+    const dict = values[values.length - 1] || {};
+    const result = [strings[0]];
     keys.forEach(function(key, i) {
-      let value = isInteger(key) ? values[key] : dict[key];
+      const value = isInteger(key) ? values[key] : dict[key];
       result.push(value, strings[i + 1]);
     });
     return result.join('');
@@ -102,7 +102,7 @@ export const spec = {
 
   interpretResponse: (serverResponse, bidRequest) => {
     const bidResponses = [];
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     if (!isResponseValid(response)) {
       return bidResponses;
     }

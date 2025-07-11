@@ -43,7 +43,7 @@ export const spec = {
     let eids;
     let geo;
     let test;
-    let bids = [];
+    const bids = [];
 
     test = config.getConfig('debug');
 
@@ -81,7 +81,7 @@ export const spec = {
       bySlotTargetKey[bidReq.adUnitCode] = targetKey;
       bidReq.targetKey = targetKey;
 
-      let bidFloor = getBidFloor(bidReq);
+      const bidFloor = getBidFloor(bidReq);
       if (bidFloor) {
         bidReq.bidFloor = bidFloor;
       }
@@ -335,7 +335,7 @@ function getBidFloor(bid) {
     return (bid.params.floorPrice) ? bid.params.floorPrice : null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency: 'USD',
     mediaType: '*',
     size: '*'

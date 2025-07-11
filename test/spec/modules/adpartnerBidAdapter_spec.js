@@ -16,7 +16,7 @@ describe('AdpartnerAdapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unitId': 123
         }
@@ -25,7 +25,7 @@ describe('AdpartnerAdapter', function () {
     });
 
     it('should return true when required params is srting', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unitId': '456'
         }
@@ -34,7 +34,7 @@ describe('AdpartnerAdapter', function () {
     });
 
     it('should return false when required params are not passed', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unknownId': 123
         }
@@ -43,7 +43,7 @@ describe('AdpartnerAdapter', function () {
     });
 
     it('should return false when required params is 0', function () {
-      let validRequest = {
+      const validRequest = {
         'params': {
           'unitId': 0
         }
@@ -53,9 +53,9 @@ describe('AdpartnerAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let validEndpoint = ENDPOINT_PROTOCOL + '://' + ENDPOINT_DOMAIN + ENDPOINT_PATH + '?tag=123,456&partner=777&sizes=300x250|300x600,728x90,300x250&referer=https%3A%2F%2Ftest.domain';
+    const validEndpoint = ENDPOINT_PROTOCOL + '://' + ENDPOINT_DOMAIN + ENDPOINT_PATH + '?tag=123,456&partner=777&sizes=300x250|300x600,728x90,300x250&referer=https%3A%2F%2Ftest.domain';
 
-    let validRequest = [
+    const validRequest = [
       {
         'bidder': BIDDER_CODE,
         'params': {
@@ -85,7 +85,7 @@ describe('AdpartnerAdapter', function () {
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         page: 'https://test.domain'
       }
@@ -299,7 +299,7 @@ describe('AdpartnerAdapter', function () {
         'pixelEnabled': false
       };
 
-      let syncs = spec.getUserSyncs(syncOptions);
+      const syncs = spec.getUserSyncs(syncOptions);
       expect(syncs).to.deep.equal([]);
     });
 
@@ -310,7 +310,7 @@ describe('AdpartnerAdapter', function () {
       };
 
       const gdprConsent = undefined;
-      let syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
       expect(syncs.length).to.equal(3);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://test.domain/tracker_1.gif');
@@ -328,7 +328,7 @@ describe('AdpartnerAdapter', function () {
         apiVersion: 2
       };
 
-      let syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
+      const syncs = spec.getUserSyncs(syncOptions, bidResponse, gdprConsent);
       expect(syncs.length).to.equal(3);
       expect(syncs[0].type).to.equal('image');
       expect(syncs[0].url).to.equal('https://test.domain/tracker_1.gif?gdpr=1&gdpr_consent=someString');

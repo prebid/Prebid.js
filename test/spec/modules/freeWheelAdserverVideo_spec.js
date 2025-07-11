@@ -9,7 +9,7 @@ describe('freeWheel adserver module', function() {
   let amGetAdUnitsStub;
 
   before(function () {
-    let adUnits = [{
+    const adUnits = [{
       code: 'preroll_1',
       mediaTypes: {
         video: {
@@ -100,7 +100,7 @@ describe('freeWheel adserver module', function() {
   });
 
   it('should only use adpod bids', function() {
-    let bannerBid = [{
+    const bannerBid = [{
       'ad': 'creative',
       'cpm': '1.99',
       'width': 300,
@@ -200,13 +200,13 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    let tier6Bid = createBid(10, 'preroll_1', 15, 'tier6_395_15s', '123', '395');
+    const tier6Bid = createBid(10, 'preroll_1', 15, 'tier6_395_15s', '123', '395');
     tier6Bid['video']['dealTier'] = 'tier6'
 
-    let tier7Bid = createBid(11, 'preroll_1', 45, 'tier7_395_15s', '123', '395');
+    const tier7Bid = createBid(11, 'preroll_1', 45, 'tier7_395_15s', '123', '395');
     tier7Bid['video']['dealTier'] = 'tier7'
 
-    let bidsReceived = [
+    const bidsReceived = [
       tier6Bid,
       tier7Bid,
       createBid(15, 'preroll_1', 90, '15.00_395_90s', '123', '395'),
@@ -245,18 +245,18 @@ describe('freeWheel adserver module', function() {
       }
     });
 
-    let tier2Bid = createBid(10, 'preroll_1', 15, 'tier2_395_15s', '123', '395');
+    const tier2Bid = createBid(10, 'preroll_1', 15, 'tier2_395_15s', '123', '395');
     tier2Bid['video']['dealTier'] = 2
     tier2Bid['adserverTargeting']['hb_pb'] = '10.00'
 
-    let tier7Bid = createBid(11, 'preroll_1', 45, 'tier7_395_15s', '123', '395');
+    const tier7Bid = createBid(11, 'preroll_1', 45, 'tier7_395_15s', '123', '395');
     tier7Bid['video']['dealTier'] = 7
     tier7Bid['adserverTargeting']['hb_pb'] = '11.00'
 
-    let bid = createBid(15, 'preroll_1', 15, '15.00_395_90s', '123', '395');
+    const bid = createBid(15, 'preroll_1', 15, '15.00_395_90s', '123', '395');
     bid['adserverTargeting']['hb_pb'] = '15.00'
 
-    let bidsReceived = [
+    const bidsReceived = [
       tier2Bid,
       tier7Bid,
       bid

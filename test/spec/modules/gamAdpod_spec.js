@@ -13,7 +13,7 @@ describe('gamAdpod', function () {
   let amGetAdUnitsStub;
 
   before(function () {
-    let adUnits = [{
+    const adUnits = [{
       code: 'adUnitCode-1',
       mediaTypes: {
         video: {
@@ -123,9 +123,9 @@ describe('gamAdpod', function () {
 
   it('should return masterTag url', function() {
     amStub.returns(getBidsReceived());
-    let uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
+    const uspDataHandlerStub = sinon.stub(uspDataHandler, 'getConsentData');
     uspDataHandlerStub.returns('1YYY');
-    let gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
+    const gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
     gdprDataHandlerStub.returns({
       gdprApplies: true,
       consentString: 'consent',
@@ -180,7 +180,7 @@ describe('gamAdpod', function () {
       }
     });
     function getBids() {
-      let bids = [
+      const bids = [
         createBid(10, 'adUnitCode-1', 15, '10.00_15s', '123', '395', '10.00'),
         createBid(15, 'adUnitCode-1', 15, '15.00_15s', '123', '395', '15.00'),
         createBid(25, 'adUnitCode-1', 30, '15.00_30s', '123', '406', '25.00'),

@@ -50,7 +50,7 @@ describe('Negative case', function () {
 
   it('eids array generation for known sub-module with non-string value', function () {
     // pubCommonId
-    let userId = {
+    const userId = {
       pubcid: undefined
     };
     let newEids = createEidsArray(userId);

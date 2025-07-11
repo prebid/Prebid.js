@@ -4768,6 +4768,12 @@
     },
     {
       "componentType": "rtd",
+      "componentName": "humansecurityMalvDefense",
+      "gvlid": null,
+      "disclosureURL": null
+    },
+    {
+      "componentType": "rtd",
       "componentName": "clean.io",
       "gvlid": null,
       "disclosureURL": null

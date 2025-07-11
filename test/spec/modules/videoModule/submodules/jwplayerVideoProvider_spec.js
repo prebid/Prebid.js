@@ -118,7 +118,7 @@ describe('JWPlayerProvider', function () {
     });
 
     it('should trigger failure when jwplayer version is under min supported version', function () {
-      let jwplayerMock = () => {};
+      const jwplayerMock = () => {};
       jwplayerMock.version = '8.20.0';
       const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
@@ -131,7 +131,7 @@ describe('JWPlayerProvider', function () {
 
     it('should trigger failure when div is missing', function () {
       removeDiv();
-      let jwplayerMock = () => {};
+      const jwplayerMock = () => {};
       const provider = JWPlayerProvider(config, jwplayerMock, adState, timeState, callbackStorage, utilsMock, sharedUtils);
       const setupFailed = sinon.spy();
       provider.onEvent(SETUP_FAILED, setupFailed, {});
@@ -387,7 +387,7 @@ describe('JWPlayerProvider', function () {
 });
 
 describe('adStateFactory', function () {
-  let adState = adStateFactory();
+  const adState = adStateFactory();
 
   beforeEach(() => {
     adState.clearState();
@@ -521,7 +521,7 @@ describe('adStateFactory', function () {
 });
 
 describe('timeStateFactory', function () {
-  let timeState = timeStateFactory();
+  const timeState = timeStateFactory();
 
   beforeEach(() => {
     timeState.clearState();
@@ -574,7 +574,7 @@ describe('timeStateFactory', function () {
 });
 
 describe('callbackStorageFactory', function () {
-  let callbackStorage = callbackStorageFactory();
+  const callbackStorage = callbackStorageFactory();
 
   beforeEach(() => {
     callbackStorage.clearStorage();
@@ -627,7 +627,7 @@ describe('utils', function () {
     });
 
     it('should set vendor config params to top level', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         params: {
           vendorConfig: {
             'test': 'a',
@@ -640,7 +640,7 @@ describe('utils', function () {
     });
 
     it('should convert video module params', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         mute: true,
         autoStart: true,
         licenseKey: 'key'
@@ -652,7 +652,7 @@ describe('utils', function () {
     });
 
     it('should apply video module params only when absent from vendor config', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         mute: true,
         autoStart: true,
         licenseKey: 'key',
@@ -671,7 +671,7 @@ describe('utils', function () {
     });
 
     it('should not convert undefined properties', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         params: {
           vendorConfig: {
             test: 'a'
@@ -685,7 +685,7 @@ describe('utils', function () {
     });
 
     it('should exclude fallback ad block when setupAds is explicitly disabled', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         setupAds: false,
         params: {
 
@@ -697,7 +697,7 @@ describe('utils', function () {
     });
 
     it('should set advertising block when setupAds is allowed', function () {
-      let jwConfig = getJwConfig({
+      const jwConfig = getJwConfig({
         params: {
           vendorConfig: {
             advertising: {
@@ -712,7 +712,7 @@ describe('utils', function () {
     });
 
     it('should fallback to vast plugin', function () {
-      let jwConfig = getJwConfig({});
+      const jwConfig = getJwConfig({});
 
       expect(jwConfig).to.have.property('advertising');
       expect(jwConfig.advertising).to.have.property('client', 'vast');
@@ -797,12 +797,12 @@ describe('utils', function () {
     const getSkipParams = utils.getSkipParams;
 
     it('should return an empty object when skip is not configured', function () {
-      let skipParams = getSkipParams({});
+      const skipParams = getSkipParams({});
       expect(skipParams).to.be.empty;
     });
 
     it('should set skip to false when explicitly configured', function () {
-      let skipParams = getSkipParams({
+      const skipParams = getSkipParams({
         skipoffset: -1
       });
       expect(skipParams.skip).to.be.equal(0);
@@ -812,7 +812,7 @@ describe('utils', function () {
 
     it('should be skippable when skip offset is set', function () {
       const skipOffset = 3;
-      let skipParams = getSkipParams({
+      const skipParams = getSkipParams({
         skipoffset: skipOffset
       });
       expect(skipParams.skip).to.be.equal(1);
@@ -966,7 +966,7 @@ describe('utils', function () {
     it('should return the first audio track language code if the getCurrentAudioTrack returns undefined', function () {
       const player = getPlayerMock();
       player.getAudioTracks = () => sampleAudioTracks;
-      let languageCode = utils.getIsoLanguageCode(player);
+      const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.equal('ht');
     });
 
@@ -974,7 +974,7 @@ describe('utils', function () {
       const player = getPlayerMock();
       player.getAudioTracks = () => sampleAudioTracks;
       player.getCurrentAudioTrack = () => null;
-      let languageCode = utils.getIsoLanguageCode(player);
+      const languageCode = utils.getIsoLanguageCode(player);
       expect(languageCode).to.be.equal('ht');
     });
 
@@ -1018,8 +1018,8 @@ describe('utils', function () {
     it('should convert segments to objects', function () {
       const segs = ['a', 'b'];
       expect(getSegments(segs)).to.deep.equal([
-        {id: 'a', value: 'a'},
-        {id: 'b', value: 'b'}
+        {id: 'a'},
+        {id: 'b'}
       ]);
     });
   });
@@ -1031,7 +1031,7 @@ describe('utils', function () {
     });
 
     it('should set media id and segments', function () {
-      const segments = [{id: 'x', value: 'x'}];
+      const segments = [{id: 'x'}];
       expect(getContentDatum('id1', segments)).to.deep.equal({
         name: 'jwplayer.com',
         segment: segments,

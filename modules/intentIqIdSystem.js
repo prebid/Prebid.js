@@ -135,8 +135,8 @@ function verifyIdType(value) {
 }
 
 function appendPartnersFirstParty (url, configParams) {
-  let partnerClientId = typeof configParams.partnerClientId === 'string' ? encodeURIComponent(configParams.partnerClientId) : '';
-  let partnerClientIdType = typeof configParams.partnerClientIdType === 'number' ? verifyIdType(configParams.partnerClientIdType) : -1;
+  const partnerClientId = typeof configParams.partnerClientId === 'string' ? encodeURIComponent(configParams.partnerClientId) : '';
+  const partnerClientIdType = typeof configParams.partnerClientIdType === 'number' ? verifyIdType(configParams.partnerClientIdType) : -1;
 
   if (partnerClientIdType === -1) return url;
   if (partnerClientId !== '') {
@@ -363,13 +363,13 @@ export const intentIqIdSubmodule = {
     let callbackFired = false;
     let runtimeEids = { eids: [] };
 
-    let gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
-    let gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
-    let groupChanged = typeof configParams.groupChanged === 'function' ? configParams.groupChanged : undefined;
-    let siloEnabled = typeof configParams.siloEnabled === 'boolean' ? configParams.siloEnabled : false;
+    const gamObjectReference = isPlainObject(configParams.gamObjectReference) ? configParams.gamObjectReference : undefined;
+    const gamParameterName = configParams.gamParameterName ? configParams.gamParameterName : 'intent_iq_group';
+    const groupChanged = typeof configParams.groupChanged === 'function' ? configParams.groupChanged : undefined;
+    const siloEnabled = typeof configParams.siloEnabled === 'boolean' ? configParams.siloEnabled : false;
     sourceMetaData = isStr(configParams.sourceMetaData) ? translateMetadata(configParams.sourceMetaData) : '';
     sourceMetaDataExternal = isNumber(configParams.sourceMetaDataExternal) ? configParams.sourceMetaDataExternal : undefined;
-    let additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
+    const additionalParams = configParams.additionalParams ? configParams.additionalParams : undefined;
     PARTNER_DATA_KEY = `${FIRST_PARTY_KEY}_${configParams.partner}`;
 
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
@@ -533,7 +533,7 @@ export const intentIqIdSubmodule = {
     const resp = function (callback) {
       const callbacks = {
         success: response => {
-          let respJson = tryParse(response);
+          const respJson = tryParse(response);
           // If response is a valid json and should save is true
           if (respJson) {
             partnerData.date = Date.now();
