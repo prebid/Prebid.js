@@ -4,6 +4,7 @@ import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {parseNativeResponse, getBidFloor} from '../libraries/nexverseUtils/index.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -11,27 +12,6 @@ const SUPPORTED_MEDIA_TYPES = [mediaTypes.BANNER, mediaTypes.NATIVE, mediaTypes.
 
 const PROD_PREBID_ENDPOINT_URL = 'https://pbs.dailyhunt.in/openrtb2/auction?partner=';
 const PROD_PREBID_TEST_ENDPOINT_URL = 'https://qa-pbs-van.dailyhunt.in/openrtb2/auction?partner=';
-
-const ORTB_NATIVE_TYPE_MAPPING = {
-  img: {
-    '3': 'image',
-    '1': 'icon'
-  },
-  data: {
-    '1': 'sponsoredBy',
-    '2': 'body',
-    '3': 'rating',
-    '4': 'likes',
-    '5': 'downloads',
-    '6': 'price',
-    '7': 'salePrice',
-    '8': 'phone',
-    '9': 'address',
-    '10': 'body2',
-    '11': 'displayUrl',
-    '12': 'cta'
-  }
-}
 
 const ORTB_NATIVE_PARAMS = {
   title: {
@@ -68,13 +48,6 @@ const ORTB_NATIVE_PARAMS = {
     name: 'data',
     type: 10
   }};
-
-// Encode URI.
-const _encodeURIComponent = function (a) {
-  let b = window.encodeURIComponent(a);
-  b = b.replace(/'/g, '%27');
-  return b;
-}
 
 // Extract key from collections.
 const extractKeyInfo = (collection, key) => {
@@ -123,12 +96,6 @@ const createOrtbSiteObj = (validBidRequests, page) => {
 }
 
 const createOrtbPublisherObj = (validBidRequests) => ({ ...extractKeyInfo(validBidRequests, `publisher`) })
-
-// get bidFloor Function for different creatives
-function getBidFloor(bid, creative) {
-  const floorInfo = typeof (bid.getFloor) == 'function' ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
-  return Math.floor(floorInfo?.floor || (bid.params.bidfloor ? bid.params.bidfloor : 0.0));
-}
 
 const createOrtbImpObj = (bid) => {
   const params = bid.params
@@ -299,39 +266,13 @@ const createPrebidNativeBid = (bid, bidResponse) => ({
   currency: 'USD',
   ttl: 360,
   netRevenue: bid.netRevenue === 'net',
-  native: parseNative(bidResponse),
+  native: parseNativeResponse(bidResponse),
   mediaType: 'native',
   winUrl: bidResponse.nurl,
   width: bidResponse.w,
   height: bidResponse.h,
   adomain: bidResponse.adomain
 })
-
-const parseNative = (bid) => {
-  const adm = JSON.parse(bid.adm)
-  const { assets, link, imptrackers, jstracker } = adm.native;
-  const result = {
-    clickUrl: _encodeURIComponent(link.url),
-    clickTrackers: link.clicktrackers || [],
-    impressionTrackers: imptrackers || [],
-    javascriptTrackers: jstracker ? [ jstracker ] : []
-  };
-  assets.forEach(asset => {
-    if (!isEmpty(asset.title)) {
-      result.title = asset.title.text
-    } else if (!isEmpty(asset.img)) {
-      result[ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
-        url: asset.img.url,
-        height: asset.img.h,
-        width: asset.img.w
-      }
-    } else if (!isEmpty(asset.data)) {
-      result[ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
-    }
-  });
-
-  return result;
-}
 
 const createPrebidVideoBid = (bid, bidResponse) => {
   const videoBid = {

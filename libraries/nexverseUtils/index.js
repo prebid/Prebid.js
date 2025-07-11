@@ -1,9 +1,30 @@
-import { logError, logInfo, logWarn, generateUUID } from '../../src/utils.js';
+import { logError, logInfo, logWarn, generateUUID, isEmpty, isArray, isPlainObject, isFn } from '../../src/utils.js';
 
 const LOG_WARN_PREFIX = '[Nexverse warn]: ';
 const LOG_ERROR_PREFIX = '[Nexverse error]: ';
 const LOG_INFO_PREFIX = '[Nexverse info]: ';
 const NEXVERSE_USER_COOKIE_KEY = 'user_nexverse';
+
+export const NV_ORTB_NATIVE_TYPE_MAPPING = {
+  img: {
+    '3': 'image',
+    '1': 'icon'
+  },
+  data: {
+    '1': 'sponsoredBy',
+    '2': 'body',
+    '3': 'rating',
+    '4': 'likes',
+    '5': 'downloads',
+    '6': 'price',
+    '7': 'salePrice',
+    '8': 'phone',
+    '9': 'address',
+    '10': 'body2',
+    '11': 'displayUrl',
+    '12': 'cta'
+  }
+}
 
 /**
  * Determines the device model (if possible).
@@ -73,7 +94,32 @@ export function isBidRequestValid(bid) {
 export function parseNativeResponse(adm) {
   try {
     const admObj = JSON.parse(adm);
-    return admObj.native;
+    if (!admObj || !admObj.native) {
+      return {};
+    }
+    const { assets, link, imptrackers, jstracker } = admObj.native;
+    const result = {
+      clickUrl: (link && link.url) ? link.url : '',
+      clickTrackers: (link && link.clicktrackers && isArray(link.clicktrackers)) ? link.clicktrackers : [],
+      impressionTrackers: (imptrackers && isArray(imptrackers)) ? imptrackers : [],
+      javascriptTrackers: (jstracker && isArray(jstracker)) ? jstracker : [],
+    };
+    if (isArray(assets)) {
+      assets.forEach(asset => {
+        if (!isEmpty(asset.title) && !isEmpty(asset.title.text)) {
+          result.title = asset.title.text
+        } else if (!isEmpty(asset.img)) {
+          result[NV_ORTB_NATIVE_TYPE_MAPPING.img[asset.img.type]] = {
+            url: asset.img.url,
+            height: asset.img.h,
+            width: asset.img.w
+          }
+        } else if (!isEmpty(asset.data)) {
+          result[NV_ORTB_NATIVE_TYPE_MAPPING.data[asset.data.type]] = asset.data.value
+        }
+      });
+    }
+    return result;
   } catch (e) {
     printLog('error', `Error parsing native response: `, e)
     logError(`${LOG_ERROR_PREFIX} Error parsing native response: `, e);
@@ -119,7 +165,7 @@ export const getUid = (storage) => {
     nexverseUid = generateUUID();
   }
   try {
-    const expirationInMs = 60 * 60 * 24 * 1000; // 1 day in milliseconds
+    const expirationInMs = 60 * 60 * 24 * 365 * 1000; // 1 year in milliseconds
     const expirationTime = new Date(Date.now() + expirationInMs); // Set expiration time
     // Set the cookie with the expiration date
     storage.setCookie(NEXVERSE_USER_COOKIE_KEY, nexverseUid, expirationTime.toUTCString());
@@ -128,3 +174,11 @@ export const getUid = (storage) => {
   }
   return nexverseUid;
 };
+
+export const getBidFloor = (bid, creative) => {
+  let floorInfo = isFn(bid.getFloor) ? bid.getFloor({ currency: 'USD', mediaType: creative, size: '*' }) : {};
+  if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor)) {
+    return floorInfo.floor
+  }
+  return (bid.params.bidFloor ? bid.params.bidFloor : 0.0);
+}
