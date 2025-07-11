@@ -14,8 +14,8 @@ describe('Orbitsoft adapter', function () {
               placementId: '123',
               requestUrl: ENDPOINT_URL
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
 
         expect(isValid).to.equal(true);
       });
@@ -23,8 +23,8 @@ describe('Orbitsoft adapter', function () {
       it('should reject invalid bid', function () {
         const invalidBid = {
             bidder: 'orbitsoft'
-          },
-          isValid = spec.isBidRequestValid(invalidBid);
+          };
+          const isValid = spec.isBidRequestValid(invalidBid);
 
         expect(isValid).to.equal(false);
       });
@@ -66,8 +66,8 @@ describe('Orbitsoft adapter', function () {
               }
             },
             refererInfo: {referer: REFERRER_URL},
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
 
         const buildRequest = spec.buildRequests([validBid])[0];
@@ -106,8 +106,8 @@ describe('Orbitsoft adapter', function () {
               }
             },
             refererInfo: {referer: REFERRER_URL},
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
 
         const buildRequest = spec.buildRequests([validBid])[0];
@@ -122,8 +122,8 @@ describe('Orbitsoft adapter', function () {
             params: {
               placementId: '123'
             }
-          },
-          isValid = spec.isBidRequestValid(invalidBid);
+          };
+          const isValid = spec.isBidRequestValid(invalidBid);
 
         expect(isValid).to.equal(false);
       });
@@ -134,8 +134,8 @@ describe('Orbitsoft adapter', function () {
             params: {
               requestUrl: ENDPOINT_URL
             }
-          },
-          isValid = spec.isBidRequestValid(invalidBid);
+          };
+          const isValid = spec.isBidRequestValid(invalidBid);
 
         expect(isValid).to.equal(false);
       });
@@ -190,8 +190,8 @@ describe('Orbitsoft adapter', function () {
               callback_uid: '265b29b70cc106',
               cpm: 0
             }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+          };
+          const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });
@@ -213,8 +213,8 @@ describe('Orbitsoft adapter', function () {
               width: 0,
               height: 0
             }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+          };
+          const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });
@@ -229,8 +229,8 @@ describe('Orbitsoft adapter', function () {
             }
           }
         ];
-        const serverResponse = {error: 'error'},
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        const serverResponse = {error: 'error'};
+          const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });
@@ -245,8 +245,8 @@ describe('Orbitsoft adapter', function () {
             }
           }
         ];
-        const serverResponse = {},
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        const serverResponse = {};
+          const bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
 
         expect(bids).to.be.lengthOf(0);
       });

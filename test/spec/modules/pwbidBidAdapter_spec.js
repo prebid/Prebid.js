@@ -517,8 +517,8 @@ describe('PubWiseAdapter', function () {
           params: {
             siteId: 'xxxxxx'
           }
-        },
-        isValid = spec.isBidRequestValid(validBid);
+        };
+        const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
@@ -529,8 +529,8 @@ describe('PubWiseAdapter', function () {
             siteId: 'xxxxxx',
             gender: 'M',
           }
-        },
-        isValid = spec.isBidRequestValid(validBid);
+        };
+        const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(true);
     });
 
@@ -540,8 +540,8 @@ describe('PubWiseAdapter', function () {
           params: {
             gender: 'M',
           }
-        },
-        isValid = spec.isBidRequestValid(inValidBid);
+        };
+        const isValid = spec.isBidRequestValid(inValidBid);
       expect(isValid).to.equal(false);
     });
 
@@ -551,8 +551,8 @@ describe('PubWiseAdapter', function () {
           params: {
             siteId: 123456
           }
-        },
-        isValid = spec.isBidRequestValid(validBid);
+        };
+        const isValid = spec.isBidRequestValid(validBid);
       expect(isValid).to.equal(false);
     });
   });

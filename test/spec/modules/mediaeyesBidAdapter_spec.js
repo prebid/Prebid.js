@@ -62,8 +62,8 @@ describe('mediaeyes adapter', function () {
                 params: {
                     itemId: 'ec1d7389a4a5afa28a23c4',
                 }
-            },
-                isValid = spec.isBidRequestValid(bid);
+            };
+                const isValid = spec.isBidRequestValid(bid);
             expect(isValid).to.equals(true);
         });
         it('isBidValid : itemId is not passed', function () {
@@ -72,15 +72,15 @@ describe('mediaeyes adapter', function () {
                 params: {
 
                 }
-            },
-                isValid = spec.isBidRequestValid(bid);
+            };
+                const isValid = spec.isBidRequestValid(bid);
             expect(isValid).to.equals(false);
         });
     });
     describe('Validate Request', function () {
         it('Immutable bid request validate', function () {
-            const _Request = utils.deepClone(request),
-                bidRequest = spec.buildRequests(request);
+            const _Request = utils.deepClone(request);
+                const bidRequest = spec.buildRequests(request);
             expect(request).to.deep.equal(_Request);
         });
     });

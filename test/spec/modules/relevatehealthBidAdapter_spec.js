@@ -87,8 +87,8 @@ describe('relevatehealth adapter', function() {
           params: {
             placement_id: 110011
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
     it('isBidValid : placement_id is not passed', function() {
@@ -100,15 +100,15 @@ describe('relevatehealth adapter', function() {
             domain: '',
             bid_floor: 0.5
           }
-        },
-        isValid = spec.isBidRequestValid(bid);
+        };
+        const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
   });
   describe('Validate Request', function() {
     it('Immutable bid request validate', function() {
-      const _Request = utils.deepClone(request),
-        bidRequest = spec.buildRequests(request);
+      const _Request = utils.deepClone(request);
+        const bidRequest = spec.buildRequests(request);
       expect(request).to.deep.equal(_Request);
     });
     it('Validate bidder connection', function() {

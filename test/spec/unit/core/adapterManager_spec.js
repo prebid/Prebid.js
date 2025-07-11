@@ -713,7 +713,7 @@ describe('adapterManager tests', function () {
 
     describe('BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
-      let cnt, count = () => cnt++;
+      let cnt; let count = () => cnt++;
 
       beforeEach(function () {
         prebidServerAdapterMock.callBids.resetHistory();
@@ -1103,7 +1103,7 @@ describe('adapterManager tests', function () {
 
     describe('BID_REQUESTED event', function () {
       // function to count BID_REQUESTED events
-      let cnt, count = () => cnt++;
+      let cnt; let count = () => cnt++;
 
       beforeEach(function () {
         prebidServerAdapterMock.callBids.resetHistory();

@@ -807,7 +807,7 @@ describe('E-Planning Adapter', function () {
       expect(data.vv).to.equal(3);
     });
     it('should return sch parameter', function () {
-      let bidRequests = [validBidWithSchain], schainExpected, schain;
+      let bidRequests = [validBidWithSchain]; let schainExpected; let schain;
       schain = validBidWithSchain.ortb2.source.ext.schain;
       schainExpected = schain.ver + ',' + schain.complete + '!' + schain.nodes.map(node => node.asi + ',' + node.sid + ',' + node.hp + ',' + node.rid + ',' + node.name + ',' + node.domain).join('!');
       const data = spec.buildRequests(bidRequests, bidderRequest).data;

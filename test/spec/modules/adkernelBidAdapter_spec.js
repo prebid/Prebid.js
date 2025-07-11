@@ -23,7 +23,7 @@ describe('Adkernel adapter', function () {
         battr: [6, 7, 9],
         pos: 2
       }
-    }, bid2_zone2 = {
+    }; const bid2_zone2 = {
       bidder: 'adkernel',
       params: {zoneId: 2, host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-2',
@@ -43,7 +43,7 @@ describe('Adkernel adapter', function () {
           ]
         }
       ]
-    }, bid3_host2 = {
+    }; const bid3_host2 = {
       bidder: 'adkernel',
       params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
       adUnitCode: 'ad-unit-2',
@@ -55,7 +55,7 @@ describe('Adkernel adapter', function () {
           sizes: [[728, 90]]
         }
       }
-    }, bid_without_zone = {
+    }; const bid_without_zone = {
       bidder: 'adkernel',
       params: {host: 'rtb-private.adkernel.com'},
       adUnitCode: 'ad-unit-1',
@@ -67,7 +67,7 @@ describe('Adkernel adapter', function () {
           sizes: [[728, 90]]
         }
       }
-    }, bid_without_host = {
+    }; const bid_without_host = {
       bidder: 'adkernel',
       params: {zoneId: 1},
       adUnitCode: 'ad-unit-1',
@@ -79,7 +79,7 @@ describe('Adkernel adapter', function () {
           sizes: [[728, 90]]
         }
       }
-    }, bid_with_wrong_zoneId = {
+    }; const bid_with_wrong_zoneId = {
       bidder: 'adkernel',
       params: {zoneId: 'wrong id', host: 'rtb.adkernel.com'},
       adUnitCode: 'ad-unit-2',
@@ -91,7 +91,7 @@ describe('Adkernel adapter', function () {
           sizes: [[728, 90]]
         }
       }
-    }, bid_video = {
+    }; const bid_video = {
       bidder: 'adkernel',
       transactionId: '866394b8-5d37-4d49-803e-f1bdb595f73e',
       bidId: 'Bid_Video',
@@ -113,7 +113,7 @@ describe('Adkernel adapter', function () {
         }
       },
       adUnitCode: 'ad-unit-1'
-    }, bid_multiformat = {
+    }; const bid_multiformat = {
       bidder: 'adkernel',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
       mediaTypes: {
@@ -125,8 +125,8 @@ describe('Adkernel adapter', function () {
       bidId: 'Bid_01',
       bidderRequestId: 'req-001',
       auctionId: 'auc-001'
-    },
-    bid_native = {
+    };
+    const bid_native = {
       bidder: 'adkernel',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
       mediaTypes: {
@@ -225,7 +225,7 @@ describe('Adkernel adapter', function () {
       ext: {
         adk_usersync: [{type: 1, url: 'https://adk.sync.com/sync'}]
       }
-    }, videoBidResponse = {
+    }; const videoBidResponse = {
       id: '47ce4badcf7482',
       seatbid: [{
         bid: [{
@@ -239,7 +239,7 @@ describe('Adkernel adapter', function () {
           mtype: 2
         }]
       }],
-    }, videoBidResponseWithAdm = {
+    }; const videoBidResponseWithAdm = {
       id: '47ce4badcf7482',
       seatbid: [{
         bid: [{
@@ -254,13 +254,13 @@ describe('Adkernel adapter', function () {
           mtype: 2
         }]
       }],
-    },
-    usersyncOnlyResponse = {
+    };
+    const usersyncOnlyResponse = {
       id: 'nobid1',
       ext: {
         adk_usersync: [{type: 2, url: 'https://adk.sync.com/sync'}]
       }
-    }, nativeResponse = {
+    }; const nativeResponse = {
       id: '56fbc713-b737-4651-9050-13376aed9818',
       seatbid: [{
         bid: [{
@@ -297,8 +297,8 @@ describe('Adkernel adapter', function () {
       }],
       bidid: 'pTuOlf5KHUo',
       cur: 'EUR'
-    },
-    multiformat_response = {
+    };
+    const multiformat_response = {
       id: '47ce4badcf7482',
       seatbid: [{
         bid: [{

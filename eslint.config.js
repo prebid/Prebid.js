@@ -231,7 +231,6 @@ module.exports = [
       // tests were not subject to many rules and they are now a nightmare
       'no-template-curly-in-string': 'off',
       'no-unused-expressions': 'off',
-      'one-var': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
       'import/extensions': 'off',

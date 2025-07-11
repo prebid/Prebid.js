@@ -9,17 +9,17 @@ import { getWinDimensions, internal } from '../../src/utils.js';
 var assert = require('assert');
 
 describe('Utils', function () {
-  var obj_string = 's',
-    obj_number = 1,
-    obj_object = {},
-    obj_array = [],
-    obj_function = function () {};
+  var obj_string = 's';
+    var obj_number = 1;
+    var obj_object = {};
+    var obj_array = [];
+    var obj_function = function () {};
 
-  var type_string = 'String',
-    type_number = 'Number',
-    type_object = 'Object',
-    type_array = 'Array',
-    type_function = 'Function';
+  var type_string = 'String';
+    var type_number = 'Number';
+    var type_object = 'Object';
+    var type_array = 'Array';
+    var type_function = 'Function';
 
   describe('canAccessWindowTop', function () {
     let sandbox;
@@ -1218,8 +1218,8 @@ describe('Utils', function () {
 
   describe('setScriptAttributes', () => {
     it('correctly adds attributes from an object', () => {
-      const script = document.createElement('script'),
-        attrs = {
+      const script = document.createElement('script');
+        const attrs = {
           'data-first_prop': '1',
           'data-second_prop': 'b',
           'id': 'newId'
