@@ -200,7 +200,7 @@ export class LocalContext {
     /**
      * Create a new context object and return it.
      */
-    let newBidContext = new BidContext({
+    const newBidContext = new BidContext({
       localContext: this,
       prebidOrOrtbBidResponse: bid,
     });
@@ -465,7 +465,7 @@ function pickKeyFields(objType, eventArgs) {
   }
 }
 
-let mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
+const mobkoiAnalytics = Object.assign(adapter({analyticsType}), {
   localContext: new LocalContext(),
   async track({
     eventType,

@@ -117,7 +117,7 @@ export const spec = {
     const syncs = []
 
     if (syncOptions.iframeEnabled) {
-      let params = {};
+      const params = {};
 
       if (gdprConsent) {
         params.gdpr = numericBoolean(gdprConsent.gdprApplies);

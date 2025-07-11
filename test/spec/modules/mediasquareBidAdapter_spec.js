@@ -250,7 +250,7 @@ describe('MediaSquare bid adapter tests', function () {
     const won = spec.onBidWon(response[0]);
     expect(won).to.equal(true);
     expect(server.requests.length).to.equal(1);
-    let message = JSON.parse(server.requests[0].requestBody);
+    const message = JSON.parse(server.requests[0].requestBody);
     expect(message).to.have.property('increment').exist;
     expect(message).to.have.property('increment').and.to.equal('1');
     expect(message).to.have.property('ova').and.to.equal('cleared');

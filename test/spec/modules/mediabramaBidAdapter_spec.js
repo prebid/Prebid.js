@@ -48,7 +48,7 @@ describe('MediaBramaBidAdapter', function () {
       expect(serverRequest.url).to.equal('https://prebid.mediabrama.com/pbjs');
     });
     it('Returns valid data if array of bids is valid', function () {
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'host', 'page', 'placements');
       expect(data.deviceWidth).to.be.a('number');
@@ -58,7 +58,7 @@ describe('MediaBramaBidAdapter', function () {
       expect(data.page).to.be.a('string');
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
-      let placement = data['placements'][0];
+      const placement = data['placements'][0];
       expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'sizes', 'schain', 'bidfloor');
       expect(placement.placementId).to.equal(24428);
       expect(placement.bidId).to.equal('23dc19818e5293');
@@ -71,7 +71,7 @@ describe('MediaBramaBidAdapter', function () {
     it('Returns data with gdprConsent and without uspConsent', function () {
       bidderRequest.gdprConsent = 'test';
       serverRequest = spec.buildRequests([bid], bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('string');
       expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
@@ -82,7 +82,7 @@ describe('MediaBramaBidAdapter', function () {
     it('Returns data with uspConsent and without gdprConsent', function () {
       bidderRequest.uspConsent = 'test';
       serverRequest = spec.buildRequests([bid], bidderRequest);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.ccpa).to.exist;
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
@@ -91,7 +91,7 @@ describe('MediaBramaBidAdapter', function () {
 
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
-      let data = serverRequest.data;
+      const data = serverRequest.data;
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
@@ -113,9 +113,9 @@ describe('MediaBramaBidAdapter', function () {
           meta: {}
         }]
       };
-      let bannerResponses = spec.interpretResponse(banner);
+      const bannerResponses = spec.interpretResponse(banner);
       expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
+      const dataItem = bannerResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
         'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23dc19818e5293');
@@ -144,7 +144,7 @@ describe('MediaBramaBidAdapter', function () {
         }]
       };
 
-      let serverResponses = spec.interpretResponse(invBanner);
+      const serverResponses = spec.interpretResponse(invBanner);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
     it('Should return an empty array if invalid response is passed', function () {
@@ -157,7 +157,7 @@ describe('MediaBramaBidAdapter', function () {
           dealId: '1'
         }]
       };
-      let serverResponses = spec.interpretResponse(invalid);
+      const serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
     });
   });

@@ -9,7 +9,7 @@ import {config} from 'src/config.js';
 import {server} from 'test/mocks/xhr.js';
 import 'src/prebid.js';
 
-let configMock = {
+const configMock = {
   name: 'ftrack',
   params: {
     url: 'https://d9.flashtalking.com/d9core',
@@ -27,7 +27,7 @@ let configMock = {
   debug: true
 };
 
-let consentDataMock = {
+const consentDataMock = {
   gdprApplies: 0,
   consentString: '<CONSENT_STRING>'
 };
@@ -54,7 +54,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage' property is missing`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      const configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.storage;
       delete configMock1.params;
 
@@ -63,7 +63,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage.name' property is missing`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      const configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.storage.name;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -71,7 +71,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage.name' is not 'ftrackId'`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      const configMock1 = JSON.parse(JSON.stringify(configMock));
       configMock1.storage.name = 'not-ftrack';
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -79,7 +79,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'congig.storage.type' property is missing`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      const configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.storage.type;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -87,7 +87,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.storage.type' is not 'html5'`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      const configMock1 = JSON.parse(JSON.stringify(configMock));
       configMock1.storage.type = 'not-html5';
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -95,7 +95,7 @@ describe('FTRACK ID System', () => {
     });
 
     it(`should be rejected if 'config.params.url' does not exist`, () => {
-      let configMock1 = JSON.parse(JSON.stringify(configMock));
+      const configMock1 = JSON.parse(JSON.stringify(configMock));
       delete configMock1.params.url;
 
       ftrackIdSubmodule.isConfigOk(configMock1);
@@ -156,7 +156,7 @@ describe('FTRACK ID System', () => {
 
     describe(`should use the "ids" setting in the config:`, () => {
       it(`should use default IDs if config.params.id is not populated`, () => {
-        let configMock1 = JSON.parse(JSON.stringify(configMock));
+        const configMock1 = JSON.parse(JSON.stringify(configMock));
         delete configMock1.params.ids;
         ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
@@ -167,7 +167,7 @@ describe('FTRACK ID System', () => {
 
       describe(`should use correct ID settings if config.params.id is populated`, () => {
         it(`- any ID set as strings should not be added to window.D9r`, () => {
-          let configMock1 = JSON.parse(JSON.stringify(configMock));
+          const configMock1 = JSON.parse(JSON.stringify(configMock));
           configMock1.params.ids['device id'] = 'test device ID';
           configMock1.params.ids['single device id'] = 'test single device ID';
           configMock1.params.ids['household id'] = 'test household ID';
@@ -179,7 +179,7 @@ describe('FTRACK ID System', () => {
         })
 
         it(`- any ID set to false should not be added to window.D9r`, () => {
-          let configMock1 = JSON.parse(JSON.stringify(configMock));
+          const configMock1 = JSON.parse(JSON.stringify(configMock));
           configMock1.params.ids['device id'] = false;
           configMock1.params.ids['single device id'] = false;
           configMock1.params.ids['household id'] = false;
@@ -191,7 +191,7 @@ describe('FTRACK ID System', () => {
         });
 
         it(`- only device id`, () => {
-          let configMock1 = JSON.parse(JSON.stringify(configMock));
+          const configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['single device id'];
           ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
@@ -201,7 +201,7 @@ describe('FTRACK ID System', () => {
         });
 
         it(`- only single device id`, () => {
-          let configMock1 = JSON.parse(JSON.stringify(configMock));
+          const configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['device id'];
           ftrackIdSubmodule.getId(configMock1, null, null).callback(() => {});
 
@@ -211,7 +211,7 @@ describe('FTRACK ID System', () => {
         });
 
         it(`- only household ID`, () => {
-          let configMock1 = JSON.parse(JSON.stringify(configMock));
+          const configMock1 = JSON.parse(JSON.stringify(configMock));
           delete configMock1.params.ids['device id'];
           delete configMock1.params.ids['single device id'];
           configMock1.params.ids['household id'] = true;

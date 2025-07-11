@@ -13,9 +13,9 @@ const EVENT_SERVER_URL = `https://events.browsiprod.com/events/v2`;
 /** @type {null|Object} */
 let _staticData = null;
 /** @type {string} */
-let VERSION = getGlobal().version;
+const VERSION = getGlobal().version;
 /** @type {string} */
-let URL = encodeURIComponent(window.location.href);
+const URL = encodeURIComponent(window.location.href);
 
 const { AUCTION_END, BROWSI_INIT, BROWSI_DATA } = EVENTS;
 
@@ -118,7 +118,7 @@ function sendEvent(event, topic) {
   } catch (err) { logMessage('Browsi Analytics error') }
 }
 
-let browsiAnalytics = Object.assign(adapter({ url: EVENT_SERVER_URL, analyticsType }), {
+const browsiAnalytics = Object.assign(adapter({ url: EVENT_SERVER_URL, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case BROWSI_INIT:
