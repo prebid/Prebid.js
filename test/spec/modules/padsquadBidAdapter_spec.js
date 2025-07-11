@@ -65,7 +65,7 @@ const RESPONSE = {
               'bidder': {
                 'appnexus': {
                   'brand_id': 334553,
-                  'auction_id': 514667951122925701,
+                    'auction_id': '514667951122925701',
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
@@ -94,7 +94,7 @@ const RESPONSE = {
               'bidder': {
                 'appnexus': {
                   'brand_id': 386046,
-                  'auction_id': 517067951122925501,
+                    'auction_id': '517067951122925501',
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
