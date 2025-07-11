@@ -1,6 +1,5 @@
 import { expect } from 'chai';
-import { utiqMtpIdSubmodule } from 'modules/utiqMtpIdSystem.js';
-import { storage } from 'modules/utiqMtpIdSystem.js';
+import { utiqMtpIdSubmodule, storage } from 'modules/utiqMtpIdSystem.js';
 
 describe('utiqMtpIdSystem', () => {
   const utiqPassKey = 'utiqPass';

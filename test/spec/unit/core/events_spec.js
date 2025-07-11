@@ -33,7 +33,7 @@ describe('events', () => {
   it('should include the eventString if a callback fails', () => {
     const logErrorStub = sinon.stub(utils, 'logError');
     const eventString = 'bidWon';
-    let fn = function() { throw new Error('Test error'); };
+    const fn = function() { throw new Error('Test error'); };
     on(eventString, fn);
 
     emit(eventString, {});

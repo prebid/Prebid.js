@@ -357,7 +357,7 @@ export function newBidder<B extends BidderCode>(spec: BidderSpec<B>) {
   });
 
   function isInvalidAlternateBidder(responseBidder, requestBidder) {
-    let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes') || false;
+    const allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes') || false;
     let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
     if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
       alternateBiddersList = isArray(alternateBiddersList) ? alternateBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques) : alternateBiddersList;
@@ -655,7 +655,7 @@ function validBidSize(adUnitCode, bid: BannerBid, {index = auctionManager.index}
 // Validate the arguments sent to us by the adapter. If this returns false, the bid should be totally ignored.
 export function isValid(adUnitCode: string, bid: Bid, {index = auctionManager.index} = {}) {
   function hasValidKeys() {
-    let bidKeys = Object.keys(bid);
+    const bidKeys = Object.keys(bid);
     return COMMON_BID_RESPONSE_KEYS.every(key => bidKeys.includes(key) && ![undefined, null].includes(bid[key]));
   }
 

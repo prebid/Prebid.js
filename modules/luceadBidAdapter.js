@@ -152,7 +152,7 @@ function report(type, data) {
 function onBidWon(bid) {
   logInfo('Bid won', bid);
 
-  let data = {
+  const data = {
     bid_id: bid?.bidId,
     placement_id: bid.params ? (bid?.params[0]?.placementId || '0') : '0',
     spent: bid?.cpm,

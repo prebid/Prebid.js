@@ -28,7 +28,7 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    let serverRequests = [];
+    const serverRequests = [];
     const REQUEST_SERVER_URL = getEngineUrl();
     const DEMO_DATA_PARAMS = ['gender', 'country', 'region', 'postal', 'city', 'yob'];
     const PERF_DATA = getData(LS_KEYS.PERF_DATA).map(perfData => JSON.parse(perfData));
@@ -44,7 +44,7 @@ export const spec = {
     }
 
     validBidRequests.forEach((bid, i) => {
-      let data = {
+      const data = {
         'screenWidthPx': screen && screen.width,
         'screenHeightPx': screen && screen.height,
         'adSpaceHttpRefUrl': getTopWindowReferrer(),
@@ -127,7 +127,7 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const responseTime = Date.now() - preReqTime;
     const successBids = serverResponse.body || [];
-    let bidResponses = [];
+    const bidResponses = [];
     successBids.forEach((bid) => {
       storeData({
         'perf_status': 'OK',
@@ -184,7 +184,7 @@ function storeData(data, name, stringify = true) {
 }
 
 function getData(name, remove = true) {
-  let data = [];
+  const data = [];
   return data;
 }
 

@@ -41,7 +41,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     logInfo(WHO + ' buildRequests() - INPUT validBidRequests:', validBidRequests, 'INPUT bidderRequest:', bidderRequest);
-    let requests = [];
+    const requests = [];
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
       var bid = validBidRequests[i];
@@ -108,7 +108,7 @@ export const spec = {
         nCPM = request.data.params.testcpm;
       }
 
-      let bidResponse = {
+      const bidResponse = {
         requestId: sRequestID,
         cpm: nCPM,
         width: nWidth,

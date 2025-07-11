@@ -39,7 +39,7 @@ describe('Pubmatic RTD Provider', () => {
 
     describe('registerSubModule', () => {
         it('should register RTD submodule provider', () => {
-            let submoduleStub = sinon.stub(hook, 'submodule');
+            const submoduleStub = sinon.stub(hook, 'submodule');
             registerSubModule();
             assert(submoduleStub.calledOnceWith('realTimeData', pubmaticSubmodule));
             submoduleStub.restore();
@@ -909,7 +909,7 @@ describe('Pubmatic RTD Provider', () => {
             sandbox.stub(utils, 'logInfo');
 
             // Mock fetch with specific multiplier data where 'nobid' is intentionally missing
-            global.fetch = sandbox.stub().returns(Promise.resolve({
+            const fetchStub = sandbox.stub(global, 'fetch').returns(Promise.resolve({
                 ok: true,
                 status: 200,
                 json: function() {
@@ -959,6 +959,8 @@ describe('Pubmatic RTD Provider', () => {
                     // Verify the log doesn't include NOBID (since it wasn't in the source)
                     expect(logArg).to.not.include('NOBID');
                 }
+            }).finally(() => {
+                sandbox.restore();
             });
         });
 
