@@ -151,10 +151,14 @@ describe('Intersection RTD Provider', function () {
     div.id = adUnit.code;
     return div;
   }
-  function append() {
-    placeholder && document.body.appendChild(placeholder);
+function append() {
+  if (placeholder) {
+    document.body.appendChild(placeholder);
   }
-  function remove() {
-    placeholder && placeholder.parentElement && placeholder.parentElement.removeChild(placeholder);
+}
+function remove() {
+  if (placeholder && placeholder.parentElement) {
+    placeholder.parentElement.removeChild(placeholder);
   }
+}
 });

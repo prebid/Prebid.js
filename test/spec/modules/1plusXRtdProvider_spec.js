@@ -160,8 +160,8 @@ describe('1plusXRtdProvider', () => {
     it('Returns the intersection of bidders found in bid request config & module config', () => {
       const bidders = ['appnexus', 'rubicon'];
       const moduleConfig = { params: { customerId, timeout, bidders } };
-      const { bidders: extractedBidders } = extractConfig(moduleConfig, reqBidsConfigObj);
-      expect(extractedBidders).to.be.an('array').and.to.have.length(1); 7
+    const { bidders: extractedBidders } = extractConfig(moduleConfig, reqBidsConfigObj);
+    expect(extractedBidders).to.be.an('array').and.to.have.length(1);
       expect(extractedBidders[0]).to.equal('appnexus');
     })
     it('Throws an error if no bidder can be used by the module', () => {

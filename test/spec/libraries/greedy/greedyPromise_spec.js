@@ -147,9 +147,13 @@ describe('GreedyPromise', () => {
             makePromise = function(ctor, value, fail = false, delay = 0) {
               // eslint-disable-next-line new-cap
               return new ctor((resolve, reject) => {
-                const run = () => fail ? reject(value) : resolve(value);
-                delay === 0 ? run() : setTimeout(run, delay);
-              })
+                  const run = () => fail ? reject(value) : resolve(value);
+                  if (delay === 0) {
+                    run();
+                  } else {
+                    setTimeout(run, delay);
+                  }
+                })
             };
             pendingSuccess = makePromise(GreedyPromise, 'pending result');
             pendingFailure = makePromise(GreedyPromise, 'pending failure', true);

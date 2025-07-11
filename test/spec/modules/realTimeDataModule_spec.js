@@ -103,9 +103,11 @@ describe('Real time module', function () {
       try {
         mod = attachRealTimeDataProvider({name: 'mockRtd', gvlid: 123});
         sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_RTD, 'mockRtd', 123);
-      } finally {
-        mod && mod();
-      }
+        } finally {
+          if (mod) {
+            mod();
+          }
+        }
     })
   })
 
