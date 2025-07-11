@@ -12,7 +12,7 @@ const defaultPathName = '/prebid-analytics';
 
 let initOptions;
 let auctionTimestamp;
-let events = {
+const events = {
   bids: []
 };
 
@@ -46,7 +46,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
 });
 
 function mapBidRequests(params) {
-  let arr = [];
+  const arr = [];
   if (typeof params.bids !== 'undefined' && params.bids.length) {
     params.bids.forEach(function (bid) {
       arr.push({
@@ -67,7 +67,7 @@ function mapBidRequests(params) {
 
 function mapBidResponse(bidResponse, status) {
   if (status !== 'win') {
-    let bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
+    const bid = events.bids.filter(o => o.bidId === bidResponse.bidId || o.bidId === bidResponse.requestId)[0];
     Object.assign(bid, {
       bidderCode: bidResponse.bidder,
       bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
@@ -110,13 +110,13 @@ function mapBidResponse(bidResponse, status) {
 }
 
 function send(data, status) {
-  let location = getWindowLocation();
+  const location = getWindowLocation();
   if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
     Object.assign(data.auctionInit, { host: location.host, path: location.pathname, search: location.search });
   }
   data.initOptions = initOptions;
 
-  let terceptAnalyticsRequestUrl = buildUrl({
+  const terceptAnalyticsRequestUrl = buildUrl({
     protocol: 'https',
     hostname: (initOptions && initOptions.hostName) || defaultHostName,
     pathname: (initOptions && initOptions.pathName) || defaultPathName,

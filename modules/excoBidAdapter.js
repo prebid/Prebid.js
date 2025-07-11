@@ -263,6 +263,10 @@ export class AdapterHelpers {
       logInfo(msg);
     }
   }
+
+  isDebugEnabled(url = '') {
+    return config.getConfig('debug') || url.includes('exco_debug=true');
+  }
 }
 
 const helpers = new AdapterHelpers();
@@ -279,7 +283,7 @@ export const converter = ortbConverter({
     }
 
     data.cur = [CURRENCY];
-    data.test = config.getConfig('debug') ? 1 : 0;
+    data.test = helpers.isDebugEnabled(window.location.href) ? 1 : 0;
 
     helpers.addOrtbFirstPartyData(data, context.bidRequests || []);
 

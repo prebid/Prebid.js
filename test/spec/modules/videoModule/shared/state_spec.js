@@ -2,7 +2,7 @@ import stateFactory from 'libraries/video/shared/state.js';
 import { expect } from 'chai';
 
 describe('State', function () {
-  let state = stateFactory();
+  const state = stateFactory();
   beforeEach(() => {
     state.clearState();
   });

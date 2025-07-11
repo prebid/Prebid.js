@@ -40,7 +40,7 @@ const setupFailMessage = 'Failed to instantiate the player';
 const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED];
 
 export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, callbackStorage_, utils) {
-  let vjs = vjs_;
+  const vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
   const callbackToHandler = {};
@@ -60,7 +60,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
   let setupFailedEventHandlers = [];
 
   // TODO: test with older videojs versions
-  let minimumSupportedPlayerVersion = '7.17.0';
+  const minimumSupportedPlayerVersion = '7.17.0';
 
   function init() {
     if (!vjs) {
@@ -185,7 +185,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
 
     const mediaItem = utils.getMedia(player);
     if (mediaItem) {
-      for (let param of ['id', 'title', 'description', 'album', 'artist']) {
+      for (const param of ['id', 'title', 'description', 'album', 'artist']) {
         if (mediaItem[param]) {
           content[param] = mediaItem[param];
         }

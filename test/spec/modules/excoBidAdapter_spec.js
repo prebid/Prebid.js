@@ -368,4 +368,34 @@ describe('ExcoBidAdapter', function () {
       expect(stubbedFetch.callCount).to.equal(0);
     });
   });
+
+  describe('isDebugEnabled', function () {
+    let originalConfig;
+
+    beforeEach(function () {
+      originalConfig = config.getConfig('debug');
+    });
+
+    afterEach(function () {
+      config.setConfig({ debug: originalConfig });
+    });
+
+    it('should return true if debug is enabled in config', function () {
+      config.setConfig({ debug: true });
+      expect(helpers.isDebugEnabled()).to.be.true;
+    });
+
+    it('should return false if debug is disabled in config', function () {
+      config.setConfig({ debug: false });
+      expect(helpers.isDebugEnabled()).to.be.false;
+    });
+
+    it('should return true if URL contains exco_debug=true', function () {
+      expect(helpers.isDebugEnabled('https://example.com?exco_debug=true')).to.be.true;
+    });
+
+    it('should return false if URL does not contain exco_debug=true', function () {
+      expect(helpers.isDebugEnabled('https://example.com')).to.be.false;
+    });
+  });
 });

@@ -188,7 +188,7 @@ export const spec = {
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.reduce((bidRequests, bid) => {
       // Common bid request attributes for banner, outstream and instream.
-      let payload = {
+      const payload = {
         siteid: bid.params.siteId,
         pageid: bid.params.pageId,
         formatid: bid.params.formatId,
@@ -255,7 +255,7 @@ export const spec = {
           payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
 
           if (isSupportedVideoContext) {
-            let videoPayload = deepClone(payload);
+            const videoPayload = deepClone(payload);
             spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
             videoPayload.bidfloor = bid.params.bidfloor || getBidFloor(bid, adServerCurrency, VIDEO);
             bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
@@ -284,12 +284,12 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequestString) {
     const bidResponses = [];
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     try {
       if (response && !response.isNoAd && (response.ad || response.adUrl)) {
         const bidRequest = JSON.parse(bidRequestString.data);
 
-        let bidResponse = {
+        const bidResponse = {
           requestId: bidRequest.bidId,
           cpm: response.cpm,
           width: response.width,

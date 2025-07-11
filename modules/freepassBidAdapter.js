@@ -68,10 +68,8 @@ export const spec = {
     logMessage('FreePass BidAdapter interpreted ORTB bid request as ', data);
 
     const freepassIdObj = validBidRequests[0].userIdAsEids?.find(eid => eid.source === 'freepass.jp');
-    if (freepassIdObj) {
-      data.user = injectIdsToUser(data.user, freepassIdObj.uids[0]);
-      data.device = injectIPtoDevice(data.device, freepassIdObj.uids[0]);
-    }
+    data.user = injectIdsToUser(data.user, freepassIdObj.uids[0]);
+    data.device = injectIPtoDevice(data.device, freepassIdObj.uids[0]);
 
     // set site.page & site.publisher
     data.site = data.site || {};
@@ -101,7 +99,7 @@ export const spec = {
       method: 'POST',
       url: BIDDER_SERVICE_URL,
       data,
-      options: { withCredentials: true }
+      options: { withCredentials: false }
     };
   },
 

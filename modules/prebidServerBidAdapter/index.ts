@@ -194,7 +194,7 @@ function validateConfigRequiredProps(s2sConfig: S2SConfig) {
 function formatUrlParams(option) {
   ['endpoint', 'syncEndpoint'].forEach((prop) => {
     if (isStr(option[prop])) {
-      let temp = option[prop];
+      const temp = option[prop];
       option[prop] = { p1Consent: temp, noP1Consent: temp };
     }
     if (isPlainObject(option[prop]) && (!option[prop].p1Consent || !option[prop].noP1Consent)) {
@@ -283,7 +283,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig: 
     filterSettings
   };
 
-  let userSyncLimit = s2sConfig.userSyncLimit;
+  const userSyncLimit = s2sConfig.userSyncLimit;
   if (isNumber(userSyncLimit) && userSyncLimit > 0) {
     payload['limit'] = userSyncLimit;
   }
@@ -394,7 +394,7 @@ function doBidderSync(type, url, bidder, done, timeout) {
  */
 function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   bidders.forEach(bidder => {
-    let clientAdapter = adapterManager.getBidAdapter(bidder);
+    const clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
       config.runWithBidder(
         bidder,
@@ -478,12 +478,12 @@ export function PrebidServer() {
     done = adapterMetrics.startTiming('total').stopBefore(done);
     bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {stopPropagation: true}));
 
-    let { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
+    const { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
         const s2sAliases = (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.aliases) ?? {};
-        let syncBidders = s2sBidRequest.s2sConfig.bidders
+        const syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || s2sAliases[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
@@ -577,7 +577,7 @@ type PbsRequestData = {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
 export const processPBSRequest = hook('async', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
-  let { gdprConsent } = getConsentData(bidRequests);
+  const { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
   // in case config.bidders contains invalid bidders, we only process those we sent requests for

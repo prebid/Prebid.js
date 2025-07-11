@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/datablocksBidAdapter.js';
-import { BotClientTests } from '../../../modules/datablocksBidAdapter.js';
+import { spec, BotClientTests } from '../../../modules/datablocksBidAdapter.js';
+
 import { getStorageManager } from '../../../src/storageManager.js';
 import {deepClone} from '../../../src/utils.js';
 
@@ -177,7 +177,7 @@ const res_object = {
   }
 }
 
-let bid_request = {
+const bid_request = {
   method: 'POST',
   url: 'https://prebid.datablocks.net/openrtb/?sid=2523014',
   options: {
@@ -394,13 +394,13 @@ describe('DatablocksAdapter', function() {
 
   describe('get client info', function() {
     it('Should return object', function() {
-      let client_info = spec.get_client_info()
+      const client_info = spec.get_client_info()
       expect(client_info).to.be.a('object');
       expect(client_info).to.have.all.keys('wiw', 'wih', 'saw', 'sah', 'scd', 'sw', 'sh', 'whl', 'wxo', 'wyo', 'wpr', 'is_bot', 'is_hid', 'vs');
     });
 
     it('bot test should return boolean', function() {
-      let bot_test = new BotClientTests();
+      const bot_test = new BotClientTests();
       expect(bot_test.doTests()).to.be.a('boolean');
     });
   })
@@ -410,13 +410,13 @@ describe('DatablocksAdapter', function() {
       expect(spec.isBidRequestValid(bid)).to.be.true;
     });
     it('Should return false when host/source_id is not set', function() {
-      let moddedBid = deepClone(bid);
+      const moddedBid = deepClone(bid);
       delete moddedBid.params.source_id;
       expect(spec.isBidRequestValid(moddedBid)).to.be.false;
     });
 
     it('Should return true when viewability reporting is opted out', function() {
-      let moddedBid = Object.assign({}, bid);
+      const moddedBid = Object.assign({}, bid);
       moddedBid.params.vis_optout = true;
       spec.isBidRequestValid(moddedBid);
       expect(spec.db_obj.vis_optout).to.be.true;
@@ -437,7 +437,7 @@ describe('DatablocksAdapter', function() {
 
   describe('onBidWon', function() {
     it('Should return undefined', function() {
-      let won_bid = {params: [{source_id: 1}], requestId: 1, adUnitCode: 'unit', auctionId: 1, size: '300x250', cpm: 10, adserverTargeting: {hb_pb: 10}, timeToRespond: 10, ttl: 10};
+      const won_bid = {params: [{source_id: 1}], requestId: 1, adUnitCode: 'unit', auctionId: 1, size: '300x250', cpm: 10, adserverTargeting: {hb_pb: 10}, timeToRespond: 10, ttl: 10};
       expect(spec.onBidWon(won_bid)).to.equal(undefined);
     });
   });
@@ -464,7 +464,7 @@ describe('DatablocksAdapter', function() {
     });
 
     it('Should be a valid openRTB request', function() {
-      let data = request.data;
+      const data = request.data;
 
       expect(data).to.be.an('object');
       expect(data).to.have.all.keys('device', 'imp', 'site', 'id');
@@ -472,9 +472,9 @@ describe('DatablocksAdapter', function() {
       expect(data.imp).to.be.a('array');
       expect(data.device.ip).to.equal('peer');
 
-      let imps = data['imp'];
+      const imps = data['imp'];
       imps.forEach((imp, index) => {
-        let curBid = bidderRequest.bids[index];
+        const curBid = bidderRequest.bids[index];
         if (imp.banner) {
           expect(imp.banner).to.be.a('object');
           expect(imp).to.have.all.keys('banner', 'id', 'secure', 'tagid', 'placement_id', 'ortb2', 'floor');
@@ -495,13 +495,13 @@ describe('DatablocksAdapter', function() {
     });
 
     it('Returns empty data if no valid requests are passed', function() {
-      let test_request = spec.buildRequests([]);
+      const test_request = spec.buildRequests([]);
       expect(test_request).to.be.an('array').that.is.empty;
     });
   });
 
   describe('interpretResponse', function() {
-    let response = spec.interpretResponse(res_object, bid_request);
+    const response = spec.interpretResponse(res_object, bid_request);
 
     it('Returns an array of valid server responses if response object is valid', function() {
       expect(response).to.be.an('array').that.is.not.empty;
