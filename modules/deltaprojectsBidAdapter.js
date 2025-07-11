@@ -58,7 +58,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 
   // -- build user, reg
-  let user = { ext: {} };
+  const user = { ext: {} };
   const regs = { ext: {} };
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   if (gdprConsent) {
@@ -69,7 +69,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   }
 
   // -- build tmax
-  let tmax = (bidderRequest && bidderRequest.timeout > 0) ? bidderRequest.timeout : undefined;
+  const tmax = (bidderRequest && bidderRequest.timeout > 0) ? bidderRequest.timeout : undefined;
 
   // build bid specific
   return validBidRequests.map(validBidRequest => {

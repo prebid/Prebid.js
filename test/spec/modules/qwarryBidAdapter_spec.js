@@ -78,7 +78,7 @@ describe('qwarryBidAdapter', function () {
     })
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, REQUEST)
+      const bid = Object.assign({}, REQUEST)
       delete bid.params.zoneToken
       expect(spec.isBidRequestValid(bid)).to.equal(false)
       delete bid.params
@@ -87,7 +87,7 @@ describe('qwarryBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let bidRequests = [REQUEST]
+    const bidRequests = [REQUEST]
     const bidderRequest = spec.buildRequests(bidRequests, {
       bidderRequestId: '123',
       gdprConsent: {

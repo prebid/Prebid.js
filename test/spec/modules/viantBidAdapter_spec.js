@@ -6,9 +6,9 @@ import {detectReferer} from '../../../src/refererDetection';
 
 describe('viantOrtbBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
-    let clonedBidderRequest = deepClone(bidderRequestBase);
+    const clonedBidderRequest = deepClone(bidderRequestBase);
     clonedBidderRequest.bids = bidRequests;
-    let requests = spec.buildRequests(bidRequests, clonedBidderRequest);
+    const requests = spec.buildRequests(bidRequests, clonedBidderRequest);
     return requests
   }
 
@@ -40,20 +40,20 @@ describe('viantOrtbBidAdapter', function () {
       });
 
       it('should return false when publisherId not passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.params.publisherId;
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
       it('should return true if placementId is not passed ', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.params.placementId;
         bid.ortb2Imp = {}
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
 
       it('should return false if mediaTypes.banner is Not passed', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         delete bid.mediaTypes
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
@@ -61,7 +61,7 @@ describe('viantOrtbBidAdapter', function () {
 
     describe('banner', function () {
       it('should return true if banner.pos is passed correctly', function () {
-        let bid = makeBid();
+        const bid = makeBid();
         bid.mediaTypes.banner.pos = 1;
         expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
@@ -104,7 +104,7 @@ describe('viantOrtbBidAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, makeBid());
+          const videoBidWithMediaTypes = Object.assign({}, makeBid());
           videoBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
         });
@@ -148,7 +148,7 @@ describe('viantOrtbBidAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let nativeBidWithMediaTypes = Object.assign({}, makeBid());
+          const nativeBidWithMediaTypes = Object.assign({}, makeBid());
           nativeBidWithMediaTypes.params = {};
           expect(spec.isBidRequestValid(nativeBidWithMediaTypes)).to.equal(false);
         });
@@ -283,7 +283,7 @@ describe('viantOrtbBidAdapter', function () {
     });
 
     it('sets the banner pos correctly if sent', function () {
-      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].mediaTypes.banner.pos = 1;
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest)[0].data;
@@ -353,8 +353,8 @@ describe('viantOrtbBidAdapter', function () {
       }
 
       it('assert video and its fields is present in imp ', function () {
-        let requests = spec.buildRequests([makeBid()], {referrerInfo: {}});
-        let clonedRequests = deepClone(requests)
+        const requests = spec.buildRequests([makeBid()], {referrerInfo: {}});
+        const clonedRequests = deepClone(requests)
         assert.equal(clonedRequests[0].data.imp[0].video.mimes[0], 'video/mp4')
         assert.equal(clonedRequests[0].data.imp[0].video.maxduration, 31)
         assert.equal(clonedRequests[0].data.imp[0].video.placement, 1)
@@ -400,14 +400,14 @@ describe('viantOrtbBidAdapter', function () {
 
     it('empty bid response test', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest)[0];
-      let bidResponse = {nbr: 0}; // Unknown error
-      let bids = spec.interpretResponse({body: bidResponse}, request);
+      const bidResponse = {nbr: 0}; // Unknown error
+      const bids = spec.interpretResponse({body: bidResponse}, request);
       expect(bids.length).to.equal(0);
     });
 
     it('bid response is a banner', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest)[0];
-      let bidResponse = {
+      const bidResponse = {
         seatbid: [{
           bid: [{
             impid: '243310435309b5',
@@ -421,9 +421,9 @@ describe('viantOrtbBidAdapter', function () {
         }],
         cur: 'USD'
       };
-      let bids = spec.interpretResponse({body: bidResponse}, request);
+      const bids = spec.interpretResponse({body: bidResponse}, request);
       expect(bids.length).to.equal(1);
-      let bid = bids[0];
+      const bid = bids[0];
       it('should return the proper mediaType', function () {
         it('should return a creativeId', function () {
           expect(bid.mediaType).to.equal('banner');
@@ -537,9 +537,9 @@ describe('viantOrtbBidAdapter', function () {
         ],
         'cur': 'USD'
       };
-      let bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request);
+      const bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request);
       expect(bids.length).to.equal(1);
-      let bid = bids[0];
+      const bid = bids[0];
       it('should return the proper mediaType', function () {
         expect(bid.mediaType).to.equal('video');
       });

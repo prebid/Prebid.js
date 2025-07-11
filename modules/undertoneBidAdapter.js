@@ -33,8 +33,8 @@ function getGdprQueryParams(gdprConsent) {
     return null;
   }
 
-  let gdpr = gdprConsent.gdprApplies ? '1' : '0';
-  let gdprstr = gdprConsent.consentString ? gdprConsent.consentString : '';
+  const gdpr = gdprConsent.gdprApplies ? '1' : '0';
+  const gdprstr = gdprConsent.consentString ? gdprConsent.consentString : '';
   return `gdpr=${gdpr}&gdprstr=${gdprstr}`;
 }
 
@@ -85,13 +85,13 @@ export const spec = {
       commons.canonicalUrl = canonicalUrl;
     }
     const hostname = parseUrl(referer).hostname;
-    let domain = extractDomainFromHost(hostname);
+    const domain = extractDomainFromHost(hostname);
     const pageUrl = canonicalUrl || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
     let reqUrl = `${URL}?pid=${pubid}&domain=${domain}`;
 
-    let gdprParams = getGdprQueryParams(bidderRequest.gdprConsent);
+    const gdprParams = getGdprQueryParams(bidderRequest.gdprConsent);
     if (gdprParams) {
       reqUrl += `&${gdprParams}`;
     }
@@ -177,7 +177,7 @@ export const spec = {
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
     const syncs = [];
 
-    let gdprParams = getGdprQueryParams(gdprConsent);
+    const gdprParams = getGdprQueryParams(gdprConsent);
     let iframePrivacyParams = '';
     let pixelPrivacyParams = '';
 

@@ -53,6 +53,7 @@ jobs:
         with:
           path: .
           key: ${{ inputs.wdir }}
+          fail-on-cache-miss: true
 
       - name: Run tests
         uses: nick-fields/retry@v3

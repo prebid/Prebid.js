@@ -4,7 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 
 describe('smarticoBidAdapter', function () {
   const adapter = newBidder(spec);
-  let bid = {
+  const bid = {
     adUnitCode: 'adunit-code',
     auctionId: '5kaj89l8-3456-2s56-c455-4g6h78jsdfgf',
     bidRequestsCount: 1,
@@ -23,7 +23,7 @@ describe('smarticoBidAdapter', function () {
     ],
     transactionId: '34562345-4dg7-46g7-4sg6-45gdsdj8fd56'
   }
-  let bidderRequests = {
+  const bidderRequests = {
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
     auctionStart: 1579746300522,
     bidderCode: 'myBidderCode',
@@ -41,8 +41,8 @@ describe('smarticoBidAdapter', function () {
     });
   });
   describe('buildRequests', function () {
-    let bidRequests = [ bid ];
-    let request = spec.buildRequests(bidRequests, bidderRequests);
+    const bidRequests = [ bid ];
+    const request = spec.buildRequests(bidRequests, bidderRequests);
     it('sends bid request via POST', function () {
       expect(request.method).to.equal('POST');
     });
@@ -59,7 +59,7 @@ describe('smarticoBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bidRequest = {
+    const bidRequest = {
       method: 'POST',
       url: 'https://trmads.eu/preBidRequest',
       bids: [bid],
@@ -71,7 +71,7 @@ describe('smarticoBidAdapter', function () {
         placementId: 'testPlacementId',
       }]
     };
-    let serverResponse = {
+    const serverResponse = {
       body: [{
         bidId: '22499d052045',
         id: 987654,
@@ -86,7 +86,7 @@ describe('smarticoBidAdapter', function () {
         title: 'Advertiser'
       }]
     };
-    let expectedResponse = [{
+    const expectedResponse = [{
       requestId: bid.bidId,
       cpm: 10,
       width: 300,
@@ -100,7 +100,7 @@ describe('smarticoBidAdapter', function () {
         advertiserDomains: ['www.advertiser.com'],
         advertiserName: 'Advertiser'
       }}];
-    let result = spec.interpretResponse(serverResponse, bidRequest);
+    const result = spec.interpretResponse(serverResponse, bidRequest);
     it('should contain correct creativeId', function () {
     expect(result[0].creativeId).to.equal(expectedResponse[0].creativeId)
     });

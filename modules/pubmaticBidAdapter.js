@@ -232,7 +232,7 @@ const handleImageProperties = asset => {
 
 const toOrtbNativeRequest = legacyNativeAssets => {
   const ortb = { ver: '1.2', assets: [] };
-  for (let key in legacyNativeAssets) {
+  for (const key in legacyNativeAssets) {
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key) && !PREBID_NATIVE_DATA_KEY_VALUES.includes(key)) {
       logWarn(`${LOG_WARN_PREFIX}: Unrecognized asset: ${key}. Ignored.`);
@@ -280,8 +280,8 @@ function removeGranularFloor(imp, mediaTypes) {
 
 const setFloorInImp = (imp, bid) => {
   let bidFloor = -1;
-  let requestedMediatypes = Object.keys(bid.mediaTypes);
-  let isMultiFormatRequest = requestedMediatypes.length > 1
+  const requestedMediatypes = Object.keys(bid.mediaTypes);
+  const isMultiFormatRequest = requestedMediatypes.length > 1
   if (typeof bid.getFloor === 'function' && !config.getConfig('pubmatic.disableFloors')) {
     [BANNER, VIDEO, NATIVE].forEach(mediaType => {
       if (!imp.hasOwnProperty(mediaType)) return;
@@ -325,7 +325,7 @@ const setFloorInImp = (imp, bid) => {
 }
 
 const updateBannerImp = (bannerObj, adSlot) => {
-  let slot = adSlot.split(':');
+  const slot = adSlot.split(':');
   let splits = slot[0]?.split('@');
   splits = splits?.length == 2 ? splits[1].split('x') : splits.length == 3 ? splits[2].split('x') : [];
   const primarySize = bannerObj.format[0];
@@ -354,7 +354,7 @@ const updateNativeImp = (imp, nativeParams) => {
     imp.native.request = JSON.stringify(toOrtbNativeRequest(nativeParams));
   }
   if (nativeParams?.ortb) {
-    let nativeConfig = JSON.parse(imp.native.request);
+    const nativeConfig = JSON.parse(imp.native.request);
     const { assets } = nativeConfig;
     if (!assets?.some(asset => asset.title || asset.img || asset.data || asset.video)) {
       logWarn(`${LOG_WARN_PREFIX}: Native assets object is empty or contains invalid objects`);
@@ -416,7 +416,7 @@ const addPMPDeals = (imp, deals) => {
 
 const updateRequestExt = (req, bidderRequest) => {
   const allBiddersList = ['all'];
-  let allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+  const allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
   const biddersList = isArray(allowedBiddersList)
     ? allowedBiddersList.map(val => val.trim().toLowerCase()).filter(uniques)
     : allBiddersList;
@@ -577,7 +577,7 @@ const validateBlockedCategories = (bcats) => {
 }
 
 const getConnectionType = () => {
-  let connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
+  const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
   const types = { ethernet: 1, wifi: 2, 'slow-2g': 4, '2g': 4, '3g': 5, '4g': 6 };
   return types[connection?.effectiveType] || 0;
 }
@@ -792,7 +792,7 @@ export const spec = {
     })
     const data = converter.toORTB({ validBidRequests, bidderRequest });
 
-    let serverRequest = {
+    const serverRequest = {
       method: 'POST',
       url: ENDPOINT,
       data: data,

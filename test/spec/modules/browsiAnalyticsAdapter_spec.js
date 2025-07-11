@@ -1,5 +1,5 @@
-import browsiAnalytics from '../../../modules/browsiAnalyticsAdapter.js';
-import { setStaticData, getStaticData } from '../../../modules/browsiAnalyticsAdapter.js';
+import browsiAnalytics, { setStaticData, getStaticData } from '../../../modules/browsiAnalyticsAdapter.js';
+
 import adapterManager from '../../../src/adapterManager';
 import { expect } from 'chai';
 import { EVENTS } from '../../../src/constants.js';
@@ -7,7 +7,7 @@ import { server } from '../../../test/mocks/xhr.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import * as utils from '../../../src/utils.js';
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('browsi analytics adapter', function () {
   const timestamp = 1740559971388;

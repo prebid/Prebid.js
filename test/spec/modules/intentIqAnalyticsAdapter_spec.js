@@ -57,7 +57,7 @@ const getUserConfigWithReportingServerAddress = () => [
   }
 ];
 
-let wonRequest = {
+const wonRequest = {
   'bidderCode': 'pubmatic',
   'width': 728,
   'height': 90,
