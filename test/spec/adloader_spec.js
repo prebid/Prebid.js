@@ -89,8 +89,8 @@ describe('adLoader', function () {
             }
           }
         }
-      },
-      attrs = {'z': 'A', 'y': 2};
+      };
+      const attrs = {'z': 'A', 'y': 2};
     const script = adLoader.loadExternalScript('someUrl', MODULE_TYPE_PREBID, 'debugging', undefined, doc, attrs);
     expect(script.z).to.equal('A');
     expect(script.y).to.equal(2);

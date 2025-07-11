@@ -138,8 +138,8 @@ describe('lemmaDigitalBidAdapter', function () {
               pubId: 1001,
               adunitId: 1
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
       it('invalid bid case', function () {
@@ -152,8 +152,8 @@ describe('lemmaDigitalBidAdapter', function () {
             params: {
               adunitId: 1
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: pubId is not number', function () {
@@ -163,8 +163,8 @@ describe('lemmaDigitalBidAdapter', function () {
               pubId: '301',
               adunitId: 1
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: adunitId is not passed', function () {
@@ -173,8 +173,8 @@ describe('lemmaDigitalBidAdapter', function () {
             params: {
               pubId: 1001
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          const isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
       });
       it('invalid bid case: video bid request mimes is not passed', function () {
@@ -189,8 +189,8 @@ describe('lemmaDigitalBidAdapter', function () {
                 maxduration: 30
               }
             }
-          },
-          isValid = spec.isBidRequestValid(validBid);
+          };
+          let isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(false);
         validBid.params.video.mimes = [];
         isValid = spec.isBidRequestValid(validBid);
