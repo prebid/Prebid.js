@@ -3,7 +3,7 @@ import {
   spec, STORAGE, getLocalStorage,
 } from 'modules/adgridBidAdapter.js';
 import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils';
+import { getAmxId } from '../../../libraries/nexx360Utils.js';
 const sandbox = sinon.createSandbox();
 
 describe('adgrid bid adapter tests', () => {

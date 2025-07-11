@@ -11,7 +11,7 @@ import {
   setGroupConfigData,
   requestContextData,
   windowPostMessageReceived
-} from '../../../modules/qortexRtdProvider';
+} from '../../../modules/qortexRtdProvider.js';
 import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
 
