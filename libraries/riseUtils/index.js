@@ -2,6 +2,7 @@ import {
   contains,
   deepAccess,
   getBidIdParameter,
+  getDNT,
   isArray,
   isEmpty,
   isFn,
@@ -26,7 +27,7 @@ export const makeBaseSpec = (baseUrl, modes) => {
       const testMode = generalObject.params.testMode;
       const rtbDomain = generalObject.params.rtbDomain || baseUrl;
 
-      combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest);
+      combinedRequestsObject.params = generateGeneralParams(generalObject, bidderRequest, ADAPTER_VERSION);
       combinedRequestsObject.bids = generateBidsParams(validBidRequests, bidderRequest);
 
       return {
@@ -227,7 +228,6 @@ export function generateBidParameters(bid, bidderRequest) {
     loop: bid.auctionsCount || 0,
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
-    coppa: 0,
   };
 
   const pos = getPos(bid);
@@ -243,16 +243,6 @@ export function generateBidParameters(bid, bidderRequest) {
   const placementId = params.placementId || getName(bid);
   if (placementId) {
     bidObject.placementId = placementId;
-  }
-
-  const sua = deepAccess(bid, `ortb2.device.sua`);
-  if (sua) {
-    bidObject.sua = sua;
-  }
-
-  const coppa = deepAccess(bid, `ortb2.regs.coppa`);
-  if (coppa) {
-    bidObject.coppa = 1;
   }
 
   if (mediaTypes.includes(VIDEO)) {
@@ -374,7 +364,8 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
     publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
-    dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
+    coppa: deepAccess(bidderRequest, `ortb2.regs.coppa`, 0),
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
@@ -397,6 +388,16 @@ export function generateGeneralParams(generalObject, bidderRequest, adapterVersi
 
   if (ortb2Metadata.device) {
     generalParams.device = ortb2Metadata.device;
+  }
+
+  const sua = deepAccess(bidderRequest, `ortb2.device.sua`);
+  if (sua) {
+    generalParams.sua = JSON.stringify(sua);
+  }
+
+  const previousAuctionInfo = deepAccess(bidderRequest, 'ortb2.ext.prebid.previousauctioninfo')
+  if (previousAuctionInfo) {
+    generalParams.prev_auction_info = JSON.stringify(previousAuctionInfo);
   }
 
   if (syncEnabled) {
