@@ -91,7 +91,7 @@ const RESPONSE = {
               'bidder': {
                 'pangle': {
                   'brand_id': 334553,
-                  'auction_id': 514667951122925701,
+                  'auction_id': '514667951122925701',
                   'bidder_id': 2,
                   'bid_ad_type': 0
                 }
