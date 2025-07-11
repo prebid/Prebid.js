@@ -5,7 +5,7 @@ import {
   BID_CATEGORY_REJECTION_REASON,
   init,
   MODULE_NAME
-  , reset} from '../../../modules/bidResponseFilter.js';
+  , reset} from '../../../modules/bidResponseFilter/index.js';
 import {config} from '../../../src/config.js';
 import {addBidResponse} from '../../../src/auction.js';
 
