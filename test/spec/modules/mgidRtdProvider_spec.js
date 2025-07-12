@@ -1,6 +1,6 @@
 import { mgidSubmodule, storage } from '../../../modules/mgidRtdProvider.js';
 import {expect} from 'chai';
-import * as refererDetection from '../../../src/refererDetection';
+import * as refererDetection from '../../../src/refererDetection.js';
 import {server} from '../../mocks/xhr.js';
 
 describe('Mgid RTD submodule', () => {

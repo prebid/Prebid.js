@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import * as priceFloors from '../../../modules/priceFloors';
+import * as priceFloors from '../../../modules/priceFloors.js';
 import * as utils from '../../../src/utils.js';
 import * as suaModule from '../../../src/fpd/sua.js';
-import { config as conf } from '../../../src/config';
+import { config as conf } from '../../../src/config.js';
 import * as hook from '../../../src/hook.js';
 import * as prebidGlobal from '../../../src/prebidGlobal.js';
 import {

@@ -7,11 +7,11 @@ import {
   handleClientHints,
   firstPartyData as moduleFPD,
   isCMPStringTheSame, createPixelUrl, translateMetadata
-} from '../../../modules/intentIqIdSystem';
+} from '../../../modules/intentIqIdSystem.js';
 import { storage, readData, storeData } from '../../../libraries/intentIqUtils/storageUtils.js';
-import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler';
-import { clearAllCookies } from '../../helpers/cookies';
-import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils';
+import { gppDataHandler, uspDataHandler, gdprDataHandler } from '../../../src/consentHandler.js';
+import { clearAllCookies } from '../../helpers/cookies.js';
+import { detectBrowser, detectBrowserFromUserAgent, detectBrowserFromUserAgentData } from '../../../libraries/intentIqUtils/detectBrowserUtils.js';
 import {CLIENT_HINTS_KEY, FIRST_PARTY_KEY, NOT_YET_DEFINED, PREBID, WITH_IIQ, WITHOUT_IIQ} from '../../../libraries/intentIqConstants/intentIqConstants.js';
 
 const partner = 10;

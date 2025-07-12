@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const { host, protocol, waitForElement } = require('../../../helpers/testing-utils');
+const { host, protocol, waitForElement } = require('../../../helpers/testing-utils.js');
 
 const validDurations = ['15s', '30s'];
 const validCats = ['Food', 'Retail Stores/Chains', 'Pet Food/Supplies', 'Travel/Hotels/Airlines', 'Automotive', 'Health Care Services'];

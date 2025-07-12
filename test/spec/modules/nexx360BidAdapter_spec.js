@@ -3,7 +3,7 @@ import {
   spec, STORAGE, getNexx360LocalStorage,
 } from 'modules/nexx360BidAdapter.js';
 import sinon from 'sinon';
-import { getAmxId } from '../../../libraries/nexx360Utils';
+import { getAmxId } from '../../../libraries/nexx360Utils/index.js';
 const sandbox = sinon.createSandbox();
 
 describe('Nexx360 bid adapter tests', () => {

@@ -1,6 +1,6 @@
 import { freepassIdSubmodule } from 'modules/freepassIdSystem';
 import sinon from 'sinon';
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 
 const expect = require('chai').expect;
 

@@ -1,4 +1,4 @@
-import {hook} from '../../../src/hook';
+import {hook} from '../../../src/hook.js';
 import {BANNER} from '../../../src/mediaTypes.js';
 import {raveltechSubmodule} from 'modules/raveltechRtdProvider';
 import adapterManager from '../../../src/adapterManager.js';

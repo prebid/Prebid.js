@@ -6,7 +6,7 @@ import * as utils from 'src/utils.js';
 import { getStorageManager } from 'src/storageManager.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import {deepClone, getUnixTimestampFromNow} from 'src/utils.js';
-import { getWinDimensions } from '../../../src/utils';
+import { getWinDimensions } from '../../../src/utils.js';
 
 describe('adnuntiusBidAdapter', function () {
   const sandbox = sinon.createSandbox();

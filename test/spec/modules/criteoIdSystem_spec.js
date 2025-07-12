@@ -1,7 +1,7 @@
 import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
-import { server } from '../../mocks/xhr';
+import { server } from '../../mocks/xhr.js';
 import {attachIdSystem} from '../../../modules/userId/index.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 import {expect} from 'chai/index.mjs';

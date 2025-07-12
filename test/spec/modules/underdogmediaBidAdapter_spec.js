@@ -5,7 +5,7 @@ import {
   spec,
   resetUserSync
 } from 'modules/underdogmediaBidAdapter.js';
-import { config } from '../../../src/config';
+import { config } from '../../../src/config.js';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;

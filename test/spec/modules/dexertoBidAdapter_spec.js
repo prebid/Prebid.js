@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/dexertoBidAdapter';
+import { spec } from '../../../modules/dexertoBidAdapter.js';
 import * as utils from '../../../src/utils.js';
 
 describe('dexerto adapter', function () {

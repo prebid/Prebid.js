@@ -1,6 +1,6 @@
 import { spec, converter } from 'modules/ivsBidAdapter.js';
 import { assert } from 'chai';
-import { deepClone } from '../../../src/utils';
+import { deepClone } from '../../../src/utils.js';
 
 describe('ivsBidAdapter', function () {
   describe('isBidRequestValid()', function () {

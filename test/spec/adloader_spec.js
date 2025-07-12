@@ -1,8 +1,8 @@
 import * as utils from 'src/utils.js';
 import * as adLoader from 'test/mocks/adloaderStub.js';
-import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities';
-import { registerActivityControl } from '../../src/activities/rules';
-import { MODULE_TYPE_PREBID } from '../../src/activities/modules';
+import { LOAD_EXTERNAL_SCRIPT } from '../../src/activities/activities.js';
+import { registerActivityControl } from '../../src/activities/rules.js';
+import { MODULE_TYPE_PREBID } from '../../src/activities/modules.js';
 
 describe('adLoader', function () {
   let utilsinsertElementStub;

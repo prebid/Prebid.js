@@ -1,4 +1,4 @@
-import * as equativUtils from "../../../../libraries/equativUtils/equativUtils";
+import * as equativUtils from "../../../../libraries/equativUtils/equativUtils.js";
 
 describe('equativUtils', () => {
   describe('prepareSplitImps', () => {

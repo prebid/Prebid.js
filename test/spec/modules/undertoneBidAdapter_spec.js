@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/undertoneBidAdapter.js';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {deepClone, getWinDimensions} from '../../../src/utils';
+import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import {deepClone, getWinDimensions} from '../../../src/utils.js';
 
 const URL = 'https://hb.undertone.com/hb';
 const BIDDER_CODE = 'undertone';

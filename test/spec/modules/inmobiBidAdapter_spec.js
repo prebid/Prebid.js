@@ -5,9 +5,9 @@ import {
 import * as utils from 'src/utils.js';
 import * as ajax from 'src/ajax.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
-import { hook } from '../../../src/hook';
+import { hook } from '../../../src/hook.js';
 import { config } from '../../../src/config.js';
-import { addFPDToBidderRequest } from '../../helpers/fpd';
+import { addFPDToBidderRequest } from '../../helpers/fpd.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec as adapter, AdapterHelpers, SID, ENDPOINT, BIDDER_CODE } from 'modules/excoBidAdapter';
-import { BANNER, VIDEO } from '../../../src/mediaTypes';
-import { config } from '../../../src/config';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { config } from '../../../src/config.js';
 import sinon from 'sinon';
 
 describe('ExcoBidAdapter', function () {

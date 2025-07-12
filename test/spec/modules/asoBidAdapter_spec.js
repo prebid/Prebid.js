@@ -2,8 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/asoBidAdapter.js';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {OUTSTREAM} from 'src/video.js';
-import {addFPDToBidderRequest} from '../../helpers/fpd';
-import {parseUrl} from '../../../src/utils';
+import {addFPDToBidderRequest} from '../../helpers/fpd.js';
+import {parseUrl} from '../../../src/utils.js';
 
 import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';

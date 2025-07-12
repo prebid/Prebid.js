@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/smartyadsBidAdapter.js';
 import { config } from '../../../src/config.js';
-import {server} from '../../mocks/xhr';
+import {server} from '../../mocks/xhr.js';
 
 describe('SmartyadsAdapter', function () {
   const bid = {

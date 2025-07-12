@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/nextrollBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { deepClone } from '../../../src/utils';
+import { deepClone } from '../../../src/utils.js';
 
 describe('nextrollBidAdapter', function() {
   let utilsMock;

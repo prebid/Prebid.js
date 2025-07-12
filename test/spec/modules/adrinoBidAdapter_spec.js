@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/adrinoBidAdapter.js';
 import {config} from '../../../src/config.js';
-import * as utils from '../../../src/utils';
+import * as utils from '../../../src/utils.js';
 
 describe('adrinoBidAdapter', function () {
   afterEach(() => {

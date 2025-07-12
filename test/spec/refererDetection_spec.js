@@ -2,7 +2,7 @@ import {cacheWithLocation, detectReferer, ensureProtocol, parseDomain} from 'src
 import {config} from 'src/config.js';
 import {expect} from 'chai';
 
-import { buildWindowTree } from '../helpers/refererDetectionHelper';
+import { buildWindowTree } from '../helpers/refererDetectionHelper.js';
 
 describe('Referer detection', () => {
   afterEach(function () {

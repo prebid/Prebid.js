@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import { NATIVE } from '../../../../src/mediaTypes';
-import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils';
+import { NATIVE } from '../../../../src/mediaTypes.js';
+import { interpretNativeBid, OPENRTB } from '../../../../libraries/precisoUtils/bidNativeUtils.js';
 
 const DEFAULT_PRICE = 1
 const DEFAULT_BANNER_WIDTH = 300

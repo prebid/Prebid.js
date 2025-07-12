@@ -4,7 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
-import {decorateAdUnitsWithNativeParams} from '../../../src/native';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 
 const ENDPOINT = 'https://hb.openwebmp.com/hb-multi';
 const TEST_ENDPOINT = 'https://hb.openwebmp.com/hb-multi-test';

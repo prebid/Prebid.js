@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../../../src/activities/modules.js';
-import * as events from '../../../src/events';
+import * as events from '../../../src/events.js';
 import * as utils from 'src/utils.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js'
 import Sinon from 'sinon';

@@ -1,8 +1,8 @@
 import {publinkIdSubmodule} from 'modules/publinkIdSystem.js';
-import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager';
+import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
 import {server} from 'test/mocks/xhr.js';
 import sinon from 'sinon';
-import {parseUrl} from '../../../src/utils';
+import {parseUrl} from '../../../src/utils.js';
 
 const storage = getCoreStorageManager();
 

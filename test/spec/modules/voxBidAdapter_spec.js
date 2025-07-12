@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/voxBidAdapter.js'
-import { setConfig as setCurrencyConfig } from '../../../modules/currency'
-import { addFPDToBidderRequest } from '../../helpers/fpd'
+import { setConfig as setCurrencyConfig } from '../../../modules/currency.js'
+import { addFPDToBidderRequest } from '../../helpers/fpd.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {

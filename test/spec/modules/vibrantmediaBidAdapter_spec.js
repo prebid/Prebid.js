@@ -3,7 +3,7 @@ import {spec} from 'modules/vibrantmediaBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from 'src/video.js';
-import { getWinDimensions } from '../../../src/utils';
+import { getWinDimensions } from '../../../src/utils.js';
 
 const EXPECTED_PREBID_SERVER_URL = 'https://prebid.intellitxt.com/prebid';
 

@@ -1,7 +1,7 @@
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { spec } from 'modules/dailymotionBidAdapter.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('dailymotionBidAdapterTests', () => {
   // Validate that isBidRequestValid only validates requests with apiKey

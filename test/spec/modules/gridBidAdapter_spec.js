@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl, storage } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import {ENDPOINT_DOMAIN, ENDPOINT_PROTOCOL} from '../../../modules/adpartnerBidAdapter';
+import {ENDPOINT_DOMAIN, ENDPOINT_PROTOCOL} from '../../../modules/adpartnerBidAdapter.js';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);

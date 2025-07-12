@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from 'src/video.js';
 import { toOrtbNativeRequest } from 'src/native.js';
-import { hasTypeNative } from '../../../modules/onetagBidAdapter';
+import { hasTypeNative } from '../../../modules/onetagBidAdapter.js';
 
 const NATIVE_SUFFIX = 'Ad';
 
