@@ -585,8 +585,8 @@ describe('hadronRtdProvider', function () {
                     bid.adBuzzData.segments.adBuzz.push(rtd.adBuzz[k]);
                   }
                 } else if (bid.bidder == 'trueBid') {
-                  for (var k = 0; k < rtd.trueBid.length; k++) {
-                    bid.trueBidSegments.push(rtd.trueBid[k]);
+                  for (var m = 0; m < rtd.trueBid.length; m++) {
+                    bid.trueBidSegments.push(rtd.trueBid[m]);
                   }
                 }
               }
