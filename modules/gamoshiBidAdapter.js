@@ -55,12 +55,6 @@ export const helper = {
     return 0;
   },
 
-  /**
-   * Checks if a string starts with a specific search string
-   * @param {string} str - The string to check
-   * @param {string} search - The search string
-   * @returns {boolean} True if str starts with search
-   */
   startsWith: function (str, search) {
     return str.substr(0, search.length) === search;
   },
@@ -83,17 +77,10 @@ export const helper = {
     return BANNER;
   },
 
-  /**
-   * Gets the bid floor price with currency support
-   * @param {Object} bid - The bid request object
-   * @param {string} currency - The currency code (default: 'USD')
-   * @returns {number|null} The floor price or null if not available
-   */
   getBidFloor(bid, currency = 'USD') {
     if (!isFn(bid.getFloor)) {
       return bid.params.bidfloor ? bid.params.bidfloor : null;
     }
-
     let bidFloor = bid.getFloor({
       mediaType: '*',
       size: '*',
@@ -103,7 +90,6 @@ export const helper = {
     if (isPlainObject(bidFloor) && !isNaN(bidFloor.floor) && bidFloor.currency === currency) {
       return bidFloor.floor;
     }
-
     return null;
   },
   getDeviceType() {
@@ -196,7 +182,23 @@ replaceMacros(url, macros) {
     }
   });
   return eids;
-}
+}, getWidthAndHeight(input) {
+    let width, height;
+
+    if (Array.isArray(input) && typeof input[0] === 'number' && typeof input[1] === 'number') {
+      // Input is like [33, 55]
+      width = input[0];
+      height = input[1];
+    } else if (Array.isArray(input) && Array.isArray(input[0]) && typeof input[0][0] === 'number' && typeof input[0][1] === 'number') {
+      // Input is like [[300, 450], [45, 45]]
+      width = input[0][0];
+      height = input[0][1];
+    } else {
+      return { width: 300, height: 250 };
+    }
+
+    return { width, height };
+  }
 };
 
 export const spec = {
@@ -224,7 +226,6 @@ export const spec = {
         const params = bidRequest.params;
         const supplyPartnerId = params.supplyPartnerId || params.supply_partner_id || params.inventory_id;
         let type = bidRequest.mediaTypes['banner'] ? BANNER : VIDEO;
-
         if (!supplyPartnerId && type != null) {
           logError('Gamoshi: supplyPartnerId is required');
           return;
@@ -412,43 +413,48 @@ function getGdprConsent(bidderRequest) {
  */
 function imp(buildImp, bidRequest, context) {
   let imp = buildImp(bidRequest, context);
+  if (!imp) {
+    logWarn('Gamoshi: Failed to build imp for bid request:', bidRequest);
+    return null;
+  }
+  let isVideo = bidRequest.mediaTypes.mediaType === VIDEO
+  if (isVideo) {
+    if (!imp.video) {
+      imp.video = {};
+    }
+  } else {
+    if (!imp.banner) {
+      imp.banner = {};
+    }
+  }
   const params = bidRequest.params;
   const currency = getCurrencyFromBidderRequest(context.bidderRequest) || 'USD';
-
   imp.tagid = bidRequest.adUnitCode;
   imp.instl = deepAccess(context.bidderRequest, 'ortb2Imp.instl') === 1 || params.instl === 1 ? 1 : 0;
   imp.bidfloor = helper.getBidFloor(bidRequest, currency) || 0;
   imp.bidfloorcur = currency;
-
   // Add video-specific properties if applicable
   if (imp.video) {
     const playerSize = bidRequest.mediaTypes?.video?.playerSize || bidRequest.sizes;
-    const paramsVideo = bidRequest.params.video;
-    if (paramsVideo) {
-      deepSetValue(imp, 'video', {
-        ...imp.video,
-        protocols: bidRequest.mediaTypes.video.protocols || params.protocols || [1, 2, 3, 4, 5, 6],
-        pos: deepAccess(bidRequest, 'mediaTypes.video.pos') || params.pos || 0,
-        skip: bidRequest.mediaTypes.video.skip || paramsVideo.skip,
-        plcmt: bidRequest.mediaTypes.video.plcmt || paramsVideo.plcmt || 1,
-        placement: bidRequest.mediaTypes.video.placement || paramsVideo.placement,
-        minduration: bidRequest.mediaTypes.video.minduration || paramsVideo.minduration,
-        maxduration: bidRequest.mediaTypes.video.maxduration || paramsVideo.maxduration,
-        playbackmethod: bidRequest.mediaTypes.video.playbackmethod || paramsVideo.playbackmethod,
-        startdelay: bidRequest.mediaTypes.video.startdelay || paramsVideo.startdelay
-      });
+    const context = bidRequest.mediaTypes?.video?.context || null;
+    const videoParams = mergeDeep({}, bidRequest.params.video || {}, bidRequest.mediaTypes.video);
+    deepSetValue(imp, 'video.ext.context', context);
+    deepSetValue(imp, 'video.protocols', videoParams.protocols || [1, 2, 3, 4, 5, 6]);
+    deepSetValue(imp, "video.pos", videoParams.pos || 0);
+    deepSetValue(imp, 'video.mimes', videoParams.mimes || ['video/mp4', 'video/x-flv', 'video/webm', 'application/x-shockwave-flash']);
+    deepSetValue(imp, 'video.api', videoParams.api);
+    deepSetValue(imp, 'video.skip', videoParams.skip);
+    if (videoParams.plcmt && isNumber(videoParams.plcmt)) {
+      deepSetValue(imp, 'video.plcmt', videoParams.plcmt);
     }
-    if (isArray(playerSize[0])) {
-      imp.video.w = playerSize[0][0];
-      imp.video.h = playerSize[0][1];
-    } else if (isNumber(playerSize[0])) {
-      imp.video.w = playerSize[0];
-      imp.video.h = playerSize[1];
-    } else {
-      imp.video.w = 300;
-      imp.video.h = 250;
-    }
-    deepSetValue(imp, 'video.ext.context', bidRequest.mediaTypes.video.context);
+    deepSetValue(imp, 'video.placement', videoParams.placement);
+    deepSetValue(imp, 'video.minduration', videoParams.minduration);
+    deepSetValue(imp, 'video.maxduration', videoParams.maxduration);
+    deepSetValue(imp, 'video.playbackmethod', videoParams.playbackmethod);
+    deepSetValue(imp, 'video.startdelay', videoParams.startdelay);
+    let sizes = helper.getWidthAndHeight(playerSize);
+    imp.video.w = sizes.width;
+    imp.video.h = sizes.height;
   } else {
       if (imp.banner) {
         const sizes = bidRequest.mediaTypes?.banner?.sizes || bidRequest.sizes;

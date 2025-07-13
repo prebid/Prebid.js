@@ -453,30 +453,28 @@ describe('GamoshiAdapter', () => {
     });
 
     it('builds request video object correctly', () => {
-      let requestWithVideo;
-      const bidRequestWithVideo = utils.deepClone(bidRequest);
-      bidRequestWithVideo.params.video = {
-        plcmt: 1,
-        minduration: 1,
-      }
+      const bidRequestWithVideo = utils.deepClone(videoBidRequest);
       bidRequestWithVideo.mediaTypes = {
         video: {
           playerSize: [[302, 252]],
           mimes: ['video/mpeg'],
+          pos: 0,
           playbackmethod: 1,
+          minduration: 30,
+          plcmt: 1,
           startdelay: 1,
         }
       };
-      requestWithVideo = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(requestWithVideo.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
-      expect(requestWithVideo.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
-      expect(requestWithVideo.data.imp[0].video.pos).to.equal(0);
-      expect(requestWithVideo.data.imp[0].video.mimes).to.equal(bidRequestWithVideo.mediaTypes.video.mimes);
-      expect(requestWithVideo.data.imp[0].video.skip).to.not.exist;
-      expect(requestWithVideo.data.imp[0].video.plcmt).to.equal(1);
-      expect(requestWithVideo.data.imp[0].video.minduration).to.equal(1);
-      expect(requestWithVideo.data.imp[0].video.playbackmethod).to.equal(1);
-      expect(requestWithVideo.data.imp[0].video.startdelay).to.equal(1);
+      let request = spec.buildRequests([bidRequestWithVideo], videoBidRequest)[0];
+      expect(request.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][0]);
+      expect(request.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0][1]);
+      expect(request.data.imp[0].video.pos).to.equal(0);
+      expect(request.data.imp[0].video.mimes[0]).to.equal(bidRequestWithVideo.mediaTypes.video.mimes[0]);
+      expect(request.data.imp[0].video.skip).to.not.exist;
+      expect(request.data.imp[0].video.plcmt).to.equal(1);
+      expect(request.data.imp[0].video.minduration).to.equal(30);
+      expect(request.data.imp[0].video.playbackmethod).to.equal(1);
+      expect(request.data.imp[0].video.startdelay).to.equal(1);
       bidRequestWithVideo.mediaTypes = {
         video: {
           playerSize: [302, 252],
@@ -488,12 +486,12 @@ describe('GamoshiAdapter', () => {
           startdelay: 1,
         },
       };
-      requestWithVideo = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(requestWithVideo.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0]);
-      expect(requestWithVideo.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[1]);
-      bidRequestWithVideo.params.pos = 1;
-      requestWithVideo = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-      expect(requestWithVideo.data.imp[0].video.pos).to.equal(1);
+      request = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(request.data.imp[0].video.w).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[0]);
+      expect(request.data.imp[0].video.h).to.equal(bidRequestWithVideo.mediaTypes.video.playerSize[1]);
+      bidRequestWithVideo.mediaTypes.video.pos = 1;
+      request = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
+      expect(request.data.imp[0].video.pos).to.equal(1);
     });
 
     it('builds request video object correctly with context', () => {
@@ -525,7 +523,7 @@ describe('GamoshiAdapter', () => {
 
     it('builds request video object correctly with multi-dimensions size array', () => {
       let resultingRequest;
-      const bidRequestWithVideo = utils.deepClone(bidRequest);
+      const bidRequestWithVideo = utils.deepClone(videoBidRequest);
       bidRequestWithVideo.mediaTypes.video = {
         playerSize: [[304, 254], [305, 255]],
         mimes: ['video/mpeg'],
@@ -535,10 +533,8 @@ describe('GamoshiAdapter', () => {
         playbackmethod: 1,
         startdelay: 1,
       };
-      resultingRequest = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
-
+      resultingRequest = spec.buildRequests([bidRequestWithVideo], videoBidRequest)[0];
       expect(resultingRequest.data.imp[0].video.plcmt).to.equal(1);
-
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
       bidRequestWithPosEquals1.mediaTypes.video.plcmt = 4;
       resultingRequest = spec.buildRequests([bidRequestWithPosEquals1], bidRequest)[0];
