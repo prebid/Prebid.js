@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as utils from '../../../src/utils.js';
-import { internal as utilInternal } from '../../../src/utils.js';
+import { internal as utilInternal, deepClone } from '../../../src/utils.js';
 import {
   isUsingNewSizeMapping,
   checkAdUnitSetupHook,
@@ -17,7 +17,6 @@ import {
 } from '../../../modules/sizeMappingV2.js';
 
 import { adUnitSetupChecks } from '../../../src/prebid.js';
-import {deepClone} from '../../../src/utils.js';
 
 const AD_UNITS = [{
   code: 'div-gpt-ad-1460505748561-0',
@@ -175,7 +174,7 @@ describe('sizeMappingV2', function () {
     });
 
     it('should return "true" if sizeConfig is declared both at the adUnits level and at the bids level', function () {
-      let adUnits = utils.deepClone(AD_UNITS);
+      const adUnits = utils.deepClone(AD_UNITS);
 
       const usingNewSizeMappingBool = isUsingNewSizeMapping(adUnits);
 
@@ -236,7 +235,7 @@ describe('sizeMappingV2', function () {
       });
 
       it('should log an error message if mediaTypes.banner does not contain "sizes" or "sizeConfig" property', function () {
-        let adUnits = utils.deepClone(AD_UNITS);
+        const adUnits = utils.deepClone(AD_UNITS);
         // deleteing the sizeConfig property from the first ad unit.
         delete adUnits[0].mediaTypes.banner.sizeConfig;
 

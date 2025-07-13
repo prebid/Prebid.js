@@ -44,7 +44,7 @@ describe('vidoomyBidAdapter', function() {
     });
 
     it('should return false when required params are not passed', function () {
-      let invalidBid = Object.assign({}, bid);
+      const invalidBid = Object.assign({}, bid);
       invalidBid.params = {};
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
@@ -60,7 +60,7 @@ describe('vidoomyBidAdapter', function() {
   });
 
   describe('buildRequests', function () {
-    let bidRequests = [
+    const bidRequests = [
       {
         'bidder': 'vidoomy',
         'params': {
@@ -124,7 +124,7 @@ describe('vidoomyBidAdapter', function() {
       }
     ];
 
-    let bidderRequest = {
+    const bidderRequest = {
       refererInfo: {
         numIframes: 0,
         reachedTop: true,
@@ -409,7 +409,7 @@ describe('vidoomyBidAdapter', function() {
         }
       }
 
-      let result = spec.interpretResponse(serverResponseVideo, bidRequest);
+      const result = spec.interpretResponse(serverResponseVideo, bidRequest);
 
       expect(result[0].renderer).to.not.be.undefined;
       expect(result[0].ad).to.equal(serverResponseVideo.body[0].vastUrl);
@@ -418,7 +418,7 @@ describe('vidoomyBidAdapter', function() {
 
     it('should get the correct bids responses for banner with same requestId ', function () {
       const bidRequest = {};
-      let result = spec.interpretResponse(serverResponseBanner, bidRequest);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].requestId).to.equal(serverResponseBanner.body[0].requestId);
       expect(result[1].requestId).to.equal(serverResponseBanner.body[1].requestId);
@@ -426,7 +426,7 @@ describe('vidoomyBidAdapter', function() {
 
     it('should get the correct bids responses for banner with same creativeId ', function () {
       const bidRequest = {};
-      let result = spec.interpretResponse(serverResponseBanner, bidRequest);
+      const result = spec.interpretResponse(serverResponseBanner, bidRequest);
 
       expect(result[0].creativeId).to.equal(serverResponseBanner.body[0].creativeId);
       expect(result[1].creativeId).to.equal(serverResponseBanner.body[1].creativeId);

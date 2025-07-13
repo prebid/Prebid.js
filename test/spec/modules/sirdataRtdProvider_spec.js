@@ -40,13 +40,13 @@ describe('sirdataRtdProvider', function () {
 
   describe('Sanitize content', function () {
     it('removes PII from content', function () {
-      let doc = document.implementation.createHTMLDocument('');
-      let div = doc.createElement('div');
+      const doc = document.implementation.createHTMLDocument('');
+      const div = doc.createElement('div');
       div.className = 'test';
       div.setAttribute('test', 'test');
       div.textContent = 'My email is test@test.com, My bank account number is 123456789012, my SSN is 123-45-6789, and my credit card number is 1234 5678 9101 1121.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
-      let div2 = doc.createElement('div');
-      let div3 = doc.createElement('div');
+      const div2 = doc.createElement('div');
+      const div3 = doc.createElement('div');
       div3.innerText = 'hello';
       div2.appendChild(div3);
       div.appendChild(div2);
@@ -61,7 +61,7 @@ describe('sirdataRtdProvider', function () {
   describe('setUidInStorage', function () {
     it('sets Id in Storage', function () {
       setUidInStorage('123456789');
-      let val = getUidFromStorage();
+      const val = getUidFromStorage();
       expect(val).to.deep.equal([{source: 'sddan.com', uids: [{id: '123456789', atype: 1}]}]);
     });
   });
@@ -84,15 +84,15 @@ describe('sirdataRtdProvider', function () {
         resString = onDocumentReady(testString);
       } catch (e) {}
       expect(resString).to.be.false;
-      let resFunction = onDocumentReady(testFunction);
+      const resFunction = onDocumentReady(testFunction);
       expect(resFunction).to.be.true;
     });
   });
 
   describe('postContentForSemanticAnalysis', function () {
     it('gets content for analysis', function () {
-      let res = postContentForSemanticAnalysis('1223456', 'https://www.sirdata.com/');
-      let resEmpty = postContentForSemanticAnalysis('1223456', '');
+      const res = postContentForSemanticAnalysis('1223456', 'https://www.sirdata.com/');
+      const resEmpty = postContentForSemanticAnalysis('1223456', '');
       expect(res).to.be.true;
       expect(resEmpty).to.be.false;
     });
@@ -134,7 +134,7 @@ describe('sirdataRtdProvider', function () {
       };
       sirdataSubmodule.init(firstConfig);
 
-      let adUnits = [
+      const adUnits = [
         {
           bids: [{
             bidder: 'appnexus',
@@ -147,14 +147,14 @@ describe('sirdataRtdProvider', function () {
         }
       ];
 
-      let firstReqBidsConfigObj = {
+      const firstReqBidsConfigObj = {
         adUnits: adUnits,
         ortb2Fragments: {
           global: {}
         }
       };
 
-      let firstData = {
+      const firstData = {
         segments: [111111, 222222],
         contextual_categories: {'333333': 100},
         'segtaxid': null,
@@ -215,7 +215,7 @@ describe('sirdataRtdProvider', function () {
       };
       sirdataSubmodule.init(config);
 
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         adUnits: [{
           bids: [{
             bidder: 'appnexus',
@@ -276,7 +276,7 @@ describe('sirdataRtdProvider', function () {
         }
       };
 
-      let data = {
+      const data = {
         'segments': [111111, 222222],
         'segtaxid': null,
         'cattaxid': null,
@@ -310,7 +310,7 @@ describe('sirdataRtdProvider', function () {
       getSegmentsAndCategories(reqBidsConfigObj, () => {
       }, {}, {});
 
-      let request = server.requests[0];
+      const request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));
 
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].name).to.equal(
@@ -335,7 +335,7 @@ describe('sirdataRtdProvider', function () {
 
   describe('Set ortb2 for bidder', function () {
     it('set ortb2 for a givent bidder', function () {
-      let reqBidsConfigObj = {
+      const reqBidsConfigObj = {
         adUnits: [{
           bids: [{
             bidder: 'appnexus',

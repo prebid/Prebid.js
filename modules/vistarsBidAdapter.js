@@ -35,14 +35,14 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    let valid = bid.params.source;
+    const valid = bid.params.source;
 
     return !!valid;
   },
 
   buildRequests: function(bids, bidderRequest) {
     return bids.map((bid) => {
-      let endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
+      const endpoint = bid.params.endpoint || DEFAULT_ENDPOINT;
       return {
         method: 'POST',
         url: `https://${endpoint}/bid?source=${bid.params.source}`,
