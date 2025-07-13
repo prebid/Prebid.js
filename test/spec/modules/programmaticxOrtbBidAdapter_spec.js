@@ -272,7 +272,7 @@ describe('programmaticxOrtbBidAdapter', function () {
     let sandbox;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        programmaticx: {
+        programmaticxortb: {
           storageAllowed: true
         }
       };
@@ -620,7 +620,7 @@ describe('programmaticxOrtbBidAdapter', function () {
   describe('unique deal id', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        programmaticx: {
+        programmaticxortb: {
           storageAllowed: true
         }
       };
@@ -655,7 +655,7 @@ describe('programmaticxOrtbBidAdapter', function () {
   describe('storage utils', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        programmaticx: {
+        programmaticxortb: {
           storageAllowed: true
         }
       };
