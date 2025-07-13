@@ -135,7 +135,7 @@ function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
   if (!floorFields.length) return [];
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
-    let exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
+    const exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
     // storing exact matches as lowerCase since we want to compare case insensitively
     accum.push(exactMatch === '*' ? ['*'] : [exactMatch.toLowerCase(), '*']);
     return accum;
@@ -147,22 +147,22 @@ function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
  * Generates all possible rule matches and picks the first matching one.
  */
 export function getFirstMatchingFloor(floorData, bidObject, responseObject = {}) {
-  let fieldValues = enumeratePossibleFieldValues(deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
+  const fieldValues = enumeratePossibleFieldValues(deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
   if (!fieldValues.length) {
     return {matchingFloor: undefined}
   }
 
   // look to see if a request for this context was made already
-  let matchingInput = fieldValues.map(field => field[0]).join('-');
+  const matchingInput = fieldValues.map(field => field[0]).join('-');
   // if we already have gotten the matching rule from this matching input then use it! No need to look again
-  let previousMatch = deepAccess(floorData, `matchingInputs.${matchingInput}`);
+  const previousMatch = deepAccess(floorData, `matchingInputs.${matchingInput}`);
   if (previousMatch) {
     return {...previousMatch};
   }
-  let allPossibleMatches = generatePossibleEnumerations(fieldValues, deepAccess(floorData, 'schema.delimiter') || '|');
-  let matchingRule = ((allPossibleMatches) || []).find(hashValue => floorData.values.hasOwnProperty(hashValue));
+  const allPossibleMatches = generatePossibleEnumerations(fieldValues, deepAccess(floorData, 'schema.delimiter') || '|');
+  const matchingRule = ((allPossibleMatches) || []).find(hashValue => floorData.values.hasOwnProperty(hashValue));
 
-  let matchingData: any = {
+  const matchingData: any = {
     floorMin: floorData.floorMin || 0,
     floorRuleValue: floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
@@ -186,7 +186,7 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
  */
 function generatePossibleEnumerations(arrayOfFields, delimiter) {
   return arrayOfFields.reduce((accum, currentVal) => {
-    let ret = [];
+    const ret = [];
     accum.map(obj => {
       currentVal.map(obj1 => {
         ret.push(obj + delimiter + obj1)
@@ -227,7 +227,7 @@ const getMediaTypesSizes = {
  */
 function updateRequestParamsFromContext(bidRequest, requestParams) {
   // if adapter asks for *'s then we can do some logic to infer if we can get a more specific rule based on context of bid
-  let mediaTypesOnBid = Object.keys(bidRequest.mediaTypes || {});
+  const mediaTypesOnBid = Object.keys(bidRequest.mediaTypes || {});
   // if there is only one mediaType then we can just use it
   if (requestParams.mediaType === '*' && mediaTypesOnBid.length === 1) {
     requestParams.mediaType = mediaTypesOnBid[0];
@@ -266,12 +266,12 @@ declare module '../src/bidderSettings' {
  */
 export function getFloor(requestParams: GetFloorParams = {currency: 'USD', mediaType: '*', size: '*'}) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-  let bidRequest = this;
-  let floorData = _floorDataForAuction[bidRequest.auctionId];
+  const bidRequest = this;
+  const floorData = _floorDataForAuction[bidRequest.auctionId];
   if (!floorData || floorData.skipped) return {};
 
   requestParams = updateRequestParamsFromContext(bidRequest, requestParams);
-  let floorInfo = getFirstMatchingFloor(floorData.data, {...bidRequest}, {mediaType: requestParams.mediaType, size: requestParams.size});
+  const floorInfo = getFirstMatchingFloor(floorData.data, {...bidRequest}, {mediaType: requestParams.mediaType, size: requestParams.size});
   let currency = requestParams.currency || floorData.data.currency;
 
   // if bidder asked for a currency which is not what floors are set in convert
@@ -295,7 +295,7 @@ export function getFloor(requestParams: GetFloorParams = {currency: 'USD', media
       );
       floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest, definedParams);
     } else {
-      let cpmAdjustment = getBiddersCpmAdjustment(floorInfo.matchingFloor, null, bidRequest);
+      const cpmAdjustment = getBiddersCpmAdjustment(floorInfo.matchingFloor, null, bidRequest);
       floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
     }
   }
@@ -316,7 +316,7 @@ export function getFloor(requestParams: GetFloorParams = {currency: 'USD', media
  * @summary Takes a floorsData object and converts it into a hash map with appropriate keys
  */
 export function getFloorsDataForAuction(floorData, adUnitCode?) {
-  let auctionFloorData = deepClone(floorData);
+  const auctionFloorData = deepClone(floorData);
   auctionFloorData.schema.delimiter = floorData.schema.delimiter || '|';
   auctionFloorData.values = normalizeRulesForAuction(auctionFloorData, adUnitCode);
   // default the currency to USD if not passed in
@@ -328,13 +328,13 @@ export function getFloorsDataForAuction(floorData, adUnitCode?) {
  * @summary if adUnitCode needs to be added to the offset then it will add it else just return the values
  */
 function normalizeRulesForAuction(floorData, adUnitCode) {
-  let fields = floorData.schema.fields;
-  let delimiter = floorData.schema.delimiter
+  const fields = floorData.schema.fields;
+  const delimiter = floorData.schema.delimiter
 
   // if we are building the floor data form an ad unit, we need to append adUnit code as to not cause collisions
-  let prependAdUnitCode = adUnitCode && fields.indexOf('adUnitCode') === -1 && fields.unshift('adUnitCode');
+  const prependAdUnitCode = adUnitCode && fields.indexOf('adUnitCode') === -1 && fields.unshift('adUnitCode');
   return Object.keys(floorData.values).reduce((rulesHash, oldKey) => {
-    let newKey = prependAdUnitCode ? `${adUnitCode}${delimiter}${oldKey}` : oldKey
+    const newKey = prependAdUnitCode ? `${adUnitCode}${delimiter}${oldKey}` : oldKey
     // we store the rule keys as lower case for case insensitive compare
     rulesHash[newKey.toLowerCase()] = floorData.values[oldKey];
     return rulesHash;
@@ -359,7 +359,7 @@ export function getFloorDataFromAdUnits(adUnits) {
         accum = getFloorsDataForAuction(floors, adUnit.code);
         accum.location = 'adUnit';
       } else {
-        let newRules = getFloorsDataForAuction(floors, adUnit.code).values;
+        const newRules = getFloorsDataForAuction(floors, adUnit.code).values;
         // copy over the new rules into our values object
         Object.assign(accum.values, newRules);
       }
@@ -432,16 +432,16 @@ export function pickRandomModel(modelGroups, weightSum) {
  * @summary Updates the adUnits accordingly and returns the necessary floorsData for the current auction
  */
 export function createFloorsDataForAuction(adUnits, auctionId) {
-  let resolvedFloorsData = deepClone(_floorsConfig);
+  const resolvedFloorsData = deepClone(_floorsConfig);
   // if using schema 2 pick a model here:
   if (deepAccess(resolvedFloorsData, 'data.floorsSchemaVersion') === 2) {
     // merge the models specific stuff into the top level data settings (now it looks like floorsSchemaVersion 1!)
-    let { modelGroups, ...rest } = resolvedFloorsData.data;
+    const { modelGroups, ...rest } = resolvedFloorsData.data;
     resolvedFloorsData.data = Object.assign(rest, pickRandomModel(modelGroups, rest.modelWeightSum));
   }
 
   // if we do not have a floors data set, we will try to use data set on adUnits
-  let useAdUnitData = Object.keys(deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0;
+  const useAdUnitData = Object.keys(deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0;
   if (useAdUnitData) {
     resolvedFloorsData.data = getFloorDataFromAdUnits(adUnits);
   } else {
@@ -664,7 +664,7 @@ export function generateAndHandleFetch(floorEndpoint) {
   // if a fetch url is defined and one is not already occurring, fire it!
   if (floorEndpoint.url && !fetching) {
     // default to GET and we only support GET for now
-    let requestMethod = floorEndpoint.method || 'GET';
+    const requestMethod = floorEndpoint.method || 'GET';
     if (requestMethod !== 'GET') {
       logError(`${MODULE_NAME}: 'GET' is the only request method supported at this time!`);
     } else {
@@ -904,7 +904,7 @@ function addFloorDataToBid(floorData, floorInfo, bid: Partial<Bid>, adjustedCpm)
     matchedFields: {}
   };
   floorData.data.schema.fields.forEach((field, index) => {
-    let matchedValue = floorInfo.matchingData.split(floorData.data.schema.delimiter)[index];
+    const matchedValue = floorInfo.matchingData.split(floorData.data.schema.delimiter)[index];
     bid.floorData.matchedFields[field] = matchedValue;
   });
 }
@@ -913,9 +913,9 @@ function addFloorDataToBid(floorData, floorInfo, bid: Partial<Bid>, adjustedCpm)
  * @summary takes the enforcement flags and the bid itself and determines if it should be floored
  */
 function shouldFloorBid(floorData, floorInfo, bid) {
-  let enforceJS = deepAccess(floorData, 'enforcement.enforceJS') !== false;
-  let shouldFloorDeal = deepAccess(floorData, 'enforcement.floorDeals') === true || !bid.dealId;
-  let bidBelowFloor = bid.floorData.cpmAfterAdjustments < floorInfo.matchingFloor;
+  const enforceJS = deepAccess(floorData, 'enforcement.enforceJS') !== false;
+  const shouldFloorDeal = deepAccess(floorData, 'enforcement.floorDeals') === true || !bid.dealId;
+  const bidBelowFloor = bid.floorData.cpmAfterAdjustments < floorInfo.matchingFloor;
   return enforceJS && (bidBelowFloor && shouldFloorDeal);
 }
 
@@ -924,7 +924,7 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  * And if the rule we find determines a bid should be floored we will do so.
  */
 export const addBidResponseHook = timedBidResponseHook('priceFloors', function addBidResponseHook(fn, adUnitCode, bid, reject) {
-  let floorData = _floorDataForAuction[bid.auctionId];
+  const floorData = _floorDataForAuction[bid.auctionId];
   // if no floor data then bail
   if (!floorData || !bid || floorData.skipped) {
     return fn.call(this, adUnitCode, bid, reject);
@@ -933,7 +933,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   const matchingBidRequest = auctionManager.index.getBidRequest(bid);
 
   // get the matching rule
-  let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
+  const floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
     if (floorInfo.matchingFloor !== 0) logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
@@ -942,8 +942,8 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 
   // determine the base cpm to use based on if the currency matches the floor currency
   let adjustedCpm;
-  let floorCurrency = floorData.data.currency.toUpperCase();
-  let bidResponseCurrency = bid.currency || 'USD'; // if an adapter does not set a bid currency and currency module not on it may come in as undefined
+  const floorCurrency = floorData.data.currency.toUpperCase();
+  const bidResponseCurrency = bid.currency || 'USD'; // if an adapter does not set a bid currency and currency module not on it may come in as undefined
   if (floorCurrency === bidResponseCurrency.toUpperCase()) {
     adjustedCpm = bid.cpm;
   } else if (bid.originalCurrency && floorCurrency === bid.originalCurrency.toUpperCase()) {

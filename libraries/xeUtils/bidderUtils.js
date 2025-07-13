@@ -6,7 +6,7 @@ export function getBidFloor(bid, currency = 'USD') {
     return null;
   }
 
-  let floor = bid.getFloor({
+  const floor = bid.getFloor({
     currency,
     mediaType: '*',
     size: '*'

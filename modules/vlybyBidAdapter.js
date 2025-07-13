@@ -51,7 +51,7 @@ export const spec = {
     if (serverResponse.body) {
       const vHB = serverResponse.body.bids;
       try {
-        let bidResponse = {
+        const bidResponse = {
           requestId: vHB.bid,
           cpm: vHB.cpm,
           width: vHB.size.width,

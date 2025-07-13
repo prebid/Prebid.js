@@ -731,7 +731,7 @@ describe('oolo Prebid Analytic', () => {
   });
 
   describe('buildAuctionData', () => {
-    let auction = {
+    const auction = {
       auctionId,
       auctionStart,
       auctionEnd,

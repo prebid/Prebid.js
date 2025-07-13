@@ -220,14 +220,14 @@ describe('SparteoAdapter', function () {
       });
 
       it('should return false because the networkId is missing', function () {
-        let wrongBid = deepClone(VALID_BID_BANNER);
+        const wrongBid = deepClone(VALID_BID_BANNER);
         delete wrongBid.params.networkId;
 
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
       });
 
       it('should return false because the banner size is missing', function () {
-        let wrongBid = deepClone(VALID_BID_BANNER);
+        const wrongBid = deepClone(VALID_BID_BANNER);
 
         wrongBid.mediaTypes.banner.sizes = '123456';
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
@@ -237,7 +237,7 @@ describe('SparteoAdapter', function () {
       });
 
       it('should return false because the video player size paramater is missing', function () {
-        let wrongBid = deepClone(VALID_BID_VIDEO);
+        const wrongBid = deepClone(VALID_BID_VIDEO);
 
         wrongBid.mediaTypes.video.playerSize = '123456';
         expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
@@ -276,15 +276,15 @@ describe('SparteoAdapter', function () {
       }
 
       it('should return the right formatted request with endpoint test', function() {
-        let endpoint = 'https://bid-test.sparteo.com/auction';
+        const endpoint = 'https://bid-test.sparteo.com/auction';
 
-        let bids = mergeDeep(deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]), {
+        const bids = mergeDeep(deepClone([VALID_BID_BANNER, VALID_BID_VIDEO]), {
           params: {
             endpoint: endpoint
           }
         });
 
-        let requests = mergeDeep(deepClone(VALID_REQUEST));
+        const requests = mergeDeep(deepClone(VALID_REQUEST));
 
         const request = adapter.buildRequests(bids, BIDDER_REQUEST);
         requests.url = endpoint;
@@ -298,7 +298,7 @@ describe('SparteoAdapter', function () {
   describe('interpretResponse', function() {
     describe('Check method return', function () {
       it('should return the right formatted response', function() {
-        let response = {
+        const response = {
           body: {
             'id': '63f4d300-6896-4bdc-8561-0932f73148b1',
             'cur': 'EUR',
@@ -351,7 +351,7 @@ describe('SparteoAdapter', function () {
           });
         }
 
-        let formattedReponse = [
+        const formattedReponse = [
           {
             requestId: '1a2b3c4d',
             seatBidId: 'cdbb6982-a269-40c7-84e5-04797f11d87a',
@@ -405,7 +405,7 @@ describe('SparteoAdapter', function () {
   describe('onBidWon', function() {
     describe('Check methods succeed', function () {
       it('should not throw error', function() {
-        let bids = [
+        const bids = [
           {
             requestId: '1a2b3c4d',
             seatBidId: 'cdbb6982-a269-40c7-84e5-04797f11d87a',

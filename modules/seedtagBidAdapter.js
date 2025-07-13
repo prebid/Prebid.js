@@ -98,7 +98,7 @@ function hasMandatoryDisplayParams(bid) {
 function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid);
 
-  let isValid =
+  const isValid =
     !!bid.params.publisherId &&
     !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
@@ -325,7 +325,7 @@ export const spec = {
       payload.schain = schain;
     }
 
-    let coppa = config.getConfig('coppa');
+    const coppa = config.getConfig('coppa');
     if (coppa) {
       payload.coppa = coppa;
     }

@@ -61,7 +61,7 @@ function createORTB(bR, bid) {
   const consentString = gdpr ? bR.gdprConsent?.consentString : '';
   const usPrivacy = bR.uspConsent || '';
 
-  let oR = {
+  const oR = {
     id: generateUUID(),
     cur: [currency],
     imp: [],
@@ -217,7 +217,7 @@ export const spec = {
 
     sR.body.seatbid.forEach((sb) => {
       try {
-        let b = sb.bid[0];
+        const b = sb.bid[0];
 
         res.push({
           adId: b?.adId ? b.adId : b.impid || b.crid,

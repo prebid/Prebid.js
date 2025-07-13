@@ -118,7 +118,7 @@ describe('BedigitechAdapter', function () {
       ];
       const result = spec.interpretResponse(response);
       expect(result).to.have.lengthOf(1);
-      let resultKeys = Object.keys(result[0]);
+      const resultKeys = Object.keys(result[0]);
       expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort());
       resultKeys.forEach(function(k) {
         if (k === 'ad') {
