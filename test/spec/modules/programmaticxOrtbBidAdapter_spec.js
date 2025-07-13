@@ -698,4 +698,10 @@ describe('programmaticxOrtbBidAdapter', function () {
       expect(parsed).to.be.equal(value);
     });
   });
+  describe('createDomain test', function() {
+    it('should return correct domain', function () {
+      const responses = createDomain();
+      expect(responses).to.be.equal('https://exchange.programmaticx.ai');
+    });
+  })
 });
