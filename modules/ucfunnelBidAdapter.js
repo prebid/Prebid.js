@@ -164,18 +164,18 @@ registerBidder(spec);
 
 function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent) {
   let param = '?';
-  if (gdprApplies == '1') {
+  if (gdprApplies === '1') {
     param = param + 'gdpr=1&';
   }
-  if (apiVersion == 1) {
+  if (apiVersion === 1) {
     param = param + 'euconsent=' + consentString + '&';
-  } else if (apiVersion == 2) {
+  } else if (apiVersion === 2) {
     param = param + 'euconsent-v2=' + consentString + '&';
   }
   if (uspConsent) {
     param = param + 'usprivacy=' + uspConsent;
   }
-  return (param == '?') ? '' : param;
+  return (param === '?') ? '' : param;
 }
 
 function parseSizes(bid) {
@@ -260,7 +260,7 @@ function getFormat(size) {
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
-  const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
+  const dnt = (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const schain = bid?.ortb2?.source?.ext?.schain;
   const supplyChain = getSupplyChain(schain);
@@ -291,7 +291,7 @@ function getRequestData(bid, bidderRequest) {
 
   if (storage.cookiesAreEnabled()) {
     let ucfUid = '';
-    if (storage.getCookie(COOKIE_NAME) != undefined) {
+    if (storage.getCookie(COOKIE_NAME) !== undefined) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;
     } else {
@@ -301,7 +301,7 @@ function getRequestData(bid, bidderRequest) {
     }
   }
 
-  if (size != undefined && size.length > 0 && size[0].length == 2) {
+  if (size !== undefined && size.length > 0 && size[0].length === 2) {
     bidData.w = size[0][0];
     bidData.h = size[0][1];
   }

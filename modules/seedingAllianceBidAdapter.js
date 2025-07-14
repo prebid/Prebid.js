@@ -213,7 +213,7 @@ function parseNative(bid, nativeParams) {
 
   nativeParamKeys.forEach(nativeParam => {
     assets.forEach(asset => {
-      if (asset.id == id) {
+      if (asset.id === id) {
         switch (nativeParam) {
           case 'title':
             result.title = asset.title.text;

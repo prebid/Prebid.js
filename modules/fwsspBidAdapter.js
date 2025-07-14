@@ -179,7 +179,7 @@ export const spec = {
         let videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
         const videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
 
-        if (currentBidRequest.params.format == 'inbanner') {
+        if (currentBidRequest.params.format === 'inbanner') {
           videoContext = 'In-Banner';
           videoPlacement = 2;
         }
@@ -450,7 +450,7 @@ export function formatAdHTML(bidrequest, size) {
 }
 
 function getSdkUrl(bidrequest) {
-  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() == 'stg';
+  const isStg = bidrequest.params.env && bidrequest.params.env.toLowerCase() === 'stg';
   const host = isStg ? 'adm.stg.fwmrm.net' : 'mssl.fwmrm.net';
   const sdkVersion = getSDKVersion(bidrequest);
   return `https://${host}/libs/adm/${sdkVersion}/AdManager-prebid.js`
@@ -658,13 +658,13 @@ function getValueFromKeyInImpressionNode(xmlNode, key) {
     let tempValue = '';
     queries.forEach(item => {
       const split = item.split('=');
-      if (split[0] == key) {
+      if (split[0] === key) {
         tempValue = split[1];
       }
-      if (split[0] == 'reqType' && split[1] == 'AdsDisplayStarted') {
+      if (split[0] === 'reqType' && split[1] === 'AdsDisplayStarted') {
         isAdsDisplayStartedPresent = true;
       }
-      if (split[0] == 'rootViewKey') {
+      if (split[0] === 'rootViewKey') {
         isRootViewKeyPresent = true;
       }
     });

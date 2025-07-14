@@ -272,7 +272,7 @@ function buildDevice() {
   return {
     ua: navigator.userAgent,
     js: 1,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack === '1') ? 1 : 0,
+    dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1') ? 1 : 0,
     h: screen.height,
     w: screen.width,
     language: navigator.language

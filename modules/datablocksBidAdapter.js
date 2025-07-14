@@ -313,7 +313,7 @@ export const spec = {
         id: bidRequest.bidId,
         tagid: bidRequest.params.tagid || bidRequest.adUnitCode,
         placement_id: bidRequest.params.placement_id || 0,
-        secure: window.location.protocol == 'https:',
+        secure: window.location.protocol === 'https:',
         ortb2: deepAccess(bidRequest, `ortb2Imp`) || {},
         floor: {}
       }
