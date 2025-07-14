@@ -118,6 +118,7 @@ module.exports = [
       //
       // See Issue #1111.
       // also see: reality. These are here to stay.
+      // we're working on them though :)
 
       'no-return-assign': 'off',
       'no-throw-literal': 'off',
